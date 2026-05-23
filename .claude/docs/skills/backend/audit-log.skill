@@ -1,0 +1,205 @@
+# Skill: audit-log
+
+> **Purpose:** Özel okul ortamında "kim, neyi, ne zaman, neden değiştirdi" sorusu hayati. Bu skill kritik aksiyonların **standart audit log** ile kayıt altına alınmasını sağlar.
+
+**İlgili Rules:** `backend/logging-error-rules.md`, `backend/security-rules.md`, `business-rules.md`
+
+---
+
+## 1. Trigger
+
+Aşağıdaki domain aksiyonları **istisnasız** audit log gerektirir:
+
+| Aksiyon | Sebep |
+|---------|-------|
+| Not değiştirme (yayınlanmış mark edit) | Veli/öğrenci anlaşmazlığı |
+| Not silme | İptal/iade kanıtı |
+| Yoklama düzenleme (kayıt sonrası) | Devamsızlık itirazı |
+| Öğrenci sınıf değişimi | Tarihsel takip |
+| Öğrenci/veli silme veya pasifleştirme | KVKK + iade işlemleri |
+| Kullanıcı rol değişimi | Yetki ihlali analizi |
+| Permission grant/revoke | Security review |
+| Login (başarılı + başarısız) | Brute force, KVKK |
+| Password reset / değişiklik | Security |
+| SuperAdmin tenant override | Cross-tenant erişim |
+| Bulk import / export | Veri sızıntısı analizi |
+| Tatil takvimi / dönem değişikliği | Operasyon |
+| Toplu duyuru gönderimi | İçerik denetim |
+| KVKK aydınlatma onayı | Yasal zorunluluk |
+
+---
+
+## 2. Audit Log Schema
+
+```csharp
+public sealed class AuditLogEntry
+{
+    public Guid Id { get; init; }
+    public SchoolId SchoolId { get; init; }              // tenant
+    public Guid ActorUserId { get; init; }                // kim
+    public string ActorRole { get; init; }                // rol snapshot
+    public string Action { get; init; }                   // "mark.edit", "student.move"
+    public string ResourceType { get; init; }             // "Mark", "Student"
+    public Guid ResourceId { get; init; }                 // hangi kayıt
+    public string? Before { get; init; }                  // JSON snapshot (eski)
+    public string? After { get; init; }                   // JSON snapshot (yeni)
+    public string? Reason { get; init; }                  // kullanıcı tarafından girilen sebep
+    public string CorrelationId { get; init; }            // request korelasyon
+    public string IpAddress { get; init; }
+    public string UserAgent { get; init; }
+    public DateTime PerformedAt { get; init; }
+}
+```
+
+**DB tablosu:** `audit_logs` (append-only, **DELETE yasak**, sadece partition rotation).
+
+---
+
+## 3. Action Naming (Standart Codebook)
+
+`{resource}.{verb}` formatında, snake_case:
+
+| Action Code | Açıklama |
+|-------------|----------|
+| `mark.create` | Yeni not eklendi (taslak) |
+| `mark.publish` | Not yayınlandı |
+| `mark.edit_published` | **Yayınlı** not düzenlendi (kritik) |
+| `mark.delete` | Not silindi |
+| `attendance.save` | Yoklama kaydedildi |
+| `attendance.edit_after_close` | Kapanmış yoklama düzenlendi (kritik) |
+| `student.create` | Öğrenci eklendi |
+| `student.move_class` | Sınıf değişimi |
+| `student.deactivate` | Pasifleştirme |
+| `student.delete` | Tam silme (SuperAdmin only) |
+| `user.role_change` | Rol değişimi |
+| `user.permission_grant` | İzin verildi |
+| `user.permission_revoke` | İzin alındı |
+| `auth.login_success` | Başarılı login |
+| `auth.login_failure` | Başarısız login |
+| `auth.password_reset_request` | Reset talebi |
+| `auth.password_changed` | Şifre değişti |
+| `superadmin.tenant_override` | Cross-tenant erişim |
+| `bulk.import` | Toplu import |
+| `bulk.export` | Toplu export |
+
+---
+
+## 4. Audit Service
+
+```csharp
+public interface IAuditService
+{
+    Task LogAsync(AuditAction action, CancellationToken ct = default);
+}
+
+public sealed record AuditAction(
+    string Code,                  // "mark.edit_published"
+    string ResourceType,
+    Guid ResourceId,
+    object? Before = null,
+    object? After = null,
+    string? Reason = null
+);
+```
+
+Kullanımı handler'da:
+
+```csharp
+public async Task<Result<Unit>> Handle(EditPublishedMarkCommand cmd, CancellationToken ct)
+{
+    var mark = await _repo.GetAsync(cmd.MarkId, ct);
+    if (mark is null) return Result.NotFound(MarkErrors.NotFound);
+
+    var before = mark.ToSnapshot();
+    mark.EditPublished(cmd.NewScore, cmd.Reason, _user.Id);
+    await _uow.SaveChangesAsync(ct);
+
+    await _audit.LogAsync(new AuditAction(
+        Code: "mark.edit_published",
+        ResourceType: nameof(Mark),
+        ResourceId: mark.Id.Value,
+        Before: before,
+        After: mark.ToSnapshot(),
+        Reason: cmd.Reason
+    ), ct);
+
+    return Result.Ok();
+}
+```
+
+---
+
+## 5. Otomatik Doldurulan Alanlar
+
+`IAuditService` implementasyonu **otomatik** doldurur:
+- `SchoolId` — `_tenant.CurrentSchoolId`
+- `ActorUserId` + `ActorRole` — `_currentUser`
+- `CorrelationId` — `LogContext`
+- `IpAddress`, `UserAgent` — `IHttpContextAccessor`
+- `PerformedAt` — `_clock.UtcNow`
+
+Handler sadece **business alanları** verir.
+
+---
+
+## 6. Sensitive Data Masking
+
+Audit `Before` / `After` snapshot'larında:
+- `Password`, `PasswordHash`, `RefreshToken`, `TC Kimlik`, `IBAN`, `Email`, `Phone` → maskelenir (`****1234`).
+- Bu işlemi `AuditSanitizer` yapar.
+- Maskelenmemiş raw veriye **sadece SuperAdmin** sorgu sayfasından erişebilir (ayrı policy + log).
+
+---
+
+## 7. Querying (UI)
+
+- `/admin/audit` ekranı (Yönetim için).
+- Filtreler: tarih aralığı, actor, action, resource type, resource id.
+- Excel export — **kendisi de** audit edilir (`bulk.export`).
+- Veli/öğrenci/öğretmen audit UI **yok** (yetkisiz erişim).
+
+---
+
+## 8. Retention & Storage
+
+- **5 yıl** retention (mevzuat + sözleşme).
+- 1 yıldan eski log'lar cold storage (S3 Glacier).
+- DB tablo aylık partition.
+- ELK'da paralel kopya, 90 gün hot.
+
+---
+
+## 9. AI Checklist (her handler'da)
+
+- [ ] Aksiyon "audit gerektirenler" listesinde mi?
+- [ ] `_audit.LogAsync` çağrıldı mı?
+- [ ] `Before` / `After` snapshot alındı mı (edit/delete için)?
+- [ ] `Reason` alanı kullanıcıdan istenip iletildi mi?
+- [ ] Sensitive alan maskelenecek mi (sanitizer)?
+- [ ] Log `SaveChangesAsync` **sonrası** mı yazılıyor (rollback'te audit yazılmamalı)?
+- [ ] Audit yazımı transaction içinde mi (outbox pattern ideal)?
+
+---
+
+## 10. Output Format
+
+```
+[audit-log]
+✅ Action: mark.edit_published (kritik, listede)
+✅ Before/After: snapshot alındı
+✅ Reason: kullanıcıdan istendi
+✅ Sanitizer: hassas alan yok
+✅ Tenant: SchoolId otomatik dolduruldu
+✅ Persistence: outbox pattern (SaveChanges sonrası dispatch)
+```
+
+---
+
+## 11. Yasak
+
+- Audit log satırını `DELETE` etmek (append-only).
+- `Reason` zorunlu olduğu yerlerde boş kabul etmek.
+- Audit'i SaveChanges **öncesi** yazmak (rollback durumunda kalıntı).
+- Sensitive alan maskelemesini atlamak.
+- "Bu önemsiz bir değişiklik" diyerek audit atlamak — listede varsa atlanmaz.
+- Audit log üzerinden domain karar vermek (read-only kayıt, business logic değil).

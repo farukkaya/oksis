@@ -1,0 +1,280 @@
+# Skill: notification-ui
+
+> **Purpose:** Bildirim, OKSİS'in merkezi ürün değeri. Bu skill push/toast/in-app notification UI'larını **standart, tutarlı, KVKK uyumlu** üretir.
+
+**İlgili Rules:** `frontend/ui-ux-rules.md`, `frontend/component-rules.md`, `frontend/state-management-rules.md`, `backend/notification-rules.md`, `notification-matrix.md`
+
+---
+
+## 1. Trigger
+
+- "Bildirim göster", "toast at", "in-app notification" istekleri.
+- Push notification handling (mobile + web).
+- Notification merkezi (zil ikonu + drawer).
+- Permission isteme akışı.
+
+---
+
+## 2. 3 Notification Kanalı
+
+| Kanal | Kullanım | Süre |
+|-------|----------|------|
+| **Toast** | Anlık geri bildirim (kaydedildi, hata) | 3-5 sn |
+| **In-App (Notification Center)** | Persistent (zil ikonu içinde) | Read/unread state |
+| **Push (FCM/APNs)** | App kapalıyken/arka planda | OS bildirimi |
+
+Üçü **aynı event'ten** beslenebilir (örn mark.published → toast + in-app + push).
+
+---
+
+## 3. Toast (Sonner)
+
+```tsx
+import { toast } from 'sonner';
+
+// Success
+toast.success('Yoklama kaydedildi');
+
+// Error (server'dan gelen)
+toast.error('Kaydedilemedi', { description: 'İnternet bağlantınızı kontrol edin' });
+
+// Action toast (undo)
+toast('Öğrenci silindi', {
+  action: { label: 'Geri al', onClick: () => undoDelete(id) },
+  duration: 5000,
+});
+
+// Promise toast (async)
+toast.promise(api.publish(markId), {
+  loading: 'Yayınlanıyor...',
+  success: 'Notlar yayınlandı',
+  error: 'Yayınlanamadı',
+});
+```
+
+**Kurallar:**
+- Tek bir aksiyon için **tek toast**. (Field validation'a per-field toast ❌)
+- Bilgilendirme için **success/info**, hata için **error**.
+- Critical hatalar **modal**, toast değil.
+- Duration: success 3s, error 5s, info 4s.
+- Stack max 3 toast (sonrası kuyrukta).
+
+---
+
+## 4. In-App Notification (Notification Center)
+
+```tsx
+<NotificationBell>
+  <Badge count={unreadCount} />
+</NotificationBell>
+
+<NotificationDrawer open={open} onClose={onClose}>
+  <Tabs>
+    <Tab label="Tümü">
+      <NotificationList items={all} onItemClick={openDetail} />
+    </Tab>
+    <Tab label="Okunmamış">
+      <NotificationList items={unread} ... />
+    </Tab>
+  </Tabs>
+  <DrawerFooter>
+    <Button variant="ghost" onClick={markAllRead}>Tümünü okundu işaretle</Button>
+  </DrawerFooter>
+</NotificationDrawer>
+```
+
+**Notification Item:**
+```tsx
+<button onClick={handleClick} className="w-full text-left p-3 hover:bg-muted/50">
+  <div className="flex gap-3">
+    <NotificationIcon type={notif.type} />
+    <div className="flex-1 min-w-0">
+      <div className="flex items-center gap-2">
+        <span className="font-medium truncate">{notif.title}</span>
+        {!notif.readAt && <span className="h-2 w-2 rounded-full bg-primary" />}
+      </div>
+      <p className="text-sm text-muted line-clamp-2">{notif.body}</p>
+      <span className="text-xs text-muted">{formatRelative(notif.createdAt)}</span>
+    </div>
+  </div>
+</button>
+```
+
+---
+
+## 5. Notification Type → Icon / Color
+
+| Type | Icon | Color |
+|------|------|-------|
+| `mark.published` | Award | success |
+| `attendance.absent` | UserX | warning |
+| `attendance.absent_threshold` | AlertTriangle | danger |
+| `homework.assigned` | BookOpen | info |
+| `homework.due_soon` | Clock | warning |
+| `announcement.new` | Megaphone | info |
+| `message.received` | MessageCircle | info |
+| `event.upcoming` | Calendar | info |
+
+`NotificationIcon` component renk + ikonu type'a göre seçer.
+
+---
+
+## 6. Real-Time Update (SignalR)
+
+```typescript
+useSignalRSubscription('notification.new', (notif: NotificationDto) => {
+  queryClient.invalidateQueries({ queryKey: ['notifications'] });
+
+  // Eğer kullanıcı in-app, ekranda küçük toast da göster
+  if (notif.priority === 'instant' && document.hasFocus()) {
+    toast(notif.title, { description: notif.body, icon: <NotificationIcon type={notif.type} /> });
+  }
+});
+```
+
+---
+
+## 7. Push Notification Permission
+
+```tsx
+export function NotificationPermissionPrompt() {
+  const [status, setStatus] = useState<NotificationPermission>('default');
+
+  // Hemen sorma — kullanıcı bir aksiyondan sonra (örn ilk login + 1 ekran sonra) prompt göster
+  const askPermission = async () => {
+    const result = await Notification.requestPermission();
+    setStatus(result);
+    if (result === 'granted') {
+      await registerFcmToken();
+    }
+  };
+
+  if (status !== 'default') return null;
+  return (
+    <Banner
+      title="Bildirimleri açın"
+      description="Yoklama, not ve duyurulardan anında haberdar olun"
+      action={<Button onClick={askPermission}>İzin ver</Button>}
+      dismissible
+    />
+  );
+}
+```
+
+**Kural:** İlk login'de browser/OS prompt'unu **direkt tetikleme** — önce in-app banner ile açıkla. (iOS Safari özellikle bir kez reddedilirse tekrar sorulamaz.)
+
+---
+
+## 8. Deep Link Handling
+
+Push tıklandığında:
+```typescript
+// Push payload
+{
+  "title": "Not yayınlandı",
+  "body": "Matematik sınavı: 85",
+  "data": {
+    "deepLink": "oksis://marks/abc-123",
+    "type": "mark.published"
+  }
+}
+
+// Handler
+function handleDeepLink(link: string) {
+  const url = new URL(link);
+  // oksis://marks/abc-123 → /marks/abc-123
+  navigate(url.pathname + url.search);
+}
+```
+
+**Kural:** Her notification'da deep link **zorunlu** — kullanıcı tıkladığında ilgili sayfaya gitsin.
+
+---
+
+## 9. Notification Preferences (Kullanıcı Ayarları)
+
+```tsx
+<SettingsPage>
+  <Section title="Bildirim Tercihleri">
+    {channels.map((ch) => (
+      <PreferenceRow key={ch.key}>
+        <div>
+          <div className="font-medium">{ch.label}</div>
+          <div className="text-xs text-muted">{ch.description}</div>
+        </div>
+        <div className="flex gap-2">
+          <Switch label="Push" checked={prefs[ch.key].push} onChange={...} />
+          <Switch label="E-posta" checked={prefs[ch.key].email} onChange={...} />
+        </div>
+      </PreferenceRow>
+    ))}
+  </Section>
+</SettingsPage>
+```
+
+Default tercihler `notification-matrix.md`'den gelir.
+
+---
+
+## 10. Multi-Child Parent
+
+Veli birden fazla çocuk seçtiyse:
+- Notification listesinde her satırda çocuk avatarı + adı.
+- Filter: "Tümü / Ali / Zeynep" tab'ları.
+- Tıklayınca **doğru çocuk context'ine** geçiş.
+
+---
+
+## 11. Empty State
+
+```tsx
+<EmptyState
+  icon={<BellIcon className="text-muted" />}
+  title="Bildirim yok"
+  description="Yeni etkinlikler olduğunda burada görünecek"
+/>
+```
+
+---
+
+## 12. AI Checklist
+
+- [ ] Toast `sonner` üzerinden tek lib mi?
+- [ ] Her aksiyon için **tek** toast (multiple yok)?
+- [ ] Critical hatalar modal, toast değil mi?
+- [ ] Notification center drawer + bell badge var mı?
+- [ ] Read/unread state ayrımı var mı?
+- [ ] SignalR ile real-time invalidation mı?
+- [ ] Permission prompt önce in-app banner mı?
+- [ ] Deep link her notification'da var mı?
+- [ ] Notification type → icon/color mapping standart mı?
+- [ ] Notification preferences ekranı `notification-matrix.md` ile uyumlu mu?
+- [ ] Multi-child parent için filter / context switch var mı?
+- [ ] Empty + loading state var mı?
+
+---
+
+## 13. Output Format
+
+```
+[notification-ui]
+✅ Toast: sonner, tek lib
+✅ In-app: drawer + bell badge + unread count
+✅ Real-time: SignalR invalidation
+✅ Permission: in-app banner → OS prompt
+✅ Deep link: oksis://marks/{id} pattern
+✅ Type → icon/color: standart mapping
+✅ Multi-child: filter tabs
+```
+
+---
+
+## 14. Yasak
+
+- Birden fazla toast library kullanmak.
+- Her field error için ayrı toast atmak.
+- Permission'ı direkt OS prompt ile istemek (önce banner).
+- Deep link olmadan push göndermek.
+- Notification body'sini `dangerouslySetInnerHTML` ile render etmek (XSS).
+- KVKK gereği "hassas içerik" (sağlık, disiplin) push body'de tam metin göndermek — özet + "uygulamayı aç" yönlendirmesi yap.
+- Multi-child velide tek context'le notification göstermek (yanlış çocuk verisi gözükür).

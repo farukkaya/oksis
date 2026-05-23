@@ -1,0 +1,175 @@
+# Skill: performance-check
+
+> **Purpose:** OKSİS heavy DataGrid, dashboard, push notification ve raporlama içerir. Bu skill performans regresyonlarını üretim öncesi yakalar.
+
+**İlgili Rules:** `frontend/datagrid-rules.md`, `frontend/state-management-rules.md`, `backend/database-rules.md`, `backend/background-job-rules.md`
+
+---
+
+## 1. Trigger
+
+- Yeni DataGrid / liste / dashboard ekranı.
+- Yeni reporting / export feature.
+- Yeni dashboard widget / metric.
+- Yeni notification / bulk operation.
+- Performans şikayeti veya yavaşlama raporu.
+
+---
+
+## 2. Backend Checklist
+
+### 2.1 N+1 Query
+
+- [ ] `.Include()` veya **projection** (`Select(x => new Dto { ... })`) kullanıldı mı?
+- [ ] Loop içinde DB çağrısı **yok** mu? (`foreach (var s in students) { var marks = _db.Marks.Where(...) }` ⚠️)
+- [ ] Bulk operasyonda `IN` clause + tek query mi?
+
+### 2.2 Pagination
+
+- [ ] Liste endpoint'i `Skip/Take` + `Count` ile sayfalanıyor mu?
+- [ ] `PageSize` max limiti (örn 200) zorlanıyor mu?
+- [ ] `Count(*)` query indeksli kolon üzerinde mi?
+- [ ] Cursor pagination (zaman/ID bazlı) heavy export için değerlendirildi mi?
+
+### 2.3 Index
+
+- [ ] Sık filtrelenen kolonda index var mı? (`(school_id, status)`, `(school_id, class_section_id)`)
+- [ ] `school_id` her composite index'in **ilk** kolonu mu?
+- [ ] FK kolonları indeksli mi?
+- [ ] Soft-delete kolonu (`is_deleted`) filtered index ile mi?
+
+### 2.4 Cache
+
+- [ ] Sık okunan + nadir değişen veri (school config, role list, permission matrix) cache'te mi?
+- [ ] Cache TTL belirlendi mi? (1-15 dk default)
+- [ ] Invalidation flow yazıldı mı? (Domain event → cache evict)
+- [ ] Cache key tenant-aware mi (`schoolId:students:list:page:1`)?
+
+### 2.5 Long-running Operations
+
+- [ ] >2sn süren operasyon background job'a alındı mı?
+- [ ] Excel import / export Hangfire üzerinden mi?
+- [ ] Bulk push notification queue üzerinden mi?
+- [ ] Rapor üretimi async + storage mu?
+
+### 2.6 Payload Size
+
+- [ ] Liste DTO'su **gereksiz alan** içermiyor mu?
+- [ ] Image/file binary response yerine URL/storage link mi?
+- [ ] Response gzip / brotli ile sıkıştırılıyor mu?
+- [ ] DataGrid response sadece görünür kolonlar mı? (Detay → ayrı endpoint)
+
+---
+
+## 3. Frontend Checklist
+
+### 3.1 React Query
+
+- [ ] `staleTime` makul (30sn-5dk) set edildi mi? (`0` default değil)
+- [ ] List ve detail query'leri **ayrı key**'ler ile mi?
+- [ ] Optimistic update gerekli yerlerde (yoklama, mark publish) var mı?
+- [ ] `enabled` ile gereksiz fetch engelleniyor mu?
+
+### 3.2 Rendering
+
+- [ ] Liste item'larında `React.memo` veya `key` doğru kullanılıyor mu?
+- [ ] Heavy child component `useMemo` / `useCallback` ile sarıldı mı?
+- [ ] `useEffect` içinde state set → infinite loop riski yok mu?
+- [ ] Form re-render `Controller` ile izole mi?
+
+### 3.3 DataGrid
+
+- [ ] **Server-side mode** kullanıldı mı? (>200 satır için zorunlu)
+- [ ] Virtual scrolling / paging aktif mi?
+- [ ] Filter row search debounced mi? (300-500ms)
+- [ ] Mobile'da DataGrid yerine card list fallback var mı?
+
+### 3.4 Bundle Size
+
+- [ ] Heavy lib (chart, pdf, excel) **lazy import** mu?
+- [ ] Route bazlı code splitting mi? (`React.lazy + Suspense`)
+- [ ] Date lib tutarlı mı? (`date-fns` only, `moment` yok)
+- [ ] DevExtreme CSS sadece kullanılan modüller mi import edildi?
+
+### 3.5 Network
+
+- [ ] Aynı veri **2 yerden** çağrılmıyor mu? (Tek query, paylaşılan key)
+- [ ] Polling yerine SignalR mi? (Real-time için)
+- [ ] Image lazy load + correct size mu?
+- [ ] WebSocket disconnect/reconnect handle ediliyor mu?
+
+---
+
+## 4. Otomatik Kırmızı Bayraklar
+
+```csharp
+// 🚨 N+1
+foreach (var student in students) {
+    var marks = await _db.Marks.Where(m => m.StudentId == student.Id).ToListAsync();
+}
+
+// ✅
+var studentIds = students.Select(s => s.Id).ToList();
+var marks = await _db.Marks.Where(m => studentIds.Contains(m.StudentId))
+    .GroupBy(m => m.StudentId).ToDictionaryAsync(g => g.Key, g => g.ToList());
+
+// 🚨 Pagination yok
+return await _db.Students.ToListAsync();
+
+// 🚨 Cache invalidation yok, TTL yok
+_cache.Set("students", list);
+```
+
+```tsx
+// 🚨 Her render yeni obje
+<Component options={{ a: 1 }} />
+
+// ✅
+const options = useMemo(() => ({ a: 1 }), []);
+<Component options={options} />
+
+// 🚨 Polling
+useInterval(() => refetch(), 3000);
+
+// ✅
+useSignalRSubscription('attendance.updated', () => queryClient.invalidateQueries(['attendance']));
+```
+
+---
+
+## 5. SLO / Hedefler (OKSİS)
+
+| Operasyon | Hedef p95 |
+|-----------|-----------|
+| Yoklama listesi yüklenmesi | <500ms |
+| Mark publish (sınıf, 30 öğr.) | <1s |
+| Veli dashboard (multi-child) | <800ms |
+| Dashboard widget | <600ms |
+| Excel import (1000 öğr.) | Background, <2dk |
+| Push notification (1000 alıcı) | Background, <30s |
+
+Bu hedeflerin altına düşülürse refactor zorunlu.
+
+---
+
+## 6. Output Format
+
+```
+[performance-check]
+✅ N+1: Projection ile tek query
+⚠️  Pagination: PageSize max limit eksik → 200 default eklendi
+✅ Index: (school_id, status) zaten var
+⚠️  Cache: TTL belirtilmedi → 5dk default eklendi
+✅ React: useMemo doğru kullanılmış
+✅ DataGrid: server-side mode aktif
+```
+
+---
+
+## 7. Yasak
+
+- "Sonra optimize ederiz" diyerek N+1 bırakmak.
+- Liste endpoint'inde pagination atlamak.
+- Cache eklemeden "performance issue" şikayetine cevap üretmek.
+- `useEffect([dependency])` ile sonsuz döngü tetikleyen kod.
+- Mobile'da heavy DataGrid render etmek.

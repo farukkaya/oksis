@@ -1,0 +1,221 @@
+# Skill: entity-design
+
+> **Purpose:** Yeni entity oluşturulurken audit, soft delete, tenant, relation, index ve naming standardını otomatik uygular. Bu skill çalışmazsa veri modeli zamanla bozulur.
+
+**İlgili Rules:** `backend/domain-model-rules.md`, `backend/database-rules.md`, `backend/multi-tenant-rules.md`, `naming-conventions.md`
+
+---
+
+## 1. Trigger
+
+- "Yeni entity oluştur", "X tablosu ekle", "şu modeli yaz" istekleri.
+- Yeni feature için aggregate root tanımlanırken.
+- Mevcut entity'ye relation eklenirken (FK + nav property + index).
+
+---
+
+## 2. Standard Entity Template
+
+Her **tenant** entity şu base'i kullanır:
+
+```csharp
+namespace Oksis.Domain.{Module};
+
+public sealed class {EntityName} : TenantEntity
+{
+    // === Identity ===
+    public {EntityName}Id Id { get; private set; }     // Strongly-typed ID
+
+    // === Tenant (TenantEntity'den geliyor) ===
+    // public SchoolId SchoolId { get; private set; }
+
+    // === Business Fields ===
+    public string Name { get; private set; }
+    public {EntityName}Status Status { get; private set; }
+
+    // === Relations ===
+    public ClassSectionId ClassSectionId { get; private set; }
+    public ClassSection ClassSection { get; private set; } = null!;  // EF nav
+
+    // === Audit (TenantEntity'den geliyor) ===
+    // public DateTime CreatedAt { get; private set; }
+    // public Guid CreatedBy { get; private set; }
+    // public DateTime? UpdatedAt { get; private set; }
+    // public Guid? UpdatedBy { get; private set; }
+    // public bool IsDeleted { get; private set; }
+    // public DateTime? DeletedAt { get; private set; }
+    // public Guid? DeletedBy { get; private set; }
+
+    // === Ctor (EF) ===
+    private {EntityName}() { }
+
+    // === Factory ===
+    public static {EntityName} Create(SchoolId schoolId, string name, ClassSectionId classSectionId)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+            throw new DomainException("{EntityName} name boş olamaz");
+
+        return new {EntityName}
+        {
+            Id = new {EntityName}Id(Guid.NewGuid()),
+            SchoolId = schoolId,
+            Name = name.Trim(),
+            ClassSectionId = classSectionId,
+            Status = {EntityName}Status.Active,
+        };
+    }
+
+    // === Behaviors (no setter, only methods) ===
+    public void Rename(string newName) { /* validation */ Name = newName; }
+}
+```
+
+---
+
+## 3. Otomatik Uygulanan Kurallar
+
+### 3.1 Audit Kolonları
+
+Her tenant entity'de **zorunlu**:
+- `CreatedAt`, `CreatedBy`
+- `UpdatedAt`, `UpdatedBy` (nullable)
+- `IsDeleted`, `DeletedAt`, `DeletedBy` (soft delete)
+
+**Doldurma:** EF Core `SaveChangesInterceptor` ile otomatik (manuel set yasak).
+
+### 3.2 Soft Delete
+
+- `Remove()` metodu çağrılır → `IsDeleted = true`, `DeletedAt = now`.
+- Global Query Filter `IsDeleted = false` filtresi uygular.
+- Hard delete sadece **SuperAdmin tooling** ile, audit log zorunlu.
+
+### 3.3 Tenant Field
+
+- `SchoolId` her tenant entity'de **zorunlu, immutable**.
+- `Create(...)` factory ile set edilir, sonra **değiştirilemez**.
+- Cross-tenant transfer (örn öğrenci başka okula geçiş) **ayrı domain operation**.
+
+### 3.4 Strongly-Typed IDs
+
+```csharp
+public readonly record struct StudentId(Guid Value)
+{
+    public override string ToString() => Value.ToString();
+}
+```
+
+- Tüm primary key'ler strongly-typed wrapper.
+- EF Core ValueConverter ile Guid'e dönüşür.
+- Yanlış ID karışımı compile-time'da yakalanır.
+
+### 3.5 Relations
+
+| İlişki | Pattern |
+|--------|---------|
+| 1-N | FK + nav property, lazy loading kapalı, explicit `.Include` veya projection |
+| N-N | Join entity (örn `ParentStudentLink`) — basit dictionary yok |
+| Aggregate boundary | Cross-aggregate sadece ID ile, nav property aggregate içinde |
+
+### 3.6 Naming
+
+| Concept | Pattern |
+|---------|---------|
+| Entity sınıfı | PascalCase, tekil (`Student`, `Mark`, `AttendanceRecord`) |
+| Tablo | snake_case, çoğul (`students`, `marks`, `attendance_records`) |
+| Kolon | snake_case (`school_id`, `created_at`, `is_deleted`) |
+| FK | `{related}_id` (`student_id`, `class_section_id`) |
+| Index | `ix_{table}_{cols}` (`ix_marks_school_id_student_id`) |
+| Unique | `ux_{table}_{cols}` |
+
+### 3.7 Index Stratejisi
+
+Otomatik eklenen index'ler:
+- **Her entity:** `(school_id)` baz index
+- **Filtered queries:** `(school_id, status, created_at desc)` compound
+- **FK:** Her FK kolonunda index
+- **Soft delete:** `WHERE is_deleted = false` filtered index
+
+```csharp
+builder.HasIndex(x => new { x.SchoolId, x.Status })
+    .HasFilter("is_deleted = false");
+```
+
+---
+
+## 4. Configuration (EF Core)
+
+```csharp
+public class {EntityName}Configuration : IEntityTypeConfiguration<{EntityName}>
+{
+    public void Configure(EntityTypeBuilder<{EntityName}> builder)
+    {
+        builder.ToTable("{entity_names}");
+
+        builder.HasKey(x => x.Id);
+        builder.Property(x => x.Id)
+            .HasConversion(id => id.Value, value => new {EntityName}Id(value));
+
+        builder.Property(x => x.SchoolId)
+            .HasConversion(id => id.Value, value => new SchoolId(value))
+            .IsRequired();
+
+        builder.Property(x => x.Name).HasMaxLength(200).IsRequired();
+        builder.Property(x => x.Status).HasConversion<string>().HasMaxLength(20);
+
+        builder.HasIndex(x => new { x.SchoolId, x.Status })
+            .HasFilter("is_deleted = false");
+
+        builder.HasOne(x => x.ClassSection)
+            .WithMany()
+            .HasForeignKey(x => x.ClassSectionId)
+            .OnDelete(DeleteBehavior.Restrict);
+    }
+}
+```
+
+---
+
+## 5. Yapılması Yasaklananlar
+
+| Yasak | Sebep |
+|-------|-------|
+| `public set;` | Encapsulation kaybı, domain invariants kontrol edilemez |
+| `Id` olarak raw `Guid` | Strongly-typed ID şart |
+| `SchoolId` nullable | Tenant ihlali riski |
+| `DateTime` (UTC olmadan) | `DateTime.UtcNow`, kolonlar `datetimeoffset` |
+| `string Status` (enum yerine) | Magic string riski |
+| `List<T>` public expose | Internal collection, `IReadOnlyCollection<T>` expose |
+| Setter ile state değişimi | Behavior method şart (`.Activate()`, `.Publish()`) |
+| Yeni "Common" entity base açma | `TenantEntity` veya `Entity` base'leri kullan |
+
+---
+
+## 6. AI Checklist (her entity üretiminde)
+
+- [ ] `TenantEntity` veya `Entity` base'den miras alındı mı?
+- [ ] Strongly-typed ID var mı?
+- [ ] `SchoolId` immutable mı (sadece `Create` ile set)?
+- [ ] Audit kolonları manuel set edilmiyor mu?
+- [ ] Public setter yok mu?
+- [ ] Factory method var mı?
+- [ ] Domain validation factory içinde mi?
+- [ ] EF Configuration ayrı dosyada mı?
+- [ ] Tablo adı snake_case çoğul mu?
+- [ ] `(school_id, ...)` compound index var mı?
+- [ ] Soft delete filtered index uygulandı mı?
+- [ ] Migration oluşturuldu mu?
+
+---
+
+## 7. Output Format
+
+```
+[entity-design]
+✅ Base: TenantEntity (audit + soft-delete + schoolId dahil)
+✅ ID: HomeworkId strongly-typed
+✅ Factory: Create() validation ile
+✅ Naming: homeworks (snake_case plural)
+✅ Index: (school_id, class_section_id, due_at)
+✅ FK: class_section_id → class_sections, Restrict
+✅ Migration: 20260515_AddHomework oluşturulacak
+```

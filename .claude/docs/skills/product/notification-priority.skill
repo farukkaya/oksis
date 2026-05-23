@@ -1,0 +1,218 @@
+# Skill: notification-priority
+
+> **Purpose:** OKSİS bildirim yağmuruna dönüşmeden bir değer aracı olarak kalmalı. Bu skill her bildirim olayını **instant / batched / silent / critical** olarak sınıflandırır ve kullanıcı yorgunluğunu engeller.
+
+**İlgili Rules:** `notification-matrix.md`, `backend/notification-rules.md`, `business-rules.md`
+
+---
+
+## 1. Trigger
+
+- Yeni bildirim event'i tanımlandığında.
+- "Bunu da push'la" / "veliye bildir" tarzı istek.
+- Notification matrix'e yeni satır eklenmesi.
+- Cooldown / quiet hours / batching kararı.
+
+---
+
+## 2. 4 Öncelik Seviyesi
+
+| Seviye | Tanım | Kanal | Quiet Hours | Cooldown |
+|--------|-------|-------|-------------|----------|
+| **Critical** | Acil eylem gerektiren, sağlık/güvenlik | Push (sessize alınmaz) + In-app + SMS opsiyonel | YOK (her zaman gönderilir) | YOK |
+| **Instant** | Hemen bilinmesi gereken, eylem isteyebilir | Push + In-app | 22:00-07:00 → "Batched" | 5 dk |
+| **Batched** | Toplu özetlenebilir, beklemeye gelir | Sabah 07:30 özet push + In-app | Direkt sabah batch | N/A |
+| **Silent** | Sadece in-app, push yok | Sadece In-app + bell badge | Etkilenmez | N/A |
+
+---
+
+## 3. Sınıflandırma Karar Ağacı
+
+AI bir event için seviye seçerken:
+
+```
+1. Bu bildirim **acil eylem** gerektiriyor mu? (örn: öğrenci kayıp, yangın drili, vize iptali)
+   └─ Evet → CRITICAL
+   └─ Hayır → 2.
+
+2. Kullanıcı bunu **birkaç saat içinde** bilmek zorunda mı?
+   └─ Evet → INSTANT
+   └─ Hayır → 3.
+
+3. Aynı tipte gün içinde **birden fazla** olabilir mi (spam riski)?
+   └─ Evet → BATCHED
+   └─ Hayır → 4.
+
+4. Bu bilgi sadece **referans** mı, push'a değer yok mu?
+   └─ Evet → SILENT
+   └─ Hayır → INSTANT (default)
+```
+
+---
+
+## 4. OKSİS Olayları için Seviye Tablosu
+
+| Event | Veli | Öğrenci | Öğretmen | Yönetim |
+|-------|------|---------|----------|---------|
+| `mark.published` (tek not) | Instant | Instant | — | Silent |
+| `marks.batch_published` (sınıf) | Batched (özet) | Batched | — | Silent |
+| `attendance.absent` (tek gün) | Instant | — | — | Silent |
+| `attendance.absent_threshold` (eşik aşımı) | **Critical** | — | Silent | **Critical** |
+| `attendance.late` | Batched | — | — | Silent |
+| `homework.assigned` | Silent | Instant | — | — |
+| `homework.due_soon` (1 gün kala) | Instant | Instant | — | — |
+| `homework.overdue` | Batched | Batched | Silent | — |
+| `announcement.new` (genel) | Instant | Instant | Instant | — |
+| `announcement.urgent` (acil) | **Critical** | **Critical** | **Critical** | — |
+| `event.upcoming` (toplantı vb) | Instant | — | Instant | — |
+| `report_card.ready` (karne) | Instant | Instant | — | Silent |
+| `message.received` (admin → kullanıcı) | Instant | Instant | Instant | — |
+| `payment.due` (aidat) | Instant | — | — | Silent |
+| `payment.overdue` | **Critical** | — | — | **Critical** |
+| `user.password_changed` | Instant | Instant | Instant | Silent |
+| `auth.suspicious_login` | **Critical** | **Critical** | **Critical** | **Critical** |
+| `system.maintenance` (planlı) | Batched | Batched | Batched | Instant |
+| `bulk.import_complete` | — | — | — | Silent |
+
+---
+
+## 5. Quiet Hours
+
+- **Default**: 22:00 — 07:00 (kullanıcının yerel saat dilimi).
+- **Davranış**:
+  - Critical → her saat gönderilir.
+  - Instant → 07:30 batch'e dönüştürülür.
+  - Batched → zaten sabah özet.
+  - Silent → quiet hours etkilemez.
+- **Kullanıcı override**: Bildirim ayarlarında "Sessiz saat" değiştirilebilir.
+- **Veli tercihi**: "Hafta sonu push istemiyorum" toggle.
+
+---
+
+## 6. Cooldown (Spam Engeli)
+
+Aynı (kullanıcı + event tipi) kombinasyonu için min süre:
+
+| Seviye | Cooldown |
+|--------|----------|
+| Critical | 0 (her seferinde) |
+| Instant | 5 dakika |
+| Batched | 4 saat (öbekleme penceresi) |
+| Silent | 0 (sadece DB satırı) |
+
+**Pencere aşılırsa**: dispatch skip + audit log "cooldown_skipped".
+
+---
+
+## 7. Batching Algoritması
+
+Sabah 07:30 batch job:
+
+```
+[Veli için]
+"Dün için 3 etkinlik:"
+- Ali: Matematik notu yayınlandı (85)
+- Ali: Türkçe ödevi verildi (yarın teslim)
+- Zeynep: Yarın okul rehberlik toplantısı
+
+→ Tek push, deep link "Notifications" merkezine.
+```
+
+- Batch içeriği **rol bazlı** + **çocuk bazlı** gruplanır (multi-child).
+- Maks 5 madde, fazlası "... ve 4 etkinlik daha".
+
+---
+
+## 8. Critical Special Handling
+
+Critical bildirim **özel kanal**:
+- iOS: `interruptionLevel: critical` (kullanıcı onayı gerektirir).
+- Android: `IMPORTANCE_HIGH` + heads-up.
+- SMS fallback (kullanıcı opt-in ettiyse).
+- E-posta paralel gönderim.
+- Push'un teslim edilmediği tespit edilirse 2dk içinde retry.
+
+**Critical kullanım disiplini:**
+- Yılda kullanıcı başına ortalama < 3 critical bildirim hedefi.
+- Critical event'i product owner onayı olmadan tanımlamak yasak.
+
+---
+
+## 9. Kullanıcı Yorgunluğu Metrikleri
+
+Take rate / engagement takibi:
+
+- **Open rate** < %20 → event re-sınıflandırılır (Instant → Batched).
+- **Mute rate** > %10 → event içeriği gözden geçirilir.
+- **Unsubscribe** > %5 → kanal/sıklık ayarı zorunlu.
+- Dashboard'da haftalık rapor → product team review.
+
+---
+
+## 10. Kullanıcı Tercihleri (Override)
+
+Notification preferences ekranı:
+
+```
+[Çocuğum hakkında]
+☑ Notlar              [Push] [E-posta]
+☑ Devamsızlık         [Push] [E-posta] [SMS]   ← critical için
+☑ Ödevler             [Push]
+☑ Duyurular           [Push] [E-posta]
+
+[Okul]
+☑ Toplantı / etkinlik [Push]
+☑ Aidat               [Push] [E-posta]
+
+[Sessiz Saatler]
+22:00 - 07:00         [Düzenle]
+Hafta sonu sessiz     ☐
+```
+
+**Kullanıcı kapatamaz olanlar** (legal/critical):
+- `auth.suspicious_login`
+- `payment.overdue` (sözleşme gereği)
+- `announcement.urgent`
+
+---
+
+## 11. AI Checklist (her bildirim tanımında)
+
+- [ ] Event'in seviyesi karar ağacı ile belirlendi mi?
+- [ ] Notification matrix tablosuna eklendi mi?
+- [ ] Quiet hours davranışı tanımlı mı?
+- [ ] Cooldown süresi belirlendi mi?
+- [ ] Batching grubu (multi-child) doğru mu?
+- [ ] Critical ise product owner onayı alındı mı?
+- [ ] Kullanıcı override edebilir mi (yoksa "legal-mandatory" mu)?
+- [ ] Push body KVKK uyumlu mu (hassas detay yok)?
+- [ ] Open rate metrikleri ölçülüyor mu?
+
+---
+
+## 12. Output Format
+
+```
+[notification-priority]
+✅ Event: attendance.absent_threshold
+✅ Seviye: CRITICAL (eşik aşımı = acil eylem)
+✅ Kanal: Push (high) + In-app + E-posta + opt-in SMS
+✅ Quiet hours: bypass (critical)
+✅ Cooldown: yok (her olayda gönderilir)
+✅ Kullanıcı override: kapatılamaz (legal-mandatory)
+✅ Push body: "Devamsızlık eşiği aşıldı" (detay app içinde)
+```
+
+---
+
+## 13. Yasak
+
+- "Hatırlasın diye" gerekçesi ile her event'i Instant yapmak.
+- Marketing / upsell push (OKSİS bir ürün aracı, advertorial değil).
+- Aynı event'i 5 dakikada birden fazla göndermek (cooldown ihlali).
+- Critical seviyeyi product owner onayı olmadan tanımlamak.
+- Push body'sine hassas içerik (not skoru tam, sağlık bilgisi, disiplin kararı) açık yazmak — özet + deep link.
+- Quiet hours / cooldown ayarını "test için" devre dışı bırakmak.
+- Kullanıcı tercihini server-side'da görmezden gelmek (mute → gönderme yok).
+
+> **Felsefe:** Her bildirim ya **eylem tetikler** ya **bilgilendirir**. İkisi de yapmayan bildirim **gönderilmez**.

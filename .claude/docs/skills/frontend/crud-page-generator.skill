@@ -1,0 +1,291 @@
+# Skill: crud-page-generator
+
+> **🚀 EN YÜKSEK ROI SKILL.** OKSİS'te onlarca CRUD ekranı var (öğrenci, veli, sınıf, ders, öğretmen, duyuru, takvim, kullanıcı...). Bu skill tek istekle **tam ekran** üretir.
+
+**İlgili Rules:** `frontend/coding-standards.md`, `frontend/component-rules.md`, `frontend/datagrid-rules.md`, `frontend/form-validation-rules.md`, `frontend/state-management-rules.md`, `frontend/ui-ux-rules.md`
+
+---
+
+## 1. Trigger
+
+- "X yönetimi sayfası ekle" (öğretmen, sınıf, ders...).
+- "X listesi + ekle/düzenle/sil" istekleri.
+- Yönetim/Admin portalında yeni CRUD modülü.
+
+---
+
+## 2. Tek İstekle Üretilenler
+
+Bir CRUD ekranı istendiğinde **otomatik** üretilir:
+
+1. **Sayfa component** (`pages/StudentsPage.tsx`)
+2. **API hooks** (`api/studentsApi.ts` + React Query keys)
+3. **TypeScript types** (`types/student.ts`)
+4. **Zod schema** (`schemas/studentSchema.ts`)
+5. **DataGrid** (server-side mode, kolonlar, toolbar, filter row, pagination)
+6. **Toolbar** (Add button, search, refresh, export)
+7. **Modal form** (create + edit, RHF + Zod)
+8. **Delete confirmation** (soft delete)
+9. **Loading skeleton**
+10. **Empty state** (illustration + CTA)
+11. **Error state** (retry button)
+12. **Toast handling** (success/error)
+13. **Mobile fallback** (card list)
+14. **i18n keys** (tr.json + en.json)
+15. **Route + menu entry** (permission'a göre)
+
+---
+
+## 3. Folder Structure
+
+```
+src/features/students/
+├── api/
+│   ├── studentsApi.ts          # axios calls
+│   └── studentsKeys.ts         # React Query keys factory
+├── components/
+│   ├── StudentDataGrid.tsx
+│   ├── StudentFormModal.tsx
+│   ├── StudentMobileList.tsx   # mobil card list
+│   └── StudentFilterBar.tsx
+├── hooks/
+│   ├── useStudentsQuery.ts
+│   ├── useStudentMutation.ts
+│   └── useStudentDeleteMutation.ts
+├── schemas/
+│   └── studentSchema.ts
+├── types/
+│   └── student.ts
+├── pages/
+│   └── StudentsPage.tsx
+└── index.ts
+```
+
+---
+
+## 4. Templates
+
+### 4.1 React Query Keys Factory
+
+```typescript
+export const studentKeys = {
+  all: ['students'] as const,
+  lists: () => [...studentKeys.all, 'list'] as const,
+  list: (filters: StudentListFilters) => [...studentKeys.lists(), filters] as const,
+  details: () => [...studentKeys.all, 'detail'] as const,
+  detail: (id: string) => [...studentKeys.details(), id] as const,
+};
+```
+
+### 4.2 API Layer
+
+```typescript
+export const studentsApi = {
+  list: (filters: StudentListFilters) =>
+    apiClient.get<ApiResponse<PagedResult<StudentDto>>>('/students', { params: filters }),
+  get: (id: string) =>
+    apiClient.get<ApiResponse<StudentDto>>(`/students/${id}`),
+  create: (data: CreateStudentDto) =>
+    apiClient.post<ApiResponse<StudentDto>>('/students', data),
+  update: (id: string, data: UpdateStudentDto) =>
+    apiClient.put<ApiResponse<StudentDto>>(`/students/${id}`, data),
+  remove: (id: string) =>
+    apiClient.delete(`/students/${id}`),
+};
+```
+
+### 4.3 Page Component
+
+```tsx
+export default function StudentsPage() {
+  const { t } = useTranslation('students');
+  const { can } = usePermission();
+  const isMobile = useIsMobile();
+  const [filters, setFilters] = useState<StudentListFilters>(defaultFilters);
+  const [editing, setEditing] = useState<StudentDto | null>(null);
+  const [creating, setCreating] = useState(false);
+
+  const { data, isLoading, isError, refetch } = useStudentsQuery(filters);
+
+  if (isError) return <ErrorState onRetry={refetch} />;
+  if (isLoading) return <DataGridSkeleton />;
+  if (!data?.items.length && !filters.search) {
+    return <EmptyState
+      icon={<UsersIcon />}
+      title={t('empty.title')}
+      description={t('empty.description')}
+      action={can('students.create') && (
+        <Button onClick={() => setCreating(true)}>{t('actions.create')}</Button>
+      )}
+    />;
+  }
+
+  return (
+    <PageLayout
+      title={t('title')}
+      actions={
+        <PageActions>
+          {can('students.export') && <ExportButton onClick={handleExport} />}
+          {can('students.create') && (
+            <Button onClick={() => setCreating(true)} icon={<PlusIcon />}>
+              {t('actions.create')}
+            </Button>
+          )}
+        </PageActions>
+      }
+    >
+      <StudentFilterBar value={filters} onChange={setFilters} />
+
+      {isMobile ? (
+        <StudentMobileList
+          data={data.items}
+          onEdit={setEditing}
+          totalCount={data.totalCount}
+          page={filters.page}
+          onPageChange={(page) => setFilters((f) => ({ ...f, page }))}
+        />
+      ) : (
+        <StudentDataGrid
+          data={data.items}
+          totalCount={data.totalCount}
+          loading={isLoading}
+          onEdit={setEditing}
+          onDelete={handleDelete}
+          filters={filters}
+          onFiltersChange={setFilters}
+        />
+      )}
+
+      <StudentFormModal
+        open={creating || !!editing}
+        student={editing}
+        onClose={() => { setCreating(false); setEditing(null); }}
+      />
+    </PageLayout>
+  );
+}
+```
+
+### 4.4 Mutation Hook
+
+```typescript
+export function useStudentMutation() {
+  const queryClient = useQueryClient();
+  const { t } = useTranslation('students');
+
+  return useMutation({
+    mutationFn: ({ id, data }: SaveStudentInput) =>
+      id ? studentsApi.update(id, data) : studentsApi.create(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: studentKeys.lists() });
+      toast.success(t('messages.saved'));
+    },
+    onError: (error) => {
+      handleServerValidationError(error) || toast.error(t('messages.error'));
+    },
+  });
+}
+```
+
+### 4.5 Modal Form
+
+```tsx
+export function StudentFormModal({ open, student, onClose }: Props) {
+  const { t } = useTranslation('students');
+  const form = useForm<StudentFormValues>({
+    resolver: zodResolver(studentSchema),
+    defaultValues: student ?? defaultValues,
+  });
+  const mutation = useStudentMutation();
+
+  const onSubmit = (values: StudentFormValues) => {
+    mutation.mutate({ id: student?.id, data: values }, { onSuccess: onClose });
+  };
+
+  return (
+    <Modal open={open} onClose={onClose} title={student ? t('edit.title') : t('create.title')}>
+      <FormProvider {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <FormField name="firstName" label={t('fields.firstName')} required />
+          <FormField name="lastName" label={t('fields.lastName')} required />
+          <FormSelectField name="classSectionId" label={t('fields.class')} options={classOptions} required />
+          <FormActions>
+            <Button variant="ghost" onClick={onClose} type="button">{t('actions.cancel')}</Button>
+            <Button type="submit" loading={mutation.isPending}>{t('actions.save')}</Button>
+          </FormActions>
+        </form>
+      </FormProvider>
+    </Modal>
+  );
+}
+```
+
+---
+
+## 5. Zorunlu UX
+
+- **Loading:** Skeleton (boş satırlar), spinner değil.
+- **Empty:** İllüstrasyon + CTA.
+- **Error:** Retry button + destek metni.
+- **Toast:** Save sonrası tek toast (multiple yok).
+- **Validation:** Inline error + scroll-to-first-error.
+- **Server error mapping:** 422 ValidationProblemDetails → form field error.
+- **Permission gate:** Add/edit/delete buton `can()` ile gizlenir.
+- **Mobile:** DataGrid → card list otomatik.
+- **Confirmation:** Delete için modal (ESC + dış tıklamada kapanmaz).
+
+---
+
+## 6. Permission Integration
+
+```tsx
+const { can } = usePermission();
+{can('students.create') && <Button>...</Button>}
+{can('students.edit') && <EditAction />}
+{can('students.delete') && <DeleteAction />}
+```
+
+Permission isimleri `permission-matrix.md` ile birebir.
+
+---
+
+## 7. AI Checklist (CRUD ekran üretiminde)
+
+- [ ] Folder structure `src/features/{module}/...` mi?
+- [ ] React Query keys factory ayrı dosyada mı?
+- [ ] API layer axios call'ları DTO type'lı mı?
+- [ ] Zod schema + RHF resolver entegre mi?
+- [ ] DataGrid wrapper (server-side) kullanıldı mı?
+- [ ] Mobile card list fallback var mı?
+- [ ] Permission `can()` check her aksiyonda mı?
+- [ ] Loading / empty / error 3 state ayrı handle mi?
+- [ ] Toast tek (success / error)?
+- [ ] Server validation error → form field error mapping?
+- [ ] i18n key'ler `students.json` (tr/en) eklendi mi?
+- [ ] Route + menu permission'a göre mi gözüküyor?
+
+---
+
+## 8. Output Format
+
+```
+[crud-page-generator]
+✅ 15 dosya üretildi (page, hooks, api, schema, components, types, i18n)
+✅ Permission gating: students.create / edit / delete
+✅ Mobile fallback: StudentMobileList
+✅ Server-side DataGrid
+✅ RHF + Zod entegrasyonu
+✅ Loading + empty + error state
+```
+
+---
+
+## 9. Yasak
+
+- Sadece component üretip hook/api'yi atlamak.
+- DataGrid'i wrapper'sız doğrudan import etmek.
+- Permission check'i atlamak (server-side var ama UI'da da gerekli).
+- Toast'u her field error için ayrı atmak.
+- Empty state'i "no data" text ile geçmek.
+- Modal'ı `<dialog>` veya custom div ile yapmak (`<Modal>` wrapper şart).
+- i18n key atlamak / hardcoded Türkçe yazmak.

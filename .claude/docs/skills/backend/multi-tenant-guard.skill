@@ -1,0 +1,221 @@
+# Skill: multi-tenant-guard
+
+> **⚠️ EN KRİTİK SKILL.** Tek bir tenant ihlali = sözleşme kaybı + KVKK ihlali + ürün ölümü. Bu skill her query, cache, event, job, log üretiminde devreye girer.
+
+**İlgili Rules:** `backend/multi-tenant-rules.md`, `backend/security-rules.md`, `backend/database-rules.md`, `backend/background-job-rules.md`
+
+---
+
+## 1. Trigger
+
+- **Her** backend kod üretiminde (mutlak).
+- Query, command, handler, service, cache, background job, event handler, controller, middleware — istisnasız.
+
+---
+
+## 2. Mutlak Kurallar (NON-NEGOTIABLE)
+
+### 2.1 Her Query Tenant-Filtered
+
+```csharp
+// 🚨 RED
+await _db.Students.FindAsync(id);
+
+// ✅ Global Query Filter aktif olduğu için bu yeterli
+await _db.Students.FirstOrDefaultAsync(x => x.Id == id);
+
+// ✅ Açık filter da OK
+await _db.Students.FirstOrDefaultAsync(x => x.Id == id && x.SchoolId == _tenant.CurrentSchoolId);
+```
+
+**`FindAsync` yasak** — Global Query Filter'ı bypass eder.
+
+### 2.2 IgnoreQueryFilters Yasaklı (İstisnalar Hariç)
+
+```csharp
+// 🚨 RED
+var all = await _db.Students.IgnoreQueryFilters().ToListAsync();
+
+// ✅ Sadece SuperAdmin tooling, gerekçe yorumu zorunlu
+// REASON: Cross-tenant export, only for SuperAdmin support workflow.
+// AUDIT: Action logged in super_admin_actions table.
+var all = await _db.Students.IgnoreQueryFilters()
+    .Where(x => x.SchoolId == requestedSchoolId)
+    .ToListAsync();
+```
+
+`IgnoreQueryFilters` her kullanımı **code review'da kritik**.
+
+### 2.3 Cache Tenant-Aware
+
+```csharp
+// 🚨 RED — tüm tenant'lara aynı cache
+_cache.Set("students:active", list);
+
+// ✅
+var key = $"school:{_tenant.CurrentSchoolId}:students:active";
+_cache.Set(key, list, TimeSpan.FromMinutes(5));
+```
+
+Helper kullan:
+```csharp
+public static class CacheKeys
+{
+    public static string Students(SchoolId schoolId, string scope)
+        => $"school:{schoolId}:students:{scope}";
+}
+```
+
+### 2.4 Background Job Tenant Context
+
+```csharp
+// 🚨 RED — job'un tenant'ı yok
+BackgroundJob.Enqueue<MarkPublishJob>(j => j.Execute(markIds));
+
+// ✅
+BackgroundJob.Enqueue<MarkPublishJob>(j => j.Execute(_tenant.CurrentSchoolId!.Value, markIds));
+
+// Job içinde
+public async Task Execute(SchoolId schoolId, List<MarkId> markIds, CancellationToken ct)
+{
+    using var _ = _tenantContext.BeginScope(schoolId);
+    // ... işlem
+}
+```
+
+### 2.5 Event Tenant-Aware
+
+Her `IDomainEvent` ve `IIntegrationEvent`:
+- `SchoolId` zorunlu alan.
+- Handler `BeginScope(event.SchoolId)` ile context açar.
+
+### 2.6 Log Tenant-Aware
+
+```csharp
+LogContext.PushProperty("SchoolId", _tenant.CurrentSchoolId?.Value);
+```
+
+- Her request middleware'de eklenir.
+- ELK'da `school_id` filter ile sorgulama.
+
+### 2.7 File Storage Tenant-Aware
+
+```csharp
+// 🚨 RED
+var path = $"uploads/students/{studentId}.jpg";
+
+// ✅
+var path = $"schools/{schoolId}/students/{studentId}.jpg";
+```
+
+- S3/MinIO bucket path her zaman tenant ile başlar.
+- Public download URL signed + tenant claim kontrol.
+
+---
+
+## 3. Cross-Tenant İhlal Sinyalleri
+
+AI bu pattern'leri görürse **dur ve uyar**:
+
+| Pattern | Risk |
+|---------|------|
+| `_db.{Table}.FindAsync(...)` | Global filter bypass |
+| `IgnoreQueryFilters()` (gerekçesiz) | Tenant açığı |
+| Cache key'de `schoolId` yok | Cross-tenant veri sızıntısı |
+| Background job parametresinde `SchoolId` yok | Job yanlış tenant'a yazar |
+| Event'te `SchoolId` yok | Handler tenant bilemez |
+| Static class içinde tenant state | Concurrency riski |
+| `Task.Run(async () => ...)` içinde `_tenant` erişimi | Context kaybı |
+| HTTP header'dan `X-School-Id` okuma | Claim spoofing |
+| `[FromRoute] schoolId` parametresi user endpoint'inde | Tenant claim'den gelmeli |
+
+---
+
+## 4. SuperAdmin Akışı
+
+SuperAdmin **istisnai** olarak cross-tenant erişebilir, ama:
+1. Endpoint **ayrı path**: `/api/v1/super/...`
+2. Policy: `RequireSuperAdmin`
+3. Tenant override: `_tenant.OverrideForSuperAdmin(schoolId)` (sadece SuperAdmin için throw etmeyen versiyon).
+4. **Her** SuperAdmin işlemi `super_admin_actions` tablosuna audit + Slack/email alert.
+5. Production'da impersonation **timeboxed** (15dk default, max 1 saat).
+
+---
+
+## 5. Test Coverage (Multi-Tenant Test)
+
+Her CRUD modülü için **zorunlu** test:
+
+```csharp
+[Fact]
+public async Task GetStudent_FromOtherSchool_ReturnsNotFound()
+{
+    // Arrange: School A + Student A1
+    var schoolA = await CreateSchoolAsync();
+    var schoolB = await CreateSchoolAsync();
+    var studentA1 = await CreateStudentAsync(schoolA);
+
+    // Act: School B context ile A1'i çek
+    using var _ = _tenant.BeginScope(schoolB);
+    var result = await _handler.Handle(new GetStudentQuery(studentA1.Id), CancellationToken.None);
+
+    // Assert
+    result.IsSuccess.Should().BeFalse();
+    result.Error.Should().Be(StudentErrors.NotFound);
+}
+```
+
+CI pipeline her modül için bu testi arar — yoksa build fail.
+
+---
+
+## 6. Manuel Override Audit
+
+Her `IgnoreQueryFilters` veya `OverrideForSuperAdmin` çağrısı:
+- Structured log (`Tenant.Override` event).
+- DB satırı (`super_admin_actions`).
+- Korelasyon ID + actor user ID.
+- Real-time Slack notification (`#oksis-security`).
+
+---
+
+## 7. AI Checklist (her query/operation üretiminde)
+
+- [ ] Query Global Query Filter'a güveniyor mu (manuel filter şart değil)?
+- [ ] `FindAsync` kullanılmamış mı?
+- [ ] `IgnoreQueryFilters` kullanıldıysa gerekçe + audit?
+- [ ] Cache key'de `school:{id}` prefix var mı?
+- [ ] Background job parametresinde `SchoolId` var mı?
+- [ ] Event'te `SchoolId` var mı?
+- [ ] Log context'inde `SchoolId` set mi?
+- [ ] File storage path'i `schools/{id}/...` ile mi başlıyor?
+- [ ] Static class içinde tenant state YOK mu?
+- [ ] User endpoint'i URL'den `schoolId` almıyor mu (claim'den geliyor)?
+- [ ] Cross-tenant test yazıldı mı?
+
+---
+
+## 8. Output Format
+
+```
+[multi-tenant-guard]
+✅ Query: Global Filter aktif, FindAsync yok
+✅ Cache: school:{id}:* prefix uygulandı
+✅ Background Job: SchoolId param + BeginScope
+✅ Event: MarkPublishedEvent.SchoolId mevcut
+✅ Log: LogContext'te SchoolId
+✅ File: schools/{id}/marks/... path
+✅ Test: GetMark_FromOtherSchool_ReturnsNotFound eklenecek
+```
+
+---
+
+## 9. Yasak — Hiçbir Koşulda
+
+- **"Bu sefer SchoolId'siz query yazalım, sonra düzeltiriz"**
+- **"Cache key'i basit tutalım, hızlı olsun"**
+- **"Bu endpoint sadece admin için, tenant kontrolüne gerek yok"**
+- **"Job'a SchoolId parametre olarak vermek karmaşık, claim'den okusun"** (job HTTP context'i bilemez)
+- **"Migration için tek seferlik IgnoreQueryFilters kullanalım"** (audit + onay şart)
+
+> Bu kuralın istisnası **yoktur**. Performans, hız, kolaylık gerekçesi geçerli değildir.

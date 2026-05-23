@@ -1,0 +1,210 @@
+# Skill: api-endpoint-generator
+
+> **Purpose:** Yeni endpoint üretirken route, response envelope, pagination, filtering, validation, OpenAPI/Scalar açıklaması ve authorization policy'sini **tutarlı** uygular.
+
+**İlgili Rules:** `backend/api-design-rules.md`, `backend/security-rules.md`, `backend/multi-tenant-rules.md`, `permission-matrix.md`, `naming-conventions.md`
+
+---
+
+## 1. Trigger
+
+- "X endpoint'ini ekle" istekleri.
+- Yeni Command / Query üretildiğinde.
+- Yeni Controller / Endpoint group açıldığında.
+
+---
+
+## 2. Endpoint Template (Minimal API + CQRS)
+
+```csharp
+public class CreateStudentEndpoint : IEndpoint
+{
+    public void Map(IEndpointRouteBuilder app) => app
+        .MapPost("/api/v1/students", Handle)
+        .WithName("CreateStudent")
+        .WithTags("Students")
+        .WithSummary("Yeni öğrenci oluşturur")
+        .Produces<ApiResponse<StudentDto>>(StatusCodes.Status201Created)
+        .ProducesProblem(StatusCodes.Status400BadRequest)
+        .ProducesProblem(StatusCodes.Status409Conflict)
+        .RequireAuthorization("Students.Create");
+
+    private static async Task<IResult> Handle(
+        CreateStudentRequest request,
+        IMediator mediator,
+        CancellationToken ct)
+    {
+        var command = request.ToCommand();
+        var result = await mediator.Send(command, ct);
+
+        return result.Match(
+            onSuccess: dto => Results.Created($"/api/v1/students/{dto.Id}", ApiResponse.Ok(dto)),
+            onFailure: error => error.ToProblem()
+        );
+    }
+}
+```
+
+---
+
+## 3. Otomatik Uygulanan Standartlar
+
+### 3.1 Route
+
+| HTTP | Pattern | Örnek |
+|------|---------|-------|
+| GET (list) | `/api/v1/{resource}` | `/api/v1/students` |
+| GET (single) | `/api/v1/{resource}/{id}` | `/api/v1/students/{id}` |
+| POST | `/api/v1/{resource}` | `/api/v1/students` |
+| PUT | `/api/v1/{resource}/{id}` | `/api/v1/students/{id}` |
+| PATCH | `/api/v1/{resource}/{id}` | `/api/v1/students/{id}` |
+| DELETE | `/api/v1/{resource}/{id}` | `/api/v1/students/{id}` |
+| Sub-resource | `/api/v1/{resource}/{id}/{sub}` | `/api/v1/students/{id}/marks` |
+| Action | `/api/v1/{resource}/{id}/{verb}` | `/api/v1/marks/{id}/publish` |
+
+- kebab-case + çoğul.
+- Versiyonlama path'te (`/api/v1/`).
+- Action endpoint sadece **idempotent olmayan** durum geçişleri için.
+
+### 3.2 Response Envelope
+
+```csharp
+public sealed record ApiResponse<T>(
+    bool Success,
+    T? Data,
+    PaginationMeta? Pagination = null,
+    string? Message = null
+);
+
+public sealed record PaginationMeta(int Page, int PageSize, int TotalCount, int TotalPages);
+```
+
+- Başarı: `{ "success": true, "data": {...} }`
+- Hata: RFC 7807 `ProblemDetails`.
+
+### 3.3 Pagination
+
+Her liste endpoint:
+
+```csharp
+public sealed record StudentListRequest(
+    int Page = 1,
+    int PageSize = 20,
+    string? Search = null,
+    StudentStatus? Status = null,
+    string? SortBy = "createdAt",
+    SortDirection SortDirection = SortDirection.Desc
+);
+```
+
+- `PageSize` max 200 (zorlanır).
+- `Page` 1-based.
+- Response'da `PaginationMeta` zorunlu.
+
+### 3.4 Filtering
+
+- Filtreler **query string** üzerinden.
+- Sık kullanılan filtreler ayrı field (`Status`, `ClassSectionId`, `From`, `To`).
+- Kompleks filtre **POST + search DTO** (örn `/api/v1/students/search`).
+- **Yasak:** JSON-in-query-string, dynamic LINQ string.
+
+### 3.5 Validation (FluentValidation)
+
+```csharp
+public class CreateStudentRequestValidator : AbstractValidator<CreateStudentRequest>
+{
+    public CreateStudentRequestValidator()
+    {
+        RuleFor(x => x.FirstName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.LastName).NotEmpty().MaximumLength(100);
+        RuleFor(x => x.NationalId).Matches(@"^\d{11}$").When(x => x.NationalId is not null);
+        RuleFor(x => x.ClassSectionId).NotEmpty();
+    }
+}
+```
+
+- Pipeline behavior ile otomatik tetiklenir.
+- Hata response 400 + `ValidationProblemDetails`.
+
+### 3.6 OpenAPI / Scalar
+
+Zorunlu metadata:
+- `WithName` — operationId
+- `WithTags` — Module
+- `WithSummary` + `WithDescription`
+- `Produces<T>` — başarı tipi
+- `ProducesProblem` — 400, 401, 403, 404, 409
+
+### 3.7 Authorization Policy
+
+```csharp
+// Program.cs
+options.AddPolicy("Students.Create", p => p
+    .RequireAuthenticatedUser()
+    .RequirePermission("students:create"));
+```
+
+- Her endpoint **bir policy** ister.
+- Policy isimleri `permission-matrix.md`'deki action'larla birebir.
+- `AllowAnonymous` sadece login/refresh/health.
+
+### 3.8 DTO Mapping
+
+- Entity → DTO **Mapster** ile.
+- Manuel DTO field eşleme yasaklı (mapping config ayrı dosyada).
+- Mass assignment koruması: DTO içinde **sadece izin verilen** alanlar.
+
+---
+
+## 4. Otomatik Eklenen Standart Hatalar
+
+| Durum | HTTP | Code |
+|-------|------|------|
+| Validation | 400 | `validation_failed` |
+| Auth missing | 401 | `unauthorized` |
+| Yetki yok | 403 | `forbidden` |
+| Kayıt yok | 404 | `not_found` |
+| Conflict (örn duplicate) | 409 | `conflict` |
+| Domain rule violation | 422 | `domain_rule_violation` |
+| Server hatası | 500 | `internal_error` |
+
+---
+
+## 5. AI Checklist (her endpoint üretiminde)
+
+- [ ] Route pattern doğru mu (kebab-case, çoğul, versiyonlu)?
+- [ ] HTTP method semantiğine uygun mu?
+- [ ] `RequireAuthorization` policy'si var mı?
+- [ ] Request DTO + validator yazıldı mı?
+- [ ] Response `ApiResponse<T>` envelope kullanıyor mu?
+- [ ] Liste endpoint'te pagination var mı?
+- [ ] OpenAPI metadata (`WithTags`, `WithSummary`, `Produces`) tam mı?
+- [ ] Handler `IMediator.Send` ile çağrılıyor mu (controller'da iş mantığı yok)?
+- [ ] Tenant filter otomatik çalışıyor mu (manuel filter yok)?
+- [ ] Hata `Result<T>.ToProblem()` üzerinden mi dönüyor?
+
+---
+
+## 6. Output Format
+
+```
+[api-endpoint-generator]
+✅ Route: POST /api/v1/students (kebab-case, çoğul)
+✅ Authorization: Policy "Students.Create"
+✅ Request DTO + validator yazıldı
+✅ Response: ApiResponse<StudentDto>
+✅ OpenAPI metadata tam
+✅ Handler MediatR üzerinden
+✅ Mapster mapping config eklendi
+```
+
+---
+
+## 7. Yasak
+
+- Controller içinde `DbContext`, repository, business logic.
+- Raw `IActionResult Ok(entity)` — Mass assignment + envelope ihlali.
+- Anonim endpoint (login/refresh/health hariç).
+- Versiyonsuz route (`/api/students` ❌).
+- "Şimdilik validation atlayalım" — pipeline behavior zorunlu.
+- `dynamic` response.

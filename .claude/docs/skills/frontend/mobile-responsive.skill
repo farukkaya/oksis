@@ -1,0 +1,254 @@
+# Skill: mobile-responsive
+
+> **Purpose:** Öğretmen "3 tıklamada yoklama" hedefini sadece mobilde tutturabilir. Bu skill her UI üretiminde mobil-öncelikli davranışları zorlar.
+
+**İlgili Rules:** `frontend/ui-ux-rules.md`, `frontend/component-rules.md`, `frontend/datagrid-rules.md`, `business-rules.md`
+
+---
+
+## 1. Trigger
+
+- Yeni component / sayfa üretildiğinde (her zaman).
+- Öğretmen portalı her ekran (mobile-first).
+- Veli mobile app screenleri (React Native paralel).
+- Form, liste, modal eklendiğinde.
+
+---
+
+## 2. Mobil Önceliklendirme
+
+OKSİS kullanım modeli:
+
+| Rol | Birincil Cihaz | Notlar |
+|-----|----------------|--------|
+| **Öğretmen** | Mobil (phone) | Sınıfta yoklama, hızlı not girişi |
+| **Veli** | Mobil (phone) | App store native — bu skill paralel |
+| **Öğrenci** | Mobil (phone) | Ödev, ders programı |
+| **Okul Yönetimi** | Tablet + Desktop | Dashboard, raporlar |
+| **SuperAdmin** | Desktop | Backoffice |
+
+→ Öğretmen, veli, öğrenci ekranları **mobile-first** tasarlanır. Yönetim ekranı **desktop-first** + tablet uyumlu.
+
+---
+
+## 3. Breakpoints
+
+```css
+/* Tailwind */
+sm: 640px    /* küçük tablet, büyük telefon yatay */
+md: 768px    /* tablet */
+lg: 1024px   /* küçük desktop */
+xl: 1280px   /* desktop */
+2xl: 1536px  /* büyük ekran */
+```
+
+**Kural:** Default class'lar mobile, `sm:`, `md:`, `lg:` ile büyütülür. **Asla** desktop default + mobile override yapma.
+
+```tsx
+// ✅
+<div className="p-4 lg:p-8">
+
+// 🚨 RED
+<div className="lg:p-4 p-8">   // mobile default p-8 (yanlış)
+```
+
+---
+
+## 4. Touch Target
+
+Minimum touch hedef: **44 × 44 px** (Apple HIG + WCAG 2.5.5).
+
+```tsx
+// ✅
+<button className="h-11 min-w-[44px] px-4">...</button>
+
+// 🚨 RED
+<button className="h-8 px-2">...</button>   // 32px — küçük
+```
+
+- Tıklanabilir alanlar **aralıklı** (min 8px gap).
+- Liste item'larında satır yüksekliği min 56px.
+- Icon button: padding ile 44px'e tamamlanır.
+
+---
+
+## 5. Yoklama Ekranı (3-Tap Hedefi)
+
+Öğretmen iş akışı:
+1. **Tap 1**: Bugünün dersine gir (push notification veya home screen card).
+2. **Tap 2**: Öğrenci listesinde "Tümünü Present" (toplu işlem) veya tek tek tap = status.
+3. **Tap 3**: "Kaydet" → bitti.
+
+**Kural:**
+- Yoklama listesi item: **tek tap** ile status değiştirme (Present ↔ Absent toggle, long-press → Late/Excused menü).
+- Default state **Present** (en sık), Absent'a tap ile geçiş.
+- Sticky "Kaydet" buton ekranın altında.
+- Klavye / scroll bağımsız → buton her zaman görünür.
+
+```tsx
+<div className="flex flex-col h-screen">
+  <Header title="9A — Matematik" />
+  <ScrollArea className="flex-1 pb-24">         {/* sticky button için boşluk */}
+    {students.map((s) => <AttendanceRow ... />)}
+  </ScrollArea>
+  <StickyFooter>
+    <Button size="lg" className="w-full h-14">Kaydet</Button>
+  </StickyFooter>
+</div>
+```
+
+---
+
+## 6. Sticky Action Pattern
+
+Form, çoklu seçim, yoklama, mark girişi ekranlarında:
+
+```tsx
+<div className="sticky bottom-0 inset-x-0 bg-surface border-t p-4 pb-safe">
+  <Button size="lg" className="w-full">{ctaLabel}</Button>
+</div>
+```
+
+- `pb-safe` → iOS notch / Android gesture bar için.
+- Background opak (`bg-surface`, transparent değil).
+- Border-top ile içerikten ayrılır.
+
+---
+
+## 7. Keyboard Handling
+
+Mobil keyboard formu örtmemeli:
+
+```tsx
+// React (mobile web)
+<form className="pb-[env(keyboard-inset-height,0)]">
+
+// Input'a focus → scroll into view
+inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+```
+
+- Modal içinde form → modal scrollable + keyboard space.
+- `autoCapitalize`, `autoCorrect`, `inputMode` doğru set:
+  - Email: `inputMode="email" autoCapitalize="none"`
+  - Telefon: `inputMode="tel"`
+  - Sayı: `inputMode="numeric" pattern="[0-9]*"`
+  - TC Kimlik: `inputMode="numeric" maxLength={11}`
+
+---
+
+## 8. Tablet (768-1023px) Davranışı
+
+Yönetim ekranları tablet uyumlu olmalı (admin demo'larında sık kullanılır):
+
+- **DataGrid**: Mobile card list değil, tam DataGrid (gizlenen kolonlar var).
+- **Modal**: Tam ekran değil, ortalanmış (max-w-2xl).
+- **Sidebar**: Açık (drawer olarak değil), collapsible.
+- **Form**: 2 sütun grid.
+
+```tsx
+<div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+```
+
+---
+
+## 9. DataGrid Mobile Fallback
+
+```tsx
+const isMobile = useIsMobile();    // <768px
+
+return isMobile
+  ? <CardList data={data} onItemClick={...} />
+  : <DataGrid data={data} columns={...} />;
+```
+
+`CardList` standart pattern:
+```tsx
+<div className="space-y-2">
+  {data.map((item) => (
+    <Card key={item.id} onClick={() => onItemClick(item)} className="p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="font-medium">{item.fullName}</div>
+          <div className="text-xs text-muted">{item.className} • {item.studentNumber}</div>
+        </div>
+        <Badge variant={statusVariant(item.status)}>{item.status}</Badge>
+      </div>
+    </Card>
+  ))}
+</div>
+```
+
+---
+
+## 10. Modal vs. Bottom Sheet
+
+| Cihaz | Tercih |
+|-------|--------|
+| Mobile (<768px) | **Bottom sheet** (alta yapışık, swipe-down kapatma) |
+| Tablet (≥768px) | Centered modal |
+| Desktop | Centered modal |
+
+```tsx
+const isMobile = useIsMobile();
+return isMobile ? <BottomSheet ...> : <Modal ...>;
+```
+
+---
+
+## 11. Image / Avatar
+
+```tsx
+<img
+  src={url}
+  alt={...}
+  loading="lazy"
+  decoding="async"
+  className="w-10 h-10 rounded-full object-cover"
+/>
+```
+
+- Avatar: `srcSet` ile 2x asset.
+- Hero image: `<picture>` + WebP fallback.
+- Lazy load default.
+
+---
+
+## 12. AI Checklist
+
+- [ ] Mobile-first class sıralaması? (default → sm → md → lg)
+- [ ] Touch target min 44x44 mı?
+- [ ] Sticky action button gerekli yerde var mı?
+- [ ] `pb-safe` notch için eklendi mi?
+- [ ] Input `inputMode` doğru mu?
+- [ ] DataGrid → mobile card fallback mi?
+- [ ] Modal → mobile bottom sheet mı?
+- [ ] Image lazy load + responsive mi?
+- [ ] Yoklama / mark girişi 3 tap'ı aşıyor mu?
+- [ ] Tablet (md) için ayrı düşünüldü mü?
+- [ ] Heavy DataGrid mobilde yüklenmiyor mu (lazy)?
+
+---
+
+## 13. Output Format
+
+```
+[mobile-responsive]
+✅ Mobile-first: default p-4, lg:p-8
+✅ Touch: tüm butonlar h-11+
+✅ Sticky footer: Kaydet butonu
+✅ Keyboard: pb-safe + scrollIntoView
+✅ Fallback: <768px CardList, ≥768px DataGrid
+✅ Bottom sheet (mobile) / Modal (≥md)
+```
+
+---
+
+## 14. Yasak
+
+- Desktop-first CSS yazıp `max-width` override etmek.
+- Touch target < 44px buton.
+- Yoklama ekranını 3 tap üstünde tutmak.
+- Mobile'da heavy DataGrid render etmek.
+- Sticky butonu `position:fixed` ile değil, `sticky` ile yap.
+- Tablet için ayrı düşünmemek (yönetim demo'sunda kullanılır).
+- Input `inputMode` set etmemek (mobile UX kötüleşir).

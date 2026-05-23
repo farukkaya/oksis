@@ -1,0 +1,244 @@
+# Skill: event-driven-flow
+
+> **Purpose:** OKSİS bildirim-yoğun bir ürün. Bu skill her domain olayında **standart flow** uygular: Domain Event → Notification Queue → Push/SignalR → Audit Log.
+
+**İlgili Rules:** `architecture-rules.md`, `backend/notification-rules.md`, `backend/background-job-rules.md`, `backend/logging-error-rules.md`, `notification-matrix.md`
+
+---
+
+## 1. Trigger
+
+- Domain'de durum değişikliği oluştu (mark publish, attendance saved, homework due, announcement created).
+- Yeni bildirim akışı isteği.
+- "X olunca veliye bildirim gitsin" tarzı istekler.
+
+---
+
+## 2. Standard Flow
+
+```
+[1] Domain action          → Aggregate.DoSomething() çağrılır
+[2] Domain event raise     → Aggregate.AddDomainEvent(new XHappened(...))
+[3] Transactional dispatch → SaveChangesAsync sonrası interceptor event'leri dispatch eder
+[4] Notification handler   → NotificationDispatcher event'i alır, recipient listesi çıkarır
+[5] Queue                  → Hangfire job (push) + SignalR (in-app)
+[6] Delivery               → FCM/APNs push + SignalR broadcast + DB notification row
+[7] Audit log              → Structured log + audit table satırı
+```
+
+---
+
+## 3. Domain Event Pattern
+
+### 3.1 Event Tanımı
+
+```csharp
+public sealed record MarkPublishedEvent(
+    MarkId MarkId,
+    SchoolId SchoolId,
+    StudentId StudentId,
+    ClassSectionId ClassSectionId,
+    SubjectId SubjectId,
+    decimal Score,
+    Guid PublishedBy,
+    DateTime PublishedAt
+) : IDomainEvent;
+```
+
+- Event **immutable record**.
+- Her event'te `SchoolId` zorunlu (tenant-aware dispatch için).
+- Past tense + `Event` suffix.
+
+### 3.2 Aggregate'te Raise
+
+```csharp
+public void Publish(Guid publisherId)
+{
+    if (Status != MarkStatus.Draft)
+        throw new DomainException("Sadece taslak notlar yayınlanabilir");
+
+    Status = MarkStatus.Published;
+    PublishedAt = DateTime.UtcNow;
+    PublishedBy = publisherId;
+
+    AddDomainEvent(new MarkPublishedEvent(
+        Id, SchoolId, StudentId, ClassSectionId,
+        SubjectId, Score, publisherId, PublishedAt.Value));
+}
+```
+
+### 3.3 Dispatch (Transactional)
+
+```csharp
+public class DomainEventDispatchInterceptor : SaveChangesInterceptor
+{
+    public override async ValueTask<int> SavedChangesAsync(...)
+    {
+        var events = context.ChangeTracker.Entries<IAggregateRoot>()
+            .SelectMany(e => e.Entity.PopDomainEvents())
+            .ToList();
+
+        foreach (var evt in events)
+            await mediator.Publish(evt, ct);
+
+        return result;
+    }
+}
+```
+
+- Event dispatch **SaveChanges sonrası**.
+- Aynı transaction içinde (DB commit fail → event dispatch yok).
+- `MediatR.INotificationHandler<TEvent>` ile handler.
+
+---
+
+## 4. Notification Handler
+
+```csharp
+public class MarkPublishedNotificationHandler : INotificationHandler<MarkPublishedEvent>
+{
+    private readonly INotificationDispatcher _dispatcher;
+    private readonly IRecipientResolver _recipients;
+
+    public async Task Handle(MarkPublishedEvent evt, CancellationToken ct)
+    {
+        // 1. Notification matrix'ten recipient listesi
+        var recipients = await _recipients.ResolveAsync(
+            NotificationEvent.MarkPublished, evt.StudentId, ct);
+
+        // 2. Tek bir dispatch çağrısı — dispatcher fan-out yapar
+        await _dispatcher.DispatchAsync(new NotificationRequest
+        {
+            SchoolId = evt.SchoolId,
+            EventType = "mark.published",
+            Recipients = recipients,
+            Channels = [Channel.Push, Channel.InApp],   // notification-matrix.md
+            Priority = NotificationPriority.Instant,
+            TitleKey = "notification.mark.published.title",
+            BodyKey = "notification.mark.published.body",
+            Data = new { evt.MarkId, evt.SubjectId, evt.Score },
+            DeepLink = $"oksis://marks/{evt.MarkId}",
+        }, ct);
+    }
+}
+```
+
+---
+
+## 5. Dispatcher Sorumlulukları
+
+`INotificationDispatcher.DispatchAsync` aşağıdaki adımları **otomatik** yapar:
+
+1. **Quiet hours** kontrolü (`business-rules.md`): 22:00-07:00 arası "Instant" → "Batched".
+2. **Cooldown** kontrolü: Aynı user/event kombinasyonu 5dk içinde tekrar gelmez.
+3. **User preferences**: Push kapalıysa skip, sadece in-app.
+4. **Localization**: `TitleKey` + `BodyKey` resolve.
+5. **Queue**:
+   - Push → Hangfire job (`PushNotificationJob`)
+   - In-app → DB row + SignalR broadcast
+   - Email → SMTP job
+6. **Audit log**: `notification_audit` tablosuna satır + Serilog.
+
+Handler **direkt FCM/SignalR çağırmaz** — sadece dispatcher.
+
+---
+
+## 6. Queue Job (Push)
+
+```csharp
+public class PushNotificationJob
+{
+    public async Task ExecuteAsync(PushNotificationPayload payload, CancellationToken ct)
+    {
+        using var _ = _tenantContext.Begin(payload.SchoolId);
+
+        try
+        {
+            await _fcm.SendAsync(payload.Tokens, payload.Title, payload.Body, payload.Data, ct);
+            await _audit.LogSuccess(payload);
+        }
+        catch (FcmTokenInvalidException ex)
+        {
+            await _tokenRepository.DeactivateAsync(ex.InvalidTokens, ct);
+            await _audit.LogFailure(payload, ex);
+        }
+    }
+}
+```
+
+- Hangfire retry: max 3, exponential backoff.
+- Invalid token → otomatik deaktive.
+- Tenant context job içinde manuel set.
+
+---
+
+## 7. SignalR (Real-Time In-App)
+
+```csharp
+await _hub.Clients
+    .Group($"school:{schoolId}:user:{userId}")
+    .SendAsync("notification.new", notificationDto, ct);
+```
+
+- Group naming: `school:{schoolId}:user:{userId}` veya `school:{schoolId}:role:{role}`.
+- Client'ta React Query invalidation tetikler.
+- Bağlantı kopuksa kullanıcı geri geldiğinde DB'den fetch.
+
+---
+
+## 8. Audit
+
+Her notification için:
+
+```json
+{
+  "EventType": "mark.published",
+  "SchoolId": "...",
+  "ActorId": "<publisher>",
+  "RecipientIds": ["...","..."],
+  "Channels": ["push","in_app"],
+  "DeliveryStatus": "queued|sent|failed",
+  "CorrelationId": "...",
+  "PerformedAt": "2026-05-15T13:42:00Z"
+}
+```
+
+---
+
+## 9. AI Checklist (her bildirim flow'unda)
+
+- [ ] Aggregate'te `AddDomainEvent` çağrıldı mı (event source-of-truth)?
+- [ ] Event `SchoolId` içeriyor mu?
+- [ ] Handler tek dispatcher çağrısı mı yapıyor (manuel FCM/SignalR yok)?
+- [ ] Recipient listesi `notification-matrix.md` ile uyumlu mu?
+- [ ] Priority doğru mu (instant/batch/silent/critical)?
+- [ ] Quiet hours / cooldown kuralları dispatcher'a delegated mı?
+- [ ] Push job idempotent mi (retry-safe)?
+- [ ] Audit log satırı yazılıyor mu?
+- [ ] Localization key var mı (hardcoded mesaj yok)?
+- [ ] Deep link Mobile + Web uyumlu mu?
+
+---
+
+## 10. Output Format
+
+```
+[event-driven-flow]
+✅ Domain event: MarkPublishedEvent (SchoolId dahil)
+✅ Aggregate raise: Mark.Publish()
+✅ Handler: dispatcher.DispatchAsync — direkt FCM yok
+✅ Matrix: parent + student → push + in_app (matrix uyumlu)
+✅ Priority: Instant (notification-priority.skill kontrolünde)
+✅ Audit: notification_audit + structured log
+```
+
+---
+
+## 11. Yasak
+
+- Aggregate dışında event raise etmek.
+- Handler içinde direkt `_fcm.SendAsync` çağırmak.
+- Recipient'ı handler'da hardcode etmek (`RecipientResolver` kullan).
+- Background job dışında push göndermek (UI request senkron blocklar).
+- Audit log atlamak.
+- Event'i transaction dışında dispatch etmek.

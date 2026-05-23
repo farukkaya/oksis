@@ -1,0 +1,142 @@
+# Skill: security-check
+
+> **Purpose:** Veli, öğrenci, öğretmen ve yönetim aynı sistemde — yetki sızıntısı = ürün ölümü. Bu skill her endpoint/handler/page üretiminde otomatik güvenlik denetimi yapar.
+
+**İlgili Rules:** `backend/security-rules.md`, `backend/multi-tenant-rules.md`, `permission-matrix.md`, `backend/api-design-rules.md`
+
+---
+
+## 1. Trigger
+
+- Yeni endpoint / command / query üretildiğinde.
+- Yeni route / sayfa eklendiğinde.
+- Authorization / authentication değişikliği yapıldığında.
+- Yeni DTO'da kullanıcı girişi alındığında.
+- Yeni "admin yapsın" / "kullanıcı yapsın" feature'ı geldiğinde.
+
+---
+
+## 2. Checklist (Backend)
+
+### 2.1 Tenant Isolation
+
+- [ ] Query'de `SchoolId` filtresi var mı (Global Filter çalışıyor mu)?
+- [ ] `IgnoreQueryFilters()` kullanıldıysa **gerekçesi yorum olarak** ekli mi?
+- [ ] SuperAdmin endpoint'i kullanıcı endpointlerinden **ayrı route'ta** mı?
+- [ ] Cache key'de `schoolId:` prefix var mı?
+- [ ] Background job tenant context ile mi enqueue edildi?
+
+### 2.2 Authentication & Authorization
+
+- [ ] Endpoint `[Authorize]` veya `[AllowAnonymous]` ile **açıkça** işaretlendi mi?
+- [ ] Role / Permission policy uygulandı mı?
+- [ ] Anonim endpoint sadece auth/health/version mı?
+- [ ] JWT claim'lerinden `sub`, `school_id`, `role` doğru okunuyor mu?
+- [ ] Refresh token rotation var mı?
+
+### 2.3 IDOR (Insecure Direct Object Reference)
+
+- [ ] Resource erişimi sadece "kayıt benim okuluma ait mi"yi değil, **"bu kullanıcı bu kaynağa erişebilir mi"yi** de kontrol ediyor mu?
+- [ ] Veli → kendi çocukları **dışındaki** öğrenciye erişemez (parent_student_link tablosu üzerinden kontrol).
+- [ ] Öğrenci → kendi notları **dışındaki** notlara erişemez.
+- [ ] Öğretmen → kendi sınıflarındaki öğrencilere erişebilir, **diğer sınıflara değil**.
+- [ ] ID'ler **GUID** mi? (Sequential int → IDOR'a açık)
+
+### 2.4 Input Validation
+
+- [ ] FluentValidation validator yazıldı mı?
+- [ ] String alanlarda `MaximumLength` set mi?
+- [ ] Tarih alanlarında min/max range var mı?
+- [ ] Pagination'da `PageSize` üst limit (örn 200) var mı?
+- [ ] Enum değerleri `IsInEnum()` ile kontrol mü?
+
+### 2.5 Mass Assignment
+
+- [ ] Endpoint **Entity** değil **DTO** alıyor mu?
+- [ ] DTO'da `IsAdmin`, `Role`, `SchoolId`, `IsDeleted`, `CreatedAt` gibi alanlar **yok** mu?
+- [ ] PATCH operasyonunda whitelist mantığı var mı?
+
+### 2.6 Data Leakage
+
+- [ ] Response DTO **gereksiz alan** içeriyor mu? (`PasswordHash`, `RefreshToken`, `InternalNotes`)
+- [ ] Error mesajı SQL/stack trace sızdırmıyor mu? (`ProblemDetails` formatı)
+- [ ] Log'a şifre / token / TC kimlik **yazılmıyor** mu? (Masking var mı)
+- [ ] Veli ekranında öğretmenin kişisel telefon numarası gözüküyor mu? (Hayır)
+
+### 2.7 Rate Limiting & Brute Force
+
+- [ ] Login endpoint rate limit'li mi? (5/min, IP başına)
+- [ ] Password reset rate limit'li mi?
+- [ ] Hesap kilitleme (5 başarısız deneme → 15dk lock) var mı?
+
+---
+
+## 3. Checklist (Frontend)
+
+- [ ] Route `<ProtectedRoute>` veya portal layout ile sarıldı mı?
+- [ ] Permission check **client-side gizleme** + **server-side enforcement** çift katmanlı mı?
+- [ ] JWT `localStorage` yerine **httpOnly cookie** veya in-memory + refresh flow mu?
+- [ ] Form alanları XSS koruması altında mı (React default escape)?
+- [ ] `dangerouslySetInnerHTML` kullanıldıysa DOMPurify mı?
+- [ ] Veli birden fazla çocuk seçtiğinde **selectedStudentId** doğru context'e set mi?
+
+---
+
+## 4. Otomatik Red Sebepleri
+
+AI cevap üretirken aşağıdakilerden birini görürse **dur ve uyar**:
+
+```csharp
+// 🚨 RED
+public async Task<Student> Get(Guid id) {
+    return await _db.Students.FindAsync(id);  // Tenant filter atlanmış!
+}
+
+// 🚨 RED
+[HttpPost]
+public async Task<IActionResult> Create(Student entity) { ... }  // Entity bind ediliyor!
+
+// 🚨 RED
+[HttpGet("export")]
+public async Task<IActionResult> Export() { ... }  // [Authorize] yok!
+
+// 🚨 RED
+_logger.LogInformation("Login attempt: {Email} {Password}", ...);  // Password log!
+```
+
+---
+
+## 5. Threat Matrix — OKSİS Spesifik
+
+| Senaryo | Risk | Mitigation |
+|---------|------|-----------|
+| Veli, başka velinin çocuğunun notlarını görür | Tenant + IDOR çift ihlal | parent_student_link kontrolü + SchoolId filter |
+| Öğretmen, başka sınıfın notunu düzenler | IDOR | teacher_class_section_link kontrol |
+| Öğrenci, kendi yoklamasını "Present" yapar | Yetki | Öğrenci write permission yok, sadece read |
+| SuperAdmin başka okulun verisini "yanlışlıkla" görür | Tenant override | `OverrideForSuperAdmin` explicit + audit log |
+| Veli login → JWT → başka okul school_id ile manipule | Claim spoofing | JWT imzası + server-side validation |
+| Bulk import → 10K kullanıcı → DoS | Resource exhaustion | Background job + rate limit |
+
+---
+
+## 6. Output Format
+
+```
+[security-check]
+✅ Authorization: [Authorize(Roles="Teacher,Admin")]
+✅ Tenant: Global filter aktif
+⚠️  IDOR: Veli kontrolü eksik → ParentChildAccessGuard ekle
+✅ Validation: FluentValidation tam
+✅ Mass Assignment: DTO kullanıldı, SchoolId DTO'da yok
+✅ Data Leakage: Response'ta PasswordHash yok
+```
+
+---
+
+## 7. Yasak
+
+- "Test için" `[AllowAnonymous]` bırakmak.
+- "Şimdilik" tenant filter'ı kapatmak.
+- Frontend'de "kullanıcı zaten görmemeli" diye server-side kontrol atlamak.
+- "Geçici" admin endpoint açıp permission policy yazmamak.
+- Hata mesajına raw exception ekleyip prod'a göndermek.

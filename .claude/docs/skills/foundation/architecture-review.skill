@@ -1,0 +1,107 @@
+# Skill: architecture-review
+
+> **Purpose:** Üretilen her feature'ın OKSİS mimarisine uygunluğunu denetler. AI'ın oturum içinde mimari sapma yapmasını engeller.
+
+**İlgili Rules:** `architecture-rules.md`, `folder-structure.md`, `backend/multi-tenant-rules.md`, `mvp-scope-rules.md`
+
+---
+
+## 1. Trigger — Bu skill ne zaman devreye girer?
+
+Aşağıdakilerin **herhangi biri** olduğunda devreye girer:
+
+- Yeni bir backend endpoint / controller / handler / entity üretildiğinde.
+- Yeni bir frontend sayfa / modül / route eklendiğinde.
+- Notification, background job, integration eklendiğinde.
+- "Şu kütüphaneyi de ekleyelim", "şu pattern'i deneyelim" önerisi geçtiğinde.
+- Yeni bir proje/csproj veya yeni bir top-level klasör açılması istendiğinde.
+
+---
+
+## 2. Checklist — AI cevabı üretmeden önce kafasından geçirmeli
+
+### 2.1 Layer Compliance
+
+- [ ] Kod **doğru katmana** yazıldı mı? (Domain → Application → Infrastructure → API)
+- [ ] Domain katmanı dış kütüphaneye **bağımsız** mı kaldı? (EF, MediatR, ASP yok)
+- [ ] Application katmanından doğrudan `DbContext` kullanılmadı mı? (Repository / IQueryable abstraction)
+- [ ] API katmanında **iş mantığı** sızdı mı?
+
+### 2.2 CQRS Compliance
+
+- [ ] Yazma operasyonu `Command + Handler` ile mi yapıldı?
+- [ ] Okuma operasyonu `Query + Handler` ile mi yapıldı?
+- [ ] Pipeline behaviors (validation, logging, tenant, transaction) atlanmadı mı?
+- [ ] Cross-handler çağrı (handler içinden başka handler çağırma) yapılmadı mı?
+
+### 2.3 Tenant Safety
+
+- [ ] Yeni entity'de `SchoolId` var mı? (SuperAdmin tabloları hariç)
+- [ ] Yeni query Global Query Filter dışına çıkmıyor mu? (`IgnoreQueryFilters` yok)
+- [ ] Cache key tenant-aware mi?
+- [ ] Background job tenant context'i ile birlikte enqueue mu ediliyor?
+
+### 2.4 Scaling Readiness
+
+- [ ] Senkron HTTP çağrı yerine **event/queue** kullanılması gereken yer var mı? (Bildirim, mail, push, rapor)
+- [ ] Long-running operasyon controller içinde mi? (Hangfire'a alınmalı)
+- [ ] N+1 sorgu riski var mı? (`.Include` / projection eksik)
+- [ ] Heavy DataGrid server-side mode dışına çıkmıyor mu?
+
+### 2.5 Sprint / MVP Compliance
+
+- [ ] Feature **mevcut sprint** kapsamında mı?
+- [ ] V2 backlog'a yazılması gereken bir şey eklendi mi?
+- [ ] "Nice to have" gerekçesi ile sprint dışı modül eklendi mi?
+
+---
+
+## 3. Otomatik Reject Sebepleri (AI üretirken bunlardan birini gördüğünde dur)
+
+| Sapma | Doğrusu |
+|-------|---------|
+| Controller içinde `DbContext` injection | `IMediator.Send(command/query)` |
+| Domain'de `Microsoft.EntityFrameworkCore` using | Domain temiz, persistance ayrı |
+| Yeni entity'de `SchoolId` yok | Multi-tenant rules ihlali |
+| `repository.GetAll().Where(...)` bellekte filtreleme | IQueryable üzerinde filtreleme |
+| Frontend'de `axios.get` doğrudan component'te | React Query hook |
+| Yeni "Utils" / "Helpers" / "Common" klasörü | Mevcut Shared kernel kullan |
+| API'den HTML/PDF üretimi controller içinde | Background job + storage |
+
+---
+
+## 4. Mimari Sapma Sinyalleri
+
+Aşağıdakiler **kırmızı bayrak**tır, AI bunu görürse refactor önermeli:
+
+- "Hızlıca" / "geçici" / "şimdilik" yorumları ile bypass edilen pattern.
+- `// TODO: refactor` veya `// HACK:` ile bırakılan yerler.
+- Aynı işin **2 farklı yerde** yapıldığı (örn: 2 farklı yerde mark hesaplama).
+- Frontend'de aynı API'yi çağıran **2 farklı hook**.
+- Tek bir feature için açılan 3+ yeni klasör/proje.
+
+---
+
+## 5. Output Format
+
+Skill devreye girdiğinde AI cevabını şu formatta gözden geçirir:
+
+```
+[architecture-review]
+✅ Layer Compliance: OK
+✅ CQRS: Command + Handler kullanıldı
+⚠️  Tenant Safety: Cache key'de schoolId eksik → düzeltildi
+✅ Scaling: Background job kullanıldı
+✅ MVP Scope: Sprint 2 kapsamında
+```
+
+Sapma varsa **kullanıcıya bildirir ve refactor önerir**, sessizce kabul etmez.
+
+---
+
+## 6. Yasak
+
+- Mimari kararı kullanıcıya sormadan değiştirme.
+- "Bu sefer hızlı yapalım" gerekçesi ile rule bypass etme.
+- Yeni teknoloji/kütüphane önerisini sessizce uygulama (önce sor).
+- Pipeline behavior atlamak için workaround yazma.

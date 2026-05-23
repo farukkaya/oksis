@@ -1,0 +1,285 @@
+# Skill: form-wizard
+
+> **Purpose:** OKSİS'te çok adımlı form akışı çok: okul kurulum sihirbazı, sezon/dönem yönetimi, Excel import, öğrenci kayıt onboarding'i. Bu skill step state, validation, autosave, draft mode'u standart üretir.
+
+**İlgili Rules:** `frontend/form-validation-rules.md`, `frontend/component-rules.md`, `frontend/state-management-rules.md`, `frontend/ui-ux-rules.md`
+
+---
+
+## 1. Trigger
+
+- "Wizard ekle", "step-by-step form", "X adımlı kurulum" istekleri.
+- Excel import flow (file upload → mapping → preview → confirm).
+- Onboarding / kurulum akışı.
+- Sezon/dönem oluşturma (5+ adım).
+
+---
+
+## 2. Wizard Anatomy
+
+```
+[Stepper UI] ─────────────────────────────
+ ●─────○─────○─────○─────○
+ Adım1  Adım2  Adım3 Adım4 Adım5
+
+[Active Step Content] ────────────────────
+  Form fields...
+
+[Footer] ─────────────────────────────────
+  [Cancel]    [Save Draft]    [Geri] [İleri / Tamamla]
+```
+
+---
+
+## 3. Core Hook
+
+```typescript
+interface UseWizardOptions<T> {
+  steps: WizardStep<T>[];
+  initialValues: T;
+  draftKey?: string;             // autosave key
+  onComplete: (values: T) => Promise<void>;
+}
+
+interface WizardStep<T> {
+  key: string;
+  label: string;
+  schema: ZodSchema<Partial<T>>;
+  fields: (keyof T)[];           // hangi field'lar bu adımda
+  optional?: boolean;
+}
+
+export function useWizard<T>({ steps, initialValues, draftKey, onComplete }: UseWizardOptions<T>) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [values, setValues] = useState<T>(() => loadDraft(draftKey) ?? initialValues);
+  const [submitting, setSubmitting] = useState(false);
+
+  const currentStep = steps[currentIndex];
+  const isFirst = currentIndex === 0;
+  const isLast = currentIndex === steps.length - 1;
+
+  // Autosave debounced
+  useDebouncedEffect(() => {
+    if (draftKey) saveDraft(draftKey, values);
+  }, 1000, [values, draftKey]);
+
+  const validateCurrent = async () => {
+    const result = await currentStep.schema.safeParseAsync(values);
+    return result.success;
+  };
+
+  const next = async () => {
+    if (!(await validateCurrent())) return false;
+    if (!isLast) setCurrentIndex((i) => i + 1);
+    return true;
+  };
+
+  const prev = () => !isFirst && setCurrentIndex((i) => i - 1);
+
+  const complete = async () => {
+    if (!(await validateCurrent())) return;
+    setSubmitting(true);
+    try {
+      await onComplete(values);
+      if (draftKey) clearDraft(draftKey);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const goTo = (index: number) => {
+    if (index <= currentIndex) setCurrentIndex(index);   // Geri istediği zaman
+  };
+
+  return { currentStep, currentIndex, values, setValues, isFirst, isLast, next, prev, complete, goTo, submitting };
+}
+```
+
+---
+
+## 4. Wizard Component
+
+```tsx
+export function Wizard<T>({ steps, initialValues, draftKey, onComplete, onCancel }: WizardProps<T>) {
+  const w = useWizard({ steps, initialValues, draftKey, onComplete });
+  const { t } = useTranslation('wizard');
+
+  return (
+    <div className="space-y-6">
+      <Stepper steps={steps} currentIndex={w.currentIndex} onStepClick={w.goTo} />
+
+      <Card className="p-6">
+        <h2 className="text-lg font-medium mb-4">{w.currentStep.label}</h2>
+        <FormProvider {/* RHF */}>
+          {w.currentStep.render(w.values, w.setValues)}
+        </FormProvider>
+      </Card>
+
+      <WizardFooter>
+        <Button variant="ghost" onClick={onCancel}>{t('cancel')}</Button>
+        {draftKey && <span className="text-xs text-muted ml-2">{t('autosaved')}</span>}
+        <div className="flex-1" />
+        <Button variant="outline" onClick={w.prev} disabled={w.isFirst}>{t('back')}</Button>
+        {w.isLast
+          ? <Button onClick={w.complete} loading={w.submitting}>{t('complete')}</Button>
+          : <Button onClick={w.next}>{t('next')}</Button>}
+      </WizardFooter>
+    </div>
+  );
+}
+```
+
+---
+
+## 5. Stepper UI
+
+```tsx
+function Stepper({ steps, currentIndex, onStepClick }: StepperProps) {
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto">
+      {steps.map((step, i) => {
+        const status = i < currentIndex ? 'completed' : i === currentIndex ? 'active' : 'pending';
+        return (
+          <Fragment key={step.key}>
+            <button
+              type="button"
+              disabled={i > currentIndex}
+              onClick={() => onStepClick(i)}
+              className={cn(
+                'flex items-center gap-2 px-3 py-2 rounded-md text-sm transition',
+                status === 'completed' && 'text-success',
+                status === 'active' && 'bg-primary/10 text-primary font-medium',
+                status === 'pending' && 'text-muted cursor-not-allowed',
+              )}
+            >
+              <StepIcon status={status} number={i + 1} />
+              <span className="hidden sm:inline">{step.label}</span>
+            </button>
+            {i < steps.length - 1 && <ChevronRight className="h-4 w-4 text-muted" />}
+          </Fragment>
+        );
+      })}
+    </div>
+  );
+}
+```
+
+---
+
+## 6. Autosave / Draft Mode
+
+```typescript
+// localStorage tabanlı draft (basit form)
+function saveDraft<T>(key: string, values: T) {
+  localStorage.setItem(`wizard:${key}`, JSON.stringify({ values, savedAt: new Date().toISOString() }));
+}
+
+function loadDraft<T>(key: string | undefined): T | null {
+  if (!key) return null;
+  const raw = localStorage.getItem(`wizard:${key}`);
+  if (!raw) return null;
+  try {
+    const { values, savedAt } = JSON.parse(raw);
+    // 7 günden eski draft'ı sil
+    if (Date.now() - new Date(savedAt).getTime() > 7 * 24 * 60 * 60 * 1000) {
+      localStorage.removeItem(`wizard:${key}`);
+      return null;
+    }
+    return values;
+  } catch { return null; }
+}
+```
+
+**Sensitive data'lı wizard'lar (örn yeni kullanıcı şifresi):** localStorage **kullanma**, server-side draft endpoint kullan.
+
+---
+
+## 7. Async Submit (Long-Running)
+
+Excel import gibi long-running wizard'larda:
+
+```tsx
+const complete = async () => {
+  const job = await api.startImport(values);    // jobId döner
+  navigate(`/admin/import-jobs/${job.id}`);     // polling/SignalR ile takip
+};
+```
+
+Wizard kapanır, kullanıcı **job status sayfasına** yönlendirilir. UI bloklanmaz.
+
+---
+
+## 8. Step Validation Stratejisi
+
+| Mod | Davranış |
+|-----|----------|
+| **Lazy** (default) | Sadece "İleri"de validate |
+| **OnChange** | Field touch'ta validate (büyük form için ağır) |
+| **OnBlur** | Field blur'da validate (önerilen) |
+
+Wizard `mode: 'onBlur'` default, `revalidateMode: 'onChange'`.
+
+---
+
+## 9. UX Kuralları
+
+- **Stepper tıklanabilirliği**: Sadece **geri** (tamamlanmış adımlara) izin verir.
+- **Required field**: Yıldız işareti + zorunluluk badge'i.
+- **Step error**: Stepper'da kırmızı badge.
+- **Cancel**: "Değişiklikler kaybolacak" confirm modal'ı.
+- **Browser back**: `beforeunload` ile uyarı (dirty state).
+- **Autosave indicator**: "Otomatik kaydedildi 14:32" footer'da.
+- **Mobile**: Stepper horizontal scroll, step etiketleri kısaltılır (sadece numara).
+
+---
+
+## 10. Multi-Wizard Yaygın Kalıplar
+
+### Okul Kurulum Sihirbazı
+1. Okul bilgileri → 2. Sınıf seviyeleri → 3. Şubeler → 4. Dersler → 5. Roller → 6. Tatil takvimi
+
+### Excel Import Wizard
+1. Şablon indir / dosya yükle → 2. Kolon eşleme → 3. Önizleme + validation → 4. Confirm + import job başlatma
+
+### Sezon (Akademik Yıl) Oluşturma
+1. Yıl seç → 2. Dönem yapısı → 3. Sınıf devir kuralları → 4. Karne şablonu → 5. Onay
+
+---
+
+## 11. AI Checklist
+
+- [ ] Step'ler ayrı bir array'de tanımlı mı (config-driven)?
+- [ ] Her step kendi Zod schema'sı var mı?
+- [ ] `useWizard` hook'u kullanıldı mı (manuel state değil)?
+- [ ] Stepper UI tıklanabilirlik kurallarına uyuyor mu (sadece geri)?
+- [ ] Autosave debounced (1sn) mı?
+- [ ] Draft 7 günden eski silindi mi?
+- [ ] Cancel confirm modal var mı?
+- [ ] Last step → onComplete async, loading state ile?
+- [ ] Long-running submit job sayfasına yönlendiriyor mu?
+- [ ] Mobile responsive (stepper scroll) mu?
+
+---
+
+## 12. Output Format
+
+```
+[form-wizard]
+✅ 5 step config-driven yapı
+✅ useWizard hook + RHF FormProvider per-step
+✅ Stepper: geri tıklanabilir, ileri disabled
+✅ Autosave: 1sn debounced, localStorage (non-sensitive)
+✅ Cancel: confirm modal
+✅ Mobile: horizontal scroll stepper
+```
+
+---
+
+## 13. Yasak
+
+- Step state'ini global Zustand'a koymak (wizard-local state yeterli).
+- localStorage'a şifre / token / TC kimlik yazmak.
+- Submit'i her step'te yapmak (sadece son step veya draft endpoint).
+- Stepper'ı sayfa boyunca disabled tutmak (tamamlanmış adımlara dönülebilmeli).
+- Browser back uyarısı atlamak (dirty state varken).
+- Step başlıklarını hardcoded Türkçe yazmak (i18n).

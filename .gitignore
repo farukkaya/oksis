@@ -1,0 +1,31 @@
+# =============================================================================
+# OKSIS Workspace .gitignore
+# =============================================================================
+# Bu repo "workspace root" — sadece paylaşımlı Claude dokümantasyonu (.claude/),
+# CLAUDE.md ve workspace-seviyesi notlar (analiz docx vb.) tutar.
+#
+# Alt repolar (oksis-api, oksis-web, oksis-mobile) bağımsız git repolarıdır;
+# bu workspace onları takip etmez (gitignore + her birinin kendi .git/'i var).
+# Cross-tier bir değişiklik gerekirse her repo kendi PR akışını izler.
+# =============================================================================
+
+# --- Bağımsız subrepolar (her biri kendi GitHub repo'su) ---
+/oksis-api/
+/oksis-web/
+/oksis-mobile/
+
+# --- Node.js (Figma Make scaffolding artifact'ları) ---
+/node_modules/
+/package-lock.json
+
+# --- IDE / OS ---
+.vs/
+.idea/
+.vscode/
+*.suo
+*.user
+.DS_Store
+Thumbs.db
+
+# --- Claude local overrides ---
+.claude/settings.local.json

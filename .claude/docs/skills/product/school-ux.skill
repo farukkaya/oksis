@@ -1,0 +1,190 @@
+# Skill: school-ux
+
+> **Purpose:** Özel okul operasyon mantığı her rolde farklı. Bu skill ürün kararlarının okul gerçekliğine uygunluğunu denetler.
+
+**İlgili Rules:** `project-context.md`, `business-rules.md`, `permission-matrix.md`, `frontend/ui-ux-rules.md`
+
+---
+
+## 1. Trigger
+
+- Her UI / UX kararı üretildiğinde.
+- Yeni iş akışı (workflow) tasarımında.
+- "Bu ekran nasıl olmalı" sorusunda.
+- Demo / sunum kararlarında.
+
+---
+
+## 2. Rol Bazlı UX İlkeleri
+
+### 2.1 Öğretmen
+
+> **"Minimum tıklamayla işlem yapmalı."**
+
+- Sınıf saatleri arasında 5-10 dakika; **hızlı** olmak şart.
+- Yoklama **3 tıklamada** tamamlanır (push'tan giriş → toplu işlem → kaydet).
+- Not girişi keyboard-friendly: tab ile satır geçiş, sayı tuş takımı.
+- Default değerler doldur (örn yoklama → tümü "Present", öğretmen sadece istisnaları işaretler).
+- Bulk action prominently: "Tümünü Present", "Tümüne 50 ver".
+- Geri al (undo) kolay erişilebilir.
+
+### 2.2 Veli
+
+> **"Tek bakışta çocuğunun durumunu görebilmeli."**
+
+- Home screen'de tek scroll = bugün özet.
+  - Devamsızlık (varsa)
+  - Yeni notlar
+  - Bugünkü ödevler
+  - Yarınki ders programı
+  - Son duyurular
+- Çoklu çocuk: tab/seçici **her zaman üstte**, kayıp olmaz.
+- Push notification → tek tıkla detay sayfası.
+- Karmaşık menü değil: çoğunlukla home + bildirimler + profil yeterli.
+- Para konusu varsa **net + gerçek zamanlı** (aidat durumu, ödeme tarihi).
+
+### 2.3 Öğrenci
+
+> **"Görev odaklı, dağınık olmamalı."**
+
+- Bugünkü ödevler ön planda.
+- Ders programı görsel (renk kodlu).
+- Notlar **yayınlanmadan önce görmemeli** (taslak gizli).
+- Yorum/mesajlaşma **default kapalı** (KVKK + güvenlik).
+- Oyunlaştırma yok (ortaokul üstü ciddiyet).
+
+### 2.4 Okul Yönetimi
+
+> **"Dashboard demo etkisi yaratmalı + günlük operasyonel hızlı olmalı."**
+
+- **First fold metric'ler**: Bugünkü devamsızlık oranı, yeni veli mesajı sayısı, yayınlanmamış not sayısı, açık ödev sayısı.
+- **Trend grafikleri**: 30 günlük devamsızlık, sınıf bazlı ortalama.
+- **Alarm**: Devamsızlık eşik aşımı, ödeme gecikme, not girişi geciken sınıflar.
+- **Hızlı aksiyonlar**: "Veli toplantısı duyurusu", "Toplu mesaj", "Rapor indir".
+- **Sınıf bazlı drill-down**: Tek tıkla sınıf detayına geçiş.
+
+### 2.5 SuperAdmin
+
+> **"Backoffice — hız değil, güvenlik ve audit önemli."**
+
+- Tenant yönetimi: ekleme, lisans, durum.
+- Cross-tenant impersonation **timeboxed + audited**.
+- Sistem sağlığı: kullanım metric, hata oranı, performance.
+- KVKK ihlali / şüpheli aktivite uyarıları.
+
+---
+
+## 3. Demo Etkisi Kuralları
+
+OKSİS yönetim ekranı demo'da satış kararını etkiler. AI üretirken:
+
+- **First fold dolu olsun** — boş skeleton/empty state demo'da kötü görünür.
+  - Demo verisi seed eden script veya empty state'i "okul başlamadı" pozitif çerçeve.
+- **1 accent renk + 1 gradient** kullan (aşırı renkli değil).
+- **Smooth transition'lar** (modal açılış, sayfa geçiş). `transition-all` Tailwind.
+- **Mikro animasyonlar** doğru yerde (loading skeleton, toast).
+- **Boş alan dengeli** — sıkışık değil.
+- **Numara/metric büyük + delta görsel** (yalın "1247" değil "1247 ↑ +12 bu ay").
+
+---
+
+## 4. Türk Okul Bağlamı
+
+OKSİS Türk özel okul mantığına oturmalı:
+
+| Kavram | UX Uygulaması |
+|--------|---------------|
+| **Akademik yıl** | Eylül-Haziran. Yaz aktif değil, "geçmiş yıl" görüntülenir. |
+| **Dönem** | 1. dönem (Eyl-Oca), 2. dönem (Şub-Haz). Karne dönem sonu. |
+| **Not skalası** | 0-100 (lise) + 1-5 harf (ilkokul). Konfigüre. |
+| **Sınıf seviyesi** | Anasınıfı, 1-12. Düzgün Türkçe etiket. |
+| **Şube** | 9-A, 9-B, 10-Fen-A. Naming flexible. |
+| **TC Kimlik** | 11 hane. Validation + maskeleme. KVKK gereği gizli. |
+| **Veli** | Anne + Baba ayrı kayıt mümkün. İlişki tipi: Anne / Baba / Vasi. |
+| **Resmi tatil** | Türk tatil takvimi seed (29 Ekim, 23 Nisan, vb). |
+| **Devamsızlık eşiği** | MEB 20 günlük devamsızlık + 30 gün izinli (konfigüre). |
+| **Karne** | MEB standart format + okul logosu. PDF imzalı. |
+
+---
+
+## 5. Anti-Pattern Listesi
+
+AI bu pattern'leri kullandığında durup soracak:
+
+| Anti-Pattern | Doğrusu |
+|-------------|---------|
+| Yoklama tek tek dropdown ile status seçimi | Toplu işlem + tap-to-toggle |
+| Veli home'da "Hoş geldiniz" başlık + boş alan | Çocuk(lar) için bugün özeti |
+| Öğretmen sınıf seçer → ders seçer → tarih seçer (3 ekran) | Otomatik: bugün + ders programından dolu |
+| Not girişi her satırda "Kaydet" butonu | Bulk save, satır satır autosave |
+| Duyuru zengin metin editör (10+ font) | Markdown veya basit rich (bold, list, link) |
+| Modal içinde 30 alanlı form | Wizard (3-5 step) |
+| Dashboard'da 12 widget tek ekranda | Önemli 4-6 widget + drill-down |
+| Empty state "No data" | Türkçe + ne yapması gerektiğini söyle |
+
+---
+
+## 6. Türkçe Dil Kuralları
+
+OKSİS Türkçe öncelikli (English V2):
+
+- **Resmi ama samimi**: "Kaydedildi" ✅, "Saved!" ❌, "Yoklama kaydı başarıyla gerçekleştirildi" ❌ (uzun).
+- **Aktif fiil**: "Yoklamayı kaydet" ✅, "Yoklamanın kaydedilmesi" ❌.
+- **Sen/Siz**: Veli/öğretmen ekranında **siz**. Öğrenci ekranında **sen**.
+- **Kısaltma minimum**: "yok." / "dev." kullanma → "yoklama" / "devamsızlık".
+- **Tutarlı terim**: "Not" (mark) ve "Sınıf seviyesi" (grade) **karıştırma**.
+
+---
+
+## 7. Hedef Kullanıcı Profilleri (Persona Hatırlatması)
+
+| Persona | Yaş | Cihaz | Tech Beceri |
+|---------|-----|-------|-------------|
+| Yönetici (Müdür) | 45-60 | Desktop + tablet | Orta |
+| Müdür Yardımcısı | 35-50 | Desktop + mobile | Orta-yüksek |
+| Öğretmen | 25-55 | Mobile (sınıfta) + desktop (planlama) | Orta |
+| Veli | 30-55 | Mobile (app store) | Düşük-orta |
+| Öğrenci | 12-18 | Mobile | Yüksek |
+| SuperAdmin (sizin ekibiniz) | 25-40 | Desktop | Yüksek |
+
+→ AI **en düşük tech beceri için** UI çizer. Karmaşık iş = wizard. Hata mesajı = anlaşılır + ne yapması gerektiğini söyleyen.
+
+---
+
+## 8. AI Checklist (her UX kararında)
+
+- [ ] Hangi rol için tasarlanıyor (öğretmen / veli / öğrenci / yönetim)?
+- [ ] O rolün UX ilkesine uygun mu (hız / özet / odak / demo etkisi)?
+- [ ] Türk okul takvimi / not skalası / KVKK ile uyumlu mu?
+- [ ] Demo etkisi kontrol edildi mi (yönetim ekranıysa)?
+- [ ] Default değer doldurulabilir mi (kullanıcı emek harcamadan)?
+- [ ] Bulk action gerekli yerlerde var mı?
+- [ ] Empty state Türkçe + actionable mı?
+- [ ] Hata mesajı kullanıcıya **ne yapacağını** söylüyor mu?
+- [ ] Persona tech beceri seviyesine uygun mu?
+
+---
+
+## 9. Output Format
+
+```
+[school-ux]
+✅ Rol: Öğretmen (hız önceliği)
+✅ 3 tıklama yoklama kuralı korundu
+✅ Default: tümü Present, sadece istisnalar işaretlenir
+✅ Bulk: "Tümünü Present" butonu var
+✅ Türkçe terminoloji: "Yoklama", "Devamsız", "İzinli"
+✅ Mobile-first
+⚠️  Persona uyarı: Öğretmen 25-55 yaş, sade UI gerekli
+```
+
+---
+
+## 10. Yasak
+
+- Veli ekranını "minimalist boş" yapmak (özet zorunlu).
+- Öğretmen ekranını "her şey görünür" yapmak (sadeleştir, default doldur).
+- Demo screen'i empty state ile başlatmak.
+- Türkçe terim sözlüğünden sapmak (naming-conventions ile birebir).
+- Persona düşünmeden "modern UI" patternleri uygulamak.
+- KVKK gizliliği gerektiren alanı (TC, doğum tarihi, sağlık) UI'da maskeleme olmadan göstermek.

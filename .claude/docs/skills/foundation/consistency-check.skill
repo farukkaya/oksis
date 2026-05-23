@@ -1,0 +1,99 @@
+# Skill: consistency-check
+
+> **Purpose:** AI'ın en yaygın hatası: "Aynı işi her seferinde farklı şekilde yazmak." Bu skill naming, folder, pattern ve abstraction tutarlılığını korur.
+
+**İlgili Rules:** `naming-conventions.md`, `folder-structure.md`, `backend/coding-standards.md`, `frontend/coding-standards.md`, `frontend/component-rules.md`
+
+---
+
+## 1. Trigger
+
+- Yeni dosya/klasör oluşturulduğunda.
+- Yeni component / hook / service / handler eklendiğinde.
+- Yeni enum / constant / type eklendiğinde.
+- Bir mevcut feature genişletildiğinde (mevcut pattern korunmalı).
+
+---
+
+## 2. Checklist
+
+### 2.1 Naming
+
+- [ ] Türkçe Domain terimi **`naming-conventions.md`** tablosuna uygun çevrildi mi?
+  - "Not" → `Mark` (Grade DEĞİL — Grade = sınıf seviyesi)
+  - "Şube" → `ClassSection` (Branch DEĞİL — Branch = okul şubesi/kampüs)
+  - "Yoklama" → `Attendance` (Absence DEĞİL — Absence = sadece "yok" durumu)
+  - "Veli" → `Parent` (Guardian değil)
+  - "Duyuru" → `Announcement` (Notice değil)
+- [ ] Backend dosya isimleri PascalCase, frontend dosya isimleri kebab-case mi?
+- [ ] Handler isimleri `{Verb}{Aggregate}{Command|Query}Handler` formatında mı?
+- [ ] React component PascalCase, hook `use*`, util camelCase mı?
+- [ ] DB tablo isimleri snake_case + tekil değil çoğul mu? (`students`, `marks`, `attendance_records`)
+- [ ] Endpoint URL kebab-case + çoğul mu? (`/api/v1/class-sections`)
+- [ ] Enum değerleri PascalCase mi? (`AttendanceStatus.Present`, `Late`, `Absent`, `Excused`)
+
+### 2.2 Folder Structure
+
+- [ ] Yeni dosya `folder-structure.md`'de tanımlı doğru klasöre gitti mi?
+- [ ] **Yeni top-level klasör açmadan** mevcut yapıya entegre edildi mi?
+- [ ] Backend modülü `Features/{ModuleName}/{Commands|Queries|DTOs|Validators}` yapısına uydu mu?
+- [ ] Frontend feature `src/features/{moduleName}/{components|hooks|pages|api|types}` yapısına uydu mu?
+
+### 2.3 Pattern Reuse
+
+- [ ] Aynı amaç için **mevcut bir helper/util/hook** var mı? (Önce ara, sonra yaz)
+- [ ] CRUD ekran üretiliyorsa `crud-page-generator.skill`'i çağırılıyor mu?
+- [ ] Yeni DataGrid sayfası `<DataGrid>` wrapper'ı üzerinden mi? (Doğrudan DevExtreme `DataGrid` değil)
+- [ ] Yeni form `RHF + zodResolver` kullanıyor mu? (Manuel state değil)
+- [ ] Yeni endpoint `ApiResponse<T>` envelope kullanıyor mu? (Raw return değil)
+
+### 2.4 Duplicate Detection
+
+Aşağıdakiler **yasak** — önce arayın:
+
+- Aynı API'yi çağıran **2 farklı hook** (`useStudents` ve `useStudentList`).
+- Aynı şeyi yapan **2 farklı validator** (`StudentCreateValidator` ve `CreateStudentValidator`).
+- 2 farklı yerde tanımlı **aynı sabitler** (`AttendanceStatus`).
+- 2 farklı yerde yazılan **aynı format fonksiyonu** (`formatDate`, `formatStudentName`).
+
+### 2.5 Pattern Drift
+
+| Yaygın Sapma | Doğrusu |
+|---------|---------|
+| Bazı yerde `Result<T>`, bazı yerde `throw` | Tek pattern: `Result<T>` (rules'a göre) |
+| Bazı yerde `useState`, bazı yerde Zustand | Server state → React Query, ephemeral UI → useState, global → Zustand |
+| Bazı toast `notistack`, bazı `sonner` | Tek lib (`sonner` veya seçili olan) |
+| Bazı modal `Dialog`, bazı `Modal` component | Tek wrapper |
+| Bazı `dayjs`, bazı `date-fns` | Tek lib (`date-fns`) |
+
+---
+
+## 3. Otomatik Davranışlar
+
+AI bu skill'i uyguladığında:
+
+1. **Önce arar:** Benzer isimde dosya/fonksiyon/hook var mı? (`grep` / dosya listesi)
+2. **Bulursa entegre eder:** Yeni dosya açmaz, mevcut olanı genişletir.
+3. **Bulamazsa rules'ı kontrol eder:** Naming/folder kuralına bak.
+4. **Uyumsuz isim üretirse refactor önerir:** "Bu dosyayı `X` olarak yeniden adlandırmamı ister misiniz?"
+
+---
+
+## 4. Output Format
+
+```
+[consistency-check]
+✅ Naming: PascalCase, naming-conventions.md uyumlu
+⚠️  Pattern: Mevcut `useStudents` hook'u zaten var → onu kullan
+✅ Folder: src/features/students/api/ doğru yer
+✅ Duplicate: Yeni format fonksiyonu yok, mevcut `formatStudentName` kullanıldı
+```
+
+---
+
+## 5. Yasak
+
+- "Daha açıklayıcı olsun" diye naming convention dışına çıkmak.
+- "Bu farklı bir use case" diyerek yeni hook açmak (önce mevcut'u parametrize etmeyi dene).
+- "Geçici" yardımcı fonksiyon yazıp folder-structure dışına atmak.
+- İngilizce terim Türkçe karşılığına çevrilmiş ama tablo dışı yeni bir kelime kullanmak.

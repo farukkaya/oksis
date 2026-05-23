@@ -1,0 +1,206 @@
+# Skill: mvp-guard
+
+> **Purpose:** AI'ın en doğal eğilimi: feature creep. Bu skill her özellik önerisinde "Sprint 1'de gerçekten gerekli mi?" sorusunu zorlar.
+
+**İlgili Rules:** `mvp-scope-rules.md`, `project-context.md`, `business-rules.md`
+
+---
+
+## 1. Trigger
+
+- Yeni özellik / modül / endpoint önerisi.
+- "Şunu da ekleyelim", "bu da olsa güzel olur" ifadeleri.
+- Mevcut feature'a ekstra konfigürasyon / toggle / variant.
+- 3rd party integration önerisi.
+- "Generic", "esnek", "ileride lazım olur" gerekçeleri.
+
+---
+
+## 2. MVP Sprint Plan (Hızlı Referans)
+
+`mvp-scope-rules.md`'den özet:
+
+### Sprint 1 — Foundation (Hafta 1-3)
+- Multi-tenant kurulum, auth, JWT
+- Okul/sınıf/şube/ders/kullanıcı CRUD (yönetim)
+- Permission matrix temel
+- Logging + audit altyapı
+
+### Sprint 2 — Core Academic (Hafta 4-6)
+- Yoklama (öğretmen mobile)
+- Not girişi + taslak/yayınla
+- Veli portalı v1 (öğrenci özet)
+- Push notification altyapı
+
+### Sprint 3 — Engagement (Hafta 7-9)
+- Duyurular
+- Ödev yönetimi
+- Dashboard widget'ları
+- Real-time (SignalR)
+
+### Sprint 4 — Polish & Launch (Hafta 10-12)
+- Excel import
+- Karne PDF
+- Raporlama temel
+- Performance + security audit
+- KVKK uyum + production deploy
+
+### V2 (MVP Sonrası)
+- Mesajlaşma (öğretmen-veli)
+- Sınav modülü
+- Yemekhane
+- Servis takibi
+- E-ticaret/aidat
+- Analitik / AI özellikleri
+- Çoklu okul grup yönetimi
+- White-label
+- Mobil offline-first
+
+---
+
+## 3. Sprint Sorgulama Algoritması
+
+AI her özellik talebinde aşağıdaki soruları sırayla cevaplar:
+
+### 3.1 Müşteri Karar Faktörü
+> "Bu özellik olmazsa müşteri sözleşme imzalamaz mı?"
+- Evet → MVP'de değerlendir.
+- Hayır → V2.
+
+### 3.2 Yasal Zorunluluk
+> "KVKK, MEB, sözleşme bunu zorunlu kılıyor mu?"
+- Evet → MVP.
+- Hayır → V2.
+
+### 3.3 Operasyonel Kritiklik
+> "Okulun günlük operasyonu bu olmadan yürür mü?"
+- Yürür → V2.
+- Yürümez → MVP.
+
+### 3.4 Effort vs. Value
+> "1 hafta efor / kaç müşteri etkilenir?"
+- 5+ müşteri & <1 hafta → MVP.
+- 1-2 müşteri & 2+ hafta → V2.
+
+### 3.5 Alternatif Var Mı
+> "Manuel yapılabilir mi / 3rd party var mı?"
+- Manuel mümkün → V2 (sonra otomatize).
+- Yok → MVP.
+
+---
+
+## 4. V2'ye Atılacak Tipik Talepler
+
+AI bu pattern'leri görürse **otomatik V2 öner**:
+
+| Talep | Neden V2 |
+|-------|----------|
+| Çoklu dil (TR dışında) | TR sözleşmesi yeterli, EN sonra eklenir |
+| Dark mode | Müşteri kararı değil |
+| White-label / theming | Tek müşteri ihtiyacı, kontrak-bağımlı |
+| Mobil offline mode | Karmaşık, sync stratejisi gerekir |
+| AI tabanlı öneriler | Veri olgunlaşmadan anlamsız |
+| Yemekhane / servis | Domain ayrı, ayrı modül |
+| Mesajlaşma | Moderasyon + KVKK kompleks |
+| SMS bildirimi | Maliyet + entegrasyon, push yeterli |
+| Çoklu döviz | Türkiye fiyatlama yeterli |
+| Detaylı analytics dashboard | Önce basic metric, sonra deep dive |
+| Webhook / public API | Müşteri yok, demand-driven |
+| SSO (Google, Microsoft) | E-posta + şifre yeterli |
+| 2FA opsiyonel | Admin için isteğe bağlı, MVP critical değil |
+| Excel export her ekrana | İstenen 3-5 ekran yeterli |
+
+---
+
+## 5. Sprint İçinde MVP Olmasına Rağmen Yapılmayanlar
+
+Even within MVP, **bazı uçları kırp**:
+
+- **Onboarding**: "Wizard" değil → admin elle 3 ekrandan kurar (V2'de wizard).
+- **Bulk import**: Sadece **öğrenci + veli** için. Öğretmen + ders V2.
+- **Karne**: Tek standart şablon, özelleştirme V2.
+- **Raporlama**: Sadece 3 hazır rapor (devamsızlık, not özeti, sınıf özeti). Custom report V2.
+- **Permission**: Predefined role + permission, custom role tanımı V2.
+- **Mark types**: Yazılı / sözlü / performans (3 tip). Diğerleri V2.
+- **Attendance**: Present / Absent / Late / Excused (4 status). Detaylı sebep V2.
+- **Push customization**: Türü değil sadece açık/kapalı toggle. Granular V2.
+
+---
+
+## 6. Karar Şablonu (AI cevabı)
+
+Kullanıcı yeni özellik talebi yaptığında AI şu şablonu kullanır:
+
+```
+[mvp-guard]
+
+Talep: <talep özet>
+Sprint kapsamı: Sprint <X> | V2 backlog
+Gerekçe:
+- Müşteri karar faktörü: <evet/hayır>
+- Operasyonel kritiklik: <yüksek/orta/düşük>
+- Effort tahmini: <gün>
+- Alternatif: <manuel/yok>
+
+Öneri: <MVP'de yapalım | V2'ye atalım | Minimal versiyon yapalım>
+
+Minimal versiyon (gerekirse): <ne yapacağımız + ne yapmayacağımız>
+```
+
+---
+
+## 7. "Geç Eklenen" Riskli İstekler
+
+Müşteri/iç ekip sıkça önerir:
+
+- **"Şu raporu da koyalım"** → V2 backlog'a yaz, müşteri onayı al.
+- **"Mobile app native olsun"** → React Native zaten native, ek talep V2.
+- **"AI ile veliye otomatik mesaj"** → V2, KVKK ve doğruluk riski.
+- **"Yemekhane ödemesi de olsun"** → Ayrı modül, V2.
+- **"Yıllık plan PDF çıkarsın"** → V2, MEB formatı + öğretmen ihtiyacı detay analiz gerektirir.
+- **"WhatsApp entegrasyonu"** → V2, Meta sürecleri + maliyet.
+
+---
+
+## 8. AI Davranışı
+
+- Kullanıcı **doğrudan kod istese** bile, talep MVP dışıysa AI önce uyarır:
+  > "Bu özellik mevcut MVP planında V2'de. Şimdi yapmak Sprint X teslimini geciktirebilir. Yine de yapayım mı, V2 backlog'a mı yazayım, yoksa minimal versiyonunu mu üreteyim?"
+- Sessizce yapmaz.
+- Karar verilmeden kod yazılmaz.
+
+---
+
+## 9. AI Checklist (her özellik talebinde)
+
+- [ ] Bu özellik `mvp-scope-rules.md`'de mevcut Sprint'te mi?
+- [ ] V2 listesinde benzer item var mı?
+- [ ] Müşteri karar faktörü mü, "nice to have" mı?
+- [ ] Yasal zorunluluk var mı?
+- [ ] Operasyon onsuz yürür mü?
+- [ ] Effort tahmini sprint kapasitesine sığar mı?
+- [ ] Minimal versiyonu MVP'de, full V2'de mümkün mü?
+- [ ] AI öneriyi açıkça yazıyor mu (sessiz kabul yok)?
+
+---
+
+## 10. Output Format
+
+```
+[mvp-guard]
+🟢 Sprint 2 kapsamında — devam.
+🟡 Sprint 3'te planlı, Sprint 2'ye çekilirse devamsızlık modülü ertelenir → kullanıcı onayı bekleniyor.
+🔴 V2 backlog'da. Talep küçük (1 gün) ama MVP'ye etkisi büyük, V2'ye atılmalı.
+```
+
+---
+
+## 11. Yasak
+
+- Kullanıcı istedi diye MVP dışı feature'ı sessizce eklemek.
+- "Generic" / "esnek" gerekçesi ile gereğinden büyük tasarlamak.
+- 3rd party entegrasyonu önerirken maliyet/süre belirtmemek.
+- V2 item'ı için MVP'de "biraz hazırlık" gerekçesi ile kod yazmak.
+- Sprint kapasitesi analizini atlamak.
+
+> **MVP felsefesi:** "Az ama mükemmel ve güvenli" > "Çok ama yarım".

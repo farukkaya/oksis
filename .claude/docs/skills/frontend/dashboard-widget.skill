@@ -1,0 +1,269 @@
+# Skill: dashboard-widget
+
+> **Purpose:** OKSİS yönetim dashboard'u demo etkisi yaratacak. Bu skill metric card, chart, skeleton, empty state ve responsive layout'u **standart** üretir.
+
+**İlgili Rules:** `frontend/component-rules.md`, `frontend/ui-ux-rules.md`, `frontend/state-management-rules.md`
+
+---
+
+## 1. Trigger
+
+- "Dashboard'a kart ekle", "metric göster", "grafik koy" istekleri.
+- Yeni rapor / analytics widget.
+- Veli / Öğretmen / Yönetim ana ekran kartları.
+
+---
+
+## 2. Widget Türleri
+
+| Tür | Kullanım | Örnek |
+|-----|----------|-------|
+| **Metric Card** | Tek sayı + delta | "Toplam öğrenci: 1247 (↑12)" |
+| **Trend Chart** | Zaman serisi | "Devamsızlık son 30 gün" |
+| **Distribution Chart** | Pie / bar dağılım | "Sınıflara göre öğrenci sayısı" |
+| **Top List** | En çok / en az | "En çok devamsız öğrenciler" |
+| **Activity Feed** | Son aksiyonlar | "Son 10 not yayını" |
+| **Calendar Heatmap** | Günlük yoğunluk | "Yoklama doluluk oranı" |
+| **Progress Card** | İlerleme | "Sınav not girişi: %78" |
+
+---
+
+## 3. Metric Card Template
+
+```tsx
+interface MetricCardProps {
+  label: string;
+  value: string | number;
+  delta?: { value: number; direction: 'up' | 'down' | 'neutral'; label?: string };
+  icon?: ReactNode;
+  loading?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
+  onClick?: () => void;     // detay sayfasına gitme
+  variant?: 'default' | 'success' | 'warning' | 'danger';
+}
+
+export function MetricCard({ label, value, delta, icon, loading, error, onRetry, onClick, variant = 'default' }: MetricCardProps) {
+  if (loading) return <MetricCardSkeleton />;
+  if (error) return <MetricCardError onRetry={onRetry} />;
+
+  return (
+    <Card
+      onClick={onClick}
+      className={cn(
+        'p-4 transition hover:shadow-md',
+        onClick && 'cursor-pointer',
+        variant === 'success' && 'border-l-4 border-l-success',
+        variant === 'warning' && 'border-l-4 border-l-warning',
+        variant === 'danger' && 'border-l-4 border-l-danger',
+      )}
+    >
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-muted">{label}</span>
+        {icon && <span className="text-muted">{icon}</span>}
+      </div>
+      <div className="mt-2 text-3xl font-semibold">{value}</div>
+      {delta && (
+        <div className={cn('mt-1 flex items-center gap-1 text-xs',
+          delta.direction === 'up' && 'text-success',
+          delta.direction === 'down' && 'text-danger',
+        )}>
+          <ArrowIcon direction={delta.direction} />
+          {delta.value > 0 ? '+' : ''}{delta.value}
+          {delta.label && <span className="text-muted ml-1">{delta.label}</span>}
+        </div>
+      )}
+    </Card>
+  );
+}
+```
+
+---
+
+## 4. Chart Wrapper
+
+```tsx
+interface ChartCardProps {
+  title: string;
+  description?: string;
+  loading?: boolean;
+  empty?: boolean;
+  error?: boolean;
+  onRetry?: () => void;
+  toolbar?: ReactNode;       // tarih aralığı seçici vs.
+  children: ReactNode;
+  height?: number;
+}
+
+export function ChartCard({ title, description, loading, empty, error, onRetry, toolbar, children, height = 280 }: ChartCardProps) {
+  return (
+    <Card className="p-4">
+      <div className="flex items-start justify-between mb-3">
+        <div>
+          <h3 className="font-medium">{title}</h3>
+          {description && <p className="text-xs text-muted">{description}</p>}
+        </div>
+        {toolbar}
+      </div>
+      <div style={{ height }}>
+        {loading && <ChartSkeleton />}
+        {error && <ChartError onRetry={onRetry} />}
+        {empty && <ChartEmpty />}
+        {!loading && !error && !empty && children}
+      </div>
+    </Card>
+  );
+}
+```
+
+Chart library: `recharts` (React) — light, mobile-friendly.
+
+---
+
+## 5. Loading Skeleton
+
+```tsx
+export function MetricCardSkeleton() {
+  return (
+    <Card className="p-4">
+      <Skeleton className="h-3 w-20 mb-3" />
+      <Skeleton className="h-8 w-24 mb-2" />
+      <Skeleton className="h-3 w-16" />
+    </Card>
+  );
+}
+
+export function ChartSkeleton() {
+  return (
+    <div className="flex h-full items-end gap-2 px-4 pb-4">
+      {[40, 70, 50, 90, 60, 80, 45].map((h, i) => (
+        <Skeleton key={i} className="flex-1" style={{ height: `${h}%` }} />
+      ))}
+    </div>
+  );
+}
+```
+
+**Spinner yasak** — skeleton kullan.
+
+---
+
+## 6. Empty / Error State
+
+```tsx
+export function ChartEmpty() {
+  return (
+    <div className="flex h-full flex-col items-center justify-center text-center text-muted">
+      <ChartBarIcon className="h-10 w-10 mb-2" />
+      <p className="text-sm">Henüz veri yok</p>
+      <p className="text-xs">İlk veriler oluştuğunda burada görünecek</p>
+    </div>
+  );
+}
+
+export function ChartError({ onRetry }: { onRetry?: () => void }) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center gap-2">
+      <ExclamationCircleIcon className="h-8 w-8 text-danger" />
+      <p className="text-sm">Veri yüklenemedi</p>
+      {onRetry && <Button variant="ghost" size="sm" onClick={onRetry}>Tekrar dene</Button>}
+    </div>
+  );
+}
+```
+
+---
+
+## 7. Responsive Grid Layout
+
+```tsx
+<div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+  <MetricCard ... />
+  <MetricCard ... />
+  <MetricCard ... />
+  <MetricCard ... />
+</div>
+
+<div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-3">
+  <ChartCard title="..." className="lg:col-span-2"> {/* trend */} </ChartCard>
+  <ChartCard title="..."> {/* dağılım */} </ChartCard>
+</div>
+```
+
+**Breakpoints:**
+- `sm` (640px): 2 sütun
+- `lg` (1024px): 4 sütun metric, 3 sütun chart
+- `xl` (1280px): büyük grafikler 2/3 + 1/3
+
+---
+
+## 8. Data Fetching
+
+```tsx
+export function useDashboardOverviewQuery() {
+  return useQuery({
+    queryKey: ['dashboard', 'overview'],
+    queryFn: dashboardApi.getOverview,
+    staleTime: 60_000,    // 1 dk
+    refetchOnWindowFocus: true,
+  });
+}
+```
+
+- Her widget **kendi query'sini** kullanmalı (paralel fetch).
+- Master overview endpoint **tek widget için** tüm ekranı bloklamamalı.
+- Real-time gereken metric'ler SignalR invalidation.
+
+---
+
+## 9. Demo Etkisi Kuralları (UX)
+
+OKSİS yönetim dashboard'u **demo'da güçlü** görünmeli:
+
+- **First fold**: 4 metric card + 1 büyük chart.
+- **Empty olmamalı**: Demo verisi seed et veya empty state'i değil "henüz okul başlamadı" tarzı positive framing kullan.
+- **Gradient/icon kullan** (aşırı değil), 1 accent renk.
+- **Trend her zaman delta ile** (yalın sayı değil).
+- **Tıklanabilir card** → detay ekranına yönlendirme.
+- **No loading flash**: < 200ms response'larda skeleton göstermeden direkt render.
+
+---
+
+## 10. AI Checklist
+
+- [ ] Skeleton var mı (spinner değil)?
+- [ ] Empty state friendly mi (icon + metin)?
+- [ ] Error state retry button içeriyor mu?
+- [ ] Responsive grid (1 / 2 / 3 / 4 col) doğru mu?
+- [ ] Her widget bağımsız query mi?
+- [ ] StaleTime makul mü (30sn-5dk)?
+- [ ] Tıklanabilir card detay'a yönlendiriyor mu?
+- [ ] Renk variant'ları (success / warning / danger) anlamlı mı (rastgele değil)?
+- [ ] Mobile'da metric card'lar tek sütun mu?
+- [ ] Chart wrapper kullanıldı mı (raw recharts değil)?
+- [ ] i18n key'leri var mı?
+
+---
+
+## 11. Output Format
+
+```
+[dashboard-widget]
+✅ 4 metric card + 2 chart card üretildi
+✅ Skeleton + empty + error state
+✅ Responsive grid sm:2 lg:4
+✅ React Query: her widget bağımsız, staleTime 60s
+✅ Tıklanabilir → detay sayfası route'u
+✅ i18n: dashboard.json
+```
+
+---
+
+## 12. Yasak
+
+- Spinner kullanmak (skeleton şart).
+- Tek endpoint ile tüm dashboard'u beslemek (her widget bağımsız).
+- Empty state için "No data available" gibi cold metin.
+- Chart'ı doğrudan recharts ile sarmadan import etmek.
+- Renkleri rastgele dağıtmak (success/warning/danger semantic olmalı).
+- Mobile'da yatay scroll (responsive grid şart).
