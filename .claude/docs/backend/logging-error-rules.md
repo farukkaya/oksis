@@ -239,6 +239,51 @@ public sealed class TenantRequiredException()
 
 ---
 
+## 8.5 Error.Message i18n Key Sözleşmesi (ZORUNLU)
+
+Backend `Result<T>` / `Error` döndürürken `Message` alanı **literal metin DEĞİL, daima bir i18n anahtarıdır**. Bu, frontend ve mobile'ın aynı backend cevabını farklı dillerde göstermesini ve UI tarafının metin değişiklikleri için backend deploy beklememesini sağlar.
+
+### Sözleşme
+
+```csharp
+public static readonly Error EmailAlreadyExists = new(
+    "identity.user.email-exists",        // ← code: makine okunabilir, stabil
+    "identity.errors.email-exists");     // ← message: i18n key (literal Türkçe DEĞİL!)
+```
+
+- **Format:** `<namespace>.errors.<kebab-key>` veya domain-specific (`school-settings.errors.holiday.archived-year`).
+- **Namespace** = web/mobile `locales/<lang>/<namespace>.json` dosya adıyla birebir eşleşir (`identity` → `identity.json`, `school-settings` → `school-settings.json`).
+- `Error.Code` ayrı yaşamaya devam eder (stabil makine ID'si; UI mantığı bu üzerinden dallanır), `Message` sadece i18n anahtarıdır.
+
+### Hard rule: Her backend key'in web ve mobile karşılığı OLMAK ZORUNDA
+
+Backend'de yeni bir `Error(...)` (veya `new Error(...)` inline) tanımlandığında, **aynı PR/commit içinde**:
+
+1. `oksis-web/src/shared/i18n/locales/tr/<namespace>.json` dosyasına anahtar **tr** karşılığıyla eklenir.
+2. `oksis-web/src/shared/i18n/locales/en/<namespace>.json` dosyası mevcutsa (örn. `school-settings`, `invitations`, `common`) **en** karşılığıyla eklenir; yoksa atlanır (mevcut mimari `identity` için EN locale tutmuyor — bu, frontend bootstrap kararı, ihlal değil).
+3. `oksis-mobile/src/shared/i18n/locales/tr/<namespace>.json` (varsa) ve `en/<namespace>.json` (varsa) aynı anahtarla güncellenir.
+
+Eksik karşılık varsa PR review **reddedilir**. Locale dosyaları yoksa (yeni namespace), web ve mobile tarafında **bootstrap'a kaydı dahil** eklenir.
+
+### Yasak
+
+- ❌ `new Error("Address.Country.NotFound", "Seçilen ülke bulunamadı.")` — literal Türkçe.
+- ❌ `new Error("X", "X")` — code'u i18n key olarak kopyalama (anahtar `<namespace>.errors.*` formatında olmalı).
+- ❌ Backend'de yeni key eklenip web/mobile locale'lere eşzamanlı eklenmemesi.
+- ❌ Aynı işin iki farklı i18n anahtarı (örn. `identity.errors.invitation-pending-already-exists` ve `invitations.errors.pending-already-exists`'in **aynı senaryoyu** taşıması). Backend sözleşmesinde tek anahtar; UI o anahtarı kullanır.
+
+### Review checklist
+
+- [ ] Yeni `Error` tanımının `Message`'ı `<namespace>.errors.<...>` formatında i18n key mi?
+- [ ] Aynı PR `oksis-web/src/shared/i18n/locales/tr/<namespace>.json`'ı güncelliyor mu?
+- [ ] EN locale dosyası varsa o da güncellenmiş mi?
+- [ ] Mobile locale dosyası varsa güncellenmiş mi?
+- [ ] Frontend/mobile hook'u bu yeni anahtarı tüketiyorsa `t(error.message)` veya code-based map ile doğru gösterimi yapıyor mu?
+
+> Cross-tier sözleşme: ApiResponse zarfı `errors: [{ code, message, field }]` döner; `message` alanı **i18n anahtarı**dır. UI `t(message)` yapabilir veya `code` üzerinden kendi sözlüğüne map edebilir; her iki yolda da locale karşılığının var olması zorunludur.
+
+---
+
 ## 9. Audit Log
 
 İş açısından kritik olaylar `audit_logs` tablosuna yazılır (Serilog'a değil — sorgulanabilir veri).

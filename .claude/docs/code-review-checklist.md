@@ -78,6 +78,8 @@
 - [ ] **Correlation ID propagate ediliyor mu?**
 - [ ] **PII log'da değil mi?**
 - [ ] **Audit log gerekli mi?** Sensitive operation'larda var.
+- [ ] **`Error.Message` i18n anahtarı mı?** Literal Türkçe YASAK. Format: `<namespace>.errors.<key>`.
+- [ ] **Yeni Error anahtarı eklendiyse `oksis-web/src/shared/i18n/locales/<lang>/<namespace>.json` ve (uygulanabiliyorsa) `oksis-mobile/src/shared/i18n/locales/<lang>/<namespace>.json` aynı PR'da güncellendi mi?** Detay: `backend/logging-error-rules.md` §8.5.
 
 ---
 

@@ -407,6 +407,13 @@ const { t } = useTranslation();
 <Text>{t('announcements.title')}</Text>
 ```
 
+### Backend Error → Mobile locale eşleşmesi (ZORUNLU)
+
+Backend `ApiResponse.errors[].message` alanı bir i18n anahtarıdır (örn. `identity.errors.user-not-found`). **Her backend Error anahtarının `oksis-mobile/src/shared/i18n/locales/<lang>/<namespace>.json` dosyasında karşılığı bulunmak zorundadır** — yoksa PR reddedilir. Web tarafıyla aynı namespace ve key path'i kullanılır; mobile sadece kendi locales klasörüne aynı eklemeyi yapar. Tam sözleşme: `../backend/logging-error-rules.md` §8.5.
+
+- ❌ Yeni backend hata anahtarı eklenip mobile `locales/tr/*.json` güncellenmemiş PR.
+- ❌ Web tarafında ekleyip mobile'ı atlamak (veya tersi).
+
 ---
 
 ## Test

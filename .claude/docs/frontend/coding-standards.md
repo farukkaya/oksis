@@ -258,6 +258,14 @@ export function StudentForm({ onSubmit }: Props) {
 - Pluralization `t("count_students", { count })`.
 - Tarih/sayı format: `date-fns` (locale aware) veya `Intl.NumberFormat`.
 
+### Backend Error → Frontend locale eşleşmesi (ZORUNLU)
+
+Backend `Result<T>` / `Error` cevaplarının `message` alanı **i18n anahtarı**dır (örn. `identity.errors.user-not-found`). **Her backend Error anahtarının `oksis-web/src/shared/i18n/locales/<lang>/<namespace>.json` dosyasında karşılığı bulunmak zorundadır** — yoksa PR reddedilir. Backend tanımı `<namespace>.errors.<key>` formatını kullanır; frontend o namespace dosyasında aynı yolu tanımlar. Tam sözleşme: `../backend/logging-error-rules.md` §8.5.
+
+- ❌ Yeni backend hata anahtarı eklenip web `locales/tr/*.json` güncellenmemiş PR.
+- ❌ Backend'in döndürdüğü i18n key yerine frontend'de literal Türkçe metin gösterme.
+- ✅ Hook'lar `code` üzerinden kendi sözlüğüne map edebilir VEYA `t(error.message)` ile direkt key'i kullanabilir — her iki yolda da locale karşılığı zorunlu.
+
 ---
 
 ## 9. Routing
