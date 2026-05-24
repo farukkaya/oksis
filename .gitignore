@@ -29,3 +29,7 @@ Thumbs.db
 
 # --- Claude local overrides ---
 .claude/settings.local.json
+
+# tmp build artifact dirs from test-doc generation
+docx-builder/
+tmp-docx/
