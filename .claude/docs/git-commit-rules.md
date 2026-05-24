@@ -151,6 +151,31 @@ feat: Yeni özellik eklendi               ← tarih yok
 - Bir commit derlenmeli + testler geçmeli.
 - "WIP" commit'leri PR'da squash edilmeli.
 
+### Bir Issue = Bir Commit (KESİN KURAL)
+
+> Generated issue'lar (örn. `.claude/generated-issues/<module>/issue-<no>.md`) implement edilirken **her issue için ayrı commit** atılır. Bu kural pazarlık konusu değildir.
+
+- Bir modülün 12 issue'su varsa → **12 ayrı commit** atılır, bir tane "modülü bitirdim" commit'i değil.
+- Aynı PR içinde N issue olabilir; ama her commit yalnızca **tek issue'nun dosyalarını** içerir.
+- Acceptance Criteria'da tanımlı testler aynı commit'e dahildir (`feat,test`); test ayrı commit'e atılmaz.
+- Commit subject'inde issue numarası prefix'i: `Issue #<no> YYYY-MM-DD <type>: Türkçe özet.`
+- Her issue dosyasının sonunda zorunlu "Commit Requirement" bölümü vardır — kanonik şablon: `.claude/generated-issues/example-module-name/example-issue-1.md`.
+
+**Anti-pattern (yasak):**
+
+❌ Bir modülün tüm issue'larını tek commit'e toplamak:
+```
+2026-05-24 feat,test: Users modülü backend — domain, EF, identity altyapısı...
+```
+
+✅ Her issue ayrı commit:
+```
+Issue #1 2026-05-24 feat,test: User domain entity ve domain event'leri eklendi.
+Issue #2 2026-05-24 feat,test: PasswordResetToken ve PasswordPolicy eklendi.
+Issue #3 2026-05-24 feat: EF Core configuration ve identity initial migration eklendi.
+...
+```
+
 ### Çoklu Tip Ne Zaman Kullanılır?
 
 ✅ **Mantıklı birleşim**:
