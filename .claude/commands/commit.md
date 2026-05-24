@@ -1,59 +1,135 @@
 ---
-description: OKSİS commit kuralına uygun commit mesajı üret ve commit at
-allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git commit:*), Read
+description: Belirtilen OKSİS repo'sunda (oksis|oksis-api|oksis-web|oksis-mobile|all) OKSİS commit kuralına uygun commit üret ve at
+argument-hint: [oksis | oksis-api | oksis-web | oksis-mobile | all]
+allowed-tools: Bash(git -C:*), Bash(git status:*), Bash(git add:*), Bash(git diff:*), Bash(git log:*), Bash(git branch:*), Bash(git rev-parse:*), Bash(git commit:*), Bash(date:*), Read
 ---
 
-# Commit Oluştur
+# OKSİS Commit Oluştur
 
-@.claude/docs/git-commit-rules.md
+> Kanonik kurallar: `oksis/.claude/docs/git-commit-rules.md`. Aşağıdaki gövde
+> committemek için gerekli tüm kuralı (format, regex, örnekler, yasaklar) içerir;
+> bu komut her repo'ya birebir aynı kopyalanır.
+
+## Bağlam
+
+Burada **dört bağımsız git repo'su** vardır:
+
+- `oksis` — **workspace root (anarepo)**, paylaşımlı dokümantasyonu (`.claude/docs/`,
+  `CLAUDE.md`, `generated-issues/`) tutan ayrı bir git repo'sudur. Yolu = workspace
+  root'un kendisi (`/Users/farukkaya/Projects/oksis`).
+- `oksis-api`, `oksis-web`, `oksis-mobile` — workspace root altında sibling olarak
+  duran üç bağımsız repo.
+
+Bu komut, **argümanla verilen repo'da** commit atar. Tüm git işlemleri
+`git -C <repo-yolu> ...` ile yapılır ki o anki çalışma dizini ne olursa olsun doğru
+repo'da çalışılsın. Her repo **bağımsız** commit'lenir; commit'ler asla birleştirilmez.
 
 ## Görev
 
-Aşağıdaki adımları sırayla uygula:
+### 1. Hedef repo'yu belirle
 
-1. **Durum tespiti**: `git status` ve `git diff --staged` çalıştır.
-   - Staged değişiklik yoksa `git diff` ile unstaged değişiklikleri incele ve "stage edilmemiş değişiklik var, `git add` ile stage'ler misin yoksa benim mi stage'lememi istersin?" diye sor.
+`$ARGUMENTS` repo adıdır. Geçerli değerler: `oksis`, `oksis-api`, `oksis-web`,
+`oksis-mobile`, `all`.
 
-2. **Analiz et**:
-   - **Type**: feat | fix | chore | docs | test | refactor | perf | style | ci | revert
-   - **Scope**: hangi modül? (`students`, `auth`, `attendance`, `grades`, `homework`, `announcements`, `messaging`, `notifications`, `dashboard`, `identity`, `schools`, `classes`, `teachers`, `ci`, `deps`, `docs`, `infra`)
-   - **Subject**: imperative mood, küçük harf, nokta yok, max 72 karakter, **İngilizce**
-   - **Body** (opsiyonel ama anlamlıysa ekle): ne yapıldı + **neden**, nasıl değil. Her satır max 72 karakter.
-   - **Footer**: BREAKING CHANGE varsa veya ticket varsa ekle (`Refs: OKS-XXX`).
+- **Repo yolları**:
+  - `oksis` → workspace root'un kendisi: `/Users/farukkaya/Projects/oksis`
+  - `oksis-api` / `oksis-web` / `oksis-mobile` → `/Users/farukkaya/Projects/oksis/<RepoAdı>`
+  - Mutlak yolu doğrulamak için ilgili dizinde `git rev-parse --show-toplevel` çalıştırabilirsin.
+- **`all`**: Dört repo'nun (`oksis`, `oksis-api`, `oksis-web`, `oksis-mobile`) **her
+  birinde ayrı ayrı** commit at — bkz. aşağıdaki "`all` modu" bölümü.
+- **Argüman yoksa**: o anki çalışma dizini hangi repo içindeyse onu kullan
+  (`git rev-parse --show-toplevel` ile tespit et). Belirsizse kullanıcıya hangi
+  repo olduğunu **sor**, uydurma.
+- Geçersiz repo adı verilirse geçerli seçenekleri listele ve dur.
 
-3. **Birden fazla mantıksal değişiklik** varsa **commit'i parçalamayı öner**: "Bu değişiklik 2 ayrı şeyi içeriyor (X ve Y). İkisini ayrı commit'e bölmek ister misin?"
+#### `all` modu
 
-4. **Draft mesajı göster** ve onay iste. Format:
-   ```
-   Önerilen commit mesajı:
-   ----------------------
-   <type>(<scope>): <subject>
+`/commit all` çağrıldığında dört repo'yu **sırayla** işle: `oksis` → `oksis-api`
+→ `oksis-web` → `oksis-mobile`. Her repo için:
 
-   <body>
+1. `git -C <repo> status --short` ile değişiklik var mı bak. **Değişiklik yoksa
+   atla** ("oksis-web: değişiklik yok, atlandı" diye belirt).
+2. Değişiklik varsa aşağıdaki 2–7. adımları o repo için uygula: kendi diff'ine göre
+   kendi type'ı + kendi Türkçe özeti + kendi commit'i. Commit'ler **asla
+   birleştirilmez** — her repo kendi mantıksal değişikliğiyle ayrı commit alır.
+3. Her repo için ayrı onay iste (veya hepsinin önerilen mesajını tek seferde göster,
+   topluca onay al — kullanıcı tercihine bırak).
 
-   <footer>
-   ----------------------
-   Onaylıyor musun? (evet / düzelt / iptal)
-   ```
+Sonunda hangi repo'da ne commit'lendiğini / nelerin atlandığını özetle.
 
-5. **Onay alınca** `git commit -m "..."` çalıştır. Multi-line için `-m` flag'ini birden fazla kullan veya heredoc.
+### 2. Durum tespiti
 
-6. **Commit sonrası** `git log -1 --stat` ile özetle.
+`git -C <repo> status` ve `git -C <repo> diff --staged` çalıştır.
 
-## Kurallar (Hatırlatma)
+- **Staged değişiklik yoksa** `git -C <repo> diff` ile unstaged değişiklikleri
+  incele ve sor: "Stage edilmemiş değişiklik var — `git add` ile stage'leyeyim mi,
+  yoksa sen mi stage'lemek istersin?"
+- **Default branch uyarısı**: `git -C <repo> branch --show-current` ile branch'i
+  kontrol et. `master`/`main` üzerindeyse kullanıcıyı uyar (kurallarda main'e
+  doğrudan push yasak) ve önce feature branch açmayı öner. Yine de commit istemesi
+  durumunda devam et.
 
-- ✅ `feat(students): add bulk import via excel`
-- ✅ `fix(auth): refresh token not invalidated on logout`
-- ✅ `chore(deps): bump react-query from 5.0 to 5.4`
-- ❌ `update stuff` — yasak
-- ❌ `WIP` — yasak
-- ❌ `fixed bug` — scope yok, generic
-- ❌ `feat: added new feature.` — past tense + nokta
-- ❌ Türkçe mesaj — kod tabanı dili İngilizce
-- ❌ Subject 72+ karakter
+### 3. Analiz et
 
-## Argüman
+- **Type**: `feat | fix | chore | docs | test | perf | refactor | style | ci | revert`.
+  Birden fazla kategori aynı işin parçasıysa **virgülle, boşluksuz** birleştir
+  (`feat,test`, `fix,test`, `refactor,docs`). İlgisiz işler için birleştirme — ayır.
+- **Özet**: **Türkçe**, anlamlı + spesifik, ilk harf büyük, sonunda **nokta**,
+  özet kısmı max 72 karakter. "Düzeltildi"/"Eklendi" tek başına yetersiz.
+- **Issue prefix**: Değişiklik bir issue geliştirmesiyse (branch adı, bağlam veya
+  `.claude/generated-issues/...` dosyası ipucu verir) başa `Issue #<no> ` ekle.
+  Emin değilsen kullanıcıya sor; issue yoksa prefix kullanma.
+- **Body** (opsiyonel): anlamlıysa bir boş satır sonrası ekle — "ne + neden",
+  "nasıl" değil. Her satır max 72 karakter.
 
-$ARGUMENTS
+### 4. Tek mantıksal değişiklik kuralı
 
-Kullanıcı argüman verdiyse (örn. `/commit veli mesajlaşması`), bunu ek bağlam olarak değerlendir — değişiklikleri analiz ederken ipucu olarak kullan, ama her zaman `git diff` çıktısına göre doğrula.
+- **Bir commit = bir mantıksal değişiklik.** Diff birden fazla bağımsız iş
+  içeriyorsa **parçalamayı öner**: "Bu değişiklik 2 ayrı şey içeriyor (X ve Y).
+  Ayrı commit'lere böleyim mi?"
+- **Bir issue = bir commit** (kesin kural). Birden fazla issue'yu tek commit'e toplama.
+
+### 5. Mesajı üret ve onay iste
+
+Tarihi dinamik al: `date +%Y-%m-%d`. Format:
+
+```
+[Issue #<no> ]YYYY-MM-DD <type>[,type]: Türkçe özet.
+
+<opsiyonel body>
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+```
+
+Önerilen mesajı göster ve onay iste: **(evet / düzelt / iptal)**.
+
+### 6. Commit at
+
+Onay alınca `git -C <repo> commit` ile commit'i at (çok satırlı mesaj için heredoc
+veya birden fazla `-m`). `oksis-api`'deki husky `commit-msg` hook'u header satırını
+şu regex ile doğrular — üretilen mesaj buna uymalı:
+
+```
+^(Issue #[0-9]+ )?[0-9]{4}-[0-9]{2}-[0-9]{2} (feat|fix|chore|docs|test|perf|refactor|style|ci|revert)(,(feat|fix|chore|docs|test|perf|refactor|style|ci|revert))*: .+\.$
+```
+
+### 7. Özetle
+
+`git -C <repo> log -1 --stat` ile commit'i özetle.
+
+## Örnekler (doğru format)
+
+```
+2026-05-24 feat: Öğrenci toplu import özelliği eklendi.
+2026-05-24 fix,test: Yoklama eşik bildirimi düzeltildi ve regression testi eklendi.
+Issue #42 2026-05-24 feat: Veli mesajlaşma ekranı eklendi.
+Issue #7 2026-05-24 refactor,docs: Mark publish akışı yeniden yapılandırıldı.
+```
+
+## Yasak
+
+- ❌ İngilizce özet (Türkçe zorunlu).
+- ❌ Tarih veya tip eksikliği, nokta yok, küçük harfle başlama.
+- ❌ Anlamsız özet (`fix: düzeltildi`, `feat: özellik eklendi`).
+- ❌ `WIP`, `update stuff` gibi jenerik mesaj.
+- ❌ Birden fazla bağımsız işi tek commit'e toplamak.
