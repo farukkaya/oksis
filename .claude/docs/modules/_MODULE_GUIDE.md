@@ -57,7 +57,7 @@ Her modül **9 dosya iskelet** ile başlar. MVP başlangıcında 16 modülün he
 | `database-schema.md` | Tablo şeması, FK, index, constraint, migration referansı | DB tasarım |
 | `permissions.md` | Modüle ait permission kodları, role mapping | Permission matrisi belirlenirken |
 | `notifications.md` | Event → kim → kanal → template | Notification matrisi belirlenirken |
-| `ui-flows.md` | Sayfa listesi, kullanıcı akışı, wireframe linki, state management | Frontend tasarım |
+| `ui-flows.md` | Sayfa listesi, kullanıcı akışı, wireframe linki, state management. **Tek dosya** — içinde "Web Flow" ve "Mobile Flow" alt başlıkları (bkz. § 3.7) | Frontend tasarım |
 | `business-rules.md` | Modüle özel kurallar (örn. "Mark publish sonrası 24 saat içinde düzeltilebilir") | İş analizi |
 | `open-questions.md` | Tartışılması gereken, henüz karar alınmamış konular | Belirsizlik çıktığında |
 
@@ -121,6 +121,37 @@ Sıralı adımlar:
 - `Files` checkbox'larında ilk kez içerik eklenen dosya `[ ]` → `[x]` olur.
 - `Status` değişmişse (örn. `planning` → `in-progress`) güncelle.
 - Bu güncelleme de özette belirtilir.
+
+---
+
+### 3.7 UI Flows: Web + Mobile Tek Dosyada (Konvansiyon)
+
+Modül **iş kavramıdır, teknik katman değil.** Bir modül hem web'de hem mobile'da farklı UX ile yaşıyorsa, akışları **tek `ui-flows.md` içinde** ayrı alt başlıklara yaz:
+
+```markdown
+## Web Flow
+### Sayfa Lokasyonu (oksis-web/src/portals/...)
+### Ekranlar
+### Web Kullanıcı Akışı
+
+## Mobile Flow
+### Sayfa Lokasyonu (oksis-mobile/src/features/...)
+### Ekranlar
+### Mobile Kullanıcı Akışı
+
+## Form Validation (ortak)
+## i18n Key'leri
+```
+
+**Yasaklar:**
+- ❌ Ayrı `ui-flows-web.md` veya `ui-flows-mobile.md` dosya **AÇMA** — drift + duplikasyon yaratır.
+- ❌ Mobile akış varken "Web Flow" başlığını tamamen atlama — hangi tier kapsam dışı belirt.
+
+**İstisnalar:**
+- Admin-only modüller (örn. `school-settings`, `users`, gelecekte `system_settings`) → sadece "Web Flow" başlığı doldurulur; "Mobile Flow" yerine kısa not yeterli ("Bu modül admin-only, mobile UI'sı yok.").
+- Mobile-only modüller (henüz yok) → tersi geçerli.
+
+**Tetik:** Yeni modül oluşturulurken `_MODULE_TEMPLATE/ui-flows.md` zaten bu yapıda gelir. Mevcut modülün ui-flows.md'sini güncellerken yapıyı koru.
 
 ---
 
