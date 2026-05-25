@@ -1,58 +1,64 @@
-# Okul Ayarları — Notifications & Events
+# Okul Ayarları — Notifications (Güncellenmiş)
 
-> Domain event akışları + kullanıcıya giden bildirimler.
-
-> Genel matriks: `notification-matrix.md`.
+> Mevcut event'ler korunur, 2 yeni event eklenir.
 
 ---
 
-## Domain Event'ler
+## Mevcut Domain Event'ler (değişmez)
 
-### `SchoolSettingsCreatedEvent`
-
-**Tetik:** `SchoolSettings.CreateDefault(schoolId)` factory metodu — `SchoolCreatedEvent` handler'ından çağrılır.
-
-**Handler:** Şimdilik aktif handler yok; Sprint 2+ audit log için kullanılacak.
-
-### `SchoolSettingsUpdatedEvent(SchoolId, SectionName)`
-
-**Tetik:** `SchoolSettings.Update*` davranışlarından her biri.
-
-**SectionName değerleri:** `UpdateBasicInfo`, `UpdateContactInfo`, `UpdateAddress`, `UpdateTheme`, `UpdateAcademicStructure`.
-
-**Handler:** Sprint 2+ `AuditLogHandler` — `audit_logs` tablosuna detaylı diff yazar.
-
-### `BellScheduleChangedEvent(SchoolId)`
-
-**Tetik:** Bell schedule bulk update sonrası `SchoolSettings.RaiseBellScheduleChanged()`.
-
-**Handler:** Sprint 2+ — Schedule modülünün cache'ini invalidate eder.
+- `SchoolSettingsCreatedEvent` — aggregate ilk oluşturulduğunda (handler: yok, Sprint 2+ audit)
+- `SchoolSettingsUpdatedEvent(SchoolId, SectionName)` — her `Update*` çağrısında
+- `BellScheduleChangedEvent(SchoolId)` — zil programı değişikliğinde
 
 ---
 
-## Kullanıcı Bildirimleri
+## Yeni Domain Event'ler
 
-MVP'de Okul Ayarları işlemleri **kullanıcıya push bildirimi tetiklemez** — tipik admin self-service. İstisnalar:
+### `AcademicPolicyUpdatedEvent(SchoolId)`
 
-| Senaryo | Bildirim | Kanal | Öncelik |
-|---|---|---|---|
-| Modül **devre dışı** bırakıldı (örn. messaging) | Okul kullanıcılarına InApp banner | InApp | `Normal` |
-| Bildirim tipi default kanal değişti | — (kullanıcı zaten Profil ayarlarından izleyebilir) | — | — |
-| Tema/logo değişti | — | — | — |
-| Resmi/okul tatil günü eklendi | Hedef sınıflara InApp | InApp | `Low` |
+**Tetik:** `SchoolSettings.UpdateAcademicPolicy(...)` çağrıldığında.
 
-> Push olmaması bilinçli karar — ayar değişiklikleri admin işi, son kullanıcıyı bombalamamak için.
+**Handler'lar:**
+- Cache invalidation: `oksis:tenant:{schoolId}:grade-scale-resolver`, `oksis:tenant:{schoolId}:academic-policy`
+- Sprint 2+ audit log
+
+**Kullanıcı bildirimi:** Yok — admin self-service, push gereksiz.
+
+### `SchoolGradeLevelsChangedEvent(SchoolId)`
+
+**Tetik:** `PUT /grade-levels` sonrası kademe aktive/deaktive edildiğinde.
+
+**Handler'lar:**
+- `academic-sessions` modülü: şube oluşturma dropdown cache invalidation
+- Sprint 2+ audit log
+
+**Kullanıcı bildirimi:** Yok.
+
+### `SchoolGradeLevelScaleChangedEvent(SchoolId, GradeLevelId)`
+
+**Tetik:** `PUT /grade-level-scales` sonrası seviye bazlı skala değiştiğinde.
+
+**Handler'lar:**
+- `marks` modülü (Sprint 2): grade scale resolver cache invalidation
+- Sprint 2+ audit log
+
+**Kullanıcı bildirimi:** Yok.
 
 ---
 
-## Cooldown & Sessiz Saatler
+## Kullanıcı Bildirimleri (değişmez)
 
-Bu modülün kullanıcı bildirimi neredeyse olmadığı için cooldown/quiet hours geçerli değil. Sadece InApp banner'lar olur, otomatik 24 saat sonra arşivlenir.
+MVP'de Okul Ayarları işlemleri kullanıcıya push bildirimi tetiklemez — tipik admin self-service. İstisnalar:
+
+| Senaryo | Bildirim | Kanal |
+|---|---|---|
+| Modül devre dışı bırakıldı | Okul kullanıcılarına InApp banner | InApp |
+| Resmi/okul tatil günü eklendi | Hedef sınıflara InApp | InApp |
+
+> Push olmaması bilinçli karar — ayar değişiklikleri admin işi.
 
 ---
 
-## Audit Trail
+## Audit Trail (değişmez)
 
-Tüm `SchoolSettings*` event'leri Sprint 2+ audit log handler'ı tarafından dinlenir. Tablo: `audit_logs (id, school_id, user_id, event_type, resource_id, before_json, after_json, occurred_at, correlation_id)`.
-
-Filtreleme: Admin paneli üzerinden `event_type LIKE 'SchoolSettings%'`.
+Tüm `SchoolSettings*` event'leri Sprint 2+ audit log handler'ı tarafından dinlenir.

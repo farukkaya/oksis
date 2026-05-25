@@ -1,115 +1,127 @@
-# School Settings — Open Questions
-
-Modülün açık kalan, sonradan karara/eyleme bağlanması gereken konuları.
+# Okul Ayarları — Açık Sorular & Kararlar
 
 ---
 
-## Test Borcu — Query Hook'ları (Issue #26)
+## Çözülmüş Sorular
 
-**Durum:** ✅ Hook'lar yazıldı (commit `8f18255`), ❗ testler ertelendi.
+### ✅ Q1 — Seviye bazlı farklı not skalası desteklenecek mi?
 
-Issue #26'nın **Acceptance Criteria** listesinde test maddesi yer almıyordu;
-ancak **Test Requirements** advisory bölümünde aşağıdaki testler isteniyor:
+**Karar tarihi:** 2026-05-25
+**Karar:** Desteklensin.
 
-1. `api.get` çağrılarını MSW (Mock Service Worker) handler'ı ile mock'la.
-2. `useSchoolSettings` döndüğünde `SchoolSettingsDto` şekline uyumu doğrula.
-3. `useHolidays(2026)` çağrısının `?year=2026` query string'ini gönderdiğini
-   doğrula.
+**Detay:** `school_grade_level_scales` junction tablosu ile her sınıf seviyesine ayrı not skalası atanabilir. İlkokul 5'lik, lise 100'lük kullanabilir. Fallback zinciri: seviye bazlı → okul default → master TR_100 (BR-SS-011).
 
-**Erteleme gerekçesi:**
-- Projede henüz Vitest + MSW test altyapısı kurulu değil.
-- Tek bir hook için altyapı kurmak scope'u şişiriyor; daha verimli yol, modül
-  içindeki tüm hook'lar (queries + mutations) yazıldıktan sonra toplu bir
-  "test setup + ilk testler" sprint'i açmak.
-
-**Eylem maddesi (gelecek):**
-- [ ] Vitest + `@testing-library/react` + MSW kurulumu.
-- [ ] `school-settings.queries.test.ts` — 3 test (#26).
-- [ ] `school-settings.mutations.test.ts` — mutation hook'ları (#27, #28).
-- [ ] Zod şema unit testleri (#30):
-  - `bellScheduleSchema.safeParse({ startTime: "09:00", endTime: "08:00", ... })` → `endTime` üzerinde hata.
-  - `holidaySchema.safeParse({ holidayDate: "2026-01-05", endDate: "2026-01-01", ... })` → `endDate` üzerinde hata.
-  - `notificationConfigSchema.safeParse({ absenceWarningThreshold: 10, absenceCriticalThreshold: 5, ... })` → `absenceCriticalThreshold` üzerinde hata.
-- [ ] `SchoolSettingsTabs` component testi (#32):
-  - Mock tab listesi ile render.
-  - "Zil Programı" tab tıklaması → `/admin/settings/bell-schedule` navigasyonu.
-  - Location'a göre doğru tab'ın `aria-current="page"` aldığını doğrula.
-- [ ] `BasicInfoSection` form testleri (#33):
-  - Valid `data` prop ile render.
-  - Boş `name` ile submit → required validation hatası.
-  - Küçük harfli `code` ile submit → regex hatası.
-  - Numeric olmayan `taxNumber` → regex hatası.
-  - Valid form submit → `useUpdateBasicInfo` doğru payload ile çağrılır.
-  - Mutation success → toast tetiklenir.
-- [ ] `ContactInfoSection` form testleri (#34):
-  - Valid `data.contactInfo` prop ile render → alanlar doluyor.
-  - Geçersiz email → email format hatası.
-  - Geçersiz URL → URL format hatası.
-  - Valid form submit → `useUpdateContactInfo` doğru payload ile çağrılır
-    (boş input'lar `null` olarak gönderilir).
-  - Mutation success → toast tetiklenir.
-- [ ] `ColorPickerField` + `ThemeSection` testleri (#35):
-  - `ColorPickerField` `value="#2563eb"` ile render → swatch ve text input
-    bu değeri yansıtıyor.
-  - Text input'a `#ZZZZZZ` yaz → Zod regex hatası alanın altında görünür.
-  - Text input'a `#ff0000` yaz → swatch kırmızıya döner.
-  - Valid `ThemeSection` submit → `useUpdateTheme` mutation çağrılır.
-  - Mutation success → toast tetiklenir.
-- [ ] `LogoUploadCard` testleri (#36):
-  - `currentUrl=null` ile render → drop zone + placeholder görünür.
-  - `currentUrl="https://.../logo.png"` ile render → preview img + remove
-    butonu görünür.
-  - 2 MB üzeri dosya drop → error toast tetiklenir, `useUploadLogo` çağrılmaz.
-  - Geçersiz MIME (örn. `application/pdf`) drop → error toast, mutation yok.
-  - Geçerli PNG drop → `useUploadLogo` `File` payload ile çağrılır.
-  - Remove butonu tıklama → `useDeleteLogo` çağrılır.
-  - Upload sırasında `Skeleton` overlay görünür (spinner değil).
-- [ ] `GeneralSettingsTab` montaj testleri (#37):
-  - `useSchoolSettings` pending → `SettingsSkeleton` görünür.
-  - `useSchoolSettings` fail → hata kartı + "Tekrar Dene" butonu görünür.
-  - Retry butonu tıklama → `refetch` çağrılır.
-  - Data yüklendiğinde Basic + Contact + Theme bölümleri sıralı render edilir.
-  - Tema bölümü içinde `LogoUploadCard` `currentUrl={data.theme.logoUrl}`
-    ile render edilir.
-- [ ] `AcademicStructureTab` testleri (#38):
-  - Skeleton (pending) ve error+retry kartı render.
-  - Dropdown'lar i18n label'larıyla doluyor.
-  - `weeklyLessonCount: 0` ile submit → Zod validation hatası.
-  - Valid submit → `useUpdateAcademicStructure` çağrılır, toast tetiklenir.
-
-**Referans:**
-- Issue'ler: #26, #27, #28, #30, #32, #33, #34, #35, #36, #37, #38
-- Genel test stratejisi: `.claude/docs/testing-rules.md`
+**Etki:** `database-schema.md` yeni tablo, `domain-model.md` yeni entity, `api-contracts.md` 2 yeni endpoint (#25-26), `ui-flows.md` Akademik Politikalar sekmesi.
 
 ---
 
-## i18n Borcu — KAPATILDI (Issue #31)
+### ✅ Q2 — `school_type` birden fazla seçilebilir mi?
 
-**Durum:** ✅ Çözüldü. `react-i18next` + `i18next` projeye eklendi, modül
-namespace'i kayıt edildi, mutation hook toast'ları `t(key)` çağrısına geçti.
+**Karar tarihi:** 2026-05-25
+**Karar:** Birden fazla seçilebilir.
 
-**Kapatma detayı:**
-- `src/shared/i18n/index.ts` bootstrap'i `tr` (varsayılan) ve `en`
-  locale'lerini birlikte kayıt ediyor. Issue out-of-scope listesinde EN
-  vardı, ancak kapsamı bu sprint'te tamamlayalım kararıyla EN locale de
-  bu issue altında oluşturuldu.
-- `src/shared/i18n/locales/tr/school-settings.json` ve
-  `src/shared/i18n/locales/en/school-settings.json` namespace dosyaları
-  oluşturuldu.
-- `main.tsx` içinden side-effect import (`import './shared/i18n'`) ile
-  init tetikleniyor.
-- Mutation hook'ları `useTranslation('school-settings')` üzerinden tüm
-  toast mesajlarını key ile çağırıyor; örn. `t('basic-info.save-success')`,
-  `t('errors.save-failed')`.
-- Şema hata mesajları (`school-settings.errors.*`) form layer'da
-  `t(error.message)` ile tüketilmek üzere zaten key formatında; ilgili
-  form/component issue'larında bağlanacak.
+**Detay:** `school_type` enum kolonu korunur ama informational olarak — asıl kademe kapsamı `school_grade_levels` junction'dan gelir. Frontend'de multi-select destekli. Ayrı junction tablosu (school_education_levels) oluşturulmaz — gereksiz karmaşıklık (BR-SS-014).
 
-**Açık kalan ufak iş (form/component issue'larında ele alınacak):**
-- Form'lar Zod hata `message` alanını `t()` ile çevirmeli — bu modülün
-  form component'leri yazıldığında (sonraki issue'ler) doğal olarak gelecek.
-- Proje genelinde diğer modüllerde (örn. AnnouncementsList) kalan
-  hardcoded TR string'ler için ayrı bir sweep ticket'ı gerekiyor.
+**Etki:** UI Akademik Yapı sekmesinde multi-select dropdown/checkbox. Backend'de major değişiklik yok.
 
-**Referans:**
-- Issue: https://github.com/farukkaya/oksis-web/issues/31
+---
+
+### ✅ Q3 — Akademik Yapı + Politikalar ayrı mı birleşik mi?
+
+**Karar tarihi:** 2026-05-25
+**Karar:** 2 ayrı sekme.
+
+**Gerekçe:** Yapı = okulu tanımlar (sınıf kademeleri, ders günleri — nadiren değişir). Politika = akademik kuralları belirler (geçme notu, skala, eşikler — her yıl ayarlanabilir). Farklı düzenleme sıklığı = farklı sekme.
+
+**Etki:** Yeni 6. sekme (Akademik Politikalar) + yeni permission (`update-academic-policy`).
+
+---
+
+### ✅ Q4 — `school_holidays.academic_session_id` nullable mı?
+
+**Karar tarihi:** 2026-05-25
+**Karar:** Migration geçişi: nullable. Sprint 4+'ta zorunlu.
+
+**Detay:** Mevcut tatil kayıtları `null` olarak kalır. Yeni tatil eklenirken aktif sezon otomatik atanır (`ICurrentSessionProvider`). Sprint 4+'ta migration: mevcut NULL kayıtlar en yakın sezona bağlanır, kolon NOT NULL yapılır (BR-SS-013).
+
+---
+
+### ✅ Q5 — Akademik Yapı için ayrı permission gerekli mi?
+
+**Karar tarihi:** 2026-05-25
+**Karar:** Evet, ayrı permission.
+
+**Detay:** `school-settings.update-academic-structure` slug'ı oluşturuldu (BR-SS-015). Mevcut `UpdateAcademicStructure` endpoint (#6) permission'ı `update-basic`'ten `update-academic-structure`'a taşındı. Ek olarak `update-academic-policy` da yeni slug olarak eklendi. Toplam: 10 → 12 permission.
+
+---
+
+## Açık Sorular
+
+### ❓ Q6 — `school_type` multi-select backend'de nasıl tutulacak?
+
+**Soruluş tarihi:** 2026-05-25
+**Mevcut durum:** Açık
+
+Mevcut `school_type` kolonu `nvarchar` enum (`Preschool`/`PrimarySchool`/`MiddleSchool`/`HighSchool`). Çoklu seçim desteklenecekse:
+- (A) Virgülle ayrılmış string ("PrimarySchool,MiddleSchool") — basit ama sorgulanamaz
+- (B) JSON array (`["PrimarySchool","MiddleSchool"]`) — EF Core JSON mapping
+- (C) Bitmask int (1=Preschool, 2=Primary, 4=Middle, 8=High) — hızlı ama okunabilirlik düşük
+
+**Öneri:** (B) — EF Core 8+ JSON column desteği ile temiz. Ama BR-SS-014 kararına göre `school_type` zaten informational — asıl kapsam `school_grade_levels`'tan geliyor. Dolayısıyla (A) bile kabul edilebilir.
+
+---
+
+### ❓ Q7 — Sınav ağırlığı override seviye bazlı mı, okul bazlı mı?
+
+**Soruluş tarihi:** 2026-05-25
+**Mevcut durum:** Sprint 2'ye bırakıldı
+
+Master `exam_types` tablosunda 7 sınav türü + default ağırlıklar var. Sprint 2'de `school_exam_type_overrides` tablosu eklenecek. Soru: override okul genelinde mi (tek set), yoksa sınıf seviyesi bazlı mı (ilkokul farklı ağırlık, lise farklı)?
+
+**Seçenekler:**
+- (A) Okul bazlı tek set (basit)
+- (B) Seviye bazlı (school_id + grade_level_id + exam_type_id) — daha esnek, `school_grade_level_scales` pattern'i ile tutarlı
+
+**Öneri:** Sprint 2'de karar verilecek; şimdilik sadece `school_exam_type_overrides` tablo iskeleti plan olarak kayıtlı.
+
+---
+
+### ❓ Q8 — `HARFLI` skala için geçme notu nasıl çalışacak?
+
+**Soruluş tarihi:** 2026-05-25
+**Mevcut durum:** Açık
+
+Master `grade_scales` tablosunda HARFLI skalanın `min_value` ve `max_value`'ı null. `passing_score` ise "C" olarak string. Ama `school_settings.default_passing_score` decimal tipinde.
+
+**Seçenekler:**
+- (A) HARFLI skala için geçme notunu ayrı string kolonda tut (`default_passing_grade_letter`)
+- (B) Geçme notunu her zaman sayısal tut, HARFLI skalada harf→sayı dönüşüm tablosu ekle (A=4, B=3, C=2, D=1, F=0)
+- (C) Sprint 1'de HARFLI skalayı destekleme, sadece TR_100 ve TR_5
+
+**Öneri:** (C) — MVP'de TR_100 ve TR_5 yeterli. HARFLI skala Sprint 3+'ta detaylandırılır. Kolon yapısı buna hazır (decimal nullable).
+
+---
+
+## Karar Akışı
+
+```
+Q1 (seviye bazlı skala) ──→ ✅ Desteklensin
+Q2 (çoklu school_type) ───→ ✅ Multi-select, informational
+Q3 (sekme ayrımı) ────────→ ✅ 2 ayrı sekme
+Q4 (holiday session FK) ──→ ✅ Nullable geçiş, Sprint 4+ zorunlu
+Q5 (ayrı permission) ─────→ ✅ Evet
+                              │
+                              ├──→ Q6 (school_type storage) — açık (minor)
+                              ├──→ Q7 (sınav ağırlığı scope) — Sprint 2'de
+                              └──→ Q8 (HARFLI skala) — Sprint 3'te
+```
+
+---
+
+## Tarihsel Notlar
+
+- Sprint 1 başlangıcı: 9 iş kuralı, 21 endpoint, 10 permission — modül çalışır durumda
+- 2026-05-25: İhtiyaç analizi tamamlandı; 5 açık soru gündeme geldi
+- 2026-05-25: 5 sorunun hepsi kullanıcı kararıyla çözüldü
+- 2026-05-25: 7 yeni iş kuralı, 5 yeni endpoint, 2 yeni permission, 2 yeni tablo eklendi
+- 2026-05-25: 3 yeni açık soru (Q6-Q8) yan etkilerle gündeme geldi

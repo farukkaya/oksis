@@ -1,113 +1,135 @@
-# Okul Ayarları — Domain Model
+# Okul Ayarları — Domain Model (Güncellenmiş)
 
-> Bu modülün domain katmanı: entity'ler, value object'ler, aggregate root'lar, invariants, domain event'ler.
+> Mevcut domain model korunur, yeni entity'ler ve property'ler eklenir.
 
 ---
 
-## Aggregate Root'lar
+## Mevcut Aggregate Root — `SchoolSettings` (güncellendi)
 
-### `SchoolSettings` (1:1 `School`)
-
-**Sorumluluk:** Okulun tüm yapılandırma alanlarını gruplandırır. Sekme bazlı `Update*` davranışlarıyla parça parça mutate edilir.
-
-**Properties:**
+**Yeni Properties (mevcut property'lere ek olarak):**
 
 | İsim | Tip | Açıklama | Kısıt |
 |---|---|---|---|
-| `Id` | `Guid` | PK | Otomatik |
-| `SchoolId` | `Guid` | Tenant FK | Immutable |
-| `OfficialName`, `MebCode`, `TaxNumber`, `TaxOffice` | `string?` | Kurumsal | Opsiyonel |
-| `ContactInfo` | `ContactInfo` (VO) | Owned VO (Phone/Fax/Email/Website) | |
-| `Address` | `SchoolAddress` (VO) | Owned VO (Country/Province/District/Neighborhood FK + FullAddress + PostalCode) | |
-| `Theme` | `SchoolTheme` (VO) | Owned VO (LogoUrl/PrimaryColor/SecondaryColor/FaviconUrl) | PrimaryColor zorunlu |
-| `SchoolType` | `SchoolType?` enum | Anaokulu/İlkokul/Ortaokul/Lise | |
-| `EducationLanguage` | `EducationLanguage?` enum | Eğitim dili | |
-| `WeeklyLessonDays` | `int[]` | Haftanın ders günleri | 1-7 |
-| `DailyLessonCount` | `int` | Günlük ders sayısı | Default 8 |
-| `StudentNumberPrefix`, `StudentNumberLength` | string, int | Öğrenci no formatı | Default `null, 4` |
-| `Timezone` | `string` | Windows tz id (örn. "Turkey Standard Time") | Default "Turkey Standard Time" |
+| `DefaultGradeScaleId` | `Guid?` (FK master `grade_scales`) | Okulun default not skalası | Nullable (henüz seçilmemiş) |
+| `DefaultPassingScore` | `decimal` | Default geçme notu | Skala aralığında (BR-SS-012) |
+| `GraduatedDataRetentionYears` | `int` | Mezun veri saklama süresi | 1-30, default 5 |
+| `RequireApprovalForClassRoomCreation` | `bool` | Şube onay akışı | Default false |
+| `AutoPublishReportCards` | `bool` | Karne otomatik yayın | Default true |
 
-**Davranışlar:**
+**Yeni Davranışlar:**
 
-- `CreateDefault(schoolId)` — Static factory; `SchoolSettingsCreatedEvent` raise eder.
-- `UpdateBasicInfo(...)` — Resmi ad/MEB kodu/vergi alanları.
-- `UpdateContactInfo(ContactInfo)`
-- `UpdateAddress(SchoolAddress)`
-- `UpdateTheme(SchoolTheme)`
-- `UpdateAcademicStructure(...)`
-- `RaiseBellScheduleChanged()` — Bell schedule batch update sonrası aggregate üzerinden event yayar.
+- `UpdateAcademicPolicy(defaultGradeScaleId, defaultPassingScore, retentionYears, requireApproval, autoPublish)` — Akademik Politikalar sekmesinden çağrılır. `SchoolSettingsUpdatedEvent(SchoolId, "AcademicPolicy")` raise eder.
+- `UpdateAcademicStructure(...)` — Mevcut davranış, artık ayrı permission ile korunur.
 
-**Domain Event'leri:**
+**Yeni Domain Event:**
 
-- `SchoolSettingsCreatedEvent(SchoolId)` — Aggregate ilk oluşturulduğunda.
-- `SchoolSettingsUpdatedEvent(SchoolId, SectionName)` — Her `Update*` çağrısında; SectionName ile hangi sekme güncellendi belirtilir.
-- `BellScheduleChangedEvent(SchoolId)` — Bell schedule değişikliklerinde.
+- `AcademicPolicyUpdatedEvent(SchoolId)` — `UpdateAcademicPolicy` çağrıldığında. Cache invalidation tetikler (grade scale resolver, approval flag).
 
 ---
 
-### `BellSchedule` (child entity)
+## Yeni Entity'ler
 
-Tenant scope, `school_id` taşır. Slot tipi (`Lesson`, `Break`, `Lunch`) + saat aralığı + display order.
+### `SchoolGradeLevel` (tenant scope)
 
----
+**Sorumluluk:** Okulun aktif çalıştırdığı sınıf kademeleri.
 
-### `Holiday` (tenant scope)
+| İsim | Tip | Açıklama |
+|---|---|---|
+| `Id` | `Guid` | PK |
+| `SchoolId` | `SchoolId` | Tenant |
+| `GradeLevelId` | `Guid` (FK master `grade_levels`) | Sınıf seviyesi |
+| `IsActive` | `bool` | Aktif mi |
+| `DisplayOrder` | `int` | Sıralama |
 
-Frontend zod şeması (`HolidayFormValues`) ile birebir hizalı: `Title`, `HolidayDate`, `EndDate`, `HolidayType` (enum: `PublicHoliday`, `SchoolEvent`, `ClosedDay`), `IsRecurring`, `Description`.
+**Invariants:**
+- `(SchoolId, GradeLevelId)` unique
+- En az 1 aktif kademe (BR-SS-010)
 
-**Davranışlar:**
-
-- `Create(...)`, `Update(...)` — Validation domain entity içinde.
-
----
-
-### `ModuleConfig` (tenant scope)
-
-Tenant başına 6 satır. Properties: `ModuleName`, `IsEnabled`, `PlanRestricted`.
-
-**Önemli kural:** `PlanRestricted = true` olan modüller okul yöneticisi tarafından açılamaz; satır yine seed edilir ama `IsEnabled = false` ve UI'da read-only badge ile gösterilir.
+**Domain Event:** `SchoolGradeLevelsChangedEvent(SchoolId)` — grade level aktive/deaktive edildiğinde. `academic-sessions` modülü bu event'e abone olur (şube oluşturma dropdown'ını günceller).
 
 ---
 
-### `NotificationConfig` (tenant scope)
+### `SchoolGradeLevelScale` (tenant scope)
 
-Tenant başına bildirim tipi override'ları. Global `notification_types` master kataloğuna referansla varsayılanları okul bazında ezer.
+**Sorumluluk:** Sınıf seviyesi bazlı not skalası override. İlkokul 5'lik, lise 100'lük kullanabilir.
 
----
+| İsim | Tip | Açıklama |
+|---|---|---|
+| `Id` | `Guid` | PK |
+| `SchoolId` | `SchoolId` | Tenant |
+| `GradeLevelId` | `Guid` (FK master `grade_levels`) | Sınıf seviyesi |
+| `GradeScaleId` | `Guid` (FK master `grade_scales`) | Not skalası |
+| `PassingScore` | `decimal?` | Seviye-özel geçme notu (null ise default kullanılır) |
 
-## Value Object'ler
+**Invariants:**
+- `(SchoolId, GradeLevelId)` unique — her seviyeye en fazla bir skala atanabilir
+- `GradeLevelId` `school_grade_levels` tablosunda aktif olmalı
+- `PassingScore` null değilse, `GradeScaleId`'nin min/max aralığında olmalı (BR-SS-012)
 
-- `ContactInfo` — `Phone`, `Fax`, `Email`, `Website`. `ContactInfo.Empty` factory.
-- `SchoolAddress` — Lookup FK'leri (nullable) + `FullAddress`, `PostalCode`. `SchoolAddress.Empty`.
-- `SchoolTheme` — `LogoUrl?`, `PrimaryColor` (zorunlu), `SecondaryColor?`, `FaviconUrl?`. `SchoolTheme.Default` (`#2563eb`, `#1d4ed8`).
-
----
-
-## Invariants
-
-- Her tenant için **tek bir** `SchoolSettings` satırı (DB unique index korur).
-- `SchoolId` immutable (TenantSaveChangesInterceptor enforce eder).
-- `PrimaryColor` boş olamaz.
-- `DailyLessonCount` > 0.
-- `WeeklyLessonDays` her elementi 1-7 aralığında.
-- `ModuleConfig.PlanRestricted = true` ise tenant `IsEnabled` toggle edemez (Application validation).
+**Domain Event:** `SchoolGradeLevelScaleChangedEvent(SchoolId, GradeLevelId)` — skala değiştiğinde. `marks` modülü cache invalidation.
 
 ---
 
-## Domain Event Flow
+## Mevcut Entity'ler (değişmez)
+
+- `BellSchedule` — Zil programı child entity
+- `Holiday` — Tatil (`school_holidays`, artık opsiyonel `AcademicSessionId` taşır)
+- `ModuleConfig` — Modül toggle
+- `NotificationConfig` — Bildirim override
+
+### `Holiday` — güncelleme
+
+**Yeni property:**
+
+| İsim | Tip | Açıklama |
+|---|---|---|
+| `AcademicSessionId` | `AcademicSessionId?` | Bağlı sezon (nullable geçiş dönemi) |
+
+Mevcut property'ler değişmez. `Create(...)` davranışı `ICurrentSessionProvider` ile aktif sezonu otomatik atar.
+
+---
+
+## Servis Arayüzleri (bu modülün dışa sunduğu)
+
+```csharp
+/// Diğer modüller (marks, attendance, timetable) bu interface'i inject eder
+public interface ISchoolSettingsReader
+{
+    Task<SchoolSettingsDto> GetAsync(SchoolId schoolId, CancellationToken ct);
+    Task<IReadOnlyList<Guid>> GetActiveGradeLevelIdsAsync(SchoolId schoolId, CancellationToken ct);
+}
+
+/// Not girişinde skala belirlemek için (fallback chain — BR-SS-011)
+public interface IGradeScaleResolver
+{
+    Task<GradeScaleInfo> ResolveAsync(SchoolId schoolId, Guid gradeLevelId, CancellationToken ct);
+}
+
+/// Tatil kontrolü (ders programı + nöbet atamasında kullanılır)
+public interface IHolidayCalendarReader
+{
+    Task<bool> IsHolidayAsync(SchoolId schoolId, DateOnly date, CancellationToken ct);
+}
+```
+
+---
+
+## İlişkiler
 
 ```
-SchoolCreatedEvent  ──► SchoolCreatedEventHandler
-                          └─► SchoolSettings.CreateDefault()
-                               └─► SchoolSettingsCreatedEvent
+SchoolSettings (aggregate root, 1:1 School)
+  ├── (1:N) → BellSchedule
+  ├── (1:N) → Holiday (artık opsiyonel AcademicSessionId taşır)
+  ├── (1:N) → ModuleConfig
+  ├── (1:N) → NotificationConfig
+  └── (FK) → GradeScale (default_grade_scale_id)
 
-SchoolSettings.UpdateBasicInfo()
-   └─► SchoolSettingsUpdatedEvent(SchoolId, "UpdateBasicInfo")
-        └─► [Sprint 2+] AuditLogHandler kayıt tutar
+SchoolGradeLevel (ayrı entity, tenant scope)
+  ├── (N:1) → School
+  └── (N:1) → GradeLevel (master)
 
-SchoolSettings.RaiseBellScheduleChanged()
-   └─► BellScheduleChangedEvent(SchoolId)
-        └─► [Sprint 2+] Schedule modülü cache invalidate
+SchoolGradeLevelScale (ayrı entity, tenant scope)
+  ├── (N:1) → School
+  ├── (N:1) → GradeLevel (master)
+  └── (N:1) → GradeScale (master)
 ```
-
-> Notification akışları: `notifications.md` (bu klasörde).

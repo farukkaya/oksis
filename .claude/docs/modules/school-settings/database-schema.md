@@ -1,4 +1,4 @@
-# Okul Ayarları — Database Schema
+# Okul Ayarları — Database Schema (Güncellenmiş)
 
 > Bu modülün tablolar, kolonlar, FK, index ve constraint'leri.
 
@@ -6,54 +6,188 @@
 
 ---
 
-## Tablolar (tenant scope — `school_id` zorunlu)
+## Mevcut Tablolar (değişmeden korunur)
 
-### `school_settings` (1:1 `schools`)
+### `school_settings` (1:1 `schools`) — MEVCUT + YENİ KOLONLAR
 
-Tek satır per tenant. `SchoolCreatedEventHandler` tarafından okul oluşturulduğunda otomatik insert (BR-SS-001 idempotent).
+Tek satır per tenant. Mevcut kolonlar değişmez. **5 yeni kolon** eklenir:
 
-**Önemli kolonlar:**
+**Mevcut kolonlar (değişmez):**
 - Kurumsal: `official_name`, `meb_code`, `tax_number`, `tax_office`
 - İletişim (owned VO): `contact_info_phone/fax/email/website`
-- Adres (owned VO): `address_country_id`, `address_province_id`, `address_district_id`, `address_neighborhood_id` (lookup FK), `address_full_address`, `address_postal_code`
+- Adres (owned VO): `address_country_id/province_id/district_id/neighborhood_id`, `address_full_address`, `address_postal_code`
 - Tema (owned VO): `theme_logo_url`, `theme_primary_color`, `theme_secondary_color`, `theme_favicon_url`
-- Akademik: `school_type`, `education_language`, `weekly_lesson_days`, `daily_lesson_count`, `student_number_prefix`, `student_number_length`, `timezone`
-- Audit + soft-delete + `row_version`
+- Akademik Yapı: `school_type`, `education_language`, `weekly_lesson_days`, `daily_lesson_count`, `student_number_prefix`, `student_number_length`, `timezone`
 
-**Index:** `ux_school_settings_school_id` (unique, filtered `is_deleted = 0`).
+**Yeni kolonlar (Sprint 1 migration):**
 
-### `school_bell_schedules`
+```sql
+-- Not sistemi (2B kararı)
+ALTER TABLE school_settings
+  ADD default_grade_scale_id  uniqueidentifier  null
+      constraint fk_school_settings_grade_scales
+        foreign key references grade_scales(id);
 
-Zil/ders saati programı. `school_id` + `slot_type` + `start_time/end_time` + `display_order`.
+ALTER TABLE school_settings
+  ADD default_passing_score    decimal(6,2)  not null  default 50;
 
-### `school_holidays`
+-- Parametrik iş akışı (academic-sessions BR-AS-007/008/009)
+ALTER TABLE school_settings
+  ADD graduated_data_retention_years         int  not null  default 5
+      constraint ck_ss_retention check (graduated_data_retention_years between 1 and 30);
 
-Okul-spesifik tatil günleri (resmi tatiller global `official_holidays`'tedir). Frontend zod şeması ile birebir kolon adları: `title`, `holiday_date`, `end_date`, `holiday_type` (enum string), `is_recurring`, `description`.
+ALTER TABLE school_settings
+  ADD require_approval_for_classroom_creation  bit  not null  default 0;
 
-**Index:** `ix_school_holidays_school_id_holiday_date`.
+ALTER TABLE school_settings
+  ADD auto_publish_report_cards                bit  not null  default 1;
+```
 
-### `school_module_configs`
+> `default_grade_scale_id` nullable çünkü mevcut okulların migration sırasında henüz skala seçimi yok; ilk oturum açtıklarında seçmeleri istenir (frontend onboarding nudge).
 
-Tenant başına 6 modül satırı (`attendance, marks, announcements, homework, messaging, reports`). Migration `20260523140000_seed_default_module_configs` her mevcut okul için cross-join ile seed eder.
+### `school_bell_schedules` — DEĞİŞMEZ
 
-**Index:** `ux_school_module_configs_school_module` (unique `school_id + module_name`).
+Mevcut yapı korunur. `school_id` + `slot_type` + `start_time/end_time` + `display_order`.
 
-### `school_notification_configs`
+### `school_module_configs` — DEĞİŞMEZ
 
-Global `notification_types` kataloğunu tenant bazında override eder. Tenant başına izin verilen kanal/cooldown/quiet-hours kuralları.
+6 modül satırı tenant başına. Mevcut yapı korunur.
+
+### `school_notification_configs` — DEĞİŞMEZ (Sprint 2'de genişler)
+
+Mevcut yapı korunur. Sprint 2'de `notification_frequency` enum kolonu eklenecek.
+
+### `school_holidays` — MEVCUT + YENİ KOLON
+
+```sql
+ALTER TABLE school_holidays
+  ADD academic_session_id  uniqueidentifier  null
+      constraint fk_school_holidays_academic_sessions
+        foreign key references academic_sessions(id);
+
+CREATE INDEX ix_school_holidays_session
+  ON school_holidays(academic_session_id) WHERE is_deleted = 0 AND academic_session_id IS NOT NULL;
+```
+
+> **Nullable geçiş dönemi.** Mevcut tatil kayıtları `academic_session_id = NULL` olarak kalır. Yeni tatil eklenirken aktif sezon otomatik atanır. Sprint 4+'ta zorunlu hale getirilir (migration: mevcut NULL kayıtlar en yakın sezona bağlanır veya silinir).
 
 ---
 
-## İlgili Lookup Tablolar (global, master)
+## Yeni Tablolar (Sprint 1)
 
-| Tablo | Modül | Açıklama |
-|---|---|---|
-| `countries`, `provinces`, `districts`, `neighborhoods` | `locations` | Adres cascade selectbox |
-| `official_holidays` | `academic-years` | Sabit ulusal tatiller (read-only, salt-okunur Calendar widget) |
-| `notification_types` | `notifications` | Bildirim katalogu — `school_notification_configs`'in referansı |
-| `system_settings` | `platform` | `JWT_*`, `MAX_FILE_UPLOAD_MB` vb. platform default'ları |
+### `school_grade_levels` (junction — okul aktif sınıf kademeleri)
 
-> Detay tablo şemaları için ilgili modüllerin `database-schema.md` dosyalarına bakınız.
+Okulun hangi sınıf seviyelerini çalıştırdığını belirler. `academic-sessions` şube oluştururken grade level dropdown'ını filtreler.
+
+```sql
+CREATE TABLE school_grade_levels (
+    id              uniqueidentifier  not null  constraint pk_school_grade_levels primary key,
+    school_id       uniqueidentifier  not null,
+    grade_level_id  uniqueidentifier  not null,
+    is_active       bit               not null  default 1,
+    display_order   int               not null,
+    -- audit + soft-delete + row_version
+
+    constraint fk_sgl_schools
+      foreign key (school_id) references schools(id),
+    constraint fk_sgl_grade_levels
+      foreign key (grade_level_id) references grade_levels(id)
+);
+
+CREATE UNIQUE INDEX ux_school_grade_levels_school_grade
+  ON school_grade_levels(school_id, grade_level_id)
+  WHERE is_deleted = 0;
+```
+
+**Seed mantığı:** Okul oluşturulduğunda `school_type`'a göre otomatik seed:
+- `PrimarySchool` → 1-4. sınıf
+- `MiddleSchool` → 5-8. sınıf
+- `HighSchool` → 9-12. sınıf
+- `Preschool` → Anaokulu
+- `K12` (veya birden fazla seçim) → ilgili tüm seviyeler
+
+Admin sonradan düzenleyebilir (UI: multi-select checkbox).
+
+---
+
+### `school_grade_level_scales` (junction — seviye bazlı not skalası)
+
+Eğitim seviyesine göre farklı not skalası. İlkokul 5'lik, lise 100'lük kullanabilir.
+
+```sql
+CREATE TABLE school_grade_level_scales (
+    id              uniqueidentifier  not null  constraint pk_sgls primary key,
+    school_id       uniqueidentifier  not null,
+    grade_level_id  uniqueidentifier  not null,
+    grade_scale_id  uniqueidentifier  not null,
+    passing_score   decimal(6,2)      null,      -- null ise school_settings.default_passing_score kullanılır
+    -- audit + soft-delete + row_version
+
+    constraint fk_sgls_schools
+      foreign key (school_id) references schools(id),
+    constraint fk_sgls_grade_levels
+      foreign key (grade_level_id) references grade_levels(id),
+    constraint fk_sgls_grade_scales
+      foreign key (grade_scale_id) references grade_scales(id)
+);
+
+CREATE UNIQUE INDEX ux_sgls_school_grade
+  ON school_grade_level_scales(school_id, grade_level_id)
+  WHERE is_deleted = 0;
+```
+
+**Kullanım mantığı:**
+1. `marks` modülü not girilirken öğrencinin sınıf seviyesine bakar
+2. `school_grade_level_scales`'ta eşleşme varsa → o skalayı kullanır
+3. Eşleşme yoksa → `school_settings.default_grade_scale_id` + `default_passing_score` fallback
+4. O da yoksa → TR_100 master default
+
+---
+
+## Sprint 2'de Eklenecek Tablolar (planlama)
+
+### `school_exam_type_overrides` (Sprint 2 — sınav ağırlığı override)
+
+```sql
+CREATE TABLE school_exam_type_overrides (
+    id                    uniqueidentifier  not null  constraint pk_seto primary key,
+    school_id             uniqueidentifier  not null,
+    exam_type_id          uniqueidentifier  not null,
+    custom_weight_percent int               not null,
+    -- audit + soft-delete + row_version
+
+    constraint ck_seto_weight check (custom_weight_percent between 0 and 100),
+    constraint fk_seto_schools foreign key (school_id) references schools(id),
+    constraint fk_seto_exam_types foreign key (exam_type_id) references exam_types(id)
+);
+
+CREATE UNIQUE INDEX ux_seto_school_exam
+  ON school_exam_type_overrides(school_id, exam_type_id)
+  WHERE is_deleted = 0;
+```
+
+### Devamsızlık eşik kolonları (Sprint 2 — school_settings tablosuna)
+
+```sql
+ALTER TABLE school_settings ADD absence_warning_threshold   int  not null  default 5;
+ALTER TABLE school_settings ADD absence_critical_threshold  int  not null  default 10;
+ALTER TABLE school_settings ADD absence_max_threshold       int  not null  default 20;
+ALTER TABLE school_settings ADD count_late_as_absence       bit  not null  default 0;
+ALTER TABLE school_settings ADD late_to_absence_ratio       int  not null  default 3;
+```
+
+---
+
+## İlgili Lookup Tablolar (global, master — DEĞİŞMEZ)
+
+| Tablo | Açıklama |
+|---|---|
+| `countries`, `provinces`, `districts`, `neighborhoods` | Adres cascade selectbox |
+| `official_holidays` | Sabit ulusal tatiller (6 satır seed) |
+| `grade_levels` | 13 sınıf kademesi (Anaokulu + 1-12) |
+| `grade_scales` | 3 not skalası (TR_100, TR_5, HARFLI) |
+| `exam_types` | 7 sınav türü + ağırlıkları |
+| `notification_types` | Bildirim kataloğu |
 
 ---
 
@@ -61,23 +195,12 @@ Global `notification_types` kataloğunu tenant bazında override eder. Tenant ba
 
 | Tarih | Migration | Değişiklik |
 |---|---|---|
-| 2026-05-20 | `20260517184554_create_school_settings_tables` | school_settings + bell_schedules + holidays + module_configs + notification_configs |
-| 2026-05-20 | `20260517184600_seed_default_school_settings` | Mevcut okullar için varsayılan satır |
-| 2026-05-22 | `20260522122811_create_locations_and_refactor_address` | Adres alanları lookup FK'lere geçti |
-| 2026-05-22 | `20260522193445_add_entity_base_columns` | Audit + soft-delete + row_version standardı |
-| 2026-05-23 | `20260523121013_align_holiday_with_frontend` | `school_holidays` kolon adları frontend zod ile hizalandı |
-| 2026-05-23 | `20260523140000_seed_default_module_configs` | 6 modül × her okul |
-| 2026-05-24 | `20260523222901_add_global_seed_master_data` | Global master tablolar + `school_onboarding_status` (tenant) |
-| 2026-05-24 | `20260523224508_add_school_settings_permissions` | 10 school-settings.* izni + SCHOOL_ADMIN bağı |
+| Mevcut | `20260523_initial_school_settings` | `school_settings` + `school_bell_schedules` + `school_holidays` + `school_module_configs` + `school_notification_configs` |
+| Mevcut | `20260523224508_add_school_settings_permissions` | 10 permission + role_permissions seed |
+| TBD | `XXXX_add_school_grade_levels` | `school_grade_levels` junction tablosu + mevcut okullar için seed |
+| TBD | `XXXX_add_school_grade_level_scales` | `school_grade_level_scales` junction tablosu |
+| TBD | `XXXX_add_academic_policy_columns` | `school_settings` 5 yeni kolon (grade_scale_id, passing_score, 3 parametrik) |
+| TBD | `XXXX_add_holidays_session_fk` | `school_holidays.academic_session_id` nullable FK |
+| TBD | `XXXX_add_academic_structure_permissions` | 2 yeni permission seed + mevcut endpoint permission taşıma |
 
----
-
-## Yasaklar
-
-- ❌ `varchar` — `nvarchar` (Türkçe karakter).
-- ❌ `datetime`/`datetime2` UTC olmadan — `datetimeoffset`.
-- ❌ `school_id` yokluğu (bu modülün tüm tabloları tenant scope).
-- ❌ Composite index ilk kolonu `school_id` değil.
-- ❌ `school_settings` çoğul satır per tenant (filtered unique index korur).
-
-> Detay: `backend/database-rules.md`.
+> **Migration sıralaması:** `school_grade_levels` önce (bağımsız), sonra `school_grade_level_scales` (grade_scales FK'ye ihtiyaç duyar), sonra kolon eklemeler.
