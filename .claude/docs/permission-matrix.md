@@ -49,6 +49,7 @@ Aksiyonlar:
 | `users.update` | ✅ | ✅ | 🚫 | 👁 (self) | 👁 (self) | 👁 (self) | 🚫 |
 | `users.delete` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.invite` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+| `users.revoke-invite` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `roles.manage` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 
 ### Schools (Tenant)
