@@ -1,4 +1,4 @@
-# Akademik Yıl / Sezon — UI Flows
+# Akademik Sezon — UI Flows
 
 > Bu modülün frontend ekranları, kullanıcı akışları, state management.
 
@@ -6,75 +6,260 @@
 
 ---
 
-## Ekranlar
+## Sprint 1 Kapsam Kararı
 
-### Liste — `{{TBD_route}}`
+Sprint 1'de **sihirbaz YOK**. Sadece basit liste + form akışı yeterli — çünkü ilk pilot okul ilk yılında olacak; yıl-geçişi senaryosu yaşanmayacak.
 
-**Portal:** admin | teacher | parent | student
-**Permission:** `academic-years.view`
-**Component:** `{{TBD_ComponentName}}`
-**Konum:** `src/modules/academic-years/pages/{{TBD_ComponentName}}.tsx`
+Sihirbaz UI (5 adımlı, autosave'li, taşıma otomasyonlu) **Sprint 4** kapsamındadır (Pilot Hazırlığı).
+
+---
+
+## Web Flow
+
+### Sayfa Lokasyonu
+
+Frontend: `oksis-web/src/portals/admin/academic-sessions/`
+
+```
+academic-sessions/
+├── pages/
+│   ├── AcademicSessionListPage.tsx
+│   ├── AcademicSessionDetailPage.tsx
+│   └── AcademicSessionFormPage.tsx
+├── components/
+│   ├── ActiveSessionCard.tsx
+│   ├── SessionStatusBadge.tsx
+│   ├── ClassRoomGrid.tsx
+│   ├── ClassRoomFormModal.tsx
+│   ├── StudentAssignmentPanel.tsx
+│   ├── TransferStudentModal.tsx
+│   └── HolidayList.tsx
+├── hooks/
+│   ├── useAcademicSessionsQuery.ts
+│   ├── useCurrentSessionQuery.ts
+│   ├── useClassRoomsQuery.ts
+│   └── ... (TanStack Query)
+└── schemas/
+    └── academicSessionSchema.ts   (Zod)
+```
+
+---
+
+### Ekranlar
+
+#### 1. Sezon Listesi — `/admin/academic-sessions`
+
+**Portal:** admin
+**Permission:** `academic-sessions.view`
+**Component:** `AcademicSessionListPage`
+
+**Yapı:**
+- **Üst:** Aktif sezon kartı (büyük, `ActiveSessionCard`)
+  - Sezon adı, aktif dönem, şube sayısı, öğrenci sayısı, öğretmen sayısı
+  - "Sezon Detayı" + "Dönem Geçişi" butonları (Dönem geçişi Sprint 3'te aktive)
+- **Orta:** Eylem butonu — "Yeni Sezon Başlat" (sağ üst)
+- **Alt:** Geçmiş sezonlar tablosu — adı, tarih aralığı, durum (Archived), şube sayısı, "Görüntüle" butonu
 
 **State:**
-- Server: `useStudentsQuery` (TanStack Query)
-- Local: filter, search, pagination (URL params)
-
-**Aksiyonlar:**
-- "Yeni Ekle" → `{{TBD_route}}/new`
-- Row click → detay sayfası
+- Server: `useAcademicSessionsQuery` + `useCurrentSessionQuery`
+- Local: yok
 
 **Edge Case'ler:**
-- Boş liste → EmptyState component
+- Aktif sezon yok → büyük CTA: "Henüz bir akademik sezon başlatmadınız. İlk sezonunuzu oluşturmak için 'Yeni Sezon Başlat'a tıklayın." → EmptyState
 - Hata → ErrorState + retry
 - Loading → Skeleton (Spinner değil)
 
 ---
 
-### Detay / Düzenle — `{{TBD_route}}/:id`
+#### 2. Yeni Sezon Formu — `/admin/academic-sessions/new`
 
-{{TBD}}
+**Portal:** admin
+**Permission:** `academic-sessions.create`
+**Component:** `AcademicSessionFormPage`
 
----
+**Form alanları:**
+- Sezon adı (text, regex `^\d{4}-\d{4}$`, placeholder "2025-2026")
+- Sezon başlangıç tarihi (DatePicker)
+- Sezon bitiş tarihi (DatePicker)
+- 1. Dönem başlangıç ve bitiş tarihleri
+- 2. Dönem başlangıç ve bitiş tarihleri
 
-### Yeni Ekle — `{{TBD_route}}/new`
-
-{{TBD}}
-
----
-
-## Kullanıcı Akışı
-
-```
-[Liste] → "Yeni Ekle" → [Form] → submit
-                                    ↓
-                              validation OK?
-                              ├── Hayır: form'da hata göster
-                              └── Evet: API call
-                                          ↓
-                                    success?
-                                    ├── Hayır: toast error
-                                    └── Evet: toast + liste yenile
-```
-
----
-
-## Mobil Notları (varsa)
-
-- 3-tap kuralı uygulanır mı? {{TBD}}
-- Sticky action button gerekli mi? {{TBD}}
-- Keyboard overlap (`KeyboardAvoidingView`)? {{TBD}}
-
----
-
-## Form Validation
-
+**Validation (Zod):**
 ```ts
-// Zod schema
-const {{TBD}}Schema = z.object({
-  {{TBD}}: z.string().min(1, "Zorunlu").max(100),
-  {{TBD}}: z.{{TBD}},
-});
+const sessionSchema = z.object({
+  name: z.string().regex(/^\d{4}-\d{4}$/, "Format: 2025-2026"),
+  startDate: z.coerce.date(),
+  endDate: z.coerce.date(),
+  term1StartDate: z.coerce.date(),
+  term1EndDate: z.coerce.date(),
+  term2StartDate: z.coerce.date(),
+  term2EndDate: z.coerce.date(),
+}).refine(d => d.startDate < d.endDate, "Bitiş başlangıçtan sonra olmalı")
+  .refine(d => d.term1EndDate < d.term2StartDate, "1. dönem 2. dönemden önce bitmeli");
 ```
+
+**Submit:**
+- `POST /api/v1/academic-sessions` → sezon `Setup` statüde oluşturulur
+- Toast "Sezon taslak olarak kaydedildi"
+- Yönlendirme: `/admin/academic-sessions/{id}` (detay sayfası)
+
+**Edge Case'ler:**
+- 409 (duplicate name) → form hatası "Bu sezon adı zaten kullanılıyor"
+
+---
+
+#### 3. Sezon Detay — `/admin/academic-sessions/:id`
+
+**Portal:** admin
+**Permission:** `academic-sessions.view-detail`
+**Component:** `AcademicSessionDetailPage`
+
+**Yapı (sekmeli):**
+- **Sekme 1: Genel Bakış**
+  - Sezon bilgileri (adı, tarihler, durum)
+  - Dönem listesi (T1, T2 — statü, tarihler, "Aktive Et" / "Kapat" butonları)
+  - Eğer `Status = Setup`: "Sezonu Yayınla" CTA
+  - Eğer `Status = Active`: "Manuel Arşivle" butonu (gizli, advanced)
+  - Eğer `Status = Archived`: read-only banner
+- **Sekme 2: Şubeler** (`ClassRoomGrid`)
+  - Sınıf seviyesine göre gruplu grid (Anaokulu / İlkokul / Ortaokul / Lise)
+  - Her grup içinde şube kartları (FullName, kapasite, öğrenci sayısı, rehber öğretmen)
+  - "Yeni Şube Ekle" butonu (her grup üstünde)
+  - Şube kartına tıklayınca → Şube detay (öğrenci listesi, atama paneli)
+- **Sekme 3: Tatiller** (`HolidayList`)
+  - Sezon-scope'lu `school_holidays` listesi
+  - "Yeni Tatil Ekle" + tatil düzenleme/silme
+  - Master `official_holidays` salt-okunur, gri badge
+
+---
+
+#### 4. Şube Detay (modal veya alt-rota)
+
+**Permission:** `class-rooms.view-detail`
+
+**Yapı:**
+- Şube bilgisi (FullName, GradeLevel, Section, Capacity, HomeroomTeacher)
+- "Düzenle" + "Rehber Öğretmen Ata/Değiştir" butonları
+- "Arşivle" butonu (sezon Active ise; aktif öğrenci varsa disabled + tooltip "Önce öğrencileri taşıyın")
+- Öğrenci listesi (`StudentAssignmentPanel`)
+  - DataGrid: Öğrenci No, Ad Soyad, Atanma Tarihi, Eylemler (Şube Değiştir, Çıkar)
+  - Sağ üst: "Öğrenci Ekle" butonu → modal
+- Geçmiş atamalar (collapse, default kapalı): bu şubeden ayrılan öğrenciler listesi
+
+---
+
+#### 5. Şube Oluşturma Modal (`ClassRoomFormModal`)
+
+**Permission:** `class-rooms.create`
+
+**Form alanları:**
+- Sınıf seviyesi (Select, master `grade_levels` listesinden)
+- Şube harfi (text, max 3, uppercase)
+- Kapasite (number, 1-100)
+- Rehber öğretmen (Select, opsiyonel)
+
+**Davranış (BR-AS-008):**
+- Eğer `school_settings.require_approval_for_classroom_creation = true`:
+  - Submit sonrası şube `PendingApproval` olur
+  - Toast "Şube onay bekliyor"
+  - Listede sarı "Onay Bekliyor" badge'i
+- Aksi halde direkt `Active`
+
+**Edge Case'ler:**
+- 409 duplicate → "Bu sezonda 9-A zaten var"
+- 403 archived session → modal açılmaz (button disabled)
+
+---
+
+#### 6. Onay Bekleyen Şubeler
+
+Listede yatay banner: "X şube onayınızı bekliyor" → filtreli liste
+
+**Permission:** `class-rooms.approve`
+
+**Aksiyon:** Şube kartında "Onayla" butonu → `POST /api/v1/class-rooms/{id}/approve` → toast "Şube onaylandı, aktif" → cache invalidate.
+
+---
+
+#### 7. Öğrenci Şube Değiştirme (`TransferStudentModal`)
+
+**Permission:** `class-rooms.transfer-student`
+
+**Form:**
+- Hedef şube (Select, sadece aynı sezon, kapasite uygun şubeler)
+- Notlar (text, opsiyonel — neden taşındı)
+
+**Bilgi banner'ı:**
+"Bu işlem öğrencinin mevcut şubedeki geçmiş verilerini (notlar, devamsızlık) korur. Yeni şubede yeni kayıtlar başlar."
+
+**Submit:** `POST .../transfer` → toast "Öğrenci taşındı".
+
+---
+
+### Web Kullanıcı Akışı
+
+```
+[Sezon Listesi]
+       │
+       ├── Aktif sezon yok ──→ EmptyState ──→ "Yeni Sezon Başlat" ──→ [Form] ──→ POST ──→ [Detay (Setup)]
+       │                                                                                       │
+       └── Aktif sezon var ──→ [Detay] (sezon kartına tıkla)                                  │
+                                  │                                                            │
+                                  ├── Sekme: Genel Bakış ──→ "Sezonu Yayınla" (Setup ise) ──→ [Confirm Modal] ──→ POST activate
+                                  │                                                                                       │
+                                  │                                                                            ┌──────────┴── eski varsa
+                                  │                                                                            │  Arşivlendi banner
+                                  │                                                                            └──→ Aktif sezon
+                                  │
+                                  ├── Sekme: Şubeler ──→ "Yeni Şube" ──→ [Modal] ──→ POST
+                                  │                                                    │
+                                  │                                          ┌─────────┴── approval gerekli?
+                                  │                                          │  Yes: PendingApproval
+                                  │                                          │  No:  Active direkt
+                                  │
+                                  │                  ──→ Şube tıkla ──→ [Şube Detay] ──→ "Öğrenci Ekle" / "Taşı" / "Çıkar"
+                                  │
+                                  └── Sekme: Tatiller ──→ "Yeni Tatil" ──→ [Modal]
+```
+
+---
+
+## Mobile Flow
+
+### Sayfa Lokasyonu
+
+Mobile: `oksis-mobile/src/features/academic-sessions/`
+
+### Karar: Mobile salt-okunur
+
+Mobile uygulamada **idare paneli minimaldir**. Bu modül için mobile:
+- ✅ Aktif sezon/dönem bilgisini gösterme (her ekran üstünde session badge)
+- ✅ Şube listesi (rehber öğretmen kendi şubesinin öğrenci listesini görür — Sprint 2)
+- ❌ Sezon oluşturma / yayınlama (web-only)
+- ❌ Şube CRUD (web-only)
+- ❌ Öğrenci atama / taşıma (web-only)
+
+**Gerekçe:** Mobile cihazda çok adımlı veri girişi sürtünmeli. İdare bilgisayardan sezon kurar, mobilde sadece referans bilgisi okur.
+
+### Ekranlar
+
+#### Aktif Sezon Banner (her admin ekranının üstünde)
+
+**Component:** `SessionContextBanner.tsx`
+**State:** `useCurrentSessionQuery` (cached, tenant prefix key)
+
+Görsel:
+```
+┌──────────────────────────────────────────┐
+│  2025-2026 · 1. Dönem aktif              │
+└──────────────────────────────────────────┘
+```
+
+Tıklanırsa session detay bottom-sheet açılır (salt-okunur).
+
+**Mobil-Spesifik Notlar:**
+- Çok küçük (yüksekliği 36px). SafeAreaView altında değil, header'a entegre.
+- Offline cache: TanStack Query persistance ile 24 saat geçerli.
 
 ---
 
@@ -82,9 +267,32 @@ const {{TBD}}Schema = z.object({
 
 | Key | TR |
 |---|---|
-| `academic-years.title` | {{TBD}} |
-| `academic-years.empty` | Henüz {{TBD}} eklenmemiş |
-| `academic-years.errors.required` | Bu alan zorunludur |
+| `academic-sessions.title` | Akademik Sezonlar |
+| `academic-sessions.empty.title` | Henüz akademik sezon yok |
+| `academic-sessions.empty.description` | İlk sezonunuzu oluşturmak için "Yeni Sezon Başlat"a tıklayın |
+| `academic-sessions.actions.create` | Yeni Sezon Başlat |
+| `academic-sessions.actions.activate` | Sezonu Yayınla |
+| `academic-sessions.actions.archive` | Manuel Arşivle |
+| `academic-sessions.errors.name-format` | Sezon adı 2025-2026 formatında olmalı |
+| `academic-sessions.errors.dates-invalid` | Tarihler tutarsız |
+| `academic-sessions.status.setup` | Taslak |
+| `academic-sessions.status.active` | Aktif |
+| `academic-sessions.status.archived` | Arşivlenmiş |
+| `academic-sessions.terms.t1` | 1. Dönem |
+| `academic-sessions.terms.t2` | 2. Dönem |
+| `academic-sessions.term-actions.activate` | Dönemi Aktive Et |
+| `academic-sessions.term-actions.close` | Dönemi Kapat |
+| `academic-sessions.term-close.confirm` | Bu işlem geri alınamaz. Notlar kilitlenir ve karneler üretilir. |
+| `class-rooms.title` | Şubeler |
+| `class-rooms.actions.create` | Yeni Şube |
+| `class-rooms.actions.assign-student` | Öğrenci Ekle |
+| `class-rooms.actions.transfer` | Şube Değiştir |
+| `class-rooms.status.pending-approval` | Onay Bekliyor |
+| `class-rooms.status.active` | Aktif |
+| `class-rooms.archive-blocked` | Önce {{count}} öğrenciyi başka şubeye taşıyın |
+| `class-rooms.transfer.info` | Bu işlem öğrencinin mevcut şubedeki geçmiş verilerini korur |
+| `school-holidays.title` | Tatiller |
+| `school-holidays.official-badge` | Resmi Tatil |
 
 ---
 
@@ -93,6 +301,9 @@ const {{TBD}}Schema = z.object({
 - ❌ Spinner (Skeleton kullan).
 - ❌ Hardcoded Türkçe string (i18n key zorunlu).
 - ❌ Form'da Zod olmadan validation.
-- ❌ `getByTestId` testlerde (Role + Text bazlı sorgular).
+- ❌ Mobile'da CRUD ekranları (yukarıda karar).
+- ❌ "Sezonu Yayınla" butonunu çift onay diyaloğu olmadan tetiklemek (geri alınamaz operasyon).
+- ❌ "Dönemi Kapat" butonunu çift onay + acknowledgment checkbox olmadan tetiklemek.
+- ❌ Arşivlenmiş sezona ait form alanlarını editable bırakmak (UI'da disable, backend zaten reddeder).
 
 > Detay: `frontend/component-rules.md`, `frontend/form-validation-rules.md`.
