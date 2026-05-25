@@ -37,11 +37,16 @@ Api ──► Application ──► Domain
 - **Infrastructure, Application'daki interface'leri implement eder** (DIP).
 - **Api, Application + Infrastructure'ı orkestre eder.**
 
+### Veritabanı Şema Partisyonu
+
+Modüler monolith — tek DB, ama tablolar **5 SQL Server schema**'sına bölünür: **`master`** (lookup/seed), **`identity`** (kullanıcı/yetki/token), **`school`** (okul aggregate ve ayarları), **`academic`** (sezon, şube, yoklama, not, vb.), **`platform`** (outbox, audit log, sistem-kesen). `dbo` kullanılmaz. Yeni tablo eklerken `IEntityTypeConfiguration<T>` içinde **`builder.ToXxxTable("name")`** extension'ı zorunlu (`builder.ToTable("x")` yasak — `dbo`'ya düşer). Detay + tam tablo haritası + ekleme karar akışı: `backend/database-rules.md` § 16.
+
 ### Yasak
 - ❌ Controller içinde DbContext kullanmak
 - ❌ Application içinde `Microsoft.EntityFrameworkCore` referansı (sadece `IApplicationDbContext` interface'i)
 - ❌ Domain entity'de attribute (DataAnnotations) — Fluent API'de yapılır
 - ❌ Static service / singleton state
+- ❌ `builder.ToTable("x")` (şemasız) — şema-spesifik extension zorunlu (`ToMasterTable`, `ToIdentityTable`, `ToSchoolTable`, `ToAcademicTable`, `ToPlatformTable`)
 
 ---
 

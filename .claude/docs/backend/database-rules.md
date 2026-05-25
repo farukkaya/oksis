@@ -375,3 +375,140 @@ public partial class AddHomeworks : Migration
 - ❌ User database'inde `master` veya `tempdb`'de obje oluşturmak.
 - ❌ Production'da auto-shrink/auto-close açık tutmak.
 - ❌ `sa` hesabıyla uygulama bağlantısı (her zaman least-privilege user).
+- ❌ `dbo` şemasında yeni tablo oluşturmak (bkz. § 16 — şema partisyonu zorunlu).
+
+---
+
+## 16. Schema Partisyonu
+
+### 16.1 Neden Şema Partisyonu?
+
+OKSİS modüler monolith — tek veritabanı, tek deploy, ama tablolar **5 farklı SQL Server schema**'sına bölünür. Bu hem **mantıksal modülarite**'yi (hangi tablonun hangi domain'e ait olduğu bir bakışta anlaşılır), hem **operasyonel izin yönetimi**'ni (gerektiğinde şema-bazlı GRANT/REVOKE), hem de **ileride mikroservise ayırma** opsiyonunu kolaylaştırır. `dbo` şeması **kullanılmaz**.
+
+### 16.2 Şemalar ve Tablo Eşlemesi
+
+| Schema | Amaç | Tablolar |
+|---|---|---|
+| **`master`** | Tenant-agnostik lookup / seed verileri. Tüm okullar paylaşır. Yazma sadece migration ile. | `academic_term_types`, `exam_types`, `grade_levels`, `grade_scales`, `official_holidays`, `subjects`, `subject_grade_levels`, `countries`, `provinces`, `districts`, `neighborhoods`, `notification_types`, `system_settings`, `duty_location_templates` |
+| **`identity`** | Auth, kullanıcı, yetki. Hem master (`permissions`, `system_roles`, `role_permissions`) hem tenant (`users`, `invitation_tokens`, `password_reset_tokens`) burada. | `users`, `permissions`, `role_permissions`, `system_roles`, `invitation_tokens`, `password_reset_tokens` |
+| **`school`** | Okul (tenant) aggregate ve okul-spesifik ayarlar. `schools` tablosu bu şemada — diğer tenant tablolarının `school_id` FK referans hedefi. | `schools`, `school_settings`, `school_bell_schedules`, `school_module_configs`, `school_notification_configs`, `school_onboarding_status` |
+| **`academic`** | Akademik takvim, şube, öğrenci atama, ders programı, yoklama, not, ödev, karne — tüm akademik aktivite. | `school_holidays` (mevcut, taşındı), `academic_sessions`, `academic_terms`, `class_rooms`, `class_room_students` (Sprint 1+) |
+| **`platform`** | Çapraz-kesen sistem tabloları: outbox, audit log, notification delivery log. Henüz tablo yok; gelecek sprint'lerde dolar. | (TBD) |
+
+> Master tablolar `is_deleted` / audit kolonlarını taşıyabilir ama **`school_id` taşımazlar**. Identity şemasındaki bazı tablolar (`users`, `invitation_tokens`, `password_reset_tokens`) tenant'tır → `school_id` taşır. Şema, **tenant olup olmamayı belirlemez** — `IHasTenant` interface'i belirler.
+
+### 16.3 Şema Atama — Kod Kuralı
+
+Her `IEntityTypeConfiguration<T>`'ün `Configure` metodunda `builder.ToTable("x")` yerine **şemaya özgü extension** kullanılır:
+
+```csharp
+// Oksis.Infrastructure/Persistence/Configurations/OksisSchemas.cs
+public static class OksisSchemas
+{
+    public const string Master = "master";
+    public const string Identity = "identity";
+    public const string School = "school";
+    public const string Academic = "academic";
+    public const string Platform = "platform";
+}
+
+// Oksis.Infrastructure/Persistence/Configurations/TableBuilderExtensions.cs
+public static class TableBuilderExtensions
+{
+    public static EntityTypeBuilder<T> ToMasterTable<T>(this EntityTypeBuilder<T> b, string name)
+        where T : class => b.ToTable(name, OksisSchemas.Master);
+
+    public static EntityTypeBuilder<T> ToIdentityTable<T>(this EntityTypeBuilder<T> b, string name)
+        where T : class => b.ToTable(name, OksisSchemas.Identity);
+
+    public static EntityTypeBuilder<T> ToSchoolTable<T>(this EntityTypeBuilder<T> b, string name)
+        where T : class => b.ToTable(name, OksisSchemas.School);
+
+    public static EntityTypeBuilder<T> ToAcademicTable<T>(this EntityTypeBuilder<T> b, string name)
+        where T : class => b.ToTable(name, OksisSchemas.Academic);
+
+    public static EntityTypeBuilder<T> ToPlatformTable<T>(this EntityTypeBuilder<T> b, string name)
+        where T : class => b.ToTable(name, OksisSchemas.Platform);
+}
+```
+
+**Kullanım:**
+
+```csharp
+public sealed class CountryConfiguration : IEntityTypeConfiguration<Country>
+{
+    public void Configure(EntityTypeBuilder<Country> builder)
+    {
+        builder.ToMasterTable("countries");   // ← schema = master
+        builder.HasKey(x => x.Id);
+        // ...
+    }
+}
+
+public sealed class UserConfiguration : IEntityTypeConfiguration<User>
+{
+    public void Configure(EntityTypeBuilder<User> builder)
+    {
+        builder.ToIdentityTable("users");     // ← schema = identity
+        // ...
+    }
+}
+```
+
+**Convention-based mapping (IEntityTypeConfiguration olmayan entity'ler):** `OksisDbContext.OnModelCreating` içinde inline ekle:
+
+```csharp
+modelBuilder.Entity<School>().ToSchoolTable("schools");
+```
+
+**Check constraint / table builder action gereken özel durum:**
+
+```csharp
+builder.ToTable("school_notification_configs", OksisSchemas.School, t =>
+{
+    t.HasCheckConstraint("ck_x", "...");
+});
+```
+
+### 16.4 Cross-Schema FK
+
+SQL Server cross-schema FK'leri tamamen destekler ve performans farkı yoktur. EF Core configuration'da herhangi bir özel ayar gerekmez — FK normal şekilde tanımlanır, EF gerçek tablo şemasını snapshot'tan çözer.
+
+```sql
+-- Otomatik üretilir
+ALTER TABLE [school].[school_holidays]
+ADD CONSTRAINT fk_school_holidays_schools
+  FOREIGN KEY (school_id) REFERENCES [school].[schools](id);
+
+ALTER TABLE [academic].[class_rooms]
+ADD CONSTRAINT fk_class_rooms_grade_levels
+  FOREIGN KEY (grade_level_id) REFERENCES [master].[grade_levels](id);
+```
+
+> **Tenant FK kuralı (§5) aynen geçerli:** `school_id` FK'leri `[school].[schools]`'a referans verir, `ON DELETE NO ACTION`.
+
+### 16.5 Yeni Tablo Ekleme — Karar Akışı
+
+| Soru | Cevap → Şema |
+|---|---|
+| Lookup / seed verisi mi, tüm tenant'lar paylaşıyor mu? | **`master`** |
+| User / role / permission / token mı? | **`identity`** |
+| Okul aggregate'in kendisi veya okul ayarı mı? | **`school`** |
+| Akademik aktivite (sezon, şube, yoklama, not, ödev, karne, ders programı) mı? | **`academic`** |
+| Outbox, audit log, sistem-kesen platform tablosu mu? | **`platform`** |
+| Hiçbiri değil mi? | **Önce sor.** Yeni şema gerekebilir veya yanlış tasarım. |
+
+### 16.6 Migration ve Deploy
+
+- Yeni şemalar EF Core tarafından otomatik üretilir (`EnsureSchema("...")`).
+- Mevcut tablo şema değişikliği `RenameTable(name, newName, newSchema)` ile (T-SQL'de `ALTER SCHEMA target TRANSFER source.table`). Atomik tek statement, lock kısa.
+- Production deploy: hiçbir uygulama instance'i eski şema referansını tutmamalı → **rolling deploy değil, blue-green tercih edilir** çünkü EF Core compiled query cache eski şema adını tutar.
+- Migration script üretirken (`dotnet ef migrations script`) `EnsureSchema` + `ALTER SCHEMA TRANSFER` sırası korunur.
+
+### 16.7 Yasaklar
+
+- ❌ `builder.ToTable("x")` (şemasız) — `dbo`'ya düşer.
+- ❌ `OksisSchemas` sabiti yerine string literal (`"master"`, `"identity"`) kullanmak.
+- ❌ Yeni şema eklerken `OksisSchemas` ve `TableBuilderExtensions`'ı güncellemeden config'te string vermek.
+- ❌ Cross-database FK (sadece cross-schema; aynı DB içinde).
+- ❌ Bir entity'yi mantıksal olarak yanlış şemaya koymak (örn. `academic` sezon tablosunu `school` şemasında).

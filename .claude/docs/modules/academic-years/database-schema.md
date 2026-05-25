@@ -6,6 +6,17 @@
 
 ---
 
+## Schema
+
+Bu modülün **tüm tabloları `[academic]` SQL Server şemasındadır**. Cross-schema FK referansları:
+- `school_id` → `[school].[schools](id)`
+- `grade_level_id` → `[master].[grade_levels](id)`
+- `term_type_id` → `[master].[academic_term_types](id)`
+
+EF Core configuration'da `builder.ToAcademicTable("x")` extension'ı kullanılır (bkz. `backend/database-rules.md` § 16).
+
+---
+
 ## Master Tablolar (tenant-agnostik, mevcut)
 
 Bu master tablolar `20260523222901_add_global_seed_master_data` migration ile zaten kurulmuştur. **Değiştirilmez, sadece referans için listeniyor.**
@@ -31,7 +42,7 @@ Sınıf kademeleri (Anaokulu + 1-12. sınıf).
 Bir okulun eğitim yılları. Aktif tek bir kayıt kuralı filtered unique ile zorlanır.
 
 ```sql
-CREATE TABLE academic_sessions (
+CREATE TABLE academic.academic_sessions (
     id              uniqueidentifier  not null  constraint pk_academic_sessions primary key,
     school_id       uniqueidentifier  not null,
     name            nvarchar(20)      not null,    -- "2025-2026"
@@ -52,21 +63,21 @@ CREATE TABLE academic_sessions (
     constraint ck_academic_sessions_dates
       check (start_date < end_date),
     constraint fk_academic_sessions_schools
-      foreign key (school_id) references schools(id)
+      foreign key (school_id) references school.schools(id)
 );
 
 -- Aktif sezon tekildir
 CREATE UNIQUE INDEX ux_academic_sessions_current
-  ON academic_sessions(school_id)
+  ON academic.academic_sessions(school_id)
   WHERE is_current = 1 AND is_deleted = 0;
 
 -- Sezon adı tenant içinde tekildir
 CREATE UNIQUE INDEX ux_academic_sessions_school_name
-  ON academic_sessions(school_id, name)
+  ON academic.academic_sessions(school_id, name)
   WHERE is_deleted = 0;
 
 CREATE INDEX ix_academic_sessions_school_status
-  ON academic_sessions(school_id, status) WHERE is_deleted = 0;
+  ON academic.academic_sessions(school_id, status) WHERE is_deleted = 0;
 ```
 
 **EF Core Enum mapping:**
@@ -82,11 +93,11 @@ public enum AcademicSessionStatus { Setup = 0, Active = 1, Archived = 2 }
 Sezona bağlı dönemler. Bir sezonda T1 ve T2 birer kez.
 
 ```sql
-CREATE TABLE academic_terms (
+CREATE TABLE academic.academic_terms (
     id                     uniqueidentifier  not null  constraint pk_academic_terms primary key,
     school_id              uniqueidentifier  not null,
     academic_session_id    uniqueidentifier  not null,
-    term_type_id           uniqueidentifier  not null,    -- FK academic_term_types
+    term_type_id           uniqueidentifier  not null,    -- FK master.academic_term_types
     start_date             date              not null,
     end_date               date              not null,
     status                 nvarchar(20)      not null,    -- NotStarted|Active|Closed
@@ -96,18 +107,18 @@ CREATE TABLE academic_terms (
     constraint ck_academic_terms_dates
       check (start_date < end_date),
     constraint fk_academic_terms_sessions
-      foreign key (academic_session_id) references academic_sessions(id),
+      foreign key (academic_session_id) references academic.academic_sessions(id),
     constraint fk_academic_terms_types
-      foreign key (term_type_id) references academic_term_types(id)
+      foreign key (term_type_id) references master.academic_term_types(id)
 );
 
 -- Bir sezonda T1 ve T2 birer kez
 CREATE UNIQUE INDEX ux_academic_terms_session_type
-  ON academic_terms(academic_session_id, term_type_id)
+  ON academic.academic_terms(academic_session_id, term_type_id)
   WHERE is_deleted = 0;
 
 CREATE INDEX ix_academic_terms_school_status
-  ON academic_terms(school_id, status) WHERE is_deleted = 0;
+  ON academic.academic_terms(school_id, status) WHERE is_deleted = 0;
 ```
 
 ---
@@ -117,11 +128,11 @@ CREATE INDEX ix_academic_terms_school_status
 Okulun her sezona ait şubeleri. **Yıl-scope'lu** (BR-AS-010).
 
 ```sql
-CREATE TABLE class_rooms (
+CREATE TABLE academic.class_rooms (
     id                     uniqueidentifier  not null  constraint pk_class_rooms primary key,
     school_id              uniqueidentifier  not null,
     academic_session_id    uniqueidentifier  not null,
-    grade_level_id         uniqueidentifier  not null,    -- FK master grade_levels
+    grade_level_id         uniqueidentifier  not null,    -- FK master.grade_levels
     section                nvarchar(3)       not null,    -- "A", "B", ...
     full_name              nvarchar(20)      not null,    -- "9-A" (stored, computed at insert)
     homeroom_teacher_id    uniqueidentifier  null,
@@ -132,21 +143,21 @@ CREATE TABLE class_rooms (
     constraint ck_class_rooms_capacity
       check (capacity between 1 and 100),
     constraint fk_class_rooms_sessions
-      foreign key (academic_session_id) references academic_sessions(id),
+      foreign key (academic_session_id) references academic.academic_sessions(id),
     constraint fk_class_rooms_grade_levels
-      foreign key (grade_level_id) references grade_levels(id)
+      foreign key (grade_level_id) references master.grade_levels(id)
 );
 
 -- Aynı sezonda iki "9-A" olamaz
 CREATE UNIQUE INDEX ux_class_rooms_session_grade_section
-  ON class_rooms(academic_session_id, grade_level_id, section)
+  ON academic.class_rooms(academic_session_id, grade_level_id, section)
   WHERE is_deleted = 0;
 
 CREATE INDEX ix_class_rooms_school_session
-  ON class_rooms(school_id, academic_session_id) WHERE is_deleted = 0;
+  ON academic.class_rooms(school_id, academic_session_id) WHERE is_deleted = 0;
 
 CREATE INDEX ix_class_rooms_homeroom
-  ON class_rooms(homeroom_teacher_id) WHERE is_deleted = 0 AND homeroom_teacher_id IS NOT NULL;
+  ON academic.class_rooms(homeroom_teacher_id) WHERE is_deleted = 0 AND homeroom_teacher_id IS NOT NULL;
 ```
 
 > `homeroom_teacher_id` üzerinde explicit FK **yok** (Teacher modülü ayrı aggregate, ID-only referans — `domain-model-rules.md` § 1).
@@ -158,7 +169,7 @@ CREATE INDEX ix_class_rooms_homeroom
 Şube ↔ öğrenci atama. Üzerine yazılmaz, tarihsel kayıt olarak korunur.
 
 ```sql
-CREATE TABLE class_room_students (
+CREATE TABLE academic.class_room_students (
     id              uniqueidentifier  not null  constraint pk_class_room_students primary key,
     school_id       uniqueidentifier  not null,
     class_room_id   uniqueidentifier  not null,
@@ -170,23 +181,23 @@ CREATE TABLE class_room_students (
     -- audit + soft-delete + row_version
 
     constraint fk_class_room_students_class_room
-      foreign key (class_room_id) references class_rooms(id)
+      foreign key (class_room_id) references academic.class_rooms(id)
 );
 
 -- Bir öğrenci aktif şubede en fazla 1 (filtered unique)
 CREATE UNIQUE INDEX ux_class_room_students_active_assignment
-  ON class_room_students(school_id, student_id)
+  ON academic.class_room_students(school_id, student_id)
   WHERE left_at IS NULL AND is_deleted = 0;
 
 -- Şube içi aktif öğrenciler için hızlı sorgu
 CREATE INDEX ix_class_room_students_class_room_active
-  ON class_room_students(class_room_id)
+  ON academic.class_room_students(class_room_id)
   INCLUDE (student_id)
   WHERE left_at IS NULL AND is_deleted = 0;
 
 -- Tarihsel sorgular için (öğrencinin tüm geçmiş atamaları)
 CREATE INDEX ix_class_room_students_student_history
-  ON class_room_students(student_id, assigned_at DESC) WHERE is_deleted = 0;
+  ON academic.class_room_students(student_id, assigned_at DESC) WHERE is_deleted = 0;
 ```
 
 **EF Core enum mapping:**
@@ -201,13 +212,13 @@ public enum AssignmentReason { Initial = 0, Transfer = 1, NewEnrollment = 2, Gra
 
 Sezon-scope'lu tatil tanımları (dini bayramlar, okul-spesifik tatiller, yarıyıl tatili).
 
-> **Not:** Bu tablo şu an `school-settings` modülünde "planlanan" olarak duruyor. Bu modülün altına taşınmalı çünkü `AcademicSessionId` zorunlu.
+> **Tablo durumu:** Bu tablo mevcut (migration `20260517184554_create_school_settings_tables`). `20260525_partition_schemas` migration ile **`[academic]` şemasına taşındı** (önceden `dbo`'daydı, `Schools` configuration klasöründeydi). Sprint 1'de `academic_session_id` FK kolonu eklenecek (şu an mevcut tablo bu kolonu içermiyor).
 
 ```sql
-CREATE TABLE school_holidays (
+CREATE TABLE academic.school_holidays (
     id                     uniqueidentifier  not null  constraint pk_school_holidays primary key,
     school_id              uniqueidentifier  not null,
-    academic_session_id    uniqueidentifier  not null,
+    academic_session_id    uniqueidentifier  not null,    -- Sprint 1'de eklenecek kolon
     name                   nvarchar(150)     not null,
     start_date             date              not null,
     end_date               date              not null,
@@ -219,11 +230,11 @@ CREATE TABLE school_holidays (
     constraint ck_school_holidays_dates
       check (start_date <= end_date),
     constraint fk_school_holidays_sessions
-      foreign key (academic_session_id) references academic_sessions(id)
+      foreign key (academic_session_id) references academic.academic_sessions(id)
 );
 
 CREATE INDEX ix_school_holidays_session_dates
-  ON school_holidays(academic_session_id, start_date, end_date)
+  ON academic.school_holidays(academic_session_id, start_date, end_date)
   WHERE is_deleted = 0;
 ```
 
@@ -234,15 +245,15 @@ CREATE INDEX ix_school_holidays_session_dates
 Bu modülün parametrik kararları `school_settings` tablosuna 3 yeni kolon ekler. Migration ayrı bir migration olarak yazılır (`Add_AcademicSession_SchoolSettings_Columns`).
 
 ```sql
-ALTER TABLE school_settings
+ALTER TABLE school.school_settings
   ADD graduated_data_retention_years        int  not null  default 5
       constraint ck_school_settings_retention_years
         check (graduated_data_retention_years between 1 and 30);
 
-ALTER TABLE school_settings
+ALTER TABLE school.school_settings
   ADD require_approval_for_classroom_creation  bit  not null  default 0;
 
-ALTER TABLE school_settings
+ALTER TABLE school.school_settings
   ADD auto_publish_report_cards               bit  not null  default 1;
 ```
 
@@ -266,10 +277,11 @@ public sealed record SchoolSettings
 | Tarih | Migration | Değişiklik |
 |---|---|---|
 | 2026-05-24 | `20260523222901_add_global_seed_master_data` | Master tablolar + seed (`academic_term_types`, `official_holidays`, `grade_levels`, `subjects`, `subject_grade_levels`) — **mevcut, değişmez** |
-| TBD | `XXXXXXXXXXXX_add_academic_sessions` | `academic_sessions` + `academic_terms` tabloları |
-| TBD | `XXXXXXXXXXXX_add_class_rooms` | `class_rooms` + `class_room_students` tabloları |
-| TBD | `XXXXXXXXXXXX_add_school_holidays` | `school_holidays` tablosu |
-| TBD | `XXXXXXXXXXXX_add_academic_session_school_settings_columns` | `school_settings` üç yeni kolon (BR-AS-007/008/009) |
+| 2026-05-25 | `20260525171819_20260525_partition_schemas` | 5 SQL Server şeması (`master`, `identity`, `school`, `academic`) + 26 mevcut tablonun `dbo` → uygun şemaya `ALTER SCHEMA TRANSFER`'ı. `school_holidays` → `[academic]` (taşındı). |
+| TBD | `XXXXXXXXXXXX_add_academic_sessions` | `academic.academic_sessions` + `academic.academic_terms` tabloları |
+| TBD | `XXXXXXXXXXXX_add_class_rooms` | `academic.class_rooms` + `academic.class_room_students` tabloları |
+| TBD | `XXXXXXXXXXXX_add_school_holidays_session_id` | `academic.school_holidays`'a `academic_session_id` kolonu ekle (sezon FK'si) |
+| TBD | `XXXXXXXXXXXX_add_academic_session_school_settings_columns` | `school.school_settings` üç yeni kolon (BR-AS-007/008/009) |
 
 > **Migration sıralaması önemli:** `academic_sessions` önce, çünkü `academic_terms`, `class_rooms`, `school_holidays` ona FK taşır.
 
