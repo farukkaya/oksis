@@ -4,18 +4,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Repository Layout
 
-This directory is **not** a single repo — it's a workspace containing three **independent git repos** as siblings:
+This directory is **not** a single repo — it's a workspace containing three **independent git repos** as siblings (plus the workspace itself, which is its own repo holding shared docs):
 
 ```
-oksis/
-├── oksis-api/        .NET 10 backend (Clean Architecture + CQRS, SQL Server, EF Core 10)
-├── oksis-web/        React + Vite + TypeScript (admin/teacher/parent/student portals)
-└── oksis-mobile/     React Native + Expo SDK 54 (teacher/parent/student roles)
+oksis/                 workspace root (own git repo — holds canonical docs in .claude/docs/)
+├── oksis-api/         .NET 10 backend (Clean Architecture + CQRS, SQL Server, EF Core 10)
+├── oksis-web/         React + Vite + TypeScript (admin/teacher/parent/student portals)
+├── oksis-mobile/      React Native + Expo SDK 54 (teacher/parent/student roles)
+└── docx-builder/      local utility for generating internal docs (not shipped)
 ```
 
-Each subproject has its **own** `CLAUDE.md` plus a deep `.claude/docs/` tree. When the user works on a specific tier, **read that subproject's CLAUDE.md first** — it's authoritative. This root file only orients across the three.
+Each subproject has its **own** `CLAUDE.md`. When the user works on a specific tier, **read that subproject's CLAUDE.md first** for tier-specific commands/bans — then defer to the workspace docs for cross-tier rules.
 
-The canonical rule docs (architecture, multi-tenant, security, permissions, notifications, naming, MVP scope, testing, code review, all backend/frontend/mobile coding standards, plus per-module docs) live in **`oksis-web/.claude/docs/`** and are mirrored / referenced from `oksis-api/.claude/docs/`. Mobile-specific rules also exist under `oksis-api/.claude/docs/mobile/`. Mobile project's `CLAUDE.md` explicitly defers to the parent docs.
+The canonical rule docs (architecture, multi-tenant, security, permissions, notifications, naming, MVP scope, testing, code review, all backend/frontend/mobile coding standards, plus per-module docs and skills) live at **workspace root: `.claude/docs/`**. All three subproject `CLAUDE.md` files reference these via `../oksis/.claude/docs/`. Claude Code auto-loads this root `CLAUDE.md` when working in any subproject, so the cross-tier rules apply automatically.
 
 ## Product Context
 
@@ -23,7 +24,7 @@ The canonical rule docs (architecture, multi-tenant, security, permissions, noti
 
 ## Absolute Rules (apply to every tier)
 
-These are non-negotiable across api/web/mobile. Full details in `oksis-web/.claude/docs/`.
+These are non-negotiable across api/web/mobile. Full details in `.claude/docs/` at workspace root.
 
 1. **Multi-tenant isolation is never bypassed.** Every query, cache key, queue job, SignalR group, file path, and log line is tenant-scoped via `SchoolId`. EF Core global query filter + `SaveChangesInterceptor` enforce on the server; React Query keys must carry the tenant prefix on the client (`shared/config/tenant.ts → tenantScopedKey` in mobile). See `multi-tenant-rules.md`.
 2. **Domain naming is fixed.** `Mark` = grade/score (the number), `Grade` = year level (5th grade). Don't conflate. See `naming-conventions.md`.
@@ -54,7 +55,7 @@ Stack: MediatR, FluentValidation, Mapster (not AutoMapper), Hangfire (SQL Server
 
 ### oksis-web
 
-Working dir: `oksis-web/`. **Note:** the current `package.json` is a Figma Make import scaffold (`@figma/my-make-file`) using Radix + MUI. The product spec (`oksis-web/.claude/docs/`) targets **DevExtreme + Tailwind + React Query + Zustand + RHF/Zod**. When working on this project, confirm with the user which direction code should follow.
+Working dir: `oksis-web/`. **Note:** `package.json` started life as a Figma Make import scaffold (`@figma/my-make-file`, Radix + MUI) and the migration to the spec stack is **in progress** — both stacks coexist. Already installed alongside the scaffold: DevExtreme, TanStack React Query, Zustand, RHF + Zod, axios, i18next, dayjs. Spec target (per `.claude/docs/frontend/*`): **DevExtreme (via `OksisDataGrid` wrapper) + Tailwind + React Query + Zustand + RHF/Zod + Axios**. When touching pages that still use Radix/MUI, confirm with the user before rewriting vs. extending.
 
 ```bash
 npm run dev          # vite dev server
@@ -118,7 +119,7 @@ Single Expo app, three role-based React Navigation stacks (Teacher / Parent / St
 
 ## Module Documentation System
 
-`oksis-web/.claude/docs/modules/<module>/` holds 9-file living docs per business module (README, domain-model, api-contracts, database-schema, permissions, notifications, ui-flows, business-rules, open-questions). When the user says "add Y to module X":
+`.claude/docs/modules/<module>/` (at workspace root) holds 9-file living docs per business module (README, domain-model, api-contracts, database-schema, permissions, notifications, ui-flows, business-rules, open-questions). Current modules: `academic-years`, `announcements`, `attendance`, `classrooms`, `dashboard`, `homework`, `identity`, `marks`, `messaging`, `notifications`, `parents`, `report-cards`, `schools`, `school-settings`, `students`, `subjects`, `teachers`, `timetable`. When the user says "add Y to module X":
 
 1. Resolve module slug from the table in `_MODULE_GUIDE.md` (don't invent names).
 2. Pick the right file by category (endpoint → `api-contracts.md`, table → `database-schema.md`, etc.).
@@ -129,7 +130,7 @@ Single Expo app, three role-based React Navigation stacks (Teacher / Parent / St
 
 ## Skills (task-triggered)
 
-Defined under `oksis-web/.claude/docs/skills/`. Trigger by task; the rule files list the exact mapping. Examples: `entity-design`, `api-endpoint-generator`, `crud-page-generator`, `form-wizard`, `mvp-guard`, `security-check`, `multi-tenant-guard`. Read the skill file before doing the task it covers.
+Defined under `.claude/docs/skills/` (at workspace root), grouped into `backend/`, `frontend/`, `foundation/`, `product/`. Trigger by task; the rule files list the exact mapping. Examples: `entity-design`, `api-endpoint-generator`, `crud-page-generator`, `form-wizard`, `mvp-guard`, `security-check`, `multi-tenant-guard`. Read the skill file before doing the task it covers.
 
 ## Hard Bans (cross-cutting)
 
@@ -146,4 +147,4 @@ Defined under `oksis-web/.claude/docs/skills/`. Trigger by task; the rule files 
 
 ## When in Doubt
 
-Each subproject's own `CLAUDE.md` and the rules under `oksis-web/.claude/docs/` are the source of truth. If a rule isn't clear from the current code, stop and ask the user rather than guessing — naming, library choice, and folder placement decisions are intentional and documented.
+Each subproject's own `CLAUDE.md` and the rules under `.claude/docs/` (workspace root) are the source of truth. If a rule isn't clear from the current code, stop and ask the user rather than guessing — naming, library choice, and folder placement decisions are intentional and documented.
