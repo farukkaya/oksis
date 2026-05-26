@@ -34,3 +34,4 @@ Thumbs.db
 docx-builder/
 tmp-docx/
 generated-issues/academic-sessions
+.claude/generated-issues/users
