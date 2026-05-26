@@ -33,3 +33,4 @@ Thumbs.db
 # tmp build artifact dirs from test-doc generation
 docx-builder/
 tmp-docx/
+generated-issues/academic-sessions
