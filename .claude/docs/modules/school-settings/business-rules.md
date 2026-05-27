@@ -106,7 +106,9 @@ Anonim erişimde sadece okul adı + tema renkleri + logo URL döner. Hassas veri
 
 **Karar:** (A) — Yeni tablo oluşturmak gereksiz. `school_type` "genel profil" bilgisi olarak kalır; gerçek kademe filtresi `school_grade_levels`'tan gelir. Frontend'de "Okul Tipi" multi-select gösterilebilir, ama backend'de zorlama yok.
 
-> `school_grade_levels` junction + seed zaten school_type'a göre çalışıyor. Eğer admin ilkokul + ortaokul seçtiyse → 1-8 seed edilir. Sonra admin kademeleri fine-tune eder.
+> `school_grade_levels` junction + seed zaten school_type'a göre çalışıyor. Eğer admin ilkokul + ortaokul seçtiyse → 1-8 seed edilir.
+
+**UI politikası güncellemesi (2026-05-28):** Kademeler frontend'de **kullanıcı tarafından tek tek seçilmez**; tamamen seçili okul tür(ler)inden **türetilir**. Gerekçe yasal: Ortaokul seçen bir okul 5–8. sınıfların hepsini açmak zorundadır; kullanıcı yanlışlıkla bir kademeyi atlayıp eksik yapı kuramamalı (okul müdürü geri bildirimi). Bu yüzden "Aktif Sınıf Kademeleri" kartı **salt-görünümdür** (info bar ile açıklanır), ve `school_grade_levels` PUT'u "Akademik Yapı" formunun Kaydet'iyle birlikte, seçili türlerin **tüm** kademeleriyle gönderilir. Önceki "admin kademeleri fine-tune eder" yaklaşımı bu nedenle terk edildi.
 
 ---
 

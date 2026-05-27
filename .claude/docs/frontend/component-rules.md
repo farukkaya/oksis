@@ -77,18 +77,21 @@ Kurallar:
 
 ---
 
-## 4. DataGrid (DevExtreme Wrapper)
+## 4. DataTable (shadcn Table Wrapper)
 
-> Bu projede DataGrid en çok kullanılan bileşen. **Tek bir DataGrid wrapper'ı** üzerinden kullanılır. Detay: `frontend/datagrid-rules.md`.
+> Liste ekranlarında en çok kullanılan bileşen. shadcn/ui `Table` üzerine kurulu **tek bir `DataTable` wrapper'ı** üzerinden kullanılır. Detay: `frontend/datagrid-rules.md`.
 
 ```tsx
-<OksisDataGrid
-  queryKey={["students", "list"]}
-  fetcher={api.students.list}
+<DataTable<Student>
+  data={students}
   columns={studentColumns}
-  toolbar={{ search: true, export: true, columnChooser: true }}
-  actions={{ onEdit, onDelete, onView }}
-  emptyState={{ title: "Öğrenci yok", action: <Button>...</Button> }}
+  rowKey="id"
+  totalCount={totalCount}
+  pagination={pagination}
+  onPaginationChange={setPagination}
+  toolbar={{ search: true, export: { excel: true } }}
+  rowActions={[{ label: "Düzenle", onClick: onEdit, permission: "student.update" }]}
+  emptyState={<EmptyState title="Öğrenci yok" action={<Button>...</Button>} />}
 />
 ```
 
@@ -345,7 +348,7 @@ Modal/feature içerikleri için `lazy` opsiyonel; sayfa initial bundle'ı zorluy
 ## 20. Yasak Pratikler
 
 - ❌ Aynı işi yapan 2 component (örn. 2 ayrı `Button`).
-- ❌ DevExtreme component'i wrapper olmadan doğrudan import (theme/i18n bypass).
+- ❌ Liste ekranında ortak `DataTable` yerine her seferinde elden shadcn `Table` dizmek (küçük statik tablolar hariç).
 - ❌ Modal içine modal içine modal.
 - ❌ Component'te direct API call (props/hook üzerinden).
 - ❌ Side effect'i render içinde (set state on render).
@@ -363,6 +366,6 @@ Modal/feature içerikleri için `lazy` opsiyonel; sayfa initial bundle'ı zorluy
 2. Yeni primitive component yazıyorsan: props API tutarlı mı (variant/size/loading/disabled)?
 3. Yeni feature component → portal/modules altına. Shared'a çıkarmak için **iki kullanım yeri** kuralı.
 4. Form için RHF + FormField + design system input'u kullan.
-5. DataGrid için `OksisDataGrid` wrapper'ı; direkt `dx-react-grid` import yok.
+5. Liste için shadcn `Table` üzerine kurulu `DataTable` wrapper'ı; ayrı grid kütüphanesi ekleme.
 6. Permission UI'da `<RequirePermission>` ile; backend yine kontrol eder.
 7. Test: snapshot yerine kullanıcı davranışı testle (click, type, assert text/role).

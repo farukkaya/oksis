@@ -43,7 +43,7 @@
 
 - [ ] Aynı amaç için **mevcut bir helper/util/hook** var mı? (Önce ara, sonra yaz)
 - [ ] CRUD ekran üretiliyorsa `crud-page-generator.skill`'i çağırılıyor mu?
-- [ ] Yeni DataGrid sayfası `<DataGrid>` wrapper'ı üzerinden mi? (Doğrudan DevExtreme `DataGrid` değil)
+- [ ] Yeni liste sayfası ortak `DataTable` (shadcn `Table`) wrapper'ı üzerinden mi?
 - [ ] Yeni form `RHF + zodResolver` kullanıyor mu? (Manuel state değil)
 - [ ] Yeni endpoint `ApiResponse<T>` envelope kullanıyor mu? (Raw return değil)
 

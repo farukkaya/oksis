@@ -1,6 +1,6 @@
 # OKSİS — Frontend Coding Standards
 
-> **Stack:** React 18 + TypeScript (strict) + Vite + Tailwind CSS + DevExtreme + React Query + Zustand + React Hook Form + Zod + React Router v6.
+> **Stack:** React 18 + TypeScript (strict) + Vite + Tailwind CSS + shadcn/ui (Radix) + React Query + Zustand + React Hook Form + Zod + React Router v6.
 > **Mobile:** React Native + Expo + TypeScript + aynı state mgmt + form library, navigation: React Navigation.
 
 ---
@@ -208,7 +208,7 @@ useEffect(() => { if (submitted) mutate(values); }, [submitted]);
 
 - **Tailwind** ile utility-first. Sınırlı custom CSS.
 - Component'e özel stil için `clsx`/`cn` ile composition.
-- DevExtreme component'leri için **tema override** `src/app/theme/dx.scss`.
+- shadcn/ui bileşenleri Tailwind + CSS değişkenleri ile temalanır (`src/app/components/ui/*`); ayrı SCSS tema dosyası yok.
 - Global CSS sadece `src/app/styles/globals.css` + reset/typography.
 - Design token'lar: `tailwind.config.ts` içinde (renkler, spacing, radius, shadow).
 
@@ -329,7 +329,7 @@ http.interceptors.response.use(
 - Image lazy loading: `<img loading="lazy" />`.
 - Code splitting: portal/route bazlı.
 - Bundle analiz: `vite-plugin-visualizer`. Hedef: ana bundle < **300KB gzip**.
-- Liste sanallaştırma: 100+ row → DevExtreme DataGrid (built-in) veya `react-virtuoso`.
+- Liste sanallaştırma: 100+ row → server-side paging (`DataTable`) veya `react-virtuoso`.
 
 > Detay: `skills/foundation/performance-check.skill`.
 
@@ -364,7 +364,7 @@ http.interceptors.response.use(
 
 - Web/mobile arası **shared/** klasörü altında **paylaşılır** kod (api types, hooks, validation schemas).
 - Native-specific UI'lar `mobile/` projesi içinde.
-- DevExtreme **web-only**; mobile için native equivalents.
+- shadcn/ui (Radix) **web-only**; mobile için React Native / NativeWind eşlenikleri.
 - Tailwind yok mobile'da; `nativewind` veya StyleSheet API.
 - Navigation: React Navigation (Stack + Bottom Tabs).
 
@@ -405,6 +405,6 @@ http.interceptors.response.use(
 2. API çağrısı mı yapacaksın: React Query? Mutation invalidation hangi key'i çağırıyor?
 3. State nereye? §3 tablosundaki kurala uy.
 4. CSS: Tailwind utility var mı, custom CSS'e gerek var mı?
-5. Form: RHF + Zod + DevExtreme/custom input?
+5. Form: RHF + Zod + shadcn/custom input?
 6. Erişim kontrolü: `usePermission` veya `<RequirePermission>` ile route protect?
 7. Test: en az happy path + 1 error case + 1 permission denied.

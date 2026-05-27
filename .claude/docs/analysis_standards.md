@@ -532,7 +532,7 @@ Her analizde **soyut tasarim degil**, OKSiS proje kurallarina ozgu **somut imple
 
 **Roller:** SuperAdmin, SchoolAdmin, SchoolStaff, Teacher, Parent, Student, Secretary, Accountant
 
-**Frontend Web:** React 18 + TypeScript strict, Vite, DevExtreme, Tailwind, React Router v6, TanStack Query v5, Zustand, RHF + Zod, axios interceptor
+**Frontend Web:** React 18 + TypeScript strict, Vite, shadcn/ui (Radix), Tailwind, React Router v6, TanStack Query v5, Zustand, RHF + Zod, axios interceptor
 
 **Mobile:** React Native + Expo SDK 53, NativeWind v4 (StyleSheet.create YASAK), React Navigation v7, TanStack Query v5, RHF + Zod, Controller (register YASAK), expo-secure-store (AsyncStorage token icin YASAK), expo-image
 

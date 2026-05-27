@@ -10,7 +10,7 @@ Implement `AcademicStructureTab` which allows configuring school type, education
 ## Implementation
 - `useForm<AcademicStructureFormValues>({ resolver: zodResolver(academicStructureSchema), defaultValues: data.academicStructure })`
 - Submit calls `mutation.mutate(data)`
-- Each field uses `<Controller>` wrapping the appropriate DevExtreme component
+- Each field uses `<Controller>` (or shadcn `FormField`) wrapping the appropriate shadcn/ui input
 - Save button shows loading state while `mutation.isPending`
 - Form section wrapped in `<FormSection>` with title from `school-settings.sections.academic`
 
@@ -18,9 +18,9 @@ Implement `AcademicStructureTab` which allows configuring school type, education
 
 | Field | Component | Options / Validation |
 |---|---|---|
-| schoolType | DxSelectBox | Preschool, Primary, Secondary, HighSchool — labels via i18n |
-| educationLanguage | DxSelectBox | tr, en, other — labels via i18n |
-| weeklyLessonCount | DxNumberBox | min 1, max 50, int |
+| schoolType | shadcn `Select` | Preschool, Primary, Secondary, HighSchool — labels via i18n |
+| educationLanguage | shadcn `Select` | tr, en, other — labels via i18n |
+| weeklyLessonCount | shadcn `Input type="number"` | min 1, max 50, int |
 
 ## Acceptance Criteria
 - [ ] `SettingsSkeleton` shown while `useSchoolSettings` is pending

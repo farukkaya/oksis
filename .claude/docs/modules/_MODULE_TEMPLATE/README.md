@@ -78,3 +78,4 @@ Bu modül hangi modüllerle konuşur?
   - [ ] ui-flows.md
   - [ ] business-rules.md
   - [ ] open-questions.md
+  - [ ] completion_status.md

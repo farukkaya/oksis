@@ -55,7 +55,7 @@ Stack: MediatR, FluentValidation, Mapster (not AutoMapper), Hangfire (SQL Server
 
 ### oksis-web
 
-Working dir: `oksis-web/`. **Note:** `package.json` started life as a Figma Make import scaffold (`@figma/my-make-file`, Radix + MUI) and the migration to the spec stack is **in progress** — both stacks coexist. Already installed alongside the scaffold: DevExtreme, TanStack React Query, Zustand, RHF + Zod, axios, i18next, dayjs. Spec target (per `.claude/docs/frontend/*`): **DevExtreme (via `OksisDataGrid` wrapper) + Tailwind + React Query + Zustand + RHF/Zod + Axios**. When touching pages that still use Radix/MUI, confirm with the user before rewriting vs. extending.
+Working dir: `oksis-web/`. **Note:** `package.json` started life as a Figma Make import scaffold (`@figma/my-make-file`, Radix + MUI) and the migration to the spec stack is **in progress**. The design system is **shadcn/ui** (Radix primitives under `src/app/components/ui/*` + Tailwind); MUI is legacy scaffold being phased out. Already installed: TanStack React Query, Zustand, RHF + Zod, axios, i18next, dayjs. Spec target (per `.claude/docs/frontend/*`): **shadcn/ui (Radix) + Tailwind + React Query + Zustand + RHF/Zod + Axios**. Lists use a shared `DataTable` wrapper over shadcn `Table` (no separate grid library). When touching pages that still use MUI, confirm with the user before rewriting vs. extending.
 
 ```bash
 npm run dev          # vite dev server
@@ -111,7 +111,7 @@ Oksis.Api ──► Oksis.Application ──► Oksis.Domain
 
 ### Web (`oksis-web`)
 
-Portal-based routing: `/admin`, `/teacher`, `/parent`, `/student`, `/super`. Each portal has its own layout and role-gated route guard. Domain modules under `src/modules/<x>/` are shared across portals; portal-specific UI lives under `src/portals/<role>/`. Server state lives **only** in React Query (never duplicated to Zustand). Forms = React Hook Form + Zod. URL state (filters, page, sort) = React Router search params. Zustand stores are small and topic-focused (auth, active-child-switcher, sidebar). DataGrid must go through the `OksisDataGrid` wrapper — direct DevExtreme import is banned. Token refresh is a single-flight axios interceptor.
+Portal-based routing: `/admin`, `/teacher`, `/parent`, `/student`, `/super`. Each portal has its own layout and role-gated route guard. Domain modules under `src/modules/<x>/` are shared across portals; portal-specific UI lives under `src/portals/<role>/`. Server state lives **only** in React Query (never duplicated to Zustand). Forms = React Hook Form + Zod. URL state (filters, page, sort) = React Router search params. Zustand stores are small and topic-focused (auth, active-child-switcher, sidebar). Lists go through a shared `DataTable` wrapper built on shadcn/ui `Table` — no separate grid library. Token refresh is a single-flight axios interceptor.
 
 ### Mobile (`oksis-mobile`)
 
@@ -119,12 +119,13 @@ Single Expo app, three role-based React Navigation stacks (Teacher / Parent / St
 
 ## Module Documentation System
 
-`.claude/docs/modules/<module>/` (at workspace root) holds 9-file living docs per business module (README, domain-model, api-contracts, database-schema, permissions, notifications, ui-flows, business-rules, open-questions). Current modules: `academic-years`, `announcements`, `attendance`, `classrooms`, `dashboard`, `homework`, `identity`, `marks`, `messaging`, `notifications`, `parents`, `report-cards`, `schools`, `school-settings`, `students`, `subjects`, `teachers`, `timetable`. When the user says "add Y to module X":
+`.claude/docs/modules/<module>/` (at workspace root) holds 10-file living docs per business module (README, domain-model, api-contracts, database-schema, permissions, notifications, ui-flows, business-rules, open-questions, completion_status). Current modules: `academic-years`, `announcements`, `attendance`, `classrooms`, `dashboard`, `homework`, `identity`, `marks`, `messaging`, `notifications`, `parents`, `report-cards`, `schools`, `school-settings`, `students`, `subjects`, `teachers`, `timetable`. When the user says "add Y to module X":
 
 1. Resolve module slug from the table in `_MODULE_GUIDE.md` (don't invent names).
 2. Pick the right file by category (endpoint → `api-contracts.md`, table → `database-schema.md`, etc.).
 3. Write directly, then summarize what changed and any cross-file updates (e.g. new permission also added to `permission-matrix.md`).
 4. Update the README metadata block: bump `Last Updated`, tick the `Files` checkbox.
+5. Update `completion_status.md` **immediately**: bump the progress bar/`Güncel` date, move items between the ✅/⏳ sections, and — critically — whenever an approved deviation from a spec/business rule happens, log it under "⚠️ Spec Dışına Çıkılanlar" the moment it's agreed (one short line: date, reason, which rule, approver, impact). Don't batch this for later; the file's value is being current. Keep notes short — it's a status snapshot, not a rules dump (full rules belong in `business-rules.md`).
 
 `{{TBD}}` placeholders mean "skeleton, not yet filled." Don't fabricate content — say which fields are still `{{TBD}}`.
 

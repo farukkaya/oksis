@@ -47,7 +47,7 @@ Liste exhaustive değil; yeni modül `naming-conventions.md`'deki domain dili s�
 
 ## 2. Modül Klasörü İçeriği
 
-Her modül **9 dosya iskelet** ile başlar. MVP başlangıcında 16 modülün hepsi için bu iskelet hazır gelir; içerikleri `{{TBD}}` placeholder'ı ile dolu — bilgi geldikçe doldurulur.
+Her modül **10 dosya iskelet** ile başlar. MVP başlangıcında 16 modülün hepsi için bu iskelet hazır gelir; içerikleri `{{TBD}}` placeholder'ı ile dolu — bilgi geldikçe doldurulur.
 
 | Dosya | İçeriği | Tipik İlk Bilgi Kaynağı |
 |---|---|---|
@@ -60,6 +60,7 @@ Her modül **9 dosya iskelet** ile başlar. MVP başlangıcında 16 modülün he
 | `ui-flows.md` | Sayfa listesi, kullanıcı akışı, wireframe linki, state management. **Tek dosya** — içinde "Web Flow" ve "Mobile Flow" alt başlıkları (bkz. § 3.7) | Frontend tasarım |
 | `business-rules.md` | Modüle özel kurallar (örn. "Mark publish sonrası 24 saat içinde düzeltilebilir") | İş analizi |
 | `open-questions.md` | Tartışılması gereken, henüz karar alınmamış konular | Belirsizlik çıktığında |
+| `completion_status.md` | Modülün tamamlanma yüzdesi (progress bar) + tamamlanan/eksik yapılar + onaylı spec sapmaları. Her geliştirmede ANINDA güncellenir; status snapshot'tır, kural deposu değil | Geliştirme ilerledikçe / sapma onaylandığında |
 
 > **İskelet bilgisiz dosya değildir.** Şablon yapı + bölüm başlıkları + `{{TBD}}` placeholder'ları içerir. AI sadece `{{TBD}}` alanları doldurmaya odaklanır, var olan yapıyı bozmaz.
 
@@ -121,6 +122,11 @@ Sıralı adımlar:
 - `Files` checkbox'larında ilk kez içerik eklenen dosya `[ ]` → `[x]` olur.
 - `Status` değişmişse (örn. `planning` → `in-progress`) güncelle.
 - Bu güncelleme de özette belirtilir.
+
+**Adım 7 — `completion_status.md`'yi ANINDA Güncelle**
+- İlerleme çubuğunu / `Güncel` tarihini güncelle; tamamlanan işi ✅, bekleyeni ⏳ başlığına taşı.
+- **Onaylı bir spec/iş kuralı sapması olduysa hemen** "⚠️ Spec Dışına Çıkılanlar" başlığına tek satır işle: tarih, neden, hangi kural, onaylayan, etki.
+- Sonraya bırakma — bu dosyanın değeri güncel olmasında. Kısa tut; status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`'de).
 
 ---
 

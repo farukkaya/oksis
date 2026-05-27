@@ -128,4 +128,4 @@ Bu modül önceki sürümünden şu farkları içerir:
 - **Status:** `in-progress`
 - **Sprint:** Sprint 1
 - **Owner:** Faruk Kaya
-- **Last Updated:** 2026-05-25
+- **Last Updated:** 2026-05-28

@@ -89,7 +89,7 @@
 - [ ] Heavy lib (chart, pdf, excel) **lazy import** mu?
 - [ ] Route bazlı code splitting mi? (`React.lazy + Suspense`)
 - [ ] Date lib tutarlı mı? (`date-fns` only, `moment` yok)
-- [ ] DevExtreme CSS sadece kullanılan modüller mi import edildi?
+- [ ] Büyük liste server-side paging / `react-virtuoso` ile mi render ediliyor?
 
 ### 3.5 Network
 

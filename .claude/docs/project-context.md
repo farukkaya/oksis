@@ -72,7 +72,7 @@ Tek React kod tabanında **portal bazlı routing** ile yönetilir. Mobile React 
 ### Frontend Web
 - **React 18 + TypeScript**
 - **Vite** (build tool)
-- **DevExtreme** (DataGrid, Scheduler, Chart — kritik componentler)
+- **shadcn/ui (Radix + Tailwind)** (Table, Dialog, Select vb. — tasarım sistemi)
 - **Tailwind CSS** (layout, utility)
 - **React Router v6** (portal bazlı routing)
 - **TanStack Query (React Query) v5** (server state)

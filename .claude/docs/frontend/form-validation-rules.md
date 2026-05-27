@@ -126,11 +126,11 @@ Kullanım örneği:
 
 | Alan | Mask | Kütüphane |
 |------|------|-----------|
-| TCKN | `11 hane sadece rakam` | DevExtreme MaskedInput veya `react-number-format` |
-| Telefon | `+90 (5XX) XXX XX XX` | aynı |
+| TCKN | `11 hane sadece rakam` | shadcn `Input` + `react-number-format` |
+| Telefon | `+90 (5XX) XXX XX XX` | `react-number-format` (pattern) |
 | Para | binlik ayraç, `,` ondalık | `react-number-format` |
-| Tarih | `gg.aa.yyyy` | DevExtreme DateBox |
-| Saat | `HH:mm` | DevExtreme DateBox time mode |
+| Tarih | `gg.aa.yyyy` | shadcn `Popover` + `Calendar` (date picker) |
+| Saat | `HH:mm` | shadcn `Input type="time"` |
 
 ## 10. Submit Davranışı
 

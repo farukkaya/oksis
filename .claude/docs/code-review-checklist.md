@@ -109,7 +109,7 @@
 ## 9. Frontend — Performance
 
 - [ ] **Gereksiz re-render var mı?** Memo / callback gerekli yerlerde.
-- [ ] **Büyük liste için virtualization?** DevExtreme DataGrid zaten yapıyor.
+- [ ] **Büyük liste için server-side paging / virtualization?** (`DataTable` server-side veya `react-virtuoso`)
 - [ ] **Code splitting** (lazy route) portal bazlı yapıldı mı?
 - [ ] **Image optimization** (lazy load, doğru boyut).
 - [ ] **Bundle size kontrolü** (`npm run build` → analyze).

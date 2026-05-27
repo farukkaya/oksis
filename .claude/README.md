@@ -33,9 +33,9 @@ OKSİS (Türk özel okulları için multi-tenant SaaS okul yönetim sistemi) pro
 **Frontend (7):**
 - `frontend/coding-standards.md` — TS strict, state mgmt stratejisi, i18n, axios
 - `frontend/ui-ux-rules.md` — Tailwind tokens, 4px grid, mobile 44px target, WCAG AA
-- `frontend/component-rules.md` — Button/Modal/OksisDataGrid/FormField API'leri
+- `frontend/component-rules.md` — Button/Modal/DataTable/FormField API'leri
 - `frontend/form-validation-rules.md` — RHF + Zod kalıpları, wizard, submit davranışı
-- `frontend/datagrid-rules.md` — DevExtreme DataGrid standartları
+- `frontend/datagrid-rules.md` — shadcn/ui Table tabanlı DataTable standartları
 - `frontend/state-management-rules.md` — React Query (server) + Zustand (client) ayrımı, cache invalidation
 - `frontend/routing-auth-rules.md` — Portal-based routing, protected routes, role-based menüler
 
@@ -74,7 +74,7 @@ Her skill dosyası belirli bir tetikleyici (trigger) durumunda devreye girer; AI
 
 **Backend:** .NET 10 + C# 13, Clean Architecture + CQRS (MediatR), Microsoft SQL Server 2022 + EF Core 10, Redis, Hangfire, SignalR, FCM, FluentValidation, Mapster, Scalar, JWT custom + refresh tokens, xUnit+FluentAssertions+NSubstitute+Testcontainers, Serilog + Elasticsearch + Kibana.
 
-**Frontend Web:** React 18 + TypeScript + Vite + DevExtreme + Tailwind + React Query + Zustand + React Hook Form + Zod + React Router v6.
+**Frontend Web:** React 18 + TypeScript + Vite + shadcn/ui (Radix) + Tailwind + React Query + Zustand + React Hook Form + Zod + React Router v6.
 
 **Mobile:** React Native + Expo + TypeScript + React Query + RHF + Zod + React Navigation.
 

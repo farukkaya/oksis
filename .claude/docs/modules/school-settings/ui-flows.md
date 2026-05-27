@@ -75,10 +75,10 @@ settings/
 └─────────────────────────────────────────────────┘
 ```
 
-- Checkbox'lar master `grade_levels`'tan, eğitim seviyesine göre gruplu
-- Son aktif checkbox deaktive edilmeye çalışılırsa disabled + tooltip (BR-SS-010)
-- Okul tipi değiştiğinde "Sınıf kademelerini otomatik güncellemek ister misiniz?" confirm dialog (güncellerse seed mantığı, istemezse manual)
-- Save: `PUT /grade-levels` → `SchoolGradeLevelsChangedEvent`
+- **Salt-görünüm (2026-05-28 güncellemesi):** Kademeler kullanıcı tarafından tek tek seçilmez; seçili okul tür(ler)inden otomatik türetilir ve yalnızca seçili türlere ait gruplar gösterilir (info bar ile açıklanır). Gerekçe yasal — bkz. BR-SS-014.
+- Master `grade_levels` eğitim seviyesine göre gruplu, salt-görünüm işaretiyle listelenir (düzenlenemez).
+- Hiç okul türü seçili değilse "önce okul türü seçin" ipucu; en az bir tür zorunlu.
+- Save: "Akademik Yapı" formunun Kaydet'i hem yapıyı hem seçili türlerin TÜM kademelerini `PUT /grade-levels` ile gönderir → `SchoolGradeLevelsChangedEvent`.
 
 ---
 
