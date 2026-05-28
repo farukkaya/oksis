@@ -17,7 +17,7 @@ Tek satır per tenant. Mevcut kolonlar değişmez. **5 yeni kolon** eklenir:
 - İletişim (owned VO): `contact_info_phone/fax/email/website`
 - Adres (owned VO): `address_country_id/province_id/district_id/neighborhood_id`, `address_full_address`, `address_postal_code`
 - Tema (owned VO): `theme_logo_url`, `theme_primary_color`, `theme_secondary_color`, `theme_favicon_url`
-- Akademik Yapı: `school_type`, `education_language`, `weekly_lesson_days`, `daily_lesson_count`, `student_number_prefix`, `student_number_length`, `timezone`
+- Akademik Yapı: `school_types` (JSON array `nvarchar(max)` — Q6 2026-05-28; eski tekil `school_type` kolonu migration `20260528_school_settings_multi_school_types` ile drop edildi), `education_language`, `weekly_lesson_days`, `daily_lesson_count`, `student_number_prefix`, `student_number_length`, `timezone`
 
 **Yeni kolonlar (Sprint 1 migration):**
 
@@ -99,7 +99,34 @@ CREATE UNIQUE INDEX ux_school_grade_levels_school_grade
   WHERE is_deleted = 0;
 ```
 
-**Seed mantığı:** Okul oluşturulduğunda `school_type`'a göre otomatik seed:
+**Plan ↔ Modül kataloğu (Q-Plan-Modules — 2026-05-28):**
+
+Yeni master tablo `master.plan_modules` (junction) `PlanCode` enum'unu (Free/Standard/Premium) modül anahtarlarına bağlar; eski hardcoded `ModuleConfig.PlanRestricted` mantığı veri kaynaklı hale geldi.
+
+```sql
+CREATE TABLE [master].[plan_modules] (
+  id uniqueidentifier PRIMARY KEY,
+  plan nvarchar(50) NOT NULL,           -- 'Free' | 'Standard' | 'Premium'
+  module_key nvarchar(50) NOT NULL,     -- 'attendance' | ... | 'reports'
+  -- audit + soft delete + rowversion (MasterEntity)
+);
+CREATE UNIQUE INDEX ux_plan_modules_plan_module ON [master].[plan_modules] (plan, module_key) WHERE is_deleted = 0;
+CREATE INDEX ix_plan_modules_plan ON [master].[plan_modules] (plan);
+```
+
+Seed (migration `20260528_add_plan_modules_catalog`):
+
+| Modül | Free | Standard | Premium |
+|---|:-:|:-:|:-:|
+| attendance, marks, announcements, homework | ✅ | ✅ | ✅ |
+| messaging | ❌ | ✅ | ✅ |
+| reports | ❌ | ❌ | ✅ |
+
+UI'da modülün "kilitli" görünmesi `school.plan` × `plan_modules` join'inden çözülür (`IPlanModuleResolver` servisi). `school_module_configs.plan_restricted` kolonu artık **deprecated** (geriye dönük korunur, yeni kayıtlar her zaman `false`).
+
+---
+
+**Seed mantığı:** Okul oluşturulduğunda `school_types` listesindeki tüm türlere göre otomatik seed (Q6 — 2026-05-28: çoklu tür birleştirilip distinct ile uygulanır):
 - `PrimarySchool` → 1-4. sınıf
 - `MiddleSchool` → 5-8. sınıf
 - `HighSchool` → 9-12. sınıf

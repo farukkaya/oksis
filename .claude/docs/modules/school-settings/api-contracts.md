@@ -15,7 +15,7 @@
 | 3 | UpdateBasicInfo | PUT | `/basic-info` | `update-basic` |
 | 4 | UpdateContactInfo | PUT | `/contact-info` | `update-contact` |
 | 5 | UpdateAddress | PUT | `/address` | `update-address` |
-| 6 | UpdateAcademicStructure | PUT | `/academic-structure` | `update-academic-structure` ⚠️ DEĞİŞTİ |
+| 6 | UpdateAcademicStructure | PUT | `/academic-structure` | `update-academic-structure` ⚠️ DEĞİŞTİ (Q6: `schoolTypes` çoklu) |
 | 7 | UpdateTheme | PUT | `/theme` | `update-theme` |
 | 8 | UploadLogo | POST | `/logo` | `upload-logo` |
 | 9 | DeleteLogo | DELETE | `/logo` | `upload-logo` |
@@ -33,6 +33,8 @@
 | 21 | UpdateNotificationConfig | PUT | `/notification-config` | `manage-notifications` |
 
 > ⚠️ **#6 Breaking change:** Permission `update-basic` → `update-academic-structure` (BR-SS-015). Migration'da SCHOOL_ADMIN rolüne yeni permission otomatik eklenir.
+>
+> ⚠️ **#6 Q6 (2026-05-28) — payload değişimi:** Tekil `schoolType: "HighSchool"` alanı **kaldırıldı**. Yeni alan: `schoolTypes: ["MiddleSchool", "HighSchool"]` (array, en az 1). Null gönderilirse mevcut değer korunur; boş array (`[]`) reddedilir. Backend `SchoolSettingsDetailDto.schoolTypes` olarak döner.
 
 ---
 

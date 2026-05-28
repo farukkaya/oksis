@@ -57,17 +57,20 @@
 
 ## Açık Sorular
 
-### ❓ Q6 — `school_type` multi-select backend'de nasıl tutulacak?
+### ✅ Q6 — `school_type` multi-select backend'de nasıl tutulacak?
 
 **Soruluş tarihi:** 2026-05-25
-**Mevcut durum:** Açık
+**Karar tarihi:** 2026-05-28
+**Karar:** (B) JSON array (`nvarchar(max)` kolon `school_types`). EF Core `HasConversion` + `ValueComparer` ile `List<SchoolType>`'a deserialize edilir. Eski tekil `school_type` kolonu drop edildi (migration `20260528_school_settings_multi_school_types` mevcut satırların değerini `["X"]` formatında taşır).
 
-Mevcut `school_type` kolonu `nvarchar` enum (`Preschool`/`PrimarySchool`/`MiddleSchool`/`HighSchool`). Çoklu seçim desteklenecekse:
-- (A) Virgülle ayrılmış string ("PrimarySchool,MiddleSchool") — basit ama sorgulanamaz
-- (B) JSON array (`["PrimarySchool","MiddleSchool"]`) — EF Core JSON mapping
-- (C) Bitmask int (1=Preschool, 2=Primary, 4=Middle, 8=High) — hızlı ama okunabilirlik düşük
+**Detay:**
+- Domain: `SchoolSettings.SchoolTypes : IReadOnlyList<SchoolType>` (backing field `_schoolTypes`, distinct + enum sırasına göre normalize).
+- API: `UpdateAcademicStructureCommand.SchoolTypes : IReadOnlyList<SchoolType>?` (null → mevcut korunur; gönderilirse en az 1).
+- DTO: `SchoolSettingsDetailDto.SchoolTypes : IReadOnlyList<string>` (enum adları).
+- Web: `AcademicStructureDto.schoolTypes : SchoolType[]`, Zod `.min(1)`.
+- Seeder (`SeedSchoolGradeLevelsHandler`): tüm seçili türlerin kademe kodlarını birleştirip distinct ile seed eder (ör. Ortaokul + Lise → 5..12 hepsi).
 
-**Öneri:** (B) — EF Core 8+ JSON column desteği ile temiz. Ama BR-SS-014 kararına göre `school_type` zaten informational — asıl kapsam `school_grade_levels`'tan geliyor. Dolayısıyla (A) bile kabul edilebilir.
+**Etki:** UI checkbox grubu artık gerçek çoklu seçimdir; Akademik Yapı sekmesinde birden fazla okul türü işaretlemek backend'e olduğu gibi gider ve yenileme sonrası korunur.
 
 ---
 
@@ -111,7 +114,7 @@ Q3 (sekme ayrımı) ────────→ ✅ 2 ayrı sekme
 Q4 (holiday session FK) ──→ ✅ Nullable geçiş, Sprint 4+ zorunlu
 Q5 (ayrı permission) ─────→ ✅ Evet
                               │
-                              ├──→ Q6 (school_type storage) — açık (minor)
+                              ├──→ Q6 (school_type storage) — ✅ 2026-05-28 (B: JSON array)
                               ├──→ Q7 (sınav ağırlığı scope) — Sprint 2'de
                               └──→ Q8 (HARFLI skala) — Sprint 3'te
 ```

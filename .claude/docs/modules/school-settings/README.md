@@ -43,27 +43,28 @@ Bu modül önceki sürümünden şu farkları içerir:
 
 | Rol | Kullanım Şekli |
 |---|---|
-| `SchoolAdmin` | Tüm ayarları görüntüler ve düzenler (10 sekme) |
+| `SchoolAdmin` | Tüm ayarları görüntüler ve düzenler (7 sekme — bkz. aşağıda) |
 | `SuperAdmin` | Public branding hariç müdahale etmez; okul kurulum sırasında ön-doldurma yapar |
 | Diğer roller | Sadece public branding (`/api/v1/school-settings/public`) anonim erişim |
 | **Diğer modüller** (en önemli tüketici) | `academic-sessions`, `timetable`, `attendance`, `marks`, `report-cards` — hepsi bu modüldeki ayarları okur |
 
 ---
 
-## Sekme Yapısı (10 sekme)
+## Sekme Yapısı (7 sekme)
 
-| # | Sekme | Permission | Durum |
-|---|---|---|---|
-| 1 | Genel Bilgi | `update-basic` | ✅ Mevcut |
-| 2 | İletişim | `update-contact` | ✅ Mevcut |
-| 3 | Adres | `update-address` | ✅ Mevcut |
-| 4 | Tema | `update-theme` + `upload-logo` | ✅ Mevcut |
-| 5 | Akademik Yapı | `update-academic-structure` ⭐ | 🔄 Güncellendi (sınıf kademesi, eğitim seviyesi multi-select) |
-| 6 | Akademik Politikalar | `update-academic-policy` ⭐ | 🆕 YENİ |
-| 7 | Zil Programı | `manage-bell` | ✅ Mevcut |
-| 8 | Tatiller | `manage-holidays` | 🔄 Güncellendi (academic_session_id) |
-| 9 | Modüller | `manage-modules` | ✅ Mevcut |
-| 10 | Bildirimler | `manage-notifications` | ✅ Mevcut |
+> Spec'in ilk 4 sekmesi (Genel Bilgi / İletişim / Adres / Tema) tek **Genel** sekmesinde
+> 4 `FormSection` olarak birleştirildi (UX kararı, 2026-05-27). Bölüm bazlı
+> permission ve endpoint'ler değişmedi.
+
+| # | Sekme | Path | Permission | Durum |
+|---|---|---|---|---|
+| 1 | Genel | `/admin/settings/general` | `update-basic`, `update-contact`, `update-address`, `update-theme`, `upload-logo` (her bölüm kendi mutation'ı) | ✅ Mevcut (4 spec sekmesinden birleştirildi) |
+| 2 | Akademik Yapı | `/admin/settings/academic` | `update-academic-structure` ⭐ | 🔄 Güncellendi (sınıf kademesi multi-select) |
+| 3 | Akademik Politikalar | `/admin/settings/academic-policy` | `update-academic-policy` ⭐ | 🆕 YENİ |
+| 4 | Zil Programı | `/admin/settings/bell-schedule` | `manage-bell` | ✅ Mevcut |
+| 5 | Tatiller | `/admin/settings/holidays` | `manage-holidays` | 🔄 Güncellendi (academic_session_id) |
+| 6 | Bildirimler | `/admin/settings/notifications` | `manage-notifications` | ✅ Mevcut |
+| 7 | Modüller | `/admin/settings/modules` | `manage-modules` | ✅ Mevcut |
 
 ---
 
@@ -98,17 +99,21 @@ Bu modül önceki sürümünden şu farkları içerir:
 ## Mevcut Durum
 
 - **Sprint:** Sprint 1
-- **Status:** `in-progress` (mevcut 21 endpoint live; genişletme devam ediyor)
+- **Status:** `mvp-ready` ✅ (21 baseline + 5 yeni endpoint live; tüm Sprint 1 hedefleri tamamlandı, 2026-05-28 QA turu geçildi)
 
-**Sprint 1 — Yapılacaklar (genişletme):**
-- [ ] `school_grade_levels` junction tablosu + migration + seed
-- [ ] `school_grade_level_scales` junction tablosu + migration
-- [ ] `school_settings` tablosuna 5 yeni kolon (grade_scale_id, passing_score, 3 parametrik)
-- [ ] `school_holidays` tablosuna `academic_session_id` nullable kolon
-- [ ] "Akademik Politikalar" sekmesi (9→6. sıra) + `PUT /academic-policy` + permission
-- [ ] "Akademik Yapı" sekmesine sınıf kademesi multi-select + `GET/PUT /grade-levels`
-- [ ] 2 yeni permission seed: `update-academic-structure`, `update-academic-policy`
-- [ ] `UpdateAcademicStructure` endpoint permission'ını `update-basic`'ten `update-academic-structure`'a taşı
+**Sprint 1 — Tamamlandı:**
+- [x] `school_grade_levels` junction tablosu + migration + seed
+- [x] `school_grade_level_scales` junction tablosu + migration
+- [x] `school_settings` tablosuna 5 yeni kolon (grade_scale_id, passing_score, 3 parametrik)
+- [x] `school_holidays` tablosuna `academic_session_id` nullable kolon
+- [x] "Akademik Politikalar" sekmesi + `PUT /academic-policy` + permission
+- [x] "Akademik Yapı" sekmesine sınıf kademesi multi-select + `GET/PUT /grade-levels`
+- [x] 2 yeni permission seed: `update-academic-structure`, `update-academic-policy`
+- [x] `UpdateAcademicStructure` endpoint permission'ını `update-academic-structure`'a taşıdı
+- [x] Q6 multi `school_types` (JSON kolon) — tam stack
+- [x] Q-Plan-Modules — `master.plan_modules` kataloğu + `IPlanModuleResolver`
+- [x] Bildirim kanal toggle'ları (push/email/sms/late-arrival) DB'de kalıcı
+- [x] `SeedDefaultModuleConfigsHandler` (yeni okul için modül seed) + DEV-OKUL backfill migration
 
 **Sprint 2'ye bırakılan:**
 - Devamsızlık eşik ayarları (attendance modülü ile)
@@ -125,7 +130,7 @@ Bu modül önceki sürümünden şu farkları içerir:
 ## Metadata
 
 - **Slug:** `school-settings`
-- **Status:** `in-progress`
-- **Sprint:** Sprint 1
+- **Status:** `mvp-ready`
+- **Sprint:** Sprint 1 (tamamlandı)
 - **Owner:** Faruk Kaya
-- **Last Updated:** 2026-05-28
+- **Last Updated:** 2026-05-28 — **mvp-ready** ✅ (10-maddelik QA tamamlandı; Q6 multi `school_types` + Q-Plan-Modules + bildirim kanal toggle'ları tam stack uygulandı; multi-tenant izolasyon ikinci tenant ile doğrulandı)

@@ -15,8 +15,21 @@ Adres FK'leri nullable; okul kurulum sihirbazının ilk adımında boş kalabili
 ### BR-SS-003 — Logo dosyası 2 MB üst sınır
 `UploadLogo` endpoint'i `[RequestSizeLimit(2_097_152)]`.
 
-### BR-SS-004 — Modül kataloğu seed önceliği
-6 modül satırı seed. PlanRestricted modüller SchoolAdmin tarafından açılamaz.
+### BR-SS-003a — Bildirim kanal toggle'ları (2026-05-28)
+`NotificationConfig` entity'si `PushEnabled`, `EmailEnabled`, `SmsEnabled`, `LateArrivalNotify`
+4 ayrı bool kolon tutar. Eski tek `IsEnabled` bayrağı artık türev — domain `Update`
+metodu en az bir kanal açıksa true, hepsi kapalıysa false olarak otomatik hesaplar.
+Frontend yalnızca 4 kanal toggle'ını gönderir; `IsEnabled` payload'da yer almaz.
+Migration `20260528_add_notification_channel_toggles` mevcut `is_enabled = true`
+satırlarda `push_enabled = true` set ederek eski davranışı korur.
+
+### BR-SS-004 — Modül kataloğu seed önceliği (Q-Plan-Modules 2026-05-28 ile güncel)
+Yeni okul oluşturulduğunda `SeedDefaultModuleConfigsHandler` 6 modül satırını seed eder
+(attendance, marks, announcements, homework, messaging, reports). Modülün **plan kapsamı**
+artık ham `plan_restricted` kolonundan değil, master `plan_modules` (junction) ile okulun
+`school.plan`'inin join'inden çözülür. SchoolAdmin plan kapsamı dışı bir modülü
+etkinleştirmeye çalışırsa handler `Failure("school-settings.errors.module.plan-required")`
+döner; pasifleştirme (toggle off) her planda serbesttir — downgrade akışı için.
 
 ### BR-SS-005 — Bell schedule sıralama tutarlılığı
 `BulkCreateBellSchedules` sıra çakışmasına izin vermez.

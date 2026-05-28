@@ -1,6 +1,8 @@
 # Okul Ayarları — UI Flows (Güncellenmiş)
 
-> Mevcut 8 sekme korunur, 2 sekme güncellenir, 1 yeni sekme eklenir. Toplam: **10 sekme**.
+> **Toplam 7 sekme.** Spec'in ilk 4 sekmesi (Genel Bilgi / İletişim / Adres / Tema) tek
+> `GeneralSettingsTab` içinde **4 `FormSection` bölümü** olarak birleştirildi (UX kararı,
+> 2026-05-27). Diğer sekmeler spec ile birebir eşleşir.
 
 ---
 
@@ -10,32 +12,32 @@ Frontend: `oksis-web/src/portals/admin/settings/`
 
 ```
 settings/
-├── SettingsPage.tsx
-├── components/
-│   ├── BasicInfoTab.tsx               (mevcut)
-│   ├── ContactInfoTab.tsx             (mevcut)
-│   ├── AddressTab.tsx                 (mevcut)
-│   ├── ThemeTab.tsx                   (mevcut)
+├── pages/
+│   └── SchoolSettingsPage.tsx         (kabuk: PageHeader + Tabs + <Outlet/>)
+├── tabs/
+│   ├── GeneralSettingsTab.tsx         (Basic + Contact + Address + Theme → tek sekmede 4 FormSection)
 │   ├── AcademicStructureTab.tsx       (🔄 güncellendi)
 │   ├── AcademicPolicyTab.tsx          (🆕 YENİ)
-│   ├── GradeLevelScalePanel.tsx       (🆕 YENİ — alt component)
 │   ├── BellScheduleTab.tsx            (mevcut)
-│   ├── HolidayTab.tsx                 (mevcut)
-│   ├── ModuleConfigTab.tsx            (mevcut)
-│   └── NotificationConfigTab.tsx      (mevcut)
-├── hooks/
-│   ├── useSchoolSettingsQuery.ts      (mevcut)
-│   ├── useGradeLevelsQuery.ts         (🆕)
-│   ├── useGradeLevelScalesQuery.ts    (🆕)
-│   └── useAcademicPolicyMutation.ts   (🆕)
-└── schemas/
-    ├── ...mevcut schemas...
-    ├── gradeLevelsSchema.ts           (🆕)
-    └── academicPolicySchema.ts        (🆕)
+│   ├── HolidaysTab.tsx                (mevcut)
+│   ├── NotificationConfigTab.tsx      (mevcut)
+│   └── ModuleConfigTab.tsx            (mevcut)
+├── components/
+│   ├── SchoolSettingsTabs.tsx         (yatay sekme çubuğu, React Router <Link>)
+│   ├── GradeLevelScalePanel.tsx       (🆕 — AcademicPolicyTab alt component)
+│   ├── AddressFields.tsx, ColorPickerField.tsx, LogoUploadCard.tsx,
+│   │   BellScheduleGrid.tsx, BellScheduleFormModal.tsx,
+│   │   HolidayList.tsx, HolidayFormModal.tsx,
+│   │   ModuleToggleCard.tsx, NotificationThresholdSection.tsx,
+│   │   PassingScoreField.tsx, SettingsSkeleton.tsx, …
+├── api/ (queries, mutations, keys)
+├── schemas/ (zod)
+└── types/
 ```
 
-**URL:** `/admin/settings`
-**Sekme state:** `?tab=basic|contact|address|theme|structure|policy|bell|holidays|modules|notifications`
+**URL:** `/admin/settings` (index → `/admin/settings/general`'a redirect)
+**Sekme state:** path-based, query param **değil**:
+`/admin/settings/{general|academic|academic-policy|bell-schedule|holidays|notifications|modules}`
 
 ---
 
@@ -171,13 +173,15 @@ Mevcut takvim/DataGrid toggle, resmi tatil read-only badge, `HolidayFormModal` �
 
 ## Mevcut Sekmeler (değişmez)
 
-1. Genel Bilgi — değişmez
-2. İletişim — değişmez
-3. Adres — değişmez
-4. Tema — değişmez
-7. Zil Programı — değişmez
-9. Modüller — değişmez
-10. Bildirimler — değişmez
+| # | Sekme (kod) | Path | İçerik |
+|---|---|---|---|
+| 1 | **Genel** (`GeneralSettingsTab`) | `/admin/settings/general` | Tek sekme içinde 4 `FormSection`: **Temel Bilgiler**, **İletişim Bilgileri**, **Adres Bilgileri**, **Görünüm** (tema/logo). Her bölümün kendi Kaydet butonu, kendi mutation'ı (`useUpdateBasicInfo`, `useUpdateContactInfo`, `useUpdateAddress`, `useUpdateTheme`). |
+| 4 | Zil Programı | `/admin/settings/bell-schedule` | değişmez |
+| 6 | Bildirimler | `/admin/settings/notifications` | değişmez |
+| 7 | Modüller | `/admin/settings/modules` | değişmez |
+
+> i18n: `school-settings.tabs.general = "Genel Bilgiler"`; bölüm başlıkları
+> `school-settings.sections.{basic-info,contact-info,address,theme}` altında.
 
 ---
 
