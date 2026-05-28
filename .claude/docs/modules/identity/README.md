@@ -85,3 +85,4 @@ Bu modül hangi modüllerle konuşur?
   - [x] ui-flows.md (iskelet)
   - [x] business-rules.md (iskelet)
   - [x] open-questions.md (iskelet)
+  - [x] completion_status.md

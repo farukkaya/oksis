@@ -106,4 +106,5 @@ Modülün ana akışı, **kişinin yaşam döngüsü** etrafında kuruludur:
   - [x] ui-flows.md
   - [x] business-rules.md
   - [x] open-questions.md
+  - [x] completion_status.md
   - [x] folder_skeleton.md (frontend mevcut yapı)

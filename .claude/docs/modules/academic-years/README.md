@@ -146,3 +146,4 @@ Karar kullanıcıya bırakılmıştır.
   - [x] ui-flows.md
   - [x] business-rules.md
   - [x] open-questions.md
+  - [x] completion_status.md
