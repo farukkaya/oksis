@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %92   ·   Status: in-progress (ISSUE-07–10: kabul, rıza, import, ABAC commit'li)   ·   Güncel: 2026-05-30
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %99   ·   Status: in-progress (API ISSUE-01–10 + Web ISSUE-11–15 + Mobile ISSUE-16 commit'li; mobil davet-kabul akışı identity revizyonuna ertelendi)   ·   Güncel: 2026-05-31
 
 > Temel: Doküman büyük ölçüde dolu (≈7 `{{TBD}}`). Web'de admin `users` sayfası mevcut;
 > backend kullanıcı yetenekleri `identity` modülü üzerinden gelir (bu modül onunla örtüşür).
@@ -91,11 +91,22 @@ OKSMVP-2 (16 issue, 296 SP) implementasyonu öncesi kapatılan çekirdek kararla
 - **ISSUE-09 — Toplu Excel import (2026-05-30):** `GET imports/template` (profil bazlı .xlsx), `POST imports/preview` (DB'ye yazmaz, 10MB/5000 satır, tenant+dosya-içi duplicate, 15 dk cache token), `POST imports` (onay → `ImportJob` + arka plan iş), `GET imports/{id}` (durum + satır hataları). `ImportPersonsJob` (`IImportProcessor`): 100'lük batch, satır-bazlı transaction, kısmi başarı (hatalı satır başarılıyı geri almaz), idempotent. Tüm uçlar `users.import`. Migration `…_add_import_jobs`. Test: ImportColumns birim + integration (kısmi başarı, idempotency, durum).
 - **ISSUE-10 — Authorization ABAC + maskeleme (2026-05-30):** `IPersonAccessGuard`/`PersonAccessGuard` — RBAC sonrası resource-level kapsam (self / veli-çocuk CanViewInfo / accountant ödeme sorumlusu / teacher homeroom sınıfı); geniş roller tenant içinde tam; default deny. `ITeacherClassroomScope` sınırı (classroom tam entegrasyonu kapsam dışı). `GetPersonDetail` artık guard'dan geçer (RBAC pipeline'da, kapsam handler'da → 403). `NationalIdMasker` (son-4-hane). Test: guard birim (tüm rol dalları) + NationalIdMasker + integration (veli kapsamı, ilgisiz 403, cross-tenant 404). **Tüm solüsyon yeşil:** Domain 195, Application 559, Api 70, Tests 22, Integration 77.
 
+- **ISSUE-11 — Web veri katmanı (mock → live) (2026-05-31, repo: oksis-web):** `src/modules/users` dikey dilimi yeni `/users/persons` API'sine taşındı. Tipler (person.types/detail.types, PascalCase string enum'lar), tenant-scoped React Query key factory'leri (`personKeys`/`invitationKeys`, schoolId prefix), api modülleri (person/invitation/relationship/publicInvitation), `getApiErrorCode/Status` axios hata yardımcıları, hook'lar (usePersons search≥2 gating, usePerson, CRUD + optimistic delete, lifecycle, ilişki/davet sekmeleri), Zod şemaları. Eski `features/user-management` + `app/pages/admin/users` ölü kod silindi. Commit `f7da93b`.
+- **ISSUE-12 — Admin kişi detay + yaşam döngüsü (2026-05-31, oksis-web):** `UserDetailPage` (7 sekme: genel/profiller/ilişkiler/rol-atamaları/davetler/rızalar/yaşam-döngüsü), `LifecycleActions` (domain state-machine gating) + `LifecycleActionModal`. TCKN maskeli, asla yeniden kurulmaz. Commit `f3f0006`.
+- **ISSUE-13 — İlişki yönetimi (2026-05-31, oksis-web):** `RelationshipsPage` + `RelationshipFormModal` (5 yetki bayrağı, `validUntil>=validFrom` refine) + revoke modalı. Commit `16448db`.
+- **ISSUE-14 — Davet yönetimi (2026-05-31, oksis-web):** sekmeli `InvitationsPage`, `BulkInviteWizard` (max 500), `InvitationBatchDetailPage`, durum rozeti + revoke. `INVITABLE_ROLES` köprü sabiti (aşağıda deviation). Commit `0b02ebe`.
+- **ISSUE-15 — Genel davet kabul + self akışlar (2026-05-31, oksis-web + oksis-api):**
+  - **Web (commit `5d947d6`):** 4 adımlı genel davet kabul sihirbazı (`/invitation/accept`) — token doğrulama (404/410/already-accepted state'leri), profil onayı, KVKK rızaları (DataProcessing zorunlu), parola (politika checklist). Token yalnız istek gövdesinde; localStorage/Zustand'a yazılmaz.
+  - **Web (commit `<self>`):** `/profile` (salt-okunur kimlik + maskeli TCKN + rol-farkındalıklı profil + düzenlenebilir e-posta/telefon) ve `/profile/consents` (rıza listesi + gerekçeli geri çekme; DataProcessing özel uyarısı). `self.api`/`useSelf` + tenant-scoped `selfKeys`. 6 test.
+  - **API (commit `Issue #15 …/users/self`):** `SelfController` (`/users/self`) — GET profil, PUT iletişim, GET consents, POST consents/{id}/revoke (sahiplik `LinkedAccountId` ile, izin değil → parent/student kendi rızasını çekebilir). 10 handler testi.
+- **ISSUE-16 — Mobil self akışlar (2026-05-31, oksis-mobile):** `features/self` — `ProfileScreen` (klavye-güvenli düzenlenebilir iletişim, maskeli TCKN, rol-farkındalıklı bilgiler) + `ProfileConsentsScreen` (FlatList + gerekçeli geri çekme modalı, DataProcessing uyarısı). `/users/self` uçlarına bağlı api/hooks, tenant-scoped key'ler. Teacher/Parent/Student stack'lerine `Profile`+`ProfileConsents` route'ları, Ayarlar'dan erişim. `self` i18n namespace (tr+en). 8 test; typecheck+lint temiz. **Davet kabul akışının yeni `/users/invitations/accept` (rıza adımlı) uca taşınması bilinçli olarak ertelendi** (aşağıda deviation). Commit `<mobile>`.
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Kalan doküman `{{TBD}}` alanları (≈7).
 - Backend kullanıcı yönetimi kapsamının genişletilmesi (README notu).
-- Web users sayfasının gerçek API'ye bağlanması (mock → live).
+- **Mobil davet kabul akışı (ISSUE-16):** mevcut otomatik-giriş akışı korundu; rıza adımı + `/users/invitations/accept` uca taşıma identity modülü revizyonunda ele alınacak (kullanıcı kararı).
+- **Self profil için açık `/users/me`:** köprü döneminde `/users/self` kullanıldı; eski Identity controller emekliye ayrılınca `/me`'ye taşınabilir.
 
 ## ➕ Karar Kaynaklı Ek Kapsam (16 issue dışı)
 
@@ -105,6 +116,10 @@ OKSMVP-2 (16 issue, 296 SP) implementasyonu öncesi kapatılan çekirdek kararla
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-05-31 — `INVITABLE_ROLES` köprü sabiti, doğrulanmış seed GUID'leriyle (ISSUE-14, oksis-web):** Davet oluştururken hedef rol seçimi için sistem rollerine ihtiyaç var; ancak rol-listesi endpoint'i yok. Seed GUID'leri (`MD5("oksis:role:CODE")` → .NET little-endian, migration `20260525231824` ile doğrulandı) TEACHER/PARENT/STUDENT için frontend sabitine yazıldı. **Gerekçe:** roller-listesi API'si gelene kadar köprü. **Etki:** seed GUID'leri değişirse sabit güncellenmeli. Geri dönülebilir (endpoint gelince sabit silinir). Onay: kullanıcı (autonomous geliştirme bağlamı).
+- **2026-05-31 — Self uçları `/users/self` altında, `/users/me` yerine (ISSUE-15, oksis-api):** api-contracts self profili `/users/me` altında tanımlar; ancak eski Identity `UsersController` `GET api/v1/users/me` yolunu hâlâ işgal ediyor (K1 emeklilik öncesi). Çakışmayı önlemek için yeni Users self uçları `/users/self` altında açıldı. Eski controller emekliye ayrılınca `/me`'ye taşınabilir. Geri dönülebilir.
+- **2026-05-31 — Self rıza geri çekme ayrı komut (`RevokeMyConsentCommand`) (ISSUE-15, oksis-api):** Admin `RevokeConsentCommand` `users.update` izni gerektirir; veli/öğrenci kendi rızasını çekerken bu izne sahip değildir. Bu yüzden izin yerine `LinkedAccountId` ile sahiplik doğrulayan ayrı self komutu açıldı (başkasının kaydı → 404/IDOR koruması).
+- **2026-05-31 — Mobil davet kabul akışı ISSUE-07 ucuna taşınmadı (ISSUE-16, oksis-mobile):** Mevcut mobil akış eski `/public/invitations/{token}/accept` (otomatik giriş, token URL'de) kullanıyor. ISSUE-16 kriterleri (token gövdede + DataProcessing rıza adımı) yeni `/users/invitations/accept` ucunu işaret eder; ancak bu uca taşıma otomatik-giriş UX'ini değiştirir ve **identity modülü geliştirmesinde revize alacağı için bilinçli ertelendi** (kullanıcı kararı). ISSUE-16 kapsamında yalnız self profil + rıza ekranları teslim edildi; mevcut davet-deep-link (`invite/:token`) ve kabul ekranı korundu.
 - **2026-05-30 — `RoleAssignment.AssignedBy` (Guid) — doc'taki `AssignedByPersonId` yerine (ISSUE-05):** atayan aktör bir identity kullanıcısıdır (Person değil); audit alanı `AssignedBy` olarak adlandırıldı ve `ICurrentUser.Id` ile dolduruluyor. Person FK'sı ima edilmiyor.
 - **2026-05-30 — `RoleAssignmentStatus` 2 değer (ISSUE-05):** doc Active/Inactive/Revoked öneriyor; ISSUE-01 enum'u Active/Inactive (2) commit'lendiğinden revoke = `Inactive` + `RevokedAt` ile modellendi (ayrı Revoked durumu yok). Audit izi korunur.
 - **2026-05-30 — `ScopeAttributes` `string?` (ham JSON) — `JsonDocument?` yerine (ISSUE-05):** domain'i saf tutmak için ABAC scope'u ham JSON metni olarak saklanıyor; geçerlilik Application validator'ında (`JsonDocument.Parse`). EF kolonu nvarchar(max).

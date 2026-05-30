@@ -91,11 +91,11 @@ Modülün ana akışı, **kişinin yaşam döngüsü** etrafında kuruludur:
 ## Metadata
 
 - **Slug:** users
-- **Status:** in-progress (ISSUE-07–10: davet kabul, KVKK rıza, Excel import, ABAC commit'li)
+- **Status:** in-progress (API ISSUE-01–10 + Web ISSUE-11–15 + Mobile ISSUE-16 commit'li; mobil davet-kabul identity revizyonuna ertelendi)
 - **Sprint:** Sprint 3
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-05-30
+- **Last Updated:** 2026-05-31
 - **Files:**
   - [x] README.md
   - [x] domain-model.md
