@@ -6,6 +6,8 @@
 
 > **Konvansiyon:** snake_case tablo/kolon, `nvarchar` (unicode), `datetimeoffset` (UTC), `uniqueidentifier` PK, soft delete (`is_deleted` + `deleted_at` + `deleted_by`), optimistic concurrency (`row_version`).
 
+> ⚠️ **Uygulama notu (2026-05-30, ISSUE-02):** Aşağıdaki `student_profiles`/`teacher_profiles`/`parent_profiles`/`staff_profiles` ayrı tabloları **şu an tek `users.profiles` tablosu** olarak gerçeklendi (EF TPH, `profile_type` discriminator) — domain bir `Profile` kalıtım hiyerarşisi olduğu için. Ortak kolonlar tip çakışmasını önlemek için `teacher_`/`staff_` ön ekli (`teacher_employee_number`, `staff_hire_date` vb.). `national_id` `users.persons` üzerinde owned VO olarak `national_id_type`/`national_id_hash`(varbinary 32)/`national_id_encrypted` kolonlarında tutulur; tekillik global `ux_persons_national_id_hash` ile (hash tenant-scoped HMAC olduğundan okul-içi tekillik garanti). Henüz oluşturulmayan tablolar (`parent_student_relationships`, `role_assignments`, `invitations`, `consent_records`, `account_lifecycle_events`) sonraki issue'larda gelecek. Detaylı sapma gerekçeleri: `completion_status.md → ⚠️ Spec Dışına Çıkılanlar`.
+
 ---
 
 ## Genel Audit & Tenant Kolonları
@@ -564,7 +566,7 @@ CREATE INDEX ix_ale_school_id_event_type_occurred_at
 
 | Tarih | Migration | Değişiklik |
 |---|---|---|
-| {{TBD}} | `20260601_add_persons_and_profiles` | `persons`, `student_profiles`, `teacher_profiles`, `parent_profiles`, `staff_profiles` |
+| 2026-05-30 | `20260530123902_AddUsersPersonsAndProfiles` | `users.persons` + `users.profiles` (TPH; öğrenci/öğretmen/veli/personel tek tabloda). Index'ler: `ix_persons_school_id`, `ix_persons_school_id_lifecycle_state`, `ix_persons_school_id_primary_email`, `ux_persons_national_id_hash`, `ix_profiles_school_id`, `ix_profiles_person_id`, `ux_profiles_school_id_student_number`, `ux_profiles_school_id_teacher_employee_number`, `ux_profiles_school_id_staff_employee_number`. |
 | {{TBD}} | `20260601_add_parent_student_relationships` | `parent_student_relationships` |
 | {{TBD}} | `20260601_add_role_assignments` | `role_assignments` |
 | {{TBD}} | `20260601_add_invitations` | `invitations` |
