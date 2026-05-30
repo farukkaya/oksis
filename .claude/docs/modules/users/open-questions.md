@@ -345,7 +345,20 @@
 
 Bu bölümde, cevabı netleşmiş ancak henüz ilgili dosyaya taşınmamış sorular tutulur. Bir sonraki güncellemede ilgili dosyaya taşı, buradan sil.
 
-_(Henüz arşivlenmiş karar yok.)_
+> **2026-05-30 Faz-0 karar turu.** Aşağıdaki kararlar `completion_status.md` § Faz-0 Geçiş Kararları'nda da özetli. ISSUE-01 sırasında `business-rules.md`/`domain-model.md`'ye işlenip yukarıdaki açık soru bloklarından silinecekler.
+
+- **OQ-users-001 → KAPANDI (K8):** Sezon rol kopya = **Hibrit akıllı default** (`TerminatedAt = null` otomatik, ayrılanlar atlanır, öğrenciler `classrooms`'tan). → `business-rules.md` BR-users-004.
+- **OQ-users-003 → KAPANDI (K9):** Consent metni = **Minimal `consent_bundle_versions` tablosu** (seed'li current version + hash); tam admin CRUD sonraya. → `database-schema.md` + `api-contracts.md`.
+- **OQ-users-005 → KAPANDI (K4):** Kimlik no = **Tek alan + `IdType` enum** (Tckn/Ykn/Passport). → `domain-model.md` + `database-schema.md`, BR-users-008.
+- **OQ-users-006 → KAPANDI (post-MVP, A):** Cross-tenant `MasterIdentity` **eklenmeyecek**; K5 tenant-scoped salt ile tutarlı.
+- **OQ-users-007 → KAPANDI (K10):** `ParentProfile.Address` = **`IsPaymentResponsible` ise zorunlu**, aksi halde opsiyonel. → BR-users-013.
+- **OQ-users-009 → KAPANDI (K3):** **Tek Person ↔ Tek Account** + çok profil + tek login & profil switcher; JWT tüm rolleri taşır. → `domain-model.md` (`Person.LinkedAccountId` tekil) + `identity/` Account ilişkisi.
+
+**Ek karar (OQ dışı):**
+- **Davet TTL = 7 gün** (resend yeniler). → `business-rules.md`.
+- **Davet çakışması (K6):** Yeni `Invitation` aggregate `Modules/Users`'ta; eski Identity invitation + web `modules/invitations` emekliye.
+
+**Hâlâ açık / park (varsayılan ile, blocker değil):** OQ-002 (Sprint 5), OQ-004 (Sprint 5-6), OQ-008 (post-MVP), OQ-010 (Sprint 4, default: parola zorunlu).
 
 ---
 
