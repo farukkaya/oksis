@@ -1,98 +1,79 @@
 # Kimlik Doğrulama — UI Flows
 
-> Bu modülün frontend ekranları, kullanıcı akışları, state management.
-
+> Bu modülün frontend ekranları, kullanıcı akışları, state management. Kaynak: teknik analiz Bölüm 7, 10, 18 + ihtiyaç analizi senaryoları.
 > Genel UI/UX kuralları için bkz. `frontend/ui-ux-rules.md` ve `frontend/component-rules.md`.
 
 ---
 
 ## Ekranlar
 
-### Liste — `{{TBD_route}}`
+### Login — `/login`
 
-**Portal:** admin | teacher | parent | student
-**Permission:** `identity.view`
-**Component:** `{{TBD_ComponentName}}`
-**Konum:** `src/modules/identity/pages/{{TBD_ComponentName}}.tsx`
+**Portal:** public. **Component:** `LoginPage` (`src/modules/identity/...`).
+**State:** RHF + Zod (identifier, password); React Query mutation `useLogin`.
+**Aksiyonlar:** "Giriş" → `/auth/login`. "Parolamı unuttum" → `/forgot-password`.
+**Yanıt yönlendirme:**
+- `200` → context'e göre portal layout'a (`/admin` | `/teacher` | `/parent` | `/student`).
+- `409 NEEDS_PROFILE_SELECTION` → profil seçim ekranı.
+- `403 ACCOUNT_SUSPENDED` → açıklayıcı mesaj + okul iletişim.
+- `401` → uniform hata "Kullanıcı bulunamadı veya parola hatalı."
+- `429` → "Çok fazla deneme, lütfen sonra tekrar deneyin."
+**Edge case:** TCKN ile giriş denenirse → "Bu alan e-posta veya telefon olmalıdır."
 
-**State:**
-- Server: `useStudentsQuery` (TanStack Query)
-- Local: filter, search, pagination (URL params)
+### Profil Seçimi — `/select-profile`
 
-**Aksiyonlar:**
-- "Yeni Ekle" → `{{TBD_route}}/new`
-- Row click → detay sayfası
+Çok profilli kullanıcı (`409` veya manuel switch). `availableProfiles` listelenir; seçim `/auth/switch-profile` çağırır, yeni JWT alınır, ilgili portala yönlendirir.
 
-**Edge Case'ler:**
-- Boş liste → EmptyState component
-- Hata → ErrorState + retry
-- Loading → Skeleton (Spinner değil)
+### Context Switcher (header/sidebar)
 
----
+- **Profile switcher** — Parent↔Teacher; switch sonrası rota değişir (`/teacher/*` ↔ `/parent/*`), React Query cache invalidate.
+- **Child switcher** (sadece Parent) — `/auth/switch-child`; **token değişmez**, `activeChildChild` Zustand store + React Query key güncellenir. "Tümü" seçeneği → birleşik dashboard.
+- **Season switcher** — `/auth/switch-season`; geçmiş sezon seçilirse salt-okunur banner gösterilir, yazma aksiyonları disable.
 
-### Detay / Düzenle — `{{TBD_route}}/:id`
+### Parola — `/forgot-password`, `/reset-password`, `/change-password`
 
-{{TBD}}
-
----
-
-### Yeni Ekle — `{{TBD_route}}/new`
-
-{{TBD}}
+Forgot uniform başarı mesajı (kanal sızdırmaz). Reset token'lı; başarılı reset/change sonrası tüm oturumlar düşer → login'e yönlendir.
 
 ---
 
-## Kullanıcı Akışı
+## Token Refresh (web)
 
-```
-[Liste] → "Yeni Ekle" → [Form] → submit
-                                    ↓
-                              validation OK?
-                              ├── Hayır: form'da hata göster
-                              └── Evet: API call
-                                          ↓
-                                    success?
-                                    ├── Hayır: toast error
-                                    └── Evet: toast + liste yenile
-```
+Tek-uçuş (single-flight) axios interceptor: `401` alınca `/auth/refresh` ile token yenilenir; eşzamanlı istekler tek refresh'i bekler. Refresh başarısız → login.
+
+## Forced Logout (SignalR)
+
+`SessionHub` `ForceLogout` mesajı → token atılır, login'e yönlendirilir, toast: "Oturumunuz sonlandırıldı."
 
 ---
 
-## Mobil Notları (varsa)
+## State Yönetimi
 
-- 3-tap kuralı uygulanır mı? {{TBD}}
-- Sticky action button gerekli mi? {{TBD}}
-- Keyboard overlap (`KeyboardAvoidingView`)? {{TBD}}
+- Server state: React Query (`useLogin`, `useCurrentContext`, `useAvailableContexts`, switch mutation'ları). **Zustand'a kopyalanmaz.**
+- Zustand: küçük topic store'lar — `auth` (token/identity), `activeChild`, `activeSeason`.
+- Access token in-memory; refresh token web'de httpOnly cookie (bkz. `RefreshTokenCookie`), mobilde `expo-secure-store`.
 
----
+## Mobil Notları
 
-## Form Validation
-
-```ts
-// Zod schema
-const {{TBD}}Schema = z.object({
-  {{TBD}}: z.string().min(1, "Zorunlu").max(100),
-  {{TBD}}: z.{{TBD}},
-});
-```
+- 3-tap kuralı: profil/çocuk switch ≤ 2 tap. Refresh token `expo-secure-store`, access token in-memory.
 
 ---
 
-## i18n Key'leri
+## i18n Key'leri (örnek)
 
 | Key | TR |
 |---|---|
-| `identity.title` | {{TBD}} |
-| `identity.empty` | Henüz {{TBD}} eklenmemiş |
-| `identity.errors.required` | Bu alan zorunludur |
+| `auth.login.title` | Giriş Yap |
+| `auth.login.identifier` | E-posta veya Telefon |
+| `auth.login.error.invalid` | Kullanıcı bulunamadı veya parola hatalı |
+| `auth.login.error.suspended` | Hesabınız geçici olarak askıya alınmıştır |
+| `auth.switch.readonly` | Geçmiş sezon — salt-okunur mod |
 
 ---
 
 ## Yasaklar
 
-- ❌ Spinner (Skeleton kullan).
-- ❌ Hardcoded Türkçe string (i18n key zorunlu).
-- ❌ Form'da Zod olmadan validation.
-- ❌ `getByTestId` testlerde (Role + Text bazlı sorgular).
+- ❌ Spinner (Skeleton kullan). ❌ Hardcoded Türkçe (i18n zorunlu). ❌ Zod'suz form validation.
+- ❌ `activeChildId`'yi token'dan okumak (server-session/Query'den gelir).
+- ❌ Uniform login hatasını bozup hangi alanın yanlış olduğunu göstermek.
 
 > Detay: `frontend/component-rules.md`, `frontend/form-validation-rules.md`.

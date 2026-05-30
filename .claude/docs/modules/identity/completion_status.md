@@ -4,25 +4,35 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓░░░░` %60   ·   Status: in-progress   ·   Güncel: 2026-05-28
+**İlerleme:** `▓▓▓▓▓▓░░░░` %58   ·   Status: in-progress   ·   Güncel: 2026-05-30
 
-> Temel: Backend `Oksis.Application/Modules/Identity` ≈77 cs (auth, JWT/refresh, kullanıcı,
-> yetki, davet). Web tarafında `modules/identity` + `modules/invitations` (api/components/
-> hooks/schemas/types) ve admin `users` sayfası mevcut. Doküman kısmen dolu (≈58 `{{TBD}}`).
+> Temel: Mevcut `User` tabanlı auth (login/refresh/invite/password-reset, `Oksis.Application/Modules/Identity` ≈77 cs) + master seed (roller/izinler) çalışır.
+> 2026-05-30: Teknik analiz (*Login & Profile Switch · Sürüm 1.0*) docs'a işlendi — domain (Account), api-contracts (switch/me/context), database-schema (identity.accounts/refresh_tokens), permissions (RBAC+ABAC, permission cache), business-rules (TR-auth-001…018), notifications (audit/SignalR), ui-flows, open-questions (TQ-auth-001…007) güncellendi. Hedef model dokümante edildi; **kod henüz yazılmadı**.
 
 ---
 
 ## ✅ Tamamlanan Yapılar
 
-- **Backend:** Identity modülü ≈77 cs — login + refresh akışı (login/refresh yanıtına kullanıcı yetki listesi eklendi, commit `6d522f1`), kullanıcı ve davet (invitation) handler'ları.
-- **Web:** `src/modules/identity` ve `src/modules/invitations` tam dikey dilim (api/components/hooks/schemas/types); `portals/admin/pages/users`.
+- **Master data:** `system_roles` (7), `permissions` (32), `role_permissions` (66) + deterministik seed.
+- **Backend (mevcut `User` modeli):** login + refresh akışı, kullanıcı + davet (invitation) handler'ları, `IJwtTokenService`, `IRefreshTokenStore` (InMemory + DB), `IPasswordHasher`, `RefreshTokenCookie`.
+- **Web:** `src/modules/identity` + `src/modules/invitations` dikey dilim; admin `users` sayfası.
+- **Docs:** 10 dosyanın tamamı teknik analize göre dolduruldu (skeleton/`{{TBD}}` büyük ölçüde kaldırıldı).
 
-## ⏳ Eksik / Bekleyen Yapılar
+## ⏳ Eksik / Bekleyen Yapılar (teknik analiz hedefi)
 
-- Doküman içeriği: ≈58 `{{TBD}}` alanı doldurulacak.
-- Mobile auth akışı (expo-secure-store refresh token) ekran/entegrasyonu.
-- Tam permission matrisi uygulaması ve şifre sıfırlama/aktivasyon akışlarının uçtan uca doğrulaması.
+- **`Account` aggregate** (auth/session sahibi) + `identity.accounts`/`refresh_tokens` migration — OQ-identity-001 kararına bağlı.
+- **Identifier resolver + read-port:** `IIdentifierResolver` / `IPersonDirectory` (users köprüsü, TCKN reddi/normalizasyon).
+- **Context resolution:** `IContextResolver`, `/me/context`, `/me/available-contexts`.
+- **Switch:** profile/child/season + permission cache (Redis) + `perms_ver` + server-side child session.
+- **Token sertleştirme:** refresh rotation + reuse detection, access token blacklist (Redis).
+- **Yetki:** `ChildScopeRequirement` (ABAC), `ActiveSeasonWritePolicy`, permission cache invalidation.
+- **Audit:** domain event → Serilog/Elasticsearch handler'ları + identifier/TCKN masking.
+- **Gerçek zamanlı:** `SessionHub` forced logout + Redis backplane.
+- **Arka plan:** Hangfire cleanup/retention job'ları (refresh/otp/dormant/audit-retention).
+- **OTP / 2FA:** iskelet (Sprint 5) + aktivasyon (Sprint 6).
+- **Mobile:** auth akışı (expo-secure-store refresh) + switch ekranları.
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
-- Henüz kayıt yok.
+- **2026-05-30 — Modül yerleşimi:** Teknik analiz ayrı projeler (`Oksis.Identity.Domain` vb.) önerir; bu repo modüler monolit olduğundan docs **mevcut `Oksis.Domain/Modules/Identity` alt klasör** yapısına göre yazıldı. Sebep: CLAUDE.md klasör kuralı. Onay: docs güncellemesi sırasında varsayıldı; mimar teyidi bekliyor (OQ-identity-002).
+- **2026-05-30 — Account vs User:** Teknik analizin `Account` aggregate'i hedef olarak dokümante edildi, ancak mevcut kod `User` üzerinde çalışıyor. Hangi yolun seçileceği OQ-identity-001'de açık; karar verilene kadar bu bir **dokümante edilmiş hedef**, uygulanmış gerçek değil.

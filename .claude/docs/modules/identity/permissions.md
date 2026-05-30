@@ -1,133 +1,85 @@
 # Kimlik Doğrulama — Permissions
 
-> Bu modülün permission kodları ve rol → permission eşleştirmeleri.
-
-> Genel matris için bkz. proje kökündeki `permission-matrix.md`.
-
----
-
-## Permission Kodları (32 izin · seed edilmiş)
-
-Backend `permissions` tablosunda HasData() ile seed edilir. Format: `{module}.{action}` (küçük harf).
-
-### USERS (5)
-
-| Kod | Anlam |
-|---|---|
-| `users.read` | Kullanıcı listesini görüntüle |
-| `users.create` | Kullanıcı ekle |
-| `users.update` | Kullanıcı düzenle |
-| `users.delete` | Kullanıcı sil (soft) |
-| `users.import` | Excel'den toplu aktar |
-
-### ATTENDANCE (2)
-
-| Kod | Anlam |
-|---|---|
-| `attendance.read` | Yoklama görüntüle |
-| `attendance.write` | Yoklama gir |
-
-### GRADES (3)
-
-| Kod | Anlam |
-|---|---|
-| `grades.read` | Not görüntüle |
-| `grades.write` | Not gir |
-| `grades.publish` | Not yayınla |
-
-### SCHEDULE (2)
-
-| Kod | Anlam |
-|---|---|
-| `schedule.read` | Ders programı görüntüle |
-| `schedule.manage` | Ders programı düzenle |
-
-### ANNOUNCEMENTS (2)
-
-| Kod | Anlam |
-|---|---|
-| `announcements.read` | Duyuru görüntüle |
-| `announcements.manage` | Duyuru yönet |
-
-### REPORTS (2)
-
-| Kod | Anlam |
-|---|---|
-| `reports.read` | Rapor görüntüle |
-| `reports.export` | Rapor dışa aktar |
-
-### SETTINGS (2 — genel)
-
-| Kod | Anlam |
-|---|---|
-| `settings.read` | Genel ayarları görüntüle |
-| `settings.manage` | Genel ayarları yönet |
-
-### DUTY (2)
-
-| Kod | Anlam |
-|---|---|
-| `duty.read` | Nöbet görüntüle |
-| `duty.manage` | Nöbet yönet |
-
-### HOMEWORK (2)
-
-| Kod | Anlam |
-|---|---|
-| `homework.read` | Ödev görüntüle |
-| `homework.manage` | Ödev yönet |
-
-### SCHOOL_SETTINGS (10 — endpoint bazlı detay)
-
-`SchoolSettingsController` endpoint'leri için detay kırılım. Detay: `modules/school-settings/permissions.md`.
-
-| Kod | Anlam |
-|---|---|
-| `school-settings.view` | Tüm okul ayarları sekmelerini görüntüle |
-| `school-settings.update-basic` | Temel bilgiler güncelle |
-| `school-settings.update-contact` | İletişim bilgileri güncelle |
-| `school-settings.update-address` | Adres güncelle |
-| `school-settings.update-theme` | Tema güncelle |
-| `school-settings.upload-logo` | Logo yükle/sil |
-| `school-settings.manage-bell` | Zil programı yönet |
-| `school-settings.manage-holidays` | Tatil günleri yönet |
-| `school-settings.manage-modules` | Modül aktif/pasif toggle |
-| `school-settings.manage-notifications` | Bildirim tercihleri yönet |
+> Bu modülün permission kodları, rol → permission eşleştirmeleri ve **iki katmanlı yetkilendirme** (RBAC + ABAC).
+> Kaynak: teknik analiz Bölüm 9. Genel matris için bkz. proje kökündeki `permission-matrix.md`.
 
 ---
 
-## Rol Default Matrisi
+## İki Katmanlı Yetkilendirme
 
-Backend `role_permissions` seed dağılımı (66 satır):
+Teknik analiz Senaryo 3 (boşanmış veli) iki katmanı zorunlu kılar:
 
-| Rol | Toplam İzin | Modüller |
+- **RBAC** — rol bazlı izinler (örn. `permissions.approve`). Permission cache'ten okunur.
+- **ABAC** — `ParentStudentRelationship` bayrakları (`CanMakeDecisions`, `IsPaymentResponsible`, `CanPickup`, `CanViewInfo`) — kaynak + çocuk bağlamına göre runtime kontrol.
+
+> **Kural (TR-auth-003):** "RBAC izin var ama ABAC bayrağı false" durumunda **her zaman ABAC kazanır (deny)**. Velayet/KVKK ihlallerini önler.
+
+### Authorization Bileşenleri
+
+| Bileşen | Tip | İş |
 |---|---|---|
-| SUPER_ADMIN | (cross-tenant, izin bypass + `X-Tenant-Override`) | — |
-| SCHOOL_ADMIN | 32 | USERS (5) + ATTENDANCE (2) + GRADES (3) + SCHEDULE (2) + ANNOUNCEMENTS (2) + REPORTS (2) + SETTINGS (2) + DUTY (2) + HOMEWORK (2) + SCHOOL_SETTINGS (10) |
-| VICE_PRINCIPAL | 12 | USERS (3: read/create/update) + ATTENDANCE (2) + GRADES (1: read) + SCHEDULE (2) + ANNOUNCEMENTS (2) + DUTY (2) |
-| TEACHER | 8 | ATTENDANCE (2) + GRADES (3) + SCHEDULE (1: read) + ANNOUNCEMENTS (1: read) + HOMEWORK (2) |
-| COUNSELOR | 4 | ATTENDANCE (1: read) + GRADES (1: read) + REPORTS (1: read) + ANNOUNCEMENTS (1: read) |
-| PARENT | 4 | ATTENDANCE (1: read) + GRADES (1: read) + HOMEWORK (1: read) + ANNOUNCEMENTS (1: read) |
-| STUDENT | 5 | GRADES (1: read) + ATTENDANCE (1: read) + HOMEWORK (1: read) + ANNOUNCEMENTS (1: read) + SCHEDULE (1: read) |
+| `PermissionRequirement` + `PermissionAuthorizationHandler` | RBAC | Permission cache'ten okur |
+| `ChildScopeRequirement` + handler | ABAC | route/body `childId` ↔ `ParentStudentRelationship` bayrağı (users read-port); reddederse `403` + `PermissionDenied` audit |
+| `ActiveSeasonWritePolicy` | Policy | `activeSeasonId != School.CurrentSeason` ise yazma endpoint'leri `403` (salt-okunur sezon) |
 
-> Tam matrix için: `permission-matrix.md`.
+---
+
+## Permission Cache (Redis)
+
+```
+Key:   permissions:{accountId}:{activeProfileType}:{seasonId}
+Value: Set<string> (efektif permission kodları)
+TTL:   oturum süresi (~30 dk)
+```
+
+- Bağlam çözüldükten sonra efektif permission'lar (`permissions` modülünden) hesaplanır, cache'lenir.
+- **Profile / Season switch** → ilgili key invalidate, `perms_ver++`, yeni JWT.
+- **Child switch** → permission **değişmez** (parent rolü aynı), sadece server-side child session güncellenir.
+- JWT'ye permission listesi gömülmez; yalnızca `perms_ver` (cache versiyonu) taşınır (TQ-auth-002, varsayılan: cache).
+
+> **En kritik risk:** permission cache eski kalır → yetki sızar. Switch'te zorunlu invalidation + `perms_ver` bump + yeni JWT; idempotent invalidate. **Integration test zorunlu.**
+
+---
+
+## Permission Kodları (mevcut 32 izin · seed edilmiş)
+
+Format `{module}.{action}` (küçük harf). Modül dağılımı: USERS (5), ATTENDANCE (2), GRADES (3), SCHEDULE (2), ANNOUNCEMENTS (2), REPORTS (2), SETTINGS (2), DUTY (2), HOMEWORK (2), SCHOOL_SETTINGS (10).
+
+### Identity/Auth ile ilgili eklenecek izinler (HEDEF)
+
+| Kod | Anlam |
+|---|---|
+| `seasons.view-archived` | Geçmiş (salt-okunur) sezonu görüntüle (season switch) |
+| `accounts.unlock` | Admin: kilitli hesabı aç |
+| `accounts.force-logout` | Admin: kullanıcının tüm oturumlarını sonlandır |
+
+> ABAC bayrakları permission kodu değildir; `users` modülünün `ParentStudentRelationship` verisinden runtime okunur.
+
+---
+
+## Rol Default Matrisi (mevcut · 66 satır seed)
+
+| Rol | İzin | Modüller |
+|---|---|---|
+| SUPER_ADMIN | cross-tenant bypass + `X-Tenant-Override` | — |
+| SCHOOL_ADMIN | 32 | tüm modüller + SCHOOL_SETTINGS (10) |
+| VICE_PRINCIPAL | 12 | USERS(3) + ATTENDANCE(2) + GRADES(1) + SCHEDULE(2) + ANNOUNCEMENTS(2) + DUTY(2) |
+| TEACHER | 8 | ATTENDANCE(2) + GRADES(3) + SCHEDULE(1) + ANNOUNCEMENTS(1) + HOMEWORK(2) |
+| COUNSELOR | 4 | ATTENDANCE(1) + GRADES(1) + REPORTS(1) + ANNOUNCEMENTS(1) |
+| PARENT | 4 | ATTENDANCE(1) + GRADES(1) + HOMEWORK(1) + ANNOUNCEMENTS(1) |
+| STUDENT | 5 | GRADES(1) + ATTENDANCE(1) + HOMEWORK(1) + ANNOUNCEMENTS(1) + SCHEDULE(1) |
+
+> Yeni `accounts.*` / `seasons.view-archived` izinleri eklenirken `role_permissions` seed + `permission-matrix.md` birlikte güncellenir.
 
 ---
 
 ## Resource-Level Scope
 
-İzin sahibi olmak yetmez — kapsam (scope) kontrolü `Application/Common/Behaviors/AuthorizationBehavior` + handler içi `IResourceAuthorizationService` ile yapılır:
-
-- **Teacher** → atandığı sınıflar
-- **Parent** → kendi çocukları
-- **Student** → kendisi
-- **SchoolAdmin/VicePrincipal/Counselor** → tek okul (EF tenant filter)
-- **SuperAdmin** → cross-tenant (`X-Tenant-Override` header + audit log)
-
----
+- **Teacher** → atandığı sınıflar · **Parent** → kendi çocukları (ABAC bayrakları) · **Student** → kendisi
+- **SchoolAdmin/VicePrincipal/Counselor** → tek okul (EF tenant filter) · **SuperAdmin** → cross-tenant (`X-Tenant-Override` + audit)
 
 ## Default Deny
 
-Matriste açıkça verilmemiş = **erişim yok**. `[HasPermission("x.y")]` attribute'ı yoksa endpoint default `[Authorize]` ile sadece JWT validate eder; ek yetki kontrolü açıkça eklenmeli.
+Matriste açıkça verilmemiş = erişim yok. `[HasPermission("x.y")]` yoksa endpoint sadece JWT validate eder; ek yetki açıkça eklenmeli.
 
-> Detay: `permission-matrix.md` § 7, `backend/security-rules.md`.
+> Detay: `permission-matrix.md`, `backend/security-rules.md`.

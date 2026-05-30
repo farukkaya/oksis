@@ -1,95 +1,85 @@
 # Kimlik Doğrulama — Database Schema
 
-> Bu modülün tablolar, kolonlar, FK, index ve constraint'leri.
-
+> Bu modülün tabloları, kolonları, FK, index ve constraint'leri.
+> Tenant tabloları kaynağı: teknik analiz Bölüm 11. **Cross-module FK kurulmaz** (`person_id`, `school_id`, `season_id` salt Id).
 > Genel DB kuralları için bkz. `backend/database-rules.md`.
 
 ---
 
-## Master Tablolar (tenant-agnostik)
+## Master Tablolar (tenant-agnostik) — UYGULANMIŞ
 
-Bu üç tablo platform genelinde paylaşılır; `SchoolId` taşımaz. Migration `20260523222901_add_global_seed_master_data` ile HasData() üzerinden seed edilir. Deterministik GUID'ler (`SeedGuid.From("role:SCHOOL_ADMIN")` → MD5 hash) sayesinde migration tekrar üretilse FK ilişkileri bozulmaz.
+Platform genelinde paylaşılır; `SchoolId` taşımaz. Migration `20260523222901` ile `HasData()` seed. Deterministik GUID'ler (`SeedGuid.From(...)` → MD5) sayesinde FK ilişkileri stabil.
 
 ### `system_roles` (7 satır seed)
+SUPER_ADMIN, SCHOOL_ADMIN, VICE_PRINCIPAL, TEACHER, COUNSELOR, PARENT, STUDENT. Kolonlar: `id, code, display_name, portal_type, is_system, description` + audit/soft-delete/row_version. `ux_system_roles_code` unique (where is_deleted=0).
 
-```sql
-CREATE TABLE system_roles (
-    id            uniqueidentifier  not null  constraint pk_system_roles primary key,
-    code          nvarchar(50)      not null,
-    display_name  nvarchar(100)     not null,
-    portal_type   nvarchar(30)      not null,  -- Platform | Admin | Teacher | Parent | Student
-    is_system     bit               not null,
-    description   nvarchar(300)     null,
-    created_at    datetimeoffset    not null,
-    created_by    uniqueidentifier  not null,
-    updated_at    datetimeoffset    null,
-    updated_by    uniqueidentifier  null,
-    is_deleted    bit               not null  constraint df_system_roles_is_deleted default 0,
-    deleted_at    datetimeoffset    null,
-    deleted_by    uniqueidentifier  null,
-    row_version   rowversion        not null
-);
-
-CREATE UNIQUE INDEX ux_system_roles_code
-  ON system_roles(code) WHERE is_deleted = 0;
-```
-
-**Seed satırları:** SUPER_ADMIN, SCHOOL_ADMIN, VICE_PRINCIPAL, TEACHER, COUNSELOR, PARENT, STUDENT.
-
-### `permissions` (32 satır seed = 22 başlangıç + 10 school-settings)
-
-```sql
-CREATE TABLE permissions (
-    id           uniqueidentifier  not null  constraint pk_permissions primary key,
-    module       nvarchar(50)      not null,
-    action       nvarchar(50)      not null,
-    code         nvarchar(100)     not null,  -- {module}.{action} lower-case
-    description  nvarchar(300)     not null,
-    -- audit & soft delete standartı (created_at/by, updated_at/by, is_deleted, deleted_at/by, row_version)
-);
-
-CREATE UNIQUE INDEX ux_permissions_code
-  ON permissions(code) WHERE is_deleted = 0;
-
-CREATE INDEX ix_permissions_module_action
-  ON permissions(module, action);
-```
-
-**Modül başına dağılım:** USERS (5), ATTENDANCE (2), GRADES (3), SCHEDULE (2), ANNOUNCEMENTS (2), REPORTS (2), SETTINGS (2), DUTY (2), HOMEWORK (2), SCHOOL_SETTINGS (10).
+### `permissions` (32 satır seed)
+`id, module, action, code ({module}.{action} lower), description` + audit standardı. `ux_permissions_code` unique, `ix_permissions_module_action`.
 
 ### `role_permissions` (66 satır seed)
-
-```sql
-CREATE TABLE role_permissions (
-    id             uniqueidentifier  not null  constraint pk_role_permissions primary key,
-    role_id        uniqueidentifier  not null,
-    permission_id  uniqueidentifier  not null,
-    -- audit & soft delete standartı
-
-    constraint fk_role_permissions_system_roles_role_id
-      foreign key (role_id) references system_roles(id),
-    constraint fk_role_permissions_permissions_permission_id
-      foreign key (permission_id) references permissions(id)
-);
-
-CREATE UNIQUE INDEX ux_role_permissions_role_permission
-  ON role_permissions(role_id, permission_id) WHERE is_deleted = 0;
-```
-
-**Dağılım:** SCHOOL_ADMIN: 32, VICE_PRINCIPAL: 12, TEACHER: 8, COUNSELOR: 4, PARENT: 4, STUDENT: 5.
-
-**Join ID stratejisi:** `Id = SeedGuid.From($"rp:{roleId:N}:{permissionId:N}")` — deterministik, idempotent.
+`id, role_id, permission_id` + audit. FK → system_roles, permissions (`DeleteBehavior.Restrict`). `ux_role_permissions_role_permission` unique. `Id = SeedGuid.From($"rp:{roleId:N}:{permissionId:N}")`.
 
 ---
 
-## Tenant Tablolar (Sprint 1+ — planlanan)
+## Tenant Tablolar — HEDEF (schema: `identity`)
 
-Henüz oluşturulmamış:
-- `users` — kullanıcı kaydı (`SchoolId` taşır, email global unique)
-- `user_roles` — kullanıcı ↔ rol bağı (`SchoolId` + `UserId` + `RoleId`)
-- `refresh_tokens` — JWT refresh token rotasyonu (hash'li token, revoked_at)
+> EF Core code-first, Fluent API (attribute yok). Karmaşık/yüksek hacimli lookup'larda Dapper. Anlık lockout/rate-limit Redis'te; kalıcı `failed_login_count`/`locked_until` DB'de denetim için yedeklenir.
 
-> Detay tasarım: `domain-model.md`.
+### `identity.accounts`
+
+```sql
+CREATE TABLE identity.accounts (
+    id                       UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    person_id                UNIQUEIDENTIFIER NOT NULL,   -- users.persons.id (Id ref, FK YOK)
+    school_id                UNIQUEIDENTIFIER NOT NULL,
+    password_hash            NVARCHAR(512)    NOT NULL,
+    last_active_profile_type NVARCHAR(64)     NULL,
+    last_active_child_id     UNIQUEIDENTIFIER NULL,
+    last_login_at            DATETIMEOFFSET   NULL,
+    last_login_ip            NVARCHAR(64)     NULL,
+    failed_login_count       INT              NOT NULL DEFAULT 0,
+    locked_until             DATETIMEOFFSET   NULL,
+    require_password_change  BIT              NOT NULL DEFAULT 0,
+    two_factor_enabled       BIT              NOT NULL DEFAULT 0,
+    is_active                BIT              NOT NULL DEFAULT 1,
+    password_policy_version  INT              NOT NULL DEFAULT 1,
+    consent_bundle_version   INT              NULL,
+    created_at               DATETIMEOFFSET   NOT NULL,
+    updated_at               DATETIMEOFFSET   NOT NULL,
+    row_version              ROWVERSION
+);
+CREATE UNIQUE INDEX ux_accounts_person ON identity.accounts(person_id);
+CREATE INDEX ix_accounts_school ON identity.accounts(school_id);
+```
+
+### `identity.refresh_tokens`
+
+```sql
+CREATE TABLE identity.refresh_tokens (
+    id                      UNIQUEIDENTIFIER NOT NULL PRIMARY KEY,
+    account_id              UNIQUEIDENTIFIER NOT NULL,
+    token_hash              NVARCHAR(256)    NOT NULL,    -- plain saklanmaz
+    expires_at              DATETIMEOFFSET   NOT NULL,
+    created_at              DATETIMEOFFSET   NOT NULL,
+    created_by_ip           NVARCHAR(64)     NULL,
+    revoked_at              DATETIMEOFFSET   NULL,
+    revoked_by_ip           NVARCHAR(64)     NULL,
+    replaced_by_token_hash  NVARCHAR(256)    NULL,        -- rotation zinciri / reuse detection
+    device_label            NVARCHAR(128)    NULL,
+    CONSTRAINT fk_rt_account FOREIGN KEY (account_id) REFERENCES identity.accounts(id)
+);
+CREATE INDEX ix_rt_account_active ON identity.refresh_tokens(account_id) WHERE revoked_at IS NULL;
+CREATE INDEX ix_rt_token_hash ON identity.refresh_tokens(token_hash);
+```
+
+### `identity.password_reset_tokens` (tek kullanımlık)
+`id, account_id, token_hash, channel (Email/Sms), expires_at, consumed_at`. Token hash'li. *(mevcut kodda iskelet var)*
+
+### `identity.otp_challenges` (Sprint 5 iskeleti)
+`id, account_id, code_hash, purpose (Login/Reset), attempts, expires_at`.
+
+### `identity.login_audit` (opsiyonel sıcak kopya)
+Asıl audit Elasticsearch'te (Bölüm 13); bu tablo isteğe bağlı yerel sıcak kopya.
 
 ---
 
@@ -97,16 +87,20 @@ Henüz oluşturulmamış:
 
 | Tarih | Migration | Değişiklik |
 |---|---|---|
-| 2026-05-24 | `20260523222901_add_global_seed_master_data` | `system_roles`, `permissions`, `role_permissions` ilk seed (22 izin) |
-| 2026-05-24 | `20260523224508_add_school_settings_permissions` | +10 `SCHOOL_SETTINGS` izni + SCHOOL_ADMIN bağı |
+| 2026-05-24 | `20260523222901_add_global_seed_master_data` | system_roles, permissions, role_permissions ilk seed |
+| 2026-05-24 | `20260523224508_add_school_settings_permissions` | +10 SCHOOL_SETTINGS izni + bağ |
+| 2026-05-24 | `20260524121808_add_invitation_tokens` | davet token tablosu (mevcut User akışı) |
+| {{TBD}} | `*_add_identity_accounts` | `identity.accounts`, `refresh_tokens` (HEDEF) |
+| {{TBD}} | `*_add_identity_password_reset_otp` | reset + otp tabloları (HEDEF) |
 
 ---
 
 ## Yasaklar
 
-- ❌ `system_roles.code` değiştirme — JWT claim bağımlılığı, eski token'lar bozulur.
-- ❌ `role_permissions` cascade delete — `OnDelete(DeleteBehavior.Restrict)` zorunlu.
-- ❌ Master tablodan satır DELETE etmek — `IsDeleted = 1` soft-delete tercih.
-- ❌ HasData() seed satırlarında dinamik `CreatedAt` — `SeedAudit.CreatedAt` sabit `2026-05-24 00:00:00 UTC`.
+- ❌ Cross-module FK (`person_id`, `school_id`, `season_id` salt Id).
+- ❌ `system_roles.code` değiştirme (JWT claim bağımlılığı).
+- ❌ Refresh/reset/otp token'ı plain saklamak (her zaman hash).
+- ❌ `role_permissions` cascade delete (`Restrict` zorunlu).
+- ❌ Master tablodan satır DELETE (soft-delete tercih).
 
 > Detay: `backend/database-rules.md`.

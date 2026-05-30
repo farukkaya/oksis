@@ -1,56 +1,52 @@
-# Kimlik Doğrulama — Notifications
+# Kimlik Doğrulama — Notifications & Audit
 
-> Bu modülün domain event → bildirim eşleştirmeleri.
-
+> Bu modülün domain event → audit / bildirim eşleştirmeleri. Kaynak: teknik analiz Bölüm 13, 14.
 > Genel akış için bkz. `backend/notification-rules.md` (teknik) ve `notification-matrix.md` (içerik).
 
 ---
 
-## Domain Event → Bildirim Akışı
+## Audit (Serilog → Elasticsearch)
 
-### `{{TBD}}Event`
+Tüm authentication/switch olayları **structured log** olarak Elasticsearch'e yazılır (Kibana'da incelenir). Her log `CorrelationId`, `SchoolId`, `AccountId`, `Channel` taşır. Identifier ve TCKN **maskelenir**. `Console.WriteLine` **yasak**. MediatR notification handler'ları her domain event'ten ilgili audit kaydını üretir.
 
-**Tetiklenme:** {{TBD}} (örn. "öğretmen mark.publish çağırdığında")
-
-**Alıcılar:**
-
-| Alıcı Rol | Kanal | Priority | Cooldown |
-|---|---|---|---|
-| Parent (öğrencinin velisi) | Push + InApp | Normal | 1 saat |
-| Student | InApp | Low | yok |
-
-**Template (TR):**
-- Title: `{{TBD}} — {ChildName}`
-- Body: `{{TBD}}`
-
-**Kapsam Kontrolü:**
-- Parent sadece kendi çocuğuna ait event'i alır.
-- {{TBD}}
+| Domain Event | Audit | Kullanıcı Bildirimi |
+|---|---|---|
+| `LoginSucceeded` | ✅ | — (opsiyonel "yeni cihazdan giriş") |
+| `LoginFailed` / `LoginRateLimited` | ✅ | — |
+| `AccountLocked` | ✅ | Admin uyarısı (opsiyonel) |
+| `PasswordResetRequested` | ✅ | Reset linki (Email/Sms) |
+| `PasswordChanged` | ✅ | "Parolanız değişti" bilgilendirme |
+| `ProfileSwitched` / `ChildContextSwitched` / `SeasonSwitched` | ✅ | — |
+| `LoggedOut` / `AllSessionsLoggedOut` | ✅ | — |
+| `SuspiciousTokenReuse` | ✅ (güvenlik alarmı) | Forced logout (SignalR) |
+| `PermissionDenied` | ✅ | — |
+| `LoginBlockedDueToSuspension` | ✅ | — |
 
 ---
 
-## Recipient Resolver Notu
+## Gerçek Zamanlı Forced Logout (SignalR)
 
-`INotificationRecipientResolver` bu event için şu mantığı uygular:
+KVKK: consent geri çekilince / suspend edilince **tüm oturumlar anlık logout** (teknik analiz 8.3).
 
-```
-event payload → SchoolId + EntityId
-  ↓
-ilgili entity'yi çek (örn. Student)
-  ↓
-related users'ı bul (örn. student.Parents)
-  ↓
-preference + cooldown + quiet hours filtresi
-  ↓
-final recipient list
-```
+- **`SessionHub`** — kullanıcı bağlanınca `account:{accountId}` grubuna katılır.
+- `AllSessionsLoggedOut`, `PasswordChanged`, `AccountSuspended`, `SuspiciousTokenReuse` → ilgili gruba `ForceLogout` mesajı; istemci token'ı atar, login'e döner.
+- Redis backplane ile çok-instance tutarlı broadcast.
 
-> Detay: `backend/notification-rules.md` § 5.
+---
+
+## Parola Kurtarma Bildirimi (örnek)
+
+**`PasswordResetRequested`** → kullanıcının seçili kanalına (Email/Sms) tek kullanımlık, kısa ömürlü (30 dk) reset linki/kodu. Forgot-password endpoint'i uniform `202` döner (kanal sızdırmaz).
+
+**Template (TR):** Title: `OKSİS — Parola Sıfırlama`, Body: link + geçerlilik süresi. **PII (TCKN/telefon) template'e gömülmez.**
 
 ---
 
 ## Yasaklar
 
-- ❌ Sync olarak Command handler içinde bildirim göndermek (queue zorunlu).
-- ❌ Template'de TCKN, telefon, email gibi PII.
-- ❌ Cross-tenant alıcı (recipient `SchoolId` farklıysa).
+- ❌ Sync olarak handler içinde bildirim göndermek (queue / outbox zorunlu).
+- ❌ Template veya log'da TCKN/telefon/email plain.
+- ❌ Cross-tenant alıcı/broadcast (recipient `SchoolId` farklıysa).
+- ❌ `Console.WriteLine` ile loglama.
+
+> Detay: `backend/notification-rules.md`, teknik analiz Bölüm 13–14.
