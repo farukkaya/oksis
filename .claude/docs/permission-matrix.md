@@ -56,6 +56,7 @@ Aksiyonlar:
 | `users.invite` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.revoke-invite` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `roles.manage` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `roles.assign` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 
 ### Schools (Tenant)
 

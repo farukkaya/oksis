@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓░░░` %65   ·   Status: in-progress (ISSUE-04 veli–öğrenci ilişkisi commit'li)   ·   Güncel: 2026-05-30
+**İlerleme:** `▓▓▓▓▓▓▓░░░` %72   ·   Status: in-progress (ISSUE-05 rol ataması commit'li)   ·   Güncel: 2026-05-30
 
 > Temel: Doküman büyük ölçüde dolu (≈7 `{{TBD}}`). Web'de admin `users` sayfası mevcut;
 > backend kullanıcı yetenekleri `identity` modülü üzerinden gelir (bu modül onunla örtüşür).
@@ -68,6 +68,15 @@ OKSMVP-2 (16 issue, 296 SP) implementasyonu öncesi kapatılan çekirdek kararla
   - **Kurallar:** self → `USERS_RELATION_SELF` (400); veli/öğrenci profili yoksa `USERS_RELATION_PARENT/STUDENT_PROFILE_REQUIRED` (409); aktif çift tekrarı `USERS_RELATION_DUPLICATE` (409); revoke audit izi korur + sonrasında yeni aktif ilişki kurulabilir.
   - **Test:** 7 domain invariant + 5 application handler (happy/self/profil/duplicate) + permission-attribute sözleşmesi genişletildi + 3 integration (gerçek SQL duplicate, tenant izolasyonu, revoke-then-recreate). Tüm projeler yeşil: Domain 165, Application 469, Api 70, Tests 22, Integration 67. Build + `dotnet format` temiz.
 
+- **ISSUE-05 — Sezona bağlı rol ataması (2026-05-30):** `RoleAssignment` aggregate + persistence + API.
+  - **Domain:** `RoleAssignment` (TenantEntity AR) — `Create`/`Revoke`/`Reactivate`/`UpdateScope`. `Status` (Active/Inactive), `AssignedAt`/`AssignedBy`, `RevokedAt`/`RevokedReason`, opsiyonel `ScopeAttributes` (ham JSON). `IsActive => Status==Active`. Event: `RoleAssignedEvent`/`RoleRevokedEvent`. Revoke = Inactive + audit izi (RoleAssignmentStatus'ta ayrı `Revoked` değeri yok → Inactive kullanıldı).
+  - **Persistence:** `role_assignments` (users şeması) + filtered unique index `ux_role_assignment_unique` (kişi/rol/sezon tekilliği) + status check constraint; `scope_attributes` nvarchar(max). Migration `20260530154915_20260530_add_role_assignments` (tablo + `roles.assign` izni seed'i birlikte). DbSet `IApplicationDbContext`/`OksisDbContext`'e eklendi.
+  - **API (`RoleAssignmentsController`):** `GET persons/{personId}/role-assignments` (sezona göre sıralı, rol/sezon adıyla zenginleştirilmiş), `POST role-assignments`, `POST role-assignments/{id}/revoke`. GET → `users.view-detail`; yazma → **yeni `roles.assign`** izni.
+  - **Kurallar:** SeasonId zorunlu; kişi/rol/sezon tenant uyumluluğu (sezon AcademicSession global filter ile cross-tenant elenir → `USERS_ROLE_ASSIGNMENT_SEASON_NOT_FOUND`); aynı (kişi,rol,sezon) tekrarı `USERS_ROLE_ASSIGNMENT_DUPLICATE` (409); revoke gerekçe zorunlu + `RevokedAt` set; aktif olmayan atama revoke edilemez (`USERS_ROLE_ASSIGNMENT_INVALID_STATE`). `ScopeAttributes` geçerli JSON (validator).
+  - **İzin:** `roles.assign` seed'e eklendi (PermissionSeedData + MasterSeedIds + RolePermissionSeedData → SuperAdmin/SchoolAdmin). permission-matrix.md güncellendi.
+  - **Test:** 8 domain + 7 application handler (happy/person/rol/sezon yok/duplicate/forbidden) + permission-attribute sözleşmesi genişletildi + 2 integration (gerçek SQL duplicate, cross-tenant sezon reddi). Tüm projeler yeşil: Domain 173, Application 481, Api 70, Tests 22, Integration 69. Build + `dotnet format` temiz.
+  - **`currentRoles`/`seasonId` notu:** ISSUE-03'te no-op bırakılan rol bilgisi artık `RoleAssignment` ile modelleniyor; `ListPersons.currentRoles` projeksiyonu ve `seasonId` filtresi ileride bu tabloya bağlanabilir (henüz bağlanmadı).
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Kalan doküman `{{TBD}}` alanları (≈7).
@@ -81,6 +90,11 @@ OKSMVP-2 (16 issue, 296 SP) implementasyonu öncesi kapatılan çekirdek kararla
 - **Sezon rol aktarım wizard'ı (K8):** hibrit kopya + manuel override UI'ı; `seasons` modülü/ISSUE-05 sınırında.
 
 ## ⚠️ Spec Dışına Çıkılanlar
+
+- **2026-05-30 — `RoleAssignment.AssignedBy` (Guid) — doc'taki `AssignedByPersonId` yerine (ISSUE-05):** atayan aktör bir identity kullanıcısıdır (Person değil); audit alanı `AssignedBy` olarak adlandırıldı ve `ICurrentUser.Id` ile dolduruluyor. Person FK'sı ima edilmiyor.
+- **2026-05-30 — `RoleAssignmentStatus` 2 değer (ISSUE-05):** doc Active/Inactive/Revoked öneriyor; ISSUE-01 enum'u Active/Inactive (2) commit'lendiğinden revoke = `Inactive` + `RevokedAt` ile modellendi (ayrı Revoked durumu yok). Audit izi korunur.
+- **2026-05-30 — `ScopeAttributes` `string?` (ham JSON) — `JsonDocument?` yerine (ISSUE-05):** domain'i saf tutmak için ABAC scope'u ham JSON metni olarak saklanıyor; geçerlilik Application validator'ında (`JsonDocument.Parse`). EF kolonu nvarchar(max).
+- **2026-05-30 — Aynı (kişi,rol,sezon) tam tekil (ISSUE-05):** unique index revoke durumuna bakmaz (soft-delete hariç tüm satırlar). Revoke sonrası aynı atamayı yeniden açmak için domain `Reactivate` var ama ISSUE-05 endpoint kapsamında değil (revoke'a kadar). 
 
 - **2026-05-30 — "Her aktif öğrencide ≥1 primary contact" invariant'ı ertelendi (ISSUE-04):** domain-model.md bu invariant'ı listeliyor; ancak çapraz-ilişki + öğrenci aktivasyon koordinasyonu gerektirdiğinden (tek ilişki komutunda zorlanamaz) ISSUE-04'te enforce edilmedi. `IsPrimaryContact` bayrağı tutuluyor ama "en az bir" kuralı sonraki issue'da (öğrenci aktivasyon akışı). Düşük riskli; geri dönülebilir.
 - **2026-05-30 — `RelationType` 4 değer (ISSUE-04):** domain-model.md Grandparent/Stepparent'tan da söz ediyor; ISSUE-01 enum'u Mother/Father/Guardian/Other (4) commit'lendiğinden o kullanıldı, check constraint de 4 değere göre. Genişletme migration ile eklenebilir.
