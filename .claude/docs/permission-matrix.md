@@ -48,6 +48,11 @@ Aksiyonlar:
 | `users.create` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.update` | ✅ | ✅ | 🚫 | 👁 (self) | 👁 (self) | 👁 (self) | 🚫 |
 | `users.delete` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `users.view-detail` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
+| `users.suspend` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `users.graduate` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `users.transfer` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `users.archive` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.invite` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.revoke-invite` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `roles.manage` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |

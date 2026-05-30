@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓░░░░░` %48   ·   Status: in-progress (ISSUE-02 persistence commit'li)   ·   Güncel: 2026-05-30
+**İlerleme:** `▓▓▓▓▓▓░░░░` %58   ·   Status: in-progress (ISSUE-03 Person/Profile API commit'li)   ·   Güncel: 2026-05-30
 
 > Temel: Doküman büyük ölçüde dolu (≈7 `{{TBD}}`). Web'de admin `users` sayfası mevcut;
 > backend kullanıcı yetenekleri `identity` modülü üzerinden gelir (bu modül onunla örtüşür).
@@ -53,6 +53,14 @@ OKSMVP-2 (16 issue, 296 SP) implementasyonu öncesi kapatılan çekirdek kararla
   - **Migration:** `20260530123902_AddUsersPersonsAndProfiles` — `persons` + `profiles` (TPH) tabloları, tüm index'ler model-bazlı. Tenant-scoped unique index'ler: `ux_persons_national_id_hash`, `ux_profiles_school_id_student_number/teacher_employee_number/staff_employee_number`.
   - **Test:** 5 persistence integration (TPH round-trip, tenant izolasyonu, TCKN hash-only saklama, kimlik+öğrenci no tekillik) + 5 `NationalIdProtector` birim (round-trip, deterministik hash, okullar-arası farklı hash, non-deterministik şifreleme, tenant zorunluluğu). **Tüm solüsyon 1129 test yeşil** (Api 78, Application 229, Domain 158, Infrastructure 586, Tests 78). Build + `dotnet format` temiz. Commit `7383003` (branch `users`, henüz push edilmedi).
 
+- **ISSUE-03 — Person/Profile API'leri (2026-05-30):** `Oksis.Application/Modules/Users` + `PersonsController` (`api/v1/users/persons`).
+  - **CQRS:** Komutlar — `CreatePerson` (Draft + opsiyonel başlangıç profili), `UpdatePerson` (demografi+iletişim), `DeletePerson` (soft delete), `AttachProfile`, `UpdateProfile`, yaşam döngüsü: `SuspendPerson`/`ReactivatePerson`/`GraduatePerson`/`TransferPerson`/`ArchivePerson`. Sorgular — `ListPersons` (sayfalı, filtre: search≥2 / profileType / lifecycleState / sort, max pageSize=100), `GetPersonDetail`. Hepsi `[Tenancy(Required)]` + dokümante `[RequirePermission]`.
+  - **Güvenlik:** TCKN açık değeri `INationalIdProtector` ile hash+şifreliye çevrilir; tenant-içi hash tekilliği create'te 409 (`USERS_PERSON_DUPLICATE_NATIONAL_ID`); öğrenci/personel no tekilliği 409. Açık TCKN hiçbir response'da dönmez (detayda yalnız `hasNationalId` + `nationalIdType`).
+  - **Envelope + hata kodları:** `ResultExtensions.MapStatusCode` `USERS_*` kodlarını eşler (NOT_FOUND→404, DUPLICATE→409, diğer→400). Geçersiz yaşam döngüsü geçişi `USERS_LIFECYCLE_INVALID_TRANSITION` (400).
+  - **Domain:** Person'a additive `UpdateDemographics(name, birthDate, gender)` eklendi (ISSUE-01 izolasyonunu bozmadan).
+  - **Permission seed + migration:** 4 yeni izin `users.suspend/graduate/transfer/archive` (`PermissionSeedData` + `MasterSeedIds` + `RolePermissionSeedData` → SuperAdmin/SchoolAdmin otomatik). Migration `20260530150027_20260530_add_users_lifecycle_permissions`. permission-matrix.md güncellendi.
+  - **Test:** Application 49 yeni (handler happy path, TCKN/öğrenci no çakışması, lifecycle invalid-transition, validator'lar, permission-attribute sözleşmesi) + Integration 3 (gerçek SQL duplicate hash/öğrenci no 409 + tenant izolasyonu). Tüm projeler yeşil: Domain 158, Application 454, Api 70, Tests 22, Integration 64. Build + `dotnet format` temiz.
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Kalan doküman `{{TBD}}` alanları (≈7).
@@ -66,6 +74,11 @@ OKSMVP-2 (16 issue, 296 SP) implementasyonu öncesi kapatılan çekirdek kararla
 - **Sezon rol aktarım wizard'ı (K8):** hibrit kopya + manuel override UI'ı; `seasons` modülü/ISSUE-05 sınırında.
 
 ## ⚠️ Spec Dışına Çıkılanlar
+
+- **2026-05-30 — Ayrı `PersonsController` (`api/v1/users/persons`) (ISSUE-03):** Eski Identity tabanlı `UsersController` (`api/v1/users`) köprü döneminde (K1/K2) paralel yaşadığından yeni Person API'leri alt kaynak `persons` altında ayrı controller olarak açıldı; route çakışması yok (`{id:guid}` ≠ `persons` literal). Cut-over Faz-4'te. Geri dönülebilir.
+- **2026-05-30 — `currentRoles` + `seasonId` no-op (ISSUE-03):** Liste/detay DTO'larında `currentRoles` (RoleAssignment) ve `ListPersons.seasonId` filtresi api-contracts'ta var ama RoleAssignment ISSUE-03 kapsamı dışı; alanlar dönmüyor / parametre no-op. Rol atama issue'sunda tamamlanacak.
+- **2026-05-30 — `UpdatePerson`/`UpdateProfile` domain mutator'larıyla sınırlı (ISSUE-03):** `UpdatePerson` yalnız demografi+iletişim günceller (TCKN değişimi ayrı güvenli akışa bırakıldı). `UpdateProfile` ISSUE-01 domain metotlarının izin verdiği alanlarla sınırlı: Student→sınıf/aktiflik, Teacher/Staff→`TerminatedAt`, Parent→adres/ödeme sorumlusu. Öğrenci no / branş gibi alanların düzenlenmesi domain'de mutator gerektirir (sonraya).
+- **2026-05-30 — Açık TCKN response'ta hiç dönmüyor (ISSUE-03):** api-contracts maskelenmiş gösterimden söz ediyor; ancak "full-field" reveal için tanımlı bir permission seed'i yok. MVP'de detay yalnız `hasNationalId` + `nationalIdType` döner; yetkili açık gösterim akışı (INationalIdProtector.Reveal + yeni permission) sonraya bırakıldı. Yasak kuralıyla (plain TCKN response/log) uyumlu.
 
 - **Modül örtüşmesi:** `users` ile `identity` doc modülleri kapsamca örtüşüyor; backend kullanıcı/yetki kodu `Modules/Identity` altında tek noktada. K1/K6 ile çözülüyor: user-management + davet `Modules/Users`'a taşınır, `Modules/Identity` yalnız auth (login/refresh/JWT) olarak kalır (bkz. [[identity]] completion_status).
 - **Eski user-management batık maliyeti:** `Admin.Users-v1.Finished` (Identity user-CRUD + web users mock + `modules/invitations`) K1 gereği değiştirilecek; harcanan efor kayıp olarak kabul edildi.

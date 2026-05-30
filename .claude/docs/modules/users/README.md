@@ -91,7 +91,7 @@ Modülün ana akışı, **kişinin yaşam döngüsü** etrafında kuruludur:
 ## Metadata
 
 - **Slug:** users
-- **Status:** in-progress (Faz-0 kararları kapandı, ISSUE-01 domain temeli commit'li)
+- **Status:** in-progress (ISSUE-03 Person/Profile API'leri commit'li)
 - **Sprint:** Sprint 3
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
