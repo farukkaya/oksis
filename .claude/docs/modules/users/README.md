@@ -91,7 +91,7 @@ Modülün ana akışı, **kişinin yaşam döngüsü** etrafında kuruludur:
 ## Metadata
 
 - **Slug:** users
-- **Status:** in-progress (ISSUE-05 sezona bağlı rol ataması API'leri commit'li)
+- **Status:** in-progress (ISSUE-06 davet iş akışı API'leri + expiry sweep commit'li)
 - **Sprint:** Sprint 3
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
