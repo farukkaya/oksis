@@ -4,12 +4,15 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓░░░` %65   ·   Status: in-progress   ·   Güncel: 2026-05-31
+**İlerleme:** `▓▓▓▓▓▓▓▓░░` %75   ·   Status: in-progress   ·   Güncel: 2026-05-31
 
 > Temel: Mevcut `User` tabanlı auth (login/refresh/invite/password-reset, `Oksis.Application/Modules/Identity` ≈77 cs) + master seed (roller/izinler) çalışır.
 > 2026-05-30: Teknik analiz (*Login & Profile Switch · Sürüm 1.0*) docs'a işlendi — domain (Account), api-contracts (switch/me/context), database-schema (identity.accounts/refresh_tokens), permissions (RBAC+ABAC, permission cache), business-rules (TR-auth-001…018), notifications (audit/SignalR), ui-flows, open-questions (TQ-auth-001…007) güncellendi. Hedef model dokümante edildi.
 > 2026-05-31: **ISSUE-01 tamamlandı** — `Account` aggregate + `RefreshToken` child entity + `AccountId`/`Identifier`/`NationalIdHash`/`PasswordHash` value objects + 3 yeni enum (`IdentifierType`/`LoginFailureReason`/`LogoutReason`) + 13 domain event + 69 unit test eklendi. OQ-identity-001 kararı: **Option A — Account aggregate kuruldu**, mevcut `User` ile yan yana yaşıyor (Person/Account ayrımı users modülünde tamamlandıkça `User` auth'tan emekli edilecek).
 > 2026-05-31: **ISSUE-02 tamamlandı** — `identity.accounts` + `identity.refresh_tokens` tabloları (EF Core Fluent API, ux_accounts_person unique, ix_rt_account_active filtered, ux_rt_token_hash unique, cascade delete) + `Argon2IdPasswordHasher` (TQ-auth-003) + `Sha256IdentityHasher` (refresh/reset token) + `IIdentityHasher` port. Migration `20260531_add_identity_accounts` (yalnız identity şemasını etkiler). 8 persistence integration test + 15 hasher unit test. Legacy User BCrypt hash'leri Argon2 hasher'ın verify fallback'i tarafından kabul edilir (rehash sonra).
+> 2026-05-31: **ISSUE-03 tamamlandı** — `IIdentifierResolver` + `IdentifierResolver` (email/phone normalize, login'de TCKN reddi TR-auth-002, recovery'de tenant-tuzlu TCKN hash) + `IPersonDirectory` read-port + `PersonContextView` minimal projeksiyon + `PersonDirectory` adapter (Infrastructure, `INationalIdProtector` aracılığıyla Persons.NationalId.Hash ile aynı HMAC chain). 11 unit test. `LinkedAccountId == null` uniform NotFound.
+> 2026-05-31: **ISSUE-06 tamamlandı** — `ILoginGuard` + `LoginGuard` (Redis varsa dağıtık sliding-window, yoksa in-memory; kademeli lockout 5/10/20→5dk/30dk/2sa; IP rate-limit hard 50/5dk) + `AdminUnlockAccountCommand` (RequirePermission("accounts.unlock")) + `AccountErrors`. Account.Unlock yeni `AccountUnlockedEvent` emit eder; audit handler bunu da işler. 10 unit test.
+> 2026-05-31: **ISSUE-11 tamamlandı** — `IIdentityPiiMasker` + `IdentityPiiMasker` (email "ah***@d.com", TCKN "•••••••••XX", IPv4 son iki octet, identifier auto-route) + `IdentityAuditHandler` 13+1 Identity domain event'ini structured log'a yazar (Login/Logout/Lock/Unlock/Password/Switch/Reuse/Permission/Suspension); plain PII log'a sızmaz. 21 unit test.
 
 ---
 
@@ -22,17 +25,18 @@
 
 ## ⏳ Eksik / Bekleyen Yapılar (teknik analiz hedefi)
 
-<!-- ISSUE-02 tamamlandı: persistence ve hashing artık ✅ listesinde. -->
-- **Identifier resolver + read-port:** `IIdentifierResolver` / `IPersonDirectory` (users köprüsü, TCKN reddi/normalizasyon).
-- **Context resolution:** `IContextResolver`, `/me/context`, `/me/available-contexts`.
-- **Switch:** profile/child/season + permission cache (Redis) + `perms_ver` + server-side child session.
-- **Token sertleştirme:** refresh rotation + reuse detection, access token blacklist (Redis).
-- **Yetki:** `ChildScopeRequirement` (ABAC), `ActiveSeasonWritePolicy`, permission cache invalidation.
-- **Audit:** domain event → Serilog/Elasticsearch handler'ları + identifier/TCKN masking.
-- **Gerçek zamanlı:** `SessionHub` forced logout + Redis backplane.
-- **Arka plan:** Hangfire cleanup/retention job'ları (refresh/otp/dormant/audit-retention).
-- **OTP / 2FA:** iskelet (Sprint 5) + aktivasyon (Sprint 6).
-- **Mobile:** auth akışı (expo-secure-store refresh) + switch ekranları.
+<!-- ISSUE-01/02/03/06/11 tamamlandı. -->
+- **Login command + MediatR pipeline:** Account aggregate üzerinden LoginCommand handler, identifier resolver tüketimi, guard çağrısı, JWT issue, refresh issue (ISSUE-04). Mevcut User-tabanlı login endpoint hâlâ çalışıyor; Account-tabanlı endpoint paralel eklenecek.
+- **Refresh rotation + logout + access token blacklist:** Account.RotateRefreshToken consumer + Redis access-token-id blacklist + reuse detection event tüketicisi (ISSUE-05).
+- **Context resolution:** `IContextResolver`, `/me/context`, `/me/available-contexts` (ISSUE-07).
+- **Switch:** profile/child/season + permission cache (Redis) + `perms_ver` + server-side child session (ISSUE-08/09).
+- **Yetki:** `ChildScopeRequirement` (ABAC), `ActiveSeasonWritePolicy`, permission cache invalidation (ISSUE-09).
+- **Password recovery flows:** forgot/reset/change Account-aggregate üzerinden (ISSUE-10).
+- **Gerçek zamanlı:** `SessionHub` forced logout + Redis backplane + Hangfire cleanup job'ları (ISSUE-12).
+- **OTP / 2FA:** iskelet (ISSUE-13).
+- **Web:** Account-tabanlı auth data layer + login refresh interceptor + switch UI + recovery (ISSUE-15/16/17).
+- **Mobile:** auth akışı (expo-secure-store refresh) + switch ekranları (ISSUE-18).
+- **Permission seed:** `accounts.unlock` + diğer Account permission'ları için yeni migration.
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
