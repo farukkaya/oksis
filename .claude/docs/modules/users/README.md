@@ -91,7 +91,7 @@ Modülün ana akışı, **kişinin yaşam döngüsü** etrafında kuruludur:
 ## Metadata
 
 - **Slug:** users
-- **Status:** in-progress (ISSUE-06 davet iş akışı API'leri + expiry sweep commit'li)
+- **Status:** in-progress (ISSUE-07–10: davet kabul, KVKK rıza, Excel import, ABAC commit'li)
 - **Sprint:** Sprint 3
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
