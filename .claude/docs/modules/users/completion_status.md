@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓░░░░` %58   ·   Status: in-progress (ISSUE-03 Person/Profile API commit'li)   ·   Güncel: 2026-05-30
+**İlerleme:** `▓▓▓▓▓▓▓░░░` %65   ·   Status: in-progress (ISSUE-04 veli–öğrenci ilişkisi commit'li)   ·   Güncel: 2026-05-30
 
 > Temel: Doküman büyük ölçüde dolu (≈7 `{{TBD}}`). Web'de admin `users` sayfası mevcut;
 > backend kullanıcı yetenekleri `identity` modülü üzerinden gelir (bu modül onunla örtüşür).
@@ -61,6 +61,13 @@ OKSMVP-2 (16 issue, 296 SP) implementasyonu öncesi kapatılan çekirdek kararla
   - **Permission seed + migration:** 4 yeni izin `users.suspend/graduate/transfer/archive` (`PermissionSeedData` + `MasterSeedIds` + `RolePermissionSeedData` → SuperAdmin/SchoolAdmin otomatik). Migration `20260530150027_20260530_add_users_lifecycle_permissions`. permission-matrix.md güncellendi.
   - **Test:** Application 49 yeni (handler happy path, TCKN/öğrenci no çakışması, lifecycle invalid-transition, validator'lar, permission-attribute sözleşmesi) + Integration 3 (gerçek SQL duplicate hash/öğrenci no 409 + tenant izolasyonu). Tüm projeler yeşil: Domain 158, Application 454, Api 70, Tests 22, Integration 64. Build + `dotnet format` temiz.
 
+- **ISSUE-04 — Veli–öğrenci ilişkisi (2026-05-30):** `ParentStudentRelationship` aggregate + persistence + API.
+  - **Domain:** `ParentStudentRelationship` (TenantEntity AR) — `Create`/`UpdatePermissions`/`Revoke`; yetki bayrakları (view/decisions/payment/pickup/primaryContact), geçerlilik aralığı, `RevokedAt`/`RevokedReason` audit. `IsActive => RevokedAt == null`. Event: `ParentStudentLinkedEvent`/`ParentStudentRevokedEvent`. Invariant: self ilişki yasak, `ValidUntil >= ValidFrom`.
+  - **Persistence:** `parent_student_relationships` (users şeması) + filtered unique index `ux_parent_student_active` (aktif çift tekilliği) + check constraint'ler. Migration `20260530153113_20260530_add_parent_student_relationships`. `IApplicationDbContext`/`OksisDbContext`'e DbSet eklendi.
+  - **API (`RelationshipsController`):** `GET students/{id}/parents`, `GET parents/{id}/students` (aktif ilişkiler, isim/öğrenci no join), `POST relationships`, `PUT relationships/{id}` (yetki güncelle), `DELETE relationships/{id}` (revoke — hard delete değil). GET → `users.view-detail`, yazma → `users.update`.
+  - **Kurallar:** self → `USERS_RELATION_SELF` (400); veli/öğrenci profili yoksa `USERS_RELATION_PARENT/STUDENT_PROFILE_REQUIRED` (409); aktif çift tekrarı `USERS_RELATION_DUPLICATE` (409); revoke audit izi korur + sonrasında yeni aktif ilişki kurulabilir.
+  - **Test:** 7 domain invariant + 5 application handler (happy/self/profil/duplicate) + permission-attribute sözleşmesi genişletildi + 3 integration (gerçek SQL duplicate, tenant izolasyonu, revoke-then-recreate). Tüm projeler yeşil: Domain 165, Application 469, Api 70, Tests 22, Integration 67. Build + `dotnet format` temiz.
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Kalan doküman `{{TBD}}` alanları (≈7).
@@ -74,6 +81,11 @@ OKSMVP-2 (16 issue, 296 SP) implementasyonu öncesi kapatılan çekirdek kararla
 - **Sezon rol aktarım wizard'ı (K8):** hibrit kopya + manuel override UI'ı; `seasons` modülü/ISSUE-05 sınırında.
 
 ## ⚠️ Spec Dışına Çıkılanlar
+
+- **2026-05-30 — "Her aktif öğrencide ≥1 primary contact" invariant'ı ertelendi (ISSUE-04):** domain-model.md bu invariant'ı listeliyor; ancak çapraz-ilişki + öğrenci aktivasyon koordinasyonu gerektirdiğinden (tek ilişki komutunda zorlanamaz) ISSUE-04'te enforce edilmedi. `IsPrimaryContact` bayrağı tutuluyor ama "en az bir" kuralı sonraki issue'da (öğrenci aktivasyon akışı). Düşük riskli; geri dönülebilir.
+- **2026-05-30 — `RelationType` 4 değer (ISSUE-04):** domain-model.md Grandparent/Stepparent'tan da söz ediyor; ISSUE-01 enum'u Mother/Father/Guardian/Other (4) commit'lendiğinden o kullanıldı, check constraint de 4 değere göre. Genişletme migration ile eklenebilir.
+- **2026-05-30 — Revoke'ta gelecek tarihli ilişkide `ValidUntil` clamp (ISSUE-04):** henüz başlamamış (ValidFrom gelecek) bir ilişki revoke edilirse `ValidUntil`, aralık invariant'ını korumak için revoke günü yerine `ValidFrom`'a sabitlenir. Spec'te açık değil; check constraint ihlalini önleyen tasarım kararı.
+- **2026-05-30 — GET listeleri yalnız aktif ilişkileri döner (ISSUE-04):** revoke edilmiş ilişkiler audit için saklanır ama `students/{id}/parents` ve `parents/{id}/students` yalnız `RevokedAt == null` olanları listeler.
 
 - **2026-05-30 — Ayrı `PersonsController` (`api/v1/users/persons`) (ISSUE-03):** Eski Identity tabanlı `UsersController` (`api/v1/users`) köprü döneminde (K1/K2) paralel yaşadığından yeni Person API'leri alt kaynak `persons` altında ayrı controller olarak açıldı; route çakışması yok (`{id:guid}` ≠ `persons` literal). Cut-over Faz-4'te. Geri dönülebilir.
 - **2026-05-30 — `currentRoles` + `seasonId` no-op (ISSUE-03):** Liste/detay DTO'larında `currentRoles` (RoleAssignment) ve `ListPersons.seasonId` filtresi api-contracts'ta var ama RoleAssignment ISSUE-03 kapsamı dışı; alanlar dönmüyor / parametre no-op. Rol atama issue'sunda tamamlanacak.
