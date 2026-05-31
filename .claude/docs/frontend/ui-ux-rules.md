@@ -10,7 +10,7 @@
 2. **Bilgi yoğunluğu kontrollü** — Parent dashboard'da "bir bakışta her şey."
 3. **Hata önle, hata afet etme** — onay diyalogları, undo opsiyonları.
 4. **Tutarlılık > yenilik** — aynı action her yerde aynı görünüm.
-5. **Mobile-first** — Teacher yoklama, Parent günlük takip mobil yoğun.
+5. **oksis-web TÜM rollerde web/desktop düzenidir** — Admin/Teacher/Parent/Student portallarının hepsi web'de sabit/collapsible sidebar + çok kolonlu masaüstü layout kullanır. **Telefon-çerçevesi mockup'ı YASAK** (örn. `max-w-[390px] mx-auto` + sabit alt tab bar). Responsive olmak serbest (küçük ekranda sidebar→drawer, üst hamburger), ama bu masaüstü layout'un daralması olmalı — ayrı bir "mobil görünüm" değil. **Mobil-yoğun deneyim (Teacher yoklama, Parent günlük takip) ayrı `oksis-mobile` uygulamasında** sunulur; web'de o rollere de masaüstü görünüm gelir.
 6. **Boş ekran yok** — empty state, loading, error mutlaka tasarlı.
 
 ---
@@ -240,9 +240,11 @@ Loading durumu: spinner + disable. Disable'da tooltip "Neden disable?" gösterme
 
 | Breakpoint | Davranış |
 |-----------|---------|
-| < 640 (mobile) | Tek kolon, sidebar drawer, bottom navigation |
+| < 640 (mobile) | Tek kolon, sidebar drawer (hamburger) — **bottom navigation web'de KULLANILMAZ** (mobil app paterni; bkz. ilke #5) |
 | 640-1024 (tablet) | 2 kolon, collapsible sidebar |
 | > 1024 (desktop) | Sabit sidebar, multi-column |
+
+> Bu tablo dar ekranda masaüstü layout'un **uyarlanmasıdır** — telefon-çerçevesi (`max-w-[390px]`) veya ayrı mobil shell değildir. Bottom-tab navigation deseni `oksis-mobile`'a aittir.
 
 ### 7.2 Touch
 
