@@ -25,6 +25,23 @@
 
 ---
 
+## OQ-identity-003: İki lockout kaynağı çelişiyor — domain düz 15dk vs guard kademeli 5/10/20
+
+**Soru:** Login'de iki ayrı kilit mekanizması paralel çalışıyor:
+- **Domain** (`Account.RegisterFailedLogin`): `FailedLoginCount >= DefaultMaxFailedAttempts (5)` → `LockedUntil = now + DefaultLockoutDuration (15dk)`, DB'de kalıcı.
+- **Guard** (`LoginGuard`, Redis/in-memory): kademeli `5→5dk, 10→30dk, 20→2sa`; pencere 15dk.
+
+**Sorun:** Handler kilitliyken `guard.CheckAsync`'te erken döner → ne domain ne guard sayacı artar. Domain kilidi 5 hatada **düz 15dk** olduğundan ve guard penceresi de 15dk olduğundan, **doğal akışta guard'ın 10/20 kademelerine ulaşılamıyor** (kilit süresince yeni hata sayılmaz; 15dk dolduğunda guard sayacı da pencereyle sıfırlanır). Yani kullanıcının gördüğü efektif davranış "5 hata → 15dk", kademeli 5/10/20 fiilen gölgeleniyor. (2026-05-31 testiyle doğrulandı: guard süreleri izole edildiğinde 300/1800/7200s doğru; ama uçtan uca domain 15dk baskın.)
+
+**Seçenekler:**
+- **A) Tek otorite = guard (kademeli):** Domain `RegisterFailedLogin`'in otomatik `LockedUntil` set etmesini kaldır (yalnız sayaç + event); kilit kararı tamamen `LoginGuard`'a bırakılsın, `Account.LockedUntil` guard kararından doldurulsun → kademeli 5/10/20 gerçekten devreye girer.
+- **B) Tek otorite = domain:** Guard'ı yalnız IP rate-limit'e indir; hesap kilidi tek kaynak domain (eşik+süre tenant-config'ten). Kademe isteniyorsa domain'e taşınır.
+- **C) Olduğu gibi bırak:** Efektif "5 hata → 15dk" yeterli kabul edilir; guard kademeleri yalnız dağıtık/IP senaryosu için kalır, completion_status'a "kademeli stage'ler gölgeleniyor" notu düşülür.
+
+**Etki:** Kullanıcıya gösterilen kilit süresi + brute-force direnci. **Karar mercii:** Güvenlik + ürün. **İlgili:** TQ-auth-007 (rate limit kapsamı).
+
+---
+
 ## TQ-auth-001: JWT imzalama RS256 mı HS256 mı?
 Teknik analiz RS256 önerir (multi-tenant doğrulama kolaylığı). **Karar mercii:** Güvenlik mimarı.
 
