@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %85   ·   Status: in-progress   ·   Güncel: 2026-05-31
+**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %88   ·   Status: in-progress   ·   Güncel: 2026-05-31
 
 > Temel: Mevcut `User` tabanlı auth (login/refresh/invite/password-reset, `Oksis.Application/Modules/Identity` ≈77 cs) + master seed (roller/izinler) çalışır.
 > 2026-05-30: Teknik analiz (*Login & Profile Switch · Sürüm 1.0*) docs'a işlendi — domain (Account), api-contracts (switch/me/context), database-schema (identity.accounts/refresh_tokens), permissions (RBAC+ABAC, permission cache), business-rules (TR-auth-001…018), notifications (audit/SignalR), ui-flows, open-questions (TQ-auth-001…007) güncellendi. Hedef model dokümante edildi.
@@ -14,6 +14,7 @@
 > 2026-05-31: **ISSUE-06 tamamlandı** — `ILoginGuard` + `LoginGuard` (Redis varsa dağıtık sliding-window, yoksa in-memory; kademeli lockout 5/10/20→5dk/30dk/2sa; IP rate-limit hard 50/5dk) + `AdminUnlockAccountCommand` (RequirePermission("accounts.unlock")) + `AccountErrors`. Account.Unlock yeni `AccountUnlockedEvent` emit eder; audit handler bunu da işler. 10 unit test.
 > 2026-05-31: **ISSUE-11 tamamlandı** — `IIdentityPiiMasker` + `IdentityPiiMasker` (email "ah***@d.com", TCKN "•••••••••XX", IPv4 son iki octet, identifier auto-route) + `IdentityAuditHandler` 13+1 Identity domain event'ini structured log'a yazar (Login/Logout/Lock/Unlock/Password/Switch/Reuse/Permission/Suspension); plain PII log'a sızmaz. 21 unit test.
 > 2026-05-31: **ISSUE-05 tamamlandı** — `AccountRefreshTokenCommand` (hash → RefreshTokens row → `Account.RotateRefreshToken` → reuse detection zincirin tamamını revoke eder + `SuspiciousTokenReuseEvent` yayar) + `AccountLogoutCommand` (refresh revoke + jti blacklist TTL ≤ kalan ömür) + `AccountLogoutAllSessionsCommand` (Account.RevokeAllRefreshTokens + AllSessionsLoggedOutEvent + jti blacklist). `IAccessTokenBlacklist` (Redis `blacklist:jti:{jti}` + in-memory fallback) + `IAccessTokenContext` (JWT jti/exp/sub/person_id okuyucusu). `JwtBearerEvents.OnTokenValidated` her doğrulanmış isteğe blacklist kontrolü ekledi. Paralel endpoint'ler `/auth/account/{login,refresh,logout,logout-all}` (mevcut User-tabanlı auth korunur). 18 yeni unit test.
+> 2026-05-31: **ISSUE-07 tamamlandı** — `ContextResolver` tam impl (`DefaultContextResolver` stub'ı yerine): 1 profil auto / çoklu + geçerli `LastActiveProfileType` auto / aksi halde `NeedsProfileSelection`; Parent ise 1 çocuk auto, `LastActiveChildId` hint → o, çoklu+hint yok → null. Sezon: `ICurrentSessionProvider` → `School.CurrentSeason` fallback `Account.LastActiveSeasonId`. `ConsentGate` tam impl: yürürlükteki `ConsentBundle` vs son `DataProcessing` `ConsentRecord` (no-consent/revoked/bundle-mismatch deny → 403). `IPersonDirectory.FindActiveChildrenAsync` read-port (ParentStudentRelationship). `GET /auth/me/context` + `GET /auth/me/available-contexts` endpoint'leri + `GetCurrentContextQuery`/`GetAvailableContextsQuery` handler'ları. 19 unit test.
 > 2026-05-31: **ISSUE-04 tamamlandı** — `AccountLoginCommand` + handler + validator + `AccountAuthResult` (Section 18.1 akışı: classify → resolve → guard → DB account → password verify → lifecycle gate → consent gate → context resolve → permission cache → token issue → `RegisterSuccessfulLogin`). TR-auth-002 TCKN reddi, TR-auth-004 uniform 401 + 403 `ACCOUNT_SUSPENDED` istisna, 409 `NEEDS_PROFILE_SELECTION` (çoklu profil + auto-select edilemedi). Sabit dummy Argon2id verify (timing-attack korumasi). Yeni portlar: `IContextResolver`/`IConsentGate`/`IPermissionCacheBuilder`/`IAccountTokenIssuer`; stub'lar (ISSUE-07/08 gerçek impl): `DefaultContextResolver` (1 profil → auto; LastActiveProfile fallback), `NoopConsentGate`, `NoopPermissionCacheBuilder`. `AccountTokenIssuer` JWT claim seti (sub=accountId, person_id, school_id, perms_ver, active_profile_type, available_profiles, active_child_id?, active_season_id?, jti). `PerformanceBehavior` >500ms warn pipeline'a eklendi. `/api/v1/auth/account/login` paralel endpoint (mevcut `/auth/login` User-tabanlı akışı bozulmadı). 21 unit test.
 
 ---
@@ -27,8 +28,7 @@
 
 ## ⏳ Eksik / Bekleyen Yapılar (teknik analiz hedefi)
 
-<!-- ISSUE-01/02/03/04/05/06/11 tamamlandı. -->
-- **Context resolution:** `IContextResolver` tam implementasyonu + `/me/context` + `/me/available-contexts` + consent gate gerçek implementasyonu (ISSUE-07; ISSUE-04 stub yerine).
+<!-- ISSUE-01/02/03/04/05/06/07/11 tamamlandı. -->
 - **Switch:** profile/child/season + permission cache (Redis) + `perms_ver` + server-side child session (ISSUE-08/09).
 - **Yetki:** `ChildScopeRequirement` (ABAC), `ActiveSeasonWritePolicy`, permission cache invalidation (ISSUE-09).
 - **Password recovery flows:** forgot/reset/change Account-aggregate üzerinden (ISSUE-10).
