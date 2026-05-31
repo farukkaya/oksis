@@ -80,6 +80,8 @@ Sadece `ParentProfile` aktifken. ABAC: route/body'deki `childId` `ParentStudentR
 
 Aktif bağlamı ve seçenekleri (profil/çocuk/sezon) döner. UI switcher'ları besler.
 
+`ContextView` ayrıca **`permissions: string[]`** taşır (TQ-auth-002 kararı, 2026-05-31): account-login token'ı izin listesi taşımaz, istemci UI gating için efektif izin slug'larını bu uçtan alır. İzinler aktif profil/sezon bağlamına göre `IPermissionReader` (Redis cache + DB resolver) ile çözülür. Web `applyAccountAuthResult` sonrası `/auth/me/context` çağırır; login/refresh/profil-sezon switch akışlarında izinler tazelenir. Bu liste **yalnız UX** içindir — backend yetki kontrolü bağımsız (Default Deny).
+
 ### `POST /auth/forgot-password` · `/reset-password` · `/change-password`
 
 Forgot uniform `202` döner (enumeration koruması, kanal sızdırmaz). Reset token tek kullanımlık + kısa ömürlü; başarılı reset/change tüm oturumları logout eder.

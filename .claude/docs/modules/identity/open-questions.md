@@ -59,9 +59,6 @@
 ## TQ-auth-001: JWT imzalama RS256 mı HS256 mı?
 Teknik analiz RS256 önerir (multi-tenant doğrulama kolaylığı). **Karar mercii:** Güvenlik mimarı.
 
-## TQ-auth-002: Permission listesi JWT'de mi, Redis cache'te mi?
-Doküman **cache (Redis) + `perms_ver`** varsayar (OQ-auth-008). Net karar gerekli. **Karar mercii:** Performans + güvenlik.
-
 ## TQ-auth-003: Parola hash algoritması (Argon2id mi PBKDF2 mi) + parametreler?
 Teknik analiz Argon2id önerir. Mevcut kodda `IPasswordHasher` var (BCrypt? doğrulanmalı). **Karar mercii:** Güvenlik mimarı.
 
@@ -81,4 +78,5 @@ Rol bazlı oturum limiti (admin tek-session, diğer N-session) tablo şeması. *
 
 ## Karar Verilenler (Arşiv)
 
-> Henüz yok. Karar gelince ilgili dosyaya taşınacak.
+### TQ-auth-002: Permission listesi JWT'de mi, Redis cache'te mi? → **Karar: Redis cache + DB resolver (JWT'de DEĞİL)** (2026-05-31)
+İzinler JWT'ye basılmaz; `AccountTokenIssuer` yalnız bağlam claim'leri + `perms_ver` koyar. Çalışma zamanında `IPermissionReader` (Redis `permissions:{accountId}:{profile}:{season}`, miss'te `AccountPermissionResolver` ile DB'den kurulur) çözer; legacy token'lar için `permissions` claim fallback'i var. MediatR `AuthorizationBehavior` + ASP.NET `PermissionRequirementHandler` reader'ı kullanır. İstemci UI gating izin listesini **`GET /auth/me/context` → `permissions[]`** üzerinden alır (bkz. api-contracts). **Neden geç fark edildi:** identity birleştirmesinde reader yazılmamıştı ve `IdentityDevSeeder` RoleAssignment üretmiyordu → web+mobil admin'de 403; ikisi de düzeltildi.
