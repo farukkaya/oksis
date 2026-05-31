@@ -22,7 +22,9 @@
 
 ### Profil Seçimi — `/select-profile`
 
-Çok profilli kullanıcı (`409` veya manuel switch). `availableProfiles` listelenir; seçim `/auth/switch-profile` çağırır, yeni JWT alınır, ilgili portala yönlendirir.
+Çok profilli kullanıcı. `availableProfiles` listelenir. İki giriş noktası:
+- **Login sırasında (409):** kullanıcı seçimi yapınca istemci **login isteğini `profileType` ile tekrarlar** → `200` + JWT, ilgili portala yönlendirir. (Login henüz tamamlanmadığından token yoktur; bu yüzden switch-profile değil, re-login kullanılır.)
+- **Oturum içi manuel switch:** zaten giriş yapmış kullanıcı header/sidebar'dan profil değiştirir → `/auth/switch-profile` (Bearer token) → yeni JWT.
 
 ### Context Switcher (header/sidebar)
 

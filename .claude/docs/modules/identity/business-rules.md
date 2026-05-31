@@ -107,7 +107,7 @@
 
 | Senaryo | Beklenen Davranış |
 |---|---|
-| Çok profilli kullanıcı (Parent+Teacher) | `LastActiveProfileType` listede ise o; değilse `409 NEEDS_PROFILE_SELECTION` |
+| Çok profilli kullanıcı (Parent+Teacher) | Öncelik: login `profileType` hint'i (geçerli & elde) > `LastActiveProfileType` (elde) > `409 NEEDS_PROFILE_SELECTION`. Açık ama sahip-olunmayan `profileType` → yine `409` (sessizce başka profile düşmez) |
 | Çok çocuklu veli, hint yok | `activeChildId=null` → birleşik dashboard |
 | Tek çocuk / tek profil | otomatik seçilir, seçim ekranı gösterilmez |
 | Geçmiş sezona switch | yeni JWT, salt-okunur mod; yazma `403` |

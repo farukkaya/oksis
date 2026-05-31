@@ -31,8 +31,9 @@
 ### `POST /auth/login`
 
 **Auth:** Anonim. **Request:**
-```json
-{ "identifier": "veli@example.com", "password": "...", "channel": "web" }
+```jsonc
+{ "identifier": "veli@example.com", "password": "...", "channel": "web",
+  "profileType": "Parent" }   // opsiyonel — çok profilli kullanıcı 409 sonrası seçimini bununla bildirir
 ```
 
 **Akış (özet, tam akış Bölüm 18.1):** guard → `FindForLoginAsync` (TCKN reddi) → password verify → lifecycle gate → consent gate → policy gate → context resolve → permission cache → token issue.
@@ -48,6 +49,7 @@
 ```jsonc
 { "code": "NEEDS_PROFILE_SELECTION", "availableProfiles": ["TeacherProfile","ParentProfile"] }
 ```
+> **Profil seçim çözümü:** 409 alındığında istemci **aynı login isteğini** `profileType` alanıyla tekrarlar (geçerli ve `availableProfiles` içindeyse `200`; açık ama sahip-olunmayan/geçersiz değer yine `409`). Bu, oturum açmadan profil seçmeyi sağlar (`/auth/switch-profile` Bearer token gerektirir, oturum-içi manuel geçiş içindir). Öncelik: `profileType` hint > `LastActiveProfileType` > `409`.
 
 **Response 403 — askıya alınmış (tek istisna — bkz. TR-auth-004):**
 ```jsonc
