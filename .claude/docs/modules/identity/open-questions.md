@@ -25,6 +25,20 @@
 
 ---
 
+## OQ-identity-004: Login ekranı branding kaynağı — subdomain mı default tenant kodu mu?
+
+**Soru:** Login artık identifier-tabanlı **cross-tenant** (okul, giriş sonrası `Person.SchoolId`'den belli olur). Ama login ekranı, kullanıcı giriş yapmadan önce okul adı/logosunu **`EXPO_PUBLIC_DEFAULT_TENANT_CODE`** (mobil) / web'deki sabit tenant kodundan çözüp gösteriyor. Tek-tenant deployment'ta bu doğru; tek-URL çok-tenant'ta okul login'den önce bilinmediği için **sabit bir okul göstermek yanıltıcı** olur.
+
+**Seçenekler:**
+- **A) Okul başına ayrı build/subdomain** (`okul1.oksis.app`): branding subdomain/tenant kodundan gelir, login'de okul adı **kalır** (marka güveni).
+- **B) Tek URL çok-tenant** (`app.oksis.com`): login'de **nötr OKSİS** markası; okul bilgisi yalnız giriş sonrası (header/portal) gösterilir. Default-tenant-code branding kaldırılır.
+- **C) Hibrit:** branding kaynağı **gerçek tenant bağlamı** (subdomain / davet deep-link'indeki tenant kodu) ise göster; yoksa nötr. Sabit default koddan ASLA besleme.
+
+**Mevcut davranış:** `branding.name` çözülürse okul kartı, yoksa tagline — yani zarif degrade ediyor; ancak kaynak sabit default tenant kodu olduğundan B senaryosunda yanlış okul gösterebilir.
+**Öneri:** C (kaynağı tenant bağlamına bağla). **Karar mercii:** Ürün + mimar (deployment modeli). **İlgili:** `school-settings` branding, OKSMVP tenant resolution.
+
+---
+
 ## OQ-identity-003: İki lockout kaynağı çelişiyor — domain düz 15dk vs guard kademeli 5/10/20
 
 **Soru:** Login'de iki ayrı kilit mekanizması paralel çalışıyor:
