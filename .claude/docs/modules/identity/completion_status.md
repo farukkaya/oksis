@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓░░░░` %58   ·   Status: in-progress   ·   Güncel: 2026-05-30
+**İlerleme:** `▓▓▓▓▓▓░░░░` %58   ·   Status: in-progress   ·   Güncel: 2026-05-31
 
 > Temel: Mevcut `User` tabanlı auth (login/refresh/invite/password-reset, `Oksis.Application/Modules/Identity` ≈77 cs) + master seed (roller/izinler) çalışır.
 > 2026-05-30: Teknik analiz (*Login & Profile Switch · Sürüm 1.0*) docs'a işlendi — domain (Account), api-contracts (switch/me/context), database-schema (identity.accounts/refresh_tokens), permissions (RBAC+ABAC, permission cache), business-rules (TR-auth-001…018), notifications (audit/SignalR), ui-flows, open-questions (TQ-auth-001…007) güncellendi. Hedef model dokümante edildi; **kod henüz yazılmadı**.
@@ -34,5 +34,7 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-05-31 — account-login success-path `DbUpdateConcurrencyException` düzeltildi (oksis-api):** Tek profilli account-login `/auth/account/login` başarılı parolada 500 dönüyordu. Kök neden: `RefreshTokenConfiguration`'da `Id` için `ValueGeneratedNever()` eksikti → Guid PK convention'la `ValueGeneratedOnAdd` kalıyor, mevcut (tracked) `Account`'un `RefreshTokens` koleksiyonuna eklenen yeni token non-default key yüzünden `Added` yerine `Modified` sanılıyor, UPDATE üretiliyor, satır olmadığı için concurrency hatası. Düzeltme: `Id.ValueGeneratedNever()` (Person/Profile/ConsentRecord ile tutarlı). Aynı hata `/auth/refresh` (RotateRefreshToken) için de geçerliydi, kapsandı. Boş migration `20260531_refresh_token_id_value_generated_never` (yalnız model snapshot).
+- **2026-05-31 — `users` şeması `identity`'ye birleştirildi + dev seed yeni modele geçti:** Kullanıcı yönetimi tabloları `[users]` → `[identity]` taşındı; dev seed artık yeni `Account/Person/Profile` modeliyle 3 okul için gerçekçi loginable kadro üretir. Detay: `users/completion_status.md → Spec Dışına Çıkılanlar`. Bu, OQ-identity-001 (Account vs User) için fiilen **Account yolunun** dev'de canlı olduğunu doğrular (legacy `User` seed'i kaldırıldı).
 - **2026-05-30 — Modül yerleşimi:** Teknik analiz ayrı projeler (`Oksis.Identity.Domain` vb.) önerir; bu repo modüler monolit olduğundan docs **mevcut `Oksis.Domain/Modules/Identity` alt klasör** yapısına göre yazıldı. Sebep: CLAUDE.md klasör kuralı. Onay: docs güncellemesi sırasında varsayıldı; mimar teyidi bekliyor (OQ-identity-002).
 - **2026-05-30 — Account vs User:** Teknik analizin `Account` aggregate'i hedef olarak dokümante edildi, ancak mevcut kod `User` üzerinde çalışıyor. Hangi yolun seçileceği OQ-identity-001'de açık; karar verilene kadar bu bir **dokümante edilmiş hedef**, uygulanmış gerçek değil.

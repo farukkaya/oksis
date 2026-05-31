@@ -8,6 +8,8 @@
 
 > ⚠️ **Uygulama notu (2026-05-30, ISSUE-02):** Aşağıdaki `student_profiles`/`teacher_profiles`/`parent_profiles`/`staff_profiles` ayrı tabloları **şu an tek `users.profiles` tablosu** olarak gerçeklendi (EF TPH, `profile_type` discriminator) — domain bir `Profile` kalıtım hiyerarşisi olduğu için. Ortak kolonlar tip çakışmasını önlemek için `teacher_`/`staff_` ön ekli (`teacher_employee_number`, `staff_hire_date` vb.). `national_id` `users.persons` üzerinde owned VO olarak `national_id_type`/`national_id_hash`(varbinary 32)/`national_id_encrypted` kolonlarında tutulur; tekillik global `ux_persons_national_id_hash` ile (hash tenant-scoped HMAC olduğundan okul-içi tekillik garanti). Henüz oluşturulmayan tablolar (`parent_student_relationships`, `role_assignments`, `invitations`, `consent_records`, `account_lifecycle_events`) sonraki issue'larda gelecek. Detaylı sapma gerekçeleri: `completion_status.md → ⚠️ Spec Dışına Çıkılanlar`.
 
+> ⚠️ **Şema notu (2026-05-31):** Tüm kullanıcı yönetimi tabloları artık **`[identity]` şemasındadır** — ayrı `[users]` şeması kaldırıldı (migration `20260531_consolidate_users_into_identity_schema`, `ALTER SCHEMA TRANSFER`, veri korunur). Aşağıdaki örneklerde `users.persons`/`users.profiles` vb. olarak geçen referanslar fiziksel olarak `identity.persons`/`identity.profiles`'tır. Tablo/kolon isimleri değişmedi.
+
 ---
 
 ## Genel Audit & Tenant Kolonları
