@@ -20,6 +20,7 @@ Teknik analiz Senaryo 3 (boşanmış veli) iki katmanı zorunlu kılar:
 |---|---|---|
 | `PermissionRequirement` + `PermissionAuthorizationHandler` | RBAC | Permission cache'ten okur |
 | `ChildScopeRequirement` + handler | ABAC | route/body `childId` ↔ `ParentStudentRelationship` bayrağı (users read-port); reddederse `403` + `PermissionDenied` audit |
+| `PersonAccessGuard` (`IPersonAccessGuard`) | ABAC | Kişi-detay kapsamı: geniş kapsam = `users.view-all` izni (`IPermissionReader`, RBAC ile aynı runtime kaynağı — **JWT rolü değil**); aksi halde self / veli→`CanViewInfo`'lu çocuk / öğretmen→kendi sınıfı. Tüketici: `GetPersonDetailQueryHandler`. |
 | `ActiveSeasonWritePolicy` | Policy | `activeSeasonId != School.CurrentSeason` ise yazma endpoint'leri `403` (salt-okunur sezon) |
 
 ---

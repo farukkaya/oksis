@@ -49,6 +49,7 @@ Aksiyonlar:
 | `users.update` | ✅ | ✅ | 🚫 | 👁 (self) | 👁 (self) | 👁 (self) | 🚫 |
 | `users.delete` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.view-detail` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
+| `users.view-all` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.suspend` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.graduate` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `users.transfer` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
@@ -58,6 +59,8 @@ Aksiyonlar:
 | `roles.manage` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `roles.assign` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `consents.manage` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+
+> **`users.view-all` (ABAC broad scope):** `users.view-detail` "detay görebilir mi?" RBAC sorusudur; `users.view-all` ise kaynak-seviyesi kapsam kontrolünde (`PersonAccessGuard`) "kapsam kısıtı olmadan tenant içindeki **herkesi** görebilir mi?" anlamına gelir. Bu izni olmayan (veli/öğretmen) yalnız ilişkili kişileri görür (veli→CanViewInfo'lu çocuk, öğretmen→kendi sınıfı). TQ-auth-002 sonrası guard rolü JWT'den değil bu izinden okur.
 
 ### Schools (Tenant)
 
