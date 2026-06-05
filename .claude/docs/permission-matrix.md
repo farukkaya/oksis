@@ -17,6 +17,8 @@
 | `Secretary` | Sekreter / idari | Tek okul (sınırlı) |
 | `Accountant` | Muhasebe | Tek okul (sadece finans) |
 
+> **⚠️ MVP seed = 5 rol (2026-06-05, Issue #1).** Backend `system_roles` seed'i MVP'de yalnızca şu 5 rolü içerir: **`SuperAdmin, SchoolAdmin, Teacher, Parent, Student`**. `SchoolStaff`, `Secretary`, `Accountant` (ve eski seed'deki `VicePrincipal`/`Counselor`) **henüz seed'de yok**; MVP sonrasına ertelendi. Bu tablodaki ve aşağıdaki matristeki o sütunlar **hedef/gelecek durumu** dokümante eder — runtime'da bu roller atanamaz. Yeni rol eklendiğinde seed (`SystemRoleSeedData`/`RolePermissionSeedData`) + bu matris birlikte güncellenir. Detay: `modules/identity/completion_status.md → Spec Dışına Çıkılanlar`.
+
 ---
 
 ## 2. İzin Sistemi (Permission)
