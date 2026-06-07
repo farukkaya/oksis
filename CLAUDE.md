@@ -31,6 +31,7 @@ These are non-negotiable across api/web/mobile. Full details in `.claude/docs/` 
 3. **MVP scope is enforced.** Before adding any feature, check `mvp-scope-rules.md`. Run the `mvp-guard` skill if uncertain.
 4. **Security**: JWT (RS256, 15 min) + rotating refresh tokens, RBAC + permission matrix, IDOR protection. Permission checks server-side always; UI permission gates are UX only. See `security-rules.md` and `permission-matrix.md`.
 5. **Commits use the OKSİS custom format** (Turkish, ISO date prefix): `YYYY-MM-DD <type>[,type]: Türkçe özet.` Example: `2025-11-15 feat,test: Yoklama eşik bildirimi düzeltildi ve regression testi eklendi.` Issue-linked commits prefix `Issue #<no> `. The husky `commit-msg` hook (`oksis-api`) enforces this. See `git-commit-rules.md`.
+6. **Topic specs in `.claude/specs/` are binding agreements (`bağlayıcı anlaşmalar`).** Before working on a topic covered by a spec file under `.claude/specs/` (at workspace root), **read that spec first** and treat its numbered items (`maddeler`, e.g. `1.3`, `5.2`) as non-negotiable design decisions. **Do not deviate.** If a request — or your own proposed approach — conflicts with a spec item, **stop and tell the user, in Turkish, exactly which item it conflicts with** (file name + item number + the rule's wording) and wait for the user's decision. Never silently override or "work around" a spec. Specs sit at the same authority level as these Absolute Rules; on conflict, surface it rather than guessing.
 
 ## Commands per Subproject
 
