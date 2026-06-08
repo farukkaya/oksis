@@ -13,9 +13,9 @@
 | users | ISSUE-03 (satır + toplu hesap aksiyonları) | ✅ tamam | web `9e96b46` |
 | users | ISSUE-04 (detay drawer — güvenlik sekmesi) | ✅ tamam | web `7e8faf2` |
 | users | ISSUE-05 (detay — etkinlik/audit + bağlı profil köprüsü) | ✅ tamam | web `4b85e7a` |
-| users | ISSUE-07 (koruma kuralları / guardrails) | 🔄 SIRADAKI | — |
+| users | ISSUE-07 (koruma kuralları / guardrails) | ✅ tamam | web `5046645` |
 
-**Sıradaki:** users/ISSUE-07 (son users issue'su; sonra students-spec-audit ISSUE-01'e geç).
+**Sıradaki:** students-spec-audit/ISSUE-01 (web-season-enrollment-axis). users klasörü tamamlandı.
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -58,6 +58,14 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
 - **Etkinlik/Audit (ISSUE-05):** sayfalı salt-okunur tablo; `GetUserActivity` backend slice'ı YOK, web §3.9'a göre tüketici hazırlandı (AsyncSection hata/boş dayanıklı). Uç açılınca aktifleşir.
 - **Bağlı Profil köprüsü (ISSUE-05):** `ProfilesTab` inline profil gösteriminden **köprüye** indirildi (sahiplik sınırı §3 — profili düzenlemez). Öğrenci → `/admin/students?q=<no>`; Öğretmen/Personel/Veli için ayrı yönetim ekranı yok → bilgi notu. `ProfileCard` (inline akademik alan switch'i) kaldırıldı.
 - **ISSUE-07 için zemin:** §3.8 koruma kuralları (son yönetici askıya alınamaz, kendi hesabını kilitleyemez, e-posta değişimi yeniden doğrulama, çok-rollü pasifleştirme uyarısı). Çoğu backend guard ister; web tarafı uyarı/disable + onay diyaloğu yüzeyini kurar. Mevcut `deactivate.multiRoleWarning` i18n zaten var (ISSUE-03). Aksiyonların çoğu hâlâ pasif (ISSUE-03/04 notu) → ISSUE-07 muhtemelen UI guardrail + i18n + (varsa) edge-case görünürlüğü ile sınırlı.
+
+### ✅ ISSUE-07 tamamlandı (2026-06-08) — kararlar
+- §3.8 koruma kuralları UI'da (sunucu kuralının aynası; iş kuralı server-side kalır).
+- **Kendi hesabı:** `UserRowActions` `useAuthStore.user.id === user.id` → kilit/askı/pasife/yeniden-etkinleştir maddeleri **gizli** (disable değil), Detay görünür. Self-hint i18n key (`rowActions.guardrails.selfAccount`) dokümantasyon amaçlı duruyor (gizleme yapıldığından gösterilmiyor).
+- **Son aktif yönetici (çatal — durmadan ilerlendi):** Güvenilir tenant-geneli sayım sunucudan gelmiyor (Out of Scope: yeni server kuralı yok). Karar: `UsersPage` `lastActiveAdminId`'yi **yalnız tek sayfada** (`totalPages === 1`) ve listede tam **bir** aktif SchoolAdmin/SuperAdmin varsa türetir; çoklu sayfada devre dışı (yanlış-pozitif yerine eksik-uyarı tercih edildi — server zaten reddeder). `isLastActiveAdmin` prop'u `UserRowActions`'a geçer → Askıya al + Pasife al **pasif + sebep tooltip'i** (`guardrails.lastActiveAdmin`).
+- **E-posta yeniden doğrulama:** Row-action'larda e-posta düzenleme yüzeyi yok; kural Güvenlik sekmesinde yüzeylendi. `UserDetailDto`'ya optional `pendingEmail` eklendi (backend henüz döndürmeyebilir). SecurityTab'a "E-posta" bölümü: mevcut e-posta + doğrulama-bekliyor/doğrulandı + yeniden-doğrulama bilgi notu. `pendingEmail` doluysa uyarı (`security-email-pending`).
+- **Çoklu rol pasife alma uyarısı** zaten ISSUE-03'te vardı (deactivate confirm `multiRoleWarning`), korundu.
+- Test: `UserRowActions.test.tsx` +4 (self gizleme, self locked, son-admin disable+sebep, normal aktif); `UserDetailPage.test.tsx` +2 (e-posta pending + verified). Tüm users suite 51 yeşil; `npm run build` yeşil.
 
 ### Anomali notu
 - Çalışma sırasında `oksis-web` working tree'de benim dokunmadığım `StudentsPage.tsx` ve
