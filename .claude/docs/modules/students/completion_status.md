@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `██░░░░░░░░` %18   ·   Status: in-progress (web spec-audit)   ·   Güncel: 2026-06-08
+**İlerleme:** `███░░░░░░░` %26   ·   Status: in-progress (web spec-audit)   ·   Güncel: 2026-06-08
 
 > Temel: Doküman iskeleti büyük ölçüde `{{TBD}}`. Backend `Application/Modules/Students`
 > boş (0 cs); öğrenci verisi `Users`(PersonsController) + sezon/kayıt `AcademicSessions`
@@ -30,6 +30,20 @@
   (§4.4); veli telefonu/e-posta artık `StudentParentDto`'da; `PersonListItemDto`'ya
   `ParentCount`. Backend mevcut `CreateRelationship`/`RevokeRelationship`/
   `UpdateRelationshipPermissions` uçlarına bağlandı (yeni slice yazılmadı).
+- **students-spec-audit ISSUE-03 (2026-06-08, web `557f129`):** Öğrenci **satır (…)
+  + toplu domain aksiyonları** (§4.5). `StudentRowActions` overflow menüsü: Detay ·
+  Düzenle(akademik) · Sınıf ata · Veli bağla · Belge ekle · Nakil çıkışı · Mezun et ·
+  Kaydı dondur · Pasife al — durum-duyarlı. Yaşam-döngüsü uçları **Person.id ekseninde
+  hazır** (PersonsController suspend/reactivate/graduate/transfer/archive) → gerçek
+  uçlara bağlandı; başarıda liste invalidate → mezun/nakil/pasife öğrenci aktif tablodan
+  düşer (§4.8). "Pasife al" = arşiv (soft, §1.3). Toplu çubuk: Dışa Aktar çalışır;
+  Sınıf Ata/Yükselt görünür-ama-pasif (Person-ekseni AssignClass/PromoteStudents yok).
+  `useStudentActions` hook + studentsApi yaşam-döngüsü metotları.
+- **students-spec-audit ISSUE-04 (2026-06-08, web `f06a6e4`):** Detay drawer sekme
+  yapısı **§4.6'ya hizalandı**: Genel · Veliler · Akademik · Devamsızlık · Kayıt Geçmişi
+  · Belgeler · Hesap. "Notlar"→"Akademik" (salt-okunur). Belgeler iskeleti (boş + pasif
+  "Belge ekle"); Hesap sekmesi sahiplik-sınırı notu + "Kullanıcılar'da yönet" köprüsü
+  (`/admin/users/{personId}`). "Ödemeler" sekmesi kaldırıldı (§4.6 dışı, aşağıya işlendi).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
@@ -37,8 +51,11 @@
 - Backend: `Modules/Students` domain entity + CQRS handler + endpoint (yok).
 - **`GetEnrollmentHistory` slice'ı (§4.9)** ve **server-side `seasonId` filtresi** (yok)
   → web tüketici hazır, uç açılınca beslenir.
-- Web spec-audit kalan issue'lar: ISSUE-03..06 (domain satır/toplu aksiyonlar,
-  detay sekme yapısı, filtreler/arama, edge-case/guardrails).
+- **Backend (§4.9) eksik uçlar:** Person-ekseni `AssignClass`/`PromoteStudents` (toplu
+  sınıf/terfi), `UploadDocument` (Belgeler), akademik `UpdateStudent` formu → web'de
+  görünür-ama-pasif + notReadyHint; uç açılınca aktifleşir.
+- Web spec-audit kalan issue'lar: ISSUE-05 (filtreler/arama), ISSUE-06
+  (edge-case/guardrails).
 - Mobile: öğrenci rolü ekranları (yok).
 
 ## ⚠️ Spec Dışına Çıkılanlar
@@ -56,3 +73,15 @@
   değişmezi sunucuda atomik garanti edilmediğinden web, hedefi birincil yaparken diğer
   birincilleri ardışık PUT ile düşürür (client orkestrasyon). Tam atomik tek-birincil +
   dedicated `SetPrimaryGuardian` slice ileride backend işi. Karar verici: spec-audit ajanı.
+- **2026-06-08 — ISSUE-03 (görünür-ama-pasif aksiyonlar, sapma değil):** §4.5 satır
+  "Sınıf ata/değiştir", "Belge ekle", akademik "Düzenle" ve toplu "Sınıf Ata/Yükselt"
+  için Person.id ekseninde backend ucu yok (§4.9 `AssignClass`/`PromoteStudents`/
+  `UploadDocument`/`UpdateStudent`) → bu maddeler **görünür ama pasif + notReadyHint**
+  (users ISSUE-03 deseni). Yaşam-döngüsü aksiyonları (dondur/etkinleştir/nakil/mezun/
+  pasife al) gerçek PersonsController uçlarına bağlı. Karar verici: spec-audit ajanı.
+- **2026-06-08 — ISSUE-04 (Ödemeler sekmesi kaldırıldı, onaylı sapma):** §4.6 detay
+  sekme seti (Genel·Veliler·Akademik·Devamsızlık·Kayıt Geçmişi·Belgeler·Hesap) "Ödemeler"
+  içermez. Mevcut drawer'daki spec-dışı **Ödemeler (payments) sekmesi kaldırıldı**
+  (issue varsayılanı: ertele/kaldır). Etki: ödeme görünümü öğrenci detayında yok;
+  gerekirse ayrı Finans/Ödemeler modülünde ele alınır (MVP dışı). Karar verici:
+  spec-audit ajanı (kullanıcı "mimari çatallarda durma" talimatı).

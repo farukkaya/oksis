@@ -16,8 +16,10 @@
 | users | ISSUE-07 (koruma kuralları / guardrails) | ✅ tamam | web `5046645` |
 | students | ISSUE-01 (web-season-enrollment-axis) | ✅ tamam | web `0834f37` |
 | students | ISSUE-02 (web-guardian-management-home) | ✅ tamam | api `fb77240`, web `b225e7e` |
+| students | ISSUE-03 (web-domain-row-and-bulk-actions) | ✅ tamam | web `557f129` |
+| students | ISSUE-04 (web-detail-tab-structure) | ✅ tamam | web `f06a6e4` |
 
-**Sıradaki:** students-spec-audit/ISSUE-03 (web-domain-row-and-bulk-actions).
+**Sıradaki:** students-spec-audit/ISSUE-05 (web-filters-and-search).
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -136,16 +138,41 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
   tek-birincil arg, çıkar onay/red), `StudentsTableParent.test.tsx` (3: +N, tek veli,
   velisiz). Students suite **22 yeşil**; `npm run build` yeşil.
 
-### ISSUE-03 için zemin (web-domain-row-and-bulk-actions, §4.5)
-- Hedef satır (…): Detay · Düzenle(akademik) · Sınıf ata/değiştir · Veli bağla(ISSUE-02 yapıldı,
-  satıra kısayol eklenebilir) · Belge ekle · Nakil çıkışı · Mezun et · Kaydı dondur · Pasife al.
-  Toplu: sınıf atama/yükseltme · dışa aktarma.
-- Mevcut backend Person lifecycle uçları: `SuspendPerson`/`ReactivatePerson`/`GraduatePerson`/
-  `TransferPerson`/`ArchivePerson`/`DeletePerson` (PersonsController `{id}/suspend|reactivate|
-  graduate|transfer` + DELETE). `AssignClass`/`PromoteStudents`/`FreezeEnrollment` §4.9 adıyla
-  YOK → users desenindeki gibi "görünür ama pasif + notReadyHint" tercih edilebilir.
-- Web: StudentsTable satır aksiyon hücresi + StudentsSelectionBar zaten var (placeholder
-  butonlar). Hesap-ekseni users ISSUE-03 deseni (UserRowActions/UsersBulkBar) referans alınabilir.
+### ✅ ISSUE-03 tamamlandı (2026-06-08, web `557f129`) — kararlar
+- `StudentRowActions.tsx` (satır … overflow menüsü) + `useStudentActions.ts` (yaşam-döngüsü
+  mutasyonları) + `studentsApi` suspend/reactivate/graduate/transferOut/deactivate metotları.
+- **Önemli avantaj (users ekseninden farkı):** öğrenci satır id = **Person.id** ve backend
+  lifecycle uçları Person.id ekseninde HAZIR (PersonsController `{id}/suspend|reactivate|
+  graduate|transfer|archive`). Bu yüzden Kaydı dondur/etkinleştir/Nakil/Mezun/Pasife al
+  **gerçek uçlara bağlandı**; başarıda `studentKeys.all` invalidate → §4.8 (aktif tablodan düşme).
+- **Pasife al = archive (soft, §1.3).** "Mezun/Nakil/Pasife al" onay diyaloğu (component-içi).
+- Görünür-ama-pasif (notReadyHint): Sınıf ata · Belge ekle · akademik Düzenle · toplu Sınıf
+  Ata/Yükselt (Person-ekseni AssignClass/PromoteStudents/UploadDocument yok).
+- "Veli bağla"/"Detay" → drawer `initialTab` ile ("guardians"/"general") açılır.
+- Toplu çubuk yeniden düzenlendi: Sınıf Ata + Sınıf Yükselt(terfi) + Dışa Aktar; Bildirim
+  toplu setten çıkarıldı (§4.5 dışı). `onSendNotification`/`onDeactivate` prop'ları kaldırıldı.
+- Test: `StudentRowActions.test.tsx` (8); `StudentsTableParent.test.tsx` QueryClientProvider
+  ile sarıldı (tablo artık RowActions mount eder).
+
+### ✅ ISSUE-04 tamamlandı (2026-06-08, web `f06a6e4`) — kararlar
+- Drawer sekme seti §4.6: Genel · Veliler · Akademik · Devamsızlık · Kayıt Geçmişi · Belgeler ·
+  Hesap. "Notlar"→"Akademik" relabel (salt-okunur). Belgeler/Hesap **iskelet**.
+- **Hesap köprüsü:** `/admin/users/{student.id}` (= Person.id; users portalında Person detayı).
+  Drawer `useNavigate` kullanır → drawer render eden testler **MemoryRouter** ile sarılmalı.
+- **Onaylı sapma:** spec-dışı **Ödemeler (payments) sekmesi kaldırıldı** (§4.6 setinde yok);
+  completion_status "⚠️ Spec Dışına Çıkılanlar"a işlendi.
+- i18n: `drawer.tabs.marks`→`academic`, `payments` kaldırıldı; `documents`/`account` eklendi;
+  `marksCard`→`academicCard`, `paymentsCard`→`documentsCard`+`accountCard`.
+- Test: `StudentDetailTabs.test.tsx` (4).
+
+### ISSUE-05 için zemin (web-filters-and-search, §4.3)
+- §4.3 arama: ad / öğrenci no / **veli**. Filtreler: Sınıf · Durum · Cinsiyet · **Seviye/Kademe**
+  · **Veli durumu (tanımlı/eksik)** · (ileride) Devamsızlık eşiği.
+- Mevcut (StudentsPage/StudentsToolbar): arama (q), Sınıf, Durum, Cinsiyet filtreleri VAR.
+  **Eksik:** Seviye/Kademe filtresi, Veli durumu filtresi; arama backend `search>=2` ad/no
+  üzerinde (veli adıyla arama backend desteğini doğrula — `ListPersonsQuery`).
+- Backend: `ListPersons` filtre paramları (`gradeLevel`/`hasGuardian`) var mı → doğrula/üret;
+  yoksa users deseni (client-side türet veya görünür-ama-pasif).
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).
