@@ -15,8 +15,9 @@
 | users | ISSUE-05 (detay — etkinlik/audit + bağlı profil köprüsü) | ✅ tamam | web `4b85e7a` |
 | users | ISSUE-07 (koruma kuralları / guardrails) | ✅ tamam | web `5046645` |
 | students | ISSUE-01 (web-season-enrollment-axis) | ✅ tamam | web `0834f37` |
+| students | ISSUE-02 (web-guardian-management-home) | ✅ tamam | api `fb77240`, web `b225e7e` |
 
-**Sıradaki:** students-spec-audit/ISSUE-02 (web-guardian-management-home). users klasörü tamamlandı.
+**Sıradaki:** students-spec-audit/ISSUE-03 (web-domain-row-and-bulk-actions).
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -108,6 +109,43 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
 - Backend: ilişki uçları `RelationshipsController` (`/users/students/{id}/parents`) altında;
   `LinkGuardian`/`UnlinkGuardian`/`SetPrimaryGuardian` (§4.9) **doğrula/üret** — kodda
   henüz teyit edilmedi. ISSUE-02 başında `RelationshipsController` + ilgili command'lar okunmalı.
+
+### ✅ ISSUE-02 tamamlandı (2026-06-08) — kararlar
+- **Backend zaten hazırdı:** veli–öğrenci ilişkisi için `CreateRelationship`/
+  `RevokeRelationship`/`UpdateRelationshipPermissions` command'ları + `RelationshipsController`
+  (`POST/PUT/DELETE /users/relationships`, `GET /users/students/{id}/parents`) var.
+  §4.9 adıyla ayrı `LinkGuardian`/`UnlinkGuardian`/`SetPrimaryGuardian` slice'ı **yazılmadı**
+  → mevcut eşdeğer uçlar bağlandı (CLAUDE.md: aynı işi yapan handler'ı kullan/genişlet).
+- **Backend'e yapılan tek dokunuş (hafif DTO zenginleştirme):** `StudentParentDto`'ya
+  `Phone`/`Email` (GetStudentParents projeksiyonu — `Person.PrimaryPhone/PrimaryEmail`);
+  `PersonListItemDto`'ya `ParentCount` (ListPersons GroupBy'dan, çoklu veli "+N" için).
+  Integration testi: `GetStudentParents_ShouldProjectParentContactAsync` (LocalDB yeşil).
+  Not: `PhoneNumber` value object `+` strip eder (`+90555…` → `90555…`).
+- **Web mimari kararlar (çatalda durmadan):**
+  - Drawer'a **Veliler** sekmesi (`GuardiansTab.tsx`); "Genel"deki read-only birincil
+    veli mini-card'ı **korundu** (özet). CRUD yeni sekmede.
+  - **Veli ekle** = tek diyalog (`AddGuardianDialog.tsx`): mevcut arama (`GET /users/persons?
+    profileType=Parent&search=`) → kardeş bağla; yoksa yeni veli (`POST /users/persons`
+    profile=Parent + e-posta/telefon) → `POST /users/relationships`. Arka plan User
+    hesabı/davet backend event'ine bırakıldı (invite-first; web tetiklemez).
+  - **Tek-birincil** sunucuda atomik değil → `useGuardianMutations.setPrimary` client
+    orkestrasyonu: diğer birincilleri ardışık PUT ile düşür, sonra hedefi birincil yap.
+  - İzin: `users.update` (CreateRelationship `[RequirePermission("users.update")]` ile aynı).
+  - Tablo "Veli" kolonu: birincil-dot + ad + `parentCount>1` ise "+N".
+- **Test:** `GuardiansTab.test.tsx` (5: boş-uyarı, çoklu liste+tek birincil, setPrimary
+  tek-birincil arg, çıkar onay/red), `StudentsTableParent.test.tsx` (3: +N, tek veli,
+  velisiz). Students suite **22 yeşil**; `npm run build` yeşil.
+
+### ISSUE-03 için zemin (web-domain-row-and-bulk-actions, §4.5)
+- Hedef satır (…): Detay · Düzenle(akademik) · Sınıf ata/değiştir · Veli bağla(ISSUE-02 yapıldı,
+  satıra kısayol eklenebilir) · Belge ekle · Nakil çıkışı · Mezun et · Kaydı dondur · Pasife al.
+  Toplu: sınıf atama/yükseltme · dışa aktarma.
+- Mevcut backend Person lifecycle uçları: `SuspendPerson`/`ReactivatePerson`/`GraduatePerson`/
+  `TransferPerson`/`ArchivePerson`/`DeletePerson` (PersonsController `{id}/suspend|reactivate|
+  graduate|transfer` + DELETE). `AssignClass`/`PromoteStudents`/`FreezeEnrollment` §4.9 adıyla
+  YOK → users desenindeki gibi "görünür ama pasif + notReadyHint" tercih edilebilir.
+- Web: StudentsTable satır aksiyon hücresi + StudentsSelectionBar zaten var (placeholder
+  butonlar). Hesap-ekseni users ISSUE-03 deseni (UserRowActions/UsersBulkBar) referans alınabilir.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).
