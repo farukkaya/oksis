@@ -4,12 +4,13 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `█░░░░░░░░░` %10   ·   Status: in-progress   ·   Güncel: 2026-06-08
+**İlerleme:** `██░░░░░░░░` %20   ·   Status: in-progress   ·   Güncel: 2026-06-08
 
 > Temel: doküman iskeleti `{{TBD}}`. Admin Öğretmenler **liste ekranı** (greenfield
 > spec §5) kuruldu: ISSUE-01 (liste/arama/filtre/tablo iskeleti) + ISSUE-02 (KPI
-> şeridi). Görevlendirme domaini (TeachingAssignment, ISSUE-03) ve workload (ISSUE-04)
-> hâlâ yok → ilgili kolonlar/metrikler "—".
+> şeridi). **ISSUE-03: `TeachingAssignment` domaini + Görevlendirmeler sekmesi
+> (ekranın kalbi) kuruldu.** Workload hesabı (ISSUE-04) hâlâ yok → §5.4 Haftalık Yük
+> kolonu "—" (sekmede toplam yük gösterilir).
 
 ---
 
@@ -26,12 +27,24 @@
 - **ISSUE-02 (web/api §5.2):** `TeachersKpiStrip` (Toplam · Aktif Görevli · Ortalama Yük ·
   Branş Açığı); `GetTeacherStats` query + `GET /users/persons/teacher-stats`. Ortalama Yük
   (ISSUE-04) + Branş Açığı (Ders Programı) kaynaksız → "—".
+- **ISSUE-03 (api §5.1/§5.7/§1.2):** `TeachingAssignment` aggregate (Teacher[Person.id] ×
+  ClassRoom × Subject + haftalık saat, sezona bağlı, soft-revoke = görev geçmişi). Komutlar
+  `AssignSubjectClass`/`UnassignSubjectClass` + `TeachingAssignmentChangedEvent` (§5.9, Ders
+  Programı senkronu için Assigned/Unassigned). Sorgular `GetTeacherAssignments` (aktif sezon +
+  toplam yük) / `GetAssignmentHistory`. EF config (filtered unique aktif tekillik, weekly_hours
+  1–40 check), migration, DbSet, permission/role seed (`teaching-assignments.view/.assign`).
+  Yardımcı: `GET /academics/subjects` lookup. §5.8 guard: ayrılmış öğretmene/arşiv şubeye atama
+  reddi. 11 unit test.
+- **ISSUE-03 (web §5.6/§5.7):** `TeacherAssignmentsTab` (ekranın kalbi) — aktif sezon
+  görevlendirmeleri haftalık saatiyle, ekle (`AddAssignmentDialog`: şube/ders/saat)/kaldır,
+  toplam yük başlıkta. `useTeacherAssignments` (query + mutasyonlar, invalidate). tr/en i18n.
+  4 web test. **Detay drawer'a mount ISSUE-06 işi** (sekme self-contained, dışa export'lu).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Doküman içeriği (≈110 `{{TBD}}` alanı) — spec doldurulmadı.
-- **ISSUE-03:** `TeachingAssignment` domain + görevlendirme yönetimi (ekranın kalbi) — yok.
-- **ISSUE-04:** Haftalık yük/kapasite hesabı + doluluk göstergesi — yok.
+- **ISSUE-04:** Haftalık yük/kapasite hesabı + doluluk göstergesi (kaynak ISSUE-03'te hazır:
+  `GetTeacherWorkload` ayrı slice + §5.4 kolon + §5.2 ortalama yük) — yok.
 - **ISSUE-05/06/07/08:** homeroom yönetimi, detay drawer, satır/toplu aksiyonlar, edge-case.
 - Mobile: öğretmen rolü ekranları (yok).
 

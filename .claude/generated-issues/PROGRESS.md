@@ -22,8 +22,9 @@
 | students | ISSUE-06 (web-edge-cases-guardrails) | ✅ tamam | web `0860801` |
 | teachers | ISSUE-01 (web-teachers-list-screen-skeleton) | ✅ tamam | api `1e73253`, web `85ab90e` |
 | teachers | ISSUE-02 (web-capacity-axis-kpis) | ✅ tamam | api `90f8391`, web `80d8585` |
+| teachers | ISSUE-03 (api-web-teaching-assignment-domain) | ✅ tamam | api `f4c631f`+`6cf92c5`, web `a8b7403` |
 
-**Sıradaki:** teachers-spec-audit/ISSUE-03 (api-web-teaching-assignment-domain — TeachingAssignment domaini, ekranın kalbi; §5.1/§5.7/§1.2). NOT: greenfield domain işi — büyük; mvp-guard ile parça/öncelik teyidi önerilir (README §57).
+**Sıradaki:** teachers-spec-audit/ISSUE-04 (web-weekly-workload-capacity — §5.2/§5.4/§5.7 Haftalık Yük/kapasite + doluluk göstergesi). Zemin ISSUE-03'te hazır: görevlendirme saatleri kaynak; `GetTeacherWorkload` ayrı slice (sezon bazında Redis cache, §5.9) + §5.4 "24/30 saat" kolon + §5.2 ortalama yük "%N". Kapasite kaynağı (öğretmen başına haftalık ders saati üst sınırı) netleşmeli — spec §5.4 "24/30" der ama "30" kaynağı belirsiz; muhtemelen okul ayarı/sabit. Çatalda durma, kararı ver+işle.
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -248,16 +249,37 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
   kaynaksız → "—" (0 değil; spec §5.2 "başta —" der). Ortalama yük dolduğunda "%N" biçimi.
 - Test: web 14 (KPI +3); `npm run build` + `dotnet build` yeşil.
 
-### ISSUE-03 için zemin (yeni oturumda tekrar keşfe gerek yok)
-- Hedef (§5.1/§5.7/§1.2): `TeachingAssignment` = Teacher × Class × Subject + **haftalık saat**.
-  Toplam yük = tüm assignment saatleri. Bu, §5.4 Haftalık Yük + §5.2 Ortalama Yük + §5.6
-  Görevlendirmeler sekmesi + §5.5 ders/sınıf görevlendir aksiyonlarının **kaynağıdır**.
-- **Çatal/karar gerekecek:** `Modules/Teachers` backend boş (.gitkeep). README §57 "büyük iş,
-  mvp-guard ile parça teyidi öner" diyor. Domain entity nereye (Modules/Teachers vs
-  AcademicSessions yanında), Subject kaynağı (`subjects` modülü?), ClassRoom (AcademicSessions)
-  bağı netleşmeli. Önce keşfet: `Modules/Subjects`, `AcademicSessions/ClassRoom`.
-- Öğretmen ekseni = Person.id (ISSUE-01 kararı); assignment muhtemelen Person.id ↔ ClassRoom.id
-  ↔ Subject.id üçlüsü + weeklyHours taşır.
+### ✅ ISSUE-03 tamamlandı (2026-06-08, api `f4c631f`+`6cf92c5`, web `a8b7403`) — kararlar
+- **Mimari eşleme (çatal — durmadan ilerlendi, ISSUE-01 kararıyla tutarlı):** Öğretmen =
+  **Person + TeacherProfile** (Person.id ekseni); ayrı `Teacher` istihdam aggregate'i AÇILMADI.
+  `TeachingAssignment.TeacherId` = Person.id. Spec §5.1 "ayrı Teacher aggregate" der ama kod
+  Person/Profile dünyasında; bu sapma **ISSUE-01'de zaten completion_status'a işlendi**, ISSUE-03
+  onun üstüne oturdu (yeni sapma satırı eklenmedi — aynı karar).
+- **Domain yeri:** `Domain/Modules/Teachers/{Entities,Events,Exceptions}` (yeni); Application
+  `Modules/Teachers/{Commands,Queries,DTOs}`. `TeachingAssignment : TenantEntity` aggregate.
+- **Kaldırma = soft-revoke** (`RevokedAt`, §1.3 arşiv) → görev geçmişi (§5.6) korunur; aktif
+  tekillik filtered unique index (`ux_teaching_assignments_active`: session+teacher+classroom+subject,
+  revoked_at IS NULL). weekly_hours 1–40 check.
+- **Cross-aggregate ID-only:** teacher_id (Person) + subject_id (master.subjects) FK YOK
+  (ClassRoom.homeroom_teacher_id deseni); session_id + class_room_id academic şemasında → FK var.
+- **Event `TeachingAssignmentChangedEvent`** (Assigned/Unassigned, §5.9) — Ders Programı dinleyecek;
+  **handler henüz yok** (Timetable modülü yok, Out of Scope). Sadece yayınlanıyor.
+- **Subject kaynağı:** `Modules/Academics/Subject` (MasterEntity, tenant-agnostik). Web diyaloğu
+  için `GET /academics/subjects` (`ListSubjects`) eklendi (ayrı küçük commit `6cf92c5`).
+- **Web:** `TeacherAssignmentsTab` (self-contained, index'ten export) — **detay drawer'a mount
+  ISSUE-06 işi**. Şube seçimi `GET /class-rooms?status=Active`, ders `GET /academics/subjects`.
+  İzin `teaching-assignments.assign`.
+- **§5.8 guard'ları (kısmi):** ayrılmış öğretmene (TeacherProfile.IsTerminated) + arşiv şubeye
+  atama reddi yapıldı. "Aşırı yük yumuşak uyarı" + "Ders Programı bağımlılık uyarısı" ISSUE-04/08
+  + Timetable gelince. Branşsız öğretmen uyarısı ISSUE-08.
+- **Test:** api 11 unit (assign happy+event, tekillik/terminated/arşiv conflict, aktif sezon yük
+  toplamı, revoke+event, notfound) — 773 app test yeşil; `dotnet build` + migration yeşil. web 4
+  (boş/liste+toplam/kaldır-onay/hata) — teachers suite 18 yeşil; `npm run build` yeşil.
+- **NSubstitute tuzağı (not):** `_db.X.Returns(arr.AsQueryable().BuildMockDbSet())` inline çağrı
+  zinciri "last call should return" hatası verir; DbSet'leri **önce local'e** al, sonra `.Returns`,
+  `.When/.Do` en sona. (Teachers test'lerinde böyle yapıldı.)
+- **Migration namespace:** EF tool 10.0.5 block-scoped namespace üretti; repo file-scoped istiyor
+  (IDE0161 error) → migration `.cs`/`.Designer.cs` file-scoped'a çevrildi.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).
