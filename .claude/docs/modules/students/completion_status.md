@@ -44,6 +44,16 @@
   · Belgeler · Hesap. "Notlar"→"Akademik" (salt-okunur). Belgeler iskeleti (boş + pasif
   "Belge ekle"); Hesap sekmesi sahiplik-sınırı notu + "Kullanıcılar'da yönet" köprüsü
   (`/admin/users/{personId}`). "Ödemeler" sekmesi kaldırıldı (§4.6 dışı, aşağıya işlendi).
+- **students-spec-audit ISSUE-05 (2026-06-08, api `744bc97` + web `9807263`):** Arama
+  ve filtreler **§4.3'e tamamlandı**. Backend `ListPersonsQuery`'ye **server-side**
+  `GradeCode` (şube adı önekinden seviye/kademe) ve `HasGuardian` (veli tanımlı/eksik)
+  filtreleri eklendi; arama dalına **aktif `ParentStudentRelationship` üzerinden veli-adı
+  eşleşmesi** eklendi (ad/öğrenci no/veli — §4.3 tam). Web: StudentsToolbar'a Seviye +
+  Veli durumu filtreleri, URL state (grade/guardian), aktif çipler, "Tümünü temizle"
+  hepsini sıfırlar. Sayfalama bozulmaz (filtreler server-side). Test: api unit
+  (HasGuardian) + integration (veli-adı arama + HasGuardian, gerçek SQL Server Like),
+  web 6 (filtre onChange + param-map). Seviye seçenekleri yüklü satırların sınıf
+  adlarından türetilir (not aşağıda).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
@@ -54,8 +64,12 @@
 - **Backend (§4.9) eksik uçlar:** Person-ekseni `AssignClass`/`PromoteStudents` (toplu
   sınıf/terfi), `UploadDocument` (Belgeler), akademik `UpdateStudent` formu → web'de
   görünür-ama-pasif + notReadyHint; uç açılınca aktifleşir.
-- Web spec-audit kalan issue'lar: ISSUE-05 (filtreler/arama), ISSUE-06
-  (edge-case/guardrails).
+- Web spec-audit kalan issue: ISSUE-06 (edge-case/guardrails).
+- **ISSUE-05 küçük not (sapma değil):** Seviye/Kademe filtresi **seçenekleri** yüklü
+  satırların sınıf adlarından türetilir (server-side ayrı GradeLevel lookup ucu eklenmedi);
+  grade filtresi seçiliyken liste daraldığından seçenek seti de daralabilir (aktif değer
+  listede tutulur). `export` ucu (`ExportPersonsQuery`) yeni `gradeCode`/`hasGuardian`
+  param'larını henüz tüketmiyor → web zararsız geçirir (export filtre paritesi ileride).
 - Mobile: öğrenci rolü ekranları (yok).
 
 ## ⚠️ Spec Dışına Çıkılanlar

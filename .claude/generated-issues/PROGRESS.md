@@ -18,8 +18,9 @@
 | students | ISSUE-02 (web-guardian-management-home) | ✅ tamam | api `fb77240`, web `b225e7e` |
 | students | ISSUE-03 (web-domain-row-and-bulk-actions) | ✅ tamam | web `557f129` |
 | students | ISSUE-04 (web-detail-tab-structure) | ✅ tamam | web `f06a6e4` |
+| students | ISSUE-05 (web-filters-and-search) | ✅ tamam | api `744bc97`, web `9807263` |
 
-**Sıradaki:** students-spec-audit/ISSUE-05 (web-filters-and-search).
+**Sıradaki:** students-spec-audit/ISSUE-06 (web-edge-cases-guardrails, §4.8).
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -165,14 +166,37 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
   `marksCard`→`academicCard`, `paymentsCard`→`documentsCard`+`accountCard`.
 - Test: `StudentDetailTabs.test.tsx` (4).
 
-### ISSUE-05 için zemin (web-filters-and-search, §4.3)
-- §4.3 arama: ad / öğrenci no / **veli**. Filtreler: Sınıf · Durum · Cinsiyet · **Seviye/Kademe**
-  · **Veli durumu (tanımlı/eksik)** · (ileride) Devamsızlık eşiği.
-- Mevcut (StudentsPage/StudentsToolbar): arama (q), Sınıf, Durum, Cinsiyet filtreleri VAR.
-  **Eksik:** Seviye/Kademe filtresi, Veli durumu filtresi; arama backend `search>=2` ad/no
-  üzerinde (veli adıyla arama backend desteğini doğrula — `ListPersonsQuery`).
-- Backend: `ListPersons` filtre paramları (`gradeLevel`/`hasGuardian`) var mı → doğrula/üret;
-  yoksa users deseni (client-side türet veya görünür-ama-pasif).
+### ✅ ISSUE-05 tamamlandı (2026-06-08, api `744bc97` + web `9807263`) — kararlar
+- **Mimari karar (çatal — durmadan ilerlendi):** Filtreler **server-side** yapıldı (client-side
+  süzme sayfalamayı/totalCount'u bozardı; mevcut class/gender zaten server-side). Backend
+  `ListPersonsQuery`'ye **2 yeni param + veli-adı arama** eklendi (issue API notu yetkilendiriyor;
+  "eksikse parametre ekle"):
+  - `GradeCode` (string?) — Seviye/Kademe. ClassRoom.FullName = "{gradeCode}-{section}";
+    `FullName LIKE '{code}-%'` ile o seviyedeki şubelerin öğrencilerini süzer.
+  - `HasGuardian` (bool?) — Veli durumu (tanımlı/eksik): aktif `ParentStudentRelationship`
+    (RevokedAt==null) varlığına göre.
+  - **Veli-adı arama** (§4.3): arama dalına aktif ilişki üzerinden parent join + `Person.Name`
+    Like eklendi → ad / öğrenci no / veli tam karşılandı.
+- Controller (`PersonsController.ListAsync`) + web (`studentsApi.list/exportFile`, `useStudentsQuery`,
+  `studentKeys`, `StudentsToolbar` 2 filtre, URL state grade/guardian, çipler, clearAll) bağlandı.
+- **Seviye seçenek kaynağı (not):** yüklü satır sınıf adlarından türetilir (ayrı GradeLevel lookup
+  ucu eklenmedi); grade seçiliyken seçenek seti daralabilir (aktif değer tutulur). Export ucu
+  (`ExportPersonsQuery`) yeni param'ları henüz tüketmiyor (web zararsız geçirir).
+- **Test:** api unit +2 (HasGuardian true/false, MockQueryable), api integration +1 (veli-adı arama +
+  HasGuardian, gerçek SQL Server — Testcontainers, **yeşil**); web 6 (filtre onChange + param-map).
+  Students web suite **40 yeşil**; `npm run build` + `dotnet build` yeşil.
+
+### ISSUE-06 için zemin (web-edge-cases-guardrails, §4.8)
+- §4.8: (1) velisiz öğrenci kaydedilebilir ama **"veli eksik" uyarısı** görünür (rozet/uyarı, kayda
+  engel değil); (2) sınıf değiştirme yalnız **aktif sezon** kaydını etkiler (UI bunu belirtir);
+  (3) **mezun/nakil** aktif tablodan düşer, filtreyle erişilir (ISSUE-03'te zaten bağlı — invalidate);
+  (4) **öğrenci no değişmez** (hiçbir formda düzenlenemez/read-only).
+- Hazır zemin: `parentCount` her satırda var (veli-eksik = `parentCount===0`); HasGuardian filtresi
+  ISSUE-05'te eklendi → "veli eksik" süzme zaten mümkün. Drawer guardians sekmesinde
+  `missingWarning` i18n zaten var (ISSUE-02). Durum filtresi (graduated) ISSUE-05/03'te çalışıyor.
+- Issue Out of Scope: yeni server iş kuralı. Bu issue **UI guard + mevcut kuralların aynası**.
+  Beklenen: tablo/detayda veli-eksik rozeti, öğrenci no read-only teyidi, sınıf değişimi aktif-sezon
+  notu, mezun/nakil düşme zaten çalışır (test ile teyit). Çoğu UI yüzeyi + i18n + birkaç test.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).
