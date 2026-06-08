@@ -20,8 +20,10 @@
 | students | ISSUE-04 (web-detail-tab-structure) | ✅ tamam | web `f06a6e4` |
 | students | ISSUE-05 (web-filters-and-search) | ✅ tamam | api `744bc97`, web `9807263` |
 | students | ISSUE-06 (web-edge-cases-guardrails) | ✅ tamam | web `0860801` |
+| teachers | ISSUE-01 (web-teachers-list-screen-skeleton) | ✅ tamam | api `1e73253`, web `85ab90e` |
+| teachers | ISSUE-02 (web-capacity-axis-kpis) | ✅ tamam | api `90f8391`, web `80d8585` |
 
-**Sıradaki:** teachers-spec-audit/ISSUE-01 (ilk teachers issue — klasörü oku, issue no sırasıyla). students-spec-audit BİTTİ.
+**Sıradaki:** teachers-spec-audit/ISSUE-03 (api-web-teaching-assignment-domain — TeachingAssignment domaini, ekranın kalbi; §5.1/§5.7/§1.2). NOT: greenfield domain işi — büyük; mvp-guard ile parça/öncelik teyidi önerilir (README §57).
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -211,6 +213,51 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
 - Genel zemin (users/students'tan): Identity `User` vs Person/Profile ayrı dünyalar; öğretmen
   satır id muhtemelen Person.id (öğrenci gibi); domain lifecycle uçları PersonsController'da
   olabilir. Önce keşfet, uydurma.
+
+## teachers-spec-audit
+
+### ✅ ISSUE-01 tamamlandı (2026-06-08, api `1e73253` + web `85ab90e`) — kararlar
+- **Greenfield liste ekranı.** `portals/admin/teachers/` Öğrenciler desenini referans alır;
+  `.stu*` CSS **yeniden kullanılır** (`import "../students/students.css"`) — 1500 satır stil
+  çoğaltılmadı (DRY). Tablo/şerit/filtre-çipi aynı görsel sistem.
+- **Mimari karar (sapma DEĞİL, README §30-34'teki "Teacher aggregate vs TeacherProfile"
+  çatalı):** Users/Students ile tutarlı şekilde öğretmen = **Person + TeacherProfile**
+  (profileType=Teacher) ekseninde tüketildi; ayrı `Teacher` istihdam aggregate'i
+  AÇILMADI. Satır id = **Person.id** (öğrenci gibi). Liste backbone = mevcut
+  `GET /users/persons?profileType=Teacher` (ListPersonsQuery → PersonListItemDto).
+  Bu, ISSUE-03 (TeachingAssignment) için de zemin: assignment muhtemelen Person.id /
+  StudentProfile-benzeri ekseninde kurulur.
+- **Backend (hafif dokunuş):** `ListPersonsQuery` aramasına TeacherProfile.EmployeeNumber/
+  Branch dalı (§5.3 ad/sicil/branş); `PersonListItemDto`'ya Branch/EmployeeNumber/HireDate
+  (§5.4). Like araması MockQueryable'da çevrilemez → unit test projeksiyonu doğrular
+  (handler +2), arama çevirisi mevcut integration deseni kapsamında.
+- **§5.4 kaynaksız kolonlar "—":** Verdiği Dersler/Sınıflar (ISSUE-03), Sınıf Öğretmenliği
+  (ISSUE-05), Haftalık Yük (ISSUE-04). Dürüst tasarım (Öğrenciler'deki Devamsızlık gibi).
+- **Görev tipi filtresi (§5.3):** UI yüzeyi hazır ama server eşlemesi yok (kaynak
+  TeachingAssignment, ISSUE-03) → adaptörde no-op (zararsız geçer). Branş filtresi server
+  arama terimine taşınır (ayrı branş-filtre paramı eklenmedi; §5.3 "arama: branş" karşılar).
+- **Detay drawer** ISSUE-06 işi → satır açılışı şimdilik no-op state.
+- Test: web 11 (states 2, toolbar/api 6, table 3); `npm run build` + `dotnet build` yeşil.
+
+### ✅ ISSUE-02 tamamlandı (2026-06-08, api `90f8391` + web `80d8585`) — kararlar
+- §5.2 KPI şeridi `TeachersKpiStrip`: Toplam Öğretmen · Aktif Görevli · Ortalama Haftalık
+  Yük (%) · Branş Açığı / Dikkat.
+- **Backend `GetTeacherStats`** (GetStudentStats deseni): `TeacherStatsDto(Total, Active)`;
+  `GET /users/persons/teacher-stats`. Aktif Görevli = Active lifecycle. Handler +2 test.
+- **Ortalama Yük** (workload → ISSUE-04) ve **Branş Açığı** (Ders Programı modülü → yok)
+  kaynaksız → "—" (0 değil; spec §5.2 "başta —" der). Ortalama yük dolduğunda "%N" biçimi.
+- Test: web 14 (KPI +3); `npm run build` + `dotnet build` yeşil.
+
+### ISSUE-03 için zemin (yeni oturumda tekrar keşfe gerek yok)
+- Hedef (§5.1/§5.7/§1.2): `TeachingAssignment` = Teacher × Class × Subject + **haftalık saat**.
+  Toplam yük = tüm assignment saatleri. Bu, §5.4 Haftalık Yük + §5.2 Ortalama Yük + §5.6
+  Görevlendirmeler sekmesi + §5.5 ders/sınıf görevlendir aksiyonlarının **kaynağıdır**.
+- **Çatal/karar gerekecek:** `Modules/Teachers` backend boş (.gitkeep). README §57 "büyük iş,
+  mvp-guard ile parça teyidi öner" diyor. Domain entity nereye (Modules/Teachers vs
+  AcademicSessions yanında), Subject kaynağı (`subjects` modülü?), ClassRoom (AcademicSessions)
+  bağı netleşmeli. Önce keşfet: `Modules/Subjects`, `AcademicSessions/ClassRoom`.
+- Öğretmen ekseni = Person.id (ISSUE-01 kararı); assignment muhtemelen Person.id ↔ ClassRoom.id
+  ↔ Subject.id üçlüsü + weeklyHours taşır.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).
