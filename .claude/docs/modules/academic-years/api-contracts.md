@@ -20,6 +20,23 @@
 | POST | `/api/v1/academic-sessions/{id}/activate` | `academic-sessions.activate` | Sezonu aktive et |
 | POST | `/api/v1/academic-sessions/{id}/archive` | `academic-sessions.archive` | Sezonu arşivle (manuel) |
 
+### Sezon Rollover (Sihirbaz) — yeni (2026-06-09)
+
+> Sezon Yönetimi 6 adımlı sihirbazının backend orkestrasyonu. Tasarım: `docs/superpowers/specs/2026-06-08-sezon-rollover-design.md`. İki fazlı: "Sezonu Aç" (yapı materyalizasyonu, Setup sezon) → "Aktifleştir" (orkestratör: aktivasyon + öğrenci terfisi §4.9 + görevlendirme kopyası §5.9).
+
+| Method | Path | Permission | Amaç |
+|---|---|---|---|
+| GET | `/api/v1/season-drafts/current` | `academic-sessions.create` ⚠️ | Sihirbaz taslağını oku (tenant başına 1) |
+| PUT | `/api/v1/season-drafts/current` | `academic-sessions.create` ⚠️ | Taslağı upsert ("Taslağı Kaydet") |
+| DELETE | `/api/v1/season-drafts/current` | `academic-sessions.create` ⚠️ | Taslağı sil (Vazgeç) |
+| GET | `/api/v1/academic-sessions/{sourceId}/rollover-preview` | `academic-sessions.create` ⚠️ | Terfi haritası önizleme (salt-okunur) |
+| POST | `/api/v1/academic-sessions/open-from-draft` | `academic-sessions.create` | Sezonu Aç → Setup sezon + dönemler + boş şubeler |
+| POST | `/api/v1/academic-sessions/{id}/activate-rollover` | `academic-sessions.activate` | Aktifleştir → aktivasyon + terfi + görevlendirme kopyası (tek transaction) |
+| POST | `/api/v1/academic-sessions/{id}/promote-students` | `students.promote` | §4.9 bağımsız (re-run); building-block |
+| POST | `/api/v1/academic-sessions/{id}/copy-assignments?sourceSessionId=` | `teaching-assignments.assign` | §5.9 bağımsız (re-run); building-block |
+
+> ⚠️ **İzin sapması (onaylı):** Tasarımda `academic-sessions.manage` öngörülmüştü ama seed'de yok; taslak/önizleme uçları mevcut `academic-sessions.create` ile gate edildi. `students.promote` yeni eklendi (seed+migration). `teachers.assign` yerine mevcut `teaching-assignments.assign` kullanıldı. Bkz. `completion_status.md` → Spec Dışına Çıkılanlar.
+
 ### AcademicTerm (Dönem)
 
 | Method | Path | Permission | Amaç |
