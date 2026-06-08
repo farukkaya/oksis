@@ -54,6 +54,14 @@
   (HasGuardian) + integration (veli-adı arama + HasGuardian, gerçek SQL Server Like),
   web 6 (filtre onChange + param-map). Seviye seçenekleri yüklü satırların sınıf
   adlarından türetilir (not aşağıda).
+- **students-spec-audit ISSUE-06 (2026-06-08, web `0860801`):** §4.8 yaşam-döngüsü
+  koruma kuralları UI'da (sunucu kuralının aynası; yeni server kuralı yok). Velisiz
+  öğrenci satırı + detay "Genel" sekmesinde **"veli eksik" uyarısı** (kayda engel değil);
+  Kayıt Geçmişi sekmesinde **"sınıf değişimi yalnız aktif sezonu etkiler"** notu; öğrenci
+  no her yerde salt-okunur (form/input yok — test ile teyit); mezun/nakil aktif tablodan
+  düşer (ISSUE-03 invalidate + ISSUE-05 durum filtresi — test ile teyit). Test: web +8
+  (`StudentsEdgeCases`, `StudentDetailGuardrails`). **Öğrenciler web ekranı spec-audit
+  issue seti (ISSUE-01..06) tamamlandı.**
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
@@ -64,7 +72,8 @@
 - **Backend (§4.9) eksik uçlar:** Person-ekseni `AssignClass`/`PromoteStudents` (toplu
   sınıf/terfi), `UploadDocument` (Belgeler), akademik `UpdateStudent` formu → web'de
   görünür-ama-pasif + notReadyHint; uç açılınca aktifleşir.
-- Web spec-audit kalan issue: ISSUE-06 (edge-case/guardrails).
+- Web spec-audit issue seti (ISSUE-01..06) **tamamlandı**; kalan açıklar backend slice'ları
+  ve doküman `{{TBD}}` içeriği (yukarıda).
 - **ISSUE-05 küçük not (sapma değil):** Seviye/Kademe filtresi **seçenekleri** yüklü
   satırların sınıf adlarından türetilir (server-side ayrı GradeLevel lookup ucu eklenmedi);
   grade filtresi seçiliyken liste daraldığından seçenek seti de daralabilir (aktif değer

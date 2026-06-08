@@ -19,8 +19,9 @@
 | students | ISSUE-03 (web-domain-row-and-bulk-actions) | ✅ tamam | web `557f129` |
 | students | ISSUE-04 (web-detail-tab-structure) | ✅ tamam | web `f06a6e4` |
 | students | ISSUE-05 (web-filters-and-search) | ✅ tamam | api `744bc97`, web `9807263` |
+| students | ISSUE-06 (web-edge-cases-guardrails) | ✅ tamam | web `0860801` |
 
-**Sıradaki:** students-spec-audit/ISSUE-06 (web-edge-cases-guardrails, §4.8).
+**Sıradaki:** teachers-spec-audit/ISSUE-01 (ilk teachers issue — klasörü oku, issue no sırasıyla). students-spec-audit BİTTİ.
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -186,17 +187,30 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
   HasGuardian, gerçek SQL Server — Testcontainers, **yeşil**); web 6 (filtre onChange + param-map).
   Students web suite **40 yeşil**; `npm run build` + `dotnet build` yeşil.
 
-### ISSUE-06 için zemin (web-edge-cases-guardrails, §4.8)
-- §4.8: (1) velisiz öğrenci kaydedilebilir ama **"veli eksik" uyarısı** görünür (rozet/uyarı, kayda
-  engel değil); (2) sınıf değiştirme yalnız **aktif sezon** kaydını etkiler (UI bunu belirtir);
-  (3) **mezun/nakil** aktif tablodan düşer, filtreyle erişilir (ISSUE-03'te zaten bağlı — invalidate);
-  (4) **öğrenci no değişmez** (hiçbir formda düzenlenemez/read-only).
-- Hazır zemin: `parentCount` her satırda var (veli-eksik = `parentCount===0`); HasGuardian filtresi
-  ISSUE-05'te eklendi → "veli eksik" süzme zaten mümkün. Drawer guardians sekmesinde
-  `missingWarning` i18n zaten var (ISSUE-02). Durum filtresi (graduated) ISSUE-05/03'te çalışıyor.
-- Issue Out of Scope: yeni server iş kuralı. Bu issue **UI guard + mevcut kuralların aynası**.
-  Beklenen: tablo/detayda veli-eksik rozeti, öğrenci no read-only teyidi, sınıf değişimi aktif-sezon
-  notu, mezun/nakil düşme zaten çalışır (test ile teyit). Çoğu UI yüzeyi + i18n + birkaç test.
+### ✅ ISSUE-06 tamamlandı (2026-06-08, web `0860801`) — kararlar
+- §4.8 koruma kuralları UI'da (sunucu kuralının aynası; iş kuralı server-side kalır, yeni server
+  kuralı yok = issue Out of Scope'a uyumlu).
+- **Veli eksik uyarısı:** `StudentsTable` veli hücresi `parentCount===0`'da nötr "—" yerine uyarı
+  tonu rozeti (`row.guardianMissing` + hint tooltip). `StudentDetailDrawer` "Genel" parentCard
+  birincil veli yoksa **ve** `parentsQuery.isSuccess` (yüklenirken yanlış-pozitif yok) → uyarı.
+- **Sınıf değişimi aktif-sezon notu:** Kayıt Geçmişi sekmesine `enrollmentCard.seasonNote`.
+- **Öğrenci no değişmez:** zaten hiçbir formda input yok (drawer salt-metin fact); test ile teyit
+  (input yokluğu).
+- **Mezun/nakil düşme:** ISSUE-03'te lifecycle uçları + `studentKeys.all` invalidate ile zaten
+  çalışıyor; ISSUE-05'te `status` filtresiyle (graduated) erişim sağlandı → test ile teyit (Mezun
+  rozeti, Aktif değil).
+- CSS: `.guardian-missing` (tablo), `.mini-warning` (drawer), `.season-note`.
+- **Test:** `StudentsEdgeCases.test.tsx` (4: veli-eksik var/yok, no read-only, mezun rozeti),
+  `StudentDetailGuardrails.test.tsx` (4: drawer veli-eksik isSuccess true/false, sezon notu, no
+  read-only). Students web suite **48 yeşil**; `npm run build` yeşil.
+
+### students-spec-audit BİTTİ → sıradaki teachers-spec-audit
+- `teachers-spec-audit/` klasörünü oku (README + ISSUE-NN-*.md), issue no sırasıyla başla.
+- İlgili spec bölümü muhtemelen "Öğretmenler" ekranı (spec'te §5.x). İlk issue'da binding spec
+  maddelerini + `.claude/docs/modules/teachers/completion_status.md`'i oku.
+- Genel zemin (users/students'tan): Identity `User` vs Person/Profile ayrı dünyalar; öğretmen
+  satır id muhtemelen Person.id (öğrenci gibi); domain lifecycle uçları PersonsController'da
+  olabilir. Önce keşfet, uydurma.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).
