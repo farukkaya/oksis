@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `███░░░░░░░` %28   ·   Status: in-progress   ·   Güncel: 2026-06-08
+**İlerleme:** `████░░░░░░` %35   ·   Status: in-progress   ·   Güncel: 2026-06-08
 
 > Temel: doküman iskeleti `{{TBD}}`. Admin Öğretmenler **liste ekranı** (greenfield
 > spec §5) kuruldu: ISSUE-01 (liste/arama/filtre/tablo iskeleti) + ISSUE-02 (KPI
@@ -50,11 +50,22 @@
   doluluk barı (ekranın imzası). Aşırı yük rozeti + sarı bar (engellemez). KPI "Ortalama
   Haftalık Yük" `averageFillPercent` ile beslenir. Yük barı CSS'i `students.css`'e eklendi.
   3 web test (tablo bar/aşırı yük + adaptör map).
+- **ISSUE-05 (api §5.7/§5.8):** `ClassRoom.RemoveHomeroom()` + `ClassRoomHomeroomRemovedEvent`
+  (§5.8 "rehbersiz"). `SetHomeroom`/`RemoveHomeroom` command'ları → `PUT`/`DELETE
+  /class-rooms/{id}/homeroom`. §5.7 "bir öğretmen aynı sezonda ≤1 şube" tenant-geneli kontrolle;
+  §5.8 ayrılmış öğretmen (TeacherProfile.IsTerminated) + arşivli şube engeli. Domain +2, app +5 test.
+- **ISSUE-05 (web §5.4/§5.5/§5.6/§5.7/§5.8):** Tablo "Sınıf Öğretmenliği" kolonu homeroom
+  haritasından (şube adı / "—"). Satır aksiyonu "Sınıf öğretmeni ata/kaldır" (`TeacherRowActions`,
+  `class-rooms.update` gate). `HomeroomDialog`: mevcut sorumlu şube + öğrenci listesi köprüsü
+  (`/admin/students?class={id}`, §5.6), rehbersiz/dolu şube ayrımı, tek-şube önden engel (dolu
+  şube option disabled). `teachersApi.homeroomMap/setHomeroom/removeHomeroom` + `useHomeroom`
+  hook (query + mutasyonlar, invalidate). tr/en i18n. 5 web test (dialog 3, rowActions 2, table +1).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Doküman içeriği (≈110 `{{TBD}}` alanı) — spec doldurulmadı.
-- **ISSUE-05/06/07/08:** homeroom yönetimi, detay drawer, satır/toplu aksiyonlar, edge-case.
+- **ISSUE-06/07/08:** detay drawer (homeroom dahil §5.6 sekmesi drawer'a taşınacak), satır/toplu
+  aksiyonlar, edge-case.
 - Mobile: öğretmen rolü ekranları (yok).
 
 ## ⚠️ Spec Dışına Çıkılanlar
@@ -64,8 +75,8 @@
   ile degrade edildi. Sapma değil, dürüst tasarım — spec §5.2 "başta —" der; kaynak
   ISSUE-03/04 (TeachingAssignment + workload) ve Ders Programı modülü ile beslenecek.
   Etki: yok (görsel iskelet, yanlış veri yok). **Güncelleme:** Haftalık Yük + Ortalama Yük
-  ISSUE-04'te dolduruldu; "—" yalnız Verdiği Dersler/Sınıf Öğretmenliği (ISSUE-05) + Branş
-  Açığı (Ders Programı) için kaldı.
+  ISSUE-04'te dolduruldu; Sınıf Öğretmenliği ISSUE-05'te dolduruldu; "—" yalnız Verdiği
+  Dersler/Sınıflar (Ders Programı özeti) + Branş Açığı (Ders Programı) için kaldı.
 - **2026-06-08 (ISSUE-04):** §5.4 "24 / 30 saat" örneğindeki kapasite üst sınırının (30)
   kaynağı spec'te tanımsız (okul ayarı mı sabit mi belirsiz). Okul ayarları modülünde
   öğretmen kapasite alanı yok + ders programı/okul ayarı genişletmesi Out of Scope →

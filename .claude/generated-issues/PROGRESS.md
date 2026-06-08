@@ -24,8 +24,9 @@
 | teachers | ISSUE-02 (web-capacity-axis-kpis) | ✅ tamam | api `90f8391`, web `80d8585` |
 | teachers | ISSUE-03 (api-web-teaching-assignment-domain) | ✅ tamam | api `f4c631f`+`6cf92c5`, web `a8b7403` |
 | teachers | ISSUE-04 (web-weekly-workload-capacity) | ✅ tamam | api `5976058`, web `1290e2e` |
+| teachers | ISSUE-05 (web-homeroom-management) | ✅ tamam | api `2987da9`, web `fa1ed82` |
 
-**Sıradaki:** teachers-spec-audit/ISSUE-05 (web-homeroom-management — sınıf öğretmenliği). Spec §5.4 "Sınıf Öğretmenliği" kolonu ("10-A" veya "—"), §5.5 satır "Sınıf öğretmeni ata/kaldır", §5.6 "Sınıf Öğretmenliği" sekmesi (sorumlu şube + öğrenci listesi köprüsü), §5.7 "bir öğretmen 0/1 şube, bir şube tek sınıf öğretmeni" (idari atama, ders vermekten bağımsız), §5.8 "sınıf öğretmeni boşalan şube rehbersiz işaretlenir". **Zemin (KRİTİK):** homeroom kaynağı zaten var → `ClassRoom.HomeroomTeacherId` (`UpdateClassRoomCommand(id, capacity, homeroomTeacherId)` üzerinden set ediliyor, `ClassRoomsController` PUT). Yani SetHomeroom/RemoveHomeroom için yeni domain gerekmeyebilir; mevcut `UpdateClassRoom` ucu + ClassRoom listesini teacher→homeroom map'ine çevir (ISSUE-04 workload deseni gibi ayrı sorgu/Map). Tablo kolonu null=dash. Önce ClassRoomsController + UpdateClassRoomCommand + ClassRoom entity'yi oku.
+**Sıradaki:** teachers-spec-audit/ISSUE-06 (web-detail-drawer-tabs — öğretmen detay drawer). Spec §5.6 sekme seti: Genel · Görevlendirmeler · Ders Programı · Nöbet · **Sınıf Öğretmenliği** · Görev Geçmişi · Belgeler · **Hesap** (bağlı User özeti + "Kullanıcılar'da yönet" köprüsü). **Zemin (KRİTİK):** Drawer henüz YOK — TeachersPage `openDrawer` no-op. Hazır mount edilebilir self-contained sekmeler: `TeacherAssignmentsTab` (ISSUE-03, export'lu) + ISSUE-05 homeroom yüzeyi (şu an `HomeroomDialog` row-action'da; detay sekmesine de bağlanabilir). Öğrenci `StudentDetailDrawer` desenini referans al. Detay verisi: `GetTeacherDetail` (§5.9) muhtemelen YOK → mevcut PersonsController/`PersonListItemDto` + assignments/homeroom sorgularından besle, kaynaksız sekmeler (Ders Programı/Nöbet/Görev Geçmişi/Belgeler) iskelet/"—". Hesap sekmesi köprüsü `/admin/users/{linkedAccount}` (Person ekseni; users portalında Person detayı).
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -309,6 +310,30 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
   (ClassRoomsController PUT). Yeni SetHomeroom domaini gerekmeyebilir; ClassRoom listesini
   teacher→şube Map'ine çevir (workload deseni). §5.7 tekillik "bir şube tek homeroom" zaten ClassRoom
   1:1; "bir öğretmen 0/1 şube" UI/guard ile.
+
+### ✅ ISSUE-05 tamamlandı (2026-06-08, api `2987da9`, web `fa1ed82`) — kararlar
+- **Mimari karar (çatal — durmadan ilerlendi):** ISSUE-04 zemininde "mevcut `UpdateClassRoom` ucunu
+  kullan" denmişti AMA `UpdateClassRoom` homeroom'u **temizleyemiyor** (null ignore) ve "tek öğretmen
+  ≤1 şube" kuralı yok. Bu yüzden **dedike uçlar** açıldı (tekrar değil, eksik kapatma):
+  `ClassRoom.RemoveHomeroom()` + `ClassRoomHomeroomRemovedEvent` (§5.8); `SetHomeroom`/`RemoveHomeroom`
+  command'ları → `PUT`/`DELETE /class-rooms/{id}/homeroom`. İzin `class-rooms.update`.
+- **§5.7 "bir öğretmen aynı sezonda ≤1 şube"** server'da tenant-geneli `AnyAsync` ile (aynı sezon, aynı
+  teacher, farklı şube → Conflict). §5.8 ayrılmış öğretmen (TeacherProfile.IsTerminated) + arşivli şube
+  engeli. UI önden engeller (dolu şube option disabled) — server ayna.
+- **Homeroom kolon kaynağı (web):** ayrı `GET /class-rooms?status=Active` (ClassRoomDto zaten
+  `homeroomTeacherId` + `fullName` döner — yeni query GEREKMEDİ). `teachersApi.homeroomMap` →
+  `Map<teacherId, şube>` + tüm şube listesi; TeachersPage `mergedItems`'a homeroom da birleştirir
+  (workload deseni). Sınıf öğretmeni olmayan öğretmen → "—".
+- **§5.6 öğrenci listesi köprüsü:** `/admin/students?class={classRoomId}` (students ekranı `?class=`
+  classroomId bekler — teyit edildi). Detay drawer YOK (ISSUE-06) → homeroom yüzeyi şimdilik
+  **row-action diyaloğu** (`HomeroomDialog`). ISSUE-06'da aynı diyalog/yüzey detay "Sınıf
+  Öğretmenliği" sekmesine de bağlanabilir.
+- **Test:** api domain +2 (RemoveHomeroom raise/no-op), app +5 (SetHomeroom happy/tek-şube
+  conflict/terminated/arşiv/notfound); `dotnet build` yeşil, hedefli testler yeşil. web 5
+  (HomeroomDialog 3, TeacherRowActions 2, TeachersTable +1) → teachers suite **26 yeşil**;
+  `npm run build` yeşil.
+- **Not (format):** `dotnet format --verify-no-changes` repo-genelinde ~944 IDE1006 naming-info raporluyor
+  (komşu commit'li test dosyaları dahil); build 0 warning, enforced değil. Yeni dosyalar komşu desenle uyumlu.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).
