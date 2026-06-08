@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: complete (API + web + mobile)   ·   Güncel: 2026-06-06 (rol-izin matrisi seviye görünürlük filtresi + /admin/roles ekranı)
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: complete (API + web + mobile)   ·   Güncel: 2026-06-08 (users-spec-audit ISSUE-02 — Kullanıcılar tablosu hesap eksenine taşındı)
+
+> 2026-06-08: **users-spec-audit ISSUE-02 tamamlandı (api + web)** — Kullanıcılar ekranı tablosu Person ekseninden (`usePersons`/`/users/persons`) **hesap eksenine** (`ListUsers`/`GET /users`) geçirildi (spec §3.3/§3.4). **API:** `UserListDto`'ya `LastLoginAt`, `LockoutEnd`, `RoleNames`, `LinkedPersonId`, `LinkedProfileType`, `LinkedProfileRef`; `ListUsersQuery`'ye `HasLinkedProfile`/`LastLoginFrom`/`LastLoginTo` filtreleri; handler bağlı profili `Person.LinkedAccountId == User.Id`, çoklu rolü bağlı kişinin aktif `RoleAssignment` → `SystemRole.DisplayName`'inden projekte eder; 54 ListUsers test yeşil. **Web:** `useUsers` hook + `listUsers` api client + i18n (tr/en); UsersPage kolonları (Kullanıcı/Rol(ler)/Bağlı Profil köprü/Durum/Son Giriş/Oluşturma) + filtreler URL state'te; 11 UsersPage test yeşil. **Karar:** Satır aksiyon menüsü ISSUE-03'e, detay drawer ISSUE-04/05'e bırakıldı (bağlı profil köprüsü `/admin/users/{linkedPersonId}` Person detayına gider — bu uygulamada domain kaydı köprüsü Person detayıdır).
 
 > Temel: Mevcut `User` tabanlı auth (login/refresh/invite/password-reset, `Oksis.Application/Modules/Identity` ≈77 cs) + master seed (roller/izinler) çalışır.
 > 2026-05-30: Teknik analiz (*Login & Profile Switch · Sürüm 1.0*) docs'a işlendi — domain (Account), api-contracts (switch/me/context), database-schema (identity.accounts/refresh_tokens), permissions (RBAC+ABAC, permission cache), business-rules (TR-auth-001…018), notifications (audit/SignalR), ui-flows, open-questions (TQ-auth-001…007) güncellendi. Hedef model dokümante edildi.
