@@ -11,9 +11,11 @@
 | users | ISSUE-06 (invite-first sahiplik sınırı) | ✅ tamam | web `b5a84cd` |
 | users | ISSUE-02 (table + filters account-axis) | ✅ tamam | api `bf23efb`, web `e976198` |
 | users | ISSUE-03 (satır + toplu hesap aksiyonları) | ✅ tamam | web `9e96b46` |
-| users | ISSUE-04 (detay drawer — güvenlik sekmesi) | 🔄 SIRADAKI | — |
+| users | ISSUE-04 (detay drawer — güvenlik sekmesi) | ✅ tamam | web `7e8faf2` |
+| users | ISSUE-05 (detay — etkinlik/audit + bağlı profil köprüsü) | ✅ tamam | web `4b85e7a` |
+| users | ISSUE-07 (koruma kuralları / guardrails) | 🔄 SIRADAKI | — |
 
-**Sıradaki:** users/ISSUE-04.
+**Sıradaki:** users/ISSUE-07 (son users issue'su; sonra students-spec-audit ISSUE-01'e geç).
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -48,6 +50,14 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
   - Gerekçe: §3.5 aksiyon setini eksiksiz/durum-duyarlı göstermek + §1.3'e uymak (Sil→Pasife al) ama çalışmayan butonla yalan söylememek. ISSUE-04/05 detay drawer'ı + ileride backend account-axis uçları bu pasif maddeleri aktifleştirir.
 - `accounts.unlock` izni `test/authFixtures.ts ADMIN_PERMISSIONS`'a eklendi (eksikti).
 - **ISSUE-04 için kritik (tekrar):** satır "Detay" şu an `/admin/users/${linkedPersonId ?? id}`'e gider — linkedProfile varsa Person detayına (UserDetailPage Person.id bekler), yoksa User.id'ye (route mismatch). Hesap detay drawer'ı User.id eksenine bağlamak ISSUE-04 işi.
+
+### ✅ ISSUE-04 + ISSUE-05 tamamlandı (2026-06-08) — kararlar
+- **Sekme ekseni netleşti:** `UserDetailPage` hâlâ Person ekseni (`usePerson`, `/users/persons/{id}`). §3.6 hesap-ekseni sekmeleri (Güvenlik, Etkinlik/Audit) veriyi **`PersonDetail.linkedAccountId`** üzerinden hesap (`Identity.User`) kayıtlarından çeker. Bağlı hesap yoksa her iki sekme net boş durum gösterir.
+- **Yeni hesap-ekseni client'ları:** `user.api.ts → getUserById` (`GET /users/{id}`, `UserDetailDto`) + `getUserActivity` (`GET /users/{id}/activity`, yeni `UserActivityDto`); `userKeys.activity`; hook'lar `useUserSecurity`, `useUserActivity` (identity/hooks).
+- **Güvenlik sekmesi (ISSUE-04):** şifre sıfırlama linki / 2FA / aktif oturumlar + tümünü kapat / giriş güvenliği (son giriş, başarısız deneme, kilit + Kilitli'de Kilidi aç). Aksiyon uçları User.id keyli olarak yok → ISSUE-03 deseni: görünür-ama-pasif + `security.notReadyHint`. 2FA + oturum listesi DTO'da yok → "—".
+- **Etkinlik/Audit (ISSUE-05):** sayfalı salt-okunur tablo; `GetUserActivity` backend slice'ı YOK, web §3.9'a göre tüketici hazırlandı (AsyncSection hata/boş dayanıklı). Uç açılınca aktifleşir.
+- **Bağlı Profil köprüsü (ISSUE-05):** `ProfilesTab` inline profil gösteriminden **köprüye** indirildi (sahiplik sınırı §3 — profili düzenlemez). Öğrenci → `/admin/students?q=<no>`; Öğretmen/Personel/Veli için ayrı yönetim ekranı yok → bilgi notu. `ProfileCard` (inline akademik alan switch'i) kaldırıldı.
+- **ISSUE-07 için zemin:** §3.8 koruma kuralları (son yönetici askıya alınamaz, kendi hesabını kilitleyemez, e-posta değişimi yeniden doğrulama, çok-rollü pasifleştirme uyarısı). Çoğu backend guard ister; web tarafı uyarı/disable + onay diyaloğu yüzeyini kurar. Mevcut `deactivate.multiRoleWarning` i18n zaten var (ISSUE-03). Aksiyonların çoğu hâlâ pasif (ISSUE-03/04 notu) → ISSUE-07 muhtemelen UI guardrail + i18n + (varsa) edge-case görünürlüğü ile sınırlı.
 
 ### Anomali notu
 - Çalışma sırasında `oksis-web` working tree'de benim dokunmadığım `StudentsPage.tsx` ve
