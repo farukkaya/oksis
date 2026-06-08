@@ -25,8 +25,10 @@
 | teachers | ISSUE-03 (api-web-teaching-assignment-domain) | ✅ tamam | api `f4c631f`+`6cf92c5`, web `a8b7403` |
 | teachers | ISSUE-04 (web-weekly-workload-capacity) | ✅ tamam | api `5976058`, web `1290e2e` |
 | teachers | ISSUE-05 (web-homeroom-management) | ✅ tamam | api `2987da9`, web `fa1ed82` |
+| teachers | ISSUE-06 (web-detail-drawer-tabs) | ✅ tamam | web `40ba115` |
+| teachers | ISSUE-07 (web-row-and-bulk-actions) | ✅ tamam | web `0a0fd15` |
 
-**Sıradaki:** teachers-spec-audit/ISSUE-06 (web-detail-drawer-tabs — öğretmen detay drawer). Spec §5.6 sekme seti: Genel · Görevlendirmeler · Ders Programı · Nöbet · **Sınıf Öğretmenliği** · Görev Geçmişi · Belgeler · **Hesap** (bağlı User özeti + "Kullanıcılar'da yönet" köprüsü). **Zemin (KRİTİK):** Drawer henüz YOK — TeachersPage `openDrawer` no-op. Hazır mount edilebilir self-contained sekmeler: `TeacherAssignmentsTab` (ISSUE-03, export'lu) + ISSUE-05 homeroom yüzeyi (şu an `HomeroomDialog` row-action'da; detay sekmesine de bağlanabilir). Öğrenci `StudentDetailDrawer` desenini referans al. Detay verisi: `GetTeacherDetail` (§5.9) muhtemelen YOK → mevcut PersonsController/`PersonListItemDto` + assignments/homeroom sorgularından besle, kaynaksız sekmeler (Ders Programı/Nöbet/Görev Geçmişi/Belgeler) iskelet/"—". Hesap sekmesi köprüsü `/admin/users/{linkedAccount}` (Person ekseni; users portalında Person detayı).
+**Sıradaki:** teachers-spec-audit/ISSUE-08 (web-edge-cases-and-lifecycle — öğretmen edge-case/koruma kuralları, son issue). Spec §5.8 edge-case'ler: branşsız öğretmen kaydedilebilir ama "branş eksik" uyarısı (görevlendirme yapılamaz) · Ders Programı'nda kullanılan görevlendirme silinince bağımlılık uyarısı · aşırı yük = sert engel değil yumuşak uyarı · izinli öğretmene yeni görev atanamaz · sınıf öğretmeni boşalan şube "rehbersiz". **Zemin:** Çoğu kural backend guard ister; web tarafı uyarı/disable + onay diyaloğu aynası kurar (server-side kural kalır). Mevcut: §5.8 atama guard'ları ISSUE-03'te kısmen (ayrılmış öğretmene/arşiv şubeye atama reddi); aşırı yük yumuşak uyarı rozeti ISSUE-04'te; "rehbersiz" rozeti homeroom dialog'da. ISSUE-08 muhtemelen: branş-eksik uyarısı (tablo + drawer Genel/Görevlendirmeler), izinli öğretmende Görevlendir aksiyonunun engellenmesi, görevlendirme silme bağımlılık uyarısı (Ders Programı modülü yok → yumuşak metin). Out of Scope: yeni server kuralı yok → UI guardrail + i18n. users ISSUE-07 / students ISSUE-06 desenini referans al.
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -334,6 +336,36 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
   `npm run build` yeşil.
 - **Not (format):** `dotnet format --verify-no-changes` repo-genelinde ~944 IDE1006 naming-info raporluyor
   (komşu commit'li test dosyaları dahil); build 0 warning, enforced değil. Yeni dosyalar komşu desenle uyumlu.
+
+### ✅ ISSUE-06 tamamlandı (2026-06-08, web `40ba115`) — kararlar
+- `TeacherDetailDrawer` (öğrenci `StudentDetailDrawer` deseni) — §5.6 sekiz sekme. Görevlendirmeler
+  ISSUE-03 `TeacherAssignmentsTab`'ı, Sınıf Öğretmenliği ISSUE-05 `useHomeroomQuery` haritasını
+  (sorumlu şube + `/admin/students?class={id}` köprüsü) mount eder.
+- **Kaynaksız sekmeler "—" (sapma değil, dürüst):** Ders Programı (Timetable modülü yok), Nöbet
+  (Duties read sorgusu yok — DutyManagement lokal mock), Görev Geçmişi (`GetAssignmentHistory` ucu
+  var ama tüketilmedi), Belgeler (`UploadDocument` yok → pasif ekle). completion_status'a işlendi.
+- **Hesap sekmesi köprüsü** `/admin/users/{teacher.id}` (= Person.id; users portalı Person detayı).
+  Sahiplik sınırı §3: giriş/güvenlik yönetmez, yalnız köprü. `<Link>` kullanır → testler Router'lı.
+- TeachersPage `openDrawer` no-op kaldırıldı; satır açılışı drawer mount eder.
+- Test: `TeacherDetailTabs.test.tsx` (7). Teachers suite 33 yeşil; build yeşil.
+
+### ✅ ISSUE-07 tamamlandı (2026-06-08, web `0a0fd15`) — kararlar
+- `TeacherRowActions` artık satır (…) overflow menüsü (§5.5 seti, durum-duyarlı): Detay · Düzenle ·
+  Ders/sınıf görevlendir · Sınıf öğretmeni ata/kaldır · Ders programını görüntüle · İzin başlat/
+  döndür · Pasife al. (Eski tek-buton homeroom yüzeyi menüye taşındı; HomeroomDialog korunur.)
+- **İzin/ayrılış eşleme (çatal — durmadan, §5.9 slice'ları yok):** İzin başlat = `POST /persons/{id}/
+  suspend`, İzinden döndür = `reactivate`, Pasife al = `archive` (soft, §1.3). `useTeacherActions` +
+  `teachersApi.putOnLeave/returnFromLeave/deactivate` (Person.id ekseni, students deseni).
+- **Görünür-ama-pasif:** mesleki "Düzenle" formu yok; "Ders programını görüntüle" (Timetable yok);
+  toplu "sezon görevlendirme taşıma" (`CopyAssignmentsToNewSeason` yok). notReadyHint ipucu.
+- **Toplu seçim eklendi:** `TeachersSelectionBar` (sezon kopyalama pasif + dışa aktarma aktif) +
+  TeachersTable'a onay-kutusu kolonu (öğrenci `StudentCheck` reuse, `.col-check`/`.sel-bar` CSS DRY).
+  TeachersPage'e sayfa-içi seçim state'i (toggle/toggleAll/clear). TeachersLoadingRows'a check hücresi.
+- **Detay aksiyonu:** "Detay" + "Ders/sınıf görevlendir" satırdan `onOpen(teacher)` ile drawer'ı açar
+  (görevlendirme ekle/çıkar drawer'ın Görevlendirmeler sekmesinde — ISSUE-06).
+- Test: `TeacherRowActions.test.tsx` yeniden yazıldı (6: durum-duyarlı set, izin/döndür, Detay,
+  Pasife onay+archive, homeroom dialog, pasif maddeler) + `TeachersSelectionBar.test.tsx` (3) +
+  `TeachersTable.test.tsx` (+1 seçim, TeacherRowActions stub'lı). Teachers suite 41 yeşil; build yeşil.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).

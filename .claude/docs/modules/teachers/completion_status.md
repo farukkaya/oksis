@@ -4,13 +4,14 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `████░░░░░░` %35   ·   Status: in-progress   ·   Güncel: 2026-06-08
+**İlerleme:** `█████░░░░░` %45   ·   Status: in-progress   ·   Güncel: 2026-06-08
 
 > Temel: doküman iskeleti `{{TBD}}`. Admin Öğretmenler **liste ekranı** (greenfield
 > spec §5) kuruldu: ISSUE-01 (liste/arama/filtre/tablo iskeleti) + ISSUE-02 (KPI
-> şeridi) + ISSUE-03 (`TeachingAssignment` domaini + Görevlendirmeler sekmesi).
-> **ISSUE-04: Haftalık yük/kapasite (ekranın imzası) kuruldu** → §5.4 "X / Y saat" +
-> doluluk barı, §5.2 Ortalama Yük KPI'ı dolu, §5.8 aşırı yük yumuşak uyarı.
+> şeridi) + ISSUE-03 (`TeachingAssignment` domaini + Görevlendirmeler sekmesi) +
+> ISSUE-04 (haftalık yük/kapasite) + ISSUE-05 (sınıf öğretmenliği).
+> **ISSUE-06: detay drawer §5.6 sekme seti kuruldu** (8 sekme); **ISSUE-07: satır (…)
+> menüsü + toplu seçim çubuğu (§5.5) kuruldu.**
 
 ---
 
@@ -60,12 +61,26 @@
   (`/admin/students?class={id}`, §5.6), rehbersiz/dolu şube ayrımı, tek-şube önden engel (dolu
   şube option disabled). `teachersApi.homeroomMap/setHomeroom/removeHomeroom` + `useHomeroom`
   hook (query + mutasyonlar, invalidate). tr/en i18n. 5 web test (dialog 3, rowActions 2, table +1).
+- **ISSUE-06 (web §5.6):** `TeacherDetailDrawer` — §5.6 sekiz sekmeli detay drawer (Genel ·
+  Görevlendirmeler · Ders Programı · Nöbet · Sınıf Öğretmenliği · Görev Geçmişi · Belgeler ·
+  Hesap). Görevlendirmeler ISSUE-03 `TeacherAssignmentsTab`'ı, Sınıf Öğretmenliği ISSUE-05
+  homeroom haritasını mount eder (sorumlu şube + öğrenci listesine köprü). Kaynaksız sekmeler
+  (Ders Programı/Nöbet/Görev Geçmişi/Belgeler) dürüstçe "—"; Hesap sahiplik sınırı (§3) gereği
+  yalnız Kullanıcılar'a köprü (`/admin/users/{id}`). TeachersPage satır açılışı drawer'ı mount
+  eder (eski no-op kaldırıldı). tr/en i18n (`drawer` bloğu). 7 web test.
+- **ISSUE-07 (web §5.5/§1.3):** `TeacherRowActions` satır (…) overflow menüsü §5.5 setini
+  durum-duyarlı sunar (Detay · Düzenle · Ders/sınıf görevlendir · Sınıf öğretmeni ata/kaldır ·
+  Ders programını görüntüle · İzin başlat/döndür · Pasife al). İzin/Pasife Person.id ekseninde
+  gerçek uçlara bağlı (suspend/reactivate/archive); Pasife al = soft archive (§1.3). Mesleki
+  Düzenle + Ders Programı köprüsü kaynak yok → görünür-ama-pasif. `useTeacherActions` hook +
+  `teachersApi.putOnLeave/returnFromLeave/deactivate`. `TeachersSelectionBar` toplu çubuğu +
+  tabloya onay-kutusu seçim kolonu. tr/en i18n (`rowActions`/`selection`). 6+3+1 web test.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Doküman içeriği (≈110 `{{TBD}}` alanı) — spec doldurulmadı.
-- **ISSUE-06/07/08:** detay drawer (homeroom dahil §5.6 sekmesi drawer'a taşınacak), satır/toplu
-  aksiyonlar, edge-case.
+- **ISSUE-08:** edge-case / koruma kuralları (§5.8 branşsız uyarı, Ders Programı bağımlılık
+  uyarısı, izinliye atama engeli — kısmen ISSUE-03'te, rehbersiz işaretleme).
 - Mobile: öğretmen rolü ekranları (yok).
 
 ## ⚠️ Spec Dışına Çıkılanlar
@@ -83,3 +98,15 @@
   kapasite tek sabit (`TeacherWorkloadDefaults.WeeklyCapacity = 30`) olarak ele alındı.
   İleride school-settings alanı eklenirse sabit fallback olur. Etki: tüm öğretmenler için
   aynı kapasite; per-okul/per-öğretmen özelleştirme yok.
+- **2026-06-08 (ISSUE-06):** §5.6 "Ders Programı" (Timetable modülü yok), "Nöbet" (Duties read
+  sorgusu yok — DutyManagement web sayfası lokal mock state), "Görev Geçmişi" (`GetAssignmentHistory`
+  ucu var ama tüketilmedi), "Belgeler" (`UploadDocument` ucu yok) sekmeleri kaynaksız → dürüstçe
+  "—"/boş-durum ile degrade. Sapma değil, dürüst tasarım (öğrenci drawer deseni). Etki: yok
+  (yanlış veri yok); kaynak modüller geldikçe sekmeler beslenir.
+- **2026-06-08 (ISSUE-07):** §5.5 "İzin/ayrılış işle" için ayrı istihdam-ekseni slice'ları
+  (`PutOnLeave`/`ReturnFromLeave`/`Terminate`, §5.9) yok → en yakın Person ucuna eşlendi (İzin
+  başlat = suspend, döndür = reactivate, Pasife al = archive). §5.5 toplu "sezon görevlendirme
+  taşıma" için `CopyAssignmentsToNewSeason` ucu yok → görünür-ama-pasif + ipucu. Mesleki "Düzenle"
+  formu + "Ders programını görüntüle" köprüsü kaynak yok → pasif. Gerekçe: §5.5 setini eksiksiz/
+  durum-duyarlı göstermek ama çalışmayan butonla yalan söylememek (users/students ISSUE deseni).
+  Etki: çalışan aksiyonlar gerçek; eksikler net pasif, backend uçları gelince aktifleşir.
