@@ -16,6 +16,8 @@
 **Bağımlılıklar:** `users` modülünün Person/Profile yazma tasarımı (OKSMVP-2) ile birlikte kararlaştırılmalı.
 **Sorulacak:** Mimar + ürün. **Hedef karar tarihi:** Sprint 1 planlama öncesi.
 
+**Karar: A (Account aggregate) — kademeli göç.** Account+Person modeli kuruldu, login/seed Account yolunda canlı (2026-05-31). **2026-06-08 — Faz 1:** Kullanıcılar ekranının okuma uçları (`ListUsers`/`GetUserById`/`GetUserStats`/`ExportUsers`) legacy `db.Users`'tan `Account`⋈`Person`'a taşındı (DTO sözleşmesi korundu; bkz. completion_status 2026-06-08). **Faz 2 (bekliyor):** yazma/auth akışları (login/refresh/invite/password-reset/admin CRUD/`GetUserActivity`/`GetUserProfile`) hâlâ `User`'da — bunlar taşınınca `User` entity + `[identity].[users]` tablosu + legacy `/auth/login` emekli edilip silinebilir. Bu issue bu noktaya kadar **kısmen kapalı.**
+
 ---
 
 ## OQ-identity-002: Modül yerleşimi — ayrı projeler mi, alt klasör mü?
