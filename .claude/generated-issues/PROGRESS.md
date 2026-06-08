@@ -27,8 +27,31 @@
 | teachers | ISSUE-05 (web-homeroom-management) | ✅ tamam | api `2987da9`, web `fa1ed82` |
 | teachers | ISSUE-06 (web-detail-drawer-tabs) | ✅ tamam | web `40ba115` |
 | teachers | ISSUE-07 (web-row-and-bulk-actions) | ✅ tamam | web `0a0fd15` |
+| teachers | ISSUE-08 (web-edge-cases-and-lifecycle) | ✅ tamam | web `4f71c43` |
 
-**Sıradaki:** teachers-spec-audit/ISSUE-08 (web-edge-cases-and-lifecycle — öğretmen edge-case/koruma kuralları, son issue). Spec §5.8 edge-case'ler: branşsız öğretmen kaydedilebilir ama "branş eksik" uyarısı (görevlendirme yapılamaz) · Ders Programı'nda kullanılan görevlendirme silinince bağımlılık uyarısı · aşırı yük = sert engel değil yumuşak uyarı · izinli öğretmene yeni görev atanamaz · sınıf öğretmeni boşalan şube "rehbersiz". **Zemin:** Çoğu kural backend guard ister; web tarafı uyarı/disable + onay diyaloğu aynası kurar (server-side kural kalır). Mevcut: §5.8 atama guard'ları ISSUE-03'te kısmen (ayrılmış öğretmene/arşiv şubeye atama reddi); aşırı yük yumuşak uyarı rozeti ISSUE-04'te; "rehbersiz" rozeti homeroom dialog'da. ISSUE-08 muhtemelen: branş-eksik uyarısı (tablo + drawer Genel/Görevlendirmeler), izinli öğretmende Görevlendir aksiyonunun engellenmesi, görevlendirme silme bağımlılık uyarısı (Ders Programı modülü yok → yumuşak metin). Out of Scope: yeni server kuralı yok → UI guardrail + i18n. users ISSUE-07 / students ISSUE-06 desenini referans al.
+**Sıradaki:** YOK — **tüm spec-audit issue setleri (users + students + teachers) BİTTİ.** users-spec-audit (7), students-spec-audit (6), teachers-spec-audit (8) tamamlandı. Yeni iş için kullanıcıdan yön bekle.
+
+### ✅ teachers-spec-audit ISSUE-08 tamamlandı (2026-06-08, web `4f71c43`) — kararlar
+- §5.8 edge-case + §6.3 çift-eksen yaşam döngüsü, hepsi web (UI guard = sunucu kuralının aynası).
+- **Saf helper `lib/lifecycle.ts`** (DRY, tablo+drawer+assignments tab paylaşır): `isTerminalStatus`,
+  `hasBranch`, `dutyState` (yük>0→assigned, 0→idle, null→unknown), `assignmentBlockReason`
+  (onLeave > terminal > noBranch öncelik).
+- **Branş eksik (§5.8):** `TeachersTable` branş hücresi nötr "—" yerine `.branch-missing` uyarı rozeti
+  ("Branş eksik" + hint); `TeacherDetailDrawer` Genel branş fact'i aynı rozet + ek uyarı bandı.
+- **Görevlendirme engeli (§5.8):** `TeacherAssignmentsTab` artık `status`+`branch` prop'u alır;
+  izinli/ayrılmış/branşsızda "Görevlendir" butonu disabled + sebep title + `.mini-warning` bandı
+  (`assignments.blocked.{onLeave|terminal|noBranch}`). Drawer bu prop'ları geçer.
+- **Bağımlılık uyarısı (§5.8):** kaldırma onayı `removeConfirm`→`removeConfirmDependency` (Ders Programı
+  bağımlılık metni). Timetable yok → **yumuşak metin** (her kaldırmada), sert engel değil →
+  completion_status "⚠️ Spec Dışına Çıkılanlar"a işlendi.
+- **Aşırı yük:** zaten ISSUE-04'te yumuşak rozet/bar; dokunulmadı (issue "ortak" der).
+- **Rehbersiz:** zaten ISSUE-05'te homeroom dialog/kolon; dokunulmadı.
+- **Çift eksen (§6.3):** tabloda durum hücresi `.dual-axis` = istihdam badge + görev ekseni `.duty-tag`
+  (Görevli/Görevsiz, idle sarı + hint); yük verisi yoksa görev etiketi gizli (yanlış-pozitif yok).
+  Drawer Genel'de "İstihdam" + "Görev" ayrı fact satırları. "Aktif ama Görevsiz" mümkün.
+- **Test:** lifecycle 8 + edge-cases 5 (branş eksik/var, görevli/görevsiz/bilinmez) + assignments +4
+  (izinli/branşsız disable+uyarı, normal aktif, bağımlılık onay metni). Teachers suite **58 yeşil**;
+  `npm run build` + i18n JSON parse yeşil. Yalnız ISSUE-08 dosyaları stage edildi (leftover yok).
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.

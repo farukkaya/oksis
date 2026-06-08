@@ -4,14 +4,15 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `█████░░░░░` %45   ·   Status: in-progress   ·   Güncel: 2026-06-08
+**İlerleme:** `██████░░░░` %50   ·   Status: in-progress   ·   Güncel: 2026-06-08
 
 > Temel: doküman iskeleti `{{TBD}}`. Admin Öğretmenler **liste ekranı** (greenfield
 > spec §5) kuruldu: ISSUE-01 (liste/arama/filtre/tablo iskeleti) + ISSUE-02 (KPI
 > şeridi) + ISSUE-03 (`TeachingAssignment` domaini + Görevlendirmeler sekmesi) +
 > ISSUE-04 (haftalık yük/kapasite) + ISSUE-05 (sınıf öğretmenliği).
 > **ISSUE-06: detay drawer §5.6 sekme seti kuruldu** (8 sekme); **ISSUE-07: satır (…)
-> menüsü + toplu seçim çubuğu (§5.5) kuruldu.**
+> menüsü + toplu seçim çubuğu (§5.5) kuruldu; ISSUE-08: edge-case/koruma kuralları +
+> çift-eksen yaşam döngüsü (§5.8/§6.3) kuruldu — teachers-spec-audit issue seti BİTTİ.**
 
 ---
 
@@ -75,12 +76,21 @@
   Düzenle + Ders Programı köprüsü kaynak yok → görünür-ama-pasif. `useTeacherActions` hook +
   `teachersApi.putOnLeave/returnFromLeave/deactivate`. `TeachersSelectionBar` toplu çubuğu +
   tabloya onay-kutusu seçim kolonu. tr/en i18n (`rowActions`/`selection`). 6+3+1 web test.
+- **ISSUE-08 (web §5.8/§6.3):** edge-case/koruma kuralları + çift-eksen yaşam döngüsü. Saf
+  `lib/lifecycle.ts` helper'ları (`isTerminalStatus`/`hasBranch`/`dutyState`/`assignmentBlockReason`)
+  tablo, detay drawer ve görevlendirme sekmesi arasında paylaşılır (DRY). §5.8: branşsız öğretmende
+  "branş eksik" uyarı rozeti (tablo branş hücresi + detay Genel) ve görevlendir aksiyonu pasif +
+  gerekçe; izinli/ayrılmış öğretmene yeni görev atama engeli (`TeacherAssignmentsTab` add butonu
+  disabled + uyarı bandı); görevlendirme kaldırma onayına Ders Programı bağımlılık uyarısı (Timetable
+  yok → yumuşak metin). §6.3 çift eksen: istihdam (Aktif/İzinli/Ayrıldı/Pasif) + görev
+  (Görevli/Görevsiz, yükten türetilir) tabloda alt etiket + detayda ayrı fact satırları ("Aktif ama
+  Görevsiz" mümkün). CSS `.branch-missing`/`.dual-axis`/`.duty-tag` students.css'e eklendi. tr/en
+  i18n (`row.branchMissing*`, `duty.*`, `employment.label`, `assignments.blocked.*`,
+  `assignments.removeConfirmDependency`). 17 yeni web test (lifecycle 8, edge-cases 5, assignments +4).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Doküman içeriği (≈110 `{{TBD}}` alanı) — spec doldurulmadı.
-- **ISSUE-08:** edge-case / koruma kuralları (§5.8 branşsız uyarı, Ders Programı bağımlılık
-  uyarısı, izinliye atama engeli — kısmen ISSUE-03'te, rehbersiz işaretleme).
 - Mobile: öğretmen rolü ekranları (yok).
 
 ## ⚠️ Spec Dışına Çıkılanlar
@@ -110,3 +120,10 @@
   formu + "Ders programını görüntüle" köprüsü kaynak yok → pasif. Gerekçe: §5.5 setini eksiksiz/
   durum-duyarlı göstermek ama çalışmayan butonla yalan söylememek (users/students ISSUE deseni).
   Etki: çalışan aksiyonlar gerçek; eksikler net pasif, backend uçları gelince aktifleşir.
+- **2026-06-08 (ISSUE-08):** §5.8 "Ders Programı'nda kullanılan görevlendirme silinmek istenince
+  bağımlılık uyarısı" — Timetable modülü yok, dolayısıyla gerçek bağımlılık verisi (bu görevlendirme
+  çizelgede kullanılıyor mu?) sorgulanamıyor. Karar (çatal — durmadan ilerlendi): bağımlılık uyarısı
+  kaldırma onay diyaloğuna **yumuşak metin** olarak gömüldü (her kaldırmada "Ders Programı'nda
+  kullanılıyorsa etkilenir" uyarısı), sert engel değil (spec "aşırı yük yumuşak uyarı" tonuyla
+  tutarlı). Timetable gelince koşullu (yalnız gerçekten kullanılanlarda) uyarıya dönüştürülür. Etki:
+  kullanıcı her kaldırmada bilgilendirilir; yanlış-pozitif yumuşak metin olduğundan zararsız.
