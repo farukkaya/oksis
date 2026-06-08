@@ -23,8 +23,9 @@
 | teachers | ISSUE-01 (web-teachers-list-screen-skeleton) | ✅ tamam | api `1e73253`, web `85ab90e` |
 | teachers | ISSUE-02 (web-capacity-axis-kpis) | ✅ tamam | api `90f8391`, web `80d8585` |
 | teachers | ISSUE-03 (api-web-teaching-assignment-domain) | ✅ tamam | api `f4c631f`+`6cf92c5`, web `a8b7403` |
+| teachers | ISSUE-04 (web-weekly-workload-capacity) | ✅ tamam | api `5976058`, web `1290e2e` |
 
-**Sıradaki:** teachers-spec-audit/ISSUE-04 (web-weekly-workload-capacity — §5.2/§5.4/§5.7 Haftalık Yük/kapasite + doluluk göstergesi). Zemin ISSUE-03'te hazır: görevlendirme saatleri kaynak; `GetTeacherWorkload` ayrı slice (sezon bazında Redis cache, §5.9) + §5.4 "24/30 saat" kolon + §5.2 ortalama yük "%N". Kapasite kaynağı (öğretmen başına haftalık ders saati üst sınırı) netleşmeli — spec §5.4 "24/30" der ama "30" kaynağı belirsiz; muhtemelen okul ayarı/sabit. Çatalda durma, kararı ver+işle.
+**Sıradaki:** teachers-spec-audit/ISSUE-05 (web-homeroom-management — sınıf öğretmenliği). Spec §5.4 "Sınıf Öğretmenliği" kolonu ("10-A" veya "—"), §5.5 satır "Sınıf öğretmeni ata/kaldır", §5.6 "Sınıf Öğretmenliği" sekmesi (sorumlu şube + öğrenci listesi köprüsü), §5.7 "bir öğretmen 0/1 şube, bir şube tek sınıf öğretmeni" (idari atama, ders vermekten bağımsız), §5.8 "sınıf öğretmeni boşalan şube rehbersiz işaretlenir". **Zemin (KRİTİK):** homeroom kaynağı zaten var → `ClassRoom.HomeroomTeacherId` (`UpdateClassRoomCommand(id, capacity, homeroomTeacherId)` üzerinden set ediliyor, `ClassRoomsController` PUT). Yani SetHomeroom/RemoveHomeroom için yeni domain gerekmeyebilir; mevcut `UpdateClassRoom` ucu + ClassRoom listesini teacher→homeroom map'ine çevir (ISSUE-04 workload deseni gibi ayrı sorgu/Map). Tablo kolonu null=dash. Önce ClassRoomsController + UpdateClassRoomCommand + ClassRoom entity'yi oku.
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -280,6 +281,34 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
   `.When/.Do` en sona. (Teachers test'lerinde böyle yapıldı.)
 - **Migration namespace:** EF tool 10.0.5 block-scoped namespace üretti; repo file-scoped istiyor
   (IDE0161 error) → migration `.cs`/`.Designer.cs` file-scoped'a çevrildi.
+
+### ✅ ISSUE-04 tamamlandı (2026-06-08, api `5976058`, web `1290e2e`) — kararlar
+- **`GetTeacherWorkload` = sezon-geneli batch sorgu** (öğretmen başına `GroupBy` + `Sum`), tek
+  öğretmen N+1 yerine. Hem §5.4 tablo kolonunu hem §5.2 ortalama KPI'ı tek sorgu besler.
+  `TeacherWorkloadSummaryDto(AcademicSessionId, Capacity, Items[], AverageFillPercent)`;
+  `TeacherWorkloadDto.FillPercent`/`IsOverloaded` computed.
+- **Cache (§5.9):** `[Cacheable(120, Key="teachers:workload:{SessionId}")]`. Cache key
+  RedisCacheService.BuildKey ile tenant-scope'lu (`tenant:{id}:...`). `SessionId` null ise
+  güncel sezon handler'da çözülür; key boş segment → tek "aktif sezon" anahtarı (kısa TTL kabul).
+  Assign/Unassign handler'ları `cache.RemoveByPrefixAsync("teachers:workload:")` ile geçersiz kılar
+  (prefix tenant-scope'lu → tüm sezon anahtarları o tenant için temizlenir).
+- **Kapasite kararı (çatal — durmadan ilerlendi):** spec §5.4 "30"un kaynağı tanımsız; school-settings
+  alanı yok + Out of Scope → sabit `TeacherWorkloadDefaults.WeeklyCapacity = 30`. completion_status
+  "⚠️ Spec Dışına Çıkılanlar"a işlendi (ileride okul ayarı eklenirse fallback).
+- **Uç:** PersonsController'a `GET /users/persons/teacher-workload` (teacher-stats yanına, aynı
+  adaptör/controller — web `teachersApi` zaten `/users/persons` altında). İzin `users.view`.
+- **Web:** `useTeacherWorkloadQuery` + `teachersApi.workload` (DTO items → `Map<teacherId, load>`).
+  TeachersPage `mergedItems` ile satırlara yük birleştirir (görevlendirmesiz öğretmen = yük 0/kapasite tam).
+  Tablo `.load-cell` (badge "X/Y saat" + `.load-bar` doluluk + aşırı yükte `.load-warn` rozeti).
+  Dinamik bar genişliği inline `style` (mevcut desen — TeachersLoadingRows da kullanıyor).
+  `TeacherListItem`'a `weeklyFillPercent`/`weeklyOverloaded` eklendi → tüm makeTeacher factory'ler güncellendi.
+- **Test:** api 3 unit (yük toplamı/sezon izolasyonu/revoked dışlama, IsOverloaded, boş); Assign/Unassign
+  testlerine `ICacheService` mock eklendi. Application suite **776 yeşil**. web 3 (tablo bar+aşırı yük,
+  adaptör map); teachers web suite **20 yeşil**. `dotnet build` + `npm run build` yeşil.
+- **ISSUE-05 zemin (homeroom):** `ClassRoom.HomeroomTeacherId` + `UpdateClassRoomCommand` ucu zaten var
+  (ClassRoomsController PUT). Yeni SetHomeroom domaini gerekmeyebilir; ClassRoom listesini
+  teacher→şube Map'ine çevir (workload deseni). §5.7 tekillik "bir şube tek homeroom" zaten ClassRoom
+  1:1; "bir öğretmen 0/1 şube" UI/guard ile.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).

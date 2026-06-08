@@ -4,13 +4,13 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `██░░░░░░░░` %20   ·   Status: in-progress   ·   Güncel: 2026-06-08
+**İlerleme:** `███░░░░░░░` %28   ·   Status: in-progress   ·   Güncel: 2026-06-08
 
 > Temel: doküman iskeleti `{{TBD}}`. Admin Öğretmenler **liste ekranı** (greenfield
 > spec §5) kuruldu: ISSUE-01 (liste/arama/filtre/tablo iskeleti) + ISSUE-02 (KPI
-> şeridi). **ISSUE-03: `TeachingAssignment` domaini + Görevlendirmeler sekmesi
-> (ekranın kalbi) kuruldu.** Workload hesabı (ISSUE-04) hâlâ yok → §5.4 Haftalık Yük
-> kolonu "—" (sekmede toplam yük gösterilir).
+> şeridi) + ISSUE-03 (`TeachingAssignment` domaini + Görevlendirmeler sekmesi).
+> **ISSUE-04: Haftalık yük/kapasite (ekranın imzası) kuruldu** → §5.4 "X / Y saat" +
+> doluluk barı, §5.2 Ortalama Yük KPI'ı dolu, §5.8 aşırı yük yumuşak uyarı.
 
 ---
 
@@ -39,12 +39,21 @@
   görevlendirmeleri haftalık saatiyle, ekle (`AddAssignmentDialog`: şube/ders/saat)/kaldır,
   toplam yük başlıkta. `useTeacherAssignments` (query + mutasyonlar, invalidate). tr/en i18n.
   4 web test. **Detay drawer'a mount ISSUE-06 işi** (sekme self-contained, dışa export'lu).
+- **ISSUE-04 (api §5.2/§5.4/§5.7/§5.8/§5.9):** `GetTeacherWorkload` query — sezon bazında
+  öğretmen başına aktif görevlendirme saatleri toplamı + kapasite doluluğu + ortalama (§5.2).
+  `[Cacheable]` ile sezon bazlı Redis cache (`teachers:workload:{SessionId}`, §5.9);
+  assign/unassign komutları cache prefix'ini geçersiz kılar. `IsOverloaded` yumuşak uyarı (§5.8).
+  `GET /users/persons/teacher-workload`. Kapasite kaynağı spec'te tanımsız → sabit
+  `TeacherWorkloadDefaults.WeeklyCapacity = 30`. 3 unit test.
+- **ISSUE-04 (web §5.2/§5.4/§5.8):** `useTeacherWorkloadQuery` + `teachersApi.workload`;
+  satırlara teacherId üzerinden yük birleştirilir → "Haftalık Yük" kolonu "X / Y saat" +
+  doluluk barı (ekranın imzası). Aşırı yük rozeti + sarı bar (engellemez). KPI "Ortalama
+  Haftalık Yük" `averageFillPercent` ile beslenir. Yük barı CSS'i `students.css`'e eklendi.
+  3 web test (tablo bar/aşırı yük + adaptör map).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Doküman içeriği (≈110 `{{TBD}}` alanı) — spec doldurulmadı.
-- **ISSUE-04:** Haftalık yük/kapasite hesabı + doluluk göstergesi (kaynak ISSUE-03'te hazır:
-  `GetTeacherWorkload` ayrı slice + §5.4 kolon + §5.2 ortalama yük) — yok.
 - **ISSUE-05/06/07/08:** homeroom yönetimi, detay drawer, satır/toplu aksiyonlar, edge-case.
 - Mobile: öğretmen rolü ekranları (yok).
 
@@ -54,4 +63,12 @@
   Haftalık Yük ve §5.2 Ortalama Yük / Branş Açığı **kaynaksız** olduğundan UI'da "—"
   ile degrade edildi. Sapma değil, dürüst tasarım — spec §5.2 "başta —" der; kaynak
   ISSUE-03/04 (TeachingAssignment + workload) ve Ders Programı modülü ile beslenecek.
-  Etki: yok (görsel iskelet, yanlış veri yok).
+  Etki: yok (görsel iskelet, yanlış veri yok). **Güncelleme:** Haftalık Yük + Ortalama Yük
+  ISSUE-04'te dolduruldu; "—" yalnız Verdiği Dersler/Sınıf Öğretmenliği (ISSUE-05) + Branş
+  Açığı (Ders Programı) için kaldı.
+- **2026-06-08 (ISSUE-04):** §5.4 "24 / 30 saat" örneğindeki kapasite üst sınırının (30)
+  kaynağı spec'te tanımsız (okul ayarı mı sabit mi belirsiz). Okul ayarları modülünde
+  öğretmen kapasite alanı yok + ders programı/okul ayarı genişletmesi Out of Scope →
+  kapasite tek sabit (`TeacherWorkloadDefaults.WeeklyCapacity = 30`) olarak ele alındı.
+  İleride school-settings alanı eklenirse sabit fallback olur. Etki: tüm öğretmenler için
+  aynı kapasite; per-okul/per-öğretmen özelleştirme yok.
