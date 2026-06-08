@@ -14,8 +14,9 @@
 | users | ISSUE-04 (detay drawer — güvenlik sekmesi) | ✅ tamam | web `7e8faf2` |
 | users | ISSUE-05 (detay — etkinlik/audit + bağlı profil köprüsü) | ✅ tamam | web `4b85e7a` |
 | users | ISSUE-07 (koruma kuralları / guardrails) | ✅ tamam | web `5046645` |
+| students | ISSUE-01 (web-season-enrollment-axis) | ✅ tamam | web `0834f37` |
 
-**Sıradaki:** students-spec-audit/ISSUE-01 (web-season-enrollment-axis). users klasörü tamamlandı.
+**Sıradaki:** students-spec-audit/ISSUE-02 (web-guardian-management-home). users klasörü tamamlandı.
 
 > Kullanıcı talimatı: "Bu tarz [mimari] kararlar için durma, önerdiğin yöntem ile çalışmaya devam et."
 > → Çatallarda durma; önerilen yöntemle ilerle, kararı kendin ver, gerekirse `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işle.
@@ -67,9 +68,46 @@ Hedef (§3.4/§3.3): Kolonlar = Kullanıcı(avatar+ad+iletişim) · Rol(ler) ço
 - **Çoklu rol pasife alma uyarısı** zaten ISSUE-03'te vardı (deactivate confirm `multiRoleWarning`), korundu.
 - Test: `UserRowActions.test.tsx` +4 (self gizleme, self locked, son-admin disable+sebep, normal aktif); `UserDetailPage.test.tsx` +2 (e-posta pending + verified). Tüm users suite 51 yeşil; `npm run build` yeşil.
 
-### Anomali notu
-- Çalışma sırasında `oksis-web` working tree'de benim dokunmadığım `StudentsPage.tsx` ve
-  `StudentsPageHead.tsx` unstaged değişiklikleri var (önceki oturumdan kalmış olabilir). Commit'lere DAHİL EDİLMEDİ.
+### Anomali notu (GÜNCEL — ISSUE-01)
+- Önceki oturumdan kalan, benim dokunmadığım `StudentsPage.tsx` + `StudentsPageHead.tsx`
+  unstaged değişiklikleri (Yeni Öğrenci butonunu kaldırma) ISSUE-01 ile **aynı dosyalara**
+  dokunuyordu. Çözüm: bu leftover'ı `git stash`'e aldım (etiket:
+  **`stash@{0}: On master: leftover-prev-session-students-newbtn`**), ISSUE-01'i temiz
+  baseline üstünde geliştirip commit'ledim (`0834f37`), stash pop **çakıştı** → çakışan iki
+  dosyayı HEAD'e (ISSUE-01 commit'ine) geri yazıp working tree'yi temizledim. **Leftover
+  kaybolmadı; hâlâ `stash@{0}`'da duruyor.** Sonraki oturumda kullanıcı isterse
+  `git stash pop stash@{0}` ile geri alabilir (Yeni Öğrenci butonu kaldırma kararı verilirse).
+  Leftover hiçbir commit'e DAHİL EDİLMEDİ.
+
+## students-spec-audit
+
+### ✅ ISSUE-01 tamamlandı (2026-06-08) — kararlar
+- **Sahiplik sınırı netleşti (§1.2, spec'e uygun, sapma yok):** Öğrenciler ekranı
+  `AcademicSessions` modülünü tüketir. `Enrollment` ≈ `ClassRoomStudent` (sezona bağlı,
+  tarihsel: transferde kapatılır+yeni kayıt → tam §4.8). Sezon seçici kaynağı =
+  mevcut `GET /academic-sessions` (`AcademicSessionDto[]`, `isCurrent`).
+- **Sezon ekseni web'de:** `SeasonSelector` (head'de), URL state `season`; etkin sezon =
+  URL'deki geçerli sezon, yoksa `isCurrent`. `studentsApi.list/exportFile` + `useStudentsQuery`
+  + `studentKeys.list` artık `seasonId` taşır. Hardcoded `SEASON` sabiti kaldırıldı.
+- **Kayıt Geçmişi sekmesi (§4.6):** drawer'da yeni "Kayıt Geçmişi" tab; `useEnrollmentHistoryQuery`
+  + `studentsApi.enrollmentHistory` (şimdilik `[]` döner). Boş/yükleniyor/hata net degrade.
+- **Backend'e dokunulmadı (karar — çatalda durmadan ilerlendi):** `GetEnrollmentHistory`
+  slice'ı + server-side `seasonId` filtresi yok. Issue repo'su web; §4.9 "üret/teyit" notu
+  bounded scope dışı. Tüketici hazır, uç açılınca tek metot (`enrollmentHistory`) +
+  `list` param'ı beslenecek. `completion_status` "⚠️ Spec Dışına Çıkılanlar"a işlendi.
+- **Test:** `SeasonSelector.test.tsx` (3), `StudentDetailEnrollment.test.tsx` (3). Students
+  suite 14 yeşil; `npm run build` yeşil.
+
+### ISSUE-02 için zemin (web-guardian-management-home, §4.7)
+- Spec §4.7: veli CRUD Öğrenci detayının evidir (ayrı veli ekranı yok). Çoka-çok ilişki,
+  ilişki üzerinde tip (anne/baba/vasi) + birincil bayrağı. Akış: "Veli ekle" → önce mevcut
+  velilerde ara (kardeş bağla) → yoksa yeni veli + arka planda User hesabı/davet.
+- Mevcut durum: drawer "Genel" sekmesi yalnız birincil veliyi read-only gösteriyor
+  (`StudentDetailDrawer` mini-card, `useStudentParentsQuery` → `GET /users/students/{id}/parents`).
+  Ekle/çıkar/birincil-ata + kardeş arama YOK. Tablo §4.4 "çoklu veli +1" kolonu da yok.
+- Backend: ilişki uçları `RelationshipsController` (`/users/students/{id}/parents`) altında;
+  `LinkGuardian`/`UnlinkGuardian`/`SetPrimaryGuardian` (§4.9) **doğrula/üret** — kodda
+  henüz teyit edilmedi. ISSUE-02 başında `RelationshipsController` + ilgili command'lar okunmalı.
 
 ## Notlar / kararlar
 - ISSUE-01: §3.2 "Dikkat Gerektiren = kilitli + askıda" için `UserStatus`'ta Locked yok (locked = `LockoutEnd > now`).
