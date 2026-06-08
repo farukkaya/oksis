@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `██████░░░░` %50   ·   Status: in-progress   ·   Güncel: 2026-06-08
+**İlerleme:** `██████░░░░` %50   ·   Status: in-progress   ·   Güncel: 2026-06-08 (design-handoff 1:1 boşlukları kapatıldı — Yeni Öğretmen + Sezon Kopyala + drawer hero/footer, backend'siz olanlar mock+D)
+
+> 2026-06-08: **Öğretmenler design-handoff 1:1 boşluk kapatma (oksis-web).** Mevcut ekran zaten tasarım sistemine oturuyordu; tasarımda olup eksik olan parçalar eklendi: (1) **"Yeni Öğretmen" (Hire) modalı** (`HireTeacherDialog`, ad/soyad + görev tipi segment + branş çoklu seçim, paylaşılan `shared/components/modal/Modal` + `shared/styles/modal.css`); (2) page-head'e **"Sezon Görevini Kopyala"** + selection-bar'da etkinleştirme; (3) drawer'da tasarım imzası **hero yük göstergesi** (başlıkta beyaz varyant) + **footer** (Görevlendir → Görevlendirmeler sekmesi, Düzenle) + `wide` genişlik. **Backend ucu OLMAYANLAR mock fallback + "D" rozeti** (`shared/api/debtFallback.attemptRealThenMock`): Hire (`POST /teachers`), Sezon Kopyala (`POST /teachers/copy-season`), Düzenle (`PUT /teachers/{id}`). Mevcut GERÇEK uçlar korundu: liste/stats/yük/homeroom/atama/export. Mock-only kontrol mantığı `teachersDebtApi`/`useTeacherDebt`'te izole; "Düzenle" mutasyonu test-izolasyonu için page'de tutulur (drawer prop `onEdit`). 66 teachers+users vitest yeşil, tam paket 463 yeşil, build yeşil. Sapma: bkz. Spec Dışına Çıkılanlar 2026-06-08 "Teachers DEBT mock-fallback".
 
 > Temel: doküman iskeleti `{{TBD}}`. Admin Öğretmenler **liste ekranı** (greenfield
 > spec §5) kuruldu: ISSUE-01 (liste/arama/filtre/tablo iskeleti) + ISSUE-02 (KPI
@@ -95,6 +97,7 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-06-08 — Teachers DEBT mock-fallback: backend'siz aksiyonlar gerçek istek atar ama mock döner + "D" rozeti (oksis-web, bu oturum):** Design-handoff 1:1 boşlukları kapatılırken backend ucu **henüz açılmamış** öğretmen işlemleri `shared/api/debtFallback.attemptRealThenMock` ile sarıldı: **önce gerçek uca istek atılır**, 404/405/network → kısa gecikmeli **mock** döner (`isMock:true`; toast'a "(mock)" eki), UI'da `shared/components/DebtBadge` ("D"). Kapsam: **Yeni Öğretmen / Hire** (`POST /teachers`), **Sezon Görevini Kopyala** (`POST /teachers/copy-season`, head + selection-bar), **Düzenle** (drawer footer, `PUT /teachers/{id}`). **Gerçek (rozetsiz):** liste/stats/yük/homeroom/görevlendirme(assign,unassign)/export. **Gerekçe:** kullanıcı talimatı — "backend karşılığı olmayanlar için mock servis yaz (istek atsın ama mock dönsün), D ile işaretle". Önceki ISSUE-07'deki Sezon Kopyala "görünür-ama-pasif" yaklaşımı **mock+D ile etkin** hale getirildi (TeachersSelectionBar testi buna göre güncellendi). **Etki & geçiş:** uç açılınca `attemptRealThenMock` gerçek cevabı döndürür → tek dosyada (`teachersDebtApi`) mock kalkar + ilgili DebtBadge silinir; UI dokunulmaz. Ortak Modal sistemi `shared/components/modal/Modal` + `shared/styles/modal.css`'e taşındı (Kullanıcılar ile paylaşımlı; Öğrenciler de kullanacak).
 - **2026-06-08 (ISSUE-01/02):** §5.4 Verdiği Dersler/Sınıflar · Sınıf Öğretmenliği ·
   Haftalık Yük ve §5.2 Ortalama Yük / Branş Açığı **kaynaksız** olduğundan UI'da "—"
   ile degrade edildi. Sapma değil, dürüst tasarım — spec §5.2 "başta —" der; kaynak
