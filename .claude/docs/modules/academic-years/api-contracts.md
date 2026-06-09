@@ -100,7 +100,8 @@
     "terms": [
       { "id": "...", "termType": { "code": "T1", "name": "1. Dönem" }, "status": "Active", "startDate": "2025-09-15", "endDate": "2026-01-23" },
       { "id": "...", "termType": { "code": "T2", "name": "2. Dönem" }, "status": "NotStarted", "startDate": "2026-02-10", "endDate": "2026-06-13" }
-    ]
+    ],
+    "activeStudentCount": 1248
   },
   "errors": null,
   "correlationId": "..."
@@ -108,6 +109,31 @@
 ```
 
 **Response 404:** Henüz aktif sezon yoksa (`{ "errors": [{ "code": "NO_ACTIVE_SESSION" }] }`). Frontend onboarding wizard'a yönlendirir.
+
+**Yeni alan (2026-06-09):**
+
+| Alan | Tip | Açıklama |
+|---|---|---|
+| `activeStudentCount` | `int` | Aktif sezondaki şubelerde `LeftAt == null` olan distinct öğrenci sayısı (ayrılanlar/mezunlar hariç) |
+
+---
+
+### `GET /api/v1/academic-sessions` — Liste Yanıt Alanları
+
+Her `AcademicSessionDto` öğesi için:
+
+| Alan | Tip | Açıklama |
+|---|---|---|
+| `id` | `string` | Sezon UUID |
+| `name` | `string` | Sezon adı (örn. "2024-2025") |
+| `startDate` | `DateOnly` | Sezon başlangıcı |
+| `endDate` | `DateOnly` | Sezon bitişi |
+| `status` | `string` | `Setup` / `Active` / `Archived` |
+| `isCurrent` | `bool` | Aktif mi |
+| `activatedAt` | `DateTimeOffset?` | Aktivasyon zamanı |
+| `archivedAt` | `DateTimeOffset?` | Arşivleme zamanı |
+| `studentCount` | `int` | Sezona kayıtlı distinct öğrenci (ayrılanlar dahil) — 2026-06-09 |
+| `graduateCount` | `int` | `Reason == Graduation` ile kapatılmış distinct atama sayısı — 2026-06-09 |
 
 ---
 

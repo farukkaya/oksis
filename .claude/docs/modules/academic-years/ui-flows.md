@@ -224,6 +224,83 @@ Listede yatay banner: "X şube onayınızı bekliyor" → filtreli liste
 
 ---
 
+## Sezon Listesi (landing) — Web (2026-06-09)
+
+> `/admin/academic-sessions` artık doğrudan sihirbazı değil bu landing ekranını açar. Sihirbaz `…/new` alt-route'una taşındı.
+
+### Route Ayrımı
+
+| Route | Component | Amaç |
+|---|---|---|
+| `/admin/academic-sessions` (index) | `SeasonListPage` | Landing — aktif/taslak/arşiv listesi |
+| `/admin/academic-sessions/new` | `SeasonWizardPage` | 6 adımlı sezon rollover sihirbazı (değişmedi) |
+
+### Sayfa Lokasyonu
+
+```
+academic-sessions/
+├── pages/
+│   ├── SeasonListPage.tsx          (yeni — landing)
+│   └── SeasonWizardPage.tsx        (taşındı → /new)
+├── components/list/
+│   ├── ActiveSeasonHero.tsx        (aktif sezon hero kartı)
+│   ├── DraftSeasonCard.tsx         (taslak kartı)
+│   ├── ArchiveSeasonGrid.tsx       (arşiv ızgarası)
+│   ├── DiscardDraftDialog.tsx      (taslak çakışma modalı)
+│   └── DeleteDraftDialog.tsx       (taslak silme modalı)
+└── hooks/
+    └── useSeasonListData.ts        (aktif/taslak/arşiv türetme hook'u)
+```
+
+### Ekran Bölümleri
+
+#### A — Aktif Sezon (`ActiveSeasonHero`)
+
+- Brand-gradient sol panel: sezon adı, tarih aralığı, "Aktif Sezon" badge'i (yeşil pulse dot).
+- Sağ panel: 3 stat kartı (Aktif dönem / Aktif öğrenci sayısı / Dönem bitişine kalan gün).
+- Dönem ilerleme bar'ı (`computeTermProgress` — 0–100%).
+- "Akademik Takvime Git" butonu → `/admin/academic-calendar`.
+- **Boş durum:** Aktif sezon yoksa dashed kart + bilgi metni.
+
+#### B — Taslak Sezonlar (`DraftSeasonCard`)
+
+- Taslak varsa: ad + "Taslak" badge + adım ilerleme metni + mini ilerleme bar; "Taslağa Devam Et" + "Sil" butonları.
+- Taslak yokken: dashed boş durum + açıklama metni.
+- **"Sil" butonu** → `DeleteDraftDialog` açılır.
+
+#### C — Arşiv Sezonlar (`ArchiveSeasonGrid`)
+
+- Responsive auto-fill grid; her kart: sezon adı + "Arşiv" badge + tarih aralığı + öğrenci/mezun sayıları + "Salt-okunur" etiketi + "Görüntüle" butonu.
+- Boş durum: tek satır mesaj.
+
+### "Yeni Sezon Aç" Davranışı
+
+```
+Kullanıcı "Yeni Sezon Aç"a tıklar
+       │
+       ├── Taslak VAR → DiscardDraftDialog açılır (3 aksiyon):
+       │       ├── Vazgeç          → modal kapanır, sayfa kalır
+       │       ├── Taslağa Devam Et → modal kapanır, navigate('new') (mevcut taslaktan devam)
+       │       └── Sil ve Yeni Aç  → DELETE /season-drafts/current → navigate('new')
+       │
+       └── Taslak YOK → doğrudan navigate('new')
+```
+
+### Taslak "Sil" Akışı
+
+```
+"Sil" butonuna tıkla → DeleteDraftDialog açılır (2 aksiyon):
+       ├── Vazgeç    → modal kapanır
+       └── Taslağı Sil → DELETE /season-drafts/current → modal kapanır, sayfa güncellenir
+```
+
+### Sihirbaz Geri Dönüşü
+
+Sihirbaz header "geri" butonu → `/admin/academic-sessions` (landing).  
+Sihirbaz "Başarı" ekranı "Bitti" → `/admin/academic-sessions` (landing).
+
+---
+
 ## Akademik Takvim (Ekran 1) — Web (2026-06-09, mock servis)
 
 > Design handoff "Akademik Takvim & Sezon Yönetimi" Ekran 1'in uygulaması. **Tamamen
