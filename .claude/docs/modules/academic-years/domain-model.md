@@ -154,6 +154,10 @@
 | `IsRecurring` | `bool` | Her yıl tekrar mı? | |
 | `Description` | `string?` | Açıklama | Max 500 |
 
+**`HolidayType` Notu (2026-06-09):** `Schools.Enums.HolidayType` enum'una `SemesterBreak` değeri eklendi. `SemesterBreak`, yarıyıl tatilini temsil eder ve sihirbaz aracılığıyla `OpenSeasonFromDraft` çağrısında canlı `Holiday` entity'si olarak sezona yazılır (BR-AS-004'e bakın). EF Core `HasConversion<string>()` ile saklandığından migration gerekmez.
+
+> **Dormant entity notu:** `SchoolHoliday` domain model dokümantasyonunda tanımlanmış olsa da kod tabanında fiilen kullanılmayan ikiz bir entity (`Holiday`) mevcuttur — `holiday` tablosu `SchoolHoliday` yerine `Holiday` entity'sine karşılık gelir. `SchoolHoliday` şu an ölü kod / dormant; `SemesterBreak` ve gelecekteki tatil kopyalama işlemleri canlı `Holiday` entity'si üzerinden yapılır.
+
 **Invariants:**
 
 - `StartDate` ve `EndDate` `AcademicSession.StartDate` ve `EndDate` aralığında olmalı.

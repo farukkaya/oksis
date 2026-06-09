@@ -81,6 +81,8 @@
   ```
 - Frontend: Zod schema + DatePicker `min/max` props.
 
+**Not — Yarıyıl Tatili (2026-06-09):** T1 bitişi ile T2 başlangıcı arasındaki boşluk "yarıyıl tatili"dir. Bu tatil sihirbaz (`StepTerms`) üzerinde düzenlenip `OpenSeasonFromDraft` çağrısında `Holiday(HolidayType.SemesterBreak)` olarak yeni sezona yazılır. Doğrulama: `T1End < BreakStart ≤ BreakEnd < T2Start`. Yarıyıl tatili **ayrı bir 3. dönem DEĞİLDİR**; 2-dönem modeli (T1/T2) korunur.
+
 ---
 
 ### BR-AS-005: Dönem kapatma geri alınamaz
