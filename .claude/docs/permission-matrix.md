@@ -113,6 +113,12 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | `teachers.update` | 🚫 | ✅ | ✅ | 👁 (self) | 🚫 | 🚫 | 🚫 |
 | `teachers.delete` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 
+### Academic Calendar
+
+| İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Secretary |
+|---|---|---|---|---|---|---|---|
+| `academic-calendar.manage` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Akademik Takvim yönetim aksiyonları (etkinlik ekle/dışa aktar/sezon ekseni). Ekran süperadmin hariç TÜM rollerde görünür ama salt-okunur; bu izin yalnız yönetimi açar. SchoolStaff okul ayarına göre kısıtlanabilir. 2026-06-09 eklendi. -->
+
 ### Classes / Timetable
 
 | İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Secretary |

@@ -265,6 +265,13 @@ academic-calendar/
 
 **Mock kontrat (gelecekteki gerçek backend):** `GET /academic-sessions` (sezon ekseni, status eşlemesi Setup→planning/Active→active/Archived→archive), `GET /academic-sessions/{id}/events?year=&month=`, `GET /academic-sessions/{id}/terms`, `POST /academic-sessions/{id}/events`.
 
+### Akademik Takvim — Rol Bazlı Görünürlük (2026-06-09)
+
+- Ekran 4 portalde de görünür (süperadmin hariç): `/admin`, `/teacher`, `/parent`, `/student` → `…/academic-calendar`.
+- Tek bileşen (`oksis-web/src/modules/academic-calendar`) tüm portallerde render edilir (eskiden `portals/admin/` altındaydı, ortaklaştırma kapsamında taşındı).
+- `academic-calendar.manage` izni olan (Admin/Müdür; ⚙️ Müd. Yrd.): tam yetki — etkinlik ekle, dışa aktar, sezon ekseni (arşiv/aktif/planlama), Sezon Yönetimi yolları.
+- İzni olmayan (Öğretmen/Öğrenci/Veli): salt-okunur; sezon ekseni gizli, yalnız aktif sezon; alt başlık "Eğitim-öğretim yılı etkinlikleri".
+
 ---
 
 ## Mobile Flow

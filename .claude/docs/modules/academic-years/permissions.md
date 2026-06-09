@@ -34,6 +34,12 @@ Slug format: `<module>.<action>[-<qualifier>]`
 | `academic-sessions.activate-term` | Dönemi aktive et |
 | `academic-sessions.close-term` | Dönemi kapat (terminal, notları kilitler, karne üretir) ⚠️ |
 
+### `academic-calendar.*`
+
+| Slug | Açıklama |
+|---|---|
+| `academic-calendar.manage` | Akademik Takvim'de yönetim aksiyonları (etkinlik ekle, dışa aktar, Sezon Yönetimi yolları). Ekran tüm rollerde görünür; bu izin yalnız yönetim öğelerini açar |
+
 ### `class-rooms.*`
 
 | Slug | Açıklama |
@@ -75,6 +81,7 @@ Slug format: `<module>.<action>[-<qualifier>]`
 | `academic-sessions.archive` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `academic-sessions.activate-term` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
 | `academic-sessions.close-term` ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `academic-calendar.manage` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
 | `class-rooms.view` | ✅ | ✅ | ✅ | 🔒 own | ❌ | ❌ | ❌ |
 | `class-rooms.view-detail` | ✅ | ✅ | ✅ | 🔒 own | ❌ | ❌ | ❌ |
 | `class-rooms.view-own` | — | — | — | ✅ | — | — | — |
@@ -120,6 +127,10 @@ Rehber öğretmen kendi şubesini görür ama:
 Veli ve öğrenci için "akademik sezon listesi görüntüleme" anlamlı değil — onlara sadece aktif sezon/dönem etiketi gerekir (`view-current`). Buna rağmen `academic-sessions.view` veriyoruz çünkü:
 - "Geçen yılın notlarını gör" Sprint 3+'ta açılacak; sezon listesi bir dropdown olarak gelir
 - Frontend filtreleme yapacak — sadece kendi çocuğuna ait sezonları gösterecek (zaten erişebileceği sezonlar)
+
+### `academic-calendar.manage` ve salt-okunur roller
+
+Akademik Takvim ekranı **süperadmin hariç tüm rollerde** görünür (Admin + Öğretmen + Öğrenci + Veli). Yönetim aksiyonları (etkinlik ekle, dışa aktar, sezon ekseni, Sezon Yönetimi yolları) yalnız `academic-calendar.manage` iznine sahip rollere açılır; diğer roller takvimi salt-okunur görür ve yalnız **aktif sezonu** görüntüler. UI gizleme UX içindir; backend yetkilendirmesi ayrıca uygulanır (Default Deny).
 
 ### `academic-sessions.activate` ve `close-term`
 
