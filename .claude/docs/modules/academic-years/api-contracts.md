@@ -68,6 +68,48 @@
 | PUT | `/api/v1/school-holidays/{id}` | `school-holidays.update` | Tatil düzenle |
 | DELETE | `/api/v1/school-holidays/{id}` | `school-holidays.delete` | Tatil sil |
 
+### Resmi Tatil — Tarih Aralığı (Sihirbaz Önizleme) — yeni (2026-06-10)
+
+| Method | Path | Permission | Amaç |
+|---|---|---|---|
+| GET | `/api/v1/official-holidays?start=YYYY-MM-DD&end=YYYY-MM-DD` | `school-holidays.view` | Verilen tarih aralığındaki ulusal resmi tatiller (`HolidayCalendarDto[]`, hepsi `source="OFFICIAL"`) |
+
+---
+
+### `GET /api/v1/official-holidays` — Resmi Tatil Tarih Aralığı
+
+**Permission:** `school-holidays.view`
+
+**Query parametreleri:**
+
+| Parametre | Tip | Zorunlu | Açıklama |
+|---|---|---|---|
+| `start` | `DateOnly` (`YYYY-MM-DD`) | ✓ | Aralık başlangıcı |
+| `end` | `DateOnly` (`YYYY-MM-DD`) | ✓ | Aralık bitişi |
+
+**Amaç:** Henüz var olmayan yeni sezon için (sihirbaz Adım 2'de girilen `sessionStart`/`sessionEnd` tarihleriyle), o döneme düşen ulusal resmi tatillerin önizlemesini verir. `sessionId` gerektirmez; master `official_holidays` kataloğu üzerinde çalışır.
+
+**Response 200:**
+```json
+{
+  "data": [
+    { "id": null, "name": "29 Ekim Cumhuriyet Bayramı", "startDate": "2026-10-29", "endDate": "2026-10-29", "type": "PublicHoliday", "isRecurring": true, "source": "OFFICIAL" },
+    { "id": null, "name": "23 Nisan Ulusal Egemenlik", "startDate": "2027-04-23", "endDate": "2027-04-23", "type": "PublicHoliday", "isRecurring": true, "source": "OFFICIAL" }
+  ],
+  "errors": null
+}
+```
+
+Tüm öğeler `source = "OFFICIAL"` ve `startDate` artan sırada döner.
+
+**Errors:**
+- 400 / `academic-sessions.errors.invalid-range` — `start > end` ise.
+- 403 — izin yok.
+
+**Notlar:**
+- Gösterim-only (persist yok); sihirbaz Tatiller adımı bu endpoint'i kullanarak resmi tatilleri listeler.
+- `OfficialHolidayResolver` saf helper (DB-bağımsız) ile hesaplanır; artık yıl gibi geçersiz tarihler sessizce atlanır.
+
 ---
 
 ## Detay — Kritik Endpoint'ler
