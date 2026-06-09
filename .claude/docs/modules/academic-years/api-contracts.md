@@ -37,6 +37,17 @@
 
 > ⚠️ **İzin sapması (onaylı):** Tasarımda `academic-sessions.manage` öngörülmüştü ama seed'de yok; taslak/önizleme uçları mevcut `academic-sessions.create` ile gate edildi. `students.promote` yeni eklendi (seed+migration). `teachers.assign` yerine mevcut `teaching-assignments.assign` kullanıldı. Bkz. `completion_status.md` → Spec Dışına Çıkılanlar.
 
+#### `rollover-preview` yanıt özeti (`summary`)
+
+`GET .../rollover-preview` yanıtı `{ rows, summary }` döndürür. `summary` alanları:
+
+| Alan | Tip | Açıklama |
+|---|---|---|
+| `promotedBranches` | `int` | Terfi eden (bir üst kademeye çıkan) şube sayısı |
+| `graduatingStudents` | `int` | Terminal kademede mezun olan öğrenci sayısı |
+| `newBottomBranches` | `int` | Giriş kademesi için açılan boş yeni şube sayısı |
+| `passiveStudents` | `int` | **(2026-06-10)** Kaynak sezonda aktif-kayıtlı (`LeftAt==null`) ama `Person.LifecycleState != Active` olan öğrenci sayısı. `PromoteStudents` `ExcludePassive` skip tanımıyla birebir; önizleme her zaman sayar (gerçek rollover yalnız `ExcludePassive` bayrağında atlar). Sihirbaz Step 5 "pasif öğrencileri hariç tut" sayısını bundan okur. |
+
 ### AcademicTerm (Dönem)
 
 | Method | Path | Permission | Amaç |
