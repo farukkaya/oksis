@@ -224,6 +224,49 @@ Listede yatay banner: "X şube onayınızı bekliyor" → filtreli liste
 
 ---
 
+## Akademik Takvim (Ekran 1) — Web (2026-06-09, mock servis)
+
+> Design handoff "Akademik Takvim & Sezon Yönetimi" Ekran 1'in uygulaması. **Tamamen
+> mock servisle** çalışır; gerçek backend bekliyor (bkz. `completion_status.md`).
+
+### Sayfa Lokasyonu
+
+Frontend: `oksis-web/src/portals/admin/academic-calendar/`
+
+```
+academic-calendar/
+├── pages/AcademicCalendarPage.tsx          (kompozisyon kökü)
+├── components/  SeasonAxisBar · CalendarKpiRow · MonthCalendar
+│               · TermStructurePanel · UpcomingEventsPanel · EventTypeLegend · AddEventModal
+├── api/         calendarApi.ts (VITE_USE_MOCK seçici) · calendarApi.mock.ts (oturum-içi bellek)
+│               · calendarApi.real.ts (httpClient stub) · calendarMockData.ts (seed)
+├── hooks/       useCalendarSeasonsQuery · useCalendarEventsQuery · useAddEventMutation
+├── schemas/calendarEventSchema.ts (Zod) · lib/eventTypes.ts (renk/soft/i18n meta)
+├── keys/calendarKeys.ts (tenant-scoped) · types/index.ts
+```
+
+### Ekran — `/admin/academic-calendar`
+
+**Portal:** admin · **Permission:** `academic-sessions.view` · **Sol menü:** *Genel → Akademik Takvim* (ikon `CalendarDays`)
+**i18n namespace:** `academic-calendar` (tr/en).
+
+**Yapı (üstten alta):**
+1. **Page head** — breadcrumb (`Genel › Akademik Takvim`), başlık + alt metin (+ seçili sezon adı); sağda **Dışa Aktar** (şimdilik disabled) + **Etkinlik Ekle** (arşiv sezonunda disabled).
+2. **Sezon ekseni** (`SeasonAxisBar`) — Arşiv / Aktif (seçili ring) / Planlama kartları + gradyan "Sezon Yönetimi" butonu. Rozet: aktif=Aktif, arşiv=Arşiv, planlama= taslak varsa "Taslak" yoksa "Planlanmamış" (`seasonDraftApi.get()`).
+3. **KPI şeridi** (`CalendarKpiRow`) — 4 kart (Aktif Dönem / Dönem Bitişine / Bu Ay Etkinlik / Sezon Etkinliği). *Mock fazda* `termEndsInDays`/`seasonEvents` placeholder.
+4. **Gövde** — sol: `MonthCalendar` (Pzt-başı ızgara, çok-günlü bant, hücre başına max 3 pill + "+N daha", bugün vurgusu); sağ: `TermStructurePanel` + `UpcomingEventsPanel` + `EventTypeLegend`.
+
+**State (sayfa lokal):** `selectedSeasonId` (gezinme — topbar global sezonu **etkilemez**), `view {year,month}`, `modalDate`. Türetilen: `readonly = (sezon.status==='archive')`, `activeView = view ?? sezon.endDate ayı`.
+
+**Davranışlar:**
+- **Sezon kartı seç** → takvim o sezona döner (ay sezon bitişine resetlenir). **Planlama kartı / gradyan buton** → `navigate('/admin/academic-sessions')` (mevcut Sezon Rollover sihirbazı; taslak varsa kaldığı adımdan devam).
+- **Ay navigasyonu** (‹ › / Bugün), hücre "+" veya header butonu → **Etkinlik Ekle modalı** (`AddEventModal`, RHF+Zod). Kaydet → mock store'a eklenir (oturum-içi), takvim eklenen etkinliğin ayına atlar, query invalidate + toast.
+- **Arşiv sezonu** → salt-okunur ("Arşiv · salt-okunur" şeridi, ekleme kapalı), Yaklaşan paneli "Sezon Etkinlikleri" + göreli zaman yerine "Geçti", tüm dönemler "Tamamlandı".
+
+**Mock kontrat (gelecekteki gerçek backend):** `GET /academic-sessions` (sezon ekseni, status eşlemesi Setup→planning/Active→active/Archived→archive), `GET /academic-sessions/{id}/events?year=&month=`, `GET /academic-sessions/{id}/terms`, `POST /academic-sessions/{id}/events`.
+
+---
+
 ## Mobile Flow
 
 ### Sayfa Lokasyonu
