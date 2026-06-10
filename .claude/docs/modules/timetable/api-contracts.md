@@ -10,6 +10,20 @@
 
 ## Endpoint Özeti
 
+### Rooms (Derslik Kataloğu) — ✅ canlı (rooms-first dilimi, 2026-06-10)
+
+| # | Method | Path | Permission | Amaç | Success |
+|---|---|---|---|---|---|
+| R1 | GET | `/api/v1/rooms?sessionId=` | `class-rooms.view`* | Aktif derslik kataloğu (+ sezondaki ev-dersliği ataması) | 200 |
+| R2 | POST | `/api/v1/rooms` | `class-rooms.update`* | Derslik tanımla (kod tenant'ta tekil, 409) | 201 |
+| R3 | PUT | `/api/v1/rooms/{id:guid}` | `class-rooms.update`* | Derslik güncelle (kod/konum/kapasite/aktiflik) | 204 |
+| R4 | PUT | `/api/v1/class-rooms/{id:guid}/room` | `class-rooms.update` | Şubeye ev dersliği ata (pasif oda 409) | 204 |
+| R5 | DELETE | `/api/v1/class-rooms/{id:guid}/room` | `class-rooms.update` | Ev dersliği atamasını kaldır | 204 |
+
+> \* Geçici izin eşlemesi — `rooms.view/manage` izinleri timetable çekirdeğiyle
+> gelecek (bkz. completion_status sapma kaydı). R4/R5 ClassRoomsController'dadır;
+> şube aggregate'ini mutasyona uğrattığı için classrooms tarafında yaşar.
+
 ### Schedule (Ders Programı Satırları)
 
 | # | Method | Path | Permission | Amaç | Success |

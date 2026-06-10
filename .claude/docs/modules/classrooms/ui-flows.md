@@ -49,11 +49,11 @@ engelleme yok (FR / bulgu #6).
 
 **Modallar** (paylaşılan `shared/components/modal/Modal` shell):
 - `NewSectionModal` — tekil şube (B1/B2): seviye + harf (dolu işaretli, sıradaki
-  önerilir) + kapasite + opsiyonel derslik (DEBT) + rehber.
+  önerilir) + kapasite + opsiyonel derslik + rehber.
 - `BulkSectionModal` — toplu açma (bulgu #1): otomatik harf (kullanılanı atlar)
   veya serbest ad (virgüllü), canlı önizleme chip'leri. Create ucunun ardışık çağrısı.
 - `AssignHomeroomModal` — öğretmen arama + seçim; çoklu şube rehberliği soft uyarı.
-- `AssignClassroomModal` — derslik atama (**DEBT** — rooms Sprint 2, mock katalog).
+- `AssignClassroomModal` — derslik atama (rooms-first dilimi, gerçek uç: GET /rooms + PUT /class-rooms/{id}/room).
 - `AssignStudentModal` — bekleyen havuzdan (classroomId=null) şubeye atama.
 - `MoveStudentModal` — kaynak sabit, hedef doluluk bilgili liste; dolu hedef soft uyarı.
 - `ExportSectionsModal` — xlsx/csv/pdf + kapsam (**DEBT** — uç yok).
@@ -61,7 +61,8 @@ engelleme yok (FR / bulgu #6).
 **Veri eşlemesi / DEBT işaretleri:** gerçek uçlar `api/classroomsApi.ts`'te;
 backend karşılığı olmayanlar `api/classroomsDebtApi.ts`'te `attemptRealThenMock`
 ile (UI'da `DebtBadge` "D"): şube adı düzenleme, Aktif→Taslak durum geçişi,
-cinsiyet dağılımı, derslik, dışa aktarma. Ayrıntı: `completion_status.md`.
+cinsiyet dağılımı, dışa aktarma. (Derslik 2026-06-10'da gerçek uca taşındı.)
+Ayrıntı: `completion_status.md`.
 
 **Edge Case'ler:**
 - Aktif sezon yok → `NO_ACTIVE_SESSION` banner'ı (Sezon Yönetimi'ne yönlendirme metni).
@@ -89,7 +90,7 @@ token adları alias bloğu ile `theme.css` token'larına eşlenir.
      │       ├─ "Rehber Ata" → [AssignHomeroomModal] → PUT homeroom
      │       ├─ "Öğrenci Ata"/"Dağıt" → [AssignStudentModal] → POST students
      │       ├─ satırda ↗ → [MoveStudentModal] → POST transfer (geçmiş korunur)
-     │       └─ "Derslik" → [AssignClassroomModal] (DEBT)
+     │       └─ "Derslik" → [AssignClassroomModal] → PUT room
      │
      └─ "Sihirbazı Başlat" → /admin/academic-sessions (Sezon Yönetimi)
 ```

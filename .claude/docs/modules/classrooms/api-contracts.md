@@ -15,6 +15,12 @@
 | POST | `/api/v1/classrooms` | `classrooms.create` | Oluştur |
 | PUT | `/api/v1/classrooms/{id}` | `classrooms.update` | Güncelle |
 | DELETE | `/api/v1/classrooms/{id}` | `classrooms.delete` | Sil (soft) |
+| PUT | `/api/v1/class-rooms/{id}/room` | `class-rooms.update` | Ev dersliği ata (rooms-first, canlı) |
+| DELETE | `/api/v1/class-rooms/{id}/room` | `class-rooms.update` | Ev dersliği kaldır (canlı) |
+
+> Not (2026-06-10): canlı uçlar `/api/v1/class-rooms` altında AcademicSessions
+> modülünde yaşıyor; derslik kataloğu için bkz. `modules/timetable/api-contracts.md`
+> (Rooms bölümü).
 
 ---
 
