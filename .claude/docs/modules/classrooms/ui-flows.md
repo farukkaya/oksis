@@ -56,12 +56,13 @@ engelleme yok (FR / bulgu #6).
 - `AssignClassroomModal` — derslik atama (rooms-first dilimi, gerçek uç: GET /rooms + PUT /class-rooms/{id}/room).
 - `AssignStudentModal` — bekleyen havuzdan (classroomId=null) şubeye atama.
 - `MoveStudentModal` — kaynak sabit, hedef doluluk bilgili liste; dolu hedef soft uyarı.
-- `ExportSectionsModal` — xlsx/csv/pdf + kapsam (**DEBT** — uç yok).
+- `ExportSectionsModal` — xlsx/csv indirme (gerçek uç: GET /class-rooms/export).
+  PDF + kapsam segmenti bilinçli kapsam dışı (bkz. completion_status sapma kaydı).
 
-**Veri eşlemesi / DEBT işaretleri:** gerçek uçlar `api/classroomsApi.ts`'te;
-backend karşılığı olmayanlar `api/classroomsDebtApi.ts`'te `attemptRealThenMock`
-ile (UI'da `DebtBadge` "D"): şube adı düzenleme, Aktif→Taslak durum geçişi,
-cinsiyet dağılımı, dışa aktarma. (Derslik 2026-06-10'da gerçek uca taşındı.)
+**Veri eşlemesi:** ekranın TÜM aksiyonları `api/classroomsApi.ts` üzerinden
+gerçek uçlara bağlıdır (2026-06-10 — DEBT katmanı kaldırıldı, sıfır borç).
+Şube adı `PUT {id}/section`, durum `PUT {id}/status` (iki yönlü), cinsiyet
+kırılımı DTO `girlsCount/boysCount`, export `GET /class-rooms/export`.
 Ayrıntı: `completion_status.md`.
 
 **Edge Case'ler:**
@@ -86,7 +87,7 @@ token adları alias bloğu ile `theme.css` token'larına eşlenir.
      │                └ Toplu aç   → [BulkSectionModal] → N × create → liste yenile
      │
      ├─ kart tıkla → [DetailPanel]
-     │       ├─ ad/kapasite/durum düzenle (ad+durum DEBT, kapasite gerçek)
+     │       ├─ ad/kapasite/durum düzenle (PUT section/status — hepsi gerçek)
      │       ├─ "Rehber Ata" → [AssignHomeroomModal] → PUT homeroom
      │       ├─ "Öğrenci Ata"/"Dağıt" → [AssignStudentModal] → POST students
      │       ├─ satırda ↗ → [MoveStudentModal] → POST transfer (geçmiş korunur)

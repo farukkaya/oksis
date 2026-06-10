@@ -17,6 +17,9 @@
 | DELETE | `/api/v1/classrooms/{id}` | `classrooms.delete` | Sil (soft) |
 | PUT | `/api/v1/class-rooms/{id}/room` | `class-rooms.update` | Ev dersliği ata (rooms-first, canlı) |
 | DELETE | `/api/v1/class-rooms/{id}/room` | `class-rooms.update` | Ev dersliği kaldır (canlı) |
+| PUT | `/api/v1/class-rooms/{id}/section` | `class-rooms.update` | Şube adını değiştir (serbest metin ≤30, tekillik 409 — canlı) |
+| PUT | `/api/v1/class-rooms/{id}/status` | `class-rooms.update` | Durum geçişi Active ⇄ Draft (canlı) |
+| GET | `/api/v1/class-rooms/export?sessionId=&format=xlsx\|csv` | `class-rooms.view` | Şube listesi dışa aktarma — dosya döner (canlı) |
 
 > Not (2026-06-10): canlı uçlar `/api/v1/class-rooms` altında AcademicSessions
 > modülünde yaşıyor; derslik kataloğu için bkz. `modules/timetable/api-contracts.md`

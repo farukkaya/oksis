@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `████▓░░░░░` %45   ·   Status: in-progress   ·   Güncel: 2026-06-10
+**İlerleme:** `██████░░░░` %60   ·   Status: in-progress   ·   Güncel: 2026-06-10
 
 > Temel: Web admin dashboard ekranı (design handoff classes_v2) 1:1 aktarıldı ve
 > gerçek `class-rooms` uçlarına bağlandı. Backend CQRS tarafı AcademicSessions
@@ -34,24 +34,38 @@
   + `PUT/DELETE /class-rooms/{id}/room` + rooms kataloğu (timetable modülünde).
   Web'de derslik D rozetleri kalktı; liste/detay DTO'ları RoomCode taşıyor.
   Bkz. timetable `completion_status.md` (sapma kaydı orada).
+- **SIFIR BORÇ (2026-06-10, ikinci dalga):** Kalan 4 DEBT kalemi gerçek uçlara
+  taşındı; web DEBT katmanı (classroomsDebtApi/useClassroomDebt) ve tüm "D"
+  rozetleri kaldırıldı:
+  1. Şube adı: `ClassRoom.Rename` + `PUT /class-rooms/{id}/section`; Section
+     nvarchar(3)→30 + FullName 20→40 (migration `20260610_expand_class_room_
+     section_and_full_name`) — serbest ad ("Papatya") artık uçtan uca çalışıyor,
+     tek harf adlar uppercase'e normalize edilir.
+  2. Durum: `MoveToDraft` + `Approve(Draft kabul)` + `PUT /class-rooms/{id}/status`
+     (Aktif ⇄ Taslak iki yönlü).
+  3. Cinsiyet: `ClassRoomDto.GirlsCount/BoysCount` (aktif atamalar × Person.Gender,
+     tek grup sorgusu; erkek = mevcut - kız).
+  4. Export: `GET /class-rooms/export?sessionId=&format=xlsx|csv`
+     (IExcelExporter + UTF-8 BOM ';' CSV); web blob indirme.
+- **Okul türü ↔ kademe uyumu (2026-06-10 fix):** Seviye kaynağı master katalog
+  yerine `GET /school-settings/grade-levels` (isActive) — "şube oluştururken
+  yalnızca buradaki kademeler listelenir" sözleşmesi. Ağaç arama yokken okulun
+  açık TÜM kademelerini şubesiz de gösterir (boş seviye = yalnız "Şube ekle"
+  kartı); Ortaokul+Lise okulda boş Ortaokul artık görünür. Not: uç
+  `school-settings.view` ister (SchoolAdmin'de var; Secretary için ⚙).
+- **Profil senkronu (2026-06-10):** assign/transfer/remove handler'ları artık
+  `StudentProfile.CurrentClassroomId`'yi aynı transaction'da günceller — roster
+  ve bekleyen havuz atama sonrası tutarlı (önceden sadece UpdateProfile yazıyordu).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Backend: `Modules/Classes` kendi slice'ı boş — ClassRoom CQRS'i AcademicSessions
   modülünde yaşıyor (isimlendirme/`Branch` kararı: bkz. open-questions).
-- **DEBT listesi (UI'da "D" rozeti + mock fallback, uç açılınca tek dosyadan gerçeğe döner):**
-  1. Şube adı (Section) düzenleme — hedef uç `PUT /class-rooms/{id}/section`.
-     ⚠️ Section kolonu nvarchar(3) — serbest ad ("Papatya") için migration gerekecek.
-  2. Durum geçişi Aktif→Taslak — approve tek yönlü; hedef uç `PUT /class-rooms/{id}/status`.
-  3. Cinsiyet dağılımı (kart K/E etiketi + detay bar) — hedef uç
-     `GET /class-rooms/{id}/gender-split`; veri mevcut (Person.Gender), öneri:
-     ClassRoomDto'ya GirlsCount/BoysCount. Şimdilik deterministik mock.
-  4. Dışa aktarma (xlsx/csv/pdf) — hedef uç `POST /class-rooms/export`
-     (ExportPersons CSV pattern'i kopyalanabilir).
-  ~~5. Derslik~~ — 2026-06-10 rooms-first dilimiyle kapatıldı (gerçek uç).
-- **Soft/hard karar bekleyenler (2026-06-10 borç analizi):** kapasite aşımı
-  (AssignStudent hard 409 ↔ spec soft), kapasiteyi mevcudun altına çekme (hard),
-  çoklu şube rehberliği (SetHomeroom hard 409 ↔ ihtiyaç analizi §9 soft).
+- **DEBT listesi: BOŞ** — 2026-06-10 itibarıyla ekranın tüm aksiyonları gerçek
+  uçlara bağlı (yukarıdaki "SIFIR BORÇ" kaydı). Tek kalan kapsam dışı: PDF export
+  (yeni kütüphane onayı gerekir — aşağıdaki sapma kaydı).
+- ~~Soft/hard karar bekleyenler~~ — 2026-06-10'da üçü de SOFT'a çekildi
+  (aşağıdaki sapma/karar kaydı).
 - Roster/bekleyen havuz `GET /users/persons?profileType=Student` (ilk 200 kayıt,
   client-side filtre) üzerinden — şube-bazlı server filtresi gelince adaptör güncellenir.
 - Sihirbaz Mod A (toplu sezon kurulum/devir) — academic-years modülünde; bu ekran
@@ -70,3 +84,18 @@
   Etki: UX iyileşmesi, görsel dil aynı.
 - 2026-06-10 · Rehber arama satırının alt metni "branş" yerine e-posta — öğretmen
   branş alanı backend'de yok (teachers modülü Phase B). Branş gelince değişecek.
+  (Düzeltme 2026-06-10 borç analizi: `PersonListItemDto.Branch` aslında DOLU —
+  web tarafında branşa geçiş küçük bir iyileştirme olarak bekliyor.)
+- 2026-06-10 · **SOFT kararları (kullanıcı onayı):** üç hard kural soft'a çekildi —
+  (1) kapasite aşımı atamayı engellemez (`AssignStudent` Capacity.Exceeded kaldırıldı,
+  Transfer ile tutarlı; İA §9/bulgu #6), (2) kapasite mevcudun altına düşürülebilir
+  (`UpdateCapacity` BelowActive kaldırıldı), (3) bir öğretmen birden çok şubeye
+  rehber atanabilir (`SetHomeroom` teacher-already-homeroom 409 kaldırıldı; İA §9).
+  Etki: UI soft uyarı metinleri artık davranışla birebir uyumlu.
+- 2026-06-10 · **PDF export kapsam dışı:** handoff modalındaki üçüncü biçim (pdf)
+  yeni kütüphane (örn. QuestPDF) onayı gerektirdiğinden xlsx+csv ile teslim edildi;
+  modaldan pdf seçeneği ve "kapsam" segmenti (tüm/filtreli/kademe — export her zaman
+  sezonun tamamı) çıkarıldı. Onay: kullanıcı talimatı kapsamında teknik karar.
+- 2026-06-10 · Tek harfli şube adları uppercase'e normalize edilir; çok karakterli
+  serbest adlarda büyük/küçük harf korunur (önceki ToUpperInvariant "PAPATYA"
+  üretirdi — bulgu #4 ile çelişirdi). Tekillik DB collation'da case-insensitive.
