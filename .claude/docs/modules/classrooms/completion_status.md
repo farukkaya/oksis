@@ -4,26 +4,59 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `░░░░░░░░░░` %0   ·   Status: planning   ·   Güncel: 2026-05-28
+**İlerleme:** `████░░░░░░` %40   ·   Status: in-progress   ·   Güncel: 2026-06-10
 
-> Temel: Yalnızca doküman iskeleti var; içerik henüz `{{TBD}}` (≈106 placeholder).
-> Backend `Application/Modules` boş (0 cs), web/mobil ekran yok.
-> Not: derslik (ClassRoom) görünümü academic-sessions web ekranlarında kısmen var; bu modülün
-> kendi CQRS kapsamı henüz açılmadı.
+> Temel: Web admin dashboard ekranı (design handoff classes_v2) 1:1 aktarıldı ve
+> gerçek `class-rooms` uçlarına bağlandı. Backend CQRS tarafı AcademicSessions
+> modülü içinde yaşıyor (ClassRoomsController); bu modülün kendi Application
+> slice'ı hâlâ boş. Mobil ekran yok. Doküman iskeletinin ui-flows kısmı dolduruldu.
 
 ---
 
 ## ✅ Tamamlanan Yapılar
 
-- 9 dosyalık doküman iskeleti oluşturuldu (içerik doldurulmadı).
+- 9 dosyalık doküman iskeleti + `ui-flows.md` içeriği (dashboard akışı) dolduruldu.
+- **Web: `/admin/classrooms` Sınıflar & Şubeler dashboard'u** (2026-06-10,
+  design handoff `design_handoff_classes_screen` 1:1 aktarım):
+  - Üç katmanlı master–detail: üst bağlam barı (sezon seçici + özet sayaçlar +
+    Şube Ekle split + Sihirbazı Başlat) · Kademe→Seviye→Şube ağacı · detay paneli.
+  - Arşiv sezon salt-okunur modu (banner'lar, disabled inputlar, soluk kartlar).
+  - Doluluk imza sistemi (renk tonları + >%100 çizgili taşma) ve soft kapasite.
+  - Modallar: tekil şube, toplu açma (ardışık create), rehber ata, öğrenci ata
+    (bekleyen havuz), öğrenci taşı, derslik ata (DEBT), dışa aktar (DEBT).
+  - Gerçek uçlar: GET/POST /class-rooms, PUT capacity, PUT/DELETE homeroom,
+    POST approve/archive/students/transfer, GET /academic-sessions,
+    GET /academics/grade-levels, GET /users/persons (Teacher/Student).
+  - i18n `classrooms` namespace (tr kaynak + en), sidebar girişi, route gate
+    (`class-rooms.view`), 13 vitest (lib + SeasonSwitcher + SectionTile), tüm
+    suite 581 yeşil.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- Doküman içeriği (≈106 `{{TBD}}` alanı) — spec doldurulmadı.
-- Backend: Domain entity + CQRS handler + endpoint (yok).
-- Web: bağımsız sınıf/şube yönetim ekranları (yok).
-- Mobile: ekran (yok).
+- Backend: `Modules/Classes` kendi slice'ı boş — ClassRoom CQRS'i AcademicSessions
+  modülünde yaşıyor (isimlendirme/`Branch` kararı: bkz. open-questions).
+- **DEBT listesi (UI'da "D" rozeti + mock fallback, uç açılınca tek dosyadan gerçeğe döner):**
+  1. Şube adı (Section) düzenleme — hedef uç `PUT /class-rooms/{id}/section`.
+  2. Durum geçişi Aktif→Taslak — approve tek yönlü; hedef uç `PUT /class-rooms/{id}/status`.
+  3. Cinsiyet dağılımı (kart K/E etiketi + detay bar) — hedef uç
+     `GET /class-rooms/{id}/gender-split`; şimdilik deterministik mock.
+  4. Derslik (rooms) — modül Sprint 2 (timetable kapsamı); katalog + atama mock.
+  5. Dışa aktarma (xlsx/csv/pdf) — hedef uç `POST /class-rooms/export`.
+- Roster/bekleyen havuz `GET /users/persons?profileType=Student` (ilk 200 kayıt,
+  client-side filtre) üzerinden — şube-bazlı server filtresi gelince adaptör güncellenir.
+- Sihirbaz Mod A (toplu sezon kurulum/devir) — academic-years modülünde; bu ekran
+  yalnızca yönlendirir.
+- Mobil ekran yok (admin-only, kapsam dışı olabilir — netleşmedi).
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
-- Henüz kayıt yok.
+- 2026-06-10 · Handoff'taki sabit varsayılan seçim ("9-A", id 17 prototip verisi)
+  yerine listedeki ilk şube otomatik seçiliyor — prototip artefaktı, gerçek veride
+  sabit id yok. Onay: kullanıcı talimatı "backend karşılığı olmayanı borçla aktar".
+  Etki: yok (davranış eşdeğer).
+- 2026-06-10 · "Öğrenci Ata/Dağıt" akışı prototipte MoveStudentModal'ı ilk roster
+  öğrencisiyle açıyordu; gerçek akışta bekleyen havuzdan seçim yapan ayrı
+  `AssignStudentModal` kullanıldı (FR-06 ile uyumlu, prototip kısayolu yerine).
+  Etki: UX iyileşmesi, görsel dil aynı.
+- 2026-06-10 · Rehber arama satırının alt metni "branş" yerine e-posta — öğretmen
+  branş alanı backend'de yok (teachers modülü Phase B). Branş gelince değişecek.

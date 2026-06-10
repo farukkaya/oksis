@@ -63,11 +63,11 @@ Bu modül hangi modüllerle konuşur?
 ## Metadata
 
 - **Slug:** classrooms
-- **Status:** planning
+- **Status:** in-progress (web dashboard teslim edildi — bkz. completion_status.md)
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-05-24
+- **Last Updated:** 2026-06-10
 - **Files:**
   - [x] README.md
   - [x] domain-model.md (iskelet)
@@ -75,7 +75,7 @@ Bu modül hangi modüllerle konuşur?
   - [x] database-schema.md
   - [x] permissions.md (iskelet)
   - [x] notifications.md (iskelet)
-  - [x] ui-flows.md (iskelet)
+  - [x] ui-flows.md (dolduruldu — admin dashboard akışı)
   - [x] business-rules.md (iskelet)
   - [x] open-questions.md (iskelet)
   - [x] completion_status.md
