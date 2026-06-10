@@ -30,12 +30,70 @@
 | PUT | `/api/v1/season-drafts/current` | `academic-sessions.create` ⚠️ | Taslağı upsert ("Taslağı Kaydet") |
 | DELETE | `/api/v1/season-drafts/current` | `academic-sessions.create` ⚠️ | Taslağı sil (Vazgeç) |
 | GET | `/api/v1/academic-sessions/{sourceId}/rollover-preview` | `academic-sessions.create` ⚠️ | Terfi haritası önizleme (salt-okunur) |
-| POST | `/api/v1/academic-sessions/open-from-draft` | `academic-sessions.create` | Sezonu Aç → Setup sezon + dönemler + boş şubeler |
-| POST | `/api/v1/academic-sessions/{id}/activate-rollover` | `academic-sessions.activate` | Aktifleştir → aktivasyon + terfi + görevlendirme kopyası (tek transaction) |
+| POST | `/api/v1/academic-sessions/open-from-draft` | `academic-sessions.create` | Sezonu Aç → Setup sezon + dönemler + boş şubeler; **taslağı silmez**, `OpenedSessionId` ile bağlar |
+| POST | `/api/v1/academic-sessions/{id}/activate-rollover` | `academic-sessions.activate` | Aktifleştir → aktivasyon + terfi + görevlendirme kopyası (tek transaction); bağlı taslağı siler |
 | POST | `/api/v1/academic-sessions/{id}/promote-students` | `students.promote` | §4.9 bağımsız (re-run); building-block |
 | POST | `/api/v1/academic-sessions/{id}/copy-assignments?sourceSessionId=` | `teaching-assignments.assign` | §5.9 bağımsız (re-run); building-block |
+| POST | `/api/v1/academic-sessions/{id}/reopen-to-draft` | `academic-sessions.create` | Setup sezonu sihirbaza geri al — şubeler + tatiller + sezon soft-delete, taslak bağı temizlenir; 200 → `{ "draftId": "..." }` |
+| POST | `/api/v1/academic-sessions/{id}/cancel-setup` | `academic-sessions.create` | Setup sezonu tamamen iptal et — reopen ile aynı geri alma + taslak da silinir; 204 |
 
 > ⚠️ **İzin sapması (onaylı):** Tasarımda `academic-sessions.manage` öngörülmüştü ama seed'de yok; taslak/önizleme uçları mevcut `academic-sessions.create` ile gate edildi. `students.promote` yeni eklendi (seed+migration). `teachers.assign` yerine mevcut `teaching-assignments.assign` kullanıldı. Bkz. `completion_status.md` → Spec Dışına Çıkılanlar.
+
+#### `open-from-draft` davranış değişikliği (2026-06-10)
+
+`POST /api/v1/academic-sessions/open-from-draft` artık taslağı **silmez**; `SeasonDraft.MarkOpened(session.Id)` çağrısı ile `OpenedSessionId` alanı doldurulur ve taslak yaşamaya devam eder. Taslak, bağlı Setup sezonu `activate-rollover` ile aktifleştirildiğinde silinir (yaşam döngüsü sonu).
+
+Bağlı taslak varken yeni bir `open-from-draft` denemesi **409** → `academic-sessions.errors.draft-already-opened` hatası verir.
+
+#### `GET /api/v1/season-drafts/current` — yeni alan (2026-06-10)
+
+| Alan | Tip | Açıklama |
+|---|---|---|
+| `openedSessionId` | `Guid?` | Taslağın bağlandığı Setup sezonunun Id'si. `null` ise taslak henüz "Sezonu Aç" ile materyalize edilmemiş. Dolu ise sihirbaz geri-alınabilir durumda (bağlı sezon `Setup` statüsünde). |
+
+> Frontend: `openedSessionId` dolu taslaklar Sezon Listesi'nde "devam eden taslak" kartı olarak gösterilmez; bağlı Setup sezonunun kartına eklenir.
+
+#### `POST /api/v1/academic-sessions/{id}/reopen-to-draft` — Sezonu Sihirbaza Geri Al (2026-06-10)
+
+**Permission:** `academic-sessions.create`
+
+**Koşul:** `{id}` sezonunun `Status = Setup` ve bağlı bir `SeasonDraft.OpenedSessionId` olması gerekir.
+
+**Davranış:** Ortak `SetupSeasonReverter` yardımcısı ile:
+1. Setup sezona ait tüm boş şubeler soft-delete.
+2. Sezona bağlı tatiller soft-delete.
+3. Setup sezonu soft-delete.
+4. `SeasonDraft.ClearOpenedSession()` — taslak bağı temizlenir, taslak yaşamaya devam eder.
+
+**Guard:** Setup şubelerinde öğrenci ataması veya görevlendirme varsa işlem reddedilir → 409 `reopen-has-data`.
+
+**Response 200:**
+```json
+{
+  "data": { "draftId": "01ARZ3..." },
+  "errors": null
+}
+```
+
+**Errors:**
+- 404 — sezon bulunamadı
+- 409 / `academic-sessions.errors.not-setup` — sezon `Setup` değil
+- 409 / `academic-sessions.errors.reopen-mismatch` — sezona bağlı geçerli taslak yok
+- 409 / `academic-sessions.errors.reopen-has-data` — şubelerde öğrenci ya da görevlendirme mevcut
+
+---
+
+#### `POST /api/v1/academic-sessions/{id}/cancel-setup` — Setup Sezonu İptal Et (2026-06-10)
+
+**Permission:** `academic-sessions.create`
+
+**Davranış:** `reopen-to-draft` ile aynı `SetupSeasonReverter` adımlarını uygular; ek olarak bağlı `SeasonDraft`'ı da soft-delete eder (tam iptal).
+
+**Response 204:** Body yok.
+
+**Errors:** `reopen-to-draft` ile aynı (`not-setup`, `reopen-mismatch`, `reopen-has-data`).
+
+---
 
 #### `rollover-preview` yanıt özeti (`summary`)
 

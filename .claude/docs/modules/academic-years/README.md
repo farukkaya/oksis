@@ -135,7 +135,7 @@ Karar kullanıcıya bırakılmıştır.
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-05-25
+- **Last Updated:** 2026-06-10
 - **Files:**
   - [x] README.md
   - [x] domain-model.md

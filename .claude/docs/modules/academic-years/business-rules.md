@@ -275,12 +275,44 @@
 
 ---
 
+### BR-AS-015 ⭐: SeasonDraft yaşam döngüsü ve Setup sezonu geri alma
+
+**Kural:** `SeasonDraft` (sihirbaz taslağı) "Sezonu Aç" işleminde **silinmez**; `OpenedSessionId` alanıyla oluşturulan Setup sezona bağlanır. Taslağın nihai silinmesi yalnızca iki koşulda gerçekleşir:
+
+1. **Aktivasyon:** `activate-rollover` tamamlandığında bağlı taslak silinir — taslak yaşam döngüsü burada biter.
+2. **İptal (cancel-setup):** İdare Setup sezonu tamamen iptal ederse taslak da silinir.
+
+**Setup sezonu geri alma (reopen-to-draft):**
+- Setup statüsündeki bir sezon, şubelerine veri (öğrenci ataması ya da görevlendirme) eklenmemişken sihirbaza geri alınabilir.
+- Geri alma işlemi: Setup şubeleri + sezona bağlı tatiller + sezon soft-delete; bağlı taslaktan `OpenedSessionId` temizlenir; taslak üzerinden sihirbaz devam edilebilir.
+- Şubelerde veri varsa geri alma reddedilir (`reopen-has-data`).
+
+**Hazır (Setup) sezon varken yeni taslak kısıtlaması:**
+- Bir tenant'ta bağlı Setup sezonu bulunan taslak (`OpenedSessionId != null`) mevcutsa `open-from-draft` çağrısı reddedilir (`draft-already-opened`).
+- UI: "Hazır" (Setup) sezon varken "Yeni Sezon Aç" bir bilgi modalıyla bloklanır; kullanıcı önce mevcut Setup sezonu aktifleştirmeli ya da iptal etmelidir.
+
+**Akademik Takvim — taslak rozeti:**
+- `openedSessionId` dolu taslaklar (bağlı Setup sezonu var) Akademik Takvim ekranında "Taslak" rozeti olarak gösterilmez; bağlı oldukları Setup sezon kartına eklenir.
+
+**Gerekçe:** Taslak → Sezonu Aç → (değişiklik) → geri al → Sezonu Aç döngüsünün taslağı kaybetmeden güvenle dönülmesini sağlar. "Sil" butonuna basınca Setup + taslak birlikte gider (`cancel-setup`); "Düzenle" ile sadece Setup geri alınır.
+
+**Uygulama:**
+- Backend: `SeasonDraft.OpenedSessionId` (nullable Guid); `MarkOpened(Guid)` + `ClearOpenedSession()` domain metotları; migration `20260610_SeasonDraftOpenedSessionId`.
+- `SetupSeasonReverter` internal helper — hem `ReopenToDraft` hem `CancelSetup` handler'larınca paylaşılır.
+- Frontend: `useSeasonDraftQuery` → `openedSessionId` dolu taslak "devam eden taslak" kartında gösterilmez; Setup kart üzerinde Düzenle + Sil aksiyonları açılır.
+
+**Test referansı:** `ReopenToDraftTests`, `CancelSetupTests`
+
+---
+
 ## Sınır Durumlar
 
 | Senaryo | Beklenen Davranış |
 |---|---|
 | Okul yeni kuruldu, hiç sezon yok | "Yeni Sezon Başlat" butonu ana ekranda büyük CTA olarak görünür |
-| Sezon `Setup`'tayken admin başka bir `Setup` sezon açmaya çalışır | İzin verilir (çoklu setup OK). Sadece tek `IsCurrent = true` kuralı geçerli |
+| Sezon `Setup`'tayken admin başka bir `Setup` sezon açmaya çalışır | İzin verilir (çoklu setup OK). Sadece tek `IsCurrent = true` kuralı geçerli. **Ancak** bağlı taslağı olan bir Setup sezon varken `open-from-draft` reddedilir (`draft-already-opened`) — bkz. BR-AS-015. |
+| Admin Setup sezonu düzenlemek ister | `reopen-to-draft` ile sihirbaza geri alınır (şubelerde veri yoksa); ardından sihirbaz devam edilir |
+| Admin Setup sezonu tamamen iptal etmek ister | `cancel-setup` — Setup sezon + bağlı taslak birlikte soft-delete |
 | Aktif sezonda admin tarihleri değiştirmeye çalışır | Reddedilir (`Setup` değil); `UpdateDatesNotAllowedInActiveStatusException` |
 | Şube oluşturulurken aynı isim çakışması (`9-A` var) | `DuplicateClassRoomSectionException` → 409 Conflict |
 | Öğrenci aktif değil ama şubeye atanmaya çalışılıyor | `Student.Status` check; `Active` değilse reddedilir |
@@ -299,5 +331,6 @@
 | 2026-05-25 | BR-AS-007, 008, 009 parametrik kararlar eklendi | Müşteri açık soru cevapları: veri saklama, şube onayı, karne otomatik üretim |
 | 2026-05-25 | `ClassRoom.AcademicTermId` kaldırıldı, sadece `AcademicSessionId` | "Tam yıl şube" pratiği — dönem-bağlı olanlar notlar/devamsızlık |
 | 2026-05-25 | `ClassRoom`, `ClassRoomStudent`, `SchoolHoliday` bu modüle dahil edildi | Domain bütünlüğü: şubesiz sezon, sezonsuz şube anlamsız |
+| 2026-06-10 | BR-AS-015 eklendi — `SeasonDraft` yaşam döngüsü + `reopen-to-draft` + `cancel-setup` | Setup sezonu geri alma ve tam iptal akışları netleştirildi |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.
