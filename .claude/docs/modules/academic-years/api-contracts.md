@@ -34,7 +34,7 @@
 | POST | `/api/v1/academic-sessions/{id}/activate-rollover` | `academic-sessions.activate` | Aktifleştir → aktivasyon + terfi + görevlendirme kopyası (tek transaction); bağlı taslağı siler |
 | POST | `/api/v1/academic-sessions/{id}/promote-students` | `students.promote` | §4.9 bağımsız (re-run); building-block |
 | POST | `/api/v1/academic-sessions/{id}/copy-assignments?sourceSessionId=` | `teaching-assignments.assign` | §5.9 bağımsız (re-run); building-block |
-| POST | `/api/v1/academic-sessions/{id}/reopen-to-draft` | `academic-sessions.create` | Setup sezonu sihirbaza geri al — şubeler + tatiller + sezon soft-delete, taslak bağı temizlenir; 200 → `{ "draftId": "..." }` |
+| POST | `/api/v1/academic-sessions/{id}/reopen-to-draft` | `academic-sessions.create` | Setup sezonu sihirbaza geri al — şubeler + tatiller + sezon soft-delete, taslak bağı temizlenir; 200 → taslak Id (data) |
 | POST | `/api/v1/academic-sessions/{id}/cancel-setup` | `academic-sessions.create` | Setup sezonu tamamen iptal et — reopen ile aynı geri alma + taslak da silinir; 204 |
 
 > ⚠️ **İzin sapması (onaylı):** Tasarımda `academic-sessions.manage` öngörülmüştü ama seed'de yok; taslak/önizleme uçları mevcut `academic-sessions.create` ile gate edildi. `students.promote` yeni eklendi (seed+migration). `teachers.assign` yerine mevcut `teaching-assignments.assign` kullanıldı. Bkz. `completion_status.md` → Spec Dışına Çıkılanlar.
@@ -70,8 +70,10 @@ Bağlı taslak varken yeni bir `open-from-draft` denemesi **409** → `academic-
 **Response 200:**
 ```json
 {
-  "data": { "draftId": "01ARZ3..." },
-  "errors": null
+  "data": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "meta": null,
+  "errors": null,
+  "correlationId": "01ARZ3..."
 }
 ```
 
