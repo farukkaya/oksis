@@ -63,11 +63,11 @@ Bu modül hangi modüllerle konuşur?
 ## Metadata
 
 - **Slug:** subjects
-- **Status:** planning
+- **Status:** frontend-first (web ekranı live, backend Debt)
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-05-24
+- **Last Updated:** 2026-06-11
 - **Files:**
   - [x] README.md
   - [x] domain-model.md (iskelet)
