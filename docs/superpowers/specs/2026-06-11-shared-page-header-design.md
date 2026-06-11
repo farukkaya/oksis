@@ -3,7 +3,23 @@
 **Tarih:** 2026-06-11
 **Repo:** `oksis-web`
 **Branch:** `shcool-settings`
-**Durum:** Onaylandı (tasarım) — implementasyon planına hazır
+**Durum:** Uygulandı + master'a merge edildi (`8c44e88`) — aşağıdaki **Revizyon** notunu oku.
+
+> ## ⚠️ Revizyon (2026-06-11, uygulama sırasında)
+> Bu spec başta görünümü **`.stu .page-head`'e (Öğrenciler düz başlığı: 27px, zeminsiz)
+> birebir** sabitliyordu. Uygulamadan sonra kullanıcı bunun referans görsele (Sınıflar
+> "üst bağlam **barı**") uymadığını belirtti. Gerçek hedef **`.clx-top` BAR**'ıydı:
+> tam-genişlik (full-bleed), dolu zemin (`--card`), alt çizgi, 13px/24px padding, **21px**
+> başlık, dikey ortalı. `page-header.css` bu bar'a göre yeniden yazıldı ve bar full-bleed
+> olması için `<PageHeader>` padding'li iç sarmalayıcının dışına, sayfa kök container'ının
+> doğrudan çocuğu olacak şekilde taşındı. Ayrıca bar **sticky** yapıldı; `.stu`'daki
+> `overflow-y:auto` araya girip sticky'yi kırdığı için kaldırıldı (gerçek scroll container
+> `.oksis-shell .content`). Aşağıdaki "CSS değerleri" ve "byte-identical" ifadeleri bu
+> revizyonla **geçersiz** — güncel değerler: bar zemini `--card`, alt çizgi `--line`,
+> padding 13/24, h1 21px/800/-0.025em/lh1.1, breadcrumb mb 4px, `position:sticky;top:0`.
+> Rollout 9 ekrana genişletildi (Öğrenciler/Öğretmenler/Kullanıcılar/Veliler +
+> Gösterge Paneli/Roller/Ayarlar/Akademik Takvim/Sezon Yönetimi). Sınıflar kaynak olarak
+> bırakıldı; `app/layouts/PageHeader.tsx` ~20 legacy tüketicisi olduğu için silinmedi.
 
 ## Amaç
 
