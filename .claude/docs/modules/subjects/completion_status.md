@@ -24,6 +24,7 @@
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
+- **Ders silme:** tasarım gereği her zaman disabled (pasife-al öncelikli); gerçek hard-delete yok (zaten hard-delete yasağı var).
 - **Backend (Debt):** `Subject` + `Branch` domain entity, CQRS handler, endpoint — yok. Tüm veri mock.
 - **İzinler (Debt):** `subjects.*` izinleri yok; `/admin/subjects` geçici olarak `class-rooms.view` ile gate'li (timetable rooms-first precedent'i gibi).
 - **Doküman içeriği:** domain-model / api-contracts / database-schema / business-rules / permissions hâlâ `{{TBD}}` — teknik analizden doldurulacak (veri modeli: branslar/dersler/ders_seviye/ogretmen_brans/gorevlendirmeler).
@@ -36,3 +37,4 @@
 - **2026-06-11** — Tasarım brief'indeki **sınıf-merkezli "Görevlendirmeler" ekranı yapılmadı.** Bağlayıcı spec `oksis-admin-ekranlari-mimari-spec.md` §5.7 görevlendirmeyi (`TeachingAssignment`) **öğretmen-merkezli** ve Öğretmen detayında konumlandırıyor; brief'in ayrı sınıf-merkezli düzenleme ekranı bu sahiplik sınırıyla çelişiyordu. **Karar:** spec'e sadık kalındı; Görevlendirmeler menüde "Yakında" pasif. **Onay:** kullanıcı. **Etki:** bu round yalnız Dersler & Branşlar; görevlendirme ileride Öğretmen detayında ele alınır.
 - **2026-06-11** — Ekran **frontend-first** teslim edildi (Frontend-First Debt deseni): görünüm tasarıma birebir, backend borçlu. **Etki:** veri kalıcı değil (oturum-ömürlü mock); izin gate'i geçici `class-rooms.view`.
 - **2026-06-11** — Branş varlığı kod adı **`Branch`** olarak belirlendi (UI "Branş"); ders **`Subject`**. Branş şimdilik subjects modülünde belgelenir (Öğretmenler tüketici).
+- **2026-06-11** — CourseDrawer/BranchModal form state RHF yerine local useState (web kuralı #3 RHF önerir); handoff'a sadık imperatif "Kaydet ve Yeni Ekle" reset davranışı + FE-first hız için bilinçli. Borç: ileride RHF+zod'a taşınabilir.
