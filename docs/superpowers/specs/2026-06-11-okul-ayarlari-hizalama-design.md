@@ -12,6 +12,7 @@ Claude Design'ın ürettiği **Yönetim portalı → Sistem › Ayarlar** ekran�
 
 1. **Akademik Politikalar veri sahipliği:** Tüm politika alanları **school-settings'te, şimdi**. marks/attendance/report-cards bu değerleri school-settings'ten okur. Q7 (sınav ağırlığı) ve Q8 (harfli skala) erteleme kararları **iptal**.
 2. **Ders Kataloğu:** Master `Subject` salt-okunur kalır; yeni **okul × ders override** junction tablosu haftalık saat + aktif/pasif tutar. "Yeni Ders" = katalogdan master'dan ekleme.
+3. **Frontend-first / Debt ilkesi (2026-06-11, faruk — TÜM planları yönetir):** FrontEnd tasarımı **birebir aktarılır**; backend **borçlu kalabilir**. Yeni tablo/entity gerektiren backend işi **ertelenir** ve frontend'de **`(Debt)`** rozeti + `// DEBT:` yorumu ile işaretlenir (veri frontend fixture'dan beslenir). Mali "borç" (debt-badge.css = öğrenci ödeme borcu) ile karıştırma. Her debt ilgili modülün `completion_status.md`'sine yazılır. → Bu, spec'teki "Dilim B/C backend remodel" işlerini *frontend exact + backend debt* önceliğine kaydırır; saf-additive (yeni tablo gerektirmeyen) backend işleri yine yapılabilir.
 
 ## Mevcut durum (doğrulanmış)
 
