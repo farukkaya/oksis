@@ -56,7 +56,7 @@ Stack: MediatR, FluentValidation, Mapster (not AutoMapper), Hangfire (SQL Server
 
 ### oksis-web
 
-Working dir: `oksis-web/`. **Note:** `package.json` started life as a Figma Make import scaffold (`@figma/my-make-file`, Radix + MUI) and the migration to the spec stack is **in progress**. The design system is **shadcn/ui** (Radix primitives under `src/app/components/ui/*` + Tailwind); MUI is legacy scaffold being phased out. Already installed: TanStack React Query, Zustand, RHF + Zod, axios, i18next, dayjs. Spec target (per `.claude/docs/frontend/*`): **shadcn/ui (Radix) + Tailwind + React Query + Zustand + RHF/Zod + Axios**. Lists use a shared `DataTable` wrapper over shadcn `Table` (no separate grid library). When touching pages that still use MUI, confirm with the user before rewriting vs. extending.
+Working dir: `oksis-web/`. **Note:** `package.json` started life as a Figma Make import scaffold (`@figma/my-make-file`, Radix + MUI) and the migration to the spec stack is **in progress**. The design system is **shadcn/ui** (Radix primitives under `src/app/components/ui/*` + Tailwind); the MUI + DevExtreme scaffold leftovers were removed (2026-06 — no MUI/grid-library imports remain). Already installed: TanStack React Query, Zustand, RHF + Zod, axios, i18next, dayjs. Spec target (per `.claude/docs/frontend/*`): **shadcn/ui (Radix) + Tailwind + React Query + Zustand + RHF/Zod + Axios**. Lists use a shared `DataTable` wrapper over shadcn `Table` (no separate grid library).
 
 ```bash
 npm run dev          # vite dev server
