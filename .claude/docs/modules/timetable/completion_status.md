@@ -4,16 +4,18 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓░░░░░` %55   ·   Status: in-progress   ·   Güncel: 2026-06-12
+**İlerleme:** `▓▓▓▓▓▓░░░░` %62   ·   Status: in-progress   ·   Güncel: 2026-06-12
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
 > bazlı dikey dilim, **tam teknik-analiz modeli** (ScheduleProgram aggregate +
 > Period + filtreli unique index). **Faz 1A (backend çekirdek) tamamlandı**
-> (branch `feature/ders-programi-faz1a`): domain + EF persistence + filtreli
-> unique index + occupancy (Redis) + editör komut/sorguları + Hub sorguları +
-> `SchedulingController`. Tüm testler yeşil. Kalan Faz 1: web ekranları (`schedule.jsx`,
-> `schedule_editor.jsx`).
+> (PR #23, master'a merge): domain + EF persistence + filtreli unique index +
+> occupancy (Redis) + editör komut/sorguları + Hub sorguları + `SchedulingController`.
+> **Faz 1B-1 (Admin Hub web) tamamlandı** (branch `feature/ders-programi-faz1b-hub`):
+> `ScheduleHubPage` gerçek API'ye bağlı (sınıf listesi + durum + yerleşim sayısı,
+> URL search-param filtre, dört durum varyantı, Yeni Program → create → editör seam).
+> Tüm testler yeşil. Kalan Faz 1: `schedule_editor.jsx` (sürükle-bırak editör, dnd-kit).
 
 ---
 
@@ -41,10 +43,23 @@
     ListClassPrograms, GetHubSummary.
   - **API:** `SchedulingController` → `/api/v1/timetable/*` (Hub + editör). İzin:
     `timetable.manage` / `timetable.view-all` (seed edildi — aşağıdaki sapma kaydı).
+- **Faz 1B-1 Admin Hub web (2026-06-12):**
+  - `src/portals/admin/timetable/` modülü (subjects/classrooms deseni): `ScheduleHubPage`
+    + types/keys/api (gerçek `/api/v1/timetable`) + `useHubData`/`useProgramMutations` +
+    `derive` (BranchId→sınıf join + filtre) + sunum bileşenleri + `timetable.css` (handoff port).
+  - **Gerçek API entegrasyonu:** program listesi/özeti timetable'dan; sınıf adı/kademe
+    classrooms `/class-rooms`'tan; aktif dönem academic-sessions `current()`'tan. Tüm
+    React Query key'leri tenant-scope'lu.
+  - **Hub:** sınıf merceği (durum + yerleşim sayısı), arama+kademe+durum filtreleri URL
+    search-param ile, dört durum varyantı (boş/yükleniyor-skeleton/hata/dolu), Yeni Program
+    modalı → CreateProgram → editör seam (`/admin/schedule/:id/edit` placeholder).
+  - **i18n:** `timetable` namespace (tr/en) eklendi ve kaydedildi.
+  - Faz 2/3 öğeleri (Yayınla, Otomatik Oluştur, Öğretmen/Derslik mercekleri) disabled + "Yakında".
+  - 14 vitest yeşil; `npm run build` temiz. Eski `ScheduleManagement.tsx` (Figma scaffold) kaldırıldı.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Web (Faz 1 kalan):** `schedule.jsx` (Admin Hub) + `schedule_editor.jsx` (sürükle-bırak editör).
+- **Web (Faz 1 kalan):** `schedule_editor.jsx` (sürükle-bırak editör, dnd-kit — sonraki oturum).
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
 - **Backend (sonraki fazlar):** Yayın/versiyon/snapshot (Faz 2), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
 - **Web:** Program kurma / yayınlama / görüntüleme ekranları.
@@ -94,3 +109,12 @@
   `ignoreProgramId` taşımıyor; aynı slot+öğretmen sabit kalıp yalnız derslik değişen AssignRoom'da
   öğretmen kendi rezervasyonunu görüp yanlış-pozitif verirdi. Handler önce mevcut rezervasyonu
   bırakıp kontrol eder, engelde geri koyar. Etki: doğruluk korunur; kaynak doğruluk yine DB.
+- 2026-06-12 · **Debt-FE-1 — Hub çakışma/eksik-saat rozetleri ertelendi:** Tasarım/spec §9.1
+  Hub'da çakışma + eksik-saat rozeti betimliyor; Faz 1A Hub DTO'ları (`ClassProgramListItemDto`,
+  `HubSummaryDto`) bunları sağlamıyor ("sonraki fazda zenginleştirilir"). Bağlayıcı kabul kriteri
+  §11 Hub için yalnız durum varyantı + URL filtre istiyor (rozetleri şart koşmuyor) → spec ihlali
+  yok. Faz 1B-1'de bu rozetler render edilmedi. Onay: kullanıcı (2026-06-12, "omit + Debt").
+  Kapanış: backend list-DTO zenginleştirme (Faz 2).
+- 2026-06-12 · **Debt-FE-2 — Hub sürüm/son-güncelleme/"kim" kolonları yok:** Tasarım bu kolonları
+  gösteriyor; DTO'da alan yok → omit. Onay: kullanıcı (2026-06-12). Kapanış: DTO + projection
+  zenginleştirme (Faz 2).
