@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓░░░` %70   ·   Status: in-progress   ·   Güncel: 2026-06-12
+**İlerleme:** `▓▓▓▓▓▓▓▓░░` %82   ·   Status: in-progress   ·   Güncel: 2026-06-12
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -13,9 +13,12 @@
 > (PR #23, master'a merge): domain + EF persistence + filtreli unique index +
 > occupancy (Redis) + editör komut/sorguları + Hub sorguları + `SchedulingController`.
 > **Faz 1B-1 (Admin Hub web) tamamlandı** (branch `feature/ders-programi-faz1b-hub`):
-> `ScheduleHubPage` gerçek API'ye bağlı (sınıf listesi + durum + yerleşim sayısı,
-> URL search-param filtre, dört durum varyantı, Yeni Program → create → editör seam).
-> Tüm testler yeşil. Kalan Faz 1: `schedule_editor.jsx` (sürükle-bırak editör, dnd-kit).
+> `ScheduleHubPage` gerçek API'ye bağlı. **Faz 1B-2a (editör çekirdeği)** ve
+> **Faz 1B-2b (editör zenginleştirme)** tamamlandı (branch
+> `feature/ders-programi-faz1b2b-editor`): hücre menüsü (öğretmen/derslik yeniden ata +
+> kaldır), blok ders (çoklu seçim + toolbar), canlı ön-kontrol (§6 sürüklerken
+> yeşil/kırmızı + sebep), Doğrula çubuğu + eksik-saat paneli ("Hücreye git" flash).
+> 679 vitest yeşil; `npm run build` temiz. **Faz 1 (Çekirdek + Hub + Editör) FE+BE tamam.**
 
 ---
 
@@ -70,11 +73,21 @@
     eşzamanlılık kodu → "yeniden yükle" bandı. (Kullanıcı kararı: hover anı canlı precheck YOK.)
   - i18n `editor.*` + `errors.*` (tr/en). Durum varyantları: yükleniyor (iskelet grid) / hata / boş / kaydediliyor / kaydedildi / çakışma / eşzamanlılık.
   - 14 yeni vitest (editorDerive 9 + sayfa 5); tam paket 665 test yeşil; `npm run build` temiz.
+- **Faz 1B-2b Admin Editör zenginleştirme web (2026-06-12):**
+  - **Hücre bağlam menüsü** (`CellMenu`, Radix Popover + portal): Öğretmen değiştir › / Derslik değiştir › /
+    Kaldır. `PUT .../placements/{pid}/teacher` + `.../room` (null = "Derslik yok"). 409 → hücre kırmızı flaş + sebep.
+  - **Blok ders** (çoklu seçim + toolbar "Blok modu" → hücre seç → "Blok oluştur"): `POST .../blocks`.
+    Blok render `deriveBlocks` (start/cont + "BLOK" etiketi). Ardışıklık/aynı-gün backend doğrular.
+  - **Canlı ön-kontrol** (§6 etkileşimli kademe): dnd-kit `onDragOver` → boş hücrede `POST .../precheck`
+    (`usePrecheck` + (slot,teacher,room) cache) → `drop-ok` yeşil / `drop-bad` kırmızı + sebep tooltip.
+  - **Doğrula çubuğu** (`ValidationBar` = `.sed-valbar`): durum pill'leri + legend + Doğrula toggle →
+    `.sed-issues` paneli (eksik-saat satırları + **"Hücreye git"** → hücreye scroll + accent flaş `flashTo`).
+  - Saf fonksiyonlar TDD: `deriveBlocks` / `deriveMissingCells` / `precheckKey`. i18n `editor.cellMenu/blockMode/validatePanel.*`
+    + gerçek backend hata kodları (`*-slot-occupied`, `block-*`, vb.). EditorFooter → ValidationBar.
+  - 5 yeni vitest (editorDerive 3 + sayfa 2); tam paket 679 test yeşil; `npm run build` temiz.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Web (Faz 1B-2b — editör zenginleştirme):** öğretmen/derslik yeniden ata (`PUT .../teacher|room`),
-  blok ders (`SetBlock`), eksik-saat raporu paneli, (istenirse) canlı hover precheck. Backend uçları hazır.
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
 - **Backend (sonraki fazlar):** Yayın/versiyon/snapshot (Faz 2), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
 - **Web:** Program kurma / yayınlama / görüntüleme ekranları.
@@ -141,3 +154,12 @@
 - 2026-06-12 · **Editör branş rengi/kodu yok (küçük):** Handoff hücrelerde branş rengi + kod
   gösteriyor; backend lookup'ı yalnız ad veriyor → editör hücreleri varsayılan accent kenarlık +
   ders adı kullanır. Etki: görsel; renk eşlemesi opsiyonel sonraki iş.
+- 2026-06-12 · **Debt-FE-4 — Eksik-saat hücre-bazlı, mandatory/optional ayrımı yok:** Tasarım eksik-saati
+  "zorunlu penceredeki (1-6) boş hücreler" sayıyor; backend `/unplaced` ise ders-bazlı kalan saat veriyor
+  (hücre hedefi yok → "Hücreye git" imkânsız). Kullanıcı kararı (2026-06-12, B): "Hücreye git" için tasarımın
+  hücre-bazlı modeli izlendi → eksik = bell ders periyotlarındaki boş hücreler (`deriveMissingCells`).
+  Mandatory/optional period ayrımı (1-6 vs 7-8) backend'de yok → Faz 1'de **tüm ders periyotları zorunlu**
+  sayıldı. Kademe/müfredat period config gelince incelt. Etki: tek-kademeli/dolu çizelgeli okullarda doğru.
+- 2026-06-12 · **Bloğu böl (split) backend'i yok → kapsam dışı:** Tasarım hücre menüsünde "Bloğu böl" var;
+  domain'de `ClearBlock`/unblock metodu yok (yalnız `SetBlock`). Kullanıcı kararı (2026-06-12, A): Faz 1'de
+  menüden çıkarıldı. Kapanış: domain `ClearBlock` + `POST .../blocks/split` (sonraki iş).
