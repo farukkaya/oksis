@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓░░░░` %62   ·   Status: in-progress   ·   Güncel: 2026-06-12
+**İlerleme:** `▓▓▓▓▓▓▓░░░` %70   ·   Status: in-progress   ·   Güncel: 2026-06-12
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -56,10 +56,25 @@
   - **i18n:** `timetable` namespace (tr/en) eklendi ve kaydedildi.
   - Faz 2/3 öğeleri (Yayınla, Otomatik Oluştur, Öğretmen/Derslik mercekleri) disabled + "Yakında".
   - 14 vitest yeşil; `npm run build` temiz. Eski `ScheduleManagement.tsx` (Figma scaffold) kaldırıldı.
+- **Faz 1B-2a Admin Editör çekirdeği web (2026-06-12):**
+  - `src/portals/admin/timetable/editor/` — `ScheduleEditorPage` (`/admin/schedule/:id/edit`,
+    placeholder yerine). `@dnd-kit/core` (kullanıcı onaylı) sürükle-bırak; DragOverlay deseni
+    (inline transform stili yok).
+  - **Veri (gerçek API):** `GET /programs/:id` (ProgramForEdit) + `/unplaced` (gerçek, görevlendirmeden)
+    + bell schedule (settings `useBellSchedules`, Lesson slot'ları = period grid) + isim lookup'ları
+    (subjects/teachers/rooms). Tenant-scope'lu key'ler.
+  - **Etkileşim:** yan panelden çip sürükle → boş hücreye **place** (POST); hücre→hücre **move** (PUT);
+    **remove** (DELETE); **Taslak Kaydet** (POST /draft). `editorDerive` saf fonksiyonları
+    (cellMap/resolveDrop/interpretConflict) TDD ile.
+  - **Çakışma = bırakınca doğrula:** drop → komut; 409 + i18n kod → hedef hücre kırmızı flaş + sebep;
+    eşzamanlılık kodu → "yeniden yükle" bandı. (Kullanıcı kararı: hover anı canlı precheck YOK.)
+  - i18n `editor.*` + `errors.*` (tr/en). Durum varyantları: yükleniyor (iskelet grid) / hata / boş / kaydediliyor / kaydedildi / çakışma / eşzamanlılık.
+  - 14 yeni vitest (editorDerive 9 + sayfa 5); tam paket 665 test yeşil; `npm run build` temiz.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Web (Faz 1 kalan):** `schedule_editor.jsx` (sürükle-bırak editör, dnd-kit — sonraki oturum).
+- **Web (Faz 1B-2b — editör zenginleştirme):** öğretmen/derslik yeniden ata (`PUT .../teacher|room`),
+  blok ders (`SetBlock`), eksik-saat raporu paneli, (istenirse) canlı hover precheck. Backend uçları hazır.
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
 - **Backend (sonraki fazlar):** Yayın/versiyon/snapshot (Faz 2), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
 - **Web:** Program kurma / yayınlama / görüntüleme ekranları.
@@ -118,3 +133,11 @@
 - 2026-06-12 · **Debt-FE-2 — Hub sürüm/son-güncelleme/"kim" kolonları yok:** Tasarım bu kolonları
   gösteriyor; DTO'da alan yok → omit. Onay: kullanıcı (2026-06-12). Kapanış: DTO + projection
   zenginleştirme (Faz 2).
+- 2026-06-12 · **Debt-FE-3 — Editör period grid: tek/ilk bell schedule:** Tasarım kademe-bazlı
+  zil çizelgesi öngörüyor (spec AS-2); editör Faz 1B-2a'da okulun bell schedule'ındaki Lesson
+  slot'larını (kademe ayrımı olmadan) period grid yapar; bell yoksa 1..8 fallback. Kademe→bell
+  eşlemesi netleşince sıkışacak. Onay: kullanıcı (2026-06-12, brainstorming). Etki: tek-kademeli/tek
+  zil çizelgeli okullarda sorunsuz; çok-kademeli okul için 1B-2b/Faz sonrası.
+- 2026-06-12 · **Editör branş rengi/kodu yok (küçük):** Handoff hücrelerde branş rengi + kod
+  gösteriyor; backend lookup'ı yalnız ad veriyor → editör hücreleri varsayılan accent kenarlık +
+  ders adı kullanır. Etki: görsel; renk eşlemesi opsiyonel sonraki iş.
