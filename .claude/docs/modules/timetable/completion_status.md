@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓░░` %82   ·   Status: in-progress   ·   Güncel: 2026-06-12
+**İlerleme:** `▓▓▓▓▓▓▓▓░░` %86   ·   Status: in-progress   ·   Güncel: 2026-06-13
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -19,6 +19,15 @@
 > kaldır), blok ders (çoklu seçim + toolbar), canlı ön-kontrol (§6 sürüklerken
 > yeşil/kırmızı + sebep), Doğrula çubuğu + eksik-saat paneli ("Hücreye git" flash).
 > 679 vitest yeşil; `npm run build` temiz. **Faz 1 (Çekirdek + Hub + Editör) FE+BE tamam.**
+> **Faz 2.1 backend yayın/snapshot dilimi tamamlandı:** `ScheduleVersion`
+> immutable snapshot modeli + `timetable.publish` seed'i + `publish-preview`/`publish`
+> endpoint'leri eklendi. Eksik saatler `allowMissingHours` ile soft uyarı; boş/tekrar yayın
+> hard 409. Domain/Application timetable testleri ve backend build yeşil.
+> **Faz 2.2 Admin Yayınla UI tamamlandı:** Hub ve Editör aynı `PublishDrawer`
+> komponentini açar; preview gate + confirm + publish mutation + success state bağlı.
+> 44 timetable Vitest yeşil; `npm run build` temiz. **2026-06-13 Hub liste kolon
+> zenginleştirme:** tasarımdaki çakışma, eksik saat, son güncelleme ve sürüm kolonları
+> gerçek backend DTO alanlarıyla eklendi; mock/olmayan aksiyonlar hâlâ render edilmez.
 
 ---
 
@@ -57,7 +66,8 @@
     search-param ile, dört durum varyantı (boş/yükleniyor-skeleton/hata/dolu), Yeni Program
     modalı → CreateProgram → editör seam (`/admin/schedule/:id/edit` placeholder).
   - **i18n:** `timetable` namespace (tr/en) eklendi ve kaydedildi.
-  - Faz 2/3 öğeleri (Yayınla, Otomatik Oluştur, Öğretmen/Derslik mercekleri) disabled + "Yakında".
+  - Hub liste yüzeyi gerçek DTO'ya indirgenmiştir: sınıf, kademe, durum, yerleşim ve gerçek aksiyonlar.
+    Öğretmen/derslik mercekleri, otomatik oluştur ve mock menü aksiyonları render edilmez.
   - 14 vitest yeşil; `npm run build` temiz. Eski `ScheduleManagement.tsx` (Figma scaffold) kaldırıldı.
 - **Faz 1B-2a Admin Editör çekirdeği web (2026-06-12):**
   - `src/portals/admin/timetable/editor/` — `ScheduleEditorPage` (`/admin/schedule/:id/edit`,
@@ -85,14 +95,64 @@
   - Saf fonksiyonlar TDD: `deriveBlocks` / `deriveMissingCells` / `precheckKey`. i18n `editor.cellMenu/blockMode/validatePanel.*`
     + gerçek backend hata kodları (`*-slot-occupied`, `block-*`, vb.). EditorFooter → ValidationBar.
   - 5 yeni vitest (editorDerive 3 + sayfa 2); tam paket 679 test yeşil; `npm run build` temiz.
+- **Faz 2.1 Backend yayın/snapshot (2026-06-12):**
+  - **Domain:** `ScheduleVersion` entity + `ScheduleProgram.Publish(...)` + `ScheduleProgramPublishedEvent`.
+    Boş program ve boş snapshot domain seviyesinde engellenir.
+  - **Persistence:** `[academic].schedule_versions` tablosu + `(school_id, program_id, version)`
+    filtered unique index + class/term/version lookup index. Migration:
+    `20260612_add_schedule_versions_publish`.
+  - **Permission:** `timetable.publish` kanonik seed'e eklendi; SuperAdmin/SchoolAdmin
+    admin rolleri alır.
+  - **API/CQRS:** `GET /api/v1/timetable/programs/{id}/publish-preview` ve
+    `POST /api/v1/timetable/programs/{id}/publish`. Eksik saatler soft uyarı
+    (`allowMissingHours` verilirse yayınlanır); boş program, hard conflict ve tekrar yayın
+    409 döner.
+  - **Test/Build:** Domain timetable: 30 test yeşil. Application timetable: 28 test yeşil.
+    `dotnet build Oksis.slnx --no-restore` temiz.
+- **Faz 2.2 Admin Yayınla UI (2026-06-12):**
+  - **API binding:** `timetableApi.getPublishPreview` + `publishProgram`, tenant-scope
+    `publishPreview` React Query key'i, publish sonrası Hub/program/preview invalidate.
+  - **UI:** `PublishDrawer` Hub satır aksiyonundan ve Editör üst şeridinden açılır.
+    Validasyon kapısı, etkilenen kişi özeti, diff boş durumu, kalıcı yayın, sürüm notu,
+    bildirim kanalları, confirm, publishing ve success durumları port edildi.
+  - **Kural:** çakışma/blocker varsa yayın butonu pasif; yalnız eksik saat varsa
+    "Yine de Yayınla" `allowMissingHours=true` ile gönderir. Yayındaki satırlarda publish
+    aksiyonu pasiftir.
+  - **Sınırlama:** "Geçici değişiklik" seçeneği görünür ama disabled; backend/domain dilimi
+    2.5'te bağlanacak.
+  - **Test/Build:** Timetable Vitest: 44 test yeşil. `npm run build` temiz. Browser smoke:
+    `/admin/schedule` render ve console error yok; test verisi boş olduğu için drawer gerçek
+    satırdan tarayıcıda tetiklenemedi.
+- **Faz 2.3 Hub liste kolon zenginleştirme (2026-06-13):**
+  - **Backend DTO:** `ClassProgramListItemDto` artık `ConflictCount`, `MissingHours`,
+    `LastUpdatedAt`, `Version`; `HubSummaryDto` artık `ConflictCount`, `MissingHours` döner.
+  - **Gerçek hesap:** `MissingHours`, şube-görevlendirme haftalık saatleri ile aktif
+    yerleşimler arasındaki farktan hesaplanır. `LastUpdatedAt` audit `UpdatedAt ?? CreatedAt`;
+    default audit tarihi UI'ya sızmaz. `Version`, program aggregate sürümüdür.
+  - **Çakışma notu:** Aktif hard çakışmalar yazma anında occupancy + filtered unique index ile
+    engellendiği için Hub `ConflictCount=0` gerçek bir backstop bilgisidir; stale validation
+    modeli gelirse bu alan genişletilecek.
+  - **Web:** Hub özet şeridine çakışma/eksik-saat rozetleri ve tabloya Çakışma, Eksik Saat,
+    Son Güncelleme, Sürüm kolonları eklendi.
+  - **Test/Build:** Timetable Vitest: 44 test yeşil. Application timetable: 29 test yeşil.
+    `npm run build` ve `dotnet build Oksis.slnx --no-restore` temiz. Browser smoke:
+    local test verisi boş olduğu için tablo başlıkları render olmadı; boş ekran render ve
+    console error yok.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
-- **Backend (sonraki fazlar):** Yayın/versiyon/snapshot (Faz 2), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
-- **Web:** Program kurma / yayınlama / görüntüleme ekranları.
+- **Backend (sonraki fazlar):** yayın sonrası consumer read model ekranları (Faz 2),
+  geçici değişiklik/override (Faz 2.5), SignalR+notification fan-out (Faz 2.6),
+  otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
+- **Web:** Yayınlanmış program görüntüleme ekranları; consumer portal ekranları.
 - **Mobile:** Öğretmen/şube/öğrenci program görünümleri.
 - Yoklama/ödev/duyuru modüllerinin bu kaynağı referans alma entegrasyonu.
+- **Debt-BE-1:** Yayın önizlemesinde etkilenen öğrenci/veli sayısı şimdilik `0`.
+  Doğru değer için şube öğrenci sayısı + veli ilişkisi read model'i Faz 2 consumer
+  diliminde bağlanacak. Öğretmen sayısı aktif yerleşimlerden gerçek hesaplanıyor.
+- **Debt-FE-5:** Publish drawer'da "Geçici değişiklik" tasarım öğesi disabled. `ScheduleException`
+  backend'i ve tarih bazlı overlay Faz 2.5'te bağlanınca aktive edilecek.
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
@@ -125,6 +185,11 @@
   (`PermissionSeedData` + `RolePermissionSeedData` → admin rolleri) eklendi, migration
   `20260612_add_timetable_permissions`. Faz 1 yalnız bu ikisini kullanır; §8'deki diğer
   izinler (publish/override/manage-rooms/import-excel) ilgili fazlarda seed edilecek.
+- 2026-06-12 · **Faz 2.1 `timetable.publish` seed'i öne alındı:** §8'de listeli publish
+  izni yayın backend dilimiyle birlikte kanonik seed'e eklendi. Faz 2.1'de yalnız
+  `timetable.publish` aktive edildi; `override/manage-rooms/import-excel/view` seed'leri
+  ilgili dilimlerde kapatılacak. Etki: yayın endpoint'leri authorization pipeline'da gerçek
+  izinle korunur.
 - 2026-06-12 · **Hub sorgularında EF projection (spec §5 Dapper ertelendi):** Spec §5 Hub
   okumalarını Dapper ile öngörüyordu; Dapper projede kurulu değil (yeni kütüphane = ayrı
   onay). Faz 1A'da `ListClassPrograms`/`GetHubSummary` EF projection ile yazıldı. Etki: yok
@@ -137,15 +202,20 @@
   `ignoreProgramId` taşımıyor; aynı slot+öğretmen sabit kalıp yalnız derslik değişen AssignRoom'da
   öğretmen kendi rezervasyonunu görüp yanlış-pozitif verirdi. Handler önce mevcut rezervasyonu
   bırakıp kontrol eder, engelde geri koyar. Etki: doğruluk korunur; kaynak doğruluk yine DB.
-- 2026-06-12 · **Debt-FE-1 — Hub çakışma/eksik-saat rozetleri ertelendi:** Tasarım/spec §9.1
-  Hub'da çakışma + eksik-saat rozeti betimliyor; Faz 1A Hub DTO'ları (`ClassProgramListItemDto`,
-  `HubSummaryDto`) bunları sağlamıyor ("sonraki fazda zenginleştirilir"). Bağlayıcı kabul kriteri
-  §11 Hub için yalnız durum varyantı + URL filtre istiyor (rozetleri şart koşmuyor) → spec ihlali
-  yok. Faz 1B-1'de bu rozetler render edilmedi. Onay: kullanıcı (2026-06-12, "omit + Debt").
-  Kapanış: backend list-DTO zenginleştirme (Faz 2).
-- 2026-06-12 · **Debt-FE-2 — Hub sürüm/son-güncelleme/"kim" kolonları yok:** Tasarım bu kolonları
-  gösteriyor; DTO'da alan yok → omit. Onay: kullanıcı (2026-06-12). Kapanış: DTO + projection
-  zenginleştirme (Faz 2).
+- 2026-06-12 · **Debt-FE-1 — Hub çakışma/eksik-saat rozetleri kapandı:** Tasarım/spec §9.1
+  Hub'da çakışma + eksik-saat rozeti betimliyor; Faz 1A DTO'ları bunları sağlamadığı için
+  Faz 1B-1'de render edilmemişti. 2026-06-13'te `ClassProgramListItemDto`/`HubSummaryDto`
+  zenginleştirildi; eksik saat gerçek assignment delta'sından hesaplanır. Çakışma şimdilik
+  write-time hard guard nedeniyle `0` döner; stale validation/read-model gelirse genişletilecek.
+- 2026-06-12 · **Debt-FE-2 — Hub sürüm/son-güncelleme kapandı, "kim" yok:** Tasarım bu kolonları
+  gösteriyor; Faz 1A DTO'da alan yoktu. 2026-06-13'te `Version` ve `LastUpdatedAt` eklendi.
+  "Kim güncelledi" alanı backend audit kontratında olmadığı için hâlâ kapsam dışı.
+- 2026-06-13 · **Hub liste gerçeklik düzeltmesi:** Tasarım handoff'u öğretmen/derslik mercekleri,
+  otomatik oluştur, çoğalt/PDF ve bazı liste zenginliklerini gösteriyordu. Kullanıcı uyarısı üzerine
+  görünür "Yakında"/mock parçaları listeden kaldırıldı; yalnız gerçek API alanları ve gerçek aksiyonlar
+  kaldı. Aynı gün çakışma/eksik/sürüm/son-güncelleme için backend DTO eklendi ve kolonlar gerçek veriyle
+  geri getirildi. Doğrulama: 44 timetable Vitest yeşil, `npm run build` temiz, browser smoke'ta mock
+  aksiyon/mercek yok.
 - 2026-06-12 · **Debt-FE-3 — Editör period grid: tek/ilk bell schedule:** Tasarım kademe-bazlı
   zil çizelgesi öngörüyor (spec AS-2); editör Faz 1B-2a'da okulun bell schedule'ındaki Lesson
   slot'larını (kademe ayrımı olmadan) period grid yapar; bell yoksa 1..8 fallback. Kademe→bell

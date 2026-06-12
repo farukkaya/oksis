@@ -10,6 +10,52 @@
 
 ## Endpoint Özeti
 
+### ScheduleProgram (Faz 1/2 canlı kontrat) — ✅ kısmi canlı
+
+| # | Method | Path | Permission | Amaç | Success |
+|---|---|---|---|---|---|
+| P1 | GET | `/api/v1/timetable/programs?termId=&page=` | `timetable.view-all` | Hub sınıf program listesi | 200 |
+| P2 | GET | `/api/v1/timetable/summary?termId=` | `timetable.view-all` | Hub özet sayaçları | 200 |
+| P3 | GET | `/api/v1/timetable/programs/{id:guid}` | `timetable.manage` | Editör için program + aktif yerleşimler | 200 |
+| P4 | GET | `/api/v1/timetable/programs/{id:guid}/unplaced` | `timetable.manage` | Görevlendirme eksi yerleşen saatler | 200 |
+| P5 | GET | `/api/v1/timetable/programs/{id:guid}/conflicts` | `timetable.manage` | Faz 1 raporu: eksik saatler | 200 |
+| P6 | POST | `/api/v1/timetable/programs/{id:guid}/precheck` | `timetable.manage` | Yazmadan slot uygunluk ön-kontrolü | 200 |
+| P7 | POST | `/api/v1/timetable/programs` | `timetable.manage` | Şube+dönem için taslak program oluştur | 201 |
+| P8 | POST | `/api/v1/timetable/programs/{id:guid}/draft` | `timetable.manage` | Taslak kaydet/no-op persist teyidi | 204 |
+| P9 | POST | `/api/v1/timetable/programs/{id:guid}/placements` | `timetable.manage` | Yerleşim ekle | 201 |
+| P10 | PUT | `/api/v1/timetable/programs/{id:guid}/placements/{pid:guid}/move` | `timetable.manage` | Yerleşimi başka slota taşı | 204 |
+| P11 | PUT | `/api/v1/timetable/programs/{id:guid}/placements/{pid:guid}/teacher` | `timetable.manage` | Yerleşimin öğretmenini değiştir | 204 |
+| P12 | PUT | `/api/v1/timetable/programs/{id:guid}/placements/{pid:guid}/room` | `timetable.manage` | Yerleşimin dersliğini değiştir/kaldır | 204 |
+| P13 | DELETE | `/api/v1/timetable/programs/{id:guid}/placements/{pid:guid}` | `timetable.manage` | Yerleşimi pasifleştir | 204 |
+| P14 | POST | `/api/v1/timetable/programs/{id:guid}/blocks` | `timetable.manage` | Ardışık yerleşimleri blok ders yap | 204 |
+| P15 | GET | `/api/v1/timetable/programs/{id:guid}/publish-preview` | `timetable.publish` | Yayın çekmecesi için validasyon/etki önizlemesi | 200 |
+| P16 | POST | `/api/v1/timetable/programs/{id:guid}/publish` | `timetable.publish` | Programı immutable snapshot olarak yayınla | 200 |
+
+**P15 response özeti:** `PublishPreviewDto { programId, status, currentVersion, nextVersion, conflictCount, missingHours, canPublish, requiresAllowMissingHours, affected, issues, changes }`.
+
+**P1 response özeti:** `ClassProgramListItemDto { id, academicTermId, branchId, status, placementCount, conflictCount, missingHours, lastUpdatedAt, version }`.
+
+Notlar:
+- `missingHours`: şube görevlendirme haftalık saati - aktif yerleşim sayısı toplamı.
+- `conflictCount`: aktif hard çakışmalar yazma anında occupancy + filtered unique index ile engellendiği için canlı kontratta `0`; stale validation/read-model gelirse genişletilecek.
+- `lastUpdatedAt`: `UpdatedAt ?? CreatedAt`, default audit tarihi dışarı verilmez.
+
+**P2 response özeti:** `HubSummaryDto { totalPrograms, draftCount, publishedCount, conflictCount, missingHours }`.
+
+**P16 request:**
+
+```json
+{
+  "allowMissingHours": true,
+  "note": "İlk yayın",
+  "notifyInApp": true,
+  "notifyPush": false,
+  "notifyEmail": false
+}
+```
+
+**P16 davranış:** boş program 409 `timetable.errors.publish-empty`; eksik saatler `allowMissingHours=false` iken 409 `timetable.errors.publish-missing-hours`; daha önce yayınlanmış program 409 `timetable.errors.already-published`; başarılı yayın `[academic].schedule_versions` içine snapshot yazar.
+
 ### Rooms (Derslik Kataloğu) — ✅ canlı (rooms-first dilimi, 2026-06-10)
 
 | # | Method | Path | Permission | Amaç | Success |
@@ -24,7 +70,7 @@
 > gelecek (bkz. completion_status sapma kaydı). R4/R5 ClassRoomsController'dadır;
 > şube aggregate'ini mutasyona uğrattığı için classrooms tarafında yaşar.
 
-### Schedule (Ders Programı Satırları)
+### Schedule (eski satır-model taslak kontrat — revizyon bekliyor)
 
 | # | Method | Path | Permission | Amaç | Success |
 |---|---|---|---|---|---|
