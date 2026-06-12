@@ -34,19 +34,21 @@
 
 ## Dilim 2.3 — Yayınlanmış Program Okuma Modelleri
 
-- [ ] Backend query: `GetBranchWeekly`, `GetTeacherWeekly`, `GetTeacherToday`.
-- [ ] Backend query: `GetStudentWeekly/Today`, `GetParentChildSchedule`.
-- [ ] Scope/IDOR: Teacher yalnız kendi dersleri, Student kendi şubesi, Parent kendi çocuğu.
-- [ ] Taslaklar hiçbir tüketici endpoint'inde dönmez.
-- [ ] Tests: published-only, cross-scope forbidden/not-found.
+- [x] Backend query: `GetBranchWeekly`, `GetTeacherWeekly`, `GetTeacherToday`.
+- [x] Backend query: `GetStudentWeekly/Today`, `GetParentChildSchedule`.
+- [x] Scope/IDOR: Teacher yalnız kendi dersleri, Student kendi şubesi, Parent kendi çocuğu (`ParentStudentRelationship` + `CanViewInfo` kontrolü).
+- [x] Taslaklar hiçbir tüketici endpoint'inde dönmez (yalnız `ScheduleVersion` snapshot okunur).
+- [x] "Bugün/şu anki/sıradaki ders" okul-yerel saat dilimine göre (`IDateTimeProvider` + `School.TimeZone`); UTC değil.
+- [x] Tests: published-only, cross-scope forbidden, no-version NotFound, okul-yerel today süzme (8 birim test).
 
 ## Dilim 2.4 — Web Tüketici Ekranları
 
-- [ ] Teacher portal `Programım`: bugün/sıradaki ders + haftalık.
-- [ ] Student portal `Programım`: bugün/yarın + haftalık.
-- [ ] Parent portal: çocuk seçimi + çocuğun gün düzeni/haftalık programı.
-- [ ] Handoff referansları: `schedule_teacher.jsx`, `schedule_student.jsx`, `schedule_parent.jsx`.
-- [ ] Loading/empty/not-published states skeleton/empty komponentleriyle.
+- [x] Teacher portal `Programım`: bugün/sıradaki ders + haftalık.
+- [x] Student portal `Programım`: bugün + haftalık.
+- [x] Parent portal: çocuk seçimi + çocuğun gün düzeni/haftalık programı.
+- [x] Paylaşılan `PublishedScheduleView` (loading/empty/not-published/error/403 + bugün paneli + haftalık ızgara).
+- [x] i18n: tüm string'ler `timetable.consumer.*` namespace'inde (tr/en), hardcoded Türkçe yok.
+- [x] Tests: `PublishedScheduleView` (5) + 3 sayfa durum varyantları (9) = 14 vitest.
 
 ## Dilim 2.5 — Geçici Değişiklik
 
@@ -65,7 +67,7 @@
 ## Her Dilim Sonu
 
 - [x] `dotnet test` ilgili unit/integration subset.
-- [ ] `npm run test` ilgili frontend subset veya ortam kısıtı notu.
+- [x] `npm run test` ilgili frontend subset veya ortam kısıtı notu.
 - [x] `npm run build` / `dotnet build` mümkünse.
 - [x] `.claude/docs/modules/timetable/completion_status.md` güncel.
 - [x] Gerekirse `api-contracts.md`, `domain-model.md`, `database-schema.md`, `ui-flows.md` güncel.

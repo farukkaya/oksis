@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓░░` %86   ·   Status: in-progress   ·   Güncel: 2026-06-13
+**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %90   ·   Status: in-progress   ·   Güncel: 2026-06-13
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -28,6 +28,16 @@
 > 44 timetable Vitest yeşil; `npm run build` temiz. **2026-06-13 Hub liste kolon
 > zenginleştirme:** tasarımdaki çakışma, eksik saat, son güncelleme ve sürüm kolonları
 > gerçek backend DTO alanlarıyla eklendi; mock/olmayan aksiyonlar hâlâ render edilmez.
+> **Faz 2.3 yayınlanmış okuma modelleri (BE) tamamlandı:** 7 endpoint
+> (branch/teacher/student/parent · weekly+today) `ScheduleVersion` snapshot'ından okur,
+> taslak sızdırmaz. Scope/IDOR handler içinde: öğretmen kendi yerleşimleri, öğrenci
+> kendi şubesi (`StudentProfile.CurrentClassroomId`), veli `ParentStudentRelationship` +
+> `CanViewInfo`. **"Bugün/şu anki/sıradaki ders" okul-yerel saat dilimine göre**
+> (`IDateTimeProvider` + `School.TimeZone`) — UTC değil; test edilebilir. 8 birim test.
+> **Faz 2.4 web tüketici ekranları tamamlandı:** teacher/student/parent `Programım`
+> + paylaşılan `PublishedScheduleView` (bugün paneli + haftalık ızgara + tüm durum
+> varyantları + 403/404). Tüm string'ler `timetable.consumer.*` i18n (tr/en) — hardcoded
+> Türkçe yok. 14 yeni vitest; tam web paketi 695 yeşil; `npm run build` temiz.
 
 ---
 
@@ -138,14 +148,31 @@
     `npm run build` ve `dotnet build Oksis.slnx --no-restore` temiz. Browser smoke:
     local test verisi boş olduğu için tablo başlıkları render olmadı; boş ekran render ve
     console error yok.
+- **Faz 2.3 Yayınlanmış okuma modelleri — BE (2026-06-13):**
+  - **CQRS/API:** `PublishedScheduleQueryHandler` + 7 endpoint — `GET /branches/{id}/weekly`,
+    `/teachers/me/weekly|today`, `/students/me/weekly|today`, `/parents/children/{id}/weekly|today`.
+    Yalnız `ScheduleVersion` snapshot'ı okunur; taslak hiçbir uçtan dönmez.
+  - **Scope/IDOR (handler içinde):** öğretmen yalnız kendi yerleşimleri; öğrenci kendi şubesi
+    (`StudentProfile.CurrentClassroomId`); veli `ParentStudentRelationship` + `CanViewInfo` —
+    ilişkisiz çocuk 403. `GetBranchWeekly` `timetable.view-all` izinli (admin/personel mercek).
+  - **Okul-yerel saat:** "bugün/şu anki/sıradaki ders" `IDateTimeProvider.UtcNow` + `School.TimeZone`
+    (IANA) dönüşümüyle hesaplanır — UTC ham saat kullanılmaz (TR UTC+3 → "şu anki ders" doğru).
+  - **Test/Build:** Application timetable 37 test yeşil (PublishedSchedule 8 yeni: branch/teacher/
+    student/parent + no-version NotFound + forbidden + okul-yerel today). `dotnet build` temiz.
+- **Faz 2.4 Web tüketici ekranları (2026-06-13):**
+  - **Modül:** `src/modules/timetable` consumer (types/keys/hooks/api), tenant-scope React Query key'leri.
+  - **UI:** teacher/student/parent `Programım` sayfaları + paylaşılan `PublishedScheduleView`
+    (`TodayLessonsPanel` şimdi/sıradaki + bugünün dersleri; `WeeklyScheduleGrid` gün×period ızgara;
+    loading-skeleton / not-published / error / 403 durumları). Parent çocuk seçimi akışı.
+  - **i18n:** tüm string'ler `timetable.consumer.*` (tr/en) — hardcoded Türkçe kalmadı (hard-ban uyumlu).
+  - **Test/Build:** 14 yeni vitest (`PublishedScheduleView` 5 + sayfalar 9); tam web paketi 695 yeşil;
+    `npm run build` temiz.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
-- **Backend (sonraki fazlar):** yayın sonrası consumer read model ekranları (Faz 2),
-  geçici değişiklik/override (Faz 2.5), SignalR+notification fan-out (Faz 2.6),
-  otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
-- **Web:** Yayınlanmış program görüntüleme ekranları; consumer portal ekranları.
+- **Backend (sonraki fazlar):** geçici değişiklik/override (Faz 2.5),
+  SignalR+notification fan-out (Faz 2.6), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
 - **Mobile:** Öğretmen/şube/öğrenci program görünümleri.
 - Yoklama/ödev/duyuru modüllerinin bu kaynağı referans alma entegrasyonu.
 - **Debt-BE-1:** Yayın önizlemesinde etkilenen öğrenci/veli sayısı şimdilik `0`.

@@ -30,6 +30,22 @@
 | P14 | POST | `/api/v1/timetable/programs/{id:guid}/blocks` | `timetable.manage` | Ardışık yerleşimleri blok ders yap | 204 |
 | P15 | GET | `/api/v1/timetable/programs/{id:guid}/publish-preview` | `timetable.publish` | Yayın çekmecesi için validasyon/etki önizlemesi | 200 |
 | P16 | POST | `/api/v1/timetable/programs/{id:guid}/publish` | `timetable.publish` | Programı immutable snapshot olarak yayınla | 200 |
+| P17 | GET | `/api/v1/timetable/branches/{branchId:guid}/weekly` | `timetable.view-all` | Şubenin yayınlanmış haftalık programı (admin/personel mercek) | 200/404 |
+| P18 | GET | `/api/v1/timetable/teachers/me/weekly` | `[Authorize]` (PersonId scope) | Öğretmenin yayınlanmış haftalık programı (yalnız kendi yerleşimleri) | 200/404 |
+| P19 | GET | `/api/v1/timetable/teachers/me/today` | `[Authorize]` (PersonId scope) | Öğretmenin bugünkü dersleri + şimdi/sıradaki (okul-yerel saat) | 200/404 |
+| P20 | GET | `/api/v1/timetable/students/me/weekly` | `[Authorize]` (PersonId scope) | Öğrencinin kendi şubesinin yayınlanmış haftalık programı | 200/404 |
+| P21 | GET | `/api/v1/timetable/students/me/today` | `[Authorize]` (PersonId scope) | Öğrencinin bugünkü dersleri + şimdi/sıradaki | 200/404 |
+| P22 | GET | `/api/v1/timetable/parents/children/{childPersonId:guid}/weekly` | `[Authorize]` (ilişki scope) | Velinin ilişkili çocuğunun haftalık programı | 200/403/404 |
+| P23 | GET | `/api/v1/timetable/parents/children/{childPersonId:guid}/today` | `[Authorize]` (ilişki scope) | Velinin ilişkili çocuğunun bugünkü dersleri | 200/403/404 |
+
+**P17–P23 (Faz 2.3 yayınlanmış okuma modelleri) notları:**
+- Yalnız `[academic].schedule_versions` snapshot'ı okunur; **taslak hiçbir uçtan dönmez** (yayın yoksa 404).
+- **Scope/IDOR handler içinde:** öğretmen yalnız kendi yerleşimleri; öğrenci `StudentProfile.CurrentClassroomId`;
+  veli `ParentStudentRelationship` + `CanViewInfo` (ilişkisiz çocuk **403**).
+- **`*/today` okul-yerel saat:** "bugün/şu anki/sıradaki ders" `IDateTimeProvider.UtcNow` + `School.TimeZone`
+  (IANA) dönüşümüyle; UTC ham saat kullanılmaz.
+- **Weekly response:** `PublishedWeeklyScheduleDto { academicYearId, academicTermId, branchId, branchName, version, publishedAt, days[], periods[], lessons[] }`.
+- **Today response:** `TodayScheduleDto { ...(weekly alanları), date, day, periods[], lessons[], currentLesson?, nextLesson? }`.
 
 **P15 response özeti:** `PublishPreviewDto { programId, status, currentVersion, nextVersion, conflictCount, missingHours, canPublish, requiresAllowMissingHours, affected, issues, changes }`.
 
