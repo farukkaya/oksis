@@ -4,11 +4,57 @@
 
 > Genel DB kuralları için bkz. `backend/database-rules.md`.
 
-> **Önemli:** `schedules` tablosu Sprint 1'de yaratıldı, ancak versiyonlama + RoomId için **migration gerekecek** (bkz. Migration Geçmişi). `rooms` ve `schedule_overrides` Sprint 2'de yeni eklenir.
+> **REVİZE (2026-06-12, K0.2/K0.3):** Geçerli şema **`schedule_programs` + `lesson_placements`**'tir
+> (Faz 1A migration `20260612_add_schedule_programs`). Aşağıdaki eski `schedules` (StartTime/EndTime)
+> bölümü *süperseded*'tir. Domain'de eski `Schedule` entity'si yok; period-modeline geçildiğinden
+> filtreli unique index artık **kullanılabilir** (eski "kullanılamaz" notu geçersiz).
 
 ---
 
-## Tablolar
+## Tablolar (geçerli — Faz 1A)
+
+### `schedule_programs`
+Bir Sınıf+Dönem programının kökü.
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | |
+| `school_id` | uniqueidentifier | tenant, immutable |
+| `academic_year_id`, `academic_term_id`, `branch_id` | uniqueidentifier | immutable |
+| `status` | int | 0=Draft, 1=Revising, 2=Published |
+| `version` | int | default 1 |
+| `row_version` | rowversion | optimistic concurrency |
+| + audit (`created_at/by`, `is_deleted`, ...) | | |
+
+- **Unique:** `ux_schedule_programs_class_term` `(school_id, academic_term_id, branch_id) WHERE is_deleted = 0` — bir sınıf+dönem'e tek program.
+
+### `lesson_placements`
+Programdaki tek bir yerleşim (4 boyut + zaman). `academic_term_id`/`branch_id` index için `program`'dan denormalize.
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | |
+| `school_id`, `program_id`, `academic_term_id`, `branch_id` | uniqueidentifier | |
+| `day_of_week` | int | |
+| `period` | int | `CHECK ck_placement_period BETWEEN 1 AND 20` |
+| `subject_id`, `teacher_id` | uniqueidentifier | |
+| `room_id` | uniqueidentifier NULL | |
+| `is_block`, `block_group_id` | bit, uniqueidentifier NULL | |
+| `is_active` | bit | default 1; Remove → 0 |
+
+**Filtreli unique index'ler (çift-rezervasyon DB-seviye garanti — K0.2):**
+```sql
+ux_placement_teacher_slot  (school_id, academic_term_id, teacher_id, day_of_week, period)  WHERE is_active = 1
+ux_placement_room_slot     (school_id, academic_term_id, room_id, day_of_week, period)     WHERE is_active = 1 AND room_id IS NOT NULL
+ux_placement_class_slot    (school_id, academic_term_id, branch_id, day_of_week, period)   WHERE is_active = 1
+```
+
+> Occupancy (Redis) hız katmanıdır; **kaynak doğruluk bu DB index'leridir** — yarış durumunda ikinci yazımı reddeder.
+> `rooms` tablosu (rooms-first dilimi) korunur; eski `schedules` migration'ı varsa ScheduleProgram'a geçişte drop/replace edilir (dev, üretim verisi yok).
+
+---
+
+## (SÜPERSEDED — Faz 1A öncesi)
 
 ### `schedules`
 

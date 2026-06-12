@@ -2,9 +2,72 @@
 
 > Bu modülün domain katmanı: entity'ler, value object'ler, aggregate root'lar, invariants, domain event'ler.
 
+> **REVİZE (2026-06-12, K0.2/K0.3):** Aşağıdaki **`ScheduleProgram` aggregate modeli** geçerli
+> tasarımdır (Faz 1A'da uygulandı). Altındaki eski **`Schedule` satır-modeli (StartTime/EndTime
+> aralığı)** *süperseded*'tir, yalnız tarihçe için tutulur — yeni kod onu kullanmaz.
+
 ---
 
-## Aggregate Root(lar)
+## Aggregate Root — `ScheduleProgram` (geçerli model)
+
+**Sorumluluk:** Bir **Sınıf (BranchId) + Dönem (AcademicTermId)** için programın tamamı.
+`LessonPlacement` entity'lerinin sahibi (aggregate). Zaman, saat-aralığı değil **period** olarak modellenir.
+
+| Alan | Tip | Not |
+|---|---|---|
+| `Id` | `Guid` (`ScheduleProgramId`) | strongly-typed id |
+| `SchoolId` | `Guid` | tenant, immutable |
+| `AcademicYearId` / `AcademicTermId` | `Guid` | immutable |
+| `BranchId` | `Guid` | sınıf/şube, immutable |
+| `Status` | `ScheduleProgramStatus` | `Draft`, `Revising`, `Published` (Faz 1 yalnız Draft) |
+| `Version` | `int` | default 1 (Faz 2'de artar) |
+| `RowVersion` | `byte[]` | optimistic concurrency |
+| `Placements` | `IReadOnlyList<LessonPlacement>` | EF-mapped ham koleksiyon (aktif+pasif) |
+| `ActivePlacements` | `IReadOnlyList<LessonPlacement>` | yalnız `IsActive` — domain mantığı bunu kullanır |
+
+**Invariant'lar (aggregate içi, güçlü tutarlılık):**
+- **INV-1 (Sınıf tekilliği):** Aynı program içinde aynı `TimeSlot`'a iki aktif yerleşim olamaz.
+- **INV-2 (Blok bütünlüğü):** `SetBlock` → aynı gün ardışık ≥2 yerleşim; aksi halde reddedilir.
+- **INV-3 (Haftalık saat — yumuşak):** Yerleşim sayısı müfredat saatine eşit olmalı; eksik/fazla
+  uyarı üretir (Faz 1'de bloklamaz; müfredat kaynağı stub → no-op, Debt).
+
+**Davranışlar:** `Create`, `Place(slot, subjectId, teacherId, roomId?)` → PlacementId, `Move`, `Remove`
+(deaktivasyon), `AssignTeacher`, `AssignRoom`, `SetBlock`. Öğretmen/derslik çapraz çakışması aggregate
+sınırını aşar → application (occupancy ön-kontrol + DB filtreli unique index son savunma).
+
+**Domain event'ler:** `ScheduleProgramCreatedEvent`, `LessonPlacedEvent`, `LessonRemovedEvent`.
+
+### `LessonPlacement` (entity, aggregate içi)
+
+| Alan | Tip | Not |
+|---|---|---|
+| `Id` | `Guid` (`LessonPlacementId`) | |
+| `ProgramId`, `SchoolId`, `AcademicTermId`, `BranchId` | `Guid` | son ikisi index için denormalize |
+| `Day` | `DayOfWeek` | |
+| `Period` | `int` | zil çizelgesi ders sırası (1..N), `IBellScheduleProvider`'dan |
+| `SubjectId`, `TeacherId` | `Guid` | |
+| `RoomId` | `Guid?` | opsiyonel |
+| `IsBlock`, `BlockGroupId` | `bool`, `Guid?` | blok ders işareti |
+| `IsActive` | `bool` | Remove → false (filtreli unique index `WHERE is_active=1`) |
+
+> Aggregate'ler arası referans yalnız Id ile (navigation yok — modül izolasyonu).
+> Davranış metotları `internal` (yalnız `ScheduleProgram` çağırır).
+
+### Value Object — `TimeSlot`
+`(DayOfWeek Day, int Period)`, değere göre eşitlik, immutable. `Period` 1..20 (zil çizelgesinden türetilir).
+
+### Value Object — `WeeklyHourRequirement`
+`(Guid SubjectId, int RequiredHours)` — müfredattan; Faz 1'de stub provider besler (Debt).
+
+### Application port'ları (çapraz çakışma + bağımlılık)
+- `IOccupancyIndex` — dönem başına öğretmen/derslik doluluk haritası (Redis, O(1) ön-kontrol). Kaynak doğruluk DB.
+- `IBellScheduleProvider` — şube kademesine göre period sayısı (school-settings).
+- `ITeachingAssignmentSource` — şube görevlendirmeleri (Teachers) → "yerleşmemiş dersler".
+- `IWeeklyHourRequirementProvider` — müfredat haftalık saati (Faz 1 stub).
+
+---
+
+## (SÜPERSEDED — Faz 1A öncesi satır-modeli, yalnız tarihçe)
 
 ### `Schedule`
 

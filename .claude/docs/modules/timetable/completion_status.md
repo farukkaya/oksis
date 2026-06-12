@@ -4,13 +4,16 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓░░░░░░░` %30   ·   Status: in-progress   ·   Güncel: 2026-06-12
+**İlerleme:** `▓▓▓▓▓░░░░░` %55   ·   Status: in-progress   ·   Güncel: 2026-06-12
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
 > bazlı dikey dilim, **tam teknik-analiz modeli** (ScheduleProgram aggregate +
-> Period + filtreli unique index). Faz 1 (çekirdek + Admin editör) plan aşamasında.
-> Domain/şema dokümanları bu yeni modele göre revize edilecek (bkz. sapma).
+> Period + filtreli unique index). **Faz 1A (backend çekirdek) tamamlandı**
+> (branch `feature/ders-programi-faz1a`): domain + EF persistence + filtreli
+> unique index + occupancy (Redis) + editör komut/sorguları + Hub sorguları +
+> `SchedulingController`. Tüm testler yeşil. Kalan Faz 1: web ekranları (`schedule.jsx`,
+> `schedule_editor.jsx`).
 
 ---
 
@@ -22,11 +25,28 @@
   Application dilimi (ListRooms/CreateRoom/UpdateRoom) + `GET/POST/PUT /api/v1/rooms`.
   Şube ev-dersliği ataması `class_rooms.room_id` üzerinden (classrooms ekranı tüketir).
   Saatlik kullanım/çakışma kontrolü timetable çekirdeğinde kalacak.
+- **Faz 1A backend çekirdeği (2026-06-12):**
+  - **Domain:** `ScheduleProgram` aggregate (INV-1 sınıf tekilliği, INV-2 blok bütünlüğü) +
+    `LessonPlacement` + `TimeSlot(Day,Period)` + `ConflictRules` + domain event'ler. 26+ birim test.
+  - **Persistence:** `schedule_programs` + `lesson_placements` tabloları +
+    3 filtreli unique index (öğretmen/derslik/sınıf çift-rezervasyonu) + check constraint.
+    Migration `20260612_add_schedule_programs`. Filtreli unique index integration testi yeşil.
+  - **Occupancy:** `IOccupancyIndex` Redis impl (`RedisOccupancyIndex`) + Redis yokken
+    `NoopOccupancyIndex` fallback. Reserve/check/release döngüsü integration testiyle yeşil.
+  - **Portlar (gerçek entegrasyon):** `BellScheduleProvider` (period grid), `TeachingAssignmentSource`
+    (yerleşmemiş dersler). `StubWeeklyHourRequirementProvider` = Debt (aşağıda).
+  - **Komutlar:** CreateProgram, PlaceLesson, MoveLesson, RemoveLesson, AssignTeacher,
+    AssignRoom, SetBlock, SaveDraft — occupancy ön-kontrol + INV + DB unique backstop.
+  - **Sorgular:** PreCheckPlacement (yazmaz), GetProgramForEdit, GetUnplacedLessons,
+    ListClassPrograms, GetHubSummary.
+  - **API:** `SchedulingController` → `/api/v1/timetable/*` (Hub + editör). İzin:
+    `timetable.manage` / `timetable.view-all` (seed edildi — aşağıdaki sapma kaydı).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Backend:** Timetable çekirdeği — Schedule entity'leri + çakışma motoru + endpoint'ler (rooms dışında yok).
+- **Web (Faz 1 kalan):** `schedule.jsx` (Admin Hub) + `schedule_editor.jsx` (sürükle-bırak editör).
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
+- **Backend (sonraki fazlar):** Yayın/versiyon/snapshot (Faz 2), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
 - **Web:** Program kurma / yayınlama / görüntüleme ekranları.
 - **Mobile:** Öğretmen/şube/öğrenci program görünümleri.
 - Yoklama/ödev/duyuru modüllerinin bu kaynağı referans alma entegrasyonu.
@@ -52,5 +72,25 @@
 - 2026-06-12 · **Controller deseni (küçük):** Teknik analiz Minimal API diyor;
   OKSİS standardı thin controller → ISender benimsendi. Etki: yok (kontrat aynı).
 - 2026-06-12 · **Müfredat-saat stub'ı (Debt):** `WeeklyHourRequirement` kaynağı
-  (Subjects curriculum hours) backend'de yok → Faz 1'de port arkasında stub.
-  Haftalık-saat doğrulaması (INV-3) gerçek veri gelince sıkışacak. Onay: kullanıcı (2026-06-12, K0.5).
+  (Subjects curriculum hours) backend'de yok → Faz 1'de port arkasında stub
+  (`StubWeeklyHourRequirementProvider` boş liste döner). Haftalık-saat doğrulaması
+  (INV-3) gerçek veri gelince sıkışacak. Onay: kullanıcı (2026-06-12, K0.5).
+- 2026-06-12 · **İzin seed düzeltmesi (spec §8 ↔ gerçeklik):** Spec §8 `timetable.manage`,
+  `timetable.view-all` vb. izinleri *"zaten tanımlı ve seed'li"* sayıyordu; gerçekte kodda
+  yoktu (yalnız `schedule.read`/`schedule.manage` vardı). Kullanıcı kararı (2026-06-12):
+  **"Spec §8'e uy + seed et"**. `timetable.manage` + `timetable.view-all` kanonik seed'e
+  (`PermissionSeedData` + `RolePermissionSeedData` → admin rolleri) eklendi, migration
+  `20260612_add_timetable_permissions`. Faz 1 yalnız bu ikisini kullanır; §8'deki diğer
+  izinler (publish/override/manage-rooms/import-excel) ilgili fazlarda seed edilecek.
+- 2026-06-12 · **Hub sorgularında EF projection (spec §5 Dapper ertelendi):** Spec §5 Hub
+  okumalarını Dapper ile öngörüyordu; Dapper projede kurulu değil (yeni kütüphane = ayrı
+  onay). Faz 1A'da `ListClassPrograms`/`GetHubSummary` EF projection ile yazıldı. Etki: yok
+  (kontrat aynı); hacim büyürse Dapper'a geçiş sonraki fazda değerlendirilecek.
+- 2026-06-12 · **Controller mutasyon alt-rotaları (spec §6 latitude):** Spec §6 tablosu
+  düzenlemeleri tek `PUT .../placements/{pid}` altında (body ile ayrım) öngörüyordu; SetBlock
+  çok-placement olduğu için tek-pid PUT'a sığmaz. Temiz alt-rotalar kullanıldı
+  (`/move`, `/teacher`, `/room`, `/blocks`). §6 zaten "controller deseni — küçük sapma" latitude'ü tanıyor.
+- 2026-06-12 · **AssignRoom occupancy "önce release" deseni:** Commit'lenen `IOccupancyIndex.CheckAsync`
+  `ignoreProgramId` taşımıyor; aynı slot+öğretmen sabit kalıp yalnız derslik değişen AssignRoom'da
+  öğretmen kendi rezervasyonunu görüp yanlış-pozitif verirdi. Handler önce mevcut rezervasyonu
+  bırakıp kontrol eder, engelde geri koyar. Etki: doğruluk korunur; kaynak doğruluk yine DB.
