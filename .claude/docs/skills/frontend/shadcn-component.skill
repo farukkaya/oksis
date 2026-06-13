@@ -1,0 +1,105 @@
+# Skill: shadcn-component
+
+> **Purpose:** OKSİS web design system'i **shadcn/ui (Radix + Tailwind v4)** üzerine kurulu. Component'ler `src/app/components/ui/*`'ta yaşar. Bu skill yeni bir UI primitive eklerken (`Button`, `Dialog`, `Table` vb.) doğru CLI akışını, OKSİS kurallarını ve özel theme token'larını ezmemeyi standartlaştırır.
+
+**İlgili Rules:** `frontend/component-rules.md`, `frontend/ui-ux-rules.md`, `frontend/coding-standards.md`, `frontend/datagrid-rules.md`
+
+---
+
+## 1. Trigger
+
+- "shadcn component ekle", "yeni UI primitive lazım", "`<X>` component'i ekle".
+- Mevcut bir shadcn primitive'i (`ui/*`) genişletme / varyant ekleme.
+- DevExtreme/MUI'den kalan bir parçayı shadcn karşılığıyla değiştirme.
+
+---
+
+## 2. Kurulum Bağlamı (kalıcı)
+
+| Ayar | Değer |
+|------|-------|
+| Tasarım sistemi | shadcn/ui — Radix primitifleri + Tailwind v4 |
+| Tailwind | **v4** (CSS-based config; `tailwind.config.js` **yok**, `@theme inline` → `src/styles/theme.css`) |
+| Component dizini | `src/app/components/ui/` |
+| `cn` util | `src/app/components/ui/utils.ts` (`@/app/components/ui/utils`) |
+| Alias | `@` → `src` (vite + `tsconfig.json` `paths`) |
+| Config | `oksis-web/components.json` (elle yazıldı; `style: new-york`, `cssVariables: true`) |
+| Icon | `lucide-react` |
+
+`components.json` zaten mevcut → CLI `add` komutu çalışır.
+
+---
+
+## 3. Component Nasıl Eklenir
+
+```bash
+npx shadcn@latest add <component>     # örn: npx shadcn@latest add tabs
+```
+
+- Dosya **`src/app/components/ui/<component>.tsx`**'e düşer.
+- `cn` import'u `components.json` alias'ı sayesinde `@/app/components/ui/utils`'ten gelir.
+- Gerekli Radix paketi (`@radix-ui/react-*`) otomatik kurulur.
+
+Eklemeden önce: aynı işi yapan bir primitive `ui/*`'ta zaten var mı kontrol et (örn. `dialog` varken `sheet` ekleme — amacı farklı mı?).
+
+---
+
+## 4. 🔴 Kritik Gotcha — `init` ASLA çalıştırma
+
+```bash
+# ❌ YASAK — özel OKSİS theme'ini ezer
+npx shadcn@latest init
+```
+
+`init`, `src/styles/theme.css`'teki **özel HEX token'ları** (`--primary: #4F6BFF`, `--navy`, portal override'ları `.portal-teacher/parent/student`, marka gradient'i) default `neutral`/`zinc` preset'iyle **ezer**. Yalnızca `add` güvenlidir. Config zaten elle yazıldığı için `init`'e hiç gerek yok.
+
+---
+
+## 5. OKSİS Kuralları (ekleme sonrası uygula)
+
+- **Named export zorunlu** — sayfa/component'te default export YASAK (shadcn zaten named üretir; bozma).
+- **Inline style yasak** — Tailwind utility veya `cn()` ile composition.
+- **`any` yasak** — `unknown` + type guard veya `z.parse()`.
+- **HEX hardcode ETME** — renkler theme token'ı üzerinden: `bg-primary`, `text-muted-foreground`, `border-border`. Asla `style={{ color: '#4F6BFF' }}` veya `bg-[#4F6BFF]`.
+- **Portal-aware accent** — `--primary` portal'a göre değişir (`.portal-*` body class'ı). Token kullandığın sürece otomatik doğru renk gelir; sabit renk yazarsan portal'lar bozulur.
+- **String varsa i18n** — component içi görünür Türkçe metin hardcode değil, i18next key.
+- **Liste → grid yok** — tablo gerekiyorsa ayrı grid kütüphanesi ekleme; shadcn `Table` üzerine paylaşımlı `DataTable` wrapper'ı kullan (`datagrid-rules.md`).
+
+---
+
+## 6. AI Checklist
+
+- [ ] `npx shadcn@latest add` ile mi eklendi (elle kopyala-yapıştır değil)?
+- [ ] `init` ÇALIŞTIRILMADI (theme.css dokunulmadı) mı?
+- [ ] Dosya `src/app/components/ui/`'da mı?
+- [ ] `cn` import'u `@/app/components/ui/utils`'ten mi?
+- [ ] Default export yok, named export var mı?
+- [ ] Renkler theme token'ı (`bg-primary` vb.), HEX/`bg-[#...]` hardcode yok mu?
+- [ ] Inline style yok mu?
+- [ ] Görünür string'ler i18n key mi?
+- [ ] Aynı amaçlı primitive zaten yoksa mı eklendi (duplikasyon yok)?
+
+---
+
+## 7. Output Format
+
+```
+[shadcn-component]
+✅ npx shadcn add <x> → src/app/components/ui/<x>.tsx
+✅ cn @/app/components/ui/utils'ten
+✅ named export, default yok
+✅ theme token (bg-primary), HEX hardcode yok
+✅ init çalıştırılmadı — theme.css korundu
+```
+
+---
+
+## 8. Yasak
+
+- `npx shadcn init` çalıştırmak (theme.css ezilir).
+- `cn`'i `@/lib/utils`'ten import etmek (bu projede `@/app/components/ui/utils`).
+- Renkleri HEX / `bg-[#...]` ile hardcode etmek (portal accent bozulur).
+- Default export eklemek.
+- `tailwind.config.js` oluşturmak (v4 CSS-based; config `theme.css`'tedir).
+- Ayrı grid/UI kütüphanesi (DevExtreme/MUI) geri getirmek — önce sor.
+- Inline style, `any`, hardcoded Türkçe string.
