@@ -52,6 +52,22 @@ ux_placement_class_slot    (school_id, academic_term_id, branch_id, day_of_week,
 > Occupancy (Redis) hız katmanıdır; **kaynak doğruluk bu DB index'leridir** — yarış durumunda ikinci yazımı reddeder.
 > `rooms` tablosu (rooms-first dilimi) korunur; eski `schedules` migration'ı varsa ScheduleProgram'a geçişte drop/replace edilir (dev, üretim verisi yok).
 
+### `schedule_exceptions` (Faz 2.5A — geçici değişiklik)
+
+Yayınlanmış programa tek-güne özel overlay (iptal / öğretmen vekaleti / derslik değişikliği). Yayınlanmış snapshot'ı **değiştirmez**.
+
+Kolonlar: `id, school_id, program_id, branch_id, academic_term_id, date, type (int: 0 Cancellation / 1 TeacherSubstitution / 2 RoomChange), target_placement_id, day_of_week (int), period, original_teacher_id, original_room_id?, new_teacher_id?, new_room_id?, reason, revoked_at?, revoked_reason?` + audit + `row_version`.
+
+```
+ix_schedule_exceptions_program_date    (school_id, program_id, date)                  WHERE is_deleted = 0
+ix_schedule_exceptions_branch_date     (school_id, branch_id, date)                   WHERE is_deleted = 0
+ux_schedule_exceptions_placement_date  (school_id, target_placement_id, date)         WHERE revoked_at IS NULL AND is_deleted = 0
+```
+
+> Filtreli unique: aynı yerleşim + aynı gün için **tek aktif** geçici değişiklik (geri alma soft → yeni aktif kayda izin verir).
+> Migration `20260613_add_schedule_exceptions`. İzin `timetable.override` (migration `20260613_add_timetable_override_permission`).
+> Not: Aşağıdaki eski `schedule_overrides` (StartTime/EndTime) **superseded**'dir; geçerli model bu tablodur.
+
 ---
 
 ## (SÜPERSEDED — Faz 1A öncesi)

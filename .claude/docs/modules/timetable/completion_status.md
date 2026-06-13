@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %90   ·   Status: in-progress   ·   Güncel: 2026-06-13
+**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %92   ·   Status: in-progress   ·   Güncel: 2026-06-13
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -167,22 +167,59 @@
   - **i18n:** tüm string'ler `timetable.consumer.*` (tr/en) — hardcoded Türkçe kalmadı (hard-ban uyumlu).
   - **Test/Build:** 14 yeni vitest (`PublishedScheduleView` 5 + sayfalar 9); tam web paketi 695 yeşil;
     `npm run build` temiz.
+- **Faz 2.5A Geçici değişiklik (ScheduleException) — BE (2026-06-13):**
+  - **Domain:** `ScheduleException` aggregate (Cancellation / TeacherSubstitution / RoomChange) +
+    INV-E1 tip-özel alan, INV-E2 gün eşleşmesi, INV-E3 sebep + soft `Revoke` + `ScheduleExceptionCreated/RevokedEvent`.
+    Yayınlanmış programı **kirletmez**; tarihe özel overlay. 12 domain test.
+  - **Persistence:** `[academic].schedule_exceptions` + `ix_*_program_date`/`ix_*_branch_date` +
+    **filtreli unique** `ux_schedule_exceptions_placement_date (WHERE revoked_at IS NULL)`.
+    Migration `20260613_add_schedule_exceptions`. 2 integration test (ikinci aktif reddedilir; revoked engellemez).
+  - **Application:** ortak `ScheduleExceptionPlanner` (hedef çözümleme + tarih `today..+30`/BR-TT-011 +
+    tatil/`IHolidayCalendarReader`/BR-TT-004 + tip-özel + tarih-bazlı çakışma + aktif tekillik) →
+    `Preview`/`Create`/`Revoke`/`List`. 11 handler test.
+  - **API (izin `timetable.override`):** `POST .../exceptions/preview`, `POST .../exceptions`,
+    `POST .../exceptions/{eid}/revoke` (program sahiplik), `GET .../exceptions?from&to&includeRevoked`.
+  - **Read overlay (yalnız `*/today`):** `PublishedLessonDto` + `IsCancelled`/`ExceptionType`;
+    iptal → ders düşer (current/next dışı), vekalet → şube görünümünde öğretmen swap / asıl öğretmende
+    "devredildi" + vekil öğretmenin bugününe eklenir, derslik değişikliği → oda swap. Haftalık ızgara
+    dokunulmaz. 3 overlay test.
+  - **Test/Build:** Domain 42, Application 51, Integration 2, seed coverage yeşil; `dotnet build` temiz.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
-- **Backend (sonraki fazlar):** geçici değişiklik/override (Faz 2.5),
+- **Backend (sonraki fazlar):** geçici değişiklik **web UI** (Faz 2.5B),
   SignalR+notification fan-out (Faz 2.6), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
 - **Mobile:** Öğretmen/şube/öğrenci program görünümleri.
 - Yoklama/ödev/duyuru modüllerinin bu kaynağı referans alma entegrasyonu.
 - **Debt-BE-1:** Yayın önizlemesinde etkilenen öğrenci/veli sayısı şimdilik `0`.
   Doğru değer için şube öğrenci sayısı + veli ilişkisi read model'i Faz 2 consumer
   diliminde bağlanacak. Öğretmen sayısı aktif yerleşimlerden gerçek hesaplanıyor.
-- **Debt-FE-5:** Publish drawer'da "Geçici değişiklik" tasarım öğesi disabled. `ScheduleException`
-  backend'i ve tarih bazlı overlay Faz 2.5'te bağlanınca aktive edilecek.
+- **Debt-BE-2:** Geçici değişiklik önizlemesinde (preview) tam veli sayısı `0` (publish-preview ile aynı);
+  öğretmen + şube öğrenci sayısı gerçek. Veli read-model'i sonra bağlanacak.
+- **Debt-BE-3 (bildirim):** `ScheduleExceptionCreated/RevokedEvent` fırlatılır ama dağıtım (BR-TT-010 HARD)
+  Faz 2.6'da bağlanacak (K0.5 — bildirim altyapısı henüz yok).
+- **Debt-BE-4 (substitution-in):** Yalnız vekalet ettiği ders olan (kendi yapısal dersi olmayan) öğretmenin
+  haftalık sorgusu boş → NotFound; bu durumda bugün overlay'i vekalet dersini gösteremez. Kendi dersi olan
+  öğretmende çalışır. Tüketici today sorgusunu yapısal-yokken-de çalışır hale getirmek sonraki iş.
+- **Debt-FE-5:** Publish drawer'da "Geçici değişiklik" tasarım öğesi disabled. Backend (2.5A) hazır;
+  web UI bağlama (preview gate + form + liste/geri al) **Faz 2.5B**'de yapılacak.
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-13 · **`timetable.override` izni seed'lendi (spec §8 ↔ gerçeklik):** Spec §8 izni
+  "zaten tanımlı/seed'li" sayıyordu; gerçekte yoktu (publish'te olduğu gibi). Kanonik seed'e
+  (`MasterSeedIds` + `PermissionSeedData` + `RolePermissionSeedData` → admin rolleri) + migration
+  `20260613_add_timetable_override_permission`. Onay: kullanıcı (2026-06-13).
+- 2026-06-13 · **Entity adı `ScheduleException` (plan-bağlayıcı):** `business-rules.md` eski
+  `ScheduleOverride` adını kullanıyor; yeni teknik-analiz modelinde ad `ScheduleException`. Etki: yok
+  (kontrat aynı); business-rules rename'i ileride senkronlanacak.
+- 2026-06-13 · **`TimeChange` override tipi kapsam dışı:** Eski kontrat taslağı Cancellation/
+  TeacherSubstitution/RoomChange/**TimeChange**/Combined öngörüyordu; period modelinde zaman = zil
+  çizelgesi olduğundan TimeChange anlamsız → 3 tip (Cancellation/Substitution/RoomChange). Onay: kullanıcı.
+- 2026-06-13 · **`ScheduleException.Id` `Guid` (strongly-typed id yerine):** Plan `ScheduleExceptionId`
+  VO öneriyordu; en yakın Faz 2 kardeşi `ScheduleVersion` `Guid Id` kullandığından EF dönüşüm karmaşası
+  olmadan onunla hizalandı. Etki: yok.
 - 2026-06-10 · **Rooms öne çekildi:** İhtiyaç analizi (classrooms §2.2) dersliği
   "rooms — timetable kapsamı, Sprint 2" ilan ediyordu; Sınıflar & Şubeler ekranındaki
   derslik borcunu kapatmak için yalnızca katalog + ev-dersliği ataması dilimi öne

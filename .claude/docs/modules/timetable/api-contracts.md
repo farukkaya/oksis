@@ -37,6 +37,18 @@
 | P21 | GET | `/api/v1/timetable/students/me/today` | `[Authorize]` (PersonId scope) | Öğrencinin bugünkü dersleri + şimdi/sıradaki | 200/404 |
 | P22 | GET | `/api/v1/timetable/parents/children/{childPersonId:guid}/weekly` | `[Authorize]` (ilişki scope) | Velinin ilişkili çocuğunun haftalık programı | 200/403/404 |
 | P23 | GET | `/api/v1/timetable/parents/children/{childPersonId:guid}/today` | `[Authorize]` (ilişki scope) | Velinin ilişkili çocuğunun bugünkü dersleri | 200/403/404 |
+| P24 | POST | `/api/v1/timetable/programs/{id:guid}/exceptions/preview` | `timetable.override` | Geçici değişiklik önizleme (yazmaz) | 200 |
+| P25 | POST | `/api/v1/timetable/programs/{id:guid}/exceptions` | `timetable.override` | Geçici değişiklik oluştur | 200/404/409 |
+| P26 | POST | `/api/v1/timetable/programs/{id:guid}/exceptions/{eid:guid}/revoke` | `timetable.override` | Geçici değişikliği geri al (soft) | 204/404/409 |
+| P27 | GET | `/api/v1/timetable/programs/{id:guid}/exceptions?from&to&includeRevoked` | `timetable.override` | Program için geçici değişiklik listesi | 200 |
+
+**P24–P27 (Faz 2.5A geçici değişiklik / ScheduleException) notları:**
+- Tipler: `Cancellation` | `TeacherSubstitution` | `RoomChange`. Yayınlanmış snapshot **kirletilmez**; tarihe özel overlay (yalnız `*/today`).
+- **Doğrulama:** hedef yerleşim en güncel published snapshot'tan; tarih `today..+30` (BR-TT-011); gün eşleşmesi; tatil değil (`IHolidayCalendarReader`, BR-TT-004); tip-özel alan (substitution→newTeacher, roomchange→newRoom); tarih-bazlı çakışma (yeni öğretmen/derslik o gün+period'da dolu mu); aynı yerleşim+gün aktif istisna tekilliği (DB filtreli unique backstop → 409).
+- **P24 request:** `{ date, type, targetPlacementId, newTeacherId?, newRoomId? }` → `ScheduleExceptionPreviewDto { canApply, target{...}, issues[], affected{teachers, students, parents} }`.
+- **P25 request:** P24 + `reason` (zorunlu) → `CreateScheduleExceptionResultDto { id, date, type }`. Yayın yok/yerleşim yok → 404; engelleyici sorun → 409 (`timetable.errors.exception-*`).
+- **P26 request:** `{ reason }`. İstisna programa ait değilse 404; zaten geri alınmışsa 409.
+- **Bildirim (BR-TT-010):** create/revoke domain event fırlatır; dağıtım Faz 2.6 (Debt-BE-3).
 
 **P17–P23 (Faz 2.3 yayınlanmış okuma modelleri) notları:**
 - Yalnız `[academic].schedule_versions` snapshot'ı okunur; **taslak hiçbir uçtan dönmez** (yayın yoksa 404).
