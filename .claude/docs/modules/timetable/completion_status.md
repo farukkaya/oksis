@@ -236,13 +236,13 @@
 - **Debt-BE-5 (vekil-vekil çakışması):** `available-teachers` (P28) "müsait" hesabı yalnız yapısal
   yerleşimleri sayar; aynı tarihte başka bir derse zaten vekil atanmış öğretmen müsait görünebilir.
   Tarih-bazlı istisna çakışması ileride eklenecek.
-- **Debt-FE-12 (editör çakışma hücresi işareti yok):** Tasarım (handoff §5) yerleşmiş çakışan hücreyi
-  kırmızı "⚠ Çakışma" rozetiyle gösteriyor; editör bunu **hiç uygulamadı** (`conflictCount={0}` hardcoded,
-  `GridCell`'de yerleşmiş-hücre çakışma durumu yok). Sürükleme anı precheck yeşil/kırmızı verir ama
-  `handleDragEnd` sonucu okumadan yerleştirir → çapraz-program çakışması (öğretmen/derslik başka sınıfta
-  dolu) yalnız Kaydet'te (sunucu 409) yakalanır, editörde kalıcı işaretlenmez. Tam çözüm yerleşmiş her
-  hücre için occupancy/çakışma sunucu sorgusu (veya toplu uç) ister → tasarım+backend kararı, ayrı dilim.
-  Not (2026-06-13): bu, geçici-değişiklik redesign'ından bağımsız, tamponlu editörden eski bir eksiklik.
+- **Debt-FE-12 (editör çakışma hücresi işareti) — ✅ KAPANDI (2026-06-13):** Yeni `external-occupancy`
+  ucu (P29, teknik analiz §6.2 — bu program hariç dönemdeki tüm aktif yerleşimler) + saf `deriveConflicts`
+  ile editör artık çapraz-program çakışan hücreleri kırmızı "⚠ Çakışma" rozetiyle işaretliyor,
+  `ValidationBar` gerçek `conflictCount` gösteriyor, Doğrula paneli çakışma satırlarını listeliyor
+  ("Hücreye git"). Tamponlu modelde işaret kaydedilmemiş yerel yerleştirmeler için (Kaydet'te 409
+  olacakların ön-uyarısı); kaydedilmiş veride çakışma zaten write-time engeliyle oluşamaz. 5 yeni
+  `deriveConflicts` testi; 741 vitest yeşil.
 - **Debt-FE-6 (flush atomik değil):** Editör Kaydet, op-log'u mevcut uçlara sıralı replay eder (yeni atomik uç yok). Bir op 409 ile reddedilirse o op ve sonrası uygulanmaz; buffer sunucu gerçeğine resetlenir (uygulanmamış değişiklikler kullanıcı tarafından tekrar yapılır). Atomik batch `POST /draft/apply` ucu sonraki iş.
 - **Debt-FE-7 (precheck stale):** Tamponlu düzenlemede `precheck` sunucu occupancy'sini kullanır; aynı program içindeki kaydedilmemiş taşımalar occupancy'ye yansımaz (sınıf-slot tekilliği yerel `cellMap` ile doğru). Kesin doğrulama Kaydet (flush) anında sunucu + DB unique backstop ile yapılır.
 - **Debt-FE-8 (flush hata ayrımı yok):** Flush hatası tek genel `editor.saveFailed` banner'ına indirgenir; eşzamanlılık (409 concurrency/stale-version) ile validation hatası ayrıştırılmaz. `interpretConflict` + `ConcurrencyBanner` kodda korunuyor (yetim ama testli) — flush hata ayrımı/concurrency reload akışı 2.5B sonraki dilim veya sertleştirme işinde yeniden bağlanacak.
