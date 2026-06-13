@@ -38,6 +38,13 @@
 > + paylaşılan `PublishedScheduleView` (bugün paneli + haftalık ızgara + tüm durum
 > varyantları + 403/404). Tüm string'ler `timetable.consumer.*` i18n (tr/en) — hardcoded
 > Türkçe yok. 14 yeni vitest; tam web paketi 695 yeşil; `npm run build` temiz.
+> **Faz 2.5B-1 Editör tamponlu kaydetme tamamlandı (FE):** editör artık her aksiyonu
+> anında sunucuya yazmıyor; yerel op-log (`editorDraft` saf modül + `foldOps`) tutar,
+> **Kaydet** disabled/dirty-turuncu-nokta/saving/saved durumlarıyla op'ları sıralı replay
+> eder (`executeFlush`, temp→gerçek id eşlemesi), başarıda refetch ile baseline senkronlanır.
+> `useBlocker` + `beforeunload` kaydedilmemiş değişiklikte çıkış uyarısı (Kaydet ve Çık /
+> Kaydetmeden Çık / Vazgeç). Tüketiciye yansıma zaten yalnız yayınlanmış snapshot'tan olduğu
+> için kullanıcı görünümü etkilenmez. Tam web test paketi 711 vitest yeşil; `npm run build` temiz.
 
 ---
 
@@ -204,9 +211,13 @@
   öğretmende çalışır. Tüketici today sorgusunu yapısal-yokken-de çalışır hale getirmek sonraki iş.
 - **Debt-FE-5:** Publish drawer'da "Geçici değişiklik" tasarım öğesi disabled. Backend (2.5A) hazır;
   web UI bağlama (preview gate + form + liste/geri al) **Faz 2.5B**'de yapılacak.
+- **Debt-FE-6 (flush atomik değil):** Editör Kaydet, op-log'u mevcut uçlara sıralı replay eder (yeni atomik uç yok). Bir op 409 ile reddedilirse o op ve sonrası uygulanmaz; buffer sunucu gerçeğine resetlenir (uygulanmamış değişiklikler kullanıcı tarafından tekrar yapılır). Atomik batch `POST /draft/apply` ucu sonraki iş.
+- **Debt-FE-7 (precheck stale):** Tamponlu düzenlemede `precheck` sunucu occupancy'sini kullanır; aynı program içindeki kaydedilmemiş taşımalar occupancy'ye yansımaz (sınıf-slot tekilliği yerel `cellMap` ile doğru). Kesin doğrulama Kaydet (flush) anında sunucu + DB unique backstop ile yapılır.
+- **Debt-FE-8 (flush hata ayrımı yok):** Flush hatası tek genel `editor.saveFailed` banner'ına indirgenir; eşzamanlılık (409 concurrency/stale-version) ile validation hatası ayrıştırılmaz. `interpretConflict` + `ConcurrencyBanner` kodda korunuyor (yetim ama testli) — flush hata ayrımı/concurrency reload akışı 2.5B sonraki dilim veya sertleştirme işinde yeniden bağlanacak.
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-13 · **Editör per-aksiyon yazma → tamponlu Kaydet:** Faz 1B editörü her aksiyonu (place/move/remove/teacher/room/block) anında sunucuya yazıyordu; tasarım handoff'undaki "Kaydet" butonu modeline (değişiklik yoksa disabled, varsa dirty-dot, kaydetmeden çıkışta uyarı) geçildi. Değişiklikler yerel op-log'da birikir, Kaydet'te replay edilir. Tüketiciye yansıma yalnız yayınlanmış snapshot'tan olduğu için kullanıcı etkisi yok; editör veri bütünlüğü/UX iyileşir. Spec §7 "Place/Save anında yetkili doğrulama" artık Kaydet (flush) anında sunucu komutu + DB filtreli unique backstop ile karşılanır; çakışma modeli (katı/engelleyici) DEĞİŞMEDİ. `useEditorMutations` hook'u kaldırıldı; yeni: `editorDraft.ts` (saf) + `useEditorDraft` hook + `LeaveGuardDialog`. Onay: kullanıcı (2026-06-13).
 - 2026-06-13 · **`timetable.override` izni seed'lendi (spec §8 ↔ gerçeklik):** Spec §8 izni
   "zaten tanımlı/seed'li" sayıyordu; gerçekte yoktu (publish'te olduğu gibi). Kanonik seed'e
   (`MasterSeedIds` + `PermissionSeedData` + `RolePermissionSeedData` → admin rolleri) + migration
