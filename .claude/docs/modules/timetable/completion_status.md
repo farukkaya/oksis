@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %93   ·   Status: in-progress   ·   Güncel: 2026-06-13
+**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %95   ·   Status: in-progress   ·   Güncel: 2026-06-14
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -58,6 +58,20 @@
 > oluşturma 2.5A P25 ile (yeni istisna tipi yok). Branş filtresi backend'siz (görevlendirme verisinden).
 > Backend: GetAvailableTeachers 3 birim test yeşil. Web: tam paket **730 vitest** yeşil; `npm run build`
 > temiz. İkame Ders (ders ikamesi) kullanıcı kararıyla kapsam dışı.
+> **Faz 2.5C Geçici değişiklikler tepsisi + 3 katmanlı geri-al tamamlandı (FE):** Yeni tasarım
+> handoff'una (2026-06-14 `Oksis Layout-handoff (1).zip` → `schedule_temp_changes.jsx`) göre geçici
+> değişiklik UX'i **tepsi-merkezli** modele taşındı. Editör hücre menüsündeki Vekil/İptal artık zengin
+> modallar açıyor (`SubstituteModal`/`CancelLessonModal`: bu/gelecek hafta · sebep çipleri · P28 müsait
+> öğretmen · iptal'de telafi toggle · bildirim toggle'ları) → grid üstünde **`TempChangesPanel` tepsisi**
+> (taslak/yayında satırları + satır geri-al) → **`TempPublishModal`** (onay → yayınlanıyor → başarı +
+> 8 sn halka-sayaçlı geri-al penceresi). **Üç katmanlı geri-al:** (a) taslak tek (yerel sil), (b) yayın-
+> sonrası pencere (tümünü P27 revoke), (c) yayınlanmış tek (P27 revoke). Backend = Faz 2.5A uçları
+> **birebir yeniden kullanıldı** (P25 toplu oluştur, P26 hafta istisnalarını yükle, P27 revoke, P28
+> müsait öğretmen) — **yeni BE yok**. Taslaklar yalnız FE state (editör tamponuyla aynı felsefe);
+> yayınlanmışlar P26'dan yüklendiği için yenilemeye dayanıklı. **PublishDrawer + `useTempActions`
+> dokunulmadan korundu** (bağımsız coexistence; drawer'ın geçici yolu duruyor, aktif yazma tepside).
+> Saf store `tempChanges.ts` (reducer'lar + `resolveDate`/`toExceptionBody`) + `useTempChanges` hook +
+> 6 yeni bileşen/CSS. Tam web paketi **765 vitest yeşil** (+1 skip); `npm run build` temiz.
 
 ---
 
@@ -204,6 +218,20 @@
     "devredildi" + vekil öğretmenin bugününe eklenir, derslik değişikliği → oda swap. Haftalık ızgara
     dokunulmaz. 3 overlay test.
   - **Test/Build:** Domain 42, Application 51, Integration 2, seed coverage yeşil; `dotnet build` temiz.
+- **Faz 2.5C Geçici değişiklikler tepsisi + 3 katmanlı geri-al — FE (2026-06-14):**
+  - **Saf çekirdek:** `editor/lib/tempChanges.ts` (TempChange modeli + reducer'lar: add/remove/markPublished/
+    undoAll/loadPublished + `resolveDate(when,dayIdx,now)` + `toExceptionBody`) + `useTempChanges` hook. 10 saf test.
+  - **Bileşenler (handoff `schedule_temp_changes.jsx` 1:1 port):** `SubstituteModal` (P28 müsait öğretmen +
+    bu/gelecek hafta + sebep çipleri + bildirim), `CancelLessonModal` (+ telafi toggle), `TempChangesPanel`
+    (tepsi: taslak/yayında + satır geri-al + Geçici Yayınla), `TempPublishModal` (onay→yayınlanıyor→başarı +
+    8 sn halka-sayaçlı geri-al penceresi). Hücre işaretleri: teal **VEKİL** (asıl öğretmen üstü çizili),
+    kırmızı taramalı **İPTAL**, yayınlanmışta yeşil nokta. `tempChanges.css` (handoff CSS port).
+  - **Backend yeniden kullanım:** P25 `createException` (toplu, Debt-FE-11), P26 `listExceptions` (hafta
+    istisnalarını "Yayında" satırı olarak yükle), P27 `revokeException` (geri-al), P28 `available-teachers`.
+    Yeni FE wrapper'ları (`listExceptions`/`revokeException`) + `ScheduleExceptionDto` eklendi. **Yeni BE yok.**
+  - **Coexistence:** Hücre menüsü artık `useTempChanges` tepsisini besler; **PublishDrawer + `useTempActions`
+    + testleri dokunulmadan korundu** (bağımsız; kullanıcı onaylı tasarım). `permLocked = tc.hasTemp`.
+  - **Test/Build:** Tam web paketi **765 vitest yeşil** (+1 skip), 165 dosya; `npm run build` temiz.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
@@ -246,9 +274,19 @@
 - **Debt-FE-6 (flush atomik değil):** Editör Kaydet, op-log'u mevcut uçlara sıralı replay eder (yeni atomik uç yok). Bir op 409 ile reddedilirse o op ve sonrası uygulanmaz; buffer sunucu gerçeğine resetlenir (uygulanmamış değişiklikler kullanıcı tarafından tekrar yapılır). Atomik batch `POST /draft/apply` ucu sonraki iş.
 - **Debt-FE-7 (precheck stale):** Tamponlu düzenlemede `precheck` sunucu occupancy'sini kullanır; aynı program içindeki kaydedilmemiş taşımalar occupancy'ye yansımaz (sınıf-slot tekilliği yerel `cellMap` ile doğru). Kesin doğrulama Kaydet (flush) anında sunucu + DB unique backstop ile yapılır.
 - **Debt-FE-8 (flush hata ayrımı yok):** Flush hatası tek genel `editor.saveFailed` banner'ına indirgenir; eşzamanlılık (409 concurrency/stale-version) ile validation hatası ayrıştırılmaz. `interpretConflict` + `ConcurrencyBanner` kodda korunuyor (yetim ama testli) — flush hata ayrımı/concurrency reload akışı 2.5B sonraki dilim veya sertleştirme işinde yeniden bağlanacak.
+- **Debt-FE-13 (telafi UI-only):** Geçici iptal modalındaki "Telafi dersi planla" toggle yalnız UI; backend'de telafi dersi kavramı yok → işaretlenir, P25'e gönderilmez. Telafi planlama backend'i sonraki iş.
+- **Debt-D2 (geçici taslak kalıcı değil):** Yayınlanmamış geçici-değişiklik taslakları yalnız FE state'inde (editör tamponuyla aynı felsefe) → sayfa yenilemede uçar. Yayınlanmışlar P26'dan döner. Kullanıcı kararı (2026-06-14); gerçek taslak kalıcılığı için ScheduleException Draft durumu + publish ucu gerekir (ertelendi).
+- **Debt-FE-11 (geçici toplu uygula atomik değil)** Faz 2.5C'de de geçerli: "Geçici Yayınla" P25 döngüsüyle tek-tek oluşturur; bir aksiyon 409 ile reddedilirse o ve sonrası uygulanmaz. Tek tarih için atomik batch ucu sonraki iş.
+- **Debt-BE-2 (geçici yayın etki sayısı):** `TempPublishModal` etki kutularında öğrenci/veli sayısı gerçek değil (öğretmen taslaklardan türetilir); doğru sayı backend preview read-model'i gerektirir (publish-preview ile aynı borç).
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-14 · **Geçici değişiklik UX = tepsi-merkezli (Faz 2.5C, yeni handoff):** 2.5B'nin yayınla-drawer
+  içi geçici-değişiklik gating'i **kaldırılmadı/korundu** ama aktif geçici-yazma yüzeyi yeni "Geçici
+  değişiklikler" tepsisine + ayrı "Geçici Yayınla" akışına taşındı (2026-06-14 tasarım handoff'u
+  `schedule_temp_changes.jsx`). Taslaklar yalnız FE state (yenilemede uçar — kabul). PublishDrawer +
+  `useTempActions` kodda bağımsız korundu (coexistence). Backend kontratı aynı (P25/P26/P27/P28; yeni BE
+  yok). Onay: kullanıcı (2026-06-14). Plan: `.claude/plans/2026-06-14-ders-programi-faz2-5c-gecici-tepsi-*.md`.
 - 2026-06-13 · **GERİ ÇEVRİLDİ → Geçici değişiklik UI = editör-merkezli (handoff §171):** Önceki "drawer
   içi kompoze form" sapması (aşağıda), kullanıcı kontrolünde tasarım handoff'una (§171: Yayın türü =
   Kalıcı / Geçici değişiklik, editörde değişiklik → Yayınla → tarih) aykırı bulundu. **Faz 2.5B redesign**
