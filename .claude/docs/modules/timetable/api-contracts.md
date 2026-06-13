@@ -41,6 +41,7 @@
 | P25 | POST | `/api/v1/timetable/programs/{id:guid}/exceptions` | `timetable.override` | Geçici değişiklik oluştur | 200/404/409 |
 | P26 | POST | `/api/v1/timetable/programs/{id:guid}/exceptions/{eid:guid}/revoke` | `timetable.override` | Geçici değişikliği geri al (soft) | 204/404/409 |
 | P27 | GET | `/api/v1/timetable/programs/{id:guid}/exceptions?from&to&includeRevoked` | `timetable.override` | Program için geçici değişiklik listesi | 200 |
+| P28 | GET | `/api/v1/timetable/programs/{id:guid}/available-teachers?day&period` | `timetable.manage` | O slotta müsait öğretmenler (vekil öğretmen seçimi) | 200 |
 
 **P24–P27 (Faz 2.5A geçici değişiklik / ScheduleException) notları:**
 - Tipler: `Cancellation` | `TeacherSubstitution` | `RoomChange`. Yayınlanmış snapshot **kirletilmez**; tarihe özel overlay (yalnız `*/today`).
@@ -49,6 +50,7 @@
 - **P25 request:** P24 + `reason` (zorunlu) → `CreateScheduleExceptionResultDto { id, date, type }`. Yayın yok/yerleşim yok → 404; engelleyici sorun → 409 (`timetable.errors.exception-*`).
 - **P26 request:** `{ reason }`. İstisna programa ait değilse 404; zaten geri alınmışsa 409.
 - **Bildirim (BR-TT-010):** create/revoke domain event fırlatır; dağıtım Faz 2.6 (Debt-BE-3).
+- **P28 (Faz 2.5B redesign):** `day` (0–6) + `period` (1–20). "Müsait" = o dönemdeki tüm programlarda o gün+period'da aktif yerleşimi olmayan, görevden ayrılmamış (`TerminatedAt == null`) + `LifecycleState == Active` öğretmenler. Yanıt `AvailableTeacherDto { id, name }[]`. Editör "Vekil Öğretmen Ata" hücre menüsü tüketir. Aynı tarihte zaten vekil atanmış öğretmen çakışması henüz hesaba katılmaz (Debt-BE-5).
 
 **P17–P23 (Faz 2.3 yayınlanmış okuma modelleri) notları:**
 - Yalnız `[academic].schedule_versions` snapshot'ı okunur; **taslak hiçbir uçtan dönmez** (yayın yoksa 404).
