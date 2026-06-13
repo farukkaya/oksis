@@ -45,6 +45,7 @@
 > `useBlocker` + `beforeunload` kaydedilmemiş değişiklikte çıkış uyarısı (Kaydet ve Çık /
 > Kaydetmeden Çık / Vazgeç). Tüketiciye yansıma zaten yalnız yayınlanmış snapshot'tan olduğu
 > için kullanıcı görünümü etkilenmez. Tam web test paketi 711 vitest yeşil; `npm run build` temiz.
+> **Faz 2.5B-2 Geçici değişiklik web — oluşturma akışı tamamlandı (FE):** Yayınla drawer'ında 'Geçici değişiklik' yolu, backend P24/P25 ile birebir kompoze form olarak bağlandı — yayınlanmış snapshot'tan (P17 `branches/{id}/weekly`) mini ızgara → hedef ders → tip (iptal/öğretmen vekaleti/derslik) → tarih → sebep → Önizle/Uygula. Toggle yalnız Published programda aktif; editör op-log'undan bağımsız; tek istisna/gönderim; doğrulama tamamen backend'de (preview issue listesi). 724 vitest yeşil; `npm run build` temiz.
 
 ---
 
@@ -209,14 +210,16 @@
 - **Debt-BE-4 (substitution-in):** Yalnız vekalet ettiği ders olan (kendi yapısal dersi olmayan) öğretmenin
   haftalık sorgusu boş → NotFound; bu durumda bugün overlay'i vekalet dersini gösteremez. Kendi dersi olan
   öğretmende çalışır. Tüketici today sorgusunu yapısal-yokken-de çalışır hale getirmek sonraki iş.
-- **Debt-FE-5:** Publish drawer'da "Geçici değişiklik" tasarım öğesi disabled. Backend (2.5A) hazır;
-  web UI bağlama (preview gate + form + liste/geri al) **Faz 2.5B**'de yapılacak.
+- **Debt-FE-5:** Geçici değişiklik web oluşturma akışı (preview gate + form) **tamamlandı (Faz 2.5B-2)**;
+  Publish drawer'da "Geçici değişiklik" yolu backend P24/P25 ile bağlı. Geriye **"Mevcut değişiklikler"
+  listesi + Geri Al (P26/P27) → Faz 2.5B-3** kaldı.
 - **Debt-FE-6 (flush atomik değil):** Editör Kaydet, op-log'u mevcut uçlara sıralı replay eder (yeni atomik uç yok). Bir op 409 ile reddedilirse o op ve sonrası uygulanmaz; buffer sunucu gerçeğine resetlenir (uygulanmamış değişiklikler kullanıcı tarafından tekrar yapılır). Atomik batch `POST /draft/apply` ucu sonraki iş.
 - **Debt-FE-7 (precheck stale):** Tamponlu düzenlemede `precheck` sunucu occupancy'sini kullanır; aynı program içindeki kaydedilmemiş taşımalar occupancy'ye yansımaz (sınıf-slot tekilliği yerel `cellMap` ile doğru). Kesin doğrulama Kaydet (flush) anında sunucu + DB unique backstop ile yapılır.
 - **Debt-FE-8 (flush hata ayrımı yok):** Flush hatası tek genel `editor.saveFailed` banner'ına indirgenir; eşzamanlılık (409 concurrency/stale-version) ile validation hatası ayrıştırılmaz. `interpretConflict` + `ConcurrencyBanner` kodda korunuyor (yetim ama testli) — flush hata ayrımı/concurrency reload akışı 2.5B sonraki dilim veya sertleştirme işinde yeniden bağlanacak.
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-13 · **Geçici değişiklik UI = drawer kompoze form (editör-diff değil):** Kullanıcı 2.5B brainstorming'inde editör-diff'i tercih etmişti; buffered model + backend tek-yerleşim/tek-tip/tek-tarih kısıtları netleşince (taşıma/ekleme/combined geçici yapılamaz, çok-günlü diff tek tarihe sığmaz) **drawer içi kompoze form**a geçildi — backend P24/P25 ile 1:1, guard'sız. Onay: kullanıcı (2026-06-13). Etki: yok (kontrat aynı); UX daha basit.
 - 2026-06-13 · **Editör per-aksiyon yazma → tamponlu Kaydet:** Faz 1B editörü her aksiyonu (place/move/remove/teacher/room/block) anında sunucuya yazıyordu; tasarım handoff'undaki "Kaydet" butonu modeline (değişiklik yoksa disabled, varsa dirty-dot, kaydetmeden çıkışta uyarı) geçildi. Değişiklikler yerel op-log'da birikir, Kaydet'te replay edilir. Tüketiciye yansıma yalnız yayınlanmış snapshot'tan olduğu için kullanıcı etkisi yok; editör veri bütünlüğü/UX iyileşir. Spec §7 "Place/Save anında yetkili doğrulama" artık Kaydet (flush) anında sunucu komutu + DB filtreli unique backstop ile karşılanır; çakışma modeli (katı/engelleyici) DEĞİŞMEDİ. `useEditorMutations` hook'u kaldırıldı; yeni: `editorDraft.ts` (saf) + `useEditorDraft` hook + `LeaveGuardDialog`. Onay: kullanıcı (2026-06-13).
 - 2026-06-13 · **`timetable.override` izni seed'lendi (spec §8 ↔ gerçeklik):** Spec §8 izni
   "zaten tanımlı/seed'li" sayıyordu; gerçekte yoktu (publish'te olduğu gibi). Kanonik seed'e
