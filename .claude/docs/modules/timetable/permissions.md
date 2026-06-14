@@ -15,6 +15,7 @@
 | `timetable.view-rooms` | Derslik listesi/detay görüntüleme | #16, #17 |
 | `timetable.manage` | Schedule oluştur/güncelle/sil (Draft seviyesinde) | #3, #4, #5, #6, #7, #8 |
 | `timetable.publish` | Taslak programı yayınlama (kritik aksiyon, SchoolAdmin) | #9 |
+| `timetable.delete` | Ders programını sil (taslak veya yayında) | `DELETE /programs/{id}`, `GET /programs/{id}/delete-preview` |
 | `timetable.override` | Tek günlük değişiklik (iptal, yerine geçme, derslik/saat değişikliği) | #22, #23 |
 | `timetable.manage-rooms` | Derslik CRUD | #18, #19, #20 |
 | `timetable.import-excel` | Excel ile toplu içe aktarım tetikleme | #24, #25 |
@@ -32,6 +33,7 @@
 | `timetable.view-rooms` | ✅ | ✅ | ✅ | ✅ | 🚫 | 🚫 | ✅ |
 | `timetable.manage` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `timetable.publish` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `timetable.delete` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `timetable.override` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `timetable.manage-rooms` | 🚫 | ✅ | ⚙ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `timetable.import-excel` | 🚫 | ✅ | ⚙ | 🚫 | 🚫 | 🚫 | 🚫 |
@@ -39,6 +41,7 @@
 **Kararlar / Gerekçeler:**
 
 - **`timetable.publish` sadece SchoolAdmin**: Yayın etkisi büyük (tüm okul + bildirim seli). Koordinatör Draft hazırlar, SchoolAdmin onaylar.
+- **`timetable.delete` sadece SchoolAdmin**: Silme geri döndürülemez (soft-delete olsa da programı akıştan çıkarır); Koordinatör program silemez. `timetable.publish` ile aynı yetki seviyesi (spec §8 dışı sapma — onay: kullanıcı 2026-06-14).
 - **`timetable.override` koordinatöre açık**: Sezon içi öğretmen hastalığı gibi günlük operasyon hızlı yönetilmeli; SchoolAdmin onayını beklemek pratik değil.
 - **`timetable.manage-rooms` koordinatöre `⚙`**: Çoğu okulda derslik envanteri yıllar arası stabil. Default kapalı, gerekirse SchoolAdmin açar.
 - **`SuperAdmin` sadece view**: Cross-tenant impersonation dışında müdahale yok (KVKK + audit).
@@ -114,6 +117,7 @@ INSERT INTO role_permissions (role_id, permission_code) VALUES
   (@schoolAdminRoleId, 'timetable.view-rooms'),
   (@schoolAdminRoleId, 'timetable.manage'),
   (@schoolAdminRoleId, 'timetable.publish'),
+  (@schoolAdminRoleId, 'timetable.delete'),
   (@schoolAdminRoleId, 'timetable.override'),
   (@schoolAdminRoleId, 'timetable.manage-rooms'),
   (@schoolAdminRoleId, 'timetable.import-excel');

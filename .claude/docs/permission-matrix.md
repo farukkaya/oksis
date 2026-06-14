@@ -127,6 +127,9 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | `classes.manage` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `timetable.view` | ✅ | ✅ | ✅ | 👁 (kendi dersleri) | 👁 (çocukları) | 👁 (kendisi) | ✅ |
 | `timetable.manage` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+| `timetable.publish` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `timetable.delete` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `timetable.override` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 
 ### Attendance
 

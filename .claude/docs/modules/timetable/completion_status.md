@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %96   ·   Status: in-progress   ·   Güncel: 2026-06-14
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %98   ·   Status: in-progress   ·   Güncel: 2026-06-14
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -243,10 +243,22 @@
     lazy **Karşılaştır** diff + teyitli **Geri yükle** mutation + durum varyantları). Tetikleyiciler: Hub `RowMenu`
     "Sürüm geçmişi" item + editör **`EditorMoreMenu`** (⋯). API wrapper'ları + `timetable.versions.*` i18n (tr/en).
     Tam web paketi **808 vitest yeşil** (+1 skip), 170 dosya; `npm run build` temiz.
+- **Programı Sil (B grubu B-2) — BE+FE (2026-06-14):**
+  - **Backend:** `ScheduleProgram.Delete()` domain metodu + `ScheduleProgramDeletedEvent`. `DeleteScheduleProgram`
+    komutu: programı + versiyonlarını + istisnalarını soft-siler (audit için tutulur), `lesson_placements.is_active=0`
+    ile occupancy serbest bırakır. `GetDeleteProgramPreview` sorgusu: gerçek öğretmen + versiyon sayısı döner;
+    öğrenci/veli=0 (Debt-BE-1 kapsamı). 2 yeni uç: `GET /programs/{id}/delete-preview` + `DELETE /programs/{id}`.
+    Yeni `timetable.delete` izni + kanonik seed + migration. Yeniden oluşturma-sonrası-silme integration testi.
+    BE timetable: Application 70 + Domain 47 yeşil (Task 11 gate); `dotnet build` temiz.
+  - **Frontend:** `DeleteScheduleModal` iki aşamalı onay (preview → sil). Hub `RowMenu` + editör `EditorMoreMenu`
+    (⋯) tetikleyicileri. Editörden sil → Hub sayfasına yönlendirme. `timetable.delete.*` i18n (tr/en). Web paketi:
+    816 vitest yeşil (+1 skip), 172 dosya; `npm run build` temiz.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
+- **Debt-BE-8 (silme bildirimi):** `ScheduleProgramDeletedEvent` fırlatılır ama dağıtım yok (bildirim altyapısı Faz 2.6 — K0.5). Silinen yayında program tüketicilere sessizce "programsız" yansır.
+- **Debt-BE-1 (delete-preview etki sayısı):** Silme önizlemesinde öğrenci/veli sayısı 0 — publish-preview ile aynı Debt-BE-1 kapsamı; öğretmen ve versiyon sayısı gerçek hesaplanıyor.
 - **Backend (sonraki fazlar):** geçici değişiklik **web UI** (Faz 2.5B),
   SignalR+notification fan-out (Faz 2.6), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
 - **Mobile:** Öğretmen/şube/öğrenci program görünümleri.
@@ -294,6 +306,7 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-14 · **`timetable.delete` izni (spec §8 dışı):** Spec §8 izin listesini "mevcut — değişmez" sayar; silme için yeni `timetable.delete` izni tanımlandı + seed + migration (`timetable.publish`/`timetable.override` eklemeleriyle aynı desen). Onay: kullanıcı (2026-06-14). Etki: silme uçları gerçek izinle korunur.
 - 2026-06-14 · **Programı Çoğalt iptal edildi (B grubu):** Tasarımdaki "Programı çoğalt", öğretmen-tekilliği
   invaryantıyla (`UX_Placement_Teacher_Slot`, spec §4.2) çatışıyor — sadık tam-kopya kaynak öğretmenleri zaten o
   slotlarda dolu olduğu için DB tarafından reddedilir; ayrıca `LessonPlacement.TeacherId` zorunlu (§3.2), öğretmensiz
