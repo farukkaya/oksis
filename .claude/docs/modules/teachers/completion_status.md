@@ -4,7 +4,27 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `██████░░░░` %50   ·   Status: in-progress   ·   Güncel: 2026-06-08 (design-handoff 1:1 boşlukları kapatıldı — Yeni Öğretmen + Sezon Kopyala + drawer hero/footer, backend'siz olanlar mock+D)
+**İlerleme:** `███████░░░` %65   ·   Status: in-progress   ·   Güncel: 2026-06-14 (Görevlendirme Hub + Müfredat Saati çekirdeği — sınıf-merkezli hub ekranı, gerçek hedef saat, sezon kopyalama; BE+FE tam)
+
+> 2026-06-14: **Görevlendirme Hub'ı (sınıf-merkezli) + Müfredat Saati çekirdeği (oksis-api + oksis-web).**
+> Spec `.claude/specs/gorevlendirme-hub-spec.md` (bağlayıcı). Mevcut `TeachingAssignment` çekirdeği
+> korundu; eklenen: (1) **Müfredat Saati çekirdeği** — `CurriculumHourTemplate` (master) +
+> `SchoolWeeklyHourOverride` (tenant) + filtreli unique index + MEB seed (şu an yalnız ortaokul 5,
+> toplam 29) + `IRequiredHoursResolver` (override > master). `CurriculumVersions.Active = "2025.04"`.
+> (2) **Hub okuma query'leri** (EF projection, Dapper DEĞİL): `GetAssignmentSummary`
+> (total/missing/mismatched; arşiv şubeler hariç), `ListAssignmentClasses` (sol panel, fillStatus,
+> kademe = EducationLevel), `ListClassAssignments` (sağ panel, branchMatch bellekte `BranchMatching`
+> ile tr-TR kültür normalize). (3) **`CopyAssignmentsToNewSeasonCommand`** (§2.3: SourceClassRoomId
+> eşleme, atlama sebepleri teacher-terminated/no-target-class/class-archived/already-exists, idempotent,
+> `AssignmentsCopiedEvent`). Mevcut `AcademicSessions POST .../copy-assignments` ucu da bu komuta evrildi
+> (CopyAssignmentsResult döner). (4) `AssignSubjectClass` artık branşsız öğretmeni hard-block eder. (5)
+> Yeni controller `api/v1/teaching-assignments` (`GET /summary|/classes|/by-class/{id}`, `POST /copy-season`).
+> Yeni izinler `teaching-assignments.copy-season` (yalnız SchoolAdmin) + `curriculum-hours.view`
+> (SuperAdmin/SchoolAdmin/Teacher), migration `20260614_gorevlendirme_hub`. **FE:** yeni admin sayfası
+> `src/portals/admin/assignments/` (master-detail hub: kademe-gruplu sidebar + doluluk rozeti + özet
+> metrikler + branş-uyum rozetleri + RHF+Zod yeni-görevlendirme modalı + sezon kopyala + sezon seçici),
+> route `/admin/assignments` (`teaching-assignments.view`), sidebar "Görevlendirmeler" etkin, `assignments`
+> i18n namespace (tr/en). Sapmalar: bkz. ⚠️ Spec Dışına Çıkılanlar 2026-06-14.
 
 > 2026-06-08: **Öğretmenler design-handoff 1:1 boşluk kapatma (oksis-web).** Mevcut ekran zaten tasarım sistemine oturuyordu; tasarımda olup eksik olan parçalar eklendi: (1) **"Yeni Öğretmen" (Hire) modalı** (`HireTeacherDialog`, ad/soyad + görev tipi segment + branş çoklu seçim, paylaşılan `shared/components/modal/Modal` + `shared/styles/modal.css`); (2) page-head'e **"Sezon Görevini Kopyala"** + selection-bar'da etkinleştirme; (3) drawer'da tasarım imzası **hero yük göstergesi** (başlıkta beyaz varyant) + **footer** (Görevlendir → Görevlendirmeler sekmesi, Düzenle) + `wide` genişlik. **Backend ucu OLMAYANLAR mock fallback + "D" rozeti** (`shared/api/debtFallback.attemptRealThenMock`): Hire (`POST /teachers`), Sezon Kopyala (`POST /teachers/copy-season`), Düzenle (`PUT /teachers/{id}`). Mevcut GERÇEK uçlar korundu: liste/stats/yük/homeroom/atama/export. Mock-only kontrol mantığı `teachersDebtApi`/`useTeacherDebt`'te izole; "Düzenle" mutasyonu test-izolasyonu için page'de tutulur (drawer prop `onEdit`). 66 teachers+users vitest yeşil, tam paket 463 yeşil, build yeşil. Sapma: bkz. Spec Dışına Çıkılanlar 2026-06-08 "Teachers DEBT mock-fallback".
 
@@ -90,13 +110,66 @@
   i18n (`row.branchMissing*`, `duty.*`, `employment.label`, `assignments.blocked.*`,
   `assignments.removeConfirmDependency`). 17 yeni web test (lifecycle 8, edge-cases 5, assignments +4).
 
+- **Görevlendirme Hub + Müfredat Saati çekirdeği (2026-06-14, BE+FE):**
+  - **Müfredat çekirdeği (api):** `CurriculumHourTemplate` (master, `master.curriculum_hour_templates`) +
+    `SchoolWeeklyHourOverride` (tenant, `academic.school_weekly_hour_overrides`) + filtreli unique index
+    (`ux_curriculum_hour_templates_ver_grade_subject` / `ux_school_weekly_hour_overrides_active`) +
+    `MebCurriculumSeed_2025_04` (şu an yalnız ortaokul 5, zorunlu toplam 29) + `IRequiredHoursResolver`
+    (override > master, seviye toplamı; seed yoksa o seviye dict dışı → hub `Undefined`/gri).
+    `CurriculumVersions.Active = "2025.04"`. Migration `20260614_gorevlendirme_hub`.
+  - **Hub query'leri (api, EF projection — Dapper değil):** `GetAssignmentSummaryQuery`
+    (totalAssignments/missingClasses/mismatchedAssignments; `Archived` şubeler hariç),
+    `ListAssignmentClassesQuery` (sol panel: fillStatus Below/OnTarget/Over/Undefined/Empty, kademe =
+    `GradeLevel.EducationLevel`), `ListClassAssignmentsQuery` (sağ panel: branchMatch Uyumlu/YanBrans).
+    `branchMatch` query-time, `BranchMatching` ile (`Trim` + `ToUpper(tr-TR)` + boşluk temizliği),
+    `ToArrayAsync` sonrası bellekte (persist yok, S-3).
+  - **Command (api):** `CopyAssignmentsToNewSeasonCommand` (SourceClassRoomId eşleme, atlama:
+    teacher-terminated/no-target-class/class-archived/already-exists, idempotent, `CopyAssignmentsResult`
+    raporu + `AssignmentsCopiedEvent`). Mevcut `AcademicSessions POST .../copy-assignments` ucu da bu
+    komuta evrildi. `AssignSubjectClass` branşsız öğretmeni hard-block (`teaching-assignments.errors.teacher-no-branch`).
+  - **API (api):** yeni controller `api/v1/teaching-assignments` — `GET /summary`, `GET /classes`,
+    `GET /by-class/{classRoomId}` (`teaching-assignments.view`), `POST /copy-season`
+    (`teaching-assignments.copy-season`). `GetRequiredTotalHoursQuery` (`curriculum-hours.view`).
+  - **İzinler:** `teaching-assignments.copy-season` (yalnız SchoolAdmin) + `curriculum-hours.view`
+    (SuperAdmin oku / SchoolAdmin tam / Teacher oku) — seed + RolePermission + migration.
+  - **FE (web):** `src/portals/admin/assignments/` master-detail hub — kademe-gruplu sidebar + doluluk
+    rozeti (amber/yeşil/kırmızı/gri-Undefined) + 3 özet metrik + branş-uyum rozetleri + RHF+Zod
+    yeni-görevlendirme modalı (mevcut `assign` ucunu çağırır) + "Önceki Sezondan Kopyala" + sezon seçici.
+    Route `/admin/assignments` (`teaching-assignments.view`), sidebar "Görevlendirmeler" etkin,
+    `assignments` i18n namespace (tr/en). Tenant-scope React Query key'leri.
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - Doküman içeriği (≈110 `{{TBD}}` alanı) — spec doldurulmadı.
 - Mobile: öğretmen rolü ekranları (yok).
+- **Debt-BE (izinli öğretmen engeli):** "İzinli öğretmen" görevlendirme engeli leave-status modeli
+  olmadığından şimdilik atlandı (§2.4). Leave-status modeli gelince `AssignSubjectClass`/copy-season'a eklenir.
+- **Debt-BE (tam TTK müfredat seed):** Şu an yalnız ortaokul 5 seed'li; eksik seviyeler resolver'da
+  hedef Undefined (gri) gösterilir, yanlış toplam üretilmez. Tam TTK per-seviye seed (ilkokul/ortaokul 6-8/lise)
+  follow-up veri işi (model gerçek). Ayrıca: Müfredat tam modülü (override UI/import/INV-3) ertelendi (§5b).
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-06-14 (S-1) — `HomeroomAssignment` entity iptal:** Docx'in `HomeroomAssignment`'ı yapılmadı;
+  homeroom zaten `ClassRoom.HomeroomTeacherId`'de (classrooms sorumluluğu). `set-homeroom` izni de eklenmedi.
+  Onay: kullanıcı (2026-06-14). Etki: yok (mevcut yapı yeniden kullanıldı).
+- **2026-06-14 (S-2) — `TeachingAssignment` rename gereksiz:** Docx'in rename + migration Debt'i geçersiz —
+  entity zaten doğru adda. Onay: kullanıcı (2026-06-14). Etki: yok.
+- **2026-06-14 (S-5) — `SchoolKind` → `EducationLevel`:** Analizin ince `SchoolKind` (AnadoluLisesi/FenLisesi…)
+  ekseni çekirdekte `EducationLevel` (Primary/Middle/High) ile sadeleştirildi (`GradeLevel.EducationLevel` zaten var).
+  İnce çizelge seçimi tam modüle ertelendi. Onay: kullanıcı (2026-06-14). Etki: çekirdek seviye-bazlı hedef yeterli.
+- **2026-06-14 (S-6) — Override yazma yolu ertelendi:** `SchoolWeeklyHourOverride` entity+tablo+resolver var,
+  ama override oluşturma UI/command'i ertelendi; resolver override okur (şimdilik boş → master'a düşer). Onay:
+  kullanıcı (2026-06-14). Etki: resolver geleceğe hazır; çift implementasyon yok.
+- **2026-06-14 (spec §2.1) — Hub okumaları Dapper yerine EF projection:** Spec §2.1 EF projection diyordu
+  (Dapper projede kurulu değil, timetable Hub'da da ertelenmişti); tüm hub query'leri EF Core projection +
+  `AsNoTracking`. Onay: kullanıcı (2026-06-14). Etki: yok (kontrat aynı).
+- **2026-06-14 (spec §2.1 yazım düzeltmesi) — branchMatch tr-TR kültürü:** Spec metni bir yerde
+  `ToUpperInvariant` yazımı içeriyordu; İ/ı doğruluğu için normalizasyon `ToUpper(tr-TR)` kültürüyle yapıldı
+  (spec §2.1'in açık niyeti). Onay: kullanıcı (2026-06-14). Etki: Türkçe branş/ders adı karşılaştırması doğru.
+- **2026-06-14 (spec §2.5) — SuperAdmin copy-season hariç:** `teaching-assignments.copy-season` yalnız
+  SchoolAdmin'e verildi; SuperAdmin'e verilmedi (§2.5 kuralı). `MasterRoleSeedTests` SuperAdmin-her-izin
+  invaryantına bu izin için istisna eklendi. Onay: kullanıcı (2026-06-14). Etki: sezon kopyalama tenant-admin işi.
 - **2026-06-08 — Teachers DEBT mock-fallback: backend'siz aksiyonlar gerçek istek atar ama mock döner + "D" rozeti (oksis-web, bu oturum):** Design-handoff 1:1 boşlukları kapatılırken backend ucu **henüz açılmamış** öğretmen işlemleri `shared/api/debtFallback.attemptRealThenMock` ile sarıldı: **önce gerçek uca istek atılır**, 404/405/network → kısa gecikmeli **mock** döner (`isMock:true`; toast'a "(mock)" eki), UI'da `shared/components/DebtBadge` ("D"). Kapsam: **Yeni Öğretmen / Hire** (`POST /teachers`), **Sezon Görevini Kopyala** (`POST /teachers/copy-season`, head + selection-bar), **Düzenle** (drawer footer, `PUT /teachers/{id}`). **Gerçek (rozetsiz):** liste/stats/yük/homeroom/görevlendirme(assign,unassign)/export. **Gerekçe:** kullanıcı talimatı — "backend karşılığı olmayanlar için mock servis yaz (istek atsın ama mock dönsün), D ile işaretle". Önceki ISSUE-07'deki Sezon Kopyala "görünür-ama-pasif" yaklaşımı **mock+D ile etkin** hale getirildi (TeachersSelectionBar testi buna göre güncellendi). **Etki & geçiş:** uç açılınca `attemptRealThenMock` gerçek cevabı döndürür → tek dosyada (`teachersDebtApi`) mock kalkar + ilgili DebtBadge silinir; UI dokunulmaz. Ortak Modal sistemi `shared/components/modal/Modal` + `shared/styles/modal.css`'e taşındı (Kullanıcılar ile paylaşımlı; Öğrenciler de kullanacak).
 - **2026-06-08 (ISSUE-01/02):** §5.4 Verdiği Dersler/Sınıflar · Sınıf Öğretmenliği ·
   Haftalık Yük ve §5.2 Ortalama Yük / Branş Açığı **kaynaksız** olduğundan UI'da "—"

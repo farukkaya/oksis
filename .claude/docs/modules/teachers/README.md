@@ -63,17 +63,17 @@ Bu modül hangi modüllerle konuşur?
 ## Metadata
 
 - **Slug:** teachers
-- **Status:** planning
+- **Status:** in-progress
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-05-15
+- **Last Updated:** 2026-06-14
 - **Files:**
   - [x] README.md
   - [x] domain-model.md (iskelet)
-  - [x] api-contracts.md (iskelet)
-  - [x] database-schema.md (iskelet)
-  - [x] permissions.md (iskelet)
+  - [x] api-contracts.md (Görevlendirme Hub uçları dolu)
+  - [x] database-schema.md (Müfredat Saati tabloları dolu)
+  - [x] permissions.md (görevlendirme/müfredat izinleri dolu)
   - [x] notifications.md (iskelet)
   - [x] ui-flows.md (iskelet)
   - [x] business-rules.md (iskelet)

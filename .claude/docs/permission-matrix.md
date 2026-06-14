@@ -112,6 +112,10 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | `teachers.create` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `teachers.update` | 🚫 | ✅ | ✅ | 👁 (self) | 🚫 | 🚫 | 🚫 |
 | `teachers.delete` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `teaching-assignments.view` | ✅ | ✅ | ✅ | 👁 (kendi yükü) | 🚫 | 🚫 | ✅ | <!-- Görevlendirme hub okuma (summary/list) + öğretmen yükü. Mevcut izin. -->
+| `teaching-assignments.assign` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Görevlendirme yaz (assign/unassign). Mevcut izin. -->
+| `teaching-assignments.copy-season` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Önceki sezondan görevlendirme kopyala. SuperAdmin'e VERİLMEZ (gorevlendirme-hub-spec §2.5). 2026-06-14 eklendi. -->
+| `curriculum-hours.view` | 👁 (oku) | ✅ | 🚫 | 👁 (oku) | 🚫 | 🚫 | 🚫 | <!-- Müfredat haftalık saat (hedef saat) okuma. SchoolAdmin tam, SuperAdmin/Teacher oku. .override/.import-template tam Müfredat modülünde gelecek. 2026-06-14 eklendi. -->
 
 ### Academic Calendar
 
