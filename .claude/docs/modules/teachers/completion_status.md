@@ -129,7 +129,9 @@
     komuta evrildi. `AssignSubjectClass` branşsız öğretmeni hard-block (`teaching-assignments.errors.teacher-no-branch`).
   - **API (api):** yeni controller `api/v1/teaching-assignments` — `GET /summary`, `GET /classes`,
     `GET /by-class/{classRoomId}` (`teaching-assignments.view`), `POST /copy-season`
-    (`teaching-assignments.copy-season`). `GetRequiredTotalHoursQuery` (`curriculum-hours.view`).
+    (`teaching-assignments.copy-season`). Ayrıca `GetRequiredTotalHoursQuery` + thin
+    `CurriculumHoursController` — `GET /api/v1/curriculum-hours/required-total?sessionId=&gradeLevelCode=`
+    (`curriculum-hours.view`; resolver üzerinden hedef saat, seed yoksa/sezon yoksa 0).
   - **İzinler:** `teaching-assignments.copy-season` (yalnız SchoolAdmin) + `curriculum-hours.view`
     (SuperAdmin oku / SchoolAdmin tam / Teacher oku) — seed + RolePermission + migration.
   - **FE (web):** `src/portals/admin/assignments/` master-detail hub — kademe-gruplu sidebar + doluluk
