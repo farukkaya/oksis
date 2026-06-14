@@ -43,6 +43,14 @@
 | P27 | GET | `/api/v1/timetable/programs/{id:guid}/exceptions?from&to&includeRevoked` | `timetable.override` | Program için geçici değişiklik listesi | 200 |
 | P28 | GET | `/api/v1/timetable/programs/{id:guid}/available-teachers?day&period` | `timetable.manage` | O slotta müsait öğretmenler (vekil öğretmen seçimi) | 200 |
 | P29 | GET | `/api/v1/timetable/programs/{id:guid}/external-occupancy` | `timetable.manage` | Bu program hariç dönemdeki diğer aktif yerleşimlerin doluluğu (editör çakışma işareti) | 200 |
+| P30 | GET | `/api/v1/timetable/programs/{id:guid}/versions` | `timetable.manage` | Programın yayın sürümleri (version desc; kim/ne zaman/not/sayı) | 200 |
+| P31 | GET | `/api/v1/timetable/programs/{id:guid}/versions/{version:int}/diff` | `timetable.manage` | vN ile v(N-1) arası satır-satır fark (v1 ilk-yayın) | 200 / 404 |
+| P32 | POST | `/api/v1/timetable/programs/{id:guid}/versions/{version:int}/restore` | `timetable.manage` | Seçilen sürümü aktif programa Draft (Revising) olarak geri yükle | 200 / 404 / 409 |
+
+**P30–P32 (B-1 Sürüm Geçmişi) notları:**
+- **P30:** `ScheduleVersionListItemDto { version, publishedAt, publishedByName, note, placementCount }[]` (version desc). `PublishedBy` Guid → `db.Persons.Name.FullName`; çözülemezse "—".
+- **P31:** `ScheduleVersionDiffDto { version, isFirstVersion, rows: ScheduleVersionDiffRow[] }`; `ScheduleVersionDiffRow { day, period, slotLabel, was, now }`. vN snapshot'ı v(N-1) ile (Day,Period) anahtarına göre kıyaslanır; `was`/`now` = "ders·öğretmen·derslik". v1 → `isFirstVersion=true`, boş satır. Sürüm yok → 404.
+- **P32:** Gövdesiz. Seçilen sürümün `SnapshotJson`'ı `ScheduleProgram.RestoreFrom` ile aktif programa yazılır (mevcut aktifler pasifleştirilir, `Status=Revising`, **yeni sürüm üretilmez**). `ScheduleProgramRestoredEvent` (dağıtım Debt-BE-6). Çapraz öğretmen/derslik çakışması DB filtreli unique index ile → 409 (`timetable.errors.restore-conflict`), transaction atomik. Program/sürüm yok → 404. Occupancy senkronu yok (Debt-BE-7).
 
 **P24–P27 (Faz 2.5A geçici değişiklik / ScheduleException) notları:**
 - Tipler: `Cancellation` | `TeacherSubstitution` | `RoomChange`. Yayınlanmış snapshot **kirletilmez**; tarihe özel overlay (yalnız `*/today`).

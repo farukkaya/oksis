@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %95   ·   Status: in-progress   ·   Güncel: 2026-06-14
+**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %96   ·   Status: in-progress   ·   Güncel: 2026-06-14
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -232,6 +232,17 @@
   - **Coexistence:** Hücre menüsü artık `useTempChanges` tepsisini besler; **PublishDrawer + `useTempActions`
     + testleri dokunulmadan korundu** (bağımsız; kullanıcı onaylı tasarım). `permLocked = tc.hasTemp`.
   - **Test/Build:** Tam web paketi **765 vitest yeşil** (+1 skip), 165 dosya; `npm run build` temiz.
+- **Sürüm Geçmişi (B grubu B-1) — BE+FE (2026-06-14):**
+  - **Backend (3 dilim + domain):** `ScheduleProgram.RestoreFrom(snapshot)` (mevcut aktifleri pasifler →
+    snapshot'tan yeniden kurar → blok grupları → `Revising` → `ScheduleProgramRestoredEvent`). `ListScheduleVersions`
+    (version desc + `PublishedBy`→ad çözümü), `GetScheduleVersionDiff` (saf `Compute` + vN vs v(N-1), v1 ilk-yayın),
+    `RestoreScheduleVersion` (snapshot → aktif programa Draft; DB filtreli unique index = çapraz çakışma backstop → 409).
+    Paylaşılan `ScheduleSnapshotSerializer` (DRY). 3 yeni uç (P30/P31/P32). **Yeni tablo/migration/izin YOK**
+    (`timetable.manage` zaten seed'li). BE timetable: Application 65 + Domain 45 yeşil; `dotnet build` temiz.
+  - **Frontend:** `VersionHistoryDrawer` (sağ çekmece: sürüm zaman çizelgesi + "Aktif çalışma" sentetik satırı +
+    lazy **Karşılaştır** diff + teyitli **Geri yükle** mutation + durum varyantları). Tetikleyiciler: Hub `RowMenu`
+    "Sürüm geçmişi" item + editör **`EditorMoreMenu`** (⋯). API wrapper'ları + `timetable.versions.*` i18n (tr/en).
+    Tam web paketi **808 vitest yeşil** (+1 skip), 170 dosya; `npm run build` temiz.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
@@ -275,12 +286,19 @@
 - **Debt-FE-7 (precheck stale):** Tamponlu düzenlemede `precheck` sunucu occupancy'sini kullanır; aynı program içindeki kaydedilmemiş taşımalar occupancy'ye yansımaz (sınıf-slot tekilliği yerel `cellMap` ile doğru). Kesin doğrulama Kaydet (flush) anında sunucu + DB unique backstop ile yapılır.
 - **Debt-FE-8 (flush hata ayrımı yok):** Flush hatası tek genel `editor.saveFailed` banner'ına indirgenir; eşzamanlılık (409 concurrency/stale-version) ile validation hatası ayrıştırılmaz. `interpretConflict` + `ConcurrencyBanner` kodda korunuyor (yetim ama testli) — flush hata ayrımı/concurrency reload akışı 2.5B sonraki dilim veya sertleştirme işinde yeniden bağlanacak.
 - **Debt-FE-13 (telafi UI-only):** Geçici iptal modalındaki "Telafi dersi planla" toggle yalnız UI; backend'de telafi dersi kavramı yok → işaretlenir, P25'e gönderilmez. Telafi planlama backend'i sonraki iş.
+- **Debt-BE-6 (restore bildirimi):** `RestoreScheduleVersion` `ScheduleProgramRestoredEvent` fırlatır ama dağıtım yok (bildirim altyapısı Faz 2.6 — K0.5). Geri yükleme sessiz; tüketiciye ancak sonraki **yayın** ile yansır (restore yeni sürüm üretmez).
+- **Debt-BE-7 (restore occupancy senkronu):** `RestoreScheduleVersion` Redis occupancy index'ini senkronlamaz; doğruluk DB filtreli unique index ile garanti (spec §7), occupancy yalnız ön-kontrol ipucu → restore sonrası bayat kalabilir, ilk yazma komutunda düzelir. Ayrıca çapraz çakışma 409 yolu yalnız DB-index ile doğrulanır (birim test yok; integration sonraki iş).
 - **Debt-D2 (geçici taslak kalıcı değil):** Yayınlanmamış geçici-değişiklik taslakları yalnız FE state'inde (editör tamponuyla aynı felsefe) → sayfa yenilemede uçar. Yayınlanmışlar P26'dan döner. Kullanıcı kararı (2026-06-14); gerçek taslak kalıcılığı için ScheduleException Draft durumu + publish ucu gerekir (ertelendi).
 - **Debt-FE-11 (geçici toplu uygula atomik değil)** Faz 2.5C'de de geçerli: "Geçici Yayınla" P25 döngüsüyle tek-tek oluşturur; bir aksiyon 409 ile reddedilirse o ve sonrası uygulanmaz. Tek tarih için atomik batch ucu sonraki iş.
 - **Debt-BE-2 (geçici yayın etki sayısı):** `TempPublishModal` etki kutularında öğrenci/veli sayısı gerçek değil (öğretmen taslaklardan türetilir); doğru sayı backend preview read-model'i gerektirir (publish-preview ile aynı borç).
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-14 · **Programı Çoğalt iptal edildi (B grubu):** Tasarımdaki "Programı çoğalt", öğretmen-tekilliği
+  invaryantıyla (`UX_Placement_Teacher_Slot`, spec §4.2) çatışıyor — sadık tam-kopya kaynak öğretmenleri zaten o
+  slotlarda dolu olduğu için DB tarafından reddedilir; ayrıca `LessonPlacement.TeacherId` zorunlu (§3.2), öğretmensiz
+  iskelet-klon model değişikliği gerektirir. Kullanıcı kararı (2026-06-14): **Çoğalt kapsam dışı**, B-1 yalnız Sürüm
+  Geçmişi. Etki: yok (özellik eklenmedi). PDF/Sil sonraki dilimler.
 - 2026-06-14 · **Geçici değişiklik UX = tepsi-merkezli (Faz 2.5C, yeni handoff):** 2.5B'nin yayınla-drawer
   içi geçici-değişiklik gating'i **kaldırılmadı/korundu** ama aktif geçici-yazma yüzeyi yeni "Geçici
   değişiklikler" tepsisine + ayrı "Geçici Yayınla" akışına taşındı (2026-06-14 tasarım handoff'u
