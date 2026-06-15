@@ -92,6 +92,47 @@ Doğru modeli kurmak, programın **tekillik kuralını** da revize etmeyi gerekt
 
 ---
 
+## 6.5. Revizyon — Rezervasyon Modeli (2026-06-15, brainstorming devamı)
+
+Implementasyon sırasında (Parça A code-review + kullanıcı netleştirmesi) yerleşim-seviyesi
+çakışma değişmezlerinin çok-taslak modeliyle çeliştiği görüldü. `LessonPlacementConfiguration.cs`
+üç **program-bağımsız** benzersiz index tutuyor (yalnız `is_active=1 AND is_deleted=0`):
+`ux_placement_teacher_slot`, `ux_placement_room_slot`, `ux_placement_class_slot`. Bu hâliyle bir
+sınıfın iki dolu programı (Yayında + Taslak) aynı anda var olamaz. Aşağıdaki kararlar bunu çözer.
+
+- **K8 — Rezervasyon kapsamı.** Öğretmen/derslik/sınıf-slot tekilliği yalnız **"rezerve eden"**
+  yerleşimlere uygulanır: sahibi programın `Status ∈ {Published, Revising}` olduğu yerleşimler.
+  **Taslaklar rezerve etmez** ve serbestçe çakışabilir. Mekanizma: `LessonPlacement`'a denormalize
+  bir `IsReserving` bayrağı (mevcut `school_id/term/branch` denormalizasyon desenini izler);
+  program rezerve-eden duruma girince/çıkınca aggregate içinde senkronlanır. Üç index'in filtresi
+  `is_active=1 AND is_deleted=0 AND is_reserving=1` olur.
+  - Kural (kullanıcı): "Bir taslak kendi sınıfının yayındaki programıyla çakışmaz; yalnız **diğer
+    sınıfların** canlı (Yayında/Revize) programlarıyla çakışır." Çünkü yayınlanınca swap eski canlıyı
+    devre dışı bırakıp kaynağını boşaltır (ör. Yayında 9-A Pzt-1 A205/Ahmet Dinç ↔ Taslak 9-A Pzt-1
+    A205/Ayşe Temiz: çakışma değildir).
+
+- **K9 — Tek canlı program / sınıf.** Program-seviyesi unique index'i (K4) `status = Published`
+  yerine **`status ∈ {Revising, Published}`** (yani `status >= 1`) ile filtrelenir: bir sınıf+dönemde
+  en fazla bir canlı (Yayında *veya* Revize) program; sınırsız Taslak. (K4'ü revize eder — A1 zaten
+  commit'lendiği için yeni migration ile genişletilir.)
+
+- **K10 — Swap canlı kardeşi indirir.** Publish-swap (K3) mevcut **canlı** kardeşi (Yayında *veya*
+  Revize) Taslağa indirir — yalnız Yayında değil. `PublishProgramCommandHandler` (A4) ve
+  `GetPublishPreviewQueryHandler` (A5) kardeş predicate'i `Status ∈ {Published, Revising}` olur.
+
+- **K11 — Düzenleyince Revize.** Yayındaki bir programa yapılan **ilk değişiklik kaydedilince**
+  program `Published → Revising`'e geçer (salt görüntüleme Revize yapmaz). Canlı yayın snapshot'ı
+  (`ScheduleVersion`) swap'e/yeniden-yayına kadar tüketicilere bozulmadan kalır. Rezervasyon
+  değişmez (her ikisi de rezerve eder); yalnız düzenleme komutları (Move/Place/Remove/AssignTeacher/
+  AssignRoom/SetBlock) bir Published programda çalışınca durumu Revising'e çevirir.
+  - "Revize'ye geçiş" başka hiçbir yerde tetiklenmiyordu; mevcut tek tetik `RestoreScheduleVersion`
+    (sürüm geri yükleme → `RestoreFrom` → Revising). K11 ikinci tetiği ekler.
+
+- **K12 — Müsaitlik/doluluk ön-kontrolü.** Editör (`GetExternalOccupancy`) ve autogen solver girdisi
+  (B3) için "dolu" sayılan = **diğer şubelerin rezerve eden** (Yayında/Revize) yerleşimleri
+  (`IsReserving=1 AND BranchId != X`). Kendi sınıfının canlı programı hariç tutulur (swap onu
+  boşaltacak).
+
 ## 7. Sıralama & Kapsam Dışı
 
 **Sıralama:** (1) Parça A (model + publish-swap) → (2) Parça B (autogen header akışı; A'ya bağlı).

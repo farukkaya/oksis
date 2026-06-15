@@ -274,6 +274,34 @@ git add -A && git commit -m "2026-06-15 feat,test: Yayın çekmecesinde swap uya
 
 ---
 
+# PARÇA A2 — Rezervasyon Modeli (K8–K12) — Parça A code-review + kullanıcı netleştirmesi
+
+> Parça A "tek Yayında / program-seviyesi" kurdu; ama yerleşim-seviyesi index'ler (öğretmen/derslik/
+> sınıf-slot) program-bağımsız olduğundan iki dolu program (Yayında+Taslak) bir arada olamıyor. A8/A9
+> bunu çözer; Parça B'den ÖNCE yapılır.
+
+### Task A8: Rezervasyon = canlı (Yayında/Revize); yerleşim index'leri daraltılır (K8–K10, K12)
+
+**Files:**
+- Modify: `src/Oksis.Domain/Modules/Timetable/Entities/LessonPlacement.cs` (+ `IsReserving` + işaretleme metotları)
+- Modify: `src/Oksis.Domain/Modules/Timetable/Entities/ScheduleProgram.cs` (durum geçişlerinde placement senkronu: `Publish`, `RevertToDraft`, `RestoreFrom`, `Place`)
+- Modify: `src/Oksis.Infrastructure/Persistence/Configurations/Timetable/LessonPlacementConfiguration.cs` (üç index filtresine `AND is_reserving = 1`) + `ScheduleProgramConfiguration.cs` (K9: filtre `status >= 1`)
+- Modify: `PublishProgramCommandHandler` (A4) + `GetPublishPreviewQueryHandler` (A5) kardeş predicate → `Status ∈ {Published, Revising}`
+- Modify: `GetExternalOccupancy` handler (K12: `IsReserving=1 AND BranchId != X`)
+- Create: migration `<ts>_placement_reservation_flag`
+- Test: domain (reserving senkronu), integration (iki taslak dolu serbest; iki canlı çakışır; swap çapraz-slot)
+
+Özet TDD: önce kırmızı testler (iki dolu taslak aynı slotta serbest; bir sınıfta iki canlı reddedilir; class-slot yalnız reserving), sonra `IsReserving` + senkron + filtreli index'ler + migration + predicate genişletmeleri. Detaylı adımlar dispatch prompt'unda verilir.
+
+### Task A9: Yayındaki programa ilk kayıtla Revize'ye geçiş (K11)
+
+**Files:**
+- Modify: `ScheduleProgram.cs` (mutasyon metotları Published'ı Revising'e çevirir; `IsReserving` korunur)
+- Modify: editör kaydet/komut handler'ları (mutasyon Published programda çalışınca geçişi tetikler) — `grep` ile bul
+- Test: domain (Published programda Move/Place → Revising; Draft'ta no-op) + handler
+
+Özet TDD: Published bir programda bir düzenleme mutasyonu çalışınca `Status` Revising olur; salt okuma değişmez; reserving bayrağı korunur (her ikisi de rezerve eder).
+
 # PARÇA B — Otomatik Üretim Header Akışı (A'ya bağlı)
 
 ### Task B1: ScheduleGenerationJob — branch+dönem+yıl'a anahtarla (K6)
