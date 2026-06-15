@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %98   ·   Status: in-progress   ·   Güncel: 2026-06-14
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam)   ·   Status: in-progress   ·   Güncel: 2026-06-15
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -72,6 +72,20 @@
 > dokunulmadan korundu** (bağımsız coexistence; drawer'ın geçici yolu duruyor, aktif yazma tepside).
 > Saf store `tempChanges.ts` (reducer'lar + `resolveDate`/`toExceptionBody`) + `useTempChanges` hook +
 > 6 yeni bileşen/CSS. Tam web paketi **765 vitest yeşil** (+1 skip); `npm run build` temiz.
+> **Faz 2.6 Bildirim & SignalR fan-out (BE+FE) tamamlandı (2026-06-15):** Genel ama minimal in-app
+> bildirim altyapısı kuruldu ve 5 timetable event'i bağlandı. Pipeline: domain event → MediatR
+> `INotificationHandler` (commit-after) → `INotificationEnqueuer` (Hangfire) → `DispatchNotificationJob`
+> (tenant `SetForLoginFlow`) → `NotificationDispatcher` (per-recipient idempotency, delivery-log) →
+> `InAppNotificationChannel` (`Notification` satırı + `NotificationHub` /hubs/notifications canlı push).
+> Alıcı çözümü `NotificationRecipientResolver` (şube → öğrenci/veli login Account.Id'leri
+> `Person.LinkedAccountId` üzerinden; öğretmen Person→Account; açık `SchoolId` filtresi). 4 event bildirim
+> üretir (Published v1/vN · ExceptionCreated→Cancelled/Exception · ExceptionRevoked · ProgramDeleted),
+> **Restored tasarımla sessiz**. Self-scope API (IDOR-safe, yeni izin yok): `GET /notifications` (paged),
+> `/unread-count`, `POST /{id}/read`, `/read-all`. Web: `src/modules/notifications/` + `@microsoft/signalr`
+> v10 client + header zili (`NotificationMenu.tsx`) gerçek API'ye + canlı güncellemeye bağlı + `notifications`
+> i18n (tr/en). Tam web paketi **860 vitest yeşil**. Bu fazda Outbox yok (Debt-N1), yalnız in-app+SignalR
+> kanalı (Debt-N2), sessiz saat/cooldown yok (Debt-N3) — aşağıda sapma kayıtları. **Faz 2 (Çekirdek + Hub +
+> Editör + Yayın + Tüketici + Geçici değişiklik + Sürüm/Sil + Bildirim) FE+BE tamam.**
 
 ---
 
@@ -253,14 +267,42 @@
   - **Frontend:** `DeleteScheduleModal` iki aşamalı onay (preview → sil). Hub `RowMenu` + editör `EditorMoreMenu`
     (⋯) tetikleyicileri. Editörden sil → Hub sayfasına yönlendirme. `timetable.delete.*` i18n (tr/en). Web paketi:
     816 vitest yeşil (+1 skip), 172 dosya; `npm run build` temiz.
+- **Faz 2.6 Bildirim & SignalR fan-out (BE+FE) (2026-06-15):**
+  - **Domain + migration (oksis-api):** `Notification` + `NotificationDeliveryLog` entity'leri + `NotificationKind`
+    enum'u (TimetablePublished/TimetableException/TimetableCancelled/TimetableExceptionRevoked/TimetableProgramDeleted).
+    Yeni `[notifications]` şeması, migration `20260615_add_notifications`, idempotency için filtreli unique index
+    `(SchoolId, EventId, RecipientAccountId, Channel)`.
+  - **Pipeline:** domain event → MediatR `INotificationHandler<DomainEventNotification<TEvent>>` (commit-after) →
+    `INotificationEnqueuer` (Hangfire) → `DispatchNotificationJob` (tenant `SetForLoginFlow`) →
+    `NotificationDispatcher` (per-recipient delivery-log idempotency) → `InAppNotificationChannel`
+    (`Notification` satırı + SignalR push). Outbox YOK (Invitation deseni gibi — Debt-N1).
+  - **SignalR:** `NotificationHub` @ `/hubs/notifications`, grup `{schoolId}:{accountId}`, metot `ReceiveNotification`.
+    Push Application portu `INotificationRealtimePusher` (Api impl `SignalRNotificationPusher`).
+  - **Alıcı çözümü:** `NotificationRecipientResolver` — şube (classroom) → öğrenci (`StudentProfile.CurrentClassroomId`)
+    + veli (`ParentStudentRelationship` aktif) login Account.Id'leri (`Person.LinkedAccountId`) + öğretmen
+    Person→Account. Açık per-tenant `SchoolId` filtresi.
+  - **5 event bağlandı (4 bildirim + 1 sessiz):** `ScheduleProgramPublishedEvent` (şube tüketicileri; v1 vs vN
+    farklı metin; key `Combine(ProgramId, Version)`), `ScheduleExceptionCreatedEvent` (şube tüketicileri + orijinal
+    + yeni öğretmen; Cancellation→Cancelled else Exception; key `Combine(ExceptionId,"created")`),
+    `ScheduleExceptionRevokedEvent` (key `Combine(ExceptionId,"revoked")`), `ScheduleProgramDeletedEvent`
+    (key `Combine(ProgramId,"deleted",Version)`). `ScheduleProgramRestoredEvent` → **handler YOK, tasarımla sessiz**
+    (restore yeni sürüm üretmez; sonraki yayında yansır).
+  - **API (self-scope, IDOR-safe):** `GET /api/v1/notifications` (paged), `/notifications/unread-count`,
+    `POST /notifications/{id}/read`, `/notifications/read-all`. **Yeni izin yok** (auth-only,
+    `RecipientAccountId == current account`).
+  - **Web:** `src/modules/notifications/` (types/keys/api/hooks) + SignalR client (`@microsoft/signalr` v10) +
+    header zili (`NotificationMenu.tsx`) gerçek API'ye + canlı güncellemeye bağlı + `notifications` i18n (tr/en).
+    Tam web paketi **860 vitest yeşil**.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
-- **Debt-BE-8 (silme bildirimi):** `ScheduleProgramDeletedEvent` fırlatılır ama dağıtım yok (bildirim altyapısı Faz 2.6 — K0.5). Silinen yayında program tüketicilere sessizce "programsız" yansır.
+- **Debt-BE-8 (silme bildirimi) — ✅ KAPANDI (2026-06-15, Faz 2.6):** `ScheduleProgramDeletedEvent` artık
+  şube tüketicilerine in-app+SignalR bildirim dağıtır (kind TimetableProgramDeleted; key
+  `Combine(ProgramId,"deleted",Version)`).
 - **Debt-BE-1 (delete-preview etki sayısı):** Silme önizlemesinde öğrenci/veli sayısı 0 — publish-preview ile aynı Debt-BE-1 kapsamı; öğretmen ve versiyon sayısı gerçek hesaplanıyor.
-- **Backend (sonraki fazlar):** geçici değişiklik **web UI** (Faz 2.5B),
-  SignalR+notification fan-out (Faz 2.6), otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
+- **Backend (sonraki fazlar):** otomatik üretim (Faz 3), müsaitlik/nöbet (Faz 4).
+  (Geçici değişiklik web UI = Faz 2.5C tamam; SignalR+notification fan-out = Faz 2.6 tamam.)
 - **Mobile:** Öğretmen/şube/öğrenci program görünümleri.
 - Yoklama/ödev/duyuru modüllerinin bu kaynağı referans alma entegrasyonu.
 - **Debt-BE-1:** Yayın önizlemesinde etkilenen öğrenci/veli sayısı şimdilik `0`.
@@ -268,8 +310,9 @@
   diliminde bağlanacak. Öğretmen sayısı aktif yerleşimlerden gerçek hesaplanıyor.
 - **Debt-BE-2:** Geçici değişiklik önizlemesinde (preview) tam veli sayısı `0` (publish-preview ile aynı);
   öğretmen + şube öğrenci sayısı gerçek. Veli read-model'i sonra bağlanacak.
-- **Debt-BE-3 (bildirim):** `ScheduleExceptionCreated/RevokedEvent` fırlatılır ama dağıtım (BR-TT-010 HARD)
-  Faz 2.6'da bağlanacak (K0.5 — bildirim altyapısı henüz yok).
+- **Debt-BE-3 (bildirim) — ✅ KAPANDI (2026-06-15, Faz 2.6):** `ScheduleExceptionCreated/RevokedEvent`
+  artık dağıtılır — Created: şube tüketicileri + orijinal + yeni öğretmen (Cancellation→Cancelled else
+  Exception); Revoked: şube tüketicileri. In-app+SignalR.
 - **Debt-BE-4 (substitution-in):** Yalnız vekalet ettiği ders olan (kendi yapısal dersi olmayan) öğretmenin
   haftalık sorgusu boş → NotFound; bu durumda bugün overlay'i vekalet dersini gösteremez. Kendi dersi olan
   öğretmende çalışır. Tüketici today sorgusunu yapısal-yokken-de çalışır hale getirmek sonraki iş.
@@ -298,14 +341,41 @@
 - **Debt-FE-7 (precheck stale):** Tamponlu düzenlemede `precheck` sunucu occupancy'sini kullanır; aynı program içindeki kaydedilmemiş taşımalar occupancy'ye yansımaz (sınıf-slot tekilliği yerel `cellMap` ile doğru). Kesin doğrulama Kaydet (flush) anında sunucu + DB unique backstop ile yapılır.
 - **Debt-FE-8 (flush hata ayrımı yok):** Flush hatası tek genel `editor.saveFailed` banner'ına indirgenir; eşzamanlılık (409 concurrency/stale-version) ile validation hatası ayrıştırılmaz. `interpretConflict` + `ConcurrencyBanner` kodda korunuyor (yetim ama testli) — flush hata ayrımı/concurrency reload akışı 2.5B sonraki dilim veya sertleştirme işinde yeniden bağlanacak.
 - **Debt-FE-13 (telafi UI-only):** Geçici iptal modalındaki "Telafi dersi planla" toggle yalnız UI; backend'de telafi dersi kavramı yok → işaretlenir, P25'e gönderilmez. Telafi planlama backend'i sonraki iş.
-- **Debt-BE-6 (restore bildirimi):** `RestoreScheduleVersion` `ScheduleProgramRestoredEvent` fırlatır ama dağıtım yok (bildirim altyapısı Faz 2.6 — K0.5). Geri yükleme sessiz; tüketiciye ancak sonraki **yayın** ile yansır (restore yeni sürüm üretmez).
+- **Debt-BE-6 (restore bildirimi) — ✅ KAPANDI (tasarımla, 2026-06-15, Faz 2.6):** `ScheduleProgramRestoredEvent`
+  için **bilinçli olarak handler yok** — restore yeni sürüm üretmez, program `Revising` (taslak) durumuna düşer;
+  değişiklik tüketiciye ancak sonraki **yayın** ile yansır. "Restored sessiz" tasarım kararıyla kapatıldı
+  (implementasyonla değil).
 - **Debt-BE-7 (restore occupancy senkronu):** `RestoreScheduleVersion` Redis occupancy index'ini senkronlamaz; doğruluk DB filtreli unique index ile garanti (spec §7), occupancy yalnız ön-kontrol ipucu → restore sonrası bayat kalabilir, ilk yazma komutunda düzelir. Ayrıca çapraz çakışma 409 yolu yalnız DB-index ile doğrulanır (birim test yok; integration sonraki iş).
 - **Debt-D2 (geçici taslak kalıcı değil):** Yayınlanmamış geçici-değişiklik taslakları yalnız FE state'inde (editör tamponuyla aynı felsefe) → sayfa yenilemede uçar. Yayınlanmışlar P26'dan döner. Kullanıcı kararı (2026-06-14); gerçek taslak kalıcılığı için ScheduleException Draft durumu + publish ucu gerekir (ertelendi).
 - **Debt-FE-11 (geçici toplu uygula atomik değil)** Faz 2.5C'de de geçerli: "Geçici Yayınla" P25 döngüsüyle tek-tek oluşturur; bir aksiyon 409 ile reddedilirse o ve sonrası uygulanmaz. Tek tarih için atomik batch ucu sonraki iş.
 - **Debt-BE-2 (geçici yayın etki sayısı):** `TempPublishModal` etki kutularında öğrenci/veli sayısı gerçek değil (öğretmen taslaklardan türetilir); doğru sayı backend preview read-model'i gerektirir (publish-preview ile aynı borç).
+- **Debt-BE-2 (bildirim alıcı sayısı):** Bildirim fan-out gerçek alıcıları çözer, ama publish/temp PREVIEW
+  uçları hâlâ 0 öğrenci/veli raporlar (ayrı read-model borcu — değişmedi).
+- **Debt-N1 (Outbox yok):** Pipeline event→Hangfire (Invitation deseni); gerçek crash-safe exactly-once Outbox
+  gerektirir (CLAUDE.md Outbox tarif eder; Teknik Analiz §10 yalnız event→Hangfire ister — sapma kaydı altta).
+- **Debt-N2 (yalnız in-app + SignalR):** FCM push + email ertelendi (FCM altyapısı yok, mobil katman henüz yok).
+- **Debt-N3 (sessiz saat + cooldown yok):** Quiet hours (22:00–07:00) + Redis cooldown yok; sezon-başı tek-tetik
+  düşük aciliyetli olduğu için ertelendi.
+- **Debt-N4 (mobil bildirim ekranı yok):** Mobil katman ayrı tier.
+- **Debt-N5 (bildirim tercih tabloları yok):** Per-kanal/per-tip kullanıcı tercihleri yok.
+- **Debt-N6 (idempotency iki pencere):** Eşzamanlı dispatch yarışı (DB unique index backstop) + kanal-gönderim
+  ile delivery-log commit arası crash (Hangfire retry'da kopyalanabilir); in-app için kabul edilebilir, tam
+  exactly-once Outbox gerektirir (Debt-N1).
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-15 · **Bildirim Outbox atlandı (Faz 2.6):** CLAUDE.md transactional Outbox tarif eder; pipeline
+  event→Hangfire (Invitation deseni) ile kuruldu. Sebep: Teknik Analiz §10 yalnız event→Hangfire ister, tam
+  exactly-once bu fazda gereksiz. Onay: kullanıcı (2026-06-15). Etki: in-app için kabul edilebilir, çift
+  bildirim penceresi var (Debt-N1/N6).
+- 2026-06-15 · **FCM push + email ertelendi (Faz 2.6):** Teknik Analiz §10 push/email kanallarını listeler;
+  yalnız in-app + SignalR uygulandı. Sebep: FCM altyapısı + mobil tier henüz yok. Onay: kullanıcı (2026-06-15).
+  Etki: kanal genişlemesi sonraki iş (Debt-N2).
+- 2026-06-15 · **Sessiz saat + cooldown ertelendi (Faz 2.6):** quiet hours (22:00–07:00) + Redis cooldown
+  uygulanmadı. Sebep: sezon-başı tek-tetik düşük aciliyetli. Onay: kullanıcı (2026-06-15). Etki: yok (Debt-N3).
+- 2026-06-15 · **`ScheduleProgramRestoredEvent` sessiz (tasarımla):** restore bildirimi yok — restore yeni
+  sürüm üretmez, değişiklik sonraki yayında yansır. Sebep: tüketiciye yansıtacak yeni durum yok. Onay: kullanıcı
+  (2026-06-15). Etki: Debt-BE-6 implementasyonla değil tasarımla kapatıldı.
 - 2026-06-14 · **`timetable.delete` izni (spec §8 dışı):** Spec §8 izin listesini "mevcut — değişmez" sayar; silme için yeni `timetable.delete` izni tanımlandı + seed + migration (`timetable.publish`/`timetable.override` eklemeleriyle aynı desen). Onay: kullanıcı (2026-06-14). Etki: silme uçları gerçek izinle korunur.
 - 2026-06-14 · **Programı Çoğalt iptal edildi (B grubu):** Tasarımdaki "Programı çoğalt", öğretmen-tekilliği
   invaryantıyla (`UX_Placement_Teacher_Slot`, spec §4.2) çatışıyor — sadık tam-kopya kaynak öğretmenleri zaten o
