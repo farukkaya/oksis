@@ -46,24 +46,33 @@
 | P30 | GET | `/api/v1/timetable/programs/{id:guid}/versions` | `timetable.manage` | Programın yayın sürümleri (version desc; kim/ne zaman/not/sayı) | 200 |
 | P31 | GET | `/api/v1/timetable/programs/{id:guid}/versions/{version:int}/diff` | `timetable.manage` | vN ile v(N-1) arası satır-satır fark (v1 ilk-yayın) | 200 / 404 |
 | P32 | POST | `/api/v1/timetable/programs/{id:guid}/versions/{version:int}/restore` | `timetable.manage` | Seçilen sürümü aktif programa Draft (Revising) olarak geri yükle | 200 / 404 / 409 |
-| P33 | POST | `/api/v1/timetable/programs/{id:guid}/auto-generate` | `timetable.manage` | Tek-sınıf otomatik üretim job'ı kuyruğa al (üret) | 202 / 404 / 409 |
+| P33 | POST | `/api/v1/timetable/auto-generate` | `timetable.manage` | Sınıf-bazlı sıfırdan otomatik üretim job'ı kuyruğa al (üret) | 202 / 404 / 409 |
 | P34 | GET | `/api/v1/timetable/auto-generate/{jobId:guid}` | `timetable.manage` | Üretim job durumu + adaylar/ipuçları (poll) | 200 / 404 |
-| P35 | POST | `/api/v1/timetable/auto-generate/{jobId:guid}/apply` | `timetable.manage` | Seçilen adayı taslağa uygula (uygula) | 200 / 404 / 409 |
+| P35 | POST | `/api/v1/timetable/auto-generate/{jobId:guid}/apply` | `timetable.manage` | Seçilen adayı **yeni Taslak**'a uygula → programId döner (uygula) | 200 / 404 / 409 |
+| P36 | GET | `/api/v1/timetable/auto-generate/classes?termId=` | `timetable.manage` | O dönemde görevlendirmesi olan (üretime uygun) sınıflar | 200 |
 
-**P33–P35 (Faz 3 Dilim-1 Otomatik Üretim — tek-sınıf) notları:**
-- **Akış (üret≠uygula):** P33 ile bir `ScheduleGenerationJob` oluşturulur + Hangfire'a kuyruğa alınır →
-  P34 ile durum poll edilir (web ~1200ms) → tamamlanınca adaylardan biri seçilip P35 ile **taslağa** uygulanır.
-  Apply ≠ yayın: seçilen aday `ScheduleProgram.RestoreFrom` ile aktif programa Draft/Revising olarak yazılır;
-  admin sonra ince-ayar yapıp ayrıca yayınlar.
-- **P33:** Yalnız `Draft`/`Revising` program — `Published` reddedilir (409). İçerde tek-sınıf solver girdileri
-  toplanır (talepler görevlendirmeden, slotlar zil periyotlarından, dış doluluk çapraz-program). Yanıt `{ jobId }`.
-  Retry-idempotency: yalnız `Queued` job koşar. İzin `timetable.manage` (yeni izin yok). Self/tenant-scope (IDOR
-  EF global filtre).
+**P33–P36 (Faz 3 Dilim-1 Otomatik Üretim — sınıf-bazlı, header akışı — REVİZE 2026-06-16, K5/K6) notları:**
+- **Akış (üret≠uygula, sıfırdan):** P33 ile bir `ScheduleGenerationJob` (sınıf+dönem+yıla anahtarlı, program'a
+  değil) oluşturulur + Hangfire'a kuyruğa alınır → P34 ile durum poll edilir (web ~1200ms) → tamamlanınca
+  adaylardan biri seçilip P35 ile uygulanır. **Apply YENİ bir Taslak `ScheduleProgram` yaratır** (mevcut
+  programa dokunmaz); admin sonra ince-ayar yapıp ayrıca yayınlar.
+- **P33 (REVİZE):** Bir programa değil **sınıfa (şube) + döneme** bağlı. Body
+  `{ branchId, academicYearId, academicTermId, weights, strict }` → `{ jobId }`. "Program düzenlenebilir mi"
+  kontrolü kalktı; yerine **"sınıfın görevlendirmesi var mı"** doğrulanır (yoksa anlamlı hata). Tek-sınıf solver
+  girdileri toplanır (talepler görevlendirmeden; slotlar zil periyotlarından; dış doluluk = diğer şubelerin
+  **rezerve eden** [canlı] yerleşimleri — K12). Retry-idempotency: yalnız `Queued` job koşar. İzin
+  `timetable.manage` (yeni izin yok). Self/tenant-scope (IDOR EF global filtre).
 - **P34:** `ScheduleGenerationJobStatusDto { jobId, status, candidates[], hints[] }`; durum
   `Queued|Running|Done|NoSolution|Failed`. `Done` → 3 puanlı aday (metrikler + önerilen işareti); `NoSolution`
-  (katı mod) → `RelaxationHints`; `Failed` → hata. Tek-sınıf bu dilim; kademe/tümü = Dilim-2 (UI'da disabled).
-- **P35:** `{ candidateId }` (seçilen aday). Aday `RestoreFrom` ile taslağa yazılır → `Draft`/`Revising`. Çapraz
-  öğretmen/derslik çakışması DB filtreli unique index ile → 409. Job/aday yok → 404.
+  (katı mod) → `RelaxationHints`; `Failed` → hata. **Şekil değişmedi.** Tek-sınıf bu dilim; kademe/tümü =
+  Dilim-2 (UI'da disabled).
+- **P35 (REVİZE):** `{ candidateId }` (seçilen aday). Mevcut programa uygulamak yerine, job'un branch+term'i
+  için `ScheduleProgram.Create` + adayın yerleşimleriyle **yeni bir Taslak program** oluşturulur; yanıt
+  **yeni Taslak `programId`** döner (FE bununla `/admin/schedule/{newId}/edit`'e gider). Çapraz
+  öğretmen/derslik çakışması DB filtreli unique index ile → 409. Job/aday yok → 404. Dilim 1'de bloklar kapalı
+  (`IsBlock=false`).
+- **P36 (YENİ):** Şube seçici kaynağı — aktif dönemde **görevlendirmesi olan tüm sınıfları** listeler (mevcut
+  programı olsun ya da olmasın, K7). Yanıt `EligibleClassDto { branchId, branchName }[]`.
 
 **P30–P32 (B-1 Sürüm Geçmişi) notları:**
 - **P30:** `ScheduleVersionListItemDto { version, publishedAt, publishedByName, note, placementCount }[]` (version desc). `PublishedBy` Guid → `db.Persons.Name.FullName`; çözülemezse "—".
@@ -89,7 +98,12 @@
 - **Weekly response:** `PublishedWeeklyScheduleDto { academicYearId, academicTermId, branchId, branchName, version, publishedAt, days[], periods[], lessons[] }`.
 - **Today response:** `TodayScheduleDto { ...(weekly alanları), date, day, periods[], lessons[], currentLesson?, nextLesson? }`.
 
-**P15 response özeti:** `PublishPreviewDto { programId, status, currentVersion, nextVersion, conflictCount, missingHours, canPublish, requiresAllowMissingHours, affected, issues, changes }`.
+**P15 response özeti:** `PublishPreviewDto { programId, status, currentVersion, nextVersion, conflictCount, missingHours, canPublish, requiresAllowMissingHours, affected, issues, changes, replacedPublishedProgramId, replacedPublishedVersion }`.
+- **`replacedPublishedProgramId` / `replacedPublishedVersion` (YENİ 2026-06-16, K3/K10):** Aynı (dönem, sınıf)
+  için zaten **canlı** (Yayında *veya* Revize) bir kardeş program varsa onun id/sürümü; yoksa null. FE
+  `PublishDrawer` bu doluyken **swap-uyarısı** gösterir ("Yayındaki X yayından kaldırılıp Taslağa alınacak").
+  `nextVersion` artık programın kendi `ScheduleVersion` geçmişinden (max+1) türetilir — demote edilmiş bir
+  program yeniden yayınlanırken sürüm çakışmaz.
 
 **P1 response özeti:** `ClassProgramListItemDto { id, academicTermId, branchId, status, placementCount, conflictCount, missingHours, lastUpdatedAt, version }`.
 
@@ -112,7 +126,14 @@ Notlar:
 }
 ```
 
-**P16 davranış:** boş program 409 `timetable.errors.publish-empty`; eksik saatler `allowMissingHours=false` iken 409 `timetable.errors.publish-missing-hours`; daha önce yayınlanmış program 409 `timetable.errors.already-published`; başarılı yayın `[academic].schedule_versions` içine snapshot yazar.
+**P16 davranış:** boş program 409 `timetable.errors.publish-empty`; eksik saatler `allowMissingHours=false`
+iken 409 `timetable.errors.publish-missing-hours`; başarılı yayın `[academic].schedule_versions` içine snapshot
+yazar.
+- **Publish-swap (REVİZE 2026-06-16, K3/K10):** "İkinci program" artık reddedilmez. Bir Taslak yayınlanırken
+  aynı (dönem, sınıf) için zaten **canlı** (Yayında *veya* Revize) bir kardeş varsa, MediatR
+  `TransactionBehavior` içinde tek atomik işlemde önce o kardeş **Taslağa indirilir** (`RevertToDraft()` —
+  silinmez), sonra bu program yayınlanır. Eski `already-published` reddi kalktı; sürüm, programın kendi
+  `ScheduleVersion` geçmişinden (max+1) türetilir.
 
 ### Rooms (Derslik Kataloğu) — ✅ canlı (rooms-first dilimi, 2026-06-10)
 

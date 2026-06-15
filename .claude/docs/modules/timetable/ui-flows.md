@@ -51,6 +51,39 @@ Frontend: `oksis-web/src/portals/admin/timetable/`
 
 ---
 
+#### Otomatik Üretim (Hub header akışı) — `ScheduleHubPage`
+
+**Portal:** admin
+**Permission:** `timetable.manage`
+**Component:** `AutoGenDrawer` (Hub başlığındaki butondan açılır)
+
+**Tetikleyici (REVİZE 2026-06-16, K5):** "✨ Otomatik Oluştur" butonu artık Hub **PageHeader**'ında,
+"Yeni Program"ın **solunda** yaşar — program-bağımsız, her zaman görünür. Satır `⋯` menüsünden **ve** editör
+`⋯` menüsünden **kaldırıldı**. Drawer `programId` olmadan, aktif dönem context'iyle açılır.
+
+**Sihirbaz akışı:**
+1. **Kapsam + Şube** (REVİZE): Kapsam bölümünde "Tek sınıf" aktif; "Kademe"/"Tümü" **disabled** (Dilim 2).
+   Bir **Şube seçici** (`GET /auto-generate/classes?termId=` ile dolar) — aktif dönemde **görevlendirmesi olan
+   tüm sınıfları** listeler (mevcut programı olsun ya da olmasın, K7).
+2. **Ayarlar:** Ağırlıklar (sabah/boşluk/denge) + katı mod (strict) toggle.
+3. **Üret:** `enqueue({ branchId, weights, strict })` → jobId → poll (~1200ms).
+4. **Sonuçlar:** 3 aday kartı (metrikler + mini-hafta + büyük önizleme + önerilen işareti); çözüm-yok →
+   gevşetme ipuçları; hata durumu.
+5. **Editörde Aç:** seçilen aday `apply` → dönen **yeni Taslak programId** ile `/admin/schedule/{newId}/edit`'e
+   gider (apply YENİ bir Taslak yaratır, mevcut programa dokunmaz).
+
+> Eski akış (geçersiz): autogen satır/editör `⋯` menüsünden, mevcut bir Draft/Revize programa uygulanıyordu.
+
+#### Yayınla Çekmecesi (PublishDrawer) — swap uyarısı
+
+**Component:** `PublishDrawer` (Hub + Editör aynı bileşeni açar)
+
+**Swap uyarısı (YENİ 2026-06-16, K3/K10):** `publish-preview` yanıtında `replacedPublishedProgramId` doluysa
+(aynı sınıf+dönem için zaten **canlı** — Yayında/Revize — bir kardeş var), drawer bir **swap-uyarısı + onay
+adımı** gösterir: "Yayındaki X yayından kaldırılıp Taslağa alınacak, bu program yayınlanacak — Devam?".
+Onaysız yayınlamaz; onaylanınca engellemez (tek transaction içinde eski canlı kardeş Taslağa indirilir, bu
+program yayınlanır).
+
 #### Excel Import — `/admin/timetable/import`
 
 **Portal:** admin

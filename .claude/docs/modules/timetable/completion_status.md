@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 tamam)   ·   Status: in-progress   ·   Güncel: 2026-06-15
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 tamam · çok-taslak/rezervasyon modeli + sınıf-bazlı autogen header akışı tamam)   ·   Status: in-progress   ·   Güncel: 2026-06-16
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -346,6 +346,26 @@
     "Editörde Aç"; çözüm-yok: ipuçları; hata) `useAutoGenerate`'e bağlı (enqueue → poll ~1200ms → apply →
     editöre yönlendir). Tetikleyiciler Hub satır menüsü + editör ⋯ (yalnız Draft/Revising). i18n
     `timetable.autogen.*` (tr/en). Tam web paketi yeşil.
+- **Çok-taslak program modeli + sınıf-bazlı otomatik üretim header akışı (BE+FE) (2026-06-16, K1–K12):**
+  Tasarım: `.claude/specs/ders-programi-cok-taslak-otomatik-uretim-design.md`.
+  - **Tek canlı + çok Taslak (K1/K9):** Sınıf+dönem için en fazla bir canlı (Yayında/Revize) program + sınırsız
+    Taslak. `CreateProgram`'dan `program-exists` reddi kaldırıldı (K2); tek-canlı garantisi filtreli index
+    (`status >= 1`) + publish-swap ile (migration `20260616_schedule_program_live_unique`).
+  - **Publish-swap (K3/K10):** Yayınlanırken canlı kardeş varsa `RevertToDraft()` ile Taslağa indirilir (silinmez),
+    sonra yayınlanır — `TransactionBehavior` ile atomik. `publish-preview` `replacedPublishedProgramId/Version`
+    döner; `PublishDrawer` swap-uyarısı gösterir. Re-publish sürümü `ScheduleVersion` geçmişinden (max+1) türetilir.
+  - **Rezervasyon yalnız canlı (K8/K12):** `lesson_placements.is_reserving` denormalize bayrağı; üç yerleşim
+    unique index'i `... AND is_reserving=1`. Taslaklar serbestçe çakışır; çakışma yayında/yayınlamada ve doluluk
+    ön-kontrolünde (`is_reserving=1 AND branch_id != X`) yüzeye çıkar (migration
+    `20260616_add_lesson_placement_is_reserving`).
+  - **İlk düzenleme → Revize (K11):** Published programa altı editör mutasyonundan biri kaydedilince `Revising`'e
+    geçer; canlı snapshot tüketiciye değişmeden kalır.
+  - **Autogen sınıf-bazlı sıfırdan + header tetik (K5/K6):** Tetik Hub başlığında ("Yeni Program"ın solunda) —
+    satır/editör ⋯ menüsünden kaldırıldı. `AutoGenDrawer` kapsam (Tek sınıf) + şube seçici (`GET .../auto-generate/
+    classes`). `schedule_generation_jobs` `program_id` → `branch_id`+`academic_term_id`+`academic_year_id`'ye
+    re-key edildi (migration `20260616_rekey_schedule_generation_jobs_to_branch`). Endpoint'ler: `POST .../auto-generate`
+    `{branchId, academicYearId, academicTermId, weights, strict}` → jobId; `GET .../auto-generate/{jobId}` (değişmedi);
+    `POST .../auto-generate/{jobId}/apply` `{candidateId}` → **yeni Taslak programId**. Apply YENİ bir Taslak yaratır.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
@@ -436,6 +456,11 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-16 — Program tekilliği "tek program/sınıf" → "tek Yayında/Revize (canlı) + çok Taslak" (K1/K9). program-exists reddi kaldırıldı; tek-canlı publish-swap + filtreli index ile zorlanır. Onay: kullanıcı.
+- 2026-06-16 — Yerleşim tekilliği (öğretmen/derslik/sınıf-slot) yalnız canlı programa daraltıldı (is_reserving denormalize, K8/K12). Taslaklar serbestçe çakışır; çakışma yayında/yayınlamada yakalanır. Onay: kullanıcı.
+- 2026-06-16 — Yayındaki programa ilk düzenleme kaydedilince Revize'ye geçer (K11, yeni davranış). Onay: kullanıcı.
+- 2026-06-16 — Otomatik üretim program-bazlı uygulamadan SINIF-bazlı sıfırdan üretime + yeni Taslak yaratmaya geçti; tetik Hub başlığına taşındı (K5/K6). Onay: kullanıcı.
+- 2026-06-16 — Not: `OKSIS-Faz3-Otomatik-Uretim-Test-Rehberi.docx` eskidi (satır-menüsü + program-bazlı akış anlatıyor) — yeni akışa göre yeniden üretilmeli.
 - 2026-06-15 · **Faz 3 handoff-zengin + 2-dilim ayrım:** Tasarım handoff'u (`.claude/design-handoffs/schedule_autogen.jsx`)
   ilk MVP'den zengin (3 aday + ağırlıklar + katı mod); tümüyle benimsendi. Faz 3, Dilim-1 (tek sınıf, bu) +
   Dilim-2 (kademe/tümü çok-sınıf, sonraki) olarak bölündü. Onay: kullanıcı (2026-06-15). Etki: yok.

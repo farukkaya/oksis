@@ -26,7 +26,12 @@ Bir Sınıf+Dönem programının kökü.
 | `row_version` | rowversion | optimistic concurrency |
 | + audit (`created_at/by`, `is_deleted`, ...) | | |
 
-- **Unique:** `ux_schedule_programs_class_term` `(school_id, academic_term_id, branch_id) WHERE is_deleted = 0` — bir sınıf+dönem'e tek program.
+- **Unique (REVİZE 2026-06-16, K9):** `ux_schedule_programs_class_term`
+  `(school_id, academic_term_id, branch_id) WHERE status >= 1 AND is_deleted = 0` — bir sınıf+dönem'e
+  en fazla **tek canlı** (Yayında *veya* Revize) program; **Taslak (status=0) sınırsız**. Eski
+  koşulsuz/`is_deleted=0`-yalnız index `status >= 1` filtresine genişletildi (migration
+  `20260616_schedule_program_live_unique`). "İkinci program yaratma" reddi `CreateProgram`'dan kalktı
+  (K2); tek-canlı garantisi bu filtreli index + publish-swap (K3/K10) ile sağlanır.
 
 ### `lesson_placements`
 Programdaki tek bir yerleşim (4 boyut + zaman). `academic_term_id`/`branch_id` index için `program`'dan denormalize.
@@ -41,14 +46,22 @@ Programdaki tek bir yerleşim (4 boyut + zaman). `academic_term_id`/`branch_id` 
 | `room_id` | uniqueidentifier NULL | |
 | `is_block`, `block_group_id` | bit, uniqueidentifier NULL | |
 | `is_active` | bit | default 1; Remove → 0 |
+| `is_reserving` | bit | **(YENİ 2026-06-16, K8/K12)** default 0; sahip programın `status ∈ {Revising(1), Published(2)}` (yani canlı) olduğunda 1. Program canlıya girince/çıkınca aggregate içinde tüm yerleşimlerinde senkronlanır (`school_id/term/branch` denormalizasyon desenini izler). |
 
-**Filtreli unique index'ler (çift-rezervasyon DB-seviye garanti — K0.2):**
+**Filtreli unique index'ler (rezervasyon DB-seviye garanti — REVİZE 2026-06-16, K8):**
 ```sql
-ux_placement_teacher_slot  (school_id, academic_term_id, teacher_id, day_of_week, period)  WHERE is_active = 1
-ux_placement_room_slot     (school_id, academic_term_id, room_id, day_of_week, period)     WHERE is_active = 1 AND room_id IS NOT NULL
-ux_placement_class_slot    (school_id, academic_term_id, branch_id, day_of_week, period)   WHERE is_active = 1
+ux_placement_teacher_slot  (school_id, academic_term_id, teacher_id, day_of_week, period)  WHERE is_active = 1 AND is_deleted = 0 AND is_reserving = 1
+ux_placement_room_slot     (school_id, academic_term_id, room_id, day_of_week, period)     WHERE is_active = 1 AND is_deleted = 0 AND is_reserving = 1 AND room_id IS NOT NULL
+ux_placement_class_slot    (school_id, academic_term_id, branch_id, day_of_week, period)   WHERE is_active = 1 AND is_deleted = 0 AND is_reserving = 1
 ```
 
+> **K8/K12 — Rezervasyon yalnız canlı programa daralır:** Üç index'in filtresine `is_reserving = 1`
+> eklendi (migration `20260616_add_lesson_placement_is_reserving`). Öğretmen/derslik/sınıf-slot
+> tekilliği yalnızca **rezerve eden** (canlı: Yayında/Revize) yerleşimlere uygulanır; **Taslaklar
+> rezerve etmez ve serbestçe çakışır**. Bir taslak kendi sınıfının canlı programıyla çakışmaz —
+> yalnız **diğer şubelerin** canlı yerleşimleriyle çakışabilir (publish-swap eski canlıyı devre dışı
+> bırakıp kaynağını boşaltacağı için). Çakışma yayında/yayınlamada ve doluluk ön-kontrolünde
+> (`is_reserving=1 AND branch_id != X`) yüzeye çıkar.
 > Occupancy (Redis) hız katmanıdır; **kaynak doğruluk bu DB index'leridir** — yarış durumunda ikinci yazımı reddeder.
 > `rooms` tablosu (rooms-first dilimi) korunur; eski `schedules` migration'ı varsa ScheduleProgram'a geçişte drop/replace edilir (dev, üretim verisi yok).
 
@@ -67,6 +80,27 @@ ux_schedule_exceptions_placement_date  (school_id, target_placement_id, date)   
 > Filtreli unique: aynı yerleşim + aynı gün için **tek aktif** geçici değişiklik (geri alma soft → yeni aktif kayda izin verir).
 > Migration `20260613_add_schedule_exceptions`. İzin `timetable.override` (migration `20260613_add_timetable_override_permission`).
 > Not: Aşağıdaki eski `schedule_overrides` (StartTime/EndTime) **superseded**'dir; geçerli model bu tablodur.
+
+### `schedule_generation_jobs` (Faz 3 Dilim-1 — otomatik üretim job'u)
+
+Otomatik üretim (tek-sınıf, sıfırdan) işinin durum + aday/ipucu deposu. `[academic]` şeması.
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | jobId |
+| `school_id` | uniqueidentifier | tenant, immutable |
+| `branch_id`, `academic_term_id`, `academic_year_id` | uniqueidentifier | **(RE-KEY 2026-06-16, K6)** job artık bir programa değil, bir **sınıfa (şube) + döneme + yıla** bağlı |
+| `scope` | int | 0=Single (tek sınıf). Kademe/Tümü = Dilim 2 |
+| `status` | int | 0=Queued, 1=Running, 2=Done, 3=NoSolution, 4=Failed |
+| `weights_json`, `strict` | nvarchar(max), bit | solver girdileri (ağırlıklar + katı mod) |
+| `candidates_json`, `hints_json` | nvarchar(max) NULL | 3 puanlı aday / gevşetme ipuçları |
+| + audit + `row_version` | | |
+
+> **RE-KEY (2026-06-16, K6):** Önceki sürüm tabloyu `program_id`'ye anahtarlıyordu (autogen mevcut bir
+> programa uygulanıyordu). Yeni model autogen'i **sıfırdan, sınıf-bazlı** çalıştırır; `program_id`
+> kaldırıldı, yerine `branch_id` + `academic_term_id` + `academic_year_id` geldi. Aday uygulandığında
+> **yeni bir Taslak `ScheduleProgram` yaratılır** (mevcut programa dokunulmaz). Migration
+> `20260616_rekey_schedule_generation_jobs_to_branch` (ilk tablo `20260615_add_schedule_generation_jobs`).
 
 ---
 
@@ -399,6 +433,10 @@ ADD CONSTRAINT ck_schedule_overrides_status_valid
 | 2026-05-26 | `20260526_evolve_schedules_indexes` | Yukarıdaki performans index'leri |
 | 2026-XX-XX | `XXXXXXXX_add_schedule_overrides` (Sprint 3) | `schedule_overrides` tablosu |
 | Faz 2 | `XXXXXXXX_drop_schedules_classroom_name` | `room_id` migration veri tamamlanınca `classroom_name` kolonu drop |
+| 2026-06-15 | `20260615_add_schedule_generation_jobs` | İlk `schedule_generation_jobs` tablosu (autogen) |
+| 2026-06-16 | `20260616_schedule_program_live_unique` | `ux_schedule_programs_class_term` filtresi `status >= 1`'e genişletildi (K9 — tek canlı + çok taslak) |
+| 2026-06-16 | `20260616_add_lesson_placement_is_reserving` | `lesson_placements.is_reserving` + üç yerleşim unique index'ine `is_reserving = 1` filtresi (K8 — rezervasyon yalnız canlı) |
+| 2026-06-16 | `20260616_rekey_schedule_generation_jobs_to_branch` | `schedule_generation_jobs`: `program_id` → `branch_id` + `academic_term_id` + `academic_year_id` (K6) |
 
 ---
 

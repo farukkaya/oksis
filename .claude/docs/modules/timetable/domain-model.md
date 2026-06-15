@@ -32,8 +32,22 @@
   uyarı üretir (Faz 1'de bloklamaz; müfredat kaynağı stub → no-op, Debt).
 
 **Davranışlar:** `Create`, `Place(slot, subjectId, teacherId, roomId?)` → PlacementId, `Move`, `Remove`
-(deaktivasyon), `AssignTeacher`, `AssignRoom`, `SetBlock`. Öğretmen/derslik çapraz çakışması aggregate
-sınırını aşar → application (occupancy ön-kontrol + DB filtreli unique index son savunma).
+(deaktivasyon), `AssignTeacher`, `AssignRoom`, `SetBlock`, `Publish(int version, …)`, `RevertToDraft()`,
+`ApplyGeneratedDraft(...)`. Öğretmen/derslik çapraz çakışması aggregate sınırını aşar → application
+(occupancy ön-kontrol + DB filtreli unique index son savunma).
+
+**Çok-taslak / canlı-program davranışı (2026-06-16, K6/K9/K10/K11):**
+- `Publish(int version, …)` — yayın sürümü artık dışarıdan verilir; uygulama bunu programın kendi
+  `ScheduleVersion` geçmişinden (max+1) türetir → demote edilmiş bir program yeniden yayınlanırken sürüm
+  çakışmaz. `Draft/Revising → Published`. (Eski "yeniden yayınlanamaz" kısıtı kalktı.)
+- `RevertToDraft()` — canlı (Yayında *veya* Revize) bir programı **Taslağa indirir** (publish-swap'ta eski
+  canlı kardeş için; silinmez). Yerleşimlerin `IsReserving` bayrağını temizler.
+- `ApplyGeneratedDraft(...)` — autogen adayının yerleşimlerini **yeni bir Taslak** programa doldurur (apply
+  mevcut programa dokunmaz; `Create` ile birlikte kullanılır).
+- **İlk düzenlemede Revize (K11):** Düzenleme komutları (Move/Place/Remove/AssignTeacher/AssignRoom/SetBlock)
+  bir `Published` programda çalışınca durumu `Revising`'e çevirir; canlı snapshot tüketiciye değişmeden kalır.
+- **Rezervasyon (K8):** Program canlıya (Yayında/Revize) girip çıktıkça aggregate, yerleşimlerinin
+  `IsReserving` bayrağını senkronlar (yalnız canlı program rezerve eder).
 
 **Domain event'ler:** `ScheduleProgramCreatedEvent`, `LessonPlacedEvent`, `LessonRemovedEvent`.
 
@@ -49,6 +63,7 @@ sınırını aşar → application (occupancy ön-kontrol + DB filtreli unique i
 | `RoomId` | `Guid?` | opsiyonel |
 | `IsBlock`, `BlockGroupId` | `bool`, `Guid?` | blok ders işareti |
 | `IsActive` | `bool` | Remove → false (filtreli unique index `WHERE is_active=1`) |
+| `IsReserving` | `bool` | **(YENİ 2026-06-16, K8)** sahip program canlı (Yayında/Revize) ise true; üç çakışma unique index'i artık `... AND is_reserving=1` ile filtreler — yalnız canlı programlar kaynak rezerve eder, taslaklar serbestçe çakışır |
 
 > Aggregate'ler arası referans yalnız Id ile (navigation yok — modül izolasyonu).
 > Davranış metotları `internal` (yalnız `ScheduleProgram` çağırır).
@@ -64,6 +79,23 @@ sınırını aşar → application (occupancy ön-kontrol + DB filtreli unique i
 - `IBellScheduleProvider` — şube kademesine göre period sayısı (school-settings).
 - `ITeachingAssignmentSource` — şube görevlendirmeleri (Teachers) → "yerleşmemiş dersler".
 - `IWeeklyHourRequirementProvider` — müfredat haftalık saati (Faz 1 stub).
+
+### `ScheduleGenerationJob` (Faz 3 Dilim-1 — otomatik üretim job'u)
+
+Otomatik üretim işinin durum + aday/ipucu kaydı.
+
+| Alan | Tip | Not |
+|---|---|---|
+| `Id` | `Guid` | jobId |
+| `SchoolId` | `Guid` | tenant, immutable |
+| `BranchId`, `AcademicTermId`, `AcademicYearId` | `Guid` | **(RE-KEY 2026-06-16, K6)** job artık bir programa değil, bir **sınıfa + döneme + yıla** bağlı (`ProgramId` kaldırıldı) |
+| `Scope` | enum | `Single` (tek sınıf). Kademe/Tümü = Dilim 2 |
+| `Status` | enum | `Queued/Running/Done/NoSolution/Failed` |
+| `CandidatesJson`, `HintsJson` | `string?` | 3 puanlı aday / gevşetme ipuçları |
+
+> RE-KEY (K6): Önceki sürüm `ProgramId`'ye anahtarlıydı (autogen mevcut programa uygulanıyordu). Yeni model
+> sıfırdan, sınıf-bazlı üretir; aday uygulandığında **yeni bir Taslak `ScheduleProgram`** yaratılır. Tablo:
+> `database-schema.md`. Durum-geçiş metotları korumasız (tek-yazıcı job).
 
 ---
 

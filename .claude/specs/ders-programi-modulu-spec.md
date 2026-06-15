@@ -36,6 +36,12 @@ Bu kararlar brainstorming oturumunda alındı ve modülün tamamını yönetir:
 
 > Ekran→faz eşlemesi tasarım handoff'una göre: Faz 1 = `schedule.jsx`, `schedule_editor.jsx`. Diğer `schedule_*.{jsx}` dosyaları sonraki fazlarda.
 
+> **REVİZYON (2026-06-16) — bkz. `.claude/specs/ders-programi-cok-taslak-otomatik-uretim-design.md` (K1–K12):**
+> Faz 3 otomatik üretim girişi **Hub başlığından, program-bağımsız ve sıfırdan** çalışır (sınıf-bazlı; aday
+> uygulanınca **yeni Taslak program** yaratılır) — satır/editör `⋯` menüsünden değil. Ayrıca program tekilliği
+> "tek program/sınıf"tan **"tek canlı (Yayında/Revize) + çok Taslak"a** revize edildi; rezervasyon yalnız canlı
+> programlara daraltıldı. Aşağıdaki §4.1 tekillik maddesi bu tasarımla geçerliliğini yitirdi.
+
 ---
 
 ## 2. Faz 1 — Kapsam sınırı
@@ -108,7 +114,7 @@ Her kural ayrı, test edilebilir bir birim. **Katı (engelleyici):** Öğretmen 
 ## 4. Persistence (Faz 1)
 
 ### 4.1 Tablolar
-- **`schedule_programs`** — `id, school_id, academic_year_id, academic_term_id, branch_id, status, version, row_version` + audit. Unique: `(school_id, academic_term_id, branch_id)` (bir sınıf+dönem'e tek program).
+- **`schedule_programs`** — `id, school_id, academic_year_id, academic_term_id, branch_id, status, version, row_version` + audit. Unique: `(school_id, academic_term_id, branch_id)` (bir sınıf+dönem'e tek program). **[REVİZE 2026-06-16, K9 — bkz. tasarım dokümanı]** Unique filtresi `WHERE status >= 1` olarak genişletildi: tek **canlı** (Yayında/Revize) + sınırsız Taslak. Yerleşim unique index'leri (§4.2) ise `... AND is_reserving = 1` ile yalnız canlı programa daraltıldı (K8).
 - **`lesson_placements`** — `id, school_id, program_id, academic_term_id, branch_id, day_of_week, period, subject_id, teacher_id, room_id?, is_block, block_group_id?, is_active` + audit. (`academic_term_id` ve `branch_id` §4.2 index'leri için `program`'dan denormalize edilir — bkz. AS-1.)
 
 ### 4.2 Filtreli unique index'ler (K0.2'nin teknik temeli — teknik analiz §3.2/§4.2)

@@ -82,7 +82,8 @@ Modülün ana akışı:
   - ⏳ Web matris UI (sürükle-bırak)
   - ⏳ Mobile bugün + hafta ekranları (3 portal)
   - ❗ Müfredat kotası (`curriculum_plans`) → Faz 2 (open question'da kalıyor)
-  - ✅ Otomatik solver (Faz 3 Dilim-1, tek-sınıf) — `IScheduleSolver` + 3 puanlı aday + üret≠uygula
+  - ✅ Otomatik solver (Faz 3 Dilim-1, tek-sınıf) — `IScheduleSolver` + 3 puanlı aday + üret≠uygula; **sınıf-bazlı sıfırdan + Hub header tetik + yeni Taslak** (2026-06-16, K5/K6)
+  - ✅ Çok-taslak program modeli — tek canlı (Yayında/Revize) + çok Taslak; publish-swap; rezervasyon yalnız canlı (2026-06-16, K1/K8/K9/K10/K11)
   - ⏳ Otomatik solver Dilim-2 (kademe/tümü çok-sınıf) → ertelendi
 
 > Açık sorular için bkz. `open-questions.md`.
@@ -96,7 +97,7 @@ Modülün ana akışı:
 - **Sprint:** Sprint 2
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-15
+- **Last Updated:** 2026-06-16
 - **Files:**
   - [x] README.md
   - [x] domain-model.md
