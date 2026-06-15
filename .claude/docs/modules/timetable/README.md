@@ -82,7 +82,8 @@ Modülün ana akışı:
   - ⏳ Web matris UI (sürükle-bırak)
   - ⏳ Mobile bugün + hafta ekranları (3 portal)
   - ❗ Müfredat kotası (`curriculum_plans`) → Faz 2 (open question'da kalıyor)
-  - ❗ Otomatik solver → Faz 2
+  - ✅ Otomatik solver (Faz 3 Dilim-1, tek-sınıf) — `IScheduleSolver` + 3 puanlı aday + üret≠uygula
+  - ⏳ Otomatik solver Dilim-2 (kademe/tümü çok-sınıf) → ertelendi
 
 > Açık sorular için bkz. `open-questions.md`.
 

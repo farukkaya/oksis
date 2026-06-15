@@ -46,6 +46,24 @@
 | P30 | GET | `/api/v1/timetable/programs/{id:guid}/versions` | `timetable.manage` | Programın yayın sürümleri (version desc; kim/ne zaman/not/sayı) | 200 |
 | P31 | GET | `/api/v1/timetable/programs/{id:guid}/versions/{version:int}/diff` | `timetable.manage` | vN ile v(N-1) arası satır-satır fark (v1 ilk-yayın) | 200 / 404 |
 | P32 | POST | `/api/v1/timetable/programs/{id:guid}/versions/{version:int}/restore` | `timetable.manage` | Seçilen sürümü aktif programa Draft (Revising) olarak geri yükle | 200 / 404 / 409 |
+| P33 | POST | `/api/v1/timetable/programs/{id:guid}/auto-generate` | `timetable.manage` | Tek-sınıf otomatik üretim job'ı kuyruğa al (üret) | 202 / 404 / 409 |
+| P34 | GET | `/api/v1/timetable/auto-generate/{jobId:guid}` | `timetable.manage` | Üretim job durumu + adaylar/ipuçları (poll) | 200 / 404 |
+| P35 | POST | `/api/v1/timetable/auto-generate/{jobId:guid}/apply` | `timetable.manage` | Seçilen adayı taslağa uygula (uygula) | 200 / 404 / 409 |
+
+**P33–P35 (Faz 3 Dilim-1 Otomatik Üretim — tek-sınıf) notları:**
+- **Akış (üret≠uygula):** P33 ile bir `ScheduleGenerationJob` oluşturulur + Hangfire'a kuyruğa alınır →
+  P34 ile durum poll edilir (web ~1200ms) → tamamlanınca adaylardan biri seçilip P35 ile **taslağa** uygulanır.
+  Apply ≠ yayın: seçilen aday `ScheduleProgram.RestoreFrom` ile aktif programa Draft/Revising olarak yazılır;
+  admin sonra ince-ayar yapıp ayrıca yayınlar.
+- **P33:** Yalnız `Draft`/`Revising` program — `Published` reddedilir (409). İçerde tek-sınıf solver girdileri
+  toplanır (talepler görevlendirmeden, slotlar zil periyotlarından, dış doluluk çapraz-program). Yanıt `{ jobId }`.
+  Retry-idempotency: yalnız `Queued` job koşar. İzin `timetable.manage` (yeni izin yok). Self/tenant-scope (IDOR
+  EF global filtre).
+- **P34:** `ScheduleGenerationJobStatusDto { jobId, status, candidates[], hints[] }`; durum
+  `Queued|Running|Done|NoSolution|Failed`. `Done` → 3 puanlı aday (metrikler + önerilen işareti); `NoSolution`
+  (katı mod) → `RelaxationHints`; `Failed` → hata. Tek-sınıf bu dilim; kademe/tümü = Dilim-2 (UI'da disabled).
+- **P35:** `{ candidateId }` (seçilen aday). Aday `RestoreFrom` ile taslağa yazılır → `Draft`/`Revising`. Çapraz
+  öğretmen/derslik çakışması DB filtreli unique index ile → 409. Job/aday yok → 404.
 
 **P30–P32 (B-1 Sürüm Geçmişi) notları:**
 - **P30:** `ScheduleVersionListItemDto { version, publishedAt, publishedByName, note, placementCount }[]` (version desc). `PublishedBy` Guid → `db.Persons.Name.FullName`; çözülemezse "—".
