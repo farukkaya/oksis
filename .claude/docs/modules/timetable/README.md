@@ -95,7 +95,7 @@ Modülün ana akışı:
 - **Sprint:** Sprint 2
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-12
+- **Last Updated:** 2026-06-15
 - **Files:**
   - [x] README.md
   - [x] domain-model.md

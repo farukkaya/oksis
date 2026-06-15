@@ -4,115 +4,101 @@
 
 > Genel akış için bkz. `backend/notification-rules.md` (teknik) ve `notification-matrix.md` (içerik).
 
+> **Faz 2.6 (2026-06-15) teslim notu — kanal:** Aşağıdaki dağıtımlar şu an **yalnız in-app + SignalR**
+> ile gerçekleşir (`InAppNotificationChannel` → `Notification` satırı + `NotificationHub` /hubs/notifications
+> canlı push). **Push (FCM) + email ertelendi (Debt-N2)** — FCM altyapısı ve mobil katman henüz yok.
+> Sessiz saatler/cooldown da bu fazda **yok (Debt-N3)**; sezon-başı tek-tetik düşük aciliyetli olduğu için.
+> Aşağıdaki tablolarda "Push + InApp" gösterimi **hedef** durumdur; bugün fiilen yalnız in-app + SignalR aktiftir.
+> Pipeline: domain event → MediatR `INotificationHandler` (commit-after) → `INotificationEnqueuer` (Hangfire)
+> → `DispatchNotificationJob` → `NotificationDispatcher` (per-recipient idempotency, delivery-log) →
+> `InAppNotificationChannel`. Alıcı çözümü `NotificationRecipientResolver` (şube → öğrenci + veli login
+> Account.Id'leri `Person.LinkedAccountId` üzerinden; öğretmen Person→Account). Idempotency:
+> `[notifications]` şemasında filtreli unique `(SchoolId, EventId, RecipientAccountId, Channel)`.
+
 ---
 
 ## Domain Event → Bildirim Akışı
 
-### `SchedulePublishedEvent`
+> **Gerçekleşen 5 timetable event'i (Faz 2.6):** `ScheduleProgramPublishedEvent`,
+> `ScheduleExceptionCreatedEvent`, `ScheduleExceptionRevokedEvent`, `ScheduleProgramDeletedEvent`
+> bildirim üretir; `ScheduleProgramRestoredEvent` **tasarım gereği sessizdir** (aşağıda).
 
-**Tetiklenme:** SchoolAdmin `POST /api/v1/timetable/publish` çağırdığında, `Draft → Published` geçişinden sonra. `publishMode` parametresine göre davranış değişir:
+### `ScheduleProgramPublishedEvent`
 
-- `publishMode == "Initial"` (sezon başı): Etkilenen tüm Schedule satırları için **tek bir dijest event** yayınlanır. Yüzlerce bildirim atılmaz.
-- `publishMode == "MidTerm"`: Sadece `Version > 1` veya yeni eklenen satırlar için bildirim. Değişmemiş satırlar atlanır.
+**Tetiklenme:** SchoolAdmin `POST /api/v1/timetable/programs/{id}/publish` çağırdığında, yayın
+(`Publish`) işleminden sonra. Bildirim metni **ilk yayın (v1)** ile **yeniden yayın (vN)** için
+farklıdır (sürüm numarasına göre).
 
-**Alıcılar:**
+- **v1 (ilk yayın, sezon başı):** Etkilenen şubenin tüm tüketicileri için tek bildirim seti. Yüzlerce ayrı push atılmaz.
+- **vN (yeniden yayın, sezon ortası):** "Programınız güncellendi" metni.
 
-| Alıcı Rol | Kanal | Priority | Cooldown |
+**İdempotency anahtarı:** `EventId = Combine(ProgramId, Version)`.
+
+**Alıcılar (branch consumers):**
+
+| Alıcı Rol | Kanal (bugün) | Priority | Cooldown |
 |---|---|---|---|
-| Teacher (etkilenen) | Push + InApp | Normal | yok (sezon başı tek tetik) |
-| Parent (etkilenen şubenin) | Push + InApp | Normal | yok (sezon başı tek tetik) |
-| Student (etkilenen şubenin) | InApp | Low | yok |
+| Teacher (etkilenen) | InApp + SignalR (Push hedef = Debt-N2) | Normal | yok (Debt-N3) |
+| Parent (etkilenen şubenin) | InApp + SignalR (Push hedef = Debt-N2) | Normal | yok (Debt-N3) |
+| Student (etkilenen şubenin) | InApp + SignalR | Low | yok (Debt-N3) |
 
 **Template (TR):**
 
-- Sezon başı (Initial):
+- İlk yayın (v1):
   - Title: `📅 {AcademicTermName} ders programı yayınlandı`
   - Body (Teacher): `Haftalık programınızı görüntülemek için dokunun.`
   - Body (Parent): `{ChildName} için yeni dönem programı hazır.`
   - Body (Student): `Yeni dönem programı yayınlandı.`
 
-- Sezon ortası (MidTerm):
+- Yeniden yayın (vN):
   - Title: `📅 Ders programınızda güncelleme var`
-  - Body (Teacher): `{ChangeCount} ders saatiniz güncellendi.`
-  - Body (Parent): `{ChildName}'in programında {ChangeCount} değişiklik var.`
+  - Body (Teacher): `Programınız güncellendi (sürüm {Version}).`
+  - Body (Parent): `{ChildName}'in programında güncelleme var (sürüm {Version}).`
 
-**Kapsam Kontrolü:**
-- Parent sadece kendi çocuğunun şubesi için bildirim alır (`student_parents.parent_id == recipient.UserId`).
-- Teacher sadece kendi `TeacherId`'sini içeren satırlar için.
-- Student sadece kendi `BranchId`'si için.
-- Pasif/silinmiş kullanıcılar resolver tarafından elenir.
-
-**Deep Link:**
-- Mobile: `oksis://timetable/weekly?branchId={...}` (parent için çocuk seçici prefill)
-- Web: `https://{tenant}/timetable/branch/{branchId}`
+**Kapsam Kontrolü (`NotificationRecipientResolver`):**
+- Şube (classroom) → öğrenci (`StudentProfile.CurrentClassroomId`) + veli (`ParentStudentRelationship` aktif) login Account.Id'leri (`Person.LinkedAccountId`).
+- Teacher: Person → Account.
+- Tenant başına açık `SchoolId` filtresi (cross-tenant alıcı elenir).
+- Pasif/login'siz Person'lar elenir (LinkedAccountId yoksa atlanır).
 
 ---
 
-### `ScheduleSupersededEvent`
+### `ScheduleExceptionCreatedEvent`
 
-**Tetiklenme:** Published bir Schedule, `PUT /schedules/{id}` ile yeni versiyona geçtiğinde. Tek satır = tek event.
+**Tetiklenme:** Geçici değişiklik (`ScheduleException`) oluşturulduğunda — `POST .../exceptions` (P25).
+Tip `Cancellation` ise bildirim türü **TimetableCancelled**, aksi hâlde **TimetableException**.
 
-**Alıcılar:**
+**İdempotency anahtarı:** `EventId = Combine(ExceptionId, "created")`.
 
-| Alıcı Rol | Kanal | Priority | Cooldown |
+**Alıcılar:** şube tüketicileri (öğrenci + veli) **+ orijinal öğretmen + yeni (vekil) öğretmen**.
+
+| Alıcı Rol | Kanal (bugün) | Priority | Cooldown |
 |---|---|---|---|
-| Teacher (eski + yeni — farklıysa ikisi de) | Push + InApp | Normal | 1 saat |
-| Parent (etkilenen şubenin) | Push + InApp | Normal | 1 saat |
-| Student (etkilenen şubenin) | Push + InApp | Low | 1 saat |
+| Teacher (orijinal) | InApp + SignalR (Push hedef = Debt-N2) | Normal | yok (Debt-N3) |
+| Teacher (yeni/vekil) | InApp + SignalR (Push hedef = Debt-N2) | Normal | yok (Debt-N3) |
+| Parent (şubenin) | InApp + SignalR | Normal | yok (Debt-N3) |
+| Student (şubenin) | InApp + SignalR | Normal | yok (Debt-N3) |
 
-> **Cooldown 1 saat:** Aynı kullanıcı 1 saat içinde aynı `branch_id` için 2+ supersede event alırsa **tek dijest** push olur ("3 değişiklik var").
+**Template (TR) — istisna tipine göre:**
 
-**Template (TR):**
-
-- Title: `📅 Programda değişiklik: {DayName} {LessonOrder}. ders`
-- Body (Parent): `{ChildName}'in {DayName} {LessonOrder}. dersi güncellendi. {OldSummary} → {NewSummary}`
-- Body (Teacher, eski): `Bu derse artık atanmıyorsunuz: {DayName} {Time} {BranchName} {CourseName}`
-- Body (Teacher, yeni): `Yeni dersiniz: {DayName} {Time} {BranchName} {CourseName}`
-
-`{OldSummary}` ve `{NewSummary}` örnek: `"Matematik / Ayşe Y. / B-12"`.
-
-**Kapsam:** SchedulePublishedEvent ile aynı (etkilenen şube + ilgili öğretmenler).
-
----
-
-### `ScheduleOverrideCreatedEvent`
-
-**Tetiklenme:** `POST /api/v1/timetable/overrides` ile tek günlük değişiklik oluşturulduğunda. Override aktif statüde ilk yazıldığında.
-
-**Alıcılar:**
-
-| Alıcı Rol | Kanal | Priority | Cooldown |
-|---|---|---|---|
-| Teacher (orijinal, eğer Cancellation/Substitution ise) | Push + InApp | **High** | yok (anlık) |
-| Teacher (yerine giren, Substitution/Combined ise) | Push + InApp | **High** | yok — ayrıca `TeacherSubstitutionAssignedEvent` tetiklenir |
-| Parent (şubenin) | Push + InApp | **High** | 15 dk |
-| Student (şubenin) | Push + InApp | **High** | 15 dk |
-
-> **Priority High:** Acil; **sessiz saatler dahi ihlal edilir** çünkü ertesi gün dersi etkiler (örn. 22:30'da "yarın 3. ders iptal").
-
-> **Cooldown 15 dk:** Aynı şubeye 15 dk içinde 2+ override gelirse dijest ("3 değişiklik var").
-
-**Template (TR) — override tipine göre:**
-
-| OverrideType | Title | Body (Parent) |
+| ExceptionType | Title | Body (Parent) |
 |---|---|---|
 | `Cancellation` | `❌ Ders iptal: {Date} {LessonOrder}. ders` | `{ChildName}'in {Date} {LessonOrder}. dersi ({CourseName}) iptal edildi. Sebep: {Reason}` |
 | `TeacherSubstitution` | `👤 Öğretmen değişikliği: {Date} {LessonOrder}. ders` | `{ChildName}'in {Date} {CourseName} dersine {NewTeacherName} girecek.` |
 | `RoomChange` | `🚪 Derslik değişikliği: {Date} {LessonOrder}. ders` | `{ChildName}'in {Date} {CourseName} dersi {NewRoomCode} dersliğine alındı.` |
-| `TimeChange` | `🕒 Saat değişikliği: {Date} {LessonOrder}. ders` | `{ChildName}'in {Date} {CourseName} dersi {NewStartTime}-{NewEndTime} olarak değişti.` |
-| `Combined` | `📌 Ders güncellendi: {Date} {LessonOrder}. ders` | `{ChildName}'in {Date} {CourseName} dersinde birden fazla değişiklik var. Detay için dokunun.` |
 
-**Deep Link:**
-- Mobile (Parent): `oksis://timetable/today?date={overrideDate}&childId={...}&highlight={overrideId}`
-- Mobile (Student/Teacher): `oksis://timetable/today?date={overrideDate}&highlight={overrideId}`
+> Eski kontrat taslağındaki `TimeChange`/`Combined` tipleri period modelinde kapsam dışıdır (bkz. completion_status sapma kaydı).
 
 ---
 
-### `ScheduleOverrideRevertedEvent`
+### `ScheduleExceptionRevokedEvent`
 
-**Tetiklenme:** Aktif bir override `DELETE /api/v1/timetable/overrides/{id}` ile geri alındığında.
+**Tetiklenme:** Aktif bir geçici değişiklik geri alındığında — `POST .../exceptions/{eid}/revoke` (P27).
+Bildirim türü **TimetableExceptionRevoked**.
 
-**Alıcılar:** Aynı `ScheduleOverrideCreatedEvent` ile — ama priority `Normal` (geri alma genelde acil değil).
+**İdempotency anahtarı:** `EventId = Combine(ExceptionId, "revoked")`.
+
+**Alıcılar:** şube tüketicileri (öğrenci + veli). Kanal InApp + SignalR; priority `Normal`.
 
 **Template (TR):**
 
@@ -121,30 +107,28 @@
 
 ---
 
-### `TeacherSubstitutionAssignedEvent`
+### `ScheduleProgramDeletedEvent`
 
-**Tetiklenme:** Override tipi `TeacherSubstitution` veya `Combined` (yeni teacher set edildiyse) — yerine giren öğretmenin bilgilendirilmesi için **ayrı bir event** (ScheduleOverrideCreatedEvent paralel).
+**Tetiklenme:** Bir program silindiğinde — `DELETE /programs/{id}`. Bildirim türü **TimetableProgramDeleted**.
 
-**Alıcılar:**
+**İdempotency anahtarı:** `EventId = Combine(ProgramId, "deleted", Version)`.
 
-| Alıcı Rol | Kanal | Priority | Cooldown |
-|---|---|---|---|
-| Teacher (yeni — yerine giren) | Push + InApp + (opsiyonel) SMS | **High** | yok |
-
-> **Neden ayrı event:** Yerine giren öğretmen için **çok özel bir bilgilendirme** gerekir — şube, ders, saat, derslik, telafi/yıllık plan referansı. Şube velisine giden mesajla aynı şablon olamaz.
+**Alıcılar:** şube tüketicileri (öğrenci + veli). Kanal InApp + SignalR; priority `Normal`.
 
 **Template (TR):**
 
-- Title: `👤 Yerine geçme görevi: {Date} {DayName} {LessonOrder}. ders`
-- Body: `{Date} {Time} arası {BranchName} sınıfında {CourseName} dersini siz gireceksiniz. Derslik: {RoomCode}. Sebep: {Reason}`
+- Title: `🗑️ Ders programı kaldırıldı`
+- Body: `{ChildName}'in ders programı kaldırıldı. Yeni program yayınlanınca bilgilendirileceksiniz.`
 
 ---
 
-### `ScheduleArchivedEvent`
+### `ScheduleProgramRestoredEvent` — **sessiz (tasarım gereği)**
 
-**Tetiklenme:** `POST /api/v1/timetable/schedules/{id}/archive` çağrıldığında. Genellikle Supersede akışı içinde otomatik (eski versiyon arşivlenir).
+**Tetiklenme:** Bir sürüm geri yüklendiğinde — `RestoreScheduleVersion` (P32).
 
-**Alıcılar:** **Bildirim gönderilmez.** Bu sadece audit ve cache invalidation için sistem event'idir. Veliye/öğretmene "satır arşivlendi" demek anlamsız — onlar `ScheduleSupersededEvent` üzerinden zaten haberdar.
+**Alıcılar:** **Bildirim gönderilmez (Debt-BE-6, tasarımla kapatıldı).** Geri yükleme **yeni sürüm üretmez**;
+program `Revising` (taslak) durumuna düşer. Değişiklik tüketiciye ancak **sonraki yayın**
+(`ScheduleProgramPublishedEvent`) ile yansır. Restore için handler **yoktur** — bilinçli sessizdir.
 
 ---
 
@@ -177,30 +161,30 @@
 
 ## Recipient Resolver Notu
 
-`INotificationRecipientResolver` bu modülün event'leri için şu mantığı uygular:
+`NotificationRecipientResolver` (Faz 2.6 fiili implementasyon) bu modülün event'leri için
+şu mantığı uygular:
 
 ```
-event payload → SchoolId + ScheduleId (veya OverrideId, BranchId)
+event payload → SchoolId + branch (classroom) Id
   ↓
-Schedule'dan branch_id + teacher_id çek
-  ↓
-related users'ı bul:
-  • Teacher: schedules.teacher_id == users.teacher_id
-  • Parent:  student_parents.parent_id WHERE students.branch_id == schedules.branch_id
-             AND student_parents.can_view_attendance == 1
-  • Student: students.user_id WHERE students.branch_id == schedules.branch_id
+şube (classroom) → tüketici Account.Id'leri:
+  • Student: StudentProfile.CurrentClassroomId == branchId → Person.LinkedAccountId
+  • Parent:  ParentStudentRelationship (aktif) → veli Person → Person.LinkedAccountId
+  • Teacher: ilgili öğretmen Person → Account (event tipi öğretmen istiyorsa)
   ↓
 filtre:
-  • user.is_deleted == 0
-  • user.status == Active
-  • cross-tenant kontrolü (recipient.school_id == event.school_id) — zorunlu
-  • preference (kullanıcı bu event tipi için bildirim açık mı)
-  • cooldown (son N dakikada aynı event geldi mi)
-  • quiet hours (priority High değilse 22:00-07:00 ertelenir)
+  • LinkedAccountId yoksa (login Account'u yok) atlanır
+  • cross-tenant kontrolü: açık SchoolId filtresi (recipient.school_id == event.school_id) — zorunlu
   ↓
-final recipient list → notification queue
+final recipient list → DispatchNotificationJob → NotificationDispatcher
+  ↓ (per-recipient)
+  delivery-log idempotency (SchoolId, EventId, RecipientAccountId, Channel) → InAppNotificationChannel
 ```
 
+> **Not (Faz 2.6 sınırları):** preference filtresi (Debt-N5), cooldown (Debt-N3) ve quiet-hours (Debt-N3)
+> henüz uygulanmadı. Idempotency iki pencerede zayıf (eşzamanlı dispatch + crash/retry) — DB unique index
+> backstop'tur; tam exactly-once Outbox gerektirir (Debt-N1, Debt-N6).
+>
 > Detay: `backend/notification-rules.md` § 5.
 
 ---
@@ -211,10 +195,13 @@ Aşağıdaki anahtarlar `user_notification_preferences` tablosunda tutulur; defa
 
 | Key | Default | Açıklama |
 |---|---|---|
-| `timetable.published` | true | Sezon başı/ortası yayın bildirimi |
-| `timetable.changed` | true | Schedule supersede |
-| `timetable.override.urgent` | true | İptal, yerine geçme, derslik/saat değişikliği (kapatılamaz mı?) |
+| `timetable.published` | true | Program yayın bildirimi (`ScheduleProgramPublishedEvent`) |
+| `timetable.changed` | true | Geçici değişiklik oluşturma/geri alma (`ScheduleExceptionCreated/RevokedEvent`) |
+| `timetable.override.urgent` | true | İptal, yerine geçme, derslik değişikliği (kapatılamaz mı?) |
 | `timetable.digest.tomorrow` | false | Yarınki ders dijesti (opt-in) |
+
+> **Faz 2.6 notu:** Bildirim tercihi tabloları henüz uygulanmadı (Debt-N5) — şu an tüm tüketiciler
+> ilgili event'i alır; per-kanal/per-tip kullanıcı tercihi sonraki iş.
 
 > **`timetable.override.urgent` kapatılamaz** — pedagojik gereklilik. UI'da disable görünür, neden açıklaması verilir.
 
@@ -225,7 +212,7 @@ Aşağıdaki anahtarlar `user_notification_preferences` tablosunda tutulur; defa
 - ❌ Sync olarak Command handler içinde bildirim göndermek (Hangfire queue zorunlu).
 - ❌ Template'de TCKN, telefon, email gibi PII.
 - ❌ Cross-tenant alıcı (recipient `SchoolId` farklıysa).
-- ❌ `SchedulePublishedEvent` (Initial mode) için kullanıcı başına 100+ ayrı push — **tek dijest** atılmalı.
+- ❌ `ScheduleProgramPublishedEvent` (ilk yayın) için kullanıcı başına 100+ ayrı push — **tek dijest** atılmalı.
 - ❌ Sessiz saatte (22:00-07:00) `Priority == Normal/Low` push göndermek — sabah dijestine ertelenir. **Override.urgent istisnadır.**
 - ❌ Override için "muhtemelen değiştirilecek" gibi muğlak mesaj — net + aksiyon-yönlü olmalı.
 - ❌ Geri alınan override için bildirim atlamak — kullanıcı ilk değişikliği gördü, geri alındığını da görmeli.
