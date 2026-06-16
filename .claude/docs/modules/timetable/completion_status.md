@@ -213,9 +213,11 @@
   - **Gerçek hesap:** `MissingHours`, şube-görevlendirme haftalık saatleri ile aktif
     yerleşimler arasındaki farktan hesaplanır. `LastUpdatedAt` audit `UpdatedAt ?? CreatedAt`;
     default audit tarihi UI'ya sızmaz. `Version`, program aggregate sürümüdür.
-  - **Çakışma notu:** Aktif hard çakışmalar yazma anında occupancy + filtered unique index ile
-    engellendiği için Hub `ConflictCount=0` gerçek bir backstop bilgisidir; stale validation
-    modeli gelirse bu alan genişletilecek.
+  - **Çakışma notu (GÜNCELLENDİ 2026-06-17):** Eski "Hub `ConflictCount=0` backstop" varsayımı Faz 3
+    rezervasyon modeliyle (K8: Taslaklar rezerve etmez) geçersiz kaldı — Taslaklar başka sınıfların
+    canlı programlarıyla gerçek çakışma taşıyabilir. Artık `ConflictCount` + `MissingHours`
+    `schedule_programs`'a denormalize saklanır ve `IScheduleProgramStatsRecomputer` ile
+    yerleşim/yayın/silme/restore anında recompute edilir; Hub bunları okur (aşağıya bkz).
   - **Web:** Hub özet şeridine çakışma/eksik-saat rozetleri ve tabloya Çakışma, Eksik Saat,
     Son Güncelleme, Sürüm kolonları eklendi.
   - **Test/Build:** Timetable Vitest: 44 test yeşil. Application timetable: 29 test yeşil.
@@ -376,6 +378,14 @@
     sihirbazda toggle. 3-4 ardışık/aynı-gün yığılması önlenir; yer yoksa eksik saat.
   - **BR-TT-015 (yeni):** 2'şer saat **blok eğilimi** (yumuşak; `SolverWeights.PreferBlockPairing`, varsayılan açık) — aynı dersi
     yan yana dizmeye eğilim (`GreedySolver` komşuluk-öncelikli kararlı sıralama); 1 saatlikler tek. Sihirbazda toggle.
+- **Hub çakışma + eksik saat denormalize sayımı (BE) (2026-06-17):** `schedule_programs.conflict_count` +
+  `missing_hours` kolonları (migration `20260617_schedule_program_stats_columns`) + `ScheduleProgram.SetStats`.
+  `IScheduleProgramStatsRecomputer` (çakışma = başka şubelerin canlı yerleşimleriyle öğretmen/derslik; eksik =
+  **ızgara bazlı**: 5 gün × zil ders periyodu − dolu hücre — editör alt çubuğu `deriveMissingCells` ile birebir).
+  Hook'lar: editör mutasyonları + create + apply-autogen → kendi sayıları (canlıysa dönem);
+  publish/swap/delete/restore → dönem. `ListClassPrograms` + `GetHubSummary` artık kolonları okur (eski hardcoded `0`
+  ve on-read görevlendirme hesabı kalktı) → editördeki canlı çakışma ile tutarlı. **Debt:** canlı program düzenlerken
+  (Revising) kardeş Taslakların sayısı, o program tekrar yayınlanana/recompute tetiklenene dek bayatlayabilir.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
