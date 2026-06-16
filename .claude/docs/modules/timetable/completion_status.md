@@ -366,6 +366,16 @@
     re-key edildi (migration `20260616_rekey_schedule_generation_jobs_to_branch`). Endpoint'ler: `POST .../auto-generate`
     `{branchId, academicYearId, academicTermId, weights, strict}` → jobId; `GET .../auto-generate/{jobId}` (değişmedi);
     `POST .../auto-generate/{jobId}/apply` `{candidateId}` → **yeni Taslak programId**. Apply YENİ bir Taslak yaratır.
+- **Otomatik üretim — oturum düzeltmeleri + günlük aynı-ders kısıtı (BE+FE) (2026-06-16):**
+  - **Gün indeksi (fix):** Solver `BuildWeekGrid` 1-tabanlı `DayOfWeek` yerine modülün **0-tabanlı** konvansiyonuna
+    hizalandı (Pzt=0..Cuma=4) — Pazartesi artık boş kalmıyor + external-occupancy hizası düzeldi.
+  - **Queued'da takılma (fix):** Arka plan enqueue açık transaction içinde fire ediliyordu; `IPostCommitDispatcher` +
+    `PostCommitDispatchBehavior` ile **commit sonrası** kuyruğa alınır (autogen + bildirim enqueuer'ları). Yarış giderildi.
+  - **Önizleme period (fix):** `AutoGenDrawer` mini/büyük önizleme period'u 1-tabanlı (`previewGrid.ts`) — boş üst satır + son period kaybı giderildi.
+  - **BR-TT-014 (yeni):** Autogen'de günde aynı ders ≤2 **kesin kısıt** (`SolverWeights.LimitDailySameSubject`, varsayılan açık) +
+    sihirbazda toggle. 3-4 ardışık/aynı-gün yığılması önlenir; yer yoksa eksik saat.
+  - **BR-TT-015 (yeni):** 2'şer saat **blok eğilimi** (yumuşak; `SolverWeights.PreferBlockPairing`, varsayılan açık) — aynı dersi
+    yan yana dizmeye eğilim (`GreedySolver` komşuluk-öncelikli kararlı sıralama); 1 saatlikler tek. Sihirbazda toggle.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 

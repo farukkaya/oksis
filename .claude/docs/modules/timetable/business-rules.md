@@ -260,6 +260,42 @@
 
 ---
 
+### BR-TT-014: Otomatik Üretim — Günde Aynı Ders ≤2 (KESİN; Faz 3)
+
+**Kural:** Otomatik program üretiminde (autogen) bir sınıf, bir günde aynı dersi (subject) en fazla **2** kez alır. 3.'sü o güne yerleştirilmez (3+ ardışığı da dolaylı önler). Yer bulunamazsa o saat **eksik saat** olarak işaretlenir.
+
+**Sebep:** Solver bazen 3-4 saat aynı dersi arka arkaya/aynı güne yığıyordu — uygulanabilir değil. BR-TT-013'ün (editörde SOFT uyarı, per-gün) autogen'deki **kesin (HARD)** karşılığı.
+
+**Uygulama:**
+- Backend: solver feasibility — `SlotFeasibility.CanPlace` günlük `(gün, subject)` sayacı ≥2 ise slotu reddeder. `SolverWeights.LimitDailySameSubject` (varsayılan `true`) ile aç/kapa.
+- Frontend: Otomatik Üretim sihirbazı (`AutoGenDrawer`) "Aynı dersi günde en fazla 2 saat" toggle'ı (varsayılan açık). Hazırlık/yoğun dil sınıfı gibi istisnalar için kapatılabilir.
+
+**Edge case'ler:**
+- Kapatıldığında eski davranış (sınırsız) geçerli.
+- Blok ders (Faz 3 Dilim-1'de kapalı): 2'lik blok = 2 sayılır, serbest.
+
+**Test referansı:** `SlotFeasibilityTests.Blocks_when_daily_same_subject_limit_reached`, `GreedySolverTests.Limits_same_subject_to_two_per_day_when_enabled`
+
+---
+
+### BR-TT-015: Otomatik Üretim — 2'şer Saat Blok Eğilimi (SOFT; Faz 3)
+
+**Kural:** Autogen, aynı dersi mümkünse aynı günde **yan yana** (period±1) yerleştirmeye eğilim gösterir → çok-saatli dersler doğal olarak **2'şer saat blok** halinde dizilir. 1 haftalık saatli dersler (Müzik, Rehberlik, Koçluk vb.) eşleştirecek ikinci saat olmadığından tek kalır.
+
+**Sebep:** Türk okul programlarının yaygın deseni (resmi `aSc Ders Dağıtım` çıktısı da böyle): dersler ikişer saat bloklanır. BR-TT-014 (günde ≤2) ile birlikte: 4 saatlik ders → 2 gün × 2'şer; 3 saatlik → 1 blok + 1 tek.
+
+**Uygulama:**
+- Backend: `GreedySolver` slot sırasını, aynı dersin mevcut bir saatinin komşusu olan slotları **kararlı** biçimde öne alarak yeniden sıralar (strateji içi sıra korunur). **Yumuşak** — zorlamaz, eksik saat üretmez. `SolverWeights.PreferBlockPairing` (varsayılan `true`).
+- Frontend: Sihirbazda "Dersleri 2'şer saat blok diz" toggle'ı (varsayılan açık).
+
+**Edge case'ler:**
+- 1 saatlik dersler tek kalır (doğal).
+- Günde ≤2 limiti (BR-TT-014) blok boyunu 2 ile sınırlar (3'lü blok oluşmaz).
+
+**Test referansı:** `GreedySolverTests.Pairing_forms_consecutive_doubles_even_with_a_spreading_order`
+
+---
+
 ### BR-TT-AG-1: Otomatik Üretim Katı Kısıtları (HARD)
 
 **Kural:** Otomatik üretim solver'ı (`IScheduleSolver`) bir adayı üretirken katı kısıtları (`SlotFeasibility`) ihlal edemez: aynı slotta sınıf/öğretmen/derslik tekilliği. Öğretmen müsaitliği bu dilimde **no-op** (Faz 4 girdisi — Debt-AG-1) → müsaitlik henüz kısıt değildir.
