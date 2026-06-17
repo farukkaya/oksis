@@ -46,33 +46,46 @@
 | P30 | GET | `/api/v1/timetable/programs/{id:guid}/versions` | `timetable.manage` | Programın yayın sürümleri (version desc; kim/ne zaman/not/sayı) | 200 |
 | P31 | GET | `/api/v1/timetable/programs/{id:guid}/versions/{version:int}/diff` | `timetable.manage` | vN ile v(N-1) arası satır-satır fark (v1 ilk-yayın) | 200 / 404 |
 | P32 | POST | `/api/v1/timetable/programs/{id:guid}/versions/{version:int}/restore` | `timetable.manage` | Seçilen sürümü aktif programa Draft (Revising) olarak geri yükle | 200 / 404 / 409 |
-| P33 | POST | `/api/v1/timetable/auto-generate` | `timetable.manage` | Sınıf-bazlı sıfırdan otomatik üretim job'ı kuyruğa al (üret) | 202 / 404 / 409 |
-| P34 | GET | `/api/v1/timetable/auto-generate/{jobId:guid}` | `timetable.manage` | Üretim job durumu + adaylar/ipuçları (poll) | 200 / 404 |
-| P35 | POST | `/api/v1/timetable/auto-generate/{jobId:guid}/apply` | `timetable.manage` | Seçilen adayı **yeni Taslak**'a uygula → programId döner (uygula) | 200 / 404 / 409 |
+| P33 | POST | `/api/v1/timetable/auto-generate` | `timetable.manage` | Kapsam-bazlı (tek/kademe/tümü) sıfırdan otomatik üretim job'ı kuyruğa al (üret) | 202 / 404 / 422 |
+| P34 | GET | `/api/v1/timetable/auto-generate/{jobId:guid}` | `timetable.manage` | Üretim job durumu + scope + adaylar (branch-etiketli + per-class) / ipuçları (poll) | 200 / 404 |
+| P35 | POST | `/api/v1/timetable/auto-generate/{jobId:guid}/apply` | `timetable.manage` | Seçilen branch'leri **yeni Taslak**'lara uygula → `[{branchId, programId}]` döner (uygula) | 200 / 404 / 409 |
 | P36 | GET | `/api/v1/timetable/auto-generate/classes?termId=` | `timetable.manage` | O dönemde görevlendirmesi olan (üretime uygun) sınıflar | 200 |
 
-**P33–P36 (Faz 3 Dilim-1 Otomatik Üretim — sınıf-bazlı, header akışı — REVİZE 2026-06-16, K5/K6) notları:**
-- **Akış (üret≠uygula, sıfırdan):** P33 ile bir `ScheduleGenerationJob` (sınıf+dönem+yıla anahtarlı, program'a
-  değil) oluşturulur + Hangfire'a kuyruğa alınır → P34 ile durum poll edilir (web ~1200ms) → tamamlanınca
-  adaylardan biri seçilip P35 ile uygulanır. **Apply YENİ bir Taslak `ScheduleProgram` yaratır** (mevcut
-  programa dokunmaz); admin sonra ince-ayar yapıp ayrıca yayınlar.
-- **P33 (REVİZE):** Bir programa değil **sınıfa (şube) + döneme** bağlı. Body
-  `{ branchId, academicYearId, academicTermId, weights, strict }` → `{ jobId }`. "Program düzenlenebilir mi"
-  kontrolü kalktı; yerine **"sınıfın görevlendirmesi var mı"** doğrulanır (yoksa anlamlı hata). Tek-sınıf solver
-  girdileri toplanır (talepler görevlendirmeden; slotlar zil periyotlarından; dış doluluk = diğer şubelerin
-  **rezerve eden** [canlı] yerleşimleri — K12). Retry-idempotency: yalnız `Queued` job koşar. İzin
-  `timetable.manage` (yeni izin yok). Self/tenant-scope (IDOR EF global filtre).
-- **P34:** `ScheduleGenerationJobStatusDto { jobId, status, candidates[], hints[] }`; durum
-  `Queued|Running|Done|NoSolution|Failed`. `Done` → 3 puanlı aday (metrikler + önerilen işareti); `NoSolution`
-  (katı mod) → `RelaxationHints`; `Failed` → hata. **Şekil değişmedi.** Tek-sınıf bu dilim; kademe/tümü =
-  Dilim-2 (UI'da disabled).
-- **P35 (REVİZE):** `{ candidateId }` (seçilen aday). Mevcut programa uygulamak yerine, job'un branch+term'i
-  için `ScheduleProgram.Create` + adayın yerleşimleriyle **yeni bir Taslak program** oluşturulur; yanıt
-  **yeni Taslak `programId`** döner (FE bununla `/admin/schedule/{newId}/edit`'e gider). Çapraz
-  öğretmen/derslik çakışması DB filtreli unique index ile → 409. Job/aday yok → 404. Dilim 1'de bloklar kapalı
-  (`IsBlock=false`).
-- **P36 (YENİ):** Şube seçici kaynağı — aktif dönemde **görevlendirmesi olan tüm sınıfları** listeler (mevcut
-  programı olsun ya da olmasın, K7). Yanıt `EligibleClassDto { branchId, branchName }[]`.
+**P33–P36 (Faz 3 Otomatik Üretim — kapsam-bazlı header akışı; Dilim-1 tek sınıf + Dilim-2 çok-sınıf — REVİZE 2026-06-17, K-D2-1…6) notları:**
+- **Akış (üret≠uygula, sıfırdan):** P33 ile bir `ScheduleGenerationJob` (kapsam + dönem + yıla anahtarlı,
+  program'a değil) oluşturulur + Hangfire'a kuyruğa alınır → P34 ile durum poll edilir (web ~1200ms) →
+  tamamlanınca P35 ile bir veya birden çok sınıf uygulanır. **Apply branch-başına YENİ bir Taslak
+  `ScheduleProgram` yaratır** (mevcut programa dokunmaz); admin sonra ince-ayar yapıp ayrıca yayınlar.
+- **P33 (REVİZE — kapsam):** Bir programa değil **kapsam + döneme** bağlı. Body
+  `{ scope, branchId?, gradeLevel?, academicYearId, academicTermId, weights, strict }` → `{ jobId }`.
+  `scope` = `Single` | `GradeLevel` | `All` (yoksa `Single` varsayılır — geriye uyum). **Doğrulama (422):**
+  `Single`→`branchId` zorunlu (`timetable.autogen.branch-required`); `GradeLevel`→`gradeLevel` zorunlu
+  (`timetable.autogen.grade-required`); kapsamda görevlendirmesi olan sınıf yoksa
+  `timetable.autogen.no-classes`. Kapsamdaki şube kümesi `IAutoGenClassResolver` ile çözülür
+  (Single=o şube; GradeLevel=`DisplayOrder == gradeLevel` görevlendirmeli şubeler; All=tümü, arşivlenmemiş).
+  **Joint (ortak) solver** girdileri tüm kapsam sınıfları için tek listede toplanır (talepler görevlendirmeden;
+  slotlar zil periyotlarından — okul-geneli tek grid; dış doluluk = **kapsam dışı** şubelerin rezerve eden
+  [canlı] yerleşimleri — kapsam içi sınıflar joint çözümle birbirini global occupancy ile zaten dışlar).
+  Retry-idempotency: yalnız `Queued` job koşar. İzin `timetable.manage` (yeni izin yok). Self/tenant-scope.
+- **P34 (REVİZE):** `AutoGenStatusDto { status, scope, candidates[], hints[], failureReason? }`; durum
+  `Queued|Running|Done|NoSolution|Failed`. `Done` → en iyi global aday(lar): `candidates[]` =
+  `AutoGenCandidateDto { id, placements[], metrics, perClass[], isRecommended }`; placement'lar
+  **`branchId` etiketli** (`AutoGenPlacementDto { branchId, day, period, subjectId, teacherId, roomId?, isBlock }`);
+  `perClass[]` = `AutoGenClassMetricsDto { branchId, className, metrics }` (bulk sonuç satırlarının
+  rozetleri/sınıf adı). `NoSolution` (katı mod) → `hints` (RelaxationHints); `Failed` → `failureReason`.
+  Tek sınıf modunda `perClass` tek elemanlıdır (aggregate == o eleman); FE 3-aday yolu mevcut alanları okur.
+- **P35 (REVİZE — seçmeli/toplu):** Body `{ branchIds: Guid[], candidateId? }` → `AppliedDraftDto[]`
+  (`{ branchId, programId }`). Her `branchId` için: en iyi adayın o sınıfa ait yerleşim dilimi →
+  `ScheduleProgram.Create` + `StampGeneratedFrom(jobId)` + stats recompute. **İdempotent (K-D2-4):** o job+branch
+  için zaten `GeneratedFromJobId` damgalı bir Taslak varsa yeniden yaratmaz, mevcut programId'yi döner ("Aç"
+  sonra "Tümünü Kaydet" çift taslak üretmez). Tüm branch'ler **tek transaction** içinde atomik
+  (`TransactionBehavior`). `candidateId` yalnız Single kapsamında anlamlı (FE A/B/C seçer); bulk'ta önerilen
+  aday sabit (joint çözüm sınıfları bağlar — K-D2-5) → yok sayılır. Çapraz öğretmen/derslik çakışması DB
+  filtreli unique index ile → 409 (yalnız diğer canlı programlara karşı — K8). Job/aday yok → 404. Bloklar
+  kapalı (`IsBlock=false`, Debt-AG-8).
+- **P36:** Şube seçici kaynağı — aktif dönemde **görevlendirmesi olan tüm sınıfları** listeler (mevcut
+  programı olsun ya da olmasın, K7). Yanıt `EligibleClassDto { branchId, branchName }[]`. FE kademe seçimini
+  bu listenin `gradeLevel`'larından türetir (yeni sunucu işi yok).
 
 **P30–P32 (B-1 Sürüm Geçmişi) notları:**
 - **P30:** `ScheduleVersionListItemDto { version, publishedAt, publishedByName, note, placementCount }[]` (version desc). `PublishedBy` Guid → `db.Persons.Name.FullName`; çözülemezse "—".

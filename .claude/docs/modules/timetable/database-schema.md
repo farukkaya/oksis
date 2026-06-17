@@ -23,6 +23,7 @@ Bir Sınıf+Dönem programının kökü.
 | `academic_year_id`, `academic_term_id`, `branch_id` | uniqueidentifier | immutable |
 | `status` | int | 0=Draft, 1=Revising, 2=Published |
 | `version` | int | default 1 |
+| `generated_from_job_id` | uniqueidentifier **NULL** | **(YENİ 2026-06-17, K-D2-4)** programı türeten otomatik üretim işinin (`schedule_generation_jobs.id`) damgası; manuel programlarda NULL. Autogen apply idempotency + izlenebilirlik. `ScheduleProgram.StampGeneratedFrom(jobId)` set eder. |
 | `row_version` | rowversion | optimistic concurrency |
 | + audit (`created_at/by`, `is_deleted`, ...) | | |
 
@@ -32,6 +33,9 @@ Bir Sınıf+Dönem programının kökü.
   koşulsuz/`is_deleted=0`-yalnız index `status >= 1` filtresine genişletildi (migration
   `20260616_schedule_program_live_unique`). "İkinci program yaratma" reddi `CreateProgram`'dan kalktı
   (K2); tek-canlı garantisi bu filtreli index + publish-swap (K3/K10) ile sağlanır.
+- **Index (YENİ 2026-06-17, K-D2-4):** `ix_schedule_programs_generated_from`
+  `(school_id, generated_from_job_id)` — autogen apply idempotency aramasını (bir job+branch için zaten
+  Taslak var mı) hızlandırır. Migration `20260617_schedule_program_generated_from`.
 
 ### `lesson_placements`
 Programdaki tek bir yerleşim (4 boyut + zaman). `academic_term_id`/`branch_id` index için `program`'dan denormalize.
@@ -81,20 +85,26 @@ ux_schedule_exceptions_placement_date  (school_id, target_placement_id, date)   
 > Migration `20260613_add_schedule_exceptions`. İzin `timetable.override` (migration `20260613_add_timetable_override_permission`).
 > Not: Aşağıdaki eski `schedule_overrides` (StartTime/EndTime) **superseded**'dir; geçerli model bu tablodur.
 
-### `schedule_generation_jobs` (Faz 3 Dilim-1 — otomatik üretim job'u)
+### `schedule_generation_jobs` (Faz 3 — otomatik üretim job'u)
 
-Otomatik üretim (tek-sınıf, sıfırdan) işinin durum + aday/ipucu deposu. `[academic]` şeması.
+Otomatik üretim (kapsam-bazlı, sıfırdan) işinin durum + aday/ipucu deposu. `[academic]` şeması.
 
 | Kolon | Tip | Not |
 |---|---|---|
 | `id` | uniqueidentifier PK | jobId |
 | `school_id` | uniqueidentifier | tenant, immutable |
-| `branch_id`, `academic_term_id`, `academic_year_id` | uniqueidentifier | **(RE-KEY 2026-06-16, K6)** job artık bir programa değil, bir **sınıfa (şube) + döneme + yıla** bağlı |
-| `scope` | int | 0=Single (tek sınıf). Kademe/Tümü = Dilim 2 |
+| `branch_id` | uniqueidentifier **NULL** | **(NULLABLE 2026-06-17, K-D2)** yalnız `scope=Single` (tek sınıf) kapsamında dolu; bulk (Kademe/Tümü) job sınıf-bağımsız |
+| `academic_term_id`, `academic_year_id` | uniqueidentifier | **(RE-KEY 2026-06-16, K6)** job bir döneme + yıla bağlı (kapsam çözümlemesi için) |
+| `scope` | int | **(2026-06-17, K-D2)** 0=Single (tek sınıf), 1=GradeLevel (kademe), 2=All (tümü); default 0 |
+| `grade_level` | int **NULL** | **(YENİ 2026-06-17, K-D2)** yalnız `scope=GradeLevel` kapsamında dolu (kademe `DisplayOrder`) |
 | `status` | int | 0=Queued, 1=Running, 2=Done, 3=NoSolution, 4=Failed |
 | `weights_json`, `strict` | nvarchar(max), bit | solver girdileri (ağırlıklar + katı mod) |
-| `candidates_json`, `hints_json` | nvarchar(max) NULL | 3 puanlı aday / gevşetme ipuçları |
+| `candidates_json`, `hints_json` | nvarchar(max) NULL | aday(lar) — placement'lar **`branchId` etiketli** + per-class metrik (K-D2-5) / gevşetme ipuçları |
 | + audit + `row_version` | | |
+
+> **KAPSAM (2026-06-17, K-D2-1…6):** Job artık tek sınıfa değil bir **kapsama** (tek/kademe/tümü) bağlanır.
+> `scope`/`grade_level` eklendi ve `branch_id` nullable yapıldı. Mevcut satırlar additive migration ile
+> `scope=0 (Single)` varsayar (default 0; backfill basit). Migration `20260617_schedule_gen_job_scope`.
 
 > **RE-KEY (2026-06-16, K6):** Önceki sürüm tabloyu `program_id`'ye anahtarlıyordu (autogen mevcut bir
 > programa uygulanıyordu). Yeni model autogen'i **sıfırdan, sınıf-bazlı** çalıştırır; `program_id`
@@ -437,6 +447,8 @@ ADD CONSTRAINT ck_schedule_overrides_status_valid
 | 2026-06-16 | `20260616_schedule_program_live_unique` | `ux_schedule_programs_class_term` filtresi `status >= 1`'e genişletildi (K9 — tek canlı + çok taslak) |
 | 2026-06-16 | `20260616_add_lesson_placement_is_reserving` | `lesson_placements.is_reserving` + üç yerleşim unique index'ine `is_reserving = 1` filtresi (K8 — rezervasyon yalnız canlı) |
 | 2026-06-16 | `20260616_rekey_schedule_generation_jobs_to_branch` | `schedule_generation_jobs`: `program_id` → `branch_id` + `academic_term_id` + `academic_year_id` (K6) |
+| 2026-06-17 | `20260617_schedule_gen_job_scope` | `schedule_generation_jobs`: `scope` (int, default 0=Single) + `grade_level` (nullable int) eklendi; `branch_id` nullable yapıldı (mevcut satırlar → Single) (K-D2) |
+| 2026-06-17 | `20260617_schedule_program_generated_from` | `schedule_programs.generated_from_job_id` (nullable) + index `ix_schedule_programs_generated_from` (autogen apply idempotency, K-D2-4) |
 
 ---
 

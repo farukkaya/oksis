@@ -61,18 +61,31 @@ Frontend: `oksis-web/src/portals/admin/timetable/`
 "Yeni Program"ın **solunda** yaşar — program-bağımsız, her zaman görünür. Satır `⋯` menüsünden **ve** editör
 `⋯` menüsünden **kaldırıldı**. Drawer `programId` olmadan, aktif dönem context'iyle açılır.
 
-**Sihirbaz akışı:**
-1. **Kapsam + Şube** (REVİZE): Kapsam bölümünde "Tek sınıf" aktif; "Kademe"/"Tümü" **disabled** (Dilim 2).
-   Bir **Şube seçici** (`GET /auto-generate/classes?termId=` ile dolar) — aktif dönemde **görevlendirmesi olan
-   tüm sınıfları** listeler (mevcut programı olsun ya da olmasın, K7).
-2. **Ayarlar:** Ağırlıklar (sabah/boşluk/denge) + katı mod (strict) toggle.
-3. **Üret:** `enqueue({ branchId, weights, strict })` → jobId → poll (~1200ms).
-4. **Sonuçlar:** 3 aday kartı (metrikler + mini-hafta + büyük önizleme + önerilen işareti); çözüm-yok →
-   gevşetme ipuçları; hata durumu.
-5. **Editörde Aç:** seçilen aday `apply` → dönen **yeni Taslak programId** ile `/admin/schedule/{newId}/edit`'e
-   gider (apply YENİ bir Taslak yaratır, mevcut programa dokunmaz).
+**Sihirbaz akışı (REVİZE 2026-06-17, Dilim-2 çok-sınıf — K-D2):**
+1. **Kapsam + seçici:** Kapsam seçici **üç seçenek aktif**: "Tek sınıf" / "Kademe" / "Tümü".
+   - **Tek sınıf** → **Şube seçici** (`GET /auto-generate/classes?termId=` ile dolar — aktif dönemde
+     görevlendirmesi olan tüm sınıflar, K7).
+   - **Kademe** → **Kademe seçici** (görevlendirmeli sınıfların `gradeLevel`'larından türetilir).
+   - **Tümü** → seçici yok. Geri besleme: "{n} sınıf · görevlendirmelerden beslenir".
+2. **Ayarlar:** Ağırlıklar (sabah/boşluk/denge) + katı mod (strict) toggle + günde-aynı-ders ≤2 (BR-TT-014)
+   + 2'şer blok eğilimi (BR-TT-015) toggle'ları.
+3. **Üret:** `enqueue({ scope, branchId?, gradeLevel?, weights, strict })` → jobId → poll (~1200ms).
+4. **Sonuçlar (kapsama göre):**
+   - **Tek sınıf** → mevcut **3 aday kartı** akışı korunur (metrikler + mini-hafta + büyük önizleme +
+     önerilen işareti; A/B/C seçilebilir).
+   - **Kademe/Tümü (bulk)** → **per-class satırlar**: her satırda **checkbox** + sınıf adı + "Taslak hazır" +
+     tercih%/ort-boş + **çakışma/eksik rozeti** + **"Aç"**. (Joint çözüm → sınıf-başına aday seçimi yok, K-D2-5.)
+   - Çözüm-yok → gevşetme ipuçları; hata durumu.
+5. **Kaydet/Aç:**
+   - **Satır "Aç"** → `apply([branchId], candidateId?)` → dönen **yeni Taslak programId** ile
+     `/admin/schedule/{newId}/edit`'e gider.
+   - **"Tümünü Kaydet"** (bulk footer) → `apply(tüm branchIds)`; **"Seçilenleri Kaydet"** (seçim varsa) →
+     `apply(seçili branchIds)` → **başarı banner'ı** (kaç taslak oluştu). Hub listesi invalidate edilir.
+   - Apply branch-başına **yeni Taslak** yaratır, mevcut programa dokunmaz; idempotenttir (aynı job+branch
+     ikinci kez yeni taslak üretmez — K-D2-4). Yayın ayrı `PublishDrawer` akışı.
 
-> Eski akış (geçersiz): autogen satır/editör `⋯` menüsünden, mevcut bir Draft/Revize programa uygulanıyordu.
+> Eski akış (geçersiz): autogen satır/editör `⋯` menüsünden, mevcut bir Draft/Revize programa uygulanıyordu;
+> Kademe/Tümü kapsamları Dilim-1'de disabled idi.
 
 #### Yayınla Çekmecesi (PublishDrawer) — swap uyarısı
 
