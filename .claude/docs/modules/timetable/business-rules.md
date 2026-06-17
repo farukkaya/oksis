@@ -466,6 +466,36 @@ korunurken çalışma kopyası ayrışır. Rezervasyon değişmez (her iki durum
 
 ---
 
+---
+
+### BR-TT-AV-1: Öğretmen Müsaitliği — Üç Durum (2026-06-17, Faz 4/Dilim-1)
+
+**Kural:** Bir öğretmenin bir dönemdeki her (gün, periyot) slotu üç durumdan birindedir:
+- **Available (0):** Müsait (varsayılan; DB'de saklanmaz — seyrek depolama).
+- **PrefersNot (1):** Tercih etmiyor — SOFT. Solver düşük puan verir; editörde uyarı; yerleşim **engellenmez**.
+- **Unavailable (2):** Müsait değil — HARD. Solver bu slota yerleştirmez; editörde hata; yerleşim **engellenir** (override olmadan).
+
+**Sebep:** Türk devlet okullarında öğretmen saatlik engel genel; özel okullarda tercih önemi yüksek. Üç durum solver kalite + editör gerçekliğini birlikte kapsar.
+
+**Uygulama:**
+- Backend: `TeacherAvailability` aggregate + `AvailabilitySlot` owned entity; `IAvailabilityProvider` → `TeacherAvailabilityProvider` (DB'den okur). `SlotFeasibility.CanPlace` `Unavailable` → hard red; `PrefersNot` → `RespectTeacherPreference` soft bileşeni (ağırlıklı puan düşüşü).
+- Editör: `PlaceLesson`/`MoveLesson` `Unavailable` slotta `AllowUnavailable=false` → `timetable.errors.teacher-unavailable` (409 benzeri); öğretmen tercih uyarısı ayrı.
+- Hub denormalize: `schedule_programs.availability_violation_count` ihlal sayısını yansıtır (`IScheduleProgramStatsRecomputer`).
+
+---
+
+### BR-TT-AV-2: Hard-Block Override (2026-06-17)
+
+**Kural:** `Unavailable` slota yerleşim, **admin kararı** ile `AllowUnavailable=true` bayrağı geçilerek **override edilebilir**. Bu bayrağı set etmek `timetable.override` iznini gerektirir. Override edilmiş yerleşimler ihlal sayacına (`availability_violation_count`) yansır ve otomatik üretimde görmezden gelinmez.
+
+**Sebep:** Öğretmen hastalık/geçici durum; acil vekalet; idari zorunluluk. Sistemin hard blok'u aşması için yetkili admin kararı gerekir.
+
+**Uygulama:**
+- Backend: `PlaceLessonCommandHandler`/`MoveLessonCommandHandler` `AllowUnavailable=true` + `timetable.override` permission check → ihlali izin verir, sayaca ekler.
+- Yayın: Müsaitlik ihlalleri yayını **bloklamaz** (publish gate değil). Editörde uyarı rozeti gösterilir.
+
+---
+
 ## Sınır Durumlar
 
 | Senaryo | Beklenen Davranış |
@@ -492,5 +522,6 @@ korunurken çalışma kopyası ayrışır. Rezervasyon değişmez (her iki durum
 | 2026-06-15 | BR-TT-AG-1..4 (otomatik üretim) tanımlandı | Faz 3 Dilim-1 tek-sınıf otomatik program üretimi (solver + üret≠uygula + katı mod) |
 | 2026-06-16 | BR-TT-PM-1..4 + BR-TT-AG-2/3 revize | Çok-taslak modeli (K1/K9), publish-swap (K3/K10), rezervasyon yalnız canlı (K8/K12), ilk düzenleme→Revize (K11), autogen sınıf-bazlı sıfırdan + yeni Taslak (K5/K6). Tasarım: `ders-programi-cok-taslak-otomatik-uretim-design.md` |
 | 2026-06-17 | BR-TT-AG-5/6 eklendi + BR-TT-AG-3 revize | Faz 3 Dilim-2 çok-sınıf: joint solver çapraz öğretmen/derslik tekilliği (K-D2-1), seçmeli/toplu apply + GeneratedFromJobId idempotency (K-D2-3/4). Tasarım: `ders-programi-cok-sinif-otomatik-uretim-design.md` |
+| 2026-06-17 | BR-TT-AV-1/2 eklendi | Faz 4/Dilim-1 müsaitlik & tercih: üç durum (Available/PrefersNot/Unavailable), hard-block (Unavailable) vs soft (PrefersNot), admin override `timetable.override`. **Debt-AG-1 kapandı.** |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.

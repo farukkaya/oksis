@@ -24,6 +24,9 @@ Bir Sınıf+Dönem programının kökü.
 | `status` | int | 0=Draft, 1=Revising, 2=Published |
 | `version` | int | default 1 |
 | `generated_from_job_id` | uniqueidentifier **NULL** | **(YENİ 2026-06-17, K-D2-4)** programı türeten otomatik üretim işinin (`schedule_generation_jobs.id`) damgası; manuel programlarda NULL. Autogen apply idempotency + izlenebilirlik. `ScheduleProgram.StampGeneratedFrom(jobId)` set eder. |
+| `conflict_count` | int | **(YENİ 2026-06-17)** denormalize çakışma sayısı; `IScheduleProgramStatsRecomputer` tarafından yazma-anında güncellenir. |
+| `missing_hours` | int | **(YENİ 2026-06-17)** denormalize eksik saat sayısı (5 gün × zil ders periyodu − dolu hücre). |
+| `availability_violation_count` | int | **(YENİ 2026-06-17, Faz 4/D1)** programdaki `Unavailable` slot ihlali sayısı. `ScheduleProgram.SetAvailabilityViolationCount` setter; `IScheduleProgramStatsRecomputer` tarafından yerleşim-anında güncellenir. Migration `20260617_add_availability_violation_count`. |
 | `row_version` | rowversion | optimistic concurrency |
 | + audit (`created_at/by`, `is_deleted`, ...) | | |
 
@@ -111,6 +114,41 @@ Otomatik üretim (kapsam-bazlı, sıfırdan) işinin durum + aday/ipucu deposu. 
 > kaldırıldı, yerine `branch_id` + `academic_term_id` + `academic_year_id` geldi. Aday uygulandığında
 > **yeni bir Taslak `ScheduleProgram` yaratılır** (mevcut programa dokunulmaz). Migration
 > `20260616_rekey_schedule_generation_jobs_to_branch` (ilk tablo `20260615_add_schedule_generation_jobs`).
+
+### `teacher_availabilities` (Faz 4/Dilim-1 — müsaitlik aggregate)
+
+Bir öğretmenin bir dönemdeki haftalık müsaitlik/tercih kaydı. Seyrek: yalnız `PrefersNot`/`Unavailable` slotlar `teacher_availability_slots`'a yazılır; kayıt yoksa `Available` varsayılır. `[academic]` şeması.
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | |
+| `school_id` | uniqueidentifier | tenant, immutable |
+| `academic_year_id`, `academic_term_id`, `teacher_id` | uniqueidentifier | immutable |
+| + audit (`created_at/by`, `updated_at/by`, `is_deleted`, ...) + `row_version` | | |
+
+```
+ux_teacher_availabilities_term_teacher  (school_id, academic_term_id, teacher_id)  WHERE is_deleted = 0
+```
+
+Migration `20260617_add_teacher_availabilities`.
+
+### `teacher_availability_slots` (owned — EF OwnsMany)
+
+`TeacherAvailability` aggregate'ine ait seyrek slot koleksiyonu. Yalnız `PrefersNot`/`Unavailable` girişler saklanır; `Available` satırı bulunmaz.
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK (shadow, EF) | |
+| `teacher_availability_id` | uniqueidentifier FK → teacher_availabilities.id (cascade delete) | |
+| `day_of_week` | int | DayOfWeek (0=Pazar..6=Cumartesi; modül 0=Pzt..4=Cuma) |
+| `period` | int | 1-indexed periyot numarası |
+| `status` | int | 1=PrefersNot, 2=Unavailable (0=Available depolanmaz) |
+
+```
+ux_teacher_availability_slots_slot  (teacher_availability_id, day_of_week, period)  — koşulsuz unique (slot başına tek kayıt)
+```
+
+> **Sapma:** Slot-seviye `teacher_id`/`school_id` denormalizasyonu eklenmedi (YAGNI). Provider/recomputer `TeacherId`'yi parent aggregate üzerinden okur; join gerekmez. Tekillik `(teacher_availability_id, day, period)` unique ile sağlanır.
 
 ---
 

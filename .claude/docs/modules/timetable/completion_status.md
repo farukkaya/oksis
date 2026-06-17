@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · çok-taslak/rezervasyon modeli + sınıf/kademe/tümü autogen header akışı tamam)   ·   Status: in-progress   ·   Güncel: 2026-06-17
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend tamam · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-17
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -413,6 +413,19 @@
     `autogen.scope.*`/`autogen.bulk.*` (tr/en). **Süregelen debt (K-D2-6):** blok üretimi kapalı (Debt-AG-8),
     müsaitlik no-op (Debt-AG-1), okul-geneli tek zil grid (Debt-FE-3/AS-2), açgözlü heuristik (Debt-AG-6).
 
+- **Faz 4/Dilim-1 Müsaitlik & Tercih — BE (2026-06-17) — Debt-AG-1 KAPANDI:**
+  - **Domain:** `TeacherAvailability` aggregate (`TenantEntity`; seyrek slot depolama — Available depolanmaz) + `AvailabilitySlot` owned `sealed record` (value-equality) + `AvailabilityStatus` enum (Available=0 / PrefersNot=1 / Unavailable=2) + `SetSlot` (slot değiştir) + `ReplaceAll` (tüm seti güncelle). `TeacherAvailabilityId` strongly-typed record struct.
+  - **Persistence (`[academic]` şema):** `teacher_availabilities` tablosu (audit + rowversion + ux) + `teacher_availability_slots` owned tablo (FK cascade; day/period/status int colonları) — bkz. DB şema bölümü. EF `OwnsMany` field-backed `"_slots"`. Migration `20260617_add_teacher_availabilities`.
+  - **Solver entegrasyonu:** `TeacherAvailabilityProvider` (gerçek; `IAvailabilityProvider` impl) — dönem+öğretmen müsaitlik kayıtlarını DB'den okur, slot-seviye `AvailabilityStatus` döner; seyrek model (kayıt yoksa `Available`). Solver: `SlotFeasibility.CanPlace` `Unavailable` slotu hard reddeder, `PrefersNot` slotu `RespectTeacherPreference` soft bileşeniyle ağırlıklandırır. **Debt-AG-1 kapandı.**
+  - **Komutlar/Sorgular:**
+    - `GetTeacherAvailabilityQuery(teacherId, termId)` → `TeacherAvailabilityDto { teacherId, slots[] }` (tek öğretmen, yalnız PrefersNot/Unavailable slot'ları).
+    - `GetTermTeacherAvailabilityQuery(termId)` → `TermTeacherAvailabilityDto { teachers[] }` (döneme ait tüm öğretmenlerin müsaitliği).
+    - `SaveTeacherAvailabilityCommand(teacherId, academicYearId, termId, slots[])` → upsert (aggregate yoksa Create, varsa ReplaceAll); PlaceLesson/MoveLesson recompute tetikler (müsaitlik ihlali sayacı güncellenir).
+  - **Hub denormalize sayım:** `schedule_programs.availability_violation_count` kolonu (migration `20260617_add_availability_violation_count`). `ScheduleProgram.SetAvailabilityViolationCount` setter; `IScheduleProgramStatsRecomputer` ihlal sayısını `PlaceLesson`/`MoveLesson`/`SaveTeacherAvailability` sonrası günceller. Hub bu kolonu okur.
+  - **Override (`AllowUnavailable`):** `PlaceLessonCommand`/`MoveLessonCommand`'a `AllowUnavailable` bayrağı eklendi; `true` geçildiğinde hard-block bypassed olur. Bu bayrağı set etmek `timetable.override` iznini gerektirir (handler + validator kontrolü).
+  - **API (3 endpoint — `timetable.manage`):** `GET availability/teachers/{teacherId}?termId` / `GET availability?termId` / `PUT availability/teachers/{teacherId}` — bkz. API Kontratları bölümü.
+  - **Testler:** Domain 17 unit (TeacherAvailabilityTests + AvailabilityStatusTests); Application 28 unit (SaveTeacherAvailability + GetTeacherAvailability + GetTermTeacherAvailability + PlaceLesson override path + EditPlacement override path); Integration 3 (TeacherAvailabilityProvider + AvailabilityViolationStats + PlaceLessonOverride). **Full suite:** build 0 hata, 1684 test geçti / 0 başarısız.
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
@@ -480,8 +493,9 @@
 - **Debt-N6 (idempotency iki pencere):** Eşzamanlı dispatch yarışı (DB unique index backstop) + kanal-gönderim
   ile delivery-log commit arası crash (Hangfire retry'da kopyalanabilir); in-app için kabul edilebilir, tam
   exactly-once Outbox gerektirir (Debt-N1).
-- **Debt-AG-1 (müsaitlik no-op):** Öğretmen müsaitliği Faz 4 girdisi — otomatik üretim müsaitliği henüz
-  dikkate ALMAZ (solver boş engellenmiş-slot ile koşar); UI metni dürüst. Spec §104 ile tutarlı.
+- **Debt-AG-1 (müsaitlik no-op) — ✅ KAPANDI (2026-06-17, Faz 4/Dilim-1):** `TeacherAvailabilityProvider`
+  (gerçek impl) + `TeacherAvailability` aggregate + solver hard/soft entegrasyonu + 3 API endpoint + recompute
+  hook teslim edildi. Bkz. yukarıdaki ✅ Faz 4/Dilim-1 girdisi.
 - **Debt-AG-2 (oda-tipi verisi yok):** Ders→oda-tipi eşlemesi verisi yok → her zaman ev-dersliği atanır
   (özel odalar/laboratuvar sonra).
 - **Debt-AG-3 — ✅ TESLİM (debt değil):** Orijinal "tek aday" MVP'si handoff (3 puanlı aday) ile
@@ -502,6 +516,10 @@
   job; illegal-transition doğrulaması orkestratöre ertelendi).
 
 ## ⚠️ Spec Dışına Çıkılanlar
+
+- 2026-06-17 — **Override izni müsaitlik hard-block'a da kapı oldu:** Editör yerleşim komutlarında (`PlaceLesson`/`MoveLesson`) `AllowUnavailable=true` bayrağı `timetable.override` iznine bağlandı — müsait olmayan slota zorla yerleştirme bu mevcut izni gerektirir (design doc K-D1-2/4; yeni permission slug eklenmedi; etki: override ek yetki ister). Onay: kullanıcı.
+- 2026-06-17 — **Slot-seviye `teacher_id` denormalizasyonu eklenmedi (YAGNI):** Design doc §3.2 `teacher_availability_slots`'a `teacher_id` denormalize edilmesini öngörüyordu; provider/recomputer `TeacherId`'yi parent aggregate üzerinden okuduğu için join zaten gerekmiyordu. Etki: seyrek slot tablosu daha yalın; slot tekilliği `(teacher_availability_id, day, period)` unique ile sağlanıyor. Onay: kullanıcı.
+- 2026-06-17 — **`AvailabilitySlot` `sealed record` (readonly record struct değil):** EF Core `OwnsMany` owned-collection gereksinimi nedeniyle `readonly record struct` yerine `sealed record` seçildi; değer-eşitliği korunur. Etki: yok. Onay: kullanıcı.
 
 - 2026-06-17 — **Joint (ortak) solver seçildi** (sıralı/birikimli reddedildi, K-D2-1); en iyi global kalite + çapraz öğretmen/derslik tekilliği global garanti. Onay: kullanıcı.
 - 2026-06-17 — **Seçmeli apply zenginleştirildi:** handoff'un ham "satır-Aç" modeli + "Tümünü Kaydet"/"Seçilenleri Kaydet" (checkbox) ile genişletildi (K-D2-3). Onay: kullanıcı.
