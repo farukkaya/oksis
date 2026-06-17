@@ -1,0 +1,204 @@
+/* ============================================================
+   OKSİS — Akademik · Ders Programı (hub)
+   Dersler & Branşlar ile birebir aynı kalıp: .stu / .aca-tabs /
+   .stu-toolbar / .stu-tbl sistemini paylaşır. Buradakiler yalnızca
+   bu ekrana özgü yeni yapı taşları (özet şeridi + program rozetleri).
+   ============================================================ */
+
+/* ── Özet şeridi (başlık ile sekmeler arasında ince satır) ── */
+.sch-summary {
+  display: flex; align-items: stretch; gap: 8px; flex-wrap: wrap;
+  padding: 11px 30px; background: var(--bg-elev);
+  border-bottom: 1px solid var(--line); flex-shrink: 0;
+}
+.oksis-app[data-density="compact"] .sch-summary { padding: 10px 24px; }
+.sch-sum {
+  display: inline-flex; align-items: center; gap: 9px; height: 34px; padding: 0 13px 0 11px;
+  border-radius: 999px; background: var(--surface); border: 1px solid transparent;
+  transition: var(--t-fast); cursor: pointer; white-space: nowrap;
+}
+.sch-sum:hover { border-color: var(--line); background: var(--bg-elev); box-shadow: var(--sh-sm); }
+.sch-sum .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.sch-sum .l { font-size: 13px; font-weight: 600; color: var(--text-body); }
+.sch-sum .n {
+  min-width: 21px; height: 21px; padding: 0 6px; border-radius: 999px; display: grid; place-items: center;
+  font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums;
+  background: var(--bg-elev); color: var(--text-muted); border: 1px solid var(--line);
+}
+/* tonlar */
+.sch-sum.t-pub .dot   { background: #16A34A; }
+.sch-sum.t-draft .dot { background: var(--text-faint); }
+.sch-sum.t-conf .dot  { background: var(--danger); }
+.sch-sum.t-miss .dot  { background: #D97706; }
+.sch-sum.t-avail .dot { background: #C2620C; }
+
+/* aktif (tıklanmış) durum — kendi tonuyla dolu */
+.sch-sum.on { border-color: transparent; }
+.sch-sum.on.t-pub   { background: var(--success-bg); }
+.sch-sum.on.t-pub   .l, .sch-sum.on.t-pub .n   { color: var(--success); }
+.sch-sum.on.t-draft { background: #EDF0F6; }
+.sch-sum.on.t-draft .l, .sch-sum.on.t-draft .n { color: var(--text-body); }
+.sch-sum.on.t-conf  { background: var(--danger-bg); }
+.sch-sum.on.t-conf  .l, .sch-sum.on.t-conf .n  { color: var(--danger); }
+.sch-sum.on.t-miss  { background: var(--warning-bg); }
+.sch-sum.on.t-miss  .l, .sch-sum.on.t-miss .n  { color: var(--warning); }
+.sch-sum.on.t-avail { background: #FEF0E0; }
+.sch-sum.on.t-avail .l, .sch-sum.on.t-avail .n { color: #C2620C; }
+.sch-sum.on .n { background: rgba(255,255,255,.6); border-color: transparent; }
+.sch-sum-clear {
+  display: inline-flex; align-items: center; gap: 5px; height: 34px; padding: 0 10px;
+  border-radius: 999px; font-size: 12.5px; font-weight: 700; color: var(--text-muted);
+  transition: var(--t-fast);
+}
+.sch-sum-clear:hover { background: var(--surface); color: var(--accent); }
+.sch-sum-grow { flex: 1; }
+.sch-sum-hint { display: inline-flex; align-items: center; gap: 6px; align-self: center; font-size: 12px; color: var(--text-faint); }
+.sch-sum-hint svg { color: var(--text-faint); }
+
+/* ── Durum rozeti (Yayın / Taslak / Revize ediliyor) ── */
+.sch-st {
+  display: inline-flex; align-items: center; gap: 6px; height: 25px; padding: 0 11px;
+  border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap;
+}
+.sch-st .d { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.sch-st.pub   { background: var(--success-bg); color: var(--success); }
+.sch-st.pub   .d { background: #16A34A; }
+.sch-st.draft { background: #EDF0F6; color: var(--text-body); }
+.sch-st.draft .d { background: var(--text-faint); }
+.sch-st.rev   { background: var(--warning-bg); color: var(--warning); }
+.sch-st.rev   .d { background: #D97706; }
+
+/* ── Sayı rozeti (çakışma / eksik saat) — 0 nötr, >0 tonlu ── */
+.sch-cnt {
+  display: inline-flex; align-items: center; gap: 5px; min-width: 30px; height: 25px; padding: 0 9px;
+  border-radius: 999px; font-size: 12.5px; font-weight: 800; white-space: nowrap;
+  font-variant-numeric: tabular-nums; background: var(--surface); color: var(--text-faint);
+  border: 1px solid var(--line);
+}
+.sch-cnt svg { width: 13px; height: 13px; }
+.sch-cnt.conf { background: var(--danger-bg); color: var(--danger); border-color: transparent; }
+.sch-cnt.miss { background: var(--warning-bg); color: var(--warning); border-color: transparent; }
+.sch-cnt.avail { background: #FEF0E0; color: #C2620C; border-color: transparent; }
+.sch-cnt.avail svg { color: #C2620C; }
+.sch-cnt.avail.zero { background: var(--surface); color: var(--text-faint); border-color: var(--line); }
+.sch-cnt.zero { color: var(--text-faint); }
+.sch-cnt.zero svg { opacity: .5; }
+
+/* ── Sürüm etiketi ── */
+.sch-ver {
+  display: inline-flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 7px;
+  font-size: 11.5px; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: var(--surface); border: 1px solid var(--line); color: var(--text-muted);
+}
+
+/* ── Sınıf/şube hücresi (avatar benzeri kod kutusu + meta) ── */
+.sch-cls { display: inline-flex; align-items: center; gap: 11px; }
+.sch-cls .tag {
+  width: 44px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
+  font-size: 14px; font-weight: 800; letter-spacing: -.02em; color: var(--accent-strong);
+  background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 14%, transparent);
+}
+.sch-cls .tx .nm { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.25; }
+.sch-cls .tx .sb { font-size: 11.5px; color: var(--text-muted); }
+
+/* ── Kademe rozeti (tek seviye) ── */
+.sch-lvl {
+  display: inline-grid; place-items: center; min-width: 28px; height: 24px; padding: 0 8px; border-radius: 8px;
+  font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums;
+  background: var(--surface); border: 1px solid var(--line); color: var(--text-body);
+}
+
+/* ── Öğretmen merceği: avatar + ad ── */
+.sch-t { display: inline-flex; align-items: center; gap: 10px; }
+.sch-av {
+  width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0;
+  font-size: 12px; font-weight: 800; color: #fff;
+}
+.sch-t .tn { font-size: 14px; font-weight: 700; color: var(--text); line-height: 1.2; }
+.sch-t .tb { font-size: 11.5px; color: var(--text-muted); }
+
+/* ── Yük / boş saat sayıları ── */
+.sch-load { font-variant-numeric: tabular-nums; font-weight: 800; color: var(--text); font-size: 14px; }
+.sch-load span { font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.sch-win { display: inline-flex; align-items: center; gap: 6px; font-size: 13.5px; font-weight: 700; color: var(--text-body); font-variant-numeric: tabular-nums; }
+.sch-win.calm { color: var(--text-faint); }
+
+/* nöbet rozeti */
+.sch-nobet { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 700; background: var(--surface); color: var(--text-muted); }
+.sch-nobet.on { background: var(--info-bg); color: var(--accent-bright); }
+.sch-nobet.on svg { color: var(--accent-bright); }
+.sch-nobet .none { color: var(--text-faint); }
+
+/* ── Derslik tür rozeti ── */
+.sch-tur { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 700; white-space: nowrap; background: var(--surface); color: var(--text-body); }
+.sch-tur.lab   { background: #EBE5FB; color: #5B45B0; }
+.sch-tur.salon { background: #FAEEDC; color: #92600F; }
+.sch-tur svg { width: 13px; height: 13px; }
+
+/* ── Doluluk oranı (bar + %) ── */
+.sch-occ { display: flex; align-items: center; gap: 10px; min-width: 150px; }
+.sch-occ .track { flex: 1; height: 7px; border-radius: 999px; background: var(--surface); overflow: hidden; }
+.sch-occ .fill { height: 100%; border-radius: 999px; background: var(--accent-bright); }
+.sch-occ .fill.high { background: var(--danger); }
+.sch-occ .fill.mid  { background: #D97706; }
+.sch-occ .pct { font-size: 13px; font-weight: 800; color: var(--text); font-variant-numeric: tabular-nums; min-width: 38px; text-align: right; }
+
+/* ── Satır içi mini metin buton (Aç / Yayınla / Görüntüle) ── */
+.sch-link {
+  display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 11px; border-radius: 9px;
+  font-size: 12.5px; font-weight: 700; color: var(--text-body); border: 1px solid var(--line);
+  background: var(--bg-elev); transition: var(--t-fast); white-space: nowrap;
+}
+.sch-link:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--sh-sm); }
+.sch-link.go { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.sch-link.go:hover { background: var(--accent-soft); }
+.sch-link.pub { color: var(--success); border-color: color-mix(in srgb, var(--success) 32%, transparent); }
+.sch-link.pub:hover { background: var(--success-bg); color: var(--success); }
+.sch-rowacts { display: flex; align-items: center; gap: 6px; justify-content: flex-end; }
+
+/* son güncelleme — sönük, monospace hizalı */
+.sch-upd { font-size: 13px; color: var(--text-muted); white-space: nowrap; }
+.sch-upd b { color: var(--text-body); font-weight: 600; }
+
+/* ── "Yeni Program" / "Otomatik Oluştur" akış modalları ── */
+.sch-pick { display: flex; flex-direction: column; gap: 8px; max-height: 320px; overflow-y: auto; margin: 2px -4px 0; padding: 0 4px; }
+.sch-pick-row {
+  display: flex; align-items: center; gap: 12px; padding: 11px 13px; border-radius: 12px;
+  border: 1.5px solid var(--line); background: var(--bg-elev); transition: var(--t-fast); text-align: left; width: 100%;
+}
+.sch-pick-row:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: var(--surface); }
+.sch-pick-row.on { border-color: var(--accent); background: var(--accent-soft); }
+.sch-pick-row .tag { width: 46px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 14.5px; font-weight: 800; color: var(--accent-strong); background: var(--accent-soft); flex-shrink: 0; }
+.sch-pick-row.on .tag { background: #fff; }
+.sch-pick-row .meta { flex: 1; min-width: 0; }
+.sch-pick-row .meta .t { font-size: 14px; font-weight: 700; color: var(--text); }
+.sch-pick-row .meta .s { font-size: 12px; color: var(--text-muted); }
+.sch-pick-row .ck { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; flex-shrink: 0; color: transparent; }
+.sch-pick-row.on .ck { border-color: var(--accent); background: var(--accent); color: #fff; }
+
+/* otomatik oluştur — önizleme satırları */
+.sch-auto-list { display: flex; flex-direction: column; gap: 7px; margin-top: 4px; }
+.sch-auto-row { display: flex; align-items: center; gap: 11px; padding: 10px 13px; border-radius: 11px; background: var(--surface); }
+.sch-auto-row .tag { width: 40px; height: 32px; border-radius: 9px; display: grid; place-items: center; font-size: 13px; font-weight: 800; color: var(--accent-strong); background: var(--accent-soft); flex-shrink: 0; }
+.sch-auto-row .gr { flex: 1; font-size: 13px; color: var(--text-body); }
+.sch-auto-row .gr b { color: var(--text); }
+.sch-auto-bar { height: 6px; border-radius: 999px; background: var(--line); overflow: hidden; margin-top: 6px; }
+.sch-auto-bar i { display: block; height: 100%; border-radius: 999px; background: var(--accent-bright); }
+
+/* ── Toast (alt-orta) ── */
+.sch-toast {
+  position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+  display: inline-flex; align-items: center; gap: 11px; max-width: 460px;
+  padding: 12px 16px 12px 14px; border-radius: 13px; z-index: 300;
+  background: #14224A; color: #fff; box-shadow: var(--sh-lg);
+  animation: sch-toast-in .26s var(--ease);
+}
+.sch-toast .ti { width: 30px; height: 30px; border-radius: 9px; display: grid; place-items: center; background: rgba(255,255,255,.14); flex-shrink: 0; }
+.sch-toast .tx { font-size: 13.5px; font-weight: 600; line-height: 1.35; }
+.sch-toast .tx b { font-weight: 800; }
+.sch-toast.ok .ti { background: rgba(34,197,94,.22); color: #6EE7B7; }
+@keyframes sch-toast-in { from { opacity: 0; transform: translate(-50%, 12px); } to { opacity: 1; transform: translate(-50%, 0); } }
+
+/* yükleniyor (skeleton) satırları */
+.sch-skel { height: 16px; border-radius: 7px; background: linear-gradient(90deg, var(--surface) 25%, var(--line-soft) 37%, var(--surface) 63%); background-size: 400% 100%; animation: sch-shim 1.3s ease infinite; }
+@keyframes sch-shim { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }

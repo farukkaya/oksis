@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OKSİS — Öğretmen Müsaitliği · Handoff Önizleme</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="brand.css" />
+  <link rel="stylesheet" href="shell.css" />
+  <link rel="stylesheet" href="students.css" />
+  <link rel="stylesheet" href="academics.css" />
+  <link rel="stylesheet" href="modals.css" />
+  <link rel="stylesheet" href="schedule.css" />
+  <link rel="stylesheet" href="schedule_editor.css" />
+  <link rel="stylesheet" href="schedule_autogen.css" />
+  <link rel="stylesheet" href="schedule_publish.css" />
+  <link rel="stylesheet" href="schedule_avail.css" />
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <style>
+    html, body { margin: 0; height: 100%; }
+    body {
+      font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+      font-size: 14px; background: #EEF1FA; color: var(--text, #1d2433);
+    }
+    #root { height: 100%; }
+    .pv-shell { display: flex; flex-direction: column; height: 100vh; }
+    .pv-bar {
+      flex: 0 0 auto; display: flex; align-items: center; gap: 14px; white-space: nowrap;
+      padding: 0 18px; height: 50px; background: #11182B; color: #E7ECF7;
+      font-size: 12.5px; border-bottom: 1px solid rgba(255,255,255,.08); z-index: 200;
+    }
+    .pv-bar > * { white-space: nowrap; }
+    .pv-brand { letter-spacing: .01em; opacity: .92; }
+    .pv-brand b { color: #fff; }
+    .pv-seg { display: flex; gap: 4px; background: rgba(255,255,255,.08); padding: 3px; border-radius: 9px; }
+    .pv-seg button {
+      border: 0; background: transparent; color: #C4CDE4; font: inherit; font-weight: 600;
+      padding: 5px 13px; border-radius: 6px; cursor: pointer;
+    }
+    .pv-seg button.on { background: #3B6CF6; color: #fff; }
+    .pv-sub { display: flex; gap: 3px; align-items: center; }
+    .pv-sub .lbl { opacity: .55; font-size: 11.5px; margin-right: 4px; }
+    .pv-sub button {
+      border: 0; background: rgba(255,255,255,.07); color: #C4CDE4; font: inherit; font-size: 11.5px; font-weight: 600;
+      padding: 4px 10px; border-radius: 6px; cursor: pointer;
+    }
+    .pv-sub button.on { background: rgba(255,255,255,.92); color: #11182B; }
+    .pv-note { margin-left: auto; opacity: .5; font-size: 11.5px; }
+    .pv-stage { flex: 1 1 auto; min-height: 0; overflow: auto; position: relative; display: flex; flex-direction: column; }
+    .pv-stage > .stu { flex: 1 1 auto; min-height: 0; }
+    .pv-stage > .sched-ed { flex: 1 1 auto; min-height: 0; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel" src="icons.jsx"></script>
+  <script type="text/babel" src="components.jsx"></script>
+  <script type="text/babel" src="modals.jsx"></script>
+  <script type="text/babel" src="students.jsx"></script>
+  <script type="text/babel" src="academicsBase.jsx"></script>
+  <script type="text/babel" src="schedule_publish.jsx"></script>
+  <script type="text/babel" src="schedule_autogen.jsx"></script>
+  <script type="text/babel" src="schedule.jsx"></script>
+  <script type="text/babel" src="schedule_editor.jsx"></script>
+  <script type="text/babel" src="schedule_avail.jsx"></script>
+  <script type="text/babel" src="preview.jsx"></script>
+</body>
+</html>

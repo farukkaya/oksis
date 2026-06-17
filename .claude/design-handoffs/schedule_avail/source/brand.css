@@ -1,0 +1,113 @@
+/* ============================================================
+   OKSİS — Brand Tokens (official, brand.oksis.net v1.0)
+   Single light theme. Brand identity (navy / electric / 135° gradient)
+   is always present. Portal colors enter ONLY as accents.
+   ============================================================ */
+
+:root {
+  /* ── Core brand palette ─────────────────────────────── */
+  --navy:      #1B2B5E;   /* Primary · Dark   — Lacivert */
+  --blue:      #3A4F9C;   /* Primary · Mid    — Mavi     */
+  --electric:  #4F6BFF;   /* Accent · Electric            */
+  --surface:   #EEF1FA;   /* Surface · Light  — Yüzey    */
+  --ink:       #0D1117;   /* Ink · Body       — Mürekkep */
+
+  --brand-gradient: linear-gradient(135deg, #1B2B5E 0%, #4F6BFF 100%);
+
+  /* ── Neutrals (calm, professional) ──────────────────── */
+  --bg:            #F4F6FB;
+  --bg-elev:       #FFFFFF;
+  --card:          #FFFFFF;
+  --line:          #E6E9F2;
+  --line-soft:     #EFF1F8;
+
+  --text:          #111827;  /* headings */
+  --text-body:     #374151;
+  --text-muted:    #6B7280;
+  --text-faint:    #9AA3B2;
+
+  /* ── Semantic (constant across portals) ─────────────── */
+  --success:       #0E7A5A;  --success-bg: #D7F5EC;
+  --warning:       #B05A0A;  --warning-bg: #FEF3C7;
+  --danger:        #991B1B;  --danger-bg:  #FEE2E2;
+  --info:          #4F6BFF;  --info-bg:    #EEF1FA;
+
+  /* ── Portal accent (defaults to Admin / navy) ───────── */
+  --accent:        #1B2B5E;
+  --accent-strong: #14224A;
+  --accent-bright: #4F6BFF;
+  --accent-soft:   #EEF1FA;
+  --accent-on:     #FFFFFF;
+
+  /* ── Typography ─────────────────────────────────────── */
+  --font: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+
+  /* ── Radius (brand spec) ────────────────────────────── */
+  --r-card:   14px;
+  --r-md:     12px;
+  --r-sm:     8px;
+  --r-pill:   999px;
+
+  /* ── Shadows (soft, layered, low-opacity) ───────────── */
+  --sh-sm: 0 1px 2px rgba(13,17,23,.05), 0 1px 3px rgba(13,17,23,.05);
+  --sh:    0 2px 8px rgba(13,17,23,.06), 0 8px 24px rgba(27,43,94,.05);
+  --sh-lg: 0 8px 28px rgba(27,43,94,.10), 0 18px 56px rgba(13,17,23,.08);
+  --sh-accent: 0 6px 18px color-mix(in srgb, var(--accent) 28%, transparent);
+
+  /* ── Motion ─────────────────────────────────────────── */
+  --ease: cubic-bezier(.2,.7,.2,1);
+  --t-fast: 140ms var(--ease);
+  --t: 240ms var(--ease);
+
+  /* ── Layout metrics ─────────────────────────────────── */
+  --sidebar-w: 264px;
+  --sidebar-w-collapsed: 78px;
+  --topbar-h: 68px;
+}
+
+/* ── Portal accent themes (UI accent only — chrome stays brand) ── */
+[data-portal="admin"] {
+  --accent: #1B2B5E; --accent-strong: #14224A; --accent-bright: #4F6BFF;
+  --accent-soft: #EEF1FA; --accent-on: #FFFFFF;
+}
+[data-portal="teacher"] {
+  --accent: #0E7A5A; --accent-strong: #0B5E45; --accent-bright: #12A877;
+  --accent-soft: #DCF6EE; --accent-on: #FFFFFF;
+}
+[data-portal="parent"] {
+  --accent: #B05A0A; --accent-strong: #8A4708; --accent-bright: #DD7A12;
+  --accent-soft: #FCEFDB; --accent-on: #FFFFFF;
+}
+[data-portal="student"] {
+  --accent: #5B21B6; --accent-strong: #3B0764; --accent-bright: #7C3AED;
+  --accent-soft: #EDE7FB; --accent-on: #FFFFFF;
+}
+[data-portal="superadmin"] {
+  --accent: #1B2B5E; --accent-strong: #14224A; --accent-bright: #4F6BFF;
+  --accent-soft: #EAEEFB; --accent-on: #FFFFFF;
+}
+
+/* ============================================================
+   RESET / BASE
+   ============================================================ */
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; overflow: hidden; }
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-body);
+  font-size: 15px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: #d3d8e6; border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: #b9c0d4; background-clip: content-box; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+h1,h2,h3,h4 { margin: 0; color: var(--text); letter-spacing: -0.02em; }
+p { margin: 0; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+a { color: inherit; text-decoration: none; }
+::selection { background: color-mix(in srgb, var(--accent-bright) 26%, transparent); }
