@@ -42,7 +42,8 @@
 
 - **`timetable.publish` sadece SchoolAdmin**: Yayın etkisi büyük (tüm okul + bildirim seli). Koordinatör Draft hazırlar, SchoolAdmin onaylar.
 - **`timetable.delete` sadece SchoolAdmin**: Silme geri döndürülemez (soft-delete olsa da programı akıştan çıkarır); Koordinatör program silemez. `timetable.publish` ile aynı yetki seviyesi (spec §8 dışı sapma — onay: kullanıcı 2026-06-14).
-- **`timetable.override` koordinatöre açık**: Sezon içi öğretmen hastalığı gibi günlük operasyon hızlı yönetilmeli; SchoolAdmin onayını beklemek pratik değil.
+- **`timetable.override` koordinatöre açık**: Sezon içi öğretmen hastalığı gibi günlük operasyon hızlı yönetilmeli; SchoolAdmin onayını beklemek pratik değil. **2026-06-17 ek kullanım:** `timetable.override` aynı zamanda editörde `Unavailable` slota zorla yerleşim (`AllowUnavailable=true`) için de kapı oldu — yeni permission slug eklenmedi; mevcut iznin amacına genişletildi (BR-TT-AV-2; onay: kullanıcı 2026-06-17).
+- **`timetable.manage` müsaitlik CRUD'u kapsar**: Müsaitlik sorgu/güncelleme endpoint'leri (`GET availability/...`, `PUT availability/...`) ayrı izin gerektirmez; `timetable.manage` yeterli (yeni permission slug yok).
 - **`timetable.manage-rooms` koordinatöre `⚙`**: Çoğu okulda derslik envanteri yıllar arası stabil. Default kapalı, gerekirse SchoolAdmin açar.
 - **`SuperAdmin` sadece view**: Cross-tenant impersonation dışında müdahale yok (KVKK + audit).
 - **`Secretary` sadece derslik doluluk**: Veli toplantısı/etkinlik planlarken "boş derslik var mı" sorgusu için minimum erişim. Schedule içeriği görmez (öğretmen-ders eşleşmesini ifşa etmez).

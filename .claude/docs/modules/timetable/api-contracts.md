@@ -50,6 +50,17 @@
 | P34 | GET | `/api/v1/timetable/auto-generate/{jobId:guid}` | `timetable.manage` | Üretim job durumu + scope + adaylar (branch-etiketli + per-class) / ipuçları (poll) | 200 / 404 |
 | P35 | POST | `/api/v1/timetable/auto-generate/{jobId:guid}/apply` | `timetable.manage` | Seçilen branch'leri **yeni Taslak**'lara uygula → `[{branchId, programId}]` döner (uygula) | 200 / 404 / 409 |
 | P36 | GET | `/api/v1/timetable/auto-generate/classes?termId=` | `timetable.manage` | O dönemde görevlendirmesi olan (üretime uygun) sınıflar | 200 |
+| P37 | GET | `/api/v1/timetable/availability/teachers/{teacherId:guid}?termId=` | `timetable.manage` | Öğretmenin dönemdeki müsaitlik/tercih kaydı (seyrek — yalnız PrefersNot/Unavailable) | 200 |
+| P38 | GET | `/api/v1/timetable/availability?termId=` | `timetable.manage` | Dönemdeki tüm öğretmenlerin müsaitlik özeti | 200 |
+| P39 | PUT | `/api/v1/timetable/availability/teachers/{teacherId:guid}` | `timetable.manage` | Öğretmen müsaitliğini kaydet/güncelle (upsert; slot listesi tam set) | 204 |
+
+**P37–P39 (Faz 4/Dilim-1 — Öğretmen Müsaitlik & Tercih) notları:**
+- İzin `timetable.manage` (müsaitlik CRUD için ayrı permission slug eklenmedi; `timetable.manage` kapsam dahilinde sayıldı).
+- **Seyrek model:** Yalnız `PrefersNot`/`Unavailable` slotlar saklanır; satır yokluğu `Available` anlamına gelir. `Available` slot gönderilirse yok sayılır.
+- **P37 yanıt:** `TeacherAvailabilityDto { teacherId, slots: [{ day, period, status }] }` — yalnız PrefersNot/Unavailable satırlar. Kayıt yoksa `slots=[]`.
+- **P38 yanıt:** `TermTeacherAvailabilityDto { teachers: TeacherAvailabilityDto[] }` — dönemdeki tüm kayıtlı öğretmenler (boş kayıtlar dahil değil).
+- **P39 istek:** `SaveTeacherAvailabilityRequest { academicYearId, termId, slots: [{ day, period, status }] }`. Upsert: kayıt yoksa oluşturur, varsa `ReplaceAll` ile tam set değiştirir. Başarı sonrası `SaveTeacherAvailabilityCommand` → stats recompute tetikler (ilgili canlı programların `availability_violation_count` güncellenir).
+- **`AllowUnavailable` override:** `PlaceLessonCommand`/`MoveLessonCommand`'a `allowUnavailable: bool` eklendi. `true` + `timetable.override` izni gerekir. Hata kodu `timetable.errors.teacher-unavailable` (block; override yoksa). Yayın **bloklanmaz** (ihlal sayacına yansır, yayın gate değil).
 
 **P33–P36 (Faz 3 Otomatik Üretim — kapsam-bazlı header akışı; Dilim-1 tek sınıf + Dilim-2 çok-sınıf — REVİZE 2026-06-17, K-D2-1…6) notları:**
 - **Akış (üret≠uygula, sıfırdan):** P33 ile bir `ScheduleGenerationJob` (kapsam + dönem + yıla anahtarlı,

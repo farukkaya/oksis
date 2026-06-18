@@ -1,0 +1,192 @@
+/* ============================================================
+   OKSİS — Akademik · Ders Programı · ÖĞRETMEN MÜSAİTLİĞİ (ADMIN)
+   schedule_avail.css · AvailabilityScreen
+   Hub (schedule.css) + Editör (schedule_editor.css) ile aynı dil:
+   editör grid scaffold'unu (.sed-grid / .sed-time / .sed-break /
+   .sed-gh) yeniden kullanır; buradakiler yalnızca müsaitlik 3-durum
+   hücreleri, öğretmen seçici ve toplu işlemler için yeni yapı taşları.
+   Üç durum sabit: Müsait (nötr/yeşil) · Tercih Etmez (amber) · Müsait Değil (kırmızı).
+   ============================================================ */
+
+/* iki-kolon yerleşim — editör gövdesi gibi tam yükseklik */
+.sav.stu { display: flex; flex-direction: column; overflow: hidden; }
+.sav-layout {
+  flex: 1; min-height: 0; display: grid; grid-template-columns: 304px minmax(0, 1fr);
+  background: var(--bg);
+}
+@media (max-width: 1180px) { .sav-layout { grid-template-columns: 256px minmax(0, 1fr); } }
+
+/* dönem seçici (PageTop sağ aksiyon) */
+.sav-donem {
+  display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px;
+  border-radius: 10px; border: 1px solid var(--line); background: var(--bg-elev); color: var(--text-muted);
+}
+.sav-donem select {
+  border: none; outline: none; background: transparent; font-family: inherit; font-size: 13.5px;
+  font-weight: 700; color: var(--text); cursor: pointer;
+}
+
+/* ════════════════ SOL — öğretmen seçici ════════════════ */
+.sav-side { border-right: 1px solid var(--line); background: var(--bg-elev); display: flex; flex-direction: column; min-height: 0; }
+.sav-side-toolbar { padding: 14px 14px 12px; border-bottom: 1px solid var(--line-soft); flex-shrink: 0; }
+.sav-side-toolbar .stu-search { max-width: none; width: 100%; height: 38px; }
+.sav-branchchips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 11px; }
+.sav-bchip {
+  display: inline-flex; align-items: center; gap: 6px; height: 27px; padding: 0 10px; border-radius: 999px;
+  font-size: 12px; font-weight: 700; color: var(--text-muted); background: var(--surface);
+  border: 1px solid transparent; transition: var(--t-fast); white-space: nowrap;
+}
+.sav-bchip .bd { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+.sav-bchip:hover { color: var(--text-body); border-color: var(--line); }
+.sav-bchip.on { background: var(--accent-soft); color: var(--accent); border-color: color-mix(in srgb, var(--accent) 26%, transparent); }
+
+.sav-tlist { flex: 1; min-height: 0; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 5px; }
+.sav-tlist-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 40px 16px; color: var(--text-faint); font-size: 12.5px; font-weight: 600; }
+.sav-trow {
+  display: flex; align-items: center; gap: 11px; width: 100%; padding: 9px 11px; border-radius: 12px;
+  border: 1.5px solid transparent; background: transparent; text-align: left; transition: var(--t-fast);
+}
+.sav-trow:hover { background: var(--surface); }
+.sav-trow.on { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.sav-trow .av { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex-shrink: 0; font-size: 12px; font-weight: 800; color: #fff; }
+.sav-trow .tx { flex: 1; min-width: 0; }
+.sav-trow .tx .nm { font-size: 13.5px; font-weight: 700; color: var(--text); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sav-trow .tx .br { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--text-muted); }
+.sav-trow .tx .br .bd { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+/* durum rozetleri (SchStatus dilinde) */
+.sav-defined {
+  display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px;
+  font-size: 11px; font-weight: 700; background: var(--success-bg); color: var(--success); flex-shrink: 0;
+}
+.sav-defined .d { width: 6px; height: 6px; border-radius: 50%; background: #16A34A; flex-shrink: 0; }
+.sav-undef {
+  display: inline-grid; place-items: center; min-width: 22px; height: 22px; border-radius: 999px;
+  font-size: 12px; font-weight: 800; color: var(--text-faint); background: var(--surface); flex-shrink: 0;
+}
+
+/* ════════════════ SAĞ — müsaitlik ızgarası ════════════════ */
+.sav-main { min-width: 0; display: flex; flex-direction: column; min-height: 0; }
+
+/* başlık şeridi */
+.sav-head {
+  flex-shrink: 0; display: flex; align-items: center; gap: 12px; padding: 13px 22px;
+  background: var(--bg-elev); border-bottom: 1px solid var(--line);
+}
+.sav-head .av { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; font-size: 13px; font-weight: 800; color: #fff; }
+.sav-head .hid { min-width: 0; }
+.sav-head .hid .nm { font-size: 17px; font-weight: 800; color: var(--text); letter-spacing: -.02em; line-height: 1.2; }
+.sav-head .hid .meta { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.sav-head .hid .meta .br { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; }
+.sav-head .hid .meta .br .bd { width: 7px; height: 7px; border-radius: 50%; }
+.sav-head .hid .meta .dot { width: 3px; height: 3px; border-radius: 50%; background: var(--text-faint); }
+.sav-head .grow { flex: 1; }
+.sav-head-empty { display: inline-flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 14px; font-weight: 600; }
+
+.sav-head-counts { display: inline-flex; align-items: center; gap: 7px; margin-left: 4px; }
+.sav-cnt { display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 10px; border-radius: 999px; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sav-cnt.unavail { background: var(--danger-bg); color: var(--danger); }
+.sav-cnt.prefer { background: var(--warning-bg); color: var(--warning); }
+
+/* kayıt durumu rozeti */
+.sav-savestate { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; color: var(--text-muted); white-space: nowrap; }
+.sav-savestate.dirty { color: var(--warning); }
+.sav-savestate.saved { color: var(--success); }
+.sav-savestate.saving { color: var(--accent); }
+
+/* gövde — kaydırılabilir */
+.sav-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px 22px 26px; }
+.oksis-app[data-density="compact"] .sav-body { padding: 14px 18px 22px; }
+
+/* toplu işlemler çubuğu */
+.sav-bulkbar { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 13px; }
+.sav-bulk {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 13px; border-radius: 10px;
+  font-size: 12.5px; font-weight: 700; color: var(--accent); background: var(--accent-soft);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent); transition: var(--t-fast);
+}
+.sav-bulk:hover { background: color-mix(in srgb, var(--accent) 14%, var(--bg-elev)); }
+.sav-bulk.ghost { color: var(--text-body); background: var(--bg-elev); border-color: var(--line); }
+.sav-bulk.ghost:hover { border-color: var(--accent); color: var(--accent); box-shadow: var(--sh-sm); }
+.sav-bulk-hint { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-faint); }
+.sav-bulkbar .grow { flex: 1; }
+
+/* lejant */
+.sav-legend { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 13px; padding: 10px 14px; border-radius: 12px; background: var(--bg-elev); border: 1px solid var(--line); }
+.sav-leg { display: inline-flex; align-items: center; gap: 8px; font-size: 12.5px; font-weight: 700; color: var(--text-body); }
+.sav-leg em { font-style: normal; font-weight: 600; color: var(--text-faint); font-size: 11.5px; }
+.sav-leg .sw { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; border: 1.5px solid; }
+.sav-leg.avail .sw   { background: #fff; border-color: var(--success); color: var(--success); }
+.sav-leg.prefer .sw  { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+.sav-leg.unavail .sw { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+
+/* grid kartı */
+.sav-grid-card { background: var(--bg-elev); border: 1px solid var(--line); border-radius: var(--r-card); padding: 14px 16px 16px; box-shadow: var(--sh-sm); overflow-x: auto; }
+.sav .sed-cal { min-width: 720px; }
+.sav .sed-grid-head { background: var(--bg-elev); top: -14px; margin-top: -14px; padding-top: 14px; }
+
+/* gün başlığı — tıklanır (tüm günü doldur) */
+.sav-dayhead { position: relative; cursor: pointer; transition: var(--t-fast); }
+.sav-dayhead:hover { border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-soft); }
+.sav-dayhead .sav-dh-caret { position: absolute; top: 6px; right: 7px; color: var(--text-faint); }
+.sav-daymenu {
+  position: absolute; top: calc(100% + 6px); left: 50%; transform: translateX(-50%); z-index: 40;
+  min-width: 176px; background: var(--bg-elev); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: var(--sh-lg); padding: 6px; animation: oksis-scrim .12s ease; text-align: left;
+}
+.sav-daymenu .h { font-size: 10.5px; font-weight: 800; letter-spacing: .03em; text-transform: uppercase; color: var(--text-faint); padding: 4px 9px 7px; }
+.sav-daymenu-opt { display: flex; align-items: center; gap: 9px; width: 100%; padding: 8px 9px; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--text-body); text-align: left; transition: var(--t-fast); }
+.sav-daymenu-opt:hover { background: var(--surface); }
+.sav-daymenu-opt .sw { width: 22px; height: 22px; border-radius: 7px; display: grid; place-items: center; border: 1.5px solid; flex-shrink: 0; }
+.sav-daymenu-opt.avail .sw   { background: #fff; border-color: var(--success); color: var(--success); }
+.sav-daymenu-opt.prefer .sw  { background: var(--warning-bg); border-color: var(--warning); color: var(--warning); }
+.sav-daymenu-opt.unavail .sw { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+
+/* ════════════════ Müsaitlik hücresi (3 durum) ════════════════ */
+.sav-cell {
+  min-height: 58px; border-radius: 11px; border: 1.5px solid var(--line); background: var(--bg-elev);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  position: relative; cursor: pointer; transition: var(--t-fast); user-select: none;
+}
+.sav-cell .ico { display: grid; place-items: center; }
+.sav-cell .lbl { font-size: 11px; font-weight: 800; letter-spacing: -.01em; }
+.sav-cell:hover { box-shadow: var(--sh-sm); }
+
+/* Müsait — nötr, yeşil ipucu (varsayılan) */
+.sav-cell.avail { background: #fff; border-color: var(--line); }
+.sav-cell.avail .ico { color: color-mix(in srgb, var(--success) 70%, var(--text-faint)); }
+.sav-cell.avail .lbl { color: var(--text-faint); font-weight: 700; }
+.sav-cell.avail:hover { border-color: color-mix(in srgb, var(--success) 45%, var(--line)); }
+
+/* Tercih Etmez — amber, YUMUŞAK uyarı (engel değil) */
+.sav-cell.prefer { background: var(--warning-bg); border-color: color-mix(in srgb, var(--warning) 40%, transparent); }
+.sav-cell.prefer .ico, .sav-cell.prefer .lbl { color: var(--warning); }
+
+/* Müsait Değil — kırmızı, KESİN engel */
+.sav-cell.unavail { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 42%, transparent); }
+.sav-cell.unavail .ico, .sav-cell.unavail .lbl { color: var(--danger); }
+
+/* hücre üstü 3'lü mini-seçim (hover) */
+.sav-pick {
+  position: absolute; top: -13px; left: 50%; transform: translateX(-50%) scale(.9); transform-origin: bottom center;
+  display: flex; gap: 3px; padding: 3px; border-radius: 9px; background: var(--bg-elev);
+  border: 1px solid var(--line); box-shadow: var(--sh-lg); z-index: 20;
+  opacity: 0; pointer-events: none; transition: opacity .12s var(--ease), transform .12s var(--ease);
+}
+.sav-cell:hover .sav-pick { opacity: 1; pointer-events: auto; transform: translateX(-50%) scale(1); }
+.sav-pick-btn { width: 26px; height: 26px; border-radius: 7px; display: grid; place-items: center; transition: var(--t-fast); color: var(--text-faint); border: 1.5px solid transparent; }
+.sav-pick-btn.avail:hover, .sav-pick-btn.avail.on { background: #fff; color: var(--success); border-color: var(--success); }
+.sav-pick-btn.prefer:hover, .sav-pick-btn.prefer.on { background: var(--warning-bg); color: var(--warning); border-color: var(--warning); }
+.sav-pick-btn.unavail:hover, .sav-pick-btn.unavail.on { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+
+/* durum varyantları (boş / hata / öğretmen seçilmemiş) */
+.sav-state { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 70px 24px; gap: 6px; min-height: 360px; }
+.sav-state .se-ico { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; background: var(--surface); color: var(--text-faint); margin-bottom: 12px; }
+.sav-state .se-ico.warn { background: var(--warning-bg); color: var(--warning); }
+.sav-state .se-ico.danger { background: var(--danger-bg); color: var(--danger); }
+.sav-state h3 { font-size: 17px; font-weight: 800; }
+.sav-state p { font-size: 14px; color: var(--text-muted); max-width: 380px; line-height: 1.55; }
+.sav-state .btn { margin-top: 14px; }
+
+/* toast — warn tonu (hub toast'a ekleme) */
+.sch-toast.bad .ti { background: rgba(239,68,68,.24); color: #FCA5A5; }
+.sch-toast.warn .ti { background: rgba(217,119,6,.26); color: #FCD34D; }
