@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend tamam · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-17
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + **FE handoff stillemesi** tamam · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-18
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -425,6 +425,13 @@
   - **Override (`AllowUnavailable`):** `PlaceLessonCommand`/`MoveLessonCommand`'a `AllowUnavailable` bayrağı eklendi; `true` geçildiğinde hard-block bypassed olur. Bu bayrağı set etmek `timetable.override` iznini gerektirir (handler + validator kontrolü).
   - **API (3 endpoint — `timetable.manage`):** `GET availability/teachers/{teacherId}?termId` / `GET availability?termId` / `PUT availability/teachers/{teacherId}` — bkz. API Kontratları bölümü.
   - **Testler:** Domain 17 unit (TeacherAvailabilityTests + AvailabilityStatusTests); Application 28 unit (SaveTeacherAvailability + GetTeacherAvailability + GetTermTeacherAvailability + PlaceLesson override path + EditPlacement override path); Integration 3 (TeacherAvailabilityProvider + AvailabilityViolationStats + PlaceLessonOverride). **Full suite:** build 0 hata, 1684 test geçti / 0 başarısız.
+
+- **Faz 4/Dilim-1 Müsaitlik & Tercih — FE handoff stillemesi (2026-06-18):**
+  - **Handoff port (`schedule_avail.jsx`/`.css` birebir):** Sayfa `.stu .aca .sav` iki-kolon yerleşime (304px seçici + ızgara) yeniden kuruldu; `availability.css` 192 satırlık handoff CSS'in faithful portu (editör `sed-*` scaffold'unu — `.sed-cal/.sed-grid/.sed-time/.sed-break/.sed-gh` — yeniden kullanır, üstüne `sav-*` ekler). Token: eksik `--bg` → `--background` remap; `--text-body` rengi `.stu` (students.css) bloğundan miras. **`.sed-sk`** iskelet sınıfı yerelde tanımlandı (editördeki adı `.sed-skel`).
+  - **Bileşenler:** `TeacherPicker` (arama + branş çipleri + avatar + branş alt-etiketi + Tanımlı/— rozeti), `AvailabilityGrid` (zaman-aralıklı `.sed-time` satırları + teneffüs/öğle ayraçları zil çizelgesinden + 3-renk `.sav-cell` + hover mini-picker), `SavDayMenu` (gün başlığı doldur popover), `TeacherAvailabilityPage` (başlık şeridi: sayaç pill'leri + Güncel/dirty/saving + Kaydet; bulkbar: Tüm haftayı Müsait + gün-doldur; lejant 3 öğe; durum varyantları: yükleniyor iskeleti / zil yok / hata / öğretmen seçilmedi).
+  - **Branş veri kaynağı — Debt YOK:** `teachersApi.list` (`/users/persons?profileType=Teacher`) `branch` döndürüyor → branş çipleri + satır alt-etiketi gerçek veriden geliyor (yeni `useAvailabilityTeachers` hook'u; eski branşsız `useAutoGenLookups` kaynağı bırakıldı). Avatar rengi handoff `SAV_AV_COLORS` paletinden stabil hash.
+  - **Bağlam:** Gün 0..4; cycle 0→1→2→0 + advance-to-0 silme (seyrek) korundu; sayaçlar taslaktan; dönem etiketi `useHubData.donemLabel` (sezon · dönem) — yeni alan eklendi. Toplu İçe Aktar / Başka güne kopyala / Önceki dönemden kopyala butonları görsel (disabled) — backend yok (Debt).
+  - **Testler:** `availability` suite (AvailabilityGrid 4 + TeacherAvailabilityPage 1 + useTeacherAvailability 3) yeşil; tüm timetable suite 202/202 geçti; `npm run build` temiz. i18n `availability.*` (statusShort, legend, dayMenu, breaks, empty.*Title/Body, errorTitle/Body, noTeacherSelected, allBranches, noMatch) tr+en eklendi.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
