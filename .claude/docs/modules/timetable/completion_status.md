@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + FE handoff stillemesi tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE + FE tamam** · **Faz 4/Dilim-2b Vekâlet BE tamam** · **Faz 4/Dilim-2b Vekâlet FE tamam** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-19
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + FE handoff stillemesi tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE + FE tamam** · **Faz 4/Dilim-2b Vekâlet BE tamam** · **Faz 4/Dilim-2b Vekâlet FE tamam** · **Editör Vekil modalı handoff zenginleştirmesi (2.5C rafine) tamam** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-20
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -274,6 +274,19 @@
   - **Coexistence:** Hücre menüsü artık `useTempChanges` tepsisini besler; **PublishDrawer + `useTempActions`
     + testleri dokunulmadan korundu** (bağımsız; kullanıcı onaylı tasarım). `permLocked = tc.hasTemp`.
   - **Test/Build:** Tam web paketi **765 vitest yeşil** (+1 skip), 165 dosya; `npm run build` temiz.
+- **Editör Vekil modalı handoff zenginleştirmesi (2.5C rafine) — FE (2026-06-20):**
+  - **Kaynak:** `schedule_temp_changes.jsx`/`.css` handoff'unun `SubstituteFlow` bölümü birebir portlandı (Claude Design
+    projeleri boştu → yerel handoff kaynağı kullanıldı). İlk 2.5C portu sade bırakılan 3 zengin parça tamamlandı.
+  - **#1 Tarih seçici:** Tek-satır metin → handoff **radyo + iki-satır** (`.tc-dateopt .rd/.dt`), her iki hafta için
+    gün+tarih etiketi (`resolveWhen("this"/"next")`). Saf FE.
+  - **#2 Vekil satırı:** Branş alt-satırı (`.br`) + "aynı branş" rozeti (`.match`) + müsaitlik etiketi (`.avtag` ✓ boş /
+    ✗ meşgul + sebep) + dolu aday disabled. FE kontratı `Map<id,name>` → `AvailableTeacher[]` (zengin, opsiyonel alanlar).
+    Branş/rozet/dolu-aday verisi backend'de yok → **Debt-FE-14** (status default "free", alanlar gizli).
+  - **#3 Bilgilendirme:** Satırlara ikon (`.ni` briefcase/grad-cap/users) + alt-satır (`.nt .s`). Öğrenci/veli sayısı
+    backend'de yok → alt-satır yalnız sınıf etiketi (`data.className`) → **Debt-FE-15**.
+  - **i18n:** Mevcut `temp.*` anahtarları (sameBranch/free/busy/notify.*) zaten hazırdı; yeni anahtar gerekmedi.
+  - **TDD/Test:** SubstituteModal testleri 7'ye çıkarıldı (RED→GREEN); **207 timetable vitest yeşil**, `tsc --noEmit` temiz.
+    `tempChanges.css` eksik handoff kuralları eklendi (radyo/dt, match, avtag, ni, nt .s). Diğer modallar/testler dokunulmadı.
 - **Sürüm Geçmişi (B grubu B-1) — BE+FE (2026-06-14):**
   - **Backend (3 dilim + domain):** `ScheduleProgram.RestoreFrom(snapshot)` (mevcut aktifleri pasifler →
     snapshot'tan yeniden kurar → blok grupları → `Revising` → `ScheduleProgramRestoredEvent`). `ListScheduleVersions`
@@ -523,6 +536,17 @@
 - **Debt-BE-5 (vekil-vekil çakışması):** `available-teachers` (P28) "müsait" hesabı yalnız yapısal
   yerleşimleri sayar; aynı tarihte başka bir derse zaten vekil atanmış öğretmen müsait görünebilir.
   Tarih-bazlı istisna çakışması ileride eklenecek.
+- **Debt-FE-14 (vekil modal zengin satır verisi):** Editör hücre menüsü → `SubstituteModal` (Vekil Öğretmen Ata)
+  handoff'a (`schedule_temp_changes.jsx`) göre **birebir** portlandı: tarih radyo + iki-satır (bu/gelecek hafta + tarih),
+  vekil satırında branş alt-satırı + "aynı branş" rozeti + müsaitlik etiketi (✓ boş / ✗ meşgul + sebep), dolu adaylar
+  disabled. Ancak `available-teachers` (P28) yalnız **boş** öğretmenleri `{id,name}` döner → FE kontrat tipi
+  `AvailableTeacher[]` zengin şekle (`branch?/sameBranch?/status?/note?`) hazırlandı ama alanlar **opsiyonel**: backend
+  gelene kadar `status` default `"free"` (tüm adaylar "Bu saat boş"), branş/rozet/dolu-aday **gizli**. Backend ucu bu
+  alanları + meşgul adayları döndürünce UI kendiliğinden dolar (kod değişikliği gerekmez). Frontend-First Debt kararı.
+- **Debt-FE-15 (bilgilendirme öğrenci/veli sayısı):** `SubstituteModal` bilgilendirme satırları handoff'a göre ikon +
+  alt-satır gösterir; "İlgili öğretmenler" alt-satırı statik ("Asıl ve vekil öğretmen"), "Öğrenciler"/"Veliler"
+  alt-satırı yalnız **sınıf etiketi** (`data.className`, ör. "9-A") — handoff'taki "9-A · 24 öğrenci" sayısı backend'de
+  yok (publish/temp preview read-model borcu, Debt-BE-1/2 ailesi). Sayı gelince alt-satıra eklenir.
 - **Debt-FE-12 (editör çakışma hücresi işareti) — ✅ KAPANDI (2026-06-13):** Yeni `external-occupancy`
   ucu (P29, teknik analiz §6.2 — bu program hariç dönemdeki tüm aktif yerleşimler) + saf `deriveConflicts`
   ile editör artık çapraz-program çakışan hücreleri kırmızı "⚠ Çakışma" rozetiyle işaretliyor,
