@@ -486,3 +486,267 @@ export const overrideFormSchema = z.object({
 - ❌ Parent ekranında çocuk seçici **alt menüye gizleme** — her zaman ekranın üstünde (school-ux skill).
 
 > Detay: `frontend/component-rules.md`, `frontend/form-validation-rules.md`, `mobile/component-rules.md`.
+
+---
+
+## Faz 4 / Dilim 2a — Nöbet Çizelgesi (Admin Ekranı)
+
+### Ekran Lokasyonu
+
+```
+oksis-web/src/portals/admin/duties/          — admin ekranı
+oksis-web/src/portals/teacher/duties/        — öğretmen salt-okunur görünümü
+```
+
+**Permission (admin):** `duties.view` (okuma), `duties.manage` (yazma)
+**Route:** `/admin/duties` (DutyAdminPage)
+**Component:** `DutyAdminPage`
+
+---
+
+### Admin Ekranı — Üç Sekmeli Yapı
+
+#### Sekme 1: Çizelge (roster)
+
+**PageHeader Aksiyon Şeridi:**
+- **Öğretmen Görünümü** butonu (her zaman) → `DtaTeacherPreview` modalı açar (salt-okunur öğretmen perspektifi)
+- `duties.manage` ise:
+  - **Kaydet** butonu (yalnız draft değişiklik varken) → flush → `saveRoster`
+  - **Yayınla** butonu → `DtaPublishModal` açar
+
+**Sayfa Gövdesi — Çizelge Sekmesi:**
+
+1. **Bilgi banner'ı:** "Günlük Nöbet" açıklama satırı (MapPin ikonu)
+2. **DutySummaryBar:** toplam atama · min/max nöbet · muaf sayısı · çakışma · aktif sürüm + "Geçerlilik" tarihi. Yancılık kapalıysa "Yancılık kapalı" rozeti. Sürüm geçmişi linki → `DtaVersionDrawer`.
+3. **DutyGrid:** Gün (Pzt–Cum) × Bölge matrisi.
+   - Her hücre: nöbetçi avatar+isim. `relieverEnabled=true` ise yancı öğretmen alt-satırı (teal).
+   - Çakışma varsa hücrede sarı uyarı rozeti.
+   - **Bugün** sütunu mavi kenarlıkla işaretlenir.
+   - Hücreye tıklama (`duties.manage` ise) → **DtaCellMenu** açılır.
+4. **FairnessPanel:** öğretmen başına nöbet dağılımı (bar chart stili). `relieverEnabled=true` ise yancı sütunu da gösterilir.
+
+**DtaCellMenu (Radix Popover):**
+- Mevcut atama yok → öğretmen listesi (avatar + isim + branş + yük sayacı). Meşgul öğretmenler grayed.
+- Mevcut atama var → öğretmen listesi + **Kaldır** seçeneği.
+- Atama seçimi yerel `draftOps` op-log'una eklenir (applyOps ile türetilmiş liste).
+
+**DtaPublishModal:**
+- Güncel sürüm numarası gösterilir.
+- "Geçerlilik başlangıcı" tarih alanı.
+- **Yayınla** → `publishRoster` → supersede önceki aktif versiyonu.
+
+**DtaVersionDrawer:**
+- Tüm sürümler zaman çizelgesi (Published / Superseded).
+- Sürüm detayı (effectiveFrom, yayıncı, atama sayısı).
+
+**DtaTeacherPreview:**
+- Tüm öğretmenlerin nöbet çizelgesi — salt-okunur özet görünümü.
+- `relieverEnabled=true` ise yancı bilgisi de listelenir.
+
+**Boş Durum:**
+- Aktif bölge yoksa "Bölge tanımlanmamış" boş durum + **Bölgeler & Politika** sekmesine yönlendirme CTA.
+
+**Yükleniyor İskeleti:** DutySummaryBar, toolbar ve grid için 3 ayrı iskelet div.
+
+---
+
+#### Sekme 2: Vekâlet (substitution)
+
+**Permission gate:** `duties.substitute` (yalnız SchoolAdmin). Kapı olmadan "izin yok" durumu gösterilir.
+**Component:** `DtaVekalet`
+**Konum:** `src/portals/admin/duties/components/DtaVekalet.tsx`
+
+> Dilim 2b'de implement edildi. Eski `VekaletPlaceholder` kaldırıldı.
+
+**Sayfa Yapısı:**
+
+1. **Gün Bar'ı (`dta-day-bar`):**  
+   Bugünün tarihi + üç pill: Açık / Kapandı / Serbest Çalışma — değerler yüklenen board'lardan `onLessonsLoaded` callback'leriyle toplanır.
+
+2. **Bilgi banner'ı:** "Bu sayfa, gelen öğretmenden bu güne ait vekâlet ataması yapmanızı sağlar." (MapPin ikonu)
+
+3. **Öğretmen seçici (Add-absent picker):**  
+   - shadcn `Select` + `Input` (sebep) — yalnız `canManage = true` iken erişilebilir.
+   - "Ekle" butonu → seçilen `teacherId`+`reason` yerel `useState<{teacherId, reason}[]>` listesine eklenir.
+   - Devamsız öğretmen **entity'de saklanmaz** (K-2b-1: devamsızlık kaydı 2b kapsamı dışı).
+
+4. **Devamsız öğretmen kartları (`AbsTeacherCard`):**  
+   Her seçilen öğretmen için ayrı kart:
+   - `useSubstitutionBoard(termId, date, teacherId, true)` → board verisi yüklenir.
+   - Kart başlığı: öğretmen adı + branşı + yerel sebep (`dta-abs-reason`).
+   - Kart gövdesi: Ders slotları (`LessonSlot`) → her slot `SubstitutionLessonDto`'dan.
+
+5. **Ders Slotu (`LessonSlot`) → `DtmLesson` bileşenine iletilir:**  
+   - **`open` (Açık):** Ders pill'i + öneri listesi (`dta-sugg`). Expand → `useAvailableSubstitutes` tetiklenir (lazy, `onExpand` ile). Aday listesi `DtmCandidate` bileşenleriyle render edilir.
+   - **`covered` (Vekil Atandı):** `DtaAvatar` + vekil adı + "Bildirildi" + **Geri Al** butonu (`revokeSubstitution`).
+   - **`study-hall` (Serbest Çalışma):** BookOpen ikonu + başlık + gövde + **Geri Al** (`revokeSubstitution`).
+
+6. **`DtmCandidate` bileşeni:**  
+   - Avatar (`DtaAvatar`) + isim + branş uyum rozeti (`dta-fit`: ok/yan/no — Same/Near/Different) + yük sayacı (Shield ikonu).
+   - "Önerilen" tag'i (`best=true` ilk aday — yük+fit sıralaması BE tarafından).
+   - **Ata** butonu → `createSubstitution(programId, placementId, date, teacherId, reason)` → toast (`toast.assigned` + öğretmen adı).
+   - **Serbest Çalışma** ayak butonu → `markStudyHall(programId, placementId, date, reason)` → toast (`toast.studyHall`).
+
+---
+
+### Admin Kullanıcı Akışı — Vekâlet (Ad-hoc Bugün)
+
+```
+[/admin/duties → Vekâlet sekmesi]
+        ↓
+duties.substitute yoksa → "izin yok" durumu
+        ↓
+(duties.substitute = SchoolAdmin)
+        ↓
+Gün Bar: bugünün tarihi + Açık/Kapandı/Serbest sayıları
+        ↓
+Öğretmen Seçici: "Devamsız Öğretmen" Select + "Sebep" Input → Ekle
+        ↓
+AbsTeacherCard oluşur — board sorgusu tetiklenir
+  (GET /duties/substitution/board?termId=&date=&teacherId=)
+        ↓
+Ders slotları yüklenir (Yükleniyor iskelet)
+        ↓
+[Ders "Açık" ise]
+        ↓
+Slot'a tıkla → "Diğer N aday" expand → useAvailableSubstitutes tetiklenir
+  (GET /duties/substitution/available-substitutes?programId=&placementId=&date=)
+        ↓
+Aday listesi: fit rozeti + yük + "Önerilen" tag
+        ↓
+Seçenek A: "Ata" → createSubstitution → toast "Öğretmen Adı atandı"
+           → slot "covered" (DtaAvatar + Bildirildi + Geri Al)
+Seçenek B: "Serbest Çalışma" → markStudyHall → toast "Serbest çalışmaya alındı"
+           → slot "study-hall" (BookOpen + Geri Al)
+        ↓
+Geri Al → revokeSubstitution → slot "open"'a döner
+```
+
+---
+
+
+
+#### Sekme 3: Bölgeler & Politika (policy)
+
+**PageHeader Kaydet:** `duties.manage` + `polDirty` iken aktif → `updatePolicy` çağrısı.
+
+**PolitikaTab içeriği:**
+
+1. **Bölgeler bölümü:** Aktif/Pasif bölge listesi (ikon, kapasite, tip).
+   - **Bölge Ekle** butonu → `DtaRegionModal` (ad, tip, kapasite, ikon seçici)
+   - Satır: düzenle (`DtaRegionModal`) / sil (`DtaConfirm` teyit)
+2. **Muafiyetler bölümü:** Kalıcı/Geçici muaf öğretmen listesi.
+   - **Muafiyet Ekle** → `DtaMuafModal` (öğretmen seçici, Kalıcı/Geçici, gün bayrağı)
+   - Satır: sil (teyit confirm)
+3. **Nöbet politikası bölümü:**
+   - **Yancılık aktif** toggle (`relieverEnabled`) — `K-2a-5`: kapalıyken tüm yancı UI'dan gizlenir
+   - **Haftalık sıklık** seçici (Haftada 2 / Haftada 1 / 2 Haftada 1) — Dilim 2c solver girdisi (şimdilik inert)
+   - **Gün dağılımı** seçici (Dağıtılmış / Ardışık) — Dilim 2c solver girdisi (şimdilik inert)
+
+---
+
+### Admin Kullanıcı Akışı — Yeni Nöbet Çizelgesi Kurulumu
+
+```
+[/admin/duties] (boş ekran — bölge yok)
+        ↓
+"Bölgeler & Politika" sekmesine geç
+        ↓
+Bölge Ekle → DtaRegionModal
+  (ad: "1. Kat Koridor", tip: Koridoru/Salon/Bahçe/Kapı/Salon/Diğer, kapasite: 1–4)
+        ↓
+Kaydet (policy) → bölge aktif
+        ↓
+"Çizelge" sekmesine dön
+        ↓
+Hücreye tıkla → DtaCellMenu → öğretmen seç
+        ↓
+[draftOps yerel op-log'una eklendi]
+        ↓
+"Kaydet" → saveRoster → server flush
+        ↓
+toast: "Çizelge güncellendi"
+        ↓
+"Yayınla" → DtaPublishModal → geçerlilik tarihi seç → Yayınla
+        ↓
+publishRoster → Draft→Published, önceki Published→Superseded
+        ↓
+toast: "Yayınlandı · v1"
+        ↓
+Öğretmenlere in-app + SignalR bildirim (DutyRosterPublishedEvent)
+```
+
+---
+
+### Admin Kullanıcı Akışı — Supersede (Yeni Sürüm Yayıni)
+
+```
+Mevcut Published sürüm var
+        ↓
+Çizelgede değişiklik yap → Kaydet
+        ↓
+Yayınla → DtaPublishModal → yeni geçerlilik tarihi
+        ↓
+publishRoster: mevcut Published → Superseded; yeni → Published
+        ↓
+DtaVersionDrawer'da v1 (Superseded) + v2 (Published) görünür
+```
+
+---
+
+## Faz 4 / Dilim 2a — Nöbet Çizelgesi (Öğretmen Görünümü)
+
+### Ekran Lokasyonu
+
+```
+oksis-web/src/portals/teacher/duties/TeacherDutyPage.tsx
+```
+
+**Permission:** `duties.view` (self-scope — yalnız kendi nöbetleri, IDOR-safe `GetMyDuties`)
+**Route:** `/teacher/duties` (TeacherDutyPage)
+
+### Ekran Yapısı
+
+**Salt-okunur görünüm. Vekâlet Dilim 2b kapsamı.**
+
+**Yükleniyor:** 3 iskelet item (tdy-sk-summary, tdy-sk-label, 3× tdy-sk-item).
+
+**Hata durumu:** Hata ikonu + `state.error` mesajı.
+
+**Boş durum:** CheckCircle ikonu + "Bu dönem nöbet göreviniz yok" mesajı.
+
+**Özet Şeridi (dolu durum):**
+- **Nöbet sayısı** (Shield ikonu) — bu haftaki nöbet adedi
+- **Yancı sayısı** (Users ikonu) — yalnızca `relieverEnabled=true` iken (`K-2a-5`)
+- **Sıradaki görev** kartı: gün + bölge adı + görev tipi (Nöbet / Yancı)
+
+**Alt-segment toggle:**
+- **Liste görünümü:** Her görev için kart (gün kodu, bölge adı, Nöbet/Yancı etiket rozeti). Bugün mavi vurgu.
+- **Haftalık takvim (DutyWeek):** Pzt–Cum grid, hücre başına görev kartı.
+
+**K-2a-5 gating:** `relieverEnabled=false` iken `kind="reliever"` item'lar filtrelenir; özet şeridinde yancı stat ve sıradaki-görev olarak yancı gösterilmez.
+
+**K-2a-2 notu:** Müsaitlik bilgisi bu ekranda gösterilmez. Ekran yalnız atanan nöbet/yancı bilgisini listeler.
+
+---
+
+## Faz 4 / Dilim 2b — Vekâlet (Öğretmen Görünümü)
+
+**Ekran:** `TeacherDutyPage.tsx` (Dilim 2a ile aynı sayfa — `SubstitutionSection` eklendi)
+**Permission:** `duties.view` (self-scope)
+**Veri kaynağı:** `useMySubstitutions(termId)` → `GET /duties/substitution/me` → `MySubstitutionDto[]`
+
+**SubstitutionSection (salt-okunur):**
+- **Bölüm başlığı:** `substitution.teacher.section` (Eye ikonu)
+- **Boş durum:** `substitution.teacher.empty` ("Bu dönem vekâlet göreviniz yok")
+- **Hata durumu:** `substitution.error` satır içi
+- **Dolu durum:** Her `MySubstitutionDto` için read-only kart:
+  - `branchName · subjectName` (sınıf + ders)
+  - `day/period`  + saat (`tdy-when`)
+  - Oda (`tdy-room`) — varsa
+  - "`{{originalTeacherName}}` yerine" pattern (`tdy-in-place-of`)
+  - Eye ikonu + `substitution.teacher.viewOnly` etiketi
+
+**K-2b-7 (itiraz yok):** Öğretmen itiraz / onay akışı `schedule_requests` dilimine ertelendi. Bu görünümde itiraz butonu/modal yoktur.
+
+**K-2a-2 tutarlılık:** Müsaitlik bilgisi SubstitutionSection'da da gösterilmez.

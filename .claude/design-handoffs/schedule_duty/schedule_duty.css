@@ -1,0 +1,152 @@
+/* ============================================================
+   OKSİS — Ders Programı · ÖĞRETMEN · "Nöbet & Vekâlet"
+   Ağırlıkla salt-okunur: öğretmen görevlerini görüntüler; vekâlette
+   yalnız onay/itiraz. NÖBET = planlı/tekrarlayan, VEKÂLET = yedek ders
+   (kimin yerine). İki tür görsel olarak ayrışır.
+   ============================================================ */
+
+/* alt-segment (Liste / Takvim) */
+.tdy-subseg { display: inline-flex; background: var(--surface); border-radius: 11px; padding: 3px; gap: 2px; }
+.tdy-subseg button { display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 14px; border-radius: 9px; font-size: 13px; font-weight: 700; color: var(--text-muted); transition: var(--t-fast); }
+.tdy-subseg button.on { background: var(--bg-elev); color: var(--accent); box-shadow: var(--sh-sm); }
+
+/* yeni vekâlet bildirim şeridi */
+.tdy-newvek { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 13px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent-bright) 24%, transparent); margin-bottom: 16px; }
+.tdy-newvek .ni { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--accent); color: #fff; flex-shrink: 0; }
+.tdy-newvek .nx { flex: 1; }
+.tdy-newvek .nx .t { font-size: 13.5px; font-weight: 800; color: var(--accent-strong); }
+.tdy-newvek .nx .s { font-size: 12px; color: var(--text-body); }
+.tdy-newvek .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--accent-bright); box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent-bright) 55%, transparent); animation: tsc-pulse 1.8s infinite; }
+
+/* çakışma uyarı şeridi */
+.tdy-conflict-strip { display: flex; align-items: center; gap: 12px; padding: 13px 16px; border-radius: 13px; background: var(--danger-bg); border: 1px solid color-mix(in srgb, var(--danger) 26%, transparent); margin-bottom: 16px; }
+.tdy-conflict-strip .ci { width: 36px; height: 36px; border-radius: 11px; display: grid; place-items: center; background: var(--danger); color: #fff; flex-shrink: 0; }
+.tdy-conflict-strip .cx { flex: 1; }
+.tdy-conflict-strip .cx .t { font-size: 13.5px; font-weight: 800; color: #7A1515; }
+.tdy-conflict-strip .cx .s { font-size: 12px; color: #7A1515; opacity: .9; }
+
+/* özet şeridi */
+.tdy-summary { display: grid; grid-template-columns: repeat(2, 160px) minmax(0, 1fr); gap: 12px; margin-bottom: 20px; }
+@media (max-width: 760px) { .tdy-summary { grid-template-columns: 1fr 1fr; } }
+.tdy-stat { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--sh-sm); }
+.tdy-stat .si { width: 38px; height: 38px; border-radius: 11px; display: grid; place-items: center; flex-shrink: 0; }
+.tdy-stat.nobet .si { background: var(--info-bg); color: var(--accent-bright); }
+.tdy-stat.vekalet .si { background: var(--warning-bg); color: var(--warning); }
+.tdy-stat .sv { font-size: 22px; font-weight: 800; color: var(--text); letter-spacing: -.02em; line-height: 1; font-variant-numeric: tabular-nums; }
+.tdy-stat .sl { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+.tdy-next { display: flex; align-items: center; gap: 13px; padding: 14px 18px; border-radius: 14px; background: var(--brand-gradient); color: #fff; box-shadow: var(--sh); position: relative; overflow: hidden; }
+.tdy-next::after { content: ''; position: absolute; right: -30px; top: -30px; width: 130px; height: 130px; border-radius: 50%; background: rgba(255,255,255,.07); }
+.tdy-next .ni { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: rgba(255,255,255,.18); flex-shrink: 0; position: relative; z-index: 1; }
+.tdy-next .nx { position: relative; z-index: 1; }
+.tdy-next .nx .l { font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; opacity: .85; }
+.tdy-next .nx .t { font-size: 16px; font-weight: 800; letter-spacing: -.01em; margin-top: 2px; }
+.tdy-next .nx .s { font-size: 12px; opacity: .9; margin-top: 1px; }
+.tdy-next .when { margin-left: auto; text-align: right; position: relative; z-index: 1; }
+.tdy-next .when .at { font-size: 16px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.tdy-next .when .in { font-size: 11.5px; opacity: .85; }
+
+/* yaklaşan görevler listesi */
+.tdy-list-h { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.tdy-list-h .t { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.tdy-list-h .grow { flex: 1; }
+.tdy-list { display: flex; flex-direction: column; gap: 10px; }
+.tdy-item { display: flex; align-items: center; gap: 16px; padding: 15px 18px; border-radius: 14px; background: var(--card); border: 1px solid var(--line); box-shadow: var(--sh-sm); transition: var(--t-fast); cursor: pointer; }
+.tdy-item:hover { box-shadow: var(--sh); transform: translateY(-1px); }
+.tdy-item .acc { width: 4px; align-self: stretch; border-radius: 999px; flex-shrink: 0; }
+.tdy-item.nobet .acc { background: var(--accent-bright); }
+.tdy-item.vekalet .acc { background: var(--warning); }
+.tdy-item.conflict { border-color: var(--danger); background: color-mix(in srgb, var(--danger-bg) 50%, var(--card)); }
+.tdy-item.conflict .acc { background: var(--danger); }
+.tdy-item.is-today { box-shadow: 0 0 0 2px var(--accent-soft), var(--sh-sm); }
+
+.tdy-when { width: 96px; flex-shrink: 0; }
+.tdy-when .day { font-size: 13px; font-weight: 800; color: var(--text); }
+.tdy-when .day.today { color: var(--accent); }
+.tdy-when .hr { font-size: 12.5px; font-weight: 700; color: var(--text-body); font-variant-numeric: tabular-nums; }
+.tdy-when .sub { font-size: 11px; color: var(--text-muted); }
+
+.tdy-type { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 800; letter-spacing: .01em; flex-shrink: 0; }
+.tdy-type.nobet { background: var(--info-bg); color: var(--accent-bright); }
+.tdy-type.vekalet { background: var(--warning-bg); color: var(--warning); }
+
+.tdy-body { flex: 1; min-width: 0; }
+.tdy-body .t { font-size: 15px; font-weight: 800; color: var(--text); letter-spacing: -.01em; }
+.tdy-body .s { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 14px; margin-top: 4px; font-size: 12.5px; color: var(--text-muted); }
+.tdy-body .s .it { display: inline-flex; align-items: center; gap: 6px; }
+.tdy-body .s .it svg { color: var(--text-faint); }
+.tdy-body .yerine { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--surface); color: var(--text-body); font-size: 11.5px; font-weight: 700; }
+.tdy-body .conflict-note { display: inline-flex; align-items: center; gap: 6px; margin-top: 7px; font-size: 12px; font-weight: 700; color: var(--danger); }
+
+.tdy-acts { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.tdy-btn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border-radius: 10px; font-size: 13px; font-weight: 700; transition: var(--t-fast); border: 1px solid var(--line); background: var(--bg-elev); color: var(--text-body); }
+.tdy-btn.approve { border-color: color-mix(in srgb, var(--success) 32%, transparent); color: var(--success); }
+.tdy-btn.approve:hover { background: var(--success-bg); }
+.tdy-btn.object { border-color: color-mix(in srgb, var(--danger) 30%, transparent); color: var(--danger); }
+.tdy-btn.object:hover { background: var(--danger-bg); }
+.tdy-btn.object.lead { background: var(--danger); color: #fff; border-color: transparent; }
+.tdy-btn.object.lead:hover { background: #7f1515; }
+.tdy-view-only { font-size: 11.5px; color: var(--text-faint); display: inline-flex; align-items: center; gap: 5px; }
+.tdy-approved { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--success-bg); color: var(--success); font-size: 12.5px; font-weight: 800; }
+.tdy-objected { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: var(--surface); color: var(--text-muted); font-size: 12.5px; font-weight: 700; }
+
+/* boş durum */
+.tdy-empty { padding: 56px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--sh-sm); }
+.tdy-empty .ic { width: 68px; height: 68px; border-radius: 20px; display: grid; place-items: center; background: var(--success-bg); color: var(--success); margin-bottom: 16px; }
+.tdy-empty h3 { font-size: 19px; font-weight: 800; letter-spacing: -.02em; }
+.tdy-empty p { font-size: 14px; color: var(--text-muted); max-width: 380px; margin-top: 8px; line-height: 1.55; }
+
+/* ── haftalık takvim (nöbet/vekâlet katmanı) ── */
+.tdy-week { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--sh-sm); padding: 16px; overflow-x: auto; }
+.tdy-week-legend { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; }
+.tdy-week-legend .lg { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 600; color: var(--text-muted); }
+.tdy-week-legend .sw { width: 14px; height: 14px; border-radius: 4px; }
+.tdy-wgrid { display: grid; grid-template-columns: 56px repeat(5, minmax(118px, 1fr)); gap: 6px; min-width: 720px; }
+.tdy-wh { text-align: center; padding: 9px 0; border-radius: 10px; background: var(--bg-elev); border: 1px solid var(--line); }
+.tdy-wh .d { font-size: 13px; font-weight: 800; color: var(--text); }
+.tdy-wh .n { font-size: 10px; color: var(--text-muted); }
+.tdy-wh.today { border-color: color-mix(in srgb, var(--accent) 40%, transparent); background: var(--accent-soft); }
+.tdy-wt { display: flex; flex-direction: column; align-items: flex-end; justify-content: center; padding-right: 8px; }
+.tdy-wt .p { font-size: 12.5px; font-weight: 800; color: var(--text-body); }
+.tdy-wt .h { font-size: 9px; color: var(--text-faint); text-align: right; line-height: 1.1; }
+.tdy-wc { min-height: 56px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg-elev); padding: 7px 9px; }
+.tdy-wc.lesson { border-left: 4px solid var(--c, var(--accent)); opacity: .55; }
+.tdy-wc.lesson .cn { font-size: 12px; font-weight: 700; color: var(--text); }
+.tdy-wc.lesson .cm { font-size: 10px; color: var(--text-muted); }
+.tdy-wc.empty { background: var(--surface); border-style: dashed; }
+.tdy-wc.nobet { background: var(--info-bg); border-color: color-mix(in srgb, var(--accent-bright) 35%, transparent); border-left: 4px solid var(--accent-bright); }
+.tdy-wc.vekalet { background: var(--warning-bg); border-color: color-mix(in srgb, var(--warning) 35%, transparent); border-left: 4px solid var(--warning); }
+.tdy-wc.conflict { background: var(--danger-bg); border: 2px solid var(--danger); }
+.tdy-wc .wtag { display: inline-flex; align-items: center; gap: 4px; font-size: 9.5px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; }
+.tdy-wc.nobet .wtag { color: var(--accent-bright); }
+.tdy-wc.vekalet .wtag { color: var(--warning); }
+.tdy-wc.conflict .wtag { color: var(--danger); }
+.tdy-wc .wmain { font-size: 12.5px; font-weight: 800; color: var(--text); margin-top: 2px; }
+.tdy-wc .wsub { font-size: 10px; color: var(--text-muted); }
+.tdy-wbreak { grid-column: 1 / -1; display: flex; align-items: center; gap: 9px; color: var(--text-faint); }
+.tdy-wbreak .ln { flex: 1; height: 1px; background: var(--line); }
+.tdy-wbreak .lbl { font-size: 9px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+
+/* skeleton */
+.tdy-sk { background: linear-gradient(90deg, var(--surface) 25%, var(--line-soft) 37%, var(--surface) 63%); background-size: 400% 100%; animation: sed-shim 1.3s ease infinite; border-radius: 14px; }
+
+/* itiraz modal */
+.tdy-modal-scrim { position: fixed; inset: 0; z-index: 320; background: rgba(13,17,23,.45); backdrop-filter: blur(3px); display: grid; place-items: center; padding: 30px; animation: oksis-scrim .15s ease; }
+.tdy-modal { width: 460px; max-width: 92vw; background: var(--bg-elev); border-radius: 18px; box-shadow: var(--sh-lg); overflow: hidden; }
+.tdy-modal-head { display: flex; align-items: center; gap: 12px; padding: 18px 20px; border-bottom: 1px solid var(--line); }
+.tdy-modal-head .mi { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: var(--danger-bg); color: var(--danger); flex-shrink: 0; }
+.tdy-modal-head h3 { font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+.tdy-modal-head .s { font-size: 12.5px; color: var(--text-muted); }
+.tdy-modal-body { padding: 16px 20px; }
+.tdy-reason { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.tdy-reason-opt { display: flex; align-items: center; gap: 11px; padding: 11px 13px; border-radius: 11px; border: 1.5px solid var(--line); cursor: pointer; transition: var(--t-fast); font-size: 13.5px; font-weight: 600; color: var(--text-body); }
+.tdy-reason-opt:hover { border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.tdy-reason-opt.on { border-color: var(--accent); background: var(--accent-soft); }
+.tdy-reason-opt .rd { width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; flex-shrink: 0; }
+.tdy-reason-opt.on .rd { border-color: var(--accent); }
+.tdy-reason-opt.on .rd::after { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--accent); }
+.tdy-modal-foot { padding: 14px 20px; border-top: 1px solid var(--line); display: flex; gap: 10px; }
+.tdy-modal-foot .btn { flex: 1; justify-content: center; }
+.tdy-modal .done-body { padding: 30px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+.tdy-modal .done-body .ci { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--success-bg); color: var(--success); margin-bottom: 14px; }
+.tdy-modal .done-body h3 { font-size: 17px; font-weight: 800; }
+.tdy-modal .done-body p { font-size: 13.5px; color: var(--text-body); line-height: 1.5; margin-top: 8px; max-width: 320px; }

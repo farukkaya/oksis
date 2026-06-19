@@ -523,5 +523,187 @@ korunurken çalışma kopyası ayrışır. Rezervasyon değişmez (her iki durum
 | 2026-06-16 | BR-TT-PM-1..4 + BR-TT-AG-2/3 revize | Çok-taslak modeli (K1/K9), publish-swap (K3/K10), rezervasyon yalnız canlı (K8/K12), ilk düzenleme→Revize (K11), autogen sınıf-bazlı sıfırdan + yeni Taslak (K5/K6). Tasarım: `ders-programi-cok-taslak-otomatik-uretim-design.md` |
 | 2026-06-17 | BR-TT-AG-5/6 eklendi + BR-TT-AG-3 revize | Faz 3 Dilim-2 çok-sınıf: joint solver çapraz öğretmen/derslik tekilliği (K-D2-1), seçmeli/toplu apply + GeneratedFromJobId idempotency (K-D2-3/4). Tasarım: `ders-programi-cok-sinif-otomatik-uretim-design.md` |
 | 2026-06-17 | BR-TT-AV-1/2 eklendi | Faz 4/Dilim-1 müsaitlik & tercih: üç durum (Available/PrefersNot/Unavailable), hard-block (Unavailable) vs soft (PrefersNot), admin override `timetable.override`. **Debt-AG-1 kapandı.** |
+| 2026-06-19 | INV-D1..D5 + BR-D kuralları eklendi | Faz 4/Dilim 2a Nöbet Çizelgesi backend tamamlandı. |
+| 2026-06-19 | K-2b-1..7 + BR-Vek kuralları eklendi | Faz 4/Dilim 2b Vekâlet backend tamamlandı: ad-hoc devamsızlık entity yok, ScheduleException yeniden kullanımı, BranchFit (Subject.Category), vekil-vekil dışlama (K-2b-6), published-only board, teacher view salt-okunur, revoke 409. |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.
+
+---
+
+## Nöbet Çizelgesi Kuralları (Faz 4/Dilim 2a)
+
+### INV-D1: Muaf Öğretmene Nöbet Atanamaz (HARD)
+
+**Kural:** `DutyExemption.CoversDay(today)` true olan öğretmene çizelge ataması yapılamaz.
+
+**Uygulama:**
+- Domain: `DutyRoster.Assign(teacherId, ..., exemptTeacherIdsForWeek)` — INV-D1 domain seviyesinde fırlatır (`DutyDomainException: duties.errors.teacher-exempt`).
+- Application: `SaveDutyRosterDraftCommandHandler` dönemin tüm aktif muafiyetlerini yükleyip `IReadOnlySet<Guid>` olarak iletir.
+- Read model: `GetDutyRosterForEditQueryHandler` atama dönüşünde `conflict="duties.conflict.teacher-exempt"` alanı doldurur (mevcut atamanın geçerliliğini gösterir).
+
+**Kural tipi:** HARD — domain exception → 422 Unprocessable Entity (ExceptionHandlingMiddleware DomainException kolu).
+
+---
+
+### INV-D2: Aynı Öğretmen Aynı Güne İkinci Nöbet Alamaz (HARD)
+
+**Kural:** Bir öğretmen aynı `(roster, day)` kombinasyonunda en fazla bir kez nöbetçi atanabilir.
+
+**Uygulama:**
+- Domain: `DutyRoster.Assign` — `_assignments.Any(a => a.TeacherId == teacherId && a.Day == day)` kontrolü → `duties.errors.teacher-day-duplicate`.
+- DB backstop: `ux_duty_assignment_teacher_cell (school_id, academic_term_id, duty_roster_id, day_of_week, location_id, teacher_id)` filtreli unique index.
+
+**Kural tipi:** HARD.
+
+---
+
+### INV-D3: Bölge Kapasitesi Aşılamaz (HARD)
+
+**Kural:** Bir nöbet bölgesinde `(roster, day)` için aktif atama sayısı `DutyLocation.Capacity`'yi geçemez. Kapasite 1–4 arasındadır (K-2a-3 binding decision).
+
+**Uygulama:**
+- Domain: `DutyRoster.Assign` — `_assignments.Count(a => a.Day == day && a.LocationId == locationId) >= locationCapacity` kontrolü → `duties.errors.location-capacity-full`.
+- Not: Filtreli unique index `ux_duty_assignment_teacher_cell` öğretmen başına tek kayıt garantisi verir; kapasite sayısı aggregate içinde kontrol edilir.
+
+**Kural tipi:** HARD.
+
+---
+
+### INV-D4: Yancı, Nöbetçinin Kendisi Olamaz (HARD)
+
+**Kural:** `AssignReliever(assignmentId, relieverId)` çağrısında `relieverId == assignment.TeacherId` olamaz. Ayrıca yancı adayı aynı günde başka nöbetçi veya yancı olamaz.
+
+**Uygulama:**
+- Domain: `DutyRoster.AssignReliever` — iki kontrol:
+  1. `a.TeacherId == relieverId` → `duties.errors.reliever-same-as-teacher`.
+  2. `_assignments.Any(x => x.Id != a.Id && x.Day == a.Day && (x.TeacherId == relieverId || x.RelieverId == relieverId))` → `duties.errors.reliever-already-busy`.
+
+**Kural tipi:** HARD.
+
+---
+
+### INV-D5: Çizelge Taslak Değilse Düzenlenemez (HARD)
+
+**Kural:** `DutyRoster.Assign`, `RemoveAssignment`, `AssignReliever`, `ClearReliever` yalnız `Status == Draft` rosters üzerinde çalışır. Published/Superseded roster değiştirilemez — yeni taslak sürüm oluşturulmalıdır (`Supersede()` ile).
+
+**Uygulama:**
+- Domain: `EnsureDraft()` metodu her mutasyon başında fırlatır → `duties.errors.roster-not-draft`.
+
+**Kural tipi:** HARD.
+
+---
+
+### BR-D-TEMPORAL-1: Temporal Versiyonlama — Canlı Sürümü Süperse Et (HARD)
+
+**Kural:** Bir dönemin yeni çizelgesi yayınlandığında, o dönemde zaten `Published` + `EffectiveTo IS NULL` olan mevcut çizelge otomatik olarak `Superseded` + `EffectiveTo = effectiveFrom` yapılır. İki çizelge aynı anda "canlı" (Published + açık) olamaz. (`ux_duty_roster_live` filtreli unique index DB-seviye garanti verir.)
+
+**Uygulama:**
+- Application: `PublishDutyRosterCommandHandler` önce mevcut canlı roster'ı sorgular; varsa `CloseAsOf(effectiveFrom)` ile kapatır, sonra bu roster'ı `Publish()` eder. Atomik transaction içinde.
+- DB backstop: `ux_duty_roster_live (school_id, academic_term_id) WHERE status = 1 AND effective_to IS NULL AND is_deleted = 0`.
+
+**Kural tipi:** HARD.
+
+---
+
+### BR-D-CONFLICT-1: Çakışma = Öğretmen Muaf Read Model Kuralı (SOFT/BİLGİ)
+
+**Kural:** `GetDutyRosterForEdit` handler'ında: eğer bir atamanın öğretmeni o dönemde muafsa, `DutyAssignmentDto.conflict = "duties.conflict.teacher-exempt"` dolu gelir. Bu atama çizelgede var ama muafiyet sonradan eklenmiş veya çakışıyor. UI uyarı gösterebilir.
+
+**Uygulama:** Handler `exemptSet.Contains(a.TeacherId) ? "duties.conflict.teacher-exempt" : null` kontrolü yapar.
+
+**Kural tipi:** SOFT (bilgi amaçlı — yazma engellemez; mevcut veri için uyarı).
+
+---
+
+### BR-D-RELIEVER-1: Yancı Adayı Eligibility Kuralı
+
+**Kural:** `GetAvailableRelieversQuery` yancı adayını şöyle tanımlar:
+- Dönemde `Permanent` muafiyeti **olmayan** öğretmen.
+- Sorgulanılan `(day, locationId)` kombinasyonunda zaten nöbetçi veya yancı **olmayan** öğretmen.
+
+**K-2a-2 (bağlayıcı karar):** Müsaitlik (Faz 4/Dilim 1) slot bilgisi yancı adayı hesabına girdi değildir. `Unavailable` slotu olan ama o günde başka nöbet/yancı görevi olmayan öğretmen aday listesine dahil edilir.
+
+**Debt:** Geçici muafiyet (`Temporary`) olan öğretmen yancı adayı olabilir — yalnız Permanent muafiyeti dışlanır. Bu BR-12 weekly-template kararıyla tutarlı. Geçici-muaf-bugün kontrolü ertelendi.
+
+**Kural tipi:** SOFT kılavuz (application layer yancı listesini filtreler; kullanıcı listedekini seçer, domain INV-D4 son kontrol).
+
+---
+
+## Vekâlet Kuralları (Faz 4/Dilim 2b)
+
+> Vekâlet = öğretmen devamsızlığında o ders için başka bir öğretmenin atanması veya dersin "serbest ders" yapılması.
+> Uygulama altyapısı: `ScheduleException` aggregate (Dilim 2a atyapısı) yeniden kullanılır.
+
+---
+
+### K-2b-1: Ad-Hoc Devamsızlık — Entity Yok (ONAYLANDI: kullanıcı 2026-06-19)
+
+**Kural:** Öğretmen devamsızlığı için bağımsız bir entity (örn. `TeacherAbsence` tablosu) tutulmaz. Admin "yok öğretmen + sebep" seçer; yalnız sonuçlanan `ScheduleException` kayıtları kalıcıdır. Vekil panosu (`SubstitutionBoardDto`) mevcut Published||Revising programdaki yerleşimleri temel alarak oluşturulur — devamsız öğretmen filtresinde daraltılır.
+
+**Kural tipi:** DESIGN (sapma kaydı var — bkz. completion_status.md ⚠️ K-2b-1).
+
+---
+
+### K-2b-1/K0.6: Published-Only Board ve Vekil Sorgusu (HARD)
+
+**Kural:** Vekâlet panosu (`GetTodaysSubstitutionBoard`) ve vekil aday listesi (`GetAvailableSubstitutes`) yalnız `Published` veya `Revising` statüsündeki programları sorgular. Taslak programlar dahil edilmez.
+
+**Uygulama:** Query handler'lar `Status == Published || Status == Revising` filtresi uygular.
+
+**Kural tipi:** HARD.
+
+---
+
+### K-2b-2/K-2b-3: ScheduleException Yeniden Kullanımı (ONAYLANDI)
+
+**Kural:** Vekâlet komutları (`CreateSubstitution`, `MarkStudyHall`, `RevokeSubstitution`) ayrı aggregate yerine `ScheduleException` entity'sini kullanır:
+- `CreateSubstitution` → `ScheduleException` type `TeacherSubstitution`.
+- `MarkStudyHall` → `ScheduleException` type `Cancellation` (reason="study-hall").
+- `RevokeSubstitution` → mevcut exception'ı soft-revoke eder.
+
+Bu komutlar `duties.substitute` kapısı altında çalışır (timetable.override komutlarından bağımsız endpoint).
+
+**Kural tipi:** DESIGN.
+
+---
+
+### K-2b-4: BranchFit Hesabı (Subject.Category Üzerinden)
+
+**Kural:** Vekil adayının branş uygunluğu (`BranchFit`) `Subject.Category` karşılaştırmasıyla belirlenir:
+- `Same` (2): Vekil öğretmenin uzmanlık kategori alanı, dersin kategorisiyle tam eşleşiyor.
+- `Near` (1): Kategori-ailesi eşleşmesi (örn. aynı fen grubu veya sosyal bilimler grubu).
+- `Different` (0): Hiçbir eşleşme yok.
+
+Yeni seed/config gerekmez. `GetAvailableSubstitutes` sorgusu `SubstituteCandidateDto { branchFit }` ile döner; UI sıralarken BranchFit'i önceliklendirir.
+
+**Uyarı (Debt-BE-Vek-1):** `Subject.Category` `GetValueOrDefault` → Language fallback yanlış pozitif farklılık üretebilir; explicit Different-tier test assertion eksik.
+
+**Kural tipi:** SOFT kılavuz (BranchFit; admin üzerine yazabilir).
+
+---
+
+### K-2b-6: Vekil-Vekil Dışlama (HARD)
+
+**Kural:** Bir öğretmen aynı gün ve period'da zaten başka bir derse vekil atanmışsa ikinci vekil ataması kabul edilmez.
+
+**Uygulama:**
+- `GetAvailableSubstitutes`: Sorgulanan `(programId, placementId, date)` için öğretmenin o gün+period'da yapısal veya mevcut vekil ataması olup olmadığı kontrol edilir (KD-vekil-vekil filtresi).
+- `CreateSubstitution` validator: İkinci kez aynı kontrol yapılır (vekil listesi ile create arası yarış koruması).
+
+**Kural tipi:** HARD.
+
+---
+
+### K-2b-7: Öğretmen Görünümü Salt-Okunur (Ertelendi)
+
+**Kural:** Öğretmen itiraz/onay akışı (`schedule_requests` diliminde) ertelendi. 2b kapsamında öğretmen yalnız kendi vekâlet atamalarını görebilir (`GetMySubstitutions`), itiraz/ret edememektedir.
+
+**Kural tipi:** DESIGN (erteleme kararı).
+
+---
+
+### BR-Vek-REVOKE-1: Zaten-Revoked → 409 (NotFound Değil)
+
+**Kural:** `RevokeSubstitution` zaten revoke edilmiş bir exception üzerinde çağrılırsa 409 Conflict döner (404 değil). Bu `RevokeScheduleException` (timetable.override) davranışıyla tutarlıdır.
+
+**Kural tipi:** HARD.

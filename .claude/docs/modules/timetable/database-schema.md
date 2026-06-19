@@ -152,6 +152,121 @@ ux_teacher_availability_slots_slot  (teacher_availability_id, day_of_week, perio
 
 ---
 
+## Nöbet Çizelgesi Tabloları (Faz 4/Dilim 2a — ✅ canlı)
+
+Tüm tablolar `[academic]` şemasında. Migrations: `20260619_add_duties_roster`, `20260619_add_duties_permissions`.
+
+### `duty_locations`
+
+Okula özgü nöbet bölgeleri (kat koridoru, kantin, bahçe, kapı…). Kapasite = paralel nöbetçi sayısı üst sınırı (INV-D3, K-2a-3).
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | |
+| `school_id` | uniqueidentifier | tenant, immutable |
+| `name` | nvarchar(120) NOT NULL | |
+| `type` | int NOT NULL | 0=Floor, 1=Canteen, 2=Garden, 3=Gate, 4=Hall, 5=Other |
+| `icon` | nvarchar(40) NULL | ikon kodu (UI tarafından yorumlanır) |
+| `capacity` | int NOT NULL | 1..4 (domain invariant `MaxCapacity=4`) |
+| `is_active` | bit NOT NULL | pasifleştirme; soft-delete değil |
+| `template_id` | uniqueidentifier NULL | `duty_location_templates.id` FK (opsiyonel klonlama referansı) |
+| + audit (`created_at/by`, `is_deleted`, `row_version`) | | |
+
+```
+ix_duty_locations_school_active  (school_id, is_active)  WHERE is_deleted = 0
+```
+
+### `duty_exemptions`
+
+Öğretmenin nöbetten muafiyeti (sürekli veya tarih aralıklı geçici). Çizelge dağıtım aşamasında bu tablo kontrol edilir (INV-D1).
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | |
+| `school_id` | uniqueidentifier | tenant, immutable |
+| `teacher_id` | uniqueidentifier NOT NULL | |
+| `type` | int NOT NULL | 0=Permanent, 1=Temporary |
+| `from` | date NULL | yalnız Temporary; NULL = Permanent |
+| `to` | date NULL | yalnız Temporary; NULL = Permanent |
+| `reason` | nvarchar(200) NOT NULL | zorunlu (domain) |
+| + audit (`created_at/by`, `is_deleted`, `row_version`) | | |
+
+```
+ix_duty_exemptions_school_teacher  (school_id, teacher_id)  WHERE is_deleted = 0
+```
+
+### `duty_rosters`
+
+Bir dönemin nöbet çizelgesi (aggregate root). Temporal versiyonlama: yeni yayın mevcut canlıyı Superseded yapar.
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | |
+| `school_id` | uniqueidentifier | tenant, immutable |
+| `academic_year_id`, `academic_term_id` | uniqueidentifier NOT NULL | immutable |
+| `status` | int NOT NULL | 0=Draft, 1=Published, 2=Superseded |
+| `version` | int NOT NULL | sürüm zinciri numarası |
+| `effective_from` | date NULL | yayın tarihi |
+| `effective_to` | date NULL | supersede tarihi (Superseded olunca set edilir) |
+| `previous_version_id` | uniqueidentifier NULL | önceki sürüm FK (self-referential) |
+| `note` | nvarchar(500) NULL | yayın notu |
+| + audit (`created_at/by`, `is_deleted`, `row_version`) | | |
+
+**Filtreli unique index (K-2a-4 tek canlı):**
+```
+ux_duty_roster_live  (school_id, academic_term_id)  WHERE status = 1 AND effective_to IS NULL AND is_deleted = 0
+```
+Garantisi: bir dönemde en fazla tek "yürürlükte" (Published + kapanmamış) çizelge.
+
+```
+ix_duty_rosters_term_status  (school_id, academic_term_id, status)
+```
+
+### `duty_assignments`
+
+`DutyRoster` aggregate'ine ait owned entity (EF Core `OwnsMany`). Öğretmen×gün×bölge ataması, opsiyonel yancı.
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | |
+| `duty_roster_id` | uniqueidentifier FK | → `duty_rosters.id` (cascade delete) |
+| `school_id` | uniqueidentifier NOT NULL | gerçek CLR property (shadow prop değil; Guid.Empty bug kaçınımı) |
+| `academic_term_id` | uniqueidentifier NOT NULL | gerçek CLR property (aynı neden) |
+| `teacher_id` | uniqueidentifier NOT NULL | |
+| `day_of_week` | int NOT NULL | DayOfWeek (0=Pazar..6=Cumartesi) |
+| `location_id` | uniqueidentifier NOT NULL | → `duty_locations.id` |
+| `reliever_id` | uniqueidentifier NULL | yancı öğretmen (opsiyonel) |
+| `is_active` | bit | shadow prop; filtreli index için |
+| `is_deleted` | bit | shadow prop; filtreli index için |
+
+**Filtreli unique index (K-2a-3 kapasite-farkındalıklı; aggregate count ≤ Capacity ile birlikte çalışır):**
+```
+ux_duty_assignment_teacher_cell
+  (school_id, academic_term_id, duty_roster_id, day_of_week, location_id, teacher_id)
+  WHERE is_active = 1 AND is_deleted = 0
+```
+Aynı öğretmen aynı roster'da aynı gün+bölge'ye ikinci kez yazılamaz. Kapasite kontrolü (`count ≤ Capacity`) aggregate Assign() metodunda (INV-D3).
+
+```
+ix_duty_assignments_teacher  (school_id, academic_term_id, teacher_id)
+```
+
+> **Sapma K-2a-3 (onaylı):** Teknik analiz orijinal olarak tek-nöbetçi (school,term,day,location) unique index öngörmüştü. Uygulanan model roster + öğretmen sütununu ekleyerek (school,term,roster,day,location,teacher) + aggregate count ≤ Capacity kombinasyonu kullanır; bu K-2a-3 binding kararıdır. Bkz. completion_status.md ⚠️ sapma kaydı.
+
+---
+
+### SchoolSettings Nöbet Kolonu Eklentileri (Faz 4/Dilim 2a)
+
+`school_settings` tablosuna 3 yeni kolon (migration `20260619_add_duties_roster` kapsamında):
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `duties_reliever_enabled` | bit NOT NULL default 0 | yancı modülü aktif mi |
+| `duty_weekly_frequency` | int NOT NULL default 1 | 0=TwicePerWeek, 1=OncePerWeek, 2=OnceEveryTwoWeeks — **2a'da inert** (2c solver girdisi) |
+| `duty_day_pattern` | int NOT NULL default 0 | 0=Spread (haftaya yayılı), 1=Consecutive (ardışık) — **2a'da inert** |
+
+---
+
 ## (SÜPERSEDED — Faz 1A öncesi)
 
 ### `schedules`
