@@ -201,6 +201,18 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | `dashboard.parent` | 🚫 | 🚫 | 🚫 | 🚫 | ✅ | 🚫 | 🚫 |
 | `dashboard.student` | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | ✅ | 🚫 |
 
+### Duties (Nöbet & Vekâlet) — Faz 4/Dilim 2a
+
+> Bağlayıcı karar K-2a-6 (2026-06-19): SuperAdmin salt-okunur; manage+substitute yalnız SchoolAdmin.
+> Secretary→duties.view eşlemesi ertelendi (seed'li Secretary rolü yok — Debt).
+
+| İzin | SuperAdmin | SchoolAdmin | Teacher | Parent | Student | Secretary |
+|---|---|---|---|---|---|---|
+| `duties.view` | ✅ | ✅ | 👁 (yalnız kendi D15) | 🚫 | 🚫 | 🚫 (ertelendi) |
+| `duties.manage` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+| `duties.substitute` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+| `duties.view-load` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+
 ### Finance (Sprint 5+, taslak)
 
 | İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Accountant |

@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + **FE handoff stillemesi** tamam · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-18
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + **FE handoff stillemesi** tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE tamam** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-19
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -433,6 +433,17 @@
   - **Bağlam:** Gün 0..4; cycle 0→1→2→0 + advance-to-0 silme (seyrek) korundu; sayaçlar taslaktan; dönem etiketi `useHubData.donemLabel` (sezon · dönem) — yeni alan eklendi. Toplu İçe Aktar / Başka güne kopyala / Önceki dönemden kopyala butonları görsel (disabled) — backend yok (Debt).
   - **Testler:** `availability` suite (AvailabilityGrid 4 + TeacherAvailabilityPage 1 + useTeacherAvailability 3) yeşil; tüm timetable suite 202/202 geçti; `npm run build` temiz. i18n `availability.*` (statusShort, legend, dayMenu, breaks, empty.*Title/Body, errorTitle/Body, noTeacherSelected, allBranches, noMatch) tr+en eklendi.
 
+- **Faz 4/Dilim-2a Nöbet Çizelgesi — BE (2026-06-19):**
+  - **Domain:** `DutyLocation` (`TenantEntity`; kapasite 1–4; Activate/Deactivate; `DutyLocationType` enum: Floor/Canteen/Garden/Gate/Hall/Other) + `DutyExemption` (`TenantEntity`; Permanent/Temporary + CoversDay) + `DutyRoster` aggregate (`TenantEntity`; Draft→Published→Superseded versiyonlama; `DutyAssignment` owned child list) + `DutyAssignment` entity (Teacher×Day×Location + optional Reliever). Domain invariants: INV-D1 (muaf öğretmen), INV-D2 (gün-tekilliği), INV-D3 (kapasite ≤ 4), INV-D4 (yancı ≠ nöbetçi + o günde meşgul değil), INV-D5 (yalnız Draft düzenlenebilir). Domain events: `DutyAssignmentChangedEvent`, `DutyExemptionChangedEvent`, `DutyRosterPublishedEvent`. `DutyDomainException extends DomainException` (422 via ExceptionHandlingMiddleware). `DutyLocationTemplate` master entity (platform seed). Strongly-typed IDs: `DutyLocationId`, `DutyRosterId`, `DutyAssignmentId`, `DutyExemptionId`.
+  - **Persistence (`[academic]` şema):** `duty_locations` (+ `ix_duty_locations_school_active`) + `duty_exemptions` (+ `ix_duty_exemptions_school_teacher`) + `duty_rosters` (+ `ux_duty_roster_live` K-2a-4 tek-canlı filtreli unique + `ix_duty_rosters_term_status`) + `duty_assignments` (`OwnsMany` field-backed + `ux_duty_assignment_teacher_cell` K-2a-3 filtreli unique + `ix_duty_assignments_teacher`). `duty_location_templates` platform master (seed). SchoolSettings +3 kolon: `duties_reliever_enabled`, `duty_weekly_frequency`, `duty_day_pattern`. Migrations: `20260619_add_duties_roster`, `20260619_add_duties_permissions`. DutyAssignment gerçek CLR property (Guid.Empty shadow-prop bug giderildi).
+  - **SchoolSettings nöbet ayarları:** `DutyWeeklyFrequency` enum (TwicePerWeek/OncePerWeek/OnceEveryTwoWeeks) + `DutyDayPattern` enum (Spread/Consecutive). 2a'da inert; 2c solver girdisi.
+  - **Komutlar (8):** `CreateDutyLocation`, `UpdateDutyLocation`, `DeleteDutyLocation`, `SetDutyExemption`, `RemoveDutyExemption`, `SaveDutyRosterDraft` (upsert; INV'lar domain içinde), `AssignReliever`, `PublishDutyRoster` (temporal supersede + `DutyRosterPublishedEvent` + Hangfire bildirim enqueue).
+  - **Sorgular (7 + 1):** `ListDutyLocations`, `ListDutyExemptions`, `GetDutyRosterForEdit` (çakışma read-model conflict alanı), `GetDutyRosterVersions`, `GetDutyHubSummary`, `GetAvailableRelievers` (K-2a-2: müsaitlik girdi değil; yalnız Permanent-muaf dışlar), `GetMyDuties` (self-only IDOR), `GetDutiesConfiguration` + `UpdateDutiesConfiguration` (settings).
+  - **API (15 endpoint + DS1/DS2):** `DutiesController` @ `/api/v1/duties` — D1..D15. Settings: DS1/DS2 SchoolSettingsController üzerinden. İzinler: `duties.view` (okuma) / `duties.manage` (yazma). Bkz. api-contracts.md § Nöbet Çizelgesi.
+  - **İzinler:** 4 izin kodu seed edildi: `duties.view`, `duties.manage`, `duties.substitute`, `duties.view-load`. SchoolAdmin: manage+substitute+view+view-load. SuperAdmin: view+view-load (salt-okunur, K-2a-6). Teacher: duties.view (self-scope). Migration `20260619_add_duties_permissions`.
+  - **Bildirim:** `DutyRosterPublishedEvent` → `DutyNotificationHandler` → `INotificationEnqueuer` (Hangfire) → dispatch pipeline (timetable Faz 2.6 deseni). `DutyNotificationContent` hardcoded Türkçe (Debt-N2 deseni, i18n ertelendi). Alıcı resolution öğretmen başına N sorgu (Debt — post-MVP optimizasyon).
+  - **Testler:** Domain 41 unit (DutyLocationTests 5, DutyExemptionTests 8, DutyRosterTests 28); Application 59 unit (komut + sorgu handler'lar); Integration 3 (DutyRosterIndexTest: tek-canlı backstop, DutyAssignmentIndexTest: teacher-cell unique, DutyAssignmentCapacityTest: aggregate count+index combo). **Full suite:** build 0 hata; Oksis.Domain 395 / Oksis.Api 133 / Oksis.Application 1012 / Oksis.Tests 28 geçti / Oksis.Infrastructure.IntegrationTests 228. (**1 test başarısız — bkz. ⏳ Debt-T1 ve ⚠️ sapma #1 altında**)
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
@@ -522,7 +533,31 @@
 - **Not (job transition guard'sız):** `ScheduleGenerationJob` durum-geçiş metotları korumasız (tek-yazıcı
   job; illegal-transition doğrulaması orkestratöre ertelendi).
 
+- **Debt-T1 (TEST GAP — KRİTİK):** `MasterRoleSeedTests.Should_GrantFullCatalogToAdminRoles` testi `duties.manage` ve `duties.substitute` izinlerinin SuperAdmin'e atanmamasından dolayı başarısız. Neden: K-2a-6 binding kararı (SuperAdmin salt-okunur) bu iki izni `AllPermissionIds()` dışında bıraktı ancak test expectation güncellenmedi. Fix: testi `teaching-assignments.copy-season` deseniyle güncellemek (4 satır). **Escalate to user.**
+- **Debt-D1 (Secretary):** K-2a-6'daki `Secretary→duties.view` eşlemesi, sistemde seed'li Secretary rolü olmadığı için ertelendi. Secretary rolü seed'e alındığında `duties.view` eklenmeli.
+- **Debt-D2 (geçici-muaf yancı):** `GetAvailableRelievers` yalnız Permanent muafiyeti dışlar; Temporary-exempt-bugün öğretmen yancı adayı olabilir. BE-12 weekly-template kararıyla tutarlı; brief "permanent" dedi.
+- **Debt-D3 (çakışma TZ):** `conflict=teacher-exempt` hesabı UTC kullanır, okul TZ değil (display-only, post-MVP).
+- **Debt-D4 (bildirim i18n):** `DutyNotificationContent` hardcoded Türkçe; i18n ertelendi (timetable Debt-N2 deseni).
+- **Debt-D5 (2nd-save rollback test):** `PublishDutyRoster` 2nd-save `DbUpdateException` rollback yolu otomatik testsiz (EF interceptor mock gerektirir; kod yolu okunarak doğrulandı).
+- **Debt-D6 (alıcı resolution N+1):** Notification recipient resolution öğretmen başına N sorgu (post-MVP batch optimizasyon).
+- **Debt-D7 (Dilim 2b — vekalet):** `duties.substitute` izni seed'li ama endpoint yok; Dilim 2b kapsamı.
+- **Debt-D8 (Dilim 2c — auto-distribute):** `DutyWeeklyFrequency` + `DutyDayPattern` policy 2a'da inert; 2c solver girdisi olacak.
+- **Debt-D9 (Dilim 2d — yük raporu):** `DutyLoadRowDto` DTO tanımlı ama query yok; `duties.view-load` izni seed'li, endpoint ertelendi.
+- **Debt-D10 (GetAvailableRelievers izni):** `duties.manage` kullanır; Teacher rolü bu endpoint'i kullanamaz. Dilim 2b'de re-değerlendirme.
+
 ## ⚠️ Spec Dışına Çıkılanlar
+
+- 2026-06-19 — **K-2a-2 (bağlayıcı karar): Müsaitlik (Dilim 1) nöbet/yancıya HİÇ girdi değil.** Teknik analiz §3.4 ve §8.2'nin "müsaitlik girdi" maddeleri geçersiz. `Unavailable` slotu olan ama o günde başka görevi olmayan öğretmen yancı adayı olabilir. `GetAvailableRelievers` müsaitlik tablosunu hiç sorgulamaz. Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **K-2a-3 (bağlayıcı karar): Kapasite-farkındalıklı index seçildi.** Teknik analiz tek-nöbetçi `(school,term,day,location)` unique index öngörüyordu; uygulanan model `(school,term,roster,day,location,teacher)` filtreli unique + aggregate `count ≤ Capacity` kombinasyonu. Çok-nöbetçi (kapasite>1) bölgeleri destekler. Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **`DutyAssignment` denormalize alanları gerçek CLR property.** Shadow prop ile ilk tasarımda `Guid.Empty` insert + tenant index bug yaşandı; `SchoolId` ve `AcademicTermId` gerçek CLR property olarak düzeltildi. Etki: daha doğru tenant index ve tenant interceptor uyumu. Onay: teknik düzeltme.
+- 2026-06-19 — **CROSS-MODULE yan etki: `DutyDomainException` artık `DomainException`'ı extend ediyor.** `ExceptionHandlingMiddleware`'e `DomainException` kolu eklendi → duty exception'lar 422 döner. Yan etki: Location/School `DomainException` alt sınıfları (önceden uncaught→500) artık 422. İyileştirme ama Dilim 2a kapsamı dışı bir davranış değişikliği. `AcademicsDomainException` hâlâ `Exception`'dan türüyor (pre-existing tutarsızlık). Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **Debt-T1 (test gap): `MasterRoleSeedTests` K-2a-6 için güncellenmedi.** `duties.manage` ve `duties.substitute`, `AllPermissionIds()` dışında bırakıldı (K-2a-6: SuperAdmin salt-okunur), ancak `Should_GrantFullCatalogToAdminRoles` invariant testi güncellenmedi → 1 test başarısız. Fix: `teaching-assignments.copy-season` deseniyle exemption eklemek. Onay: fix kullanıcı onayı bekliyor.
+- 2026-06-19 — **Debt-D2 — Geçici-muaf öğretmen yancı adayı olabilir.** `GetAvailableRelievers` yalnız Permanent muafiyet dışlar; Temporary-muaf-bugün öğretmen yancı listesinde görünür. Brief "permanent" dedi; K-2a-2 tutarlı. Etki: minimal (kullanıcı seçer, domain INV-D4 son kontrol). Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **Debt-D4 — `DutyNotificationContent` hardcoded Türkçe.** i18n ertelendi (timetable `NotificationContent` deseni). Etki: bildirim metni Türkçe sabit. Post-MVP. Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **Debt-D5 — `PublishDutyRoster` 2nd-save `DbUpdateException` rollback yolu testsiz.** EF interceptor mock gerektirir; kod yolu okunarak doğrulandı. Etki: recovery senaryosu otomatik test yok. Post-MVP. Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **Debt-D3 — Çakışma/muafiyet hesabı UTC, okul TZ değil.** `conflict=teacher-exempt` display-only; okul TZ post-MVP. Etki: display tutarsızlığı olabilir (UTC+3 TR için aynı gün). Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **Debt-D6 — Bildirim alıcı resolution öğretmen başına N sorgu.** Perf borcu; post-MVP batch optimizasyon. Etki: az öğretmenli okulda ihmal edilebilir. Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **Debt-D1 (Secretary gap): `duties.view` Secretary'e verilmedi.** Seed'li Secretary rolü yok. K-2a-6 §Secretary eşlemesi ertelendi. Etki: Secretary nöbet göremez (0 runtime etkisi şimdilik). Onay: kullanıcı 2026-06-19.
 
 - 2026-06-17 — **Override izni müsaitlik hard-block'a da kapı oldu:** Editör yerleşim komutlarında (`PlaceLesson`/`MoveLesson`) `AllowUnavailable=true` bayrağı `timetable.override` iznine bağlandı — müsait olmayan slota zorla yerleştirme bu mevcut izni gerektirir (design doc K-D1-2/4; yeni permission slug eklenmedi; etki: override ek yetki ister). Onay: kullanıcı.
 - 2026-06-17 — **Slot-seviye `teacher_id` denormalizasyonu eklenmedi (YAGNI):** Design doc §3.2 `teacher_availability_slots`'a `teacher_id` denormalize edilmesini öngörüyordu; provider/recomputer `TeacherId`'yi parent aggregate üzerinden okuduğu için join zaten gerekmiyordu. Etki: seyrek slot tablosu daha yalın; slot tekilliği `(teacher_availability_id, day, period)` unique ile sağlanıyor. Onay: kullanıcı.

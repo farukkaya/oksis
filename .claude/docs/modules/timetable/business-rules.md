@@ -523,5 +523,105 @@ korunurken çalışma kopyası ayrışır. Rezervasyon değişmez (her iki durum
 | 2026-06-16 | BR-TT-PM-1..4 + BR-TT-AG-2/3 revize | Çok-taslak modeli (K1/K9), publish-swap (K3/K10), rezervasyon yalnız canlı (K8/K12), ilk düzenleme→Revize (K11), autogen sınıf-bazlı sıfırdan + yeni Taslak (K5/K6). Tasarım: `ders-programi-cok-taslak-otomatik-uretim-design.md` |
 | 2026-06-17 | BR-TT-AG-5/6 eklendi + BR-TT-AG-3 revize | Faz 3 Dilim-2 çok-sınıf: joint solver çapraz öğretmen/derslik tekilliği (K-D2-1), seçmeli/toplu apply + GeneratedFromJobId idempotency (K-D2-3/4). Tasarım: `ders-programi-cok-sinif-otomatik-uretim-design.md` |
 | 2026-06-17 | BR-TT-AV-1/2 eklendi | Faz 4/Dilim-1 müsaitlik & tercih: üç durum (Available/PrefersNot/Unavailable), hard-block (Unavailable) vs soft (PrefersNot), admin override `timetable.override`. **Debt-AG-1 kapandı.** |
+| 2026-06-19 | INV-D1..D5 + BR-D kuralları eklendi | Faz 4/Dilim 2a Nöbet Çizelgesi backend tamamlandı. |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.
+
+---
+
+## Nöbet Çizelgesi Kuralları (Faz 4/Dilim 2a)
+
+### INV-D1: Muaf Öğretmene Nöbet Atanamaz (HARD)
+
+**Kural:** `DutyExemption.CoversDay(today)` true olan öğretmene çizelge ataması yapılamaz.
+
+**Uygulama:**
+- Domain: `DutyRoster.Assign(teacherId, ..., exemptTeacherIdsForWeek)` — INV-D1 domain seviyesinde fırlatır (`DutyDomainException: duties.errors.teacher-exempt`).
+- Application: `SaveDutyRosterDraftCommandHandler` dönemin tüm aktif muafiyetlerini yükleyip `IReadOnlySet<Guid>` olarak iletir.
+- Read model: `GetDutyRosterForEditQueryHandler` atama dönüşünde `conflict="duties.conflict.teacher-exempt"` alanı doldurur (mevcut atamanın geçerliliğini gösterir).
+
+**Kural tipi:** HARD — domain exception → 422 Unprocessable Entity (ExceptionHandlingMiddleware DomainException kolu).
+
+---
+
+### INV-D2: Aynı Öğretmen Aynı Güne İkinci Nöbet Alamaz (HARD)
+
+**Kural:** Bir öğretmen aynı `(roster, day)` kombinasyonunda en fazla bir kez nöbetçi atanabilir.
+
+**Uygulama:**
+- Domain: `DutyRoster.Assign` — `_assignments.Any(a => a.TeacherId == teacherId && a.Day == day)` kontrolü → `duties.errors.teacher-day-duplicate`.
+- DB backstop: `ux_duty_assignment_teacher_cell (school_id, academic_term_id, duty_roster_id, day_of_week, location_id, teacher_id)` filtreli unique index.
+
+**Kural tipi:** HARD.
+
+---
+
+### INV-D3: Bölge Kapasitesi Aşılamaz (HARD)
+
+**Kural:** Bir nöbet bölgesinde `(roster, day)` için aktif atama sayısı `DutyLocation.Capacity`'yi geçemez. Kapasite 1–4 arasındadır (K-2a-3 binding decision).
+
+**Uygulama:**
+- Domain: `DutyRoster.Assign` — `_assignments.Count(a => a.Day == day && a.LocationId == locationId) >= locationCapacity` kontrolü → `duties.errors.location-capacity-full`.
+- Not: Filtreli unique index `ux_duty_assignment_teacher_cell` öğretmen başına tek kayıt garantisi verir; kapasite sayısı aggregate içinde kontrol edilir.
+
+**Kural tipi:** HARD.
+
+---
+
+### INV-D4: Yancı, Nöbetçinin Kendisi Olamaz (HARD)
+
+**Kural:** `AssignReliever(assignmentId, relieverId)` çağrısında `relieverId == assignment.TeacherId` olamaz. Ayrıca yancı adayı aynı günde başka nöbetçi veya yancı olamaz.
+
+**Uygulama:**
+- Domain: `DutyRoster.AssignReliever` — iki kontrol:
+  1. `a.TeacherId == relieverId` → `duties.errors.reliever-same-as-teacher`.
+  2. `_assignments.Any(x => x.Id != a.Id && x.Day == a.Day && (x.TeacherId == relieverId || x.RelieverId == relieverId))` → `duties.errors.reliever-already-busy`.
+
+**Kural tipi:** HARD.
+
+---
+
+### INV-D5: Çizelge Taslak Değilse Düzenlenemez (HARD)
+
+**Kural:** `DutyRoster.Assign`, `RemoveAssignment`, `AssignReliever`, `ClearReliever` yalnız `Status == Draft` rosters üzerinde çalışır. Published/Superseded roster değiştirilemez — yeni taslak sürüm oluşturulmalıdır (`Supersede()` ile).
+
+**Uygulama:**
+- Domain: `EnsureDraft()` metodu her mutasyon başında fırlatır → `duties.errors.roster-not-draft`.
+
+**Kural tipi:** HARD.
+
+---
+
+### BR-D-TEMPORAL-1: Temporal Versiyonlama — Canlı Sürümü Süperse Et (HARD)
+
+**Kural:** Bir dönemin yeni çizelgesi yayınlandığında, o dönemde zaten `Published` + `EffectiveTo IS NULL` olan mevcut çizelge otomatik olarak `Superseded` + `EffectiveTo = effectiveFrom` yapılır. İki çizelge aynı anda "canlı" (Published + açık) olamaz. (`ux_duty_roster_live` filtreli unique index DB-seviye garanti verir.)
+
+**Uygulama:**
+- Application: `PublishDutyRosterCommandHandler` önce mevcut canlı roster'ı sorgular; varsa `CloseAsOf(effectiveFrom)` ile kapatır, sonra bu roster'ı `Publish()` eder. Atomik transaction içinde.
+- DB backstop: `ux_duty_roster_live (school_id, academic_term_id) WHERE status = 1 AND effective_to IS NULL AND is_deleted = 0`.
+
+**Kural tipi:** HARD.
+
+---
+
+### BR-D-CONFLICT-1: Çakışma = Öğretmen Muaf Read Model Kuralı (SOFT/BİLGİ)
+
+**Kural:** `GetDutyRosterForEdit` handler'ında: eğer bir atamanın öğretmeni o dönemde muafsa, `DutyAssignmentDto.conflict = "duties.conflict.teacher-exempt"` dolu gelir. Bu atama çizelgede var ama muafiyet sonradan eklenmiş veya çakışıyor. UI uyarı gösterebilir.
+
+**Uygulama:** Handler `exemptSet.Contains(a.TeacherId) ? "duties.conflict.teacher-exempt" : null` kontrolü yapar.
+
+**Kural tipi:** SOFT (bilgi amaçlı — yazma engellemez; mevcut veri için uyarı).
+
+---
+
+### BR-D-RELIEVER-1: Yancı Adayı Eligibility Kuralı
+
+**Kural:** `GetAvailableRelieversQuery` yancı adayını şöyle tanımlar:
+- Dönemde `Permanent` muafiyeti **olmayan** öğretmen.
+- Sorgulanılan `(day, locationId)` kombinasyonunda zaten nöbetçi veya yancı **olmayan** öğretmen.
+
+**K-2a-2 (bağlayıcı karar):** Müsaitlik (Faz 4/Dilim 1) slot bilgisi yancı adayı hesabına girdi değildir. `Unavailable` slotu olan ama o günde başka nöbet/yancı görevi olmayan öğretmen aday listesine dahil edilir.
+
+**Debt:** Geçici muafiyet (`Temporary`) olan öğretmen yancı adayı olabilir — yalnız Permanent muafiyeti dışlanır. Bu BR-12 weekly-template kararıyla tutarlı. Geçici-muaf-bugün kontrolü ertelendi.
+
+**Kural tipi:** SOFT kılavuz (application layer yancı listesini filtreler; kullanıcı listedekini seçer, domain INV-D4 son kontrol).

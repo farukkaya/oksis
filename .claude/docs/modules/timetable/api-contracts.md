@@ -159,6 +159,64 @@ yazar.
   silinmez), sonra bu program yayınlanır. Eski `already-published` reddi kalktı; sürüm, programın kendi
   `ScheduleVersion` geçmişinden (max+1) türetilir.
 
+### Nöbet Çizelgesi (Faz 4/Dilim 2a — ✅ canlı kontrat)
+
+Base route: `/api/v1/duties` · Controller: `DutiesController` · Tüm endpoint'ler `[Authorize]`.
+
+| # | Method | Path | Permission | Amaç | Success |
+|---|---|---|---|---|---|
+| D1 | GET | `/api/v1/duties/locations` | `duties.view` | Okula ait nöbet bölgesi listesi (aktif + pasif) | 200 |
+| D2 | POST | `/api/v1/duties/locations` | `duties.manage` | Yeni nöbet bölgesi oluştur | 201 |
+| D3 | PUT | `/api/v1/duties/locations/{id:guid}` | `duties.manage` | Bölge güncelle (isim/tip/ikon/kapasite/aktiflik) | 204 / 404 |
+| D4 | DELETE | `/api/v1/duties/locations/{id:guid}` | `duties.manage` | Bölgeyi soft-delete | 204 / 404 |
+| D5 | GET | `/api/v1/duties/exemptions` | `duties.view` | Döneme ait muafiyet listesi | 200 |
+| D6 | POST | `/api/v1/duties/exemptions` | `duties.manage` | Muafiyet ekle (sürekli / geçici) | 201 / 400 |
+| D7 | DELETE | `/api/v1/duties/exemptions/{id:guid}` | `duties.manage` | Muafiyeti kaldır (soft-delete) | 204 / 404 |
+| D8 | GET | `/api/v1/duties/roster?termId=` | `duties.view` | Dönem çizelgesini (taslak veya canlı) döndür | 200 / 404 |
+| D9 | PUT | `/api/v1/duties/roster` | `duties.manage` | Çizelge taslağını kaydet (upsert; atamalar tam set) | 200 |
+| D10 | POST | `/api/v1/duties/roster/reliever` | `duties.manage` | Atamanın yancısını set et / temizle | 204 / 404 |
+| D11 | POST | `/api/v1/duties/roster/publish` | `duties.manage` | Taslağı yayınla (temporal supersede; yeni sürüm) | 200 / 400 / 409 |
+| D12 | GET | `/api/v1/duties/roster/versions?termId=` | `duties.view` | Dönemin çizelge sürüm geçmişi | 200 |
+| D13 | GET | `/api/v1/duties/summary?termId=` | `duties.view` | Hub özet (atama sayısı, min/max/muaf/çakışma) | 200 |
+| D14 | GET | `/api/v1/duties/available-relievers?termId=&day=&locationId=` | `duties.manage` | O gün+bölge için yancı adayları + yük sayısı | 200 |
+| D15 | GET | `/api/v1/duties/me?termId=` | `duties.view` | Giriş yapmış öğretmenin kendi nöbet atamaları | 200 / 404 |
+
+Ayarlar (SchoolSettings controller'ı üzerinden — ayrı endpoint):
+
+| # | Method | Path | Permission | Amaç | Success |
+|---|---|---|---|---|---|
+| DS1 | GET | `/api/v1/school-settings/duties` | `duties.view` | Nöbet politikası oku (reliever, sıklık, dağılım) | 200 |
+| DS2 | PUT | `/api/v1/school-settings/duties` | `duties.manage` | Nöbet politikasını güncelle | 204 |
+
+**DTO özetleri:**
+
+- **D1 response:** `DutyLocationDto { id, name, type, icon, capacity, isActive }[]`.
+  `type` int: 0=Floor, 1=Canteen, 2=Garden, 3=Gate, 4=Hall, 5=Other.
+- **D2 request:** `CreateDutyLocationCommand { name, type, icon?, capacity, templateId? }` → `Guid` (location id).
+  Doğrulama: `name` zorunlu, `capacity` 1–4 arası (domain invariant), `type` geçerli enum değeri.
+- **D3 request:** `UpdateDutyLocationBody { name, type, icon?, capacity, isActive }`.
+- **D5 response:** `DutyExemptionDto { id, teacherId, teacherName, type, from?, to?, reason }[]`.
+  `type` int: 0=Permanent, 1=Temporary. Geçici → `from/to` zorunlu, `from > to` domain hatası.
+- **D6 request:** `SetDutyExemptionCommand { teacherId, type, from?, to?, reason }`.
+- **D8 response:** `DutyRosterDto { rosterId, termId, status, version, effectiveFrom?, assignments: DutyAssignmentDto[] }`.
+  `status` int: 0=Draft, 1=Published, 2=Superseded. `DutyAssignmentDto { id, teacherId, teacherName, teacherBranch?, day, locationId, relieverId?, relieverName?, conflict? }`.
+  `conflict` dolu ise öğretmen o dönem için muaf (`"duties.conflict.teacher-exempt"`).
+- **D9 request:** `SaveDutyRosterDraftCommand { termId, academicYearId, academicTermId, assignments: DutyAssignmentInput[] }`.
+  Upsert: roster yoksa oluştur, varsa atamaları (Draft) tam set ile değiştir. INV-D1/D2/D3/D4 domain seviyesinde zorlanır.
+- **D10 request:** `AssignRelieverCommand { assignmentId, relieverId? }`. `relieverId=null` → yancıyı temizle. INV-D5 (yancı≠nöbetçi + aynı günde başka meşgul değil) domain içinde.
+- **D11 request:** `PublishDutyRosterCommand { termId, effectiveFrom, note? }`.
+  Davranış: canlı (Published) sürüm varsa `CloseAsOf(effectiveFrom)` ile Superseded edilir; bu Draft yayınlanır (yeni sürüm zinciri). Boş çizelge → 400 `duties.errors.roster-empty`. Zaten yayında → 409.
+- **D12 response:** `DutyRosterVersionDto { rosterId, version, status, effectiveFrom?, effectiveTo?, createdAt, createdByName, note? }[]`.
+- **D13 response:** `DutyHubSummaryDto { totalAssignments, minDuty, maxDuty, exemptCount, conflictCount }`.
+- **D14 response:** `AvailableRelieverDto { id, name, branch?, currentDutyLoad }[]`.
+  "Müsait yancı" = dönemde Permanent muafiyeti **olmayan** + aynı günde nöbetçi/yancı **olmayan** öğretmenler. **K-2a-2: Müsaitlik (Faz 4/Dilim 1) nöbet girdi değil** — `Unavailable` slotu olan ama o günde dersi olmayan öğretmen yancı adayı olabilir.
+- **D15 response:** `MyDutiesDto { termId, version, effectiveFrom?, items: MyDutyItemDto[] }`.
+  `MyDutyItemDto { day, locationId, locationName, kind }`. `kind` = "duty" (nöbetçi) | "reliever" (yancı). IDOR-safe: yalnız giriş yapan öğretmenin atamaları.
+- **DS1/DS2 yanıt/istek:** `DutyPolicyDto { relieverEnabled, weeklyFrequency, dayPattern }`.
+  `weeklyFrequency` int: 0=TwicePerWeek, 1=OncePerWeek, 2=OnceEveryTwoWeeks. `dayPattern` int: 0=Spread, 1=Consecutive. (**2a'da inert** — 2c solver girdisi.)
+
+---
+
 ### Rooms (Derslik Kataloğu) — ✅ canlı (rooms-first dilimi, 2026-06-10)
 
 | # | Method | Path | Permission | Amaç | Success |
