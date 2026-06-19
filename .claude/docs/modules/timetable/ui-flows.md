@@ -486,3 +486,174 @@ export const overrideFormSchema = z.object({
 - ❌ Parent ekranında çocuk seçici **alt menüye gizleme** — her zaman ekranın üstünde (school-ux skill).
 
 > Detay: `frontend/component-rules.md`, `frontend/form-validation-rules.md`, `mobile/component-rules.md`.
+
+---
+
+## Faz 4 / Dilim 2a — Nöbet Çizelgesi (Admin Ekranı)
+
+### Ekran Lokasyonu
+
+```
+oksis-web/src/portals/admin/duties/          — admin ekranı
+oksis-web/src/portals/teacher/duties/        — öğretmen salt-okunur görünümü
+```
+
+**Permission (admin):** `duties.view` (okuma), `duties.manage` (yazma)
+**Route:** `/admin/duties` (DutyAdminPage)
+**Component:** `DutyAdminPage`
+
+---
+
+### Admin Ekranı — Üç Sekmeli Yapı
+
+#### Sekme 1: Çizelge (roster)
+
+**PageHeader Aksiyon Şeridi:**
+- **Öğretmen Görünümü** butonu (her zaman) → `DtaTeacherPreview` modalı açar (salt-okunur öğretmen perspektifi)
+- `duties.manage` ise:
+  - **Kaydet** butonu (yalnız draft değişiklik varken) → flush → `saveRoster`
+  - **Yayınla** butonu → `DtaPublishModal` açar
+
+**Sayfa Gövdesi — Çizelge Sekmesi:**
+
+1. **Bilgi banner'ı:** "Günlük Nöbet" açıklama satırı (MapPin ikonu)
+2. **DutySummaryBar:** toplam atama · min/max nöbet · muaf sayısı · çakışma · aktif sürüm + "Geçerlilik" tarihi. Yancılık kapalıysa "Yancılık kapalı" rozeti. Sürüm geçmişi linki → `DtaVersionDrawer`.
+3. **DutyGrid:** Gün (Pzt–Cum) × Bölge matrisi.
+   - Her hücre: nöbetçi avatar+isim. `relieverEnabled=true` ise yancı öğretmen alt-satırı (teal).
+   - Çakışma varsa hücrede sarı uyarı rozeti.
+   - **Bugün** sütunu mavi kenarlıkla işaretlenir.
+   - Hücreye tıklama (`duties.manage` ise) → **DtaCellMenu** açılır.
+4. **FairnessPanel:** öğretmen başına nöbet dağılımı (bar chart stili). `relieverEnabled=true` ise yancı sütunu da gösterilir.
+
+**DtaCellMenu (Radix Popover):**
+- Mevcut atama yok → öğretmen listesi (avatar + isim + branş + yük sayacı). Meşgul öğretmenler grayed.
+- Mevcut atama var → öğretmen listesi + **Kaldır** seçeneği.
+- Atama seçimi yerel `draftOps` op-log'una eklenir (applyOps ile türetilmiş liste).
+
+**DtaPublishModal:**
+- Güncel sürüm numarası gösterilir.
+- "Geçerlilik başlangıcı" tarih alanı.
+- **Yayınla** → `publishRoster` → supersede önceki aktif versiyonu.
+
+**DtaVersionDrawer:**
+- Tüm sürümler zaman çizelgesi (Published / Superseded).
+- Sürüm detayı (effectiveFrom, yayıncı, atama sayısı).
+
+**DtaTeacherPreview:**
+- Tüm öğretmenlerin nöbet çizelgesi — salt-okunur özet görünümü.
+- `relieverEnabled=true` ise yancı bilgisi de listelenir.
+
+**Boş Durum:**
+- Aktif bölge yoksa "Bölge tanımlanmamış" boş durum + **Bölgeler & Politika** sekmesine yönlendirme CTA.
+
+**Yükleniyor İskeleti:** DutySummaryBar, toolbar ve grid için 3 ayrı iskelet div.
+
+---
+
+#### Sekme 2: Vekâlet (substitution)
+
+**VekaletPlaceholder** bileşeni — Dilim 2b kapsamı. Şu an "Yakında" gösterir.
+
+---
+
+#### Sekme 3: Bölgeler & Politika (policy)
+
+**PageHeader Kaydet:** `duties.manage` + `polDirty` iken aktif → `updatePolicy` çağrısı.
+
+**PolitikaTab içeriği:**
+
+1. **Bölgeler bölümü:** Aktif/Pasif bölge listesi (ikon, kapasite, tip).
+   - **Bölge Ekle** butonu → `DtaRegionModal` (ad, tip, kapasite, ikon seçici)
+   - Satır: düzenle (`DtaRegionModal`) / sil (`DtaConfirm` teyit)
+2. **Muafiyetler bölümü:** Kalıcı/Geçici muaf öğretmen listesi.
+   - **Muafiyet Ekle** → `DtaMuafModal` (öğretmen seçici, Kalıcı/Geçici, gün bayrağı)
+   - Satır: sil (teyit confirm)
+3. **Nöbet politikası bölümü:**
+   - **Yancılık aktif** toggle (`relieverEnabled`) — `K-2a-5`: kapalıyken tüm yancı UI'dan gizlenir
+   - **Haftalık sıklık** seçici (Haftada 2 / Haftada 1 / 2 Haftada 1) — Dilim 2c solver girdisi (şimdilik inert)
+   - **Gün dağılımı** seçici (Dağıtılmış / Ardışık) — Dilim 2c solver girdisi (şimdilik inert)
+
+---
+
+### Admin Kullanıcı Akışı — Yeni Nöbet Çizelgesi Kurulumu
+
+```
+[/admin/duties] (boş ekran — bölge yok)
+        ↓
+"Bölgeler & Politika" sekmesine geç
+        ↓
+Bölge Ekle → DtaRegionModal
+  (ad: "1. Kat Koridor", tip: Koridoru/Salon/Bahçe/Kapı/Salon/Diğer, kapasite: 1–4)
+        ↓
+Kaydet (policy) → bölge aktif
+        ↓
+"Çizelge" sekmesine dön
+        ↓
+Hücreye tıkla → DtaCellMenu → öğretmen seç
+        ↓
+[draftOps yerel op-log'una eklendi]
+        ↓
+"Kaydet" → saveRoster → server flush
+        ↓
+toast: "Çizelge güncellendi"
+        ↓
+"Yayınla" → DtaPublishModal → geçerlilik tarihi seç → Yayınla
+        ↓
+publishRoster → Draft→Published, önceki Published→Superseded
+        ↓
+toast: "Yayınlandı · v1"
+        ↓
+Öğretmenlere in-app + SignalR bildirim (DutyRosterPublishedEvent)
+```
+
+---
+
+### Admin Kullanıcı Akışı — Supersede (Yeni Sürüm Yayıni)
+
+```
+Mevcut Published sürüm var
+        ↓
+Çizelgede değişiklik yap → Kaydet
+        ↓
+Yayınla → DtaPublishModal → yeni geçerlilik tarihi
+        ↓
+publishRoster: mevcut Published → Superseded; yeni → Published
+        ↓
+DtaVersionDrawer'da v1 (Superseded) + v2 (Published) görünür
+```
+
+---
+
+## Faz 4 / Dilim 2a — Nöbet Çizelgesi (Öğretmen Görünümü)
+
+### Ekran Lokasyonu
+
+```
+oksis-web/src/portals/teacher/duties/TeacherDutyPage.tsx
+```
+
+**Permission:** `duties.view` (self-scope — yalnız kendi nöbetleri, IDOR-safe `GetMyDuties`)
+**Route:** `/teacher/duties` (TeacherDutyPage)
+
+### Ekran Yapısı
+
+**Salt-okunur görünüm. Vekâlet Dilim 2b kapsamı.**
+
+**Yükleniyor:** 3 iskelet item (tdy-sk-summary, tdy-sk-label, 3× tdy-sk-item).
+
+**Hata durumu:** Hata ikonu + `state.error` mesajı.
+
+**Boş durum:** CheckCircle ikonu + "Bu dönem nöbet göreviniz yok" mesajı.
+
+**Özet Şeridi (dolu durum):**
+- **Nöbet sayısı** (Shield ikonu) — bu haftaki nöbet adedi
+- **Yancı sayısı** (Users ikonu) — yalnızca `relieverEnabled=true` iken (`K-2a-5`)
+- **Sıradaki görev** kartı: gün + bölge adı + görev tipi (Nöbet / Yancı)
+
+**Alt-segment toggle:**
+- **Liste görünümü:** Her görev için kart (gün kodu, bölge adı, Nöbet/Yancı etiket rozeti). Bugün mavi vurgu.
+- **Haftalık takvim (DutyWeek):** Pzt–Cum grid, hücre başına görev kartı.
+
+**K-2a-5 gating:** `relieverEnabled=false` iken `kind="reliever"` item'lar filtrelenir; özet şeridinde yancı stat ve sıradaki-görev olarak yancı gösterilmez.
+
+**K-2a-2 notu:** Müsaitlik bilgisi bu ekranda gösterilmez. Ekran yalnız atanan nöbet/yancı bilgisini listeler.
