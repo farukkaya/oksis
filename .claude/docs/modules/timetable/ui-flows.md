@@ -552,9 +552,79 @@ oksis-web/src/portals/teacher/duties/        — öğretmen salt-okunur görün�
 
 #### Sekme 2: Vekâlet (substitution)
 
-**VekaletPlaceholder** bileşeni — Dilim 2b kapsamı. Şu an "Yakında" gösterir.
+**Permission gate:** `duties.substitute` (yalnız SchoolAdmin). Kapı olmadan "izin yok" durumu gösterilir.
+**Component:** `DtaVekalet`
+**Konum:** `src/portals/admin/duties/components/DtaVekalet.tsx`
+
+> Dilim 2b'de implement edildi. Eski `VekaletPlaceholder` kaldırıldı.
+
+**Sayfa Yapısı:**
+
+1. **Gün Bar'ı (`dta-day-bar`):**  
+   Bugünün tarihi + üç pill: Açık / Kapandı / Serbest Çalışma — değerler yüklenen board'lardan `onLessonsLoaded` callback'leriyle toplanır.
+
+2. **Bilgi banner'ı:** "Bu sayfa, gelen öğretmenden bu güne ait vekâlet ataması yapmanızı sağlar." (MapPin ikonu)
+
+3. **Öğretmen seçici (Add-absent picker):**  
+   - shadcn `Select` + `Input` (sebep) — yalnız `canManage = true` iken erişilebilir.
+   - "Ekle" butonu → seçilen `teacherId`+`reason` yerel `useState<{teacherId, reason}[]>` listesine eklenir.
+   - Devamsız öğretmen **entity'de saklanmaz** (K-2b-1: devamsızlık kaydı 2b kapsamı dışı).
+
+4. **Devamsız öğretmen kartları (`AbsTeacherCard`):**  
+   Her seçilen öğretmen için ayrı kart:
+   - `useSubstitutionBoard(termId, date, teacherId, true)` → board verisi yüklenir.
+   - Kart başlığı: öğretmen adı + branşı + yerel sebep (`dta-abs-reason`).
+   - Kart gövdesi: Ders slotları (`LessonSlot`) → her slot `SubstitutionLessonDto`'dan.
+
+5. **Ders Slotu (`LessonSlot`) → `DtmLesson` bileşenine iletilir:**  
+   - **`open` (Açık):** Ders pill'i + öneri listesi (`dta-sugg`). Expand → `useAvailableSubstitutes` tetiklenir (lazy, `onExpand` ile). Aday listesi `DtmCandidate` bileşenleriyle render edilir.
+   - **`covered` (Vekil Atandı):** `DtaAvatar` + vekil adı + "Bildirildi" + **Geri Al** butonu (`revokeSubstitution`).
+   - **`study-hall` (Serbest Çalışma):** BookOpen ikonu + başlık + gövde + **Geri Al** (`revokeSubstitution`).
+
+6. **`DtmCandidate` bileşeni:**  
+   - Avatar (`DtaAvatar`) + isim + branş uyum rozeti (`dta-fit`: ok/yan/no — Same/Near/Different) + yük sayacı (Shield ikonu).
+   - "Önerilen" tag'i (`best=true` ilk aday — yük+fit sıralaması BE tarafından).
+   - **Ata** butonu → `createSubstitution(programId, placementId, date, teacherId, reason)` → toast (`toast.assigned` + öğretmen adı).
+   - **Serbest Çalışma** ayak butonu → `markStudyHall(programId, placementId, date, reason)` → toast (`toast.studyHall`).
 
 ---
+
+### Admin Kullanıcı Akışı — Vekâlet (Ad-hoc Bugün)
+
+```
+[/admin/duties → Vekâlet sekmesi]
+        ↓
+duties.substitute yoksa → "izin yok" durumu
+        ↓
+(duties.substitute = SchoolAdmin)
+        ↓
+Gün Bar: bugünün tarihi + Açık/Kapandı/Serbest sayıları
+        ↓
+Öğretmen Seçici: "Devamsız Öğretmen" Select + "Sebep" Input → Ekle
+        ↓
+AbsTeacherCard oluşur — board sorgusu tetiklenir
+  (GET /duties/substitution/board?termId=&date=&teacherId=)
+        ↓
+Ders slotları yüklenir (Yükleniyor iskelet)
+        ↓
+[Ders "Açık" ise]
+        ↓
+Slot'a tıkla → "Diğer N aday" expand → useAvailableSubstitutes tetiklenir
+  (GET /duties/substitution/available-substitutes?programId=&placementId=&date=)
+        ↓
+Aday listesi: fit rozeti + yük + "Önerilen" tag
+        ↓
+Seçenek A: "Ata" → createSubstitution → toast "Öğretmen Adı atandı"
+           → slot "covered" (DtaAvatar + Bildirildi + Geri Al)
+Seçenek B: "Serbest Çalışma" → markStudyHall → toast "Serbest çalışmaya alındı"
+           → slot "study-hall" (BookOpen + Geri Al)
+        ↓
+Geri Al → revokeSubstitution → slot "open"'a döner
+```
+
+---
+
+
 
 #### Sekme 3: Bölgeler & Politika (policy)
 
@@ -657,3 +727,26 @@ oksis-web/src/portals/teacher/duties/TeacherDutyPage.tsx
 **K-2a-5 gating:** `relieverEnabled=false` iken `kind="reliever"` item'lar filtrelenir; özet şeridinde yancı stat ve sıradaki-görev olarak yancı gösterilmez.
 
 **K-2a-2 notu:** Müsaitlik bilgisi bu ekranda gösterilmez. Ekran yalnız atanan nöbet/yancı bilgisini listeler.
+
+---
+
+## Faz 4 / Dilim 2b — Vekâlet (Öğretmen Görünümü)
+
+**Ekran:** `TeacherDutyPage.tsx` (Dilim 2a ile aynı sayfa — `SubstitutionSection` eklendi)
+**Permission:** `duties.view` (self-scope)
+**Veri kaynağı:** `useMySubstitutions(termId)` → `GET /duties/substitution/me` → `MySubstitutionDto[]`
+
+**SubstitutionSection (salt-okunur):**
+- **Bölüm başlığı:** `substitution.teacher.section` (Eye ikonu)
+- **Boş durum:** `substitution.teacher.empty` ("Bu dönem vekâlet göreviniz yok")
+- **Hata durumu:** `substitution.error` satır içi
+- **Dolu durum:** Her `MySubstitutionDto` için read-only kart:
+  - `branchName · subjectName` (sınıf + ders)
+  - `day/period`  + saat (`tdy-when`)
+  - Oda (`tdy-room`) — varsa
+  - "`{{originalTeacherName}}` yerine" pattern (`tdy-in-place-of`)
+  - Eye ikonu + `substitution.teacher.viewOnly` etiketi
+
+**K-2b-7 (itiraz yok):** Öğretmen itiraz / onay akışı `schedule_requests` dilimine ertelendi. Bu görünümde itiraz butonu/modal yoktur.
+
+**K-2a-2 tutarlılık:** Müsaitlik bilgisi SubstitutionSection'da da gösterilmez.
