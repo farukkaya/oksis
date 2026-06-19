@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + FE handoff stillemesi tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE + FE tamam** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-19
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + FE handoff stillemesi tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE + FE tamam** · **Faz 4/Dilim-2b Vekâlet BE tamam** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-19
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -446,6 +446,24 @@
   - **TeacherDutyPage — salt-okunur (Task 10):** `useMyDuties` (self-scope IDOR). Liste / Haftalık takvim (DutyWeek) alt-segment toggle. Özet şeridi (nöbet sayısı + yancı sayısı K-2a-5 gated + sıradaki görev). K-2a-5: `relieverEnabled=false` iken kind="reliever" item'lar filtrelenir. K-2a-2: müsaitlik bilgisi gösterilmez. Boş/hata/yükleniyor durum varyantları.
   - **Testler (Task 11 — bu görev):** DtaAvatar 2, DtaCellMenu (render+close+busy), DtaPublishModal (open+submit), DutyAdminPage (tab switch + empty state), DutyGrid (cell render + relieverEnabled gating), FairnessPanel (reliever col gate), PolitikaTab (toggle+add+remove), useDutyData (hook render), TeacherDutyPage (yükleniyor/hata/boş/dolu + K-2a-5 gate). **Full suite:** 966 test geçti / 1 skipped / 0 başarısız; `npm run build` temiz; `npx tsc --noEmit` yalnız pre-existing deprecation uyarısı (baseUrl TS7.0).
 
+- **Faz 4/Dilim-2b Vekâlet — BE (2026-06-19):**
+  - **Domain/Application (ScheduleException yeniden kullanımı):** Yeni aggregate eklenmedi; vekâlet komutları `ScheduleException` (Cancellation/TeacherSubstitution) aggregate'ini yeniden kullanır — Dilim 2a `ScheduleExceptionPlanner` altyapısının üstünde yeni `Duties/Substitution/` dikey dilimi.
+  - **BranchFit çözücüsü:** `BranchMatchingService` — `Subject.Category` karşılaştırması: Same=tam eşleşme (score 2), Near=kategori-ailesi eşleşmesi (score 1), Different=eşleşmeme (score 0). `SubstituteCandidateDto { teacherId, name, currentLoad, branchFit (int) }` ile döner.
+  - **Sorgular (3):**
+    - `GetTodaysSubstitutionBoardQuery` → `SubstitutionBoardDto { date, lessons: SubstitutionLessonDto[] }`. `SubstitutionLessonDto { placementId, subjectName, branchName, period, originalTeacherId, originalTeacherName, substituteTeacherId?, substituteTeacherName?, status (Unassigned/Assigned/StudyHall/Cancelled) }`. Yalnız **Published||Revising** programlar sorgulanır (K-2b-1 yayın filtresi).
+    - `GetAvailableSubstitutesQuery(programId, placementId, date)` → `SubstituteCandidateDto[]`. Müsait = o gün+period'da başka vekil/yapısal ders yok (K-2b-6 vekil-vekil dışlama). Kendi yapısal veya vekil dersi olan öğretmen dışlanır. BranchFit `Subject.Category` üzerinden.
+    - `GetMySubstitutionsQuery` → `MySubstitutionDto[] { date, period, branchName, subjectName, originalTeacherName, status }` — Teacher self-scope.
+  - **Komutlar (3):**
+    - `CreateSubstitutionCommand(programId, placementId, date, substituteTeacherId, reason)` → ScheduleException (TeacherSubstitution tipi). K-2b-6 vekil-vekil dışlaması validate; K-2b-1 yayın filtresi. `duties.substitute` izni.
+    - `MarkStudyHallCommand(programId, placementId, date, reason)` → ScheduleException (Cancellation tipi, `reason="study-hall"`). `duties.substitute` izni.
+    - `RevokeSubstitutionCommand(programId, exceptionId)` → soft revoke. Zaten revoked → **409 Conflict** (NotFound değil — tutarlılık). `duties.substitute` izni.
+  - **API (6 endpoint — `duties.substitute`):** `SubstitutionController` @ `/api/v1/duties/substitution/*` — bkz. api-contracts.md § Vekâlet bölümü.
+  - **İzin kullanımı:** `duties.substitute` (Dilim 2a'da seed'li ama pasif) artık 6 endpoint tarafından **etkin kullanılıyor**. Yalnız SchoolAdmin rolü taşır (2a'da karar verildi).
+  - **K-2b-6 vekil-vekil dışlama:** `GetAvailableSubstitutes` hem yapısal hem varolan vekil atamaları kontrol eder; `CreateSubstitution` validate adımında ikinci kez kontrol.
+  - **Published-only fix (K-2b-1/K0.6):** Board sorgusu + available-substitutes sorgusu artık yalnız `Published` veya `Revising` programları döner.
+  - **K-2b-7 (itiraz ertelendi):** Öğretmen itiraz akışı `schedule_requests` dilimine ertelendi; teacher view `GetMySubstitutions` ile salt-okunur.
+  - **Testler:** Application unit 22 (GetTodaysSubstitutionBoard 5, GetAvailableSubstitutes 6, CreateSubstitution 7, MarkStudyHall 2, RevokeSubstitution 2). **Full suite:** build 0 hata / 0 uyarı; 395 Domain + 145 Api + 1042 Application + 29 Tests + 245 Infrastructure = **1856 test geçti / 0 başarısız**.
+
 - **Faz 4/Dilim-2a Nöbet Çizelgesi — BE (2026-06-19):**
   - **Domain:** `DutyLocation` (`TenantEntity`; kapasite 1–4; Activate/Deactivate; `DutyLocationType` enum: Floor/Canteen/Garden/Gate/Hall/Other) + `DutyExemption` (`TenantEntity`; Permanent/Temporary + CoversDay) + `DutyRoster` aggregate (`TenantEntity`; Draft→Published→Superseded versiyonlama; `DutyAssignment` owned child list) + `DutyAssignment` entity (Teacher×Day×Location + optional Reliever). Domain invariants: INV-D1 (muaf öğretmen), INV-D2 (gün-tekilliği), INV-D3 (kapasite ≤ 4), INV-D4 (yancı ≠ nöbetçi + o günde meşgul değil), INV-D5 (yalnız Draft düzenlenebilir). Domain events: `DutyAssignmentChangedEvent`, `DutyExemptionChangedEvent`, `DutyRosterPublishedEvent`. `DutyDomainException extends DomainException` (422 via ExceptionHandlingMiddleware). `DutyLocationTemplate` master entity (platform seed). Strongly-typed IDs: `DutyLocationId`, `DutyRosterId`, `DutyAssignmentId`, `DutyExemptionId`.
   - **Persistence (`[academic]` şema):** `duty_locations` (+ `ix_duty_locations_school_active`) + `duty_exemptions` (+ `ix_duty_exemptions_school_teacher`) + `duty_rosters` (+ `ux_duty_roster_live` K-2a-4 tek-canlı filtreli unique + `ix_duty_rosters_term_status`) + `duty_assignments` (`OwnsMany` field-backed + `ux_duty_assignment_teacher_cell` K-2a-3 filtreli unique + `ix_duty_assignments_teacher`). `duty_location_templates` platform master (seed). SchoolSettings +3 kolon: `duties_reliever_enabled`, `duty_weekly_frequency`, `duty_day_pattern`. Migrations: `20260619_add_duties_roster`, `20260619_add_duties_permissions`. DutyAssignment gerçek CLR property (Guid.Empty shadow-prop bug giderildi).
@@ -553,8 +571,11 @@
 - **Debt-D4 (bildirim i18n):** `DutyNotificationContent` hardcoded Türkçe; i18n ertelendi (timetable Debt-N2 deseni).
 - **Debt-D5 (2nd-save rollback test):** `PublishDutyRoster` 2nd-save `DbUpdateException` rollback yolu otomatik testsiz (EF interceptor mock gerektirir; kod yolu okunarak doğrulandı).
 - **Debt-D6 (alıcı resolution N+1):** Notification recipient resolution öğretmen başına N sorgu (post-MVP batch optimizasyon).
-- **Debt-D7 (Dilim 2b — vekalet):** `duties.substitute` izni seed'li ama endpoint yok; Dilim 2b kapsamı.
+- **Debt-D7 (Dilim 2b — vekalet) — ✅ KAPANDI (2026-06-19, Faz 4/Dilim-2b):** `duties.substitute` izni 6 endpoint ile etkinleştirildi. Bkz. yukarıdaki ✅ Faz 4/Dilim-2b girdisi.
 - **Debt-D8 (Dilim 2c — auto-distribute):** `DutyWeeklyFrequency` + `DutyDayPattern` policy 2a'da inert; 2c solver girdisi olacak.
+- **Debt-BE-Vek-1 (orphaned subject BranchFit):** `Subject.Category` `GetValueOrDefault` → Language tier için yanlış pozitif BranchFit farklılıkları üretebilir; explicit Different-tier assertion içeren test eksik. Post-MVP refinement.
+- **Debt-BE-Vek-2 (P28 yayın filtresi yok):** `GetAvailableTeachers` (P28, Faz 2.5B redesign) hâlâ Published/Revising filtresi içermiyor — pre-existing, 2b kapsamı dışı.
+- **Debt-BE-Vek-3 (teacher view read-only):** Öğretmen itiraz akışı (K-2b-7) ertelendi; `GetMySubstitutions` salt-okunur. `schedule_requests` diliminde tamamlanacak.
 - **Debt-D9 (Dilim 2d — yük raporu):** `DutyLoadRowDto` DTO tanımlı ama query yok; `duties.view-load` izni seed'li, endpoint ertelendi.
 - **Debt-D10 (GetAvailableRelievers izni):** `duties.manage` kullanır; Teacher rolü bu endpoint'i kullanamaz. Dilim 2b'de re-değerlendirme.
 
@@ -572,6 +593,14 @@
 - 2026-06-19 — **Debt-D3 — Çakışma/muafiyet hesabı UTC, okul TZ değil.** `conflict=teacher-exempt` display-only; okul TZ post-MVP. Etki: display tutarsızlığı olabilir (UTC+3 TR için aynı gün). Onay: kullanıcı 2026-06-19.
 - 2026-06-19 — **Debt-D6 — Bildirim alıcı resolution öğretmen başına N sorgu.** Perf borcu; post-MVP batch optimizasyon. Etki: az öğretmenli okulda ihmal edilebilir. Onay: kullanıcı 2026-06-19.
 - 2026-06-19 — **Debt-D1 (Secretary gap): `duties.view` Secretary'e verilmedi.** Seed'li Secretary rolü yok. K-2a-6 §Secretary eşlemesi ertelendi. Etki: Secretary nöbet göremez (0 runtime etkisi şimdilik). Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **K-2b-1 (ad-hoc devamsızlık entity'si yok):** Spec öğretmen-devamsızlık entity'si öngörüyordu; admin "yok öğretmen + sebep" seçer ama yalnız sonuçlanan ScheduleException'lar kalıcıdır; devamsızlık kaydı yoktur. Etki: devamsızlık tarihsel raporu 2b kapsamı dışı. Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **K-2b-2/K-2b-3 (yeni aggregate yok):** Vekâlet yeni aggregate yerine `ScheduleException` aggregate'ini (Dilim 2a altyapısı) yeniden kullanır; `CreateSubstitution`/`MarkStudyHall`/`Revoke` `duties.substitute` kapısı altında in-domain exception yaratır. `timetable.override` gated eski P25 komutuna değil yeni `SubstitutionController` endpoint'lerine gider. Etki: iki vekâlet yolu aynı tabloyu paylaşır; IDOR domain invariant + handler izin kapısı ile ayrılır. Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **K-2b-4 (BranchFit `Subject.Category` üzerinden):** BranchFit tiers yeni seed/config yerine `Subject.Category` karşılaştırmasından türetilir; veri konfigürasyonu olmadan çalışır. Etki: kategori eşlemesi zımni; yanlış kategori verisi yanlış tier'a yol açabilir (Debt-BE-Vek-1). Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **K-2b-6 (vekil-vekil dışlama):** `GetAvailableSubstitutes` + `CreateSubstitution` validator her ikisinde de yapısal + mevcut vekil atamaları kontrol eder; ayrı uygunluk yardımcı fonksiyonu önerildi ama zorunlu tutulmadı (iki kontrol noktası var — DRY borcu). Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **Published-only fix (K-2b-1/K0.6):** Board sorgusu + available-substitutes yalnız Published||Revising döner. **P28 `GetAvailableTeachers`** hâlâ yayın filtresi içermiyor (pre-existing; 2b kapsamı dışı — Debt-BE-Vek-2). Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **K-2b-7 (öğretmen itiraz ertelendi):** Teacher itiraz akışı `schedule_requests` dilimine ertelendi; 2b teacher view salt-okunur (`GetMySubstitutions`). Onay: kullanıcı 2026-06-19.
+- 2026-06-19 — **Zaten-revoked → 409 Conflict (NotFound değil):** `RevokeSubstitution` zaten revoke edilmiş exception'da 409 döner; `RevokeScheduleException` (timetable.override komutu) tutarlılığı için aynı davranış. Onay: teknik karar.
+
 - 2026-06-19 — **Debt-D11 (Teacher yetki aşırı-açığı — BE final review): `duties.view` admin read uçlarını da açıyor.** K-2a-6 "Teacher view self-only" der, ancak design §5 admin read uçlarını (`GET /duties/roster`, `/summary`, `/exemptions`, `/versions`, `/locations`, `settings/duties`) da `duties.view`'e bağlar; yalnız `/duties/me` handler'da self-scoped. Net: `duties.view` taşıyan Teacher tüm okulun roster'ını + muafiyetleri (öğretmen adı+sebep = **PII**) + politikayı okuyabilir. Çözüm (ertelendi): ayrı `duties.view-self` izni ekleyip admin read'leri `duties.view`'de bırakmak. Etki: PII aşırı-açığı. **Onay: kullanıcı 2026-06-19 (şimdilik debt olarak kabul; sonraki dilimde düzeltilecek).**
 
 - 2026-06-17 — **Override izni müsaitlik hard-block'a da kapı oldu:** Editör yerleşim komutlarında (`PlaceLesson`/`MoveLesson`) `AllowUnavailable=true` bayrağı `timetable.override` iznine bağlandı — müsait olmayan slota zorla yerleştirme bu mevcut izni gerektirir (design doc K-D1-2/4; yeni permission slug eklenmedi; etki: override ek yetki ister). Onay: kullanıcı.

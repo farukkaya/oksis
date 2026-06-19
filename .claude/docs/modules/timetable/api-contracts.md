@@ -188,6 +188,38 @@ Ayarlar (SchoolSettings controller'ı üzerinden — ayrı endpoint):
 | DS1 | GET | `/api/v1/school-settings/duties` | `duties.view` | Nöbet politikası oku (reliever, sıklık, dağılım) | 200 |
 | DS2 | PUT | `/api/v1/school-settings/duties` | `duties.manage` | Nöbet politikasını güncelle | 204 |
 
+---
+
+### Vekâlet (Faz 4/Dilim 2b — ✅ canlı kontrat)
+
+Base route: `/api/v1/duties/substitution` · Controller: `SubstitutionController` · Tüm endpoint'ler `[Authorize]`.
+
+| # | Method | Path | Permission | Amaç | Success |
+|---|---|---|---|---|---|
+| S1 | GET | `/api/v1/duties/substitution/board?date=` | `duties.substitute` | Bugünün (veya belirtilen tarihin) vekâlet panosu — tüm ders yerleşimleri + atama durumu | 200 |
+| S2 | GET | `/api/v1/duties/substitution/available?programId=&placementId=&date=` | `duties.substitute` | O ders için vekil aday listesi + BranchFit skoru | 200 |
+| S3 | POST | `/api/v1/duties/substitution` | `duties.substitute` | Vekil ata (ScheduleException/TeacherSubstitution yaratır) | 200 / 404 / 409 |
+| S4 | POST | `/api/v1/duties/substitution/study-hall` | `duties.substitute` | Dersi serbest ders (boş) yap (ScheduleException/Cancellation, reason="study-hall") | 200 / 404 / 409 |
+| S5 | POST | `/api/v1/duties/substitution/{exceptionId:guid}/revoke` | `duties.substitute` | Vekâlet atamasını geri al (soft revoke) | 204 / 404 / 409 |
+| S6 | GET | `/api/v1/duties/substitution/me` | `duties.substitute` | Giriş yapmış öğretmenin vekâlet atamaları (salt-okunur; K-2b-7 scope) | 200 |
+
+**DTO özetleri:**
+
+- **S1 response:** `SubstitutionBoardDto { date, lessons: SubstitutionLessonDto[] }`.
+  `SubstitutionLessonDto { placementId, subjectName, branchName, period, originalTeacherId, originalTeacherName, substituteTeacherId?, substituteTeacherName?, status }`.
+  `status` string: `"Unassigned"` | `"Assigned"` | `"StudyHall"` | `"Cancelled"`.
+  Yalnız **Published || Revising** programlardaki yerleşimler dahil edilir (K-2b-1).
+- **S2 response:** `SubstituteCandidateDto { teacherId, name, currentLoad, branchFit }[]`.
+  `branchFit` int: 2=Same (tam branş eşleşmesi), 1=Near (kategori-ailesi), 0=Different (eşleşmeme). Zaten o gün+period'da başka ders/vekil olan öğretmenler dışlanır (K-2b-6).
+- **S3 request:** `{ programId, placementId, date, substituteTeacherId, reason }` → `{ exceptionId, date, type }`.
+  K-2b-6 vekil-vekil dışlama + K-2b-1 yayın filtresi handler içinde. Yerleşim yok / program Published||Revising değil → 404. Vekil meşgul / zaten atanmış → 409.
+- **S4 request:** `{ programId, placementId, date, reason }` → `{ exceptionId, date, type: "Cancellation" }`.
+  Aynı validasyon kuralları. `reason` "study-hall" olarak işaretlenir.
+- **S5:** Gövdesiz. Exception programa ait değilse 404. Zaten revoked → 409 (NotFound değil — tutarlılık).
+- **S6 response:** `MySubstitutionDto { date, period, branchName, subjectName, originalTeacherName, status }[]`. IDOR-safe: yalnız giriş yapan öğretmenin vekâlet atamaları.
+
+---
+
 **DTO özetleri:**
 
 - **D1 response:** `DutyLocationDto { id, name, type, icon, capacity, isActive }[]`.

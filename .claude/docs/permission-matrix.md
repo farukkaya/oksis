@@ -210,7 +210,7 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 |---|---|---|---|---|---|---|
 | `duties.view` | ✅ | ✅ | 👁 (yalnız kendi D15) | 🚫 | 🚫 | 🚫 (ertelendi) |
 | `duties.manage` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
-| `duties.substitute` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+| `duties.substitute` | 🚫 | ✅ | 🚫 (S6/me erişimi Dilim 2b FE'de değerlendirilecek) | 🚫 | 🚫 | 🚫 |
 | `duties.view-load` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 
 ### Finance (Sprint 5+, taslak)

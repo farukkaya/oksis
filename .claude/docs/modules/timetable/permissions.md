@@ -148,7 +148,7 @@ INSERT INTO role_permissions ... ('timetable.view') ...;
 |---|---|---|
 | `duties.view` | Nöbet özet/çizelge/versiyon/kendi nöbetleri görüntüleme | D1, D5, D8, D12, D13, D15, DS1 |
 | `duties.manage` | Bölge/muafiyet/çizelge/yayın/yancı tam yönetimi | D2, D3, D4, D6, D7, D9, D10, D11, D14, DS2 |
-| `duties.substitute` | Vekalet görevlendirme (Dilim 2b — henüz pasif) | _(gelecek)_ |
+| `duties.substitute` | Vekalet görevlendirme ve pano görüntüleme (Dilim 2b — **etkin**) | S1, S2, S3, S4, S5, S6 |
 | `duties.view-load` | Yük & adalet raporu görüntüleme (Dilim 2d — henüz pasif) | _(gelecek)_ |
 
 > Bkz. `permission-matrix.md` — Duties bölümü.
@@ -165,7 +165,7 @@ INSERT INTO role_permissions ... ('timetable.view') ...;
 **Kararlar / Gerekçeler:**
 
 - **`duties.manage` yalnız SchoolAdmin:** Nöbet çizelgesi yayını tüm öğretmenleri etkiler; koordinatör taslak düzenler, SchoolAdmin onaylar. SuperAdmin salt-okunur (K-2a-6 bağlayıcı karar, 2026-06-19).
-- **`duties.substitute` yalnız SchoolAdmin:** Vekalet ataması personel yönetimi kapsamında. Koordinatör Dilim 2b'de değerlendirilecek.
+- **`duties.substitute` yalnız SchoolAdmin (Dilim 2b'de etkinleştirildi):** Vekalet ataması (SubstitutionController S1–S6) personel yönetimi kapsamındadır; yalnız SchoolAdmin tarafından yapılabilir. Teacher rolü S6 (`/me`) ucu için bu izni hâlâ gerektirmiyor mu değerlendirilecek (şu an: Teacher duties.substitute olmadan S6'ya erişemez — Dilim 2b scope'u, FE bağlanacak).
 - **`duties.view` Teacher:** D15 (`/me`) endpoint'i self-scope zorunlu; query handler `currentUser.PersonId == teacherId` IDOR kontrolü yapar.
 - **Debt — Secretary:** K-2a-6'da `Secretary→duties.view` öngörülmüş ancak sistemde seed'li Secretary rolü olmadığından ertelendi (Dilim 2b). Bkz. completion_status.md debt kaydı.
 

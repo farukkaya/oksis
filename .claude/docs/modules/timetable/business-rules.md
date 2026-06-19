@@ -524,6 +524,7 @@ korunurken çalışma kopyası ayrışır. Rezervasyon değişmez (her iki durum
 | 2026-06-17 | BR-TT-AG-5/6 eklendi + BR-TT-AG-3 revize | Faz 3 Dilim-2 çok-sınıf: joint solver çapraz öğretmen/derslik tekilliği (K-D2-1), seçmeli/toplu apply + GeneratedFromJobId idempotency (K-D2-3/4). Tasarım: `ders-programi-cok-sinif-otomatik-uretim-design.md` |
 | 2026-06-17 | BR-TT-AV-1/2 eklendi | Faz 4/Dilim-1 müsaitlik & tercih: üç durum (Available/PrefersNot/Unavailable), hard-block (Unavailable) vs soft (PrefersNot), admin override `timetable.override`. **Debt-AG-1 kapandı.** |
 | 2026-06-19 | INV-D1..D5 + BR-D kuralları eklendi | Faz 4/Dilim 2a Nöbet Çizelgesi backend tamamlandı. |
+| 2026-06-19 | K-2b-1..7 + BR-Vek kuralları eklendi | Faz 4/Dilim 2b Vekâlet backend tamamlandı: ad-hoc devamsızlık entity yok, ScheduleException yeniden kullanımı, BranchFit (Subject.Category), vekil-vekil dışlama (K-2b-6), published-only board, teacher view salt-okunur, revoke 409. |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.
 
@@ -625,3 +626,84 @@ korunurken çalışma kopyası ayrışır. Rezervasyon değişmez (her iki durum
 **Debt:** Geçici muafiyet (`Temporary`) olan öğretmen yancı adayı olabilir — yalnız Permanent muafiyeti dışlanır. Bu BR-12 weekly-template kararıyla tutarlı. Geçici-muaf-bugün kontrolü ertelendi.
 
 **Kural tipi:** SOFT kılavuz (application layer yancı listesini filtreler; kullanıcı listedekini seçer, domain INV-D4 son kontrol).
+
+---
+
+## Vekâlet Kuralları (Faz 4/Dilim 2b)
+
+> Vekâlet = öğretmen devamsızlığında o ders için başka bir öğretmenin atanması veya dersin "serbest ders" yapılması.
+> Uygulama altyapısı: `ScheduleException` aggregate (Dilim 2a atyapısı) yeniden kullanılır.
+
+---
+
+### K-2b-1: Ad-Hoc Devamsızlık — Entity Yok (ONAYLANDI: kullanıcı 2026-06-19)
+
+**Kural:** Öğretmen devamsızlığı için bağımsız bir entity (örn. `TeacherAbsence` tablosu) tutulmaz. Admin "yok öğretmen + sebep" seçer; yalnız sonuçlanan `ScheduleException` kayıtları kalıcıdır. Vekil panosu (`SubstitutionBoardDto`) mevcut Published||Revising programdaki yerleşimleri temel alarak oluşturulur — devamsız öğretmen filtresinde daraltılır.
+
+**Kural tipi:** DESIGN (sapma kaydı var — bkz. completion_status.md ⚠️ K-2b-1).
+
+---
+
+### K-2b-1/K0.6: Published-Only Board ve Vekil Sorgusu (HARD)
+
+**Kural:** Vekâlet panosu (`GetTodaysSubstitutionBoard`) ve vekil aday listesi (`GetAvailableSubstitutes`) yalnız `Published` veya `Revising` statüsündeki programları sorgular. Taslak programlar dahil edilmez.
+
+**Uygulama:** Query handler'lar `Status == Published || Status == Revising` filtresi uygular.
+
+**Kural tipi:** HARD.
+
+---
+
+### K-2b-2/K-2b-3: ScheduleException Yeniden Kullanımı (ONAYLANDI)
+
+**Kural:** Vekâlet komutları (`CreateSubstitution`, `MarkStudyHall`, `RevokeSubstitution`) ayrı aggregate yerine `ScheduleException` entity'sini kullanır:
+- `CreateSubstitution` → `ScheduleException` type `TeacherSubstitution`.
+- `MarkStudyHall` → `ScheduleException` type `Cancellation` (reason="study-hall").
+- `RevokeSubstitution` → mevcut exception'ı soft-revoke eder.
+
+Bu komutlar `duties.substitute` kapısı altında çalışır (timetable.override komutlarından bağımsız endpoint).
+
+**Kural tipi:** DESIGN.
+
+---
+
+### K-2b-4: BranchFit Hesabı (Subject.Category Üzerinden)
+
+**Kural:** Vekil adayının branş uygunluğu (`BranchFit`) `Subject.Category` karşılaştırmasıyla belirlenir:
+- `Same` (2): Vekil öğretmenin uzmanlık kategori alanı, dersin kategorisiyle tam eşleşiyor.
+- `Near` (1): Kategori-ailesi eşleşmesi (örn. aynı fen grubu veya sosyal bilimler grubu).
+- `Different` (0): Hiçbir eşleşme yok.
+
+Yeni seed/config gerekmez. `GetAvailableSubstitutes` sorgusu `SubstituteCandidateDto { branchFit }` ile döner; UI sıralarken BranchFit'i önceliklendirir.
+
+**Uyarı (Debt-BE-Vek-1):** `Subject.Category` `GetValueOrDefault` → Language fallback yanlış pozitif farklılık üretebilir; explicit Different-tier test assertion eksik.
+
+**Kural tipi:** SOFT kılavuz (BranchFit; admin üzerine yazabilir).
+
+---
+
+### K-2b-6: Vekil-Vekil Dışlama (HARD)
+
+**Kural:** Bir öğretmen aynı gün ve period'da zaten başka bir derse vekil atanmışsa ikinci vekil ataması kabul edilmez.
+
+**Uygulama:**
+- `GetAvailableSubstitutes`: Sorgulanan `(programId, placementId, date)` için öğretmenin o gün+period'da yapısal veya mevcut vekil ataması olup olmadığı kontrol edilir (KD-vekil-vekil filtresi).
+- `CreateSubstitution` validator: İkinci kez aynı kontrol yapılır (vekil listesi ile create arası yarış koruması).
+
+**Kural tipi:** HARD.
+
+---
+
+### K-2b-7: Öğretmen Görünümü Salt-Okunur (Ertelendi)
+
+**Kural:** Öğretmen itiraz/onay akışı (`schedule_requests` diliminde) ertelendi. 2b kapsamında öğretmen yalnız kendi vekâlet atamalarını görebilir (`GetMySubstitutions`), itiraz/ret edememektedir.
+
+**Kural tipi:** DESIGN (erteleme kararı).
+
+---
+
+### BR-Vek-REVOKE-1: Zaten-Revoked → 409 (NotFound Değil)
+
+**Kural:** `RevokeSubstitution` zaten revoke edilmiş bir exception üzerinde çağrılırsa 409 Conflict döner (404 değil). Bu `RevokeScheduleException` (timetable.override) davranışıyla tutarlıdır.
+
+**Kural tipi:** HARD.
