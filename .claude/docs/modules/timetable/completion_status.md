@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + FE handoff stillemesi tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE + FE tamam** · **Faz 4/Dilim-2b Vekâlet BE tamam** · **Faz 4/Dilim-2b Vekâlet FE tamam** · **Editör Vekil modalı handoff zenginleştirmesi (2.5C rafine) tamam** · **Faz 4/Dilim-2c Otomatik Dağıtım BE tamam (FE bekleniyor)** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-20
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + FE handoff stillemesi tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE + FE tamam** · **Faz 4/Dilim-2b Vekâlet BE tamam** · **Faz 4/Dilim-2b Vekâlet FE tamam** · **Editör Vekil modalı handoff zenginleştirmesi (2.5C rafine) tamam** · **Faz 4/Dilim-2c Otomatik Dağıtım BE + FE tamam** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-20
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -507,7 +507,15 @@
   - **Hangfire (`AutoDistributeDutyJob`):** Girdileri toplar (bölge/muafiyet/havuz/müsaitlik-gün/yancı-meşguliyet/politika/pinned) → çözer → `ResultJson`/`HintsJson` saklar.
   - **API (3 endpoint — `duties.manage`):** `POST /api/v1/duties/auto-distribute` (→jobId), `GET .../auto-distribute/{jobId}`, `POST .../auto-distribute/{jobId}/apply` (→rosterId). Bkz. api-contracts.md § Nöbet Otomatik Dağıtım.
   - **Testler:** Domain 5 unit (`DutyDistributionJob`); Application — `DutyFeasibility` 7 + `DutyFairnessScorer` 2 + `DutySolver` 8 + validator/handler unit'ler; Integration 3 (apply — `FromScratch`/`FillEmpty`/idempotency). **Full suite:** ~1888 test yeşil / 0 başarısız.
-  - **Kapsam notu:** FE (hub tetikleyici + sonuç görünümü + uygula akışı) ayrı plandır — henüz yapılmadı.
+  - **Kapsam notu:** FE ayrı plandır — bkz. aşağıdaki Dilim 2c FE girdisi.
+
+- **Faz 4/Dilim-2c Nöbet Otomatik Dağıtım — FE (2026-06-20):**
+  - **i18n (Task 1):** `autoDistribute.*` namespace (tr/en parité) — `cta`, `biweeklyDisabled`, `mode.*` (fromScratch/fillEmpty), `settings.*` (policy/mode), `distributing`, `result.*` (assigned/missing/balance), `hints.*`, `applied`, `error.*`.
+  - **React Query + API tipleri (Task 2):** `DutyDistributionMode` union (`"FromScratch"|"FillEmpty"`); `AutoDistributeStatus` + `AutoDistributeResult` tipler; `dutyKeys.autoDistribute(schoolId, jobId)` tenant-scope key; `dutiesApi.enqueueAutoDistribute`, `.getAutoDistributeStatus`, `.applyAutoDistribute` wrapper'ları.
+  - **`useAutoDistribute` hook (Task 3):** `enqueue(mode)` → jobId; poll (~1200ms, `enabled = !!jobId && status !== "Done|Failed"`); `apply(jobId, mode)` → rosterId + invalidate `dutyKeys.all(schoolId)`. 2 birim test (enqueue+poll round-trip, apply + invalidation).
+  - **`DutyAutoDistributeDrawer` 4-aşama sihirbazı (Task 4):** Aşama 1 = mod toggle + politika rozetleri + "Dağıt"; Aşama 2 = dağıtılıyor (spinner + poll); Aşama 3 = sonuç (DutyGrid önizleme + metrik pill'leri assigned/missing/balance + gevşetme ipuçları + "Geri Dön"/"Uygula"); Aşama 4 = başarı (toast + drawer kapat + roster query invalidate). 3 birim test (render ilk aşama, mod geçişi, biweekly gate).
+  - **Buton aktivasyon + biweekly gate (Task 5):** Çizelge sekmesi PageHeader'ında "Adil Otomatik Dağıt" butonu. `weeklyFrequency === 2` (OnceEveryTwoWeeks) iken `disabled` + Tooltip `autoDistribute.biweeklyDisabled`; diğer değerlerde etkin. 2 birim test (etkin/disabled durumları).
+  - **Testler:** i18n parité 1 + useAutoDistribute 2 + DutyAutoDistributeDrawer 3 + gate 2 = **7 yeni test**. Tam web paketi: **1036 test geçti / 1 skipped / 0 başarısız**; `npm run build` temiz (pre-existing chunk-size uyarısı).
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
@@ -622,7 +630,7 @@
 - **Debt-2c-2 (greedy heuristik solver):** `DutySolver` coverage-first + surplus greedy; OR-Tools / LP optimizasyonu `IDutySolver` portu arkasına eklenebilir (özellikle büyük kadro/çok bölge için).
 - **Debt-2c-3 (tek öneri):** Solver tek sonuç döner; birden çok aday (A/B/C seçimi) yok (K-2c-8 "tek öneri" spec maddesi — bilinçli MVP sınırı).
 - **Debt-2c-4 (muafiyet kapsam notu):** Permanent muafiyet her zaman elenir. Temporary `CoversDay` (tarih-bazlı) de elenir — solver **tarih-farkındalıklı** (2a `GetAvailableRelievers`'dan farklı). Yalnız `CoversDay=false` Temporary muafiyeti elenmez (davranış bilinçli; 2a tasarımıyla tutarlı).
-- **Debt-2c-FE (FE henüz yok):** Hub tetikleyicisi + sonuç görünümü (durum poll + ipuçları) + uygula akışı FE ayrı planda; bu dilim yalnız BE.
+- **Debt-2c-FE (FE) — ✅ KAPANDI (2026-06-20, Faz 4/Dilim-2c FE):** `DutyAutoDistributeDrawer` (4-aşama) + `useAutoDistribute` hook (enqueue→poll→apply) + buton aktivasyonu + biweekly gate + `autoDistribute.*` i18n (tr/en) teslim edildi.
 - **Debt-BE-Vek-1 (orphaned subject BranchFit):** `Subject.Category` `GetValueOrDefault` → Language tier için yanlış pozitif BranchFit farklılıkları üretebilir; explicit Different-tier assertion içeren test eksik. Post-MVP refinement.
 - **Debt-BE-Vek-2 (P28 yayın filtresi yok):** `GetAvailableTeachers` (P28, Faz 2.5B redesign) hâlâ Published/Revising filtresi içermiyor — pre-existing, 2b kapsamı dışı.
 - **Debt-BE-Vek-3 (teacher view read-only):** Öğretmen itiraz akışı (K-2b-7) ertelendi; `GetMySubstitutions` salt-okunur. `schedule_requests` diliminde tamamlanacak.

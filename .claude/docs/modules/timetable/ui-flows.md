@@ -694,6 +694,116 @@ DtaVersionDrawer'da v1 (Superseded) + v2 (Published) görünür
 
 ---
 
+## Faz 4 / Dilim 2c — Nöbet Otomatik Dağıtım
+
+### Bileşenler
+
+```
+oksis-web/src/portals/admin/duties/components/DutyAutoDistributeDrawer.tsx
+oksis-web/src/portals/admin/duties/hooks/useAutoDistribute.ts
+```
+
+**Permission:** `duties.manage`
+**Tetikleyici:** Çizelge sekmesi PageHeader'daki "Adil Otomatik Dağıt" butonu
+
+---
+
+### Buton Aktivasyon Koşulu
+
+- `weeklyFrequency === OnceEveryTwoWeeks` (değer `2`) iken buton **disabled** + Tooltip: "2 haftada 1 nöbet için otomatik dağıtım desteklenmiyor" (i18n `autoDistribute.biweeklyDisabled`).
+- Diğer tüm sıklık değerlerinde buton etkin.
+
+---
+
+### Drawer Akışı (4 Aşama)
+
+#### Aşama 1: Ayarlar
+
+- **Mod toggle (FromScratch / FillEmpty):**
+  - `FromScratch` — Mevcut Draft roster sıfırlanır, solver yeniden dağıtır.
+  - `FillEmpty` — Yalnız atanmamış hücreler doldurulur; mevcut atamalar korunur.
+- **Politika rozetleri** (salt bilgi): haftalık sıklık + gün dağılımı (Spread/Consecutive).
+- **"Dağıt" butonu** → `enqueue({ mode })` tetikler, Aşama 2'ye geçer.
+
+#### Aşama 2: Dağıtılıyor
+
+- Spinner + "Dağıtım hesaplanıyor…" mesajı (`autoDistribute.distributing`).
+- `useAutoDistribute` hook'u ~1200ms aralıkla poll eder (`GET /duties/auto-distribute/{jobId}`).
+- Hata durumunda satır içi hata mesajı + "Tekrar Dene" CTA.
+
+#### Aşama 3: Sonuç
+
+- **DutyGrid önizlemesi** (salt-okunur): solver'ın önerdiği atama planı.
+- **Metrik pill'leri:**
+  - Atanan hücre sayısı (`autoDistribute.result.assigned`)
+  - Eksik hücre sayısı (`autoDistribute.result.missing`) — varsa turuncu/kırmızı
+  - Denge skoru (`autoDistribute.result.balance`)
+- **Gevşetme ipuçları** (`hints[]`): solver çözüm üretemediği hücreler için öneriler (i18n `autoDistribute.hints.*`).
+- **"Uygula" butonu** → `apply(jobId, mode)` tetikler, Aşama 4'e geçer.
+- **"Geri Dön"** → Aşama 1'e döner (yeniden dağıtım başlatılabilir).
+
+#### Aşama 4: Uygulandı
+
+- Başarı durumu: "Nöbet çizelgesi taslağa uygulandı" (`autoDistribute.applied`).
+- Drawer kapanır / Çizelge sekmesi yenilenir (roster query invalidate edilir).
+- Taslak roster `DutyGrid`'de görünür; admin ince-ayar + Yayınla akışı ile devam eder.
+
+---
+
+### Admin Kullanıcı Akışı — Otomatik Dağıtım
+
+```
+[/admin/duties → Çizelge sekmesi]
+        ↓
+weeklyFrequency === OnceEveryTwoWeeks?
+  → Evet: buton disabled + tooltip gösterilir (akış durur)
+  → Hayır: "Adil Otomatik Dağıt" butonu etkin
+        ↓
+Butona tıkla → DutyAutoDistributeDrawer açılır
+        ↓
+[Aşama 1: Ayarlar]
+Mod seç (FromScratch / FillEmpty) → politika rozetleri gözden geçir
+        ↓
+"Dağıt" → enqueue POST /duties/auto-distribute (→ jobId)
+        ↓
+[Aşama 2: Dağıtılıyor]
+Poll GET /duties/auto-distribute/{jobId} (~1200ms)
+  → Hata: satır içi mesaj + Tekrar Dene
+  → Done: Aşama 3'e geçer
+        ↓
+[Aşama 3: Sonuç]
+DutyGrid önizlemesi + metrikler (atanan/eksik/denge) + ipuçları
+        ↓
+"Geri Dön" → Aşama 1 (yeniden ayarla)
+        ↓
+"Uygula" → apply POST /duties/auto-distribute/{jobId}/apply (→ rosterId)
+        ↓
+[Aşama 4: Uygulandı]
+Toast: "Çizelge taslağa uygulandı" → Drawer kapanır
+        ↓
+Çizelge sekmesi yenilenir (Draft roster görünür)
+        ↓
+Admin ince-ayar (DtaCellMenu) + Yayınla (DtaPublishModal) akışı
+```
+
+---
+
+### i18n Anahtarları (autoDistribute.*)
+
+| Anahtar | TR |
+|---|---|
+| `autoDistribute.cta` | Adil Otomatik Dağıt |
+| `autoDistribute.biweeklyDisabled` | 2 haftada 1 nöbet için otomatik dağıtım desteklenmiyor |
+| `autoDistribute.mode.fromScratch` | Sıfırdan Dağıt |
+| `autoDistribute.mode.fillEmpty` | Boşları Doldur |
+| `autoDistribute.distributing` | Dağıtım hesaplanıyor… |
+| `autoDistribute.result.assigned` | Atanan |
+| `autoDistribute.result.missing` | Eksik |
+| `autoDistribute.result.balance` | Denge |
+| `autoDistribute.applied` | Nöbet çizelgesi taslağa uygulandı |
+
+---
+
 ## Faz 4 / Dilim 2a — Nöbet Çizelgesi (Öğretmen Görünümü)
 
 ### Ekran Lokasyonu
