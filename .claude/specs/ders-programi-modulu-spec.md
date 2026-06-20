@@ -104,6 +104,7 @@ Bir **Sınıf (BranchId) + Dönem (AcademicTermId)** için programın tamamı; `
 
 ### 3.3 Value Objects
 - **`TimeSlot`** = `(DayOfWeek Day, int Period)`. Değere göre eşitlik, immutable. `Period` aralığı school-settings bell schedule'dan türetilir.
+  > **§106 Uygulama notu (2026-06-20):** `Day`, **gerçek `System.DayOfWeek`** semantiğindedir: Pazartesi=1 … Cuma=5 (hafta içi 1–5). Faz 1'den 2026-06-20'ye kadarki implementasyon 0-tabanlı (Pzt=0) `DayOfWeek` kullanıyordu — bu spec'in asıl niyetinden sapmaktı ve off-by-one bug sınıfı yarattı. 2026-06-20 itibarıyla kod + DB migration + FE gerçek `System.DayOfWeek` değerlerine hizalandı (bkz. `gun-konvansiyonu-system-dayofweek-hizalama-design.md`, K-GUN-1..8).
 - **`WeeklyHourRequirement`** = `(Guid SubjectId, int RequiredHours)`. Müfredattan; Faz 1'de stub (§10).
 
 ### 3.4 Çakışma kuralları (specification)

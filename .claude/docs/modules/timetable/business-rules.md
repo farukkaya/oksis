@@ -511,6 +511,23 @@ korunurken çalışma kopyası ayrışır. Rezervasyon değişmez (her iki durum
 
 ---
 
+### BR-TT-DAY-1: Gün Konvansiyonu — Gerçek System.DayOfWeek (HARD)
+
+**Kural:** Tüm program ve nöbet `Day` alanları (`TimeSlot`, `LessonPlacement`, `DutyAssignment`, `AvailabilitySlot`, `ScheduleException`) **gerçek `System.DayOfWeek`** değerleri tutar: Pazartesi=1, Salı=2, Çarşamba=3, Perşembe=4, Cuma=5. Sistem yalnız hafta içi (1–5) destekler; Cmt=6 / Paz=0 program/nöbet gününe atanamaz. Tip `DayOfWeek` olarak kalır; `(DayOfWeek)request.Day` cast'i FE 1-tabanlı değer gönderdiği için semantik doğrudur.
+
+**Görüntü:** Takvim/ızgara Pazartesi-ilk gösterir (sayısal değer 1 ise de ilk sütun Pazartesi). `dayShort[day-1]` / `dayLong[day-1]` indekslemesi kullanılır.
+
+**Sebep:** Gerçek tarih–gün karşılaştırmaları (`date.DayOfWeek == placement.Day`) herhangi bir dönüşüm yardımcısı olmadan doğal doğru çalışır; 0-tabanlı saklama ile gerçek `date.DayOfWeek` (Pzt=1) karşılaştırıldığında doğan off-by-one sınıfını yapısal olarak ortadan kaldırır. Spec §106 `TimeSlot = (DayOfWeek Day, int Period)` zaten `DayOfWeek` yazar; 0-tabanlı hack spec niyetinden sapmaktı.
+
+**Uygulama:**
+- BE: `(DayOfWeek)request.Day` cast doğal doğru (FE Pzt=1 gönderir). Validasyon: 1–5 dışı ret. Solver: `[DayOfWeek.Monday..Friday]` (=1..5).
+- FE: `EDITOR_DAYS`/`DUTY_DAYS` = `[1,2,3,4,5]`; gün dizisi `dayShort[day-1]` ile erişilir; `useDutyContext.today` = JS `getDay()` (Paz=0…Cmt=6, Pzt=1 zaten System ile aynı).
+- DB: `lesson_placements.day`, `duty_assignments.day_of_week`, `schedule_exceptions.day`, `teacher_availability_slots.day_of_week` + `schedule_versions` snapshot JSON `Day` değerleri +1 migration ile kaydırıldı (EF migration `<ts>_align_day_to_system_dayofweek`).
+
+**Tarihçe:** 2026-06-20 — 0-tabanlı (Pzt=0…Cum=4) konvansiyondan hizalandı. Önceki `9d74f5b` 0-tabanlı WorkingDays interim fix'i bu migration ile yerini aldı.
+
+---
+
 ## Tarihsel Notlar
 
 | Tarih | Değişiklik | Sebep |
@@ -707,3 +724,33 @@ Yeni seed/config gerekmez. `GetAvailableSubstitutes` sorgusu `SubstituteCandidat
 **Kural:** `RevokeSubstitution` zaten revoke edilmiş bir exception üzerinde çağrılırsa 409 Conflict döner (404 değil). Bu `RevokeScheduleException` (timetable.override) davranışıyla tutarlıdır.
 
 **Kural tipi:** HARD.
+
+---
+
+## Nöbet Yük Raporu (Faz 4 / Dilim 2d)
+
+Bağlayıcı tasarım: `.claude/specs/ders-programi-faz4-dilim2d-rapor-design.md` (K-2d-1…9). Rapor salt-okunur (K0.6) — yeni veri üretmez.
+
+### BR-Rap-1: Sürüm-doğru toplama (NÖ-10)
+
+**Kural:** Nöbet/yancı, **dönem ∩ her yürürlüğe girmiş çizelge sürümünün** penceresi üzerinden `haftalık × hafta` ile toplanır. Hem **canlı** (Published, `EffectiveTo=null`) hem **geçmiş** (Superseded, `EffectiveTo` set) sürümler sayılır; yalnız hiç yayınlanmamış **Draft** dışlanır. `weeks = ceil(pencere_gün/7)` (tatil-duyarlı incelik Debt). **Kural tipi:** HARD.
+
+### BR-Rap-2: Vekâlet birimi (OQ-rap-002/003 geçici)
+
+**Kural:** `Toplam = nöbet günü + yancı + vekâlet ADEDİ`; saat ayrıca gösterilir. `VekaletHours` = aktif `TeacherSubstitution` exception period sayısı; `VekaletCount` = `(Date, OriginalTeacherId)` olay sayısı (bloklu vekâlet = 1 olay / N saat). `RevokedAt != null` ve pencere-dışı kayıtlar sayılmaz. **Kural tipi:** SOFT (ileride ağırlıklı yük).
+
+### BR-Rap-3: Muafiyet dışlama
+
+**Kural:** Permanent veya pencereyle örtüşen Temporary muafiyeti olan öğretmen yük tablosundan (Rows) **dışlanır**, muafiyet listesinde (`Exemptions`) görünür — sonradan muafiyet eklenmiş, atamalı öğretmen dahil. **Kural tipi:** HARD.
+
+### BR-Rap-4: Yancılık parametresi
+
+**Kural:** `SchoolSettings.DutiesRelieverEnabled` kapalıysa yancı verisi **hiç üretilmez** (gizleme değil): `Yanci=0`, `TotalYanci=0`, yalnız-yancı öğretmen Rows'a girmez, `YancilikEnabled=false`. **Kural tipi:** HARD.
+
+### BR-Rap-5: Self görünüm (IDOR)
+
+**Kural:** `GetMyDutyLoad` yalnız çağıranın kendi satırını + anonim okul ortalamasını döner; başka öğretmenin verisi sızmaz (sunucu-tarafı, `ICurrentUser` self-çözümü). `Over = Diff > 1`. **Kural tipi:** HARD.
+
+### BR-Rap-6: Adalet metrikleri
+
+**Kural:** `Spread = Max − Min`, `Balanced = Spread ≤ 2`. Satır etiketi: `Toplam > round(avg)+1 → hi`, `< round(avg)−1 → lo`, aksi `ok`. **Kural tipi:** HARD (görsel/adalet).

@@ -253,6 +253,30 @@ ix_duty_assignments_teacher  (school_id, academic_term_id, teacher_id)
 
 > **Sapma K-2a-3 (onaylı):** Teknik analiz orijinal olarak tek-nöbetçi (school,term,day,location) unique index öngörmüştü. Uygulanan model roster + öğretmen sütununu ekleyerek (school,term,roster,day,location,teacher) + aggregate count ≤ Capacity kombinasyonu kullanır; bu K-2a-3 binding kararıdır. Bkz. completion_status.md ⚠️ sapma kaydı.
 
+### `duty_distribution_jobs` (Faz 4/Dilim 2c — otomatik dağıtım işi)
+
+Otomatik nöbet dağıtımının (öner≠uygula) durum + sonuç deposu. `[academic]` şeması.
+
+| Kolon | Tip | Not |
+|---|---|---|
+| `id` | uniqueidentifier PK | jobId |
+| `school_id` | uniqueidentifier | tenant, immutable |
+| `academic_year_id`, `academic_term_id` | uniqueidentifier NOT NULL | iş bir döneme bağlı |
+| `status` | int NOT NULL | 0=Queued, 1=Running, 2=Done, 3=Failed |
+| `mode` | int NOT NULL | 0=FromScratch (sıfırdan), 1=FillEmpty (yalnız boş hücreleri doldur) |
+| `result_json` | nvarchar(max) NULL | solver çıktısı — `DutySolveResult` serileştirilmiş (Done olunca dolu) |
+| `hints_json` | nvarchar(max) NULL | çözüm ipuçları (eksik hücreler, feasibility uyarıları) |
+| + audit (`created_at/by`, `is_deleted`, `row_version`) | | |
+
+```
+ix_duty_distribution_jobs_school_term
+  (school_id, academic_term_id, created_at DESC)
+  WHERE is_deleted = 0
+```
+
+> **Amaç:** Dönem başına en güncel iş sorgusunu (DA2) hızlandırır. `result_json`/`hints_json` `nvarchar(max)` — JSON geçerliliği EF Json serializatörü tarafından sağlanır.
+> Migration: `20260620_add_duty_distribution_jobs`.
+
 ---
 
 ### SchoolSettings Nöbet Kolonu Eklentileri (Faz 4/Dilim 2a)
