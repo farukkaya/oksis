@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + FE handoff stillemesi tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE + FE tamam** · **Faz 4/Dilim-2b Vekâlet BE tamam** · **Faz 4/Dilim-2b Vekâlet FE tamam** · **Editör Vekil modalı handoff zenginleştirmesi (2.5C rafine) tamam** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-20
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100 (Faz 2 tamam · Faz 3 Dilim-1 + Dilim-2 çok-sınıf tamam · Faz 4/Dilim-1 Müsaitlik & Tercih backend + FE handoff stillemesi tamam · **Faz 4/Dilim-2a Nöbet Çizelgesi BE + FE tamam** · **Faz 4/Dilim-2b Vekâlet BE tamam** · **Faz 4/Dilim-2b Vekâlet FE tamam** · **Editör Vekil modalı handoff zenginleştirmesi (2.5C rafine) tamam** · **Faz 4/Dilim-2c Otomatik Dağıtım BE tamam (FE bekleniyor)** · **Debt-AG-1 KAPANDI**)   ·   Status: in-progress   ·   Güncel: 2026-06-20
 
 > Temel: Doküman tam, `Room` dilimi var. **2026-06-12:** Modülün tamamı için
 > bağlayıcı spec yazıldı (`.claude/specs/ders-programi-modulu-spec.md`) — faz
@@ -500,6 +500,15 @@
   - **Bildirim:** `DutyRosterPublishedEvent` → `DutyNotificationHandler` → `INotificationEnqueuer` (Hangfire) → dispatch pipeline (timetable Faz 2.6 deseni). `DutyNotificationContent` hardcoded Türkçe (Debt-N2 deseni, i18n ertelendi). Alıcı resolution öğretmen başına N sorgu (Debt — post-MVP optimizasyon).
   - **Testler:** Domain 41 unit (DutyLocationTests 5, DutyExemptionTests 8, DutyRosterTests 28); Application 59 unit (komut + sorgu handler'lar); Integration 3 (DutyRosterIndexTest: tek-canlı backstop, DutyAssignmentIndexTest: teacher-cell unique, DutyAssignmentCapacityTest: aggregate count+index combo). **Full suite:** build 0 hata; Oksis.Domain 395 / Oksis.Api 133 / Oksis.Application 1012 / Oksis.Tests 28 geçti / Oksis.Infrastructure.IntegrationTests 228. (**1 test başarısız — bkz. ⏳ Debt-T1 ve ⚠️ sapma #1 altında**)
 
+- **Faz 4/Dilim-2c Nöbet Otomatik Dağıtım — BE (2026-06-20):**
+  - **Domain:** `DutyDistributionJob` entity (`TenantEntity`; Status/Mode int; `ResultJson`/`HintsJson` nvarchar; strongly-typed `DutyDistributionJobId`). `[academic].duty_distribution_jobs` tablosu + filtreli index `(school_id, academic_term_id, created_at DESC) WHERE is_deleted=0`. Migration `20260620_add_duty_distribution_jobs`.
+  - **Solver (saf, Application):** `IDutySolver`/`DutySolver` — coverage-first (her aktif hücreye ≥1 nöbetçi) + surplus (kapasite üst sınırına K-2c-2) + reliever geçişi + fairness scoring. `DutyFeasibility`: hard kısıtlar — muafiyet pre-filtresi (Permanent her zaman + Temporary `CoversDay` — K-2c-7), INV-D2 gün-tekilliği, kapasite tavan K-2c-2, Unavailable-gün K-2c-6 (gün-bazlı MVP eşlemesi — ⚠️ sapma kaydına bak), reliever INV-D4. `DutyFairnessScorer`: öğretmen başına yük + varyans.
+  - **CQRS (3 dilim):** `EnqueueAutoDistributeDuty` (biweekly reddeder — `duties.errors.auto-distribute-biweekly-unsupported`; job oluşturur + kuyruğa alır), `GetAutoDistributeDutyStatus` (poll), `ApplyAutoDistributeDuty` (FromScratch/FillEmpty → DutyRoster Draft; `duties.errors.distribution-not-ready` / `duties.errors.distribution-job-not-found`).
+  - **Hangfire (`AutoDistributeDutyJob`):** Girdileri toplar (bölge/muafiyet/havuz/müsaitlik-gün/yancı-meşguliyet/politika/pinned) → çözer → `ResultJson`/`HintsJson` saklar.
+  - **API (3 endpoint — `duties.manage`):** `POST /api/v1/duties/auto-distribute` (→jobId), `GET .../auto-distribute/{jobId}`, `POST .../auto-distribute/{jobId}/apply` (→rosterId). Bkz. api-contracts.md § Nöbet Otomatik Dağıtım.
+  - **Testler:** Domain 5 unit (`DutyDistributionJob`); Application — `DutyFeasibility` 7 + `DutyFairnessScorer` 2 + `DutySolver` 8 + validator/handler unit'ler; Integration 3 (apply — `FromScratch`/`FillEmpty`/idempotency). **Full suite:** ~1888 test yeşil / 0 başarısız.
+  - **Kapsam notu:** FE (hub tetikleyici + sonuç görünümü + uygula akışı) ayrı plandır — henüz yapılmadı.
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
@@ -608,7 +617,12 @@
 - **Debt-D5 (2nd-save rollback test):** `PublishDutyRoster` 2nd-save `DbUpdateException` rollback yolu otomatik testsiz (EF interceptor mock gerektirir; kod yolu okunarak doğrulandı).
 - **Debt-D6 (alıcı resolution N+1):** Notification recipient resolution öğretmen başına N sorgu (post-MVP batch optimizasyon).
 - **Debt-D7 (Dilim 2b — vekalet) — ✅ KAPANDI (2026-06-19, Faz 4/Dilim-2b):** `duties.substitute` izni 6 endpoint ile etkinleştirildi. Bkz. yukarıdaki ✅ Faz 4/Dilim-2b girdisi.
-- **Debt-D8 (Dilim 2c — auto-distribute):** `DutyWeeklyFrequency` + `DutyDayPattern` policy 2a'da inert; 2c solver girdisi olacak.
+- **Debt-D8 (Dilim 2c — auto-distribute) — ✅ KAPANDI (2026-06-20, Faz 4/Dilim-2c):** `DutyWeeklyFrequency` + `DutyDayPattern` policy 2c solver girdisi olarak bağlandı; `EnqueueAutoDistributeDuty` handler politikayı `AutoDistributeDutyJob`'a taşır.
+- **Debt-2c-1 (biweekly kapsam dışı):** `weeklyFrequency=OnceEveryTwoWeeks` iken `EnqueueAutoDistributeDuty` `duties.errors.auto-distribute-biweekly-unsupported` ile reddeder. Biweekly dağıtım solver'a eklenmedi; ertelendi.
+- **Debt-2c-2 (greedy heuristik solver):** `DutySolver` coverage-first + surplus greedy; OR-Tools / LP optimizasyonu `IDutySolver` portu arkasına eklenebilir (özellikle büyük kadro/çok bölge için).
+- **Debt-2c-3 (tek öneri):** Solver tek sonuç döner; birden çok aday (A/B/C seçimi) yok (K-2c-8 "tek öneri" spec maddesi — bilinçli MVP sınırı).
+- **Debt-2c-4 (muafiyet kapsam notu):** Permanent muafiyet her zaman elenir. Temporary `CoversDay` (tarih-bazlı) de elenir — solver **tarih-farkındalıklı** (2a `GetAvailableRelievers`'dan farklı). Yalnız `CoversDay=false` Temporary muafiyeti elenmez (davranış bilinçli; 2a tasarımıyla tutarlı).
+- **Debt-2c-FE (FE henüz yok):** Hub tetikleyicisi + sonuç görünümü (durum poll + ipuçları) + uygula akışı FE ayrı planda; bu dilim yalnız BE.
 - **Debt-BE-Vek-1 (orphaned subject BranchFit):** `Subject.Category` `GetValueOrDefault` → Language tier için yanlış pozitif BranchFit farklılıkları üretebilir; explicit Different-tier assertion içeren test eksik. Post-MVP refinement.
 - **Debt-BE-Vek-2 (P28 yayın filtresi yok):** `GetAvailableTeachers` (P28, Faz 2.5B redesign) hâlâ Published/Revising filtresi içermiyor — pre-existing, 2b kapsamı dışı.
 - **Debt-BE-Vek-3 (teacher view read-only):** Öğretmen itiraz akışı (K-2b-7) ertelendi; `GetMySubstitutions` salt-okunur. `schedule_requests` diliminde tamamlanacak.
@@ -617,6 +631,7 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-20 — **K-2c-6 (müsaitlik gün-eşlemesi MVP basitleştirmesi):** Spec K-2c-6 period-bazlı `Unavailable` kısıt öngörür; solver girdisinde "herhangi bir period `Unavailable` olan gün → tüm gün engel" eşlemesi kullanıldı (period→gün granülerlik; implementasyona bırakıldı, design'da onaylı). Etki: period-bazlı kısmi müsaitlik (örn. yalnız 1. period Unavailable) fazla-kısıtlayıcı olabilir. Post-MVP: period-bazlı eşleme `DutyFeasibility` içinde genişletilebilir. Onay: kullanıcı 2026-06-20.
 - 2026-06-19 — **K-2a-2 (bağlayıcı karar): Müsaitlik (Dilim 1) nöbet/yancıya HİÇ girdi değil.** Teknik analiz §3.4 ve §8.2'nin "müsaitlik girdi" maddeleri geçersiz. `Unavailable` slotu olan ama o günde başka görevi olmayan öğretmen yancı adayı olabilir. `GetAvailableRelievers` müsaitlik tablosunu hiç sorgulamaz. **FE sonucu:** `DtaCellMenu` + yancı seçici UI'da müsaitlik rengi/uyarısı gösterilmez; `TeacherDutyPage`'de müsaitlik satırı yoktur. Onay: kullanıcı 2026-06-19.
 - 2026-06-19 — **K-2a-5 (bağlayıcı karar — FE gating): `relieverEnabled=false` iken tüm yancı UI öğeleri gizlenir.** Tasarım handoff'unda yancı bileşenleri her zaman görünür; spec K-2a-5 "yancılık kapalıysa UI'dan da kaldır" kararıyla override edildi. **FE sonucu:** `DutyGrid` yancı alt-satırı, `FairnessPanel` yancı sütunu, `DutySummaryBar` yancı legend satırı, `TeacherDutyPage` yancı sayacı + yancı item'lar `relieverEnabled` flag'ine koşulludur. `PolitikaTab`'daki toggle sunucu verisini yönetir. Onay: kullanıcı 2026-06-19.
 - 2026-06-19 — **K-2a-3 (bağlayıcı karar): Kapasite-farkındalıklı index seçildi.** Teknik analiz tek-nöbetçi `(school,term,day,location)` unique index öngörüyordu; uygulanan model `(school,term,roster,day,location,teacher)` filtreli unique + aggregate `count ≤ Capacity` kombinasyonu. Çok-nöbetçi (kapasite>1) bölgeleri destekler. Onay: kullanıcı 2026-06-19.

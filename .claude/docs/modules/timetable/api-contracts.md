@@ -220,6 +220,59 @@ Base route: `/api/v1/duties/substitution` · Controller: `SubstitutionController
 
 ---
 
+### Nöbet Otomatik Dağıtım (Faz 4/Dilim 2c — ✅ BE canlı kontrat)
+
+Base route: `/api/v1/duties` · Controller: `DutiesController` · Tüm endpoint'ler `[Authorize]`.
+İzin: `duties.manage` (okuma + uygulama dahil).
+
+| # | Method | Path | Permission | Amaç | Success |
+|---|---|---|---|---|---|
+| DA1 | POST | `/api/v1/duties/auto-distribute` | `duties.manage` | Otomatik dağıtım işini kuyruğa al → `jobId` | 202 |
+| DA2 | GET | `/api/v1/duties/auto-distribute/{jobId:guid}` | `duties.manage` | İş durumunu sorgula (poll) | 200 / 404 |
+| DA3 | POST | `/api/v1/duties/auto-distribute/{jobId:guid}/apply` | `duties.manage` | Öneriyi DutyRoster Draft'ına uygula → `rosterId` | 200 / 404 / 409 |
+
+**Akış (öner ≠ uygula):** DA1 ile bir `DutyDistributionJob` oluşturulur + Hangfire'a kuyruğa alınır → DA2 ile durum poll edilir → `Done` olunca DA3 ile Draft'a uygulanır; admin ince-ayar yapıp ayrıca yayınlar.
+
+**DA1 request/response:**
+```json
+// Request body
+{ "academicYearId": "...", "academicTermId": "...", "mode": "FromScratch" }
+// mode: "FromScratch" (sıfırdan) | "FillEmpty" (yalnız boş hücreleri doldur)
+// Response 202
+{ "data": { "jobId": "..." } }
+```
+
+**DA2 response:**
+```json
+{
+  "data": {
+    "jobId": "...",
+    "status": "Done",
+    "mode": "FromScratch",
+    "hintsJson": null,
+    "failureReason": null
+  }
+}
+```
+`status`: `Queued` | `Running` | `Done` | `Failed`.
+
+**DA3 request/response:**
+```json
+// Request body: (gövdesiz — jobId path'ten)
+// Response 200
+{ "data": { "rosterId": "..." } }
+```
+
+**Hata Kodları:**
+- `duties.errors.auto-distribute-biweekly-unsupported` — `weeklyFrequency=OnceEveryTwoWeeks` iken (422); biweekly kapsam dışı.
+- `duties.errors.distribution-not-ready` — Job `Done` durumunda değilken apply çağrısı (409).
+- `duties.errors.distribution-job-not-found` — `jobId` bulunamadı veya tenant uyuşmazlığı (404).
+
+**Hangfire iş detayı (`AutoDistributeDutyJob`):**
+Girdiler: bölge + kapasite, muafiyet (Permanent her zaman + Temporary `CoversDay=true`), öğretmen havuzu, müsaitlik (gün-bazlı: o günde herhangi bir `Unavailable` period → tüm gün engel — K-2c-6 uygulama basitleştirmesi), yancı meşguliyeti (öğle), nöbet politikası, pinned (FillEmpty modunda mevcut atamalar). Solver çıktısı `ResultJson`'a, ipuçları `HintsJson`'a kaydedilir.
+
+---
+
 **DTO özetleri:**
 
 - **D1 response:** `DutyLocationDto { id, name, type, icon, capacity, isActive }[]`.
