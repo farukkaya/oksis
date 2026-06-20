@@ -724,3 +724,33 @@ Yeni seed/config gerekmez. `GetAvailableSubstitutes` sorgusu `SubstituteCandidat
 **Kural:** `RevokeSubstitution` zaten revoke edilmiş bir exception üzerinde çağrılırsa 409 Conflict döner (404 değil). Bu `RevokeScheduleException` (timetable.override) davranışıyla tutarlıdır.
 
 **Kural tipi:** HARD.
+
+---
+
+## Nöbet Yük Raporu (Faz 4 / Dilim 2d)
+
+Bağlayıcı tasarım: `.claude/specs/ders-programi-faz4-dilim2d-rapor-design.md` (K-2d-1…9). Rapor salt-okunur (K0.6) — yeni veri üretmez.
+
+### BR-Rap-1: Sürüm-doğru toplama (NÖ-10)
+
+**Kural:** Nöbet/yancı, **dönem ∩ her yürürlüğe girmiş çizelge sürümünün** penceresi üzerinden `haftalık × hafta` ile toplanır. Hem **canlı** (Published, `EffectiveTo=null`) hem **geçmiş** (Superseded, `EffectiveTo` set) sürümler sayılır; yalnız hiç yayınlanmamış **Draft** dışlanır. `weeks = ceil(pencere_gün/7)` (tatil-duyarlı incelik Debt). **Kural tipi:** HARD.
+
+### BR-Rap-2: Vekâlet birimi (OQ-rap-002/003 geçici)
+
+**Kural:** `Toplam = nöbet günü + yancı + vekâlet ADEDİ`; saat ayrıca gösterilir. `VekaletHours` = aktif `TeacherSubstitution` exception period sayısı; `VekaletCount` = `(Date, OriginalTeacherId)` olay sayısı (bloklu vekâlet = 1 olay / N saat). `RevokedAt != null` ve pencere-dışı kayıtlar sayılmaz. **Kural tipi:** SOFT (ileride ağırlıklı yük).
+
+### BR-Rap-3: Muafiyet dışlama
+
+**Kural:** Permanent veya pencereyle örtüşen Temporary muafiyeti olan öğretmen yük tablosundan (Rows) **dışlanır**, muafiyet listesinde (`Exemptions`) görünür — sonradan muafiyet eklenmiş, atamalı öğretmen dahil. **Kural tipi:** HARD.
+
+### BR-Rap-4: Yancılık parametresi
+
+**Kural:** `SchoolSettings.DutiesRelieverEnabled` kapalıysa yancı verisi **hiç üretilmez** (gizleme değil): `Yanci=0`, `TotalYanci=0`, yalnız-yancı öğretmen Rows'a girmez, `YancilikEnabled=false`. **Kural tipi:** HARD.
+
+### BR-Rap-5: Self görünüm (IDOR)
+
+**Kural:** `GetMyDutyLoad` yalnız çağıranın kendi satırını + anonim okul ortalamasını döner; başka öğretmenin verisi sızmaz (sunucu-tarafı, `ICurrentUser` self-çözümü). `Over = Diff > 1`. **Kural tipi:** HARD.
+
+### BR-Rap-6: Adalet metrikleri
+
+**Kural:** `Spread = Max − Min`, `Balanced = Spread ≤ 2`. Satır etiketi: `Toplam > round(avg)+1 → hi`, `< round(avg)−1 → lo`, aksi `ok`. **Kural tipi:** HARD (görsel/adalet).

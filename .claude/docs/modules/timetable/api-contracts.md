@@ -918,3 +918,25 @@ Handler `IScheduleAccessPolicy` üzerinden çözer; query expression'a otomatik 
 - ❌ `validate` çağrısı yapmadan bulk import tetiklemek (handler kendi içinde validate ediyor — UI önce göstermek için kullanır).
 
 > Detay: `backend/api-design-rules.md`.
+
+---
+
+## Nöbet Yük Raporu (Faz 4 / Dilim 2d) — salt-okunur
+
+Bağlayıcı tasarım: `.claude/specs/ders-programi-faz4-dilim2d-rapor-design.md`. Rota tabanı `/api/v1/duties`.
+
+| Uç | İzin | İşlev |
+|---|---|---|
+| `GET /duties/load-report?termId=&from=&to=` | `duties.view-load` | Yönetici tam yük raporu (sürüm-doğru NÖ-10) → `DutyLoadReportDto` |
+| `GET /duties/load-report/me?termId=&from=&to=` | `duties.view` (self) | Öğretmen kendi yükü + anonim okul ortalaması → `MyDutyLoadDto` |
+
+- `from`/`to` opsiyonel → verilmezse dönemin `StartDate`/`EndDate`'i. Dönem bulunamazsa **404**.
+- Yönetici uç `[Cacheable(120s, key=duties:load-report:{TermId}:{From}:{To}]`. Self uç cache'siz; yalnız çağıranın satırı + ortalama (IDOR-safe, sunucu-tarafı).
+- Yancılık `SchoolSettings.DutiesRelieverEnabled`'dan çözülür (parametre değil); kapalıysa yancı alanları 0 + `YancilikEnabled=false`.
+
+**DTO'lar** (`Modules/Duties/DTOs/DutyDtos.cs`): `DutyLoadReportDto`, `DutyLoadRowDto` (Nobet/Yanci/VekaletCount/VekaletHours/Toplam/LoadTag + VekDetail), `SubstitutionItemDto`, `RosterVersionRefDto`, `DutyLoadExemptionDto`, `MyDutyLoadDto`.
+
+**Yapma:**
+- ❌ Self uçtan başka öğretmenin satırını döndürmek (yalnız `Me` + anonim ortalama).
+- ❌ Yancılık kapalıyken yancı verisi üretmek (gizleme değil — hiç üretilmez).
+- ❌ Export uçları (Excel/PDF) — bu turda ertelendi (Debt-2d-EXPORT).
