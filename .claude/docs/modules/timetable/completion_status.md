@@ -542,6 +542,48 @@
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
+### 🎯 Faz 5 / Kapanış (planlı — 2026-06-20)
+
+> Faz 0–4 çekirdeği %100. Faz 5 **yeni özellik açmaz**; mevcut açık uçları + Debt'leri
+> kapatıp operasyonel olgunluğa taşıyan bir kapanış fazıdır. Aşağıdaki kalemler önceki
+> tek tek Debt kayıtlarının bir **roll-up**'ı + henüz hiç izlenmemiş 4 açık uçtur.
+> Öncelik sırası: 5-1 → 5-2 → 5-0/5-3 → 5-4 → 5-5. Onay akışı kapsam dışı (→ V2, mvp-guard 2026-06-20).
+
+- **Dilim 5-0 — Editör "Öğretmen Görünümü" (salt-okunur mercek) — ✅ TAMAMLANDI (FE-only, 2026-06-20, branch `dersprog`):**
+  Editör toolbar'ındaki **Öğretmen görünümü** toggle'ı etkinleştirildi (önceki `disabled title={soonPhase2}`
+  kaldırıldı). Açık olan **tek programın** seçilen öğretmen gözünden **salt-okunur önizlemesi**: öğretmen seçici +
+  "Salt-okunur · {sınıf} merceği" rozeti + salt-okunur grid. Bu programdaki dersler detaylı (ders+sınıf+derslik);
+  öğretmen başka sınıfta meşgulse **"Başka sınıf"** işareti (zaten yüklü `externalOccupancy`/P29'dan). Çalışma
+  tamponunu yansıtır (kaydedilmemiş değişiklikler önizlemede görünür). **Yeni BE YOK** (design D2 — önceki
+  "5-0.1 (BE) yeni query" notu geçersiz; tüm veri client'ta).
+  - Dosyalar: `editor/lib/teacherView.ts` (saf `deriveTeacherView`+`distinctTeachers`), `editor/components/TeacherPreviewGrid.tsx`,
+    `editor/components/TeacherViewPanel.tsx`, `EditorToolbar.tsx` (toggle), `ScheduleEditorPage.tsx` (entegrasyon),
+    `timetable.json` tr/en (`editor.teacherPreview.*`), `editor.css`. Spec: `ders-programi-faz5-dilim0-ogretmen-gorunumu-design.md`,
+    plan: `…-plan-fe.md`. Test: 10 yeni vitest (saf 7 + grid 1 + panel 2 + toolbar 1) yeşil; `npm run build` temiz; `src/portals` 802 yeşil.
+  - Kapsam dışı (design §6): çok-sınıf holistik öğretmen-haftası, öğretmen görünümünden düzenleme, "Başka sınıf" detayı.
+- **Dilim 5-1 — Bildirim dayanıklılığı (🔴 önce):** **Debt-N1** (crash-safe Outbox/exactly-once) +
+  **Debt-N3** (quiet hours 22:00–07:00 + Redis cooldown). (Debt-N2 = FCM/email mobil tier'a bağlı, ayrı tutulur.)
+- **Dilim 5-2 — Veri tutarlılığı & solver doğruluğu (🟠):** **Debt-BE-7** (restore'da Redis occupancy senkronu) +
+  **Debt-BE-5** (aynı tarihte vekil-vekil çakışması — P28 müsaitlik hesabı) + **Debt-BE-Vek-1** (BranchFit
+  `Subject.Category` yanlış-pozitif). *(Not: ConflictCount/MissingHours recompute zaten var —
+  `IScheduleProgramStatsRecomputer`; Faz 5 kapsamı değil.)*
+- **Dilim 5-3 — Nöbet paritesi (🟠):**
+  - **5-3.1 [YENİ]:** Nöbet için **öğretmen müsaitlik defteri** (ders programındaki `TeacherAvailability`
+    muadili) → `DutySolver` girdisi (solver şu an müsaitliği gün-bazlı no-op işliyor).
+  - **5-3.2 [doğrulanacak]:** Nöbet tarafı publish-swap / revision paritesi (ders programındaki K10 muadili) —
+    `DutyRoster` Draft/Published/Revising durumları var; canlı-tekillik/swap mekanizmasının varlığı teyit edilecek.
+- **Dilim 5-4 — Operasyon & yönetim uçları (🟡):**
+  - **5-4.1 [YENİ]:** Zil çizelgesi (BellSchedule) yönetim API'ı + izin (şu an `IBellScheduleProvider` var,
+    yalnız seed/migration ile giriliyor; yönetici ekranı/uç yok).
+  - **5-4.2 [YENİ]:** Constraint-relaxation UI — solver `RelaxationHints`/`DutyRelaxationHint` üretiyor ama
+    kullanıcıya rehberlik gösterilmiyor (FE).
+  - **5-4.3:** **Debt-AG-8** — Apply'da blok üretimini aç (`IsBlock=true`).
+- **Dilim 5-5 — Kapanış & hijyen (⚪ son):** README `Owner: {{TBD}}` ata; açık sorular (OQ-001..007)
+  "Faz 5 dışı, ürün kararı" işaretle; kapanan Debt'leri ✅'e taşı.
+- **V2 backlog (Faz 5 dışı):** Yayın onay (approval) workflow — submit→approve→reject + `PendingApproval`
+  durumu + `timetable.approve` izni, okul-bazlı parametrik. mvp-guard (2026-06-20): spec'te tanımlı borç değil,
+  yeni özellik; operasyon onsuz yürüyor, manuel alternatifi var → V2.
+
 - `rooms.*` özel izinleri (şimdilik rooms uçları `class-rooms.view/update` ile korunuyor — aşağıdaki sapma kaydı).
 - **Debt-BE-8 (silme bildirimi) — ✅ KAPANDI (2026-06-15, Faz 2.6):** `ScheduleProgramDeletedEvent` artık
   şube tüketicilerine in-app+SignalR bildirim dağıtır (kind TimetableProgramDeleted; key
