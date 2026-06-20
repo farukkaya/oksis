@@ -4,6 +4,8 @@
 
 **Hedef:** Tüm program/nöbet gün değerleri 0-tabanlı (Pzt=0) → gerçek `System.DayOfWeek` (Pzt=1..Cum=5). Kod + DB veri migration (snapshot JSON dahil) + FE. Off-by-one yapısal olarak biter.
 
+**Durum (2026-06-20):** Faz 0–4 tamamlandı (uncommitted, final doğrulama + commit bekliyor). Ertelenen: BE 1–5 giriş validasyon hardening (Debt-GUN-1).
+
 **Atomiklik (K-GUN-8):** Tüm fazlar tek branch'te (`dersprog`) ardışık; yarıda bırakılırsa veri+kod tutarsız. Migration en sona yakın ama kod-öncesi seed'lerle test edilir.
 
 ---

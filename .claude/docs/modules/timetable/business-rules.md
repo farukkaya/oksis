@@ -511,6 +511,23 @@ korunurken çalışma kopyası ayrışır. Rezervasyon değişmez (her iki durum
 
 ---
 
+### BR-TT-DAY-1: Gün Konvansiyonu — Gerçek System.DayOfWeek (HARD)
+
+**Kural:** Tüm program ve nöbet `Day` alanları (`TimeSlot`, `LessonPlacement`, `DutyAssignment`, `AvailabilitySlot`, `ScheduleException`) **gerçek `System.DayOfWeek`** değerleri tutar: Pazartesi=1, Salı=2, Çarşamba=3, Perşembe=4, Cuma=5. Sistem yalnız hafta içi (1–5) destekler; Cmt=6 / Paz=0 program/nöbet gününe atanamaz. Tip `DayOfWeek` olarak kalır; `(DayOfWeek)request.Day` cast'i FE 1-tabanlı değer gönderdiği için semantik doğrudur.
+
+**Görüntü:** Takvim/ızgara Pazartesi-ilk gösterir (sayısal değer 1 ise de ilk sütun Pazartesi). `dayShort[day-1]` / `dayLong[day-1]` indekslemesi kullanılır.
+
+**Sebep:** Gerçek tarih–gün karşılaştırmaları (`date.DayOfWeek == placement.Day`) herhangi bir dönüşüm yardımcısı olmadan doğal doğru çalışır; 0-tabanlı saklama ile gerçek `date.DayOfWeek` (Pzt=1) karşılaştırıldığında doğan off-by-one sınıfını yapısal olarak ortadan kaldırır. Spec §106 `TimeSlot = (DayOfWeek Day, int Period)` zaten `DayOfWeek` yazar; 0-tabanlı hack spec niyetinden sapmaktı.
+
+**Uygulama:**
+- BE: `(DayOfWeek)request.Day` cast doğal doğru (FE Pzt=1 gönderir). Validasyon: 1–5 dışı ret. Solver: `[DayOfWeek.Monday..Friday]` (=1..5).
+- FE: `EDITOR_DAYS`/`DUTY_DAYS` = `[1,2,3,4,5]`; gün dizisi `dayShort[day-1]` ile erişilir; `useDutyContext.today` = JS `getDay()` (Paz=0…Cmt=6, Pzt=1 zaten System ile aynı).
+- DB: `lesson_placements.day`, `duty_assignments.day_of_week`, `schedule_exceptions.day`, `teacher_availability_slots.day_of_week` + `schedule_versions` snapshot JSON `Day` değerleri +1 migration ile kaydırıldı (EF migration `<ts>_align_day_to_system_dayofweek`).
+
+**Tarihçe:** 2026-06-20 — 0-tabanlı (Pzt=0…Cum=4) konvansiyondan hizalandı. Önceki `9d74f5b` 0-tabanlı WorkingDays interim fix'i bu migration ile yerini aldı.
+
+---
+
 ## Tarihsel Notlar
 
 | Tarih | Değişiklik | Sebep |

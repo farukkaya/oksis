@@ -1,6 +1,6 @@
 # Gün Konvansiyonu — System.DayOfWeek Hizalaması (Timetable + Duties) Tasarımı
 
-**Durum:** Karar onaylandı (kullanıcı 2026-06-20) — tüm yapı `System.DayOfWeek`'e hizalanacak, DB migration dahil.
+**Durum:** Faz 0–3 tamamlandı (2026-06-20) — BE solver flip + DB migration (+1 incl. snapshot JSON) + FE flip (~20 dosya) uygulandı; uncommitted, final doğrulama + commit bekliyor. Faz 4 (doküman) tamamlandı. BE 1–5 giriş validasyon hardening ertelendi (Debt-GUN-1).
 **Tarih:** 2026-06-20
 **İlgili bağlayıcı spec:** `.claude/specs/ders-programi-modulu-spec.md` (§106 `TimeSlot = (DayOfWeek Day, int Period)`). **Bu hizalama spec ile ÇELİŞMEZ** — spec zaten `DayOfWeek` der; mevcut 0-tabanlı hack spec'in asıl niyetinden sapmıştı, bu iş onu geri getirir (Rule #6 sorunu yok).
 **Kapsam:** Cross-module — `timetable` + `Duties` (oksis-api) + oksis-web + DB veri migration'ı.

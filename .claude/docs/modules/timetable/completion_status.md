@@ -274,6 +274,13 @@
   - **Coexistence:** Hücre menüsü artık `useTempChanges` tepsisini besler; **PublishDrawer + `useTempActions`
     + testleri dokunulmadan korundu** (bağımsız; kullanıcı onaylı tasarım). `permLocked = tc.hasTemp`.
   - **Test/Build:** Tam web paketi **765 vitest yeşil** (+1 skip), 165 dosya; `npm run build` temiz.
+- **Gün Konvansiyonu — System.DayOfWeek Hizalaması (2026-06-20 — Faz 0–3 tamamlandı, uncommitted):**
+  - **3 off-by-one bug sınıfı giderildi:** (1) `ScheduleException` INV-E2 — Pazartesi istisnası oluşturulamıyordu (`date.DayOfWeek=1` vs `stored day=0`); (2) `PublishedScheduleQueryHandler` "bugün" — yanlış gün / boş dersler; (3) Vekâlet board (`GetTodaysSubstitutionBoard`/`GetAvailableSubstitutes`) Pazartesi kaymış.
+  - **BE solver flip (K-GUN-6):** `AutoDistributeDutyJob.WorkingDays` + `AutoGenerateScheduleJob.BuildWeekGrid` → doğal `[DayOfWeek.Monday..Friday]` (=1..5). `9d74f5b` interim 0-tabanlı WorkingDays fix'i reverted.
+  - **DB migration (+1 incl. snapshot JSON):** `lesson_placements.day`, `duty_assignments.day_of_week`, `schedule_exceptions.day`, `teacher_availability_slots.day_of_week` + `schedule_versions` snapshot JSON `Day` değerleri tümü +1 kaydırıldı (idempotent, `Down()` −1 yazılı).
+  - **FE flip (~20 dosya):** `EDITOR_DAYS`/`DUTY_DAYS`/`WEEK_DAYS`/`AVAILABILITY_DAYS` → `[1..5]`; `dayShort[day-1]`/`dayLong[day-1]` indeksleme disiplini uygulandı; `useDutyContext.today` native `getDay()` kullandı (JS Pzt=1 = System).
+  - **Ertelenen (follow-up):** BE 1–5 giriş validasyonunun tüm `(DayOfWeek)request.Day` cast sahalarına (13 site) eklenmesi tamamlanmadı — Debt olarak kayıt altına alındı.
+  - Tasarım: `gun-konvansiyonu-system-dayofweek-hizalama-design.md`. Plan: `gun-konvansiyonu-system-dayofweek-hizalama-plan.md`.
 - **Editör Vekil modalı handoff zenginleştirmesi (2.5C rafine) — FE (2026-06-20):**
   - **Kaynak:** `schedule_temp_changes.jsx`/`.css` handoff'unun `SubstituteFlow` bölümü birebir portlandı (Claude Design
     projeleri boştu → yerel handoff kaynağı kullanıldı). İlk 2.5C portu sade bırakılan 3 zengin parça tamamlandı.
@@ -639,6 +646,8 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- 2026-06-20 — **0-tabanlı gün konvansiyonu → System.DayOfWeek hizalaması (spec §106 re-align):** Sistem Faz 1'den beri günü 0-tabanlı (Pzt=0…Cum=4) `DayOfWeek` alanında saklıyordu — spec §106 `TimeSlot.Day: DayOfWeek` zaten gerçek semantiği imliyordu. Bu, gerçek tarih–gün karşılaştırmalarında off-by-one sapmasıydı; 2026-06-20 migration + kod + FE değişiklikleriyle **spec §106 asıl niyetine hizalandı** (deviation değil, correction). `gun-konvansiyonu-system-dayofweek-hizalama-design.md` K-GUN-1..8. Onay: kullanıcı 2026-06-20.
+- 2026-06-20 — **Debt-GUN-1 (BE 1–5 input validasyon hardening ertelendi):** 13 `(DayOfWeek)request.Day` cast sahasına hafta içi 1–5 FluentValidation kuralı eklenmedi. Cast sonucu `DayOfWeek` tipi EF tarafından int olarak saklandığı için 0 veya 6 gönderilirse sessizce geçer. Post-MVP follow-up: her cast sahasına `Must(d => d >= 1 && d <= 5)` validasyonu.
 - 2026-06-20 — **K-2c-6 (müsaitlik gün-eşlemesi MVP basitleştirmesi):** Spec K-2c-6 period-bazlı `Unavailable` kısıt öngörür; solver girdisinde "herhangi bir period `Unavailable` olan gün → tüm gün engel" eşlemesi kullanıldı (period→gün granülerlik; implementasyona bırakıldı, design'da onaylı). Etki: period-bazlı kısmi müsaitlik (örn. yalnız 1. period Unavailable) fazla-kısıtlayıcı olabilir. Post-MVP: period-bazlı eşleme `DutyFeasibility` içinde genişletilebilir. Onay: kullanıcı 2026-06-20.
 - 2026-06-19 — **K-2a-2 (bağlayıcı karar): Müsaitlik (Dilim 1) nöbet/yancıya HİÇ girdi değil.** Teknik analiz §3.4 ve §8.2'nin "müsaitlik girdi" maddeleri geçersiz. `Unavailable` slotu olan ama o günde başka görevi olmayan öğretmen yancı adayı olabilir. `GetAvailableRelievers` müsaitlik tablosunu hiç sorgulamaz. **FE sonucu:** `DtaCellMenu` + yancı seçici UI'da müsaitlik rengi/uyarısı gösterilmez; `TeacherDutyPage`'de müsaitlik satırı yoktur. Onay: kullanıcı 2026-06-19.
 - 2026-06-19 — **K-2a-5 (bağlayıcı karar — FE gating): `relieverEnabled=false` iken tüm yancı UI öğeleri gizlenir.** Tasarım handoff'unda yancı bileşenleri her zaman görünür; spec K-2a-5 "yancılık kapalıysa UI'dan da kaldır" kararıyla override edildi. **FE sonucu:** `DutyGrid` yancı alt-satırı, `FairnessPanel` yancı sütunu, `DutySummaryBar` yancı legend satırı, `TeacherDutyPage` yancı sayacı + yancı item'lar `relieverEnabled` flag'ine koşulludur. `PolitikaTab`'daki toggle sunucu verisini yönetir. Onay: kullanıcı 2026-06-19.
