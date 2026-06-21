@@ -258,6 +258,7 @@ academic-sessions/
 
 - Brand-gradient sol panel: sezon adı, tarih aralığı, "Aktif Sezon" badge'i (yeşil pulse dot).
 - Sağ panel: 3 stat kartı (Aktif dönem / Aktif öğrenci sayısı / Dönem bitişine kalan gün).
+  - **Geri sayım stat'ı negatife düşerse** (bitiş tarihi geçmiş): eksi gösterilmez; "`{n} gün önce`" değeri + "Sezon bitti" etiketiyle gösterilir (`list.stat-days-ago` + `list.term-flow.ended`).
 - Dönem ilerleme bar'ı (`computeTermProgress` — 0–100%).
 - "Akademik Takvime Git" butonu → `/admin/academic-calendar`.
 - **Boş durum:** Aktif sezon yoksa dashed kart + bilgi metni.
@@ -361,6 +362,7 @@ Mobile: `oksis-mobile/src/features/academic-sessions/`
 
 Mobile uygulamada **idare paneli minimaldir**. Bu modül için mobile:
 - ✅ Aktif sezon/dönem bilgisini gösterme (her ekran üstünde session badge)
+  - Sezonun bitiş tarihi geçmiş ama hâlâ aktif işaretliyse, üst bardaki `SeasonPill` kehribar uyarı tonuna döner ve metne "· Bitti" eki gelir (`season-pill--ended` + `shell.ended-suffix`).
 - ✅ Şube listesi (rehber öğretmen kendi şubesinin öğrenci listesini görür — Sprint 2)
 - ❌ Sezon oluşturma / yayınlama (web-only)
 - ❌ Şube CRUD (web-only)
