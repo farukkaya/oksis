@@ -350,6 +350,21 @@ academic-calendar/
 - `academic-calendar.manage` izni olan (Admin/Müdür; ⚙️ Müd. Yrd.): tam yetki — etkinlik ekle, dışa aktar, sezon ekseni (arşiv/aktif/planlama), Sezon Yönetimi yolları.
 - İzni olmayan (Öğretmen/Öğrenci/Veli): salt-okunur; sezon ekseni gizli, yalnız aktif sezon; alt başlık "Eğitim-öğretim yılı etkinlikleri".
 
+### Üst Bar Bağlam Seçici — Rol Bazlı Modlar (`SeasonTermSwitcher`) (2026-06-22)
+
+Topbar sezon·dönem seçicisi (`oksis-web/src/app/components/shell/SeasonTermSwitcher.tsx`) `portalKey`'den (`config.key`) **mod** türetir. Her rol zamanda farklı yerde yaşar (handoff `sezon_baglam` analizi); seçici buna göre farklılaşır:
+
+| portalKey | mode | Davranış |
+|---|---|---|
+| `admin` | `full` | Yıl (Aktif + Arşiv) + dönem menüsü; seçim `useSeasonStore`'a yazılır. **Değişmedi.** |
+| `student` | `now` | "Şimdi"ye **kilitli** rozet (`lock` ikonu, `Şimdi · {dönem}`, chevron yok, "kilitli" mini etiket). Tıklayınca seçim menüsü değil, bilgi notu (`.tb-season-lock`): bağlam değiştirme yok, sistem her zaman aktif yıl + güncel dönem gösterir. `setTerm`/`setSeason` çağrılmaz. |
+| `teacher` | `teacher` | **Salt-okunur** rozet (`{sezon adı} · {dönem}`, kilit görünümü, "kilitli" etiket). Tıklayınca bilgi notu: "Yıl aktife kilitli. Dönem seçimi not girişi ve karne ekranlarında açılır." `setTerm`/`setSeason` çağrılmaz. |
+| `parent` + diğer | `default` | Mevcut dönem-only menü (dönemi tüm roller seçer; yıl yalnız admin). C1'de dokunulmadı; veli mode'u (çocuk seçici) C2'de gelecek. |
+
+- Boş/yükleniyor durumları (`SeasonPill` paritesi) tüm modlarda korunur: aktif sezon yoksa admin'e "Başlat" butonu, diğerlerine bilgi.
+- **DEBT (öğretmen):** Handoff'ta öğretmen dönem *seçebiliyor* (yalnız not & karne için). Marks/ReportCard ekranları henüz olmadığından dönem seçimi kasıtlı ertelendi; öğretmene şimdilik salt-okunur rozet gösterilir. Ekranlar gelince `mode === 'teacher'` dalı tam dönem menüsüne genişletilecek.
+- i18n: `auth.shell.*` (`locked`, `now-locked-trigger`, `now-locked-title/body`, `teacher-locked-title/body`) — tr + en. Stil: `shell.css` `.tb-season-btn.locked`, `.tbs-locked-tag`, `.tb-season-lock`, `.tbs-lock-ic/.tbs-lock-tx`.
+
 ---
 
 ## Mobile Flow
