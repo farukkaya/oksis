@@ -82,6 +82,17 @@ Aktif bağlamı ve seçenekleri (profil/çocuk/sezon) döner. UI switcher'ları 
 
 `ContextView` ayrıca **`permissions: string[]`** taşır (TQ-auth-002 kararı, 2026-05-31): account-login token'ı izin listesi taşımaz, istemci UI gating için efektif izin slug'larını bu uçtan alır. İzinler aktif profil/sezon bağlamına göre `IPermissionReader` (Redis cache + DB resolver) ile çözülür. Web `applyAccountAuthResult` sonrası `/auth/me/context` çağırır; login/refresh/profil-sezon switch akışlarında izinler tazelenir. Bu liste **yalnız UX** içindir — backend yetki kontrolü bağımsız (Default Deny).
 
+`AvailableContextsView.availableChildren[]` (= `AvailableChildView`) topbar veli (parent) child-switcher'ını besler ve şu alanları taşır (C2, 2026-06-22):
+
+| Alan | Tip | Açıklama |
+|------|-----|----------|
+| `studentPersonId` | `Guid` | Çocuğun Person id'si (switch-child hedefi). |
+| `canViewInfo` | `bool` | ABAC bayrağı; `false` → UI'da göster ama seçtirme (backend ayrıca reddeder). |
+| `displayName` | `string` | Çocuğun adı (`Person.Name` → "Ad Soyad"). |
+| `className` | `string?` | Çocuğun **güncel** şubesi (`StudentProfile.CurrentClassroomId` → `ClassRoom.FullName`, örn "7-A"); atanmamışsa `null`. |
+
+`displayName`/`className`, `PersonDirectory.FindActiveChildrenAsync` içinde tek EF projection sorgusuyla (N+1/lazy-load yok, tenant filter otomatik) çözülür. `CurrentClassroomId` zaten güncel sınıfı tuttuğundan ekstra aktif-sezon filtresi gerekmez.
+
 ### `POST /auth/forgot-password` · `/reset-password` · `/change-password`
 
 Forgot uniform `202` döner (enumeration koruması, kanal sızdırmaz). Reset token tek kullanımlık + kısa ömürlü; başarılı reset/change tüm oturumları logout eder.
