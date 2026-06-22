@@ -91,7 +91,18 @@
 
 **Uygulama:** `ActiveSeasonWritePolicy` merkezi authorization policy (her handler'da elle tekrar edilmez).
 
-**Test referansı:** `ActiveSeasonWritePolicyTests`.
+**switch-season durum-bazlı erişim gating (B2, 2026-06-22):** `AccountSwitchSeason` handler hedef sezonu DB'den `Status` ile yükler (tenant query filter otomatik, `IgnoreQueryFilters` yok) ve şu kapıyı uygular:
+
+| Hedef sezon | Gerekli izin | readOnly | Reddedilince |
+|---|---|---|---|
+| Yürürlükteki (current / `IsCurrent`) sezon | (yok) | false | — |
+| `Setup` | `season.update` | true | 403 `unlock-unauthorized` |
+| `Archived` (ve beklenmeyen `Active` ama current-değil edge) | `season.archive.view` | true | 403 `unlock-unauthorized` |
+| Hedef sezon bulunamadı | — | — | 404 NotFound |
+
+İzin reddi `RecordPermissionDenied(reddedilen-kod, season:{id})` ile audit'lenir; doğru kod (`season.update` veya `season.archive.view`) loglanır. `season.archive.view` yalnız SuperAdmin + SchoolAdmin'e seed edilir (`ACADEMIC_SESSIONS`/`ARCHIVE_VIEW`); veli kendi çocuğunun geçmişine ABAC/child-scope ile erişir, RBAC değişmez.
+
+**Test referansı:** `ActiveSeasonWritePolicyTests`, `AccountSwitchSeasonCommandHandlerTests`.
 
 ---
 

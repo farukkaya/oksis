@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %85   ·   Status: in-progress   ·   Güncel: 2026-06-22
+**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %85   ·   Status: in-progress   ·   Güncel: 2026-06-22 (B2: switch-season durum-bazlı gating + `season.archive.view` izni seed)
+
+> 2026-06-22: **B2 — switch-season durum-bazlı erişim gating + `season.archive.view` izni seed.** `AccountSwitchSeason` handler hedef sezonun `Status`'una göre kapı uygular: current → izin yok/readOnly=false; `Setup` → `season.update`/readOnly=true; `Archived` → `season.archive.view`/readOnly=true; sezon yok → 404. `season.archive.view` artık tanımlı+seed (yalnız SuperAdmin + SchoolAdmin); migration `20260622072027_20260622_seed_season_archive_view_permission`. Kural detayı identity `business-rules.md` BR-identity-008; izin matrisi bu modülün `permissions.md`'sine işlendi. 8 yeni handler unit testi + 3 unit suite (1074/145/402) yeşil.
 
 > Temel: Doküman neredeyse tam (toplam 3 `{{TBD}}` — yalnızca open-questions + README).
 > Backend `Oksis.Application/Modules/AcademicSessions` dolu; web academic-sessions

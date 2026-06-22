@@ -50,7 +50,7 @@ Format `{module}.{action}` (küçük harf). Modül dağılımı: USERS (5), ATTE
 
 | Kod | Anlam |
 |---|---|
-| `season.archive.view` | Geçmiş (salt-okunur) sezonu görüntüle (season switch) |
+| `season.archive.view` | ✅ **Seed edildi (B2, 2026-06-22)** — switch-season ile geçmiş/arşiv sezona salt-okunur geçiş. Yalnız SuperAdmin + SchoolAdmin (`ACADEMIC_SESSIONS` modülü, `ARCHIVE_VIEW`). Setup sezona geçiş ise `season.update` ister. Detay: `academic-years/permissions.md` + BR-identity-008. |
 | `accounts.unlock` | Admin: kilitli hesabı aç |
 | `accounts.force-logout` | Admin: kullanıcının tüm oturumlarını sonlandır |
 

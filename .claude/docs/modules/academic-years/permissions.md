@@ -33,6 +33,7 @@ Slug format: `<module>.<action>[-<qualifier>]`
 | `season.archive` | Sezonu manuel arşivle (advanced, nadir) |
 | `season.term.activate` | Dönemi aktive et |
 | `season.term.close` | Dönemi kapat (terminal, notları kilitler, karne üretir) ⚠️ |
+| `season.archive.view` | Geçmiş/arşiv sezona switch-season ile geçip salt-okunur görüntüle (B2 — yalnız SuperAdmin + SchoolAdmin) |
 
 ### `academic-calendar.*`
 
@@ -81,6 +82,7 @@ Slug format: `<module>.<action>[-<qualifier>]`
 | `season.archive` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `season.term.activate` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
 | `season.term.close` ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `season.archive.view` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `academic-calendar.manage` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
 | `class-rooms.view` | ✅ | ✅ | ✅ | 🔒 own | ❌ | ❌ | ❌ |
 | `class-rooms.view-detail` | ✅ | ✅ | ✅ | 🔒 own | ❌ | ❌ | ❌ |
@@ -131,6 +133,19 @@ Veli ve öğrenci için "akademik sezon listesi görüntüleme" anlamlı değil 
 ### `academic-calendar.manage` ve salt-okunur roller
 
 Akademik Takvim ekranı **süperadmin hariç tüm rollerde** görünür (Admin + Öğretmen + Öğrenci + Veli). Yönetim aksiyonları (etkinlik ekle, dışa aktar, sezon ekseni, Sezon Yönetimi yolları) yalnız `academic-calendar.manage` iznine sahip rollere açılır; diğer roller takvimi salt-okunur görür ve yalnız **aktif sezonu** görüntüler. UI gizleme UX içindir; backend yetkilendirmesi ayrıca uygulanır (Default Deny).
+
+### `season.archive.view` ve switch-season durum-bazlı gating (B2)
+
+`AccountSwitchSeason` (switch-season) handler hedef sezonun `Status`'una göre sunucu-tarafı yetki kapısı uygular:
+
+| Hedef sezon | Gerekli izin | readOnly |
+|---|---|---|
+| Yürürlükteki (current, `IsCurrent`) sezon | (yok) | false |
+| `Setup` | `season.update` | true |
+| `Archived` (ve beklenmeyen `Active` ama current-değil edge) | `season.archive.view` | true |
+| Sezon bulunamadı | — | 404 NotFound |
+
+İzin reddinde 403 (`identity.account.unlock-unauthorized`) döner ve `RecordPermissionDenied` ile audit'lenir. `season.archive.view` yalnız SuperAdmin + SchoolAdmin'e seed edilir; veli kendi çocuğunun geçmişine ABAC/child-scope ile erişir, RBAC değişikliği gerekmez. Detaylı kural: `identity/business-rules.md` BR-identity-008.
 
 ### `season.activate` ve `season.term.close`
 
