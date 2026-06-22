@@ -125,7 +125,7 @@ HasPermission(currentUser, "users.view-detail")
 `RoleAssignment.SeasonId` üzerinden:
 
 - Bir kullanıcının **şu anki** rolü = `RoleAssignments.Where(r => r.PersonId == userId && r.SeasonId == currentSeasonId && r.Status == Active)`.
-- Geçmiş sezona ait sorgu için (örn. "2024-2025'te 9-A'da kimler vardı?"), `users.view-detail` permission'ı + `seasons.view-archived` permission'ı birlikte gerekir (default sadece SchoolAdmin'de).
+- Geçmiş sezona ait sorgu için (örn. "2024-2025'te 9-A'da kimler vardı?"), `users.view-detail` permission'ı + `season.archive.view` permission'ı birlikte gerekir (default sadece SchoolAdmin'de).
 - Bir öğretmenin "aktif" olup olmadığı, sezona göre değişir — `IsActive(personId, seasonId)` helper'ı `RoleAssignment` üzerinden hesaplanır.
 
 ---

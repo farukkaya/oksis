@@ -79,7 +79,7 @@ Modülün ana akışı (login + context resolution):
 - **Sprint:** Sprint 1–6
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-05
+- **Last Updated:** 2026-06-22
 - **Files:**
   - [x] README.md
   - [x] domain-model.md

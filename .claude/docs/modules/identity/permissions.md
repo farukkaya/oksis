@@ -50,7 +50,7 @@ Format `{module}.{action}` (küçük harf). Modül dağılımı: USERS (5), ATTE
 
 | Kod | Anlam |
 |---|---|
-| `seasons.view-archived` | Geçmiş (salt-okunur) sezonu görüntüle (season switch) |
+| `season.archive.view` | Geçmiş (salt-okunur) sezonu görüntüle (season switch) |
 | `accounts.unlock` | Admin: kilitli hesabı aç |
 | `accounts.force-logout` | Admin: kullanıcının tüm oturumlarını sonlandır |
 
@@ -70,7 +70,7 @@ Format `{module}.{action}` (küçük harf). Modül dağılımı: USERS (5), ATTE
 | PARENT | 4 | ATTENDANCE(1) + GRADES(1) + HOMEWORK(1) + ANNOUNCEMENTS(1) |
 | STUDENT | 5 | GRADES(1) + ATTENDANCE(1) + HOMEWORK(1) + ANNOUNCEMENTS(1) + SCHEDULE(1) |
 
-> Yeni `accounts.*` / `seasons.view-archived` izinleri eklenirken `role_permissions` seed + `permission-matrix.md` birlikte güncellenir.
+> Yeni `accounts.*` / `season.archive.view` izinleri eklenirken `role_permissions` seed + `permission-matrix.md` birlikte güncellenir.
 
 ---
 

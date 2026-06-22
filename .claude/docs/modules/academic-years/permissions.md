@@ -20,19 +20,19 @@ Slug format: `<module>.<action>[-<qualifier>]`
 
 ## Slug Listesi
 
-### `academic-sessions.*`
+### `season.*`
 
 | Slug | Açıklama |
 |---|---|
-| `academic-sessions.view` | Sezon listesi (aktif + arşiv) |
-| `academic-sessions.view-detail` | Sezon detayı |
-| `academic-sessions.view-current` | Aktif sezon endpoint'i (cache'li, çok yüksek hacim) |
-| `academic-sessions.create` | Yeni sezon (Setup) |
-| `academic-sessions.update` | Sezon bilgilerini güncelle (sadece Setup) |
-| `academic-sessions.activate` | Sezonu aktive et (önceki sezon arşivlenir) ⚠️ |
-| `academic-sessions.archive` | Sezonu manuel arşivle (advanced, nadir) |
-| `academic-sessions.activate-term` | Dönemi aktive et |
-| `academic-sessions.close-term` | Dönemi kapat (terminal, notları kilitler, karne üretir) ⚠️ |
+| `season.list.read` | Sezon listesi (aktif + arşiv) |
+| `season.detail.read` | Sezon detayı |
+| `season.current.read` | Aktif sezon endpoint'i (cache'li, çok yüksek hacim) |
+| `season.draft.create` | Yeni sezon (Setup) |
+| `season.update` | Sezon bilgilerini güncelle (sadece Setup) |
+| `season.activate` | Sezonu aktive et (önceki sezon arşivlenir) ⚠️ |
+| `season.archive` | Sezonu manuel arşivle (advanced, nadir) |
+| `season.term.activate` | Dönemi aktive et |
+| `season.term.close` | Dönemi kapat (terminal, notları kilitler, karne üretir) ⚠️ |
 
 ### `academic-calendar.*`
 
@@ -72,15 +72,15 @@ Slug format: `<module>.<action>[-<qualifier>]`
 
 | Permission | `SuperAdmin` | `SchoolAdmin` (Müdür) | `SchoolStaff` (Müd. Yrd.) | `HomeroomTeacher` | `Teacher` | `Parent` | `Student` |
 |---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| `academic-sessions.view` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `academic-sessions.view-detail` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| `academic-sessions.view-current` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `academic-sessions.create` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
-| `academic-sessions.update` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
-| `academic-sessions.activate` ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| `academic-sessions.archive` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| `academic-sessions.activate-term` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
-| `academic-sessions.close-term` ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `season.list.read` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `season.detail.read` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| `season.current.read` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| `season.draft.create` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
+| `season.update` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
+| `season.activate` ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `season.archive` | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| `season.term.activate` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
+| `season.term.close` ⚠️ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | `academic-calendar.manage` | ✅ | ✅ | ⚙️ | ❌ | ❌ | ❌ | ❌ |
 | `class-rooms.view` | ✅ | ✅ | ✅ | 🔒 own | ❌ | ❌ | ❌ |
 | `class-rooms.view-detail` | ✅ | ✅ | ✅ | 🔒 own | ❌ | ❌ | ❌ |
@@ -124,7 +124,7 @@ Rehber öğretmen kendi şubesini görür ama:
 
 ### `Parent` ve `Student` ve `view`
 
-Veli ve öğrenci için "akademik sezon listesi görüntüleme" anlamlı değil — onlara sadece aktif sezon/dönem etiketi gerekir (`view-current`). Buna rağmen `academic-sessions.view` veriyoruz çünkü:
+Veli ve öğrenci için "akademik sezon listesi görüntüleme" anlamlı değil — onlara sadece aktif sezon/dönem etiketi gerekir (`season.current.read`). Buna rağmen `season.list.read` veriyoruz çünkü:
 - "Geçen yılın notlarını gör" Sprint 3+'ta açılacak; sezon listesi bir dropdown olarak gelir
 - Frontend filtreleme yapacak — sadece kendi çocuğuna ait sezonları gösterecek (zaten erişebileceği sezonlar)
 
@@ -132,7 +132,7 @@ Veli ve öğrenci için "akademik sezon listesi görüntüleme" anlamlı değil 
 
 Akademik Takvim ekranı **süperadmin hariç tüm rollerde** görünür (Admin + Öğretmen + Öğrenci + Veli). Yönetim aksiyonları (etkinlik ekle, dışa aktar, sezon ekseni, Sezon Yönetimi yolları) yalnız `academic-calendar.manage` iznine sahip rollere açılır; diğer roller takvimi salt-okunur görür ve yalnız **aktif sezonu** görüntüler. UI gizleme UX içindir; backend yetkilendirmesi ayrıca uygulanır (Default Deny).
 
-### `academic-sessions.activate` ve `close-term`
+### `season.activate` ve `season.term.close`
 
 Bu iki permission ⚠️ **geri alınamaz operasyonları** yetkilendirir. Default olarak sadece `SchoolAdmin` (Müdür) rolüne verilir. `SchoolStaff` (Müdür Yardımcısı) bu iki işlemi yapamaz; **stratejik karar müdürün**.
 
@@ -168,12 +168,12 @@ public sealed class PermissionAuthorizationBehavior<TRequest, TResponse>
 // Command markers
 public sealed record CreateAcademicSessionCommand(...) : IAuthorizedRequest
 {
-    public IReadOnlyList<string> RequiredPermissions => ["academic-sessions.create"];
+    public IReadOnlyList<string> RequiredPermissions => ["season.draft.create"];
 }
 
 public sealed record ActivateAcademicSessionCommand(...) : IAuthorizedRequest
 {
-    public IReadOnlyList<string> RequiredPermissions => ["academic-sessions.activate"];
+    public IReadOnlyList<string> RequiredPermissions => ["season.activate"];
 }
 ```
 
@@ -181,7 +181,7 @@ public sealed record ActivateAcademicSessionCommand(...) : IAuthorizedRequest
 
 ```tsx
 // usePermission hook
-const canCreateSession = usePermission("academic-sessions.create");
+const canCreateSession = usePermission("season.draft.create");
 
 return (
   <Button disabled={!canCreateSession}>Yeni Sezon Başlat</Button>

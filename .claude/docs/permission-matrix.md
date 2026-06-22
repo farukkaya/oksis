@@ -102,7 +102,7 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | `students.update` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
 | `students.delete` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `students.import` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
-| `students.promote` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Sezon terfisi (§4.9). 2026-06-09 eklendi; ActivateSeasonRollover + bağımsız uç. -->
+| `season.student.promote` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Sezon terfisi (§4.9). 2026-06-09 eklendi; ActivateSeasonRollover + bağımsız uç. -->
 
 ### Teachers
 

@@ -12,7 +12,7 @@ Etkilenenler:
 - Modül slug: `academic-sessions` (eski: `academic-years`)
 - Aggregate root: `AcademicSession`
 - Tablo adı: `academic_sessions`
-- Permission prefix: `academic-sessions.*`
+- Permission prefix: `season.*`
 - API path: `/api/v1/academic-sessions`
 
 > **Aksiyon:** `naming-conventions.md` ve `_MODULE_GUIDE.md`'de `AcademicYear` → `AcademicSession` güncellemesi yapılmalı. Mevcut `.claude/docs/modules/academic-years/` klasörü `academic-sessions/` olarak yeniden adlandırılmalı.
@@ -135,7 +135,7 @@ Karar kullanıcıya bırakılmıştır.
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-10
+- **Last Updated:** 2026-06-22
 - **Files:**
   - [x] README.md
   - [x] domain-model.md

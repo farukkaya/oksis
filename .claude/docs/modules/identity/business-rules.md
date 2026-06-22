@@ -87,7 +87,7 @@
 
 ## BR-identity-008: Salt-okunur sezon
 
-**Kural:** `activeSeasonId != School.CurrentSeason` ise yazma endpoint'leri `403`. `seasons.view-archived` permission gerekir; veliye kendi çocuğunun sınırlı geçmişi için ABAC ile otomatik açık.
+**Kural:** `activeSeasonId != School.CurrentSeason` ise yazma endpoint'leri `403`. `season.archive.view` permission gerekir; veliye kendi çocuğunun sınırlı geçmişi için ABAC ile otomatik açık.
 
 **Uygulama:** `ActiveSeasonWritePolicy` merkezi authorization policy (her handler'da elle tekrar edilmez).
 

@@ -50,7 +50,7 @@ academic-sessions/
 #### 1. Sezon Listesi — `/admin/academic-sessions`
 
 **Portal:** admin
-**Permission:** `academic-sessions.view`
+**Permission:** `season.list.read`
 **Component:** `AcademicSessionListPage`
 
 **Yapı:**
@@ -74,7 +74,7 @@ academic-sessions/
 #### 2. Yeni Sezon Formu — `/admin/academic-sessions/new`
 
 **Portal:** admin
-**Permission:** `academic-sessions.create`
+**Permission:** `season.draft.create`
 **Component:** `AcademicSessionFormPage`
 
 **Form alanları:**
@@ -111,7 +111,7 @@ const sessionSchema = z.object({
 #### 3. Sezon Detay — `/admin/academic-sessions/:id`
 
 **Portal:** admin
-**Permission:** `academic-sessions.view-detail`
+**Permission:** `season.detail.read`
 **Component:** `AcademicSessionDetailPage`
 
 **Yapı (sekmeli):**
@@ -325,7 +325,7 @@ academic-calendar/
 
 ### Ekran — `/admin/academic-calendar`
 
-**Portal:** admin · **Permission:** `academic-sessions.view` · **Sol menü:** *Genel → Akademik Takvim* (ikon `CalendarDays`)
+**Portal:** admin · **Permission:** `season.list.read` · **Sol menü:** *Genel → Akademik Takvim* (ikon `CalendarDays`)
 **i18n namespace:** `academic-calendar` (tr/en).
 
 **Yapı (üstten alta):**

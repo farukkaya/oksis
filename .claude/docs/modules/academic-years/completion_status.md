@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %85   ·   Status: in-progress   ·   Güncel: 2026-06-21
+**İlerleme:** `▓▓▓▓▓▓▓▓▓░` %85   ·   Status: in-progress   ·   Güncel: 2026-06-22
 
 > Temel: Doküman neredeyse tam (toplam 3 `{{TBD}}` — yalnızca open-questions + README).
 > Backend `Oksis.Application/Modules/AcademicSessions` dolu; web academic-sessions
@@ -53,6 +53,7 @@
 - **2026-06-09 — Akademik Takvim mock servis:** Ekran 1 frontend'i, takvim-etkinliği backend'i henüz olmadığından tamamen mock servisle (oturum-içi bellek; sayfa yenilemede sıfırlanır) çalışıyor. Gerçek `GET/POST /academic-sessions/{id}/events` sonra yapılacak. Onaylayan: oturum kararı (Claude/farukkaya). Etki: yalnız frontend; `VITE_USE_MOCK` flag ile gerçeğe geçiş tek satır. Mock'taki KPI placeholder'ları (`termEndsInDays=0`, `seasonEvents`=ay-içi sayım) kodda `TODO(real-backend)` ile işaretli.
 - **2026-06-09 — Rollover faz ayrımı:** Öğrenci terfisi + görevlendirme kopyası "Sezonu Aç"ta değil **"Aktifleştir"de** materyalize edilir (taslak↔aktivasyon arası öğrenci giriş/çıkışı gerçek cutover'da yansısın diye). Onaylayan: oturum kararı. Kaynak: tasarım dokümanı §1.
 - **2026-06-09 — Tenant interceptor:** Bir alt-geliştirme `TenantSaveChangesInterceptor`'a global Modified→Added heuristiği eklemişti; adversarial güvenlik review'ı (disconnected-update bozulması + cross-tenant guard zayıflaması) nedeniyle **geri alındı**. Kök neden `PromoteStudentsCommandHandler`'da tek-entity `IApplicationDbContext.MarkAsAdded(object)` ile yerel çözüldü. `SchoolId != original` değişmezlik kontrolü (daha güçlü) korundu.
+- 2026-06-22 — İzin slug'ları `season.*` taksonomisine taşındı (academic-sessions.* / seasons.view-archived / students.promote → season.*). Veri migration UpdateData id-Guid bazlı, atamalar korundu. Onay: oturum kararı (farukkaya). Etki: kozmetik, sıfır fonksiyonel.
 
 ## 🐛 Bilinen / Devredilen
 

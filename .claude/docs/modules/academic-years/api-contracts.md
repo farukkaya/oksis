@@ -12,13 +12,13 @@
 
 | Method | Path | Permission | Amaç |
 |---|---|---|---|
-| GET | `/api/v1/academic-sessions` | `academic-sessions.view` | Liste (aktif + arşiv) |
-| GET | `/api/v1/academic-sessions/{id}` | `academic-sessions.view-detail` | Detay |
-| GET | `/api/v1/academic-sessions/current` | `academic-sessions.view-current` | Aktif sezon (cache'li) ⭐ |
-| POST | `/api/v1/academic-sessions` | `academic-sessions.create` | Yeni sezon (Setup) |
-| PUT | `/api/v1/academic-sessions/{id}` | `academic-sessions.update` | Sezon güncelle (sadece Setup) |
-| POST | `/api/v1/academic-sessions/{id}/activate` | `academic-sessions.activate` | Sezonu aktive et |
-| POST | `/api/v1/academic-sessions/{id}/archive` | `academic-sessions.archive` | Sezonu arşivle (manuel) |
+| GET | `/api/v1/academic-sessions` | `season.list.read` | Liste (aktif + arşiv) |
+| GET | `/api/v1/academic-sessions/{id}` | `season.detail.read` | Detay |
+| GET | `/api/v1/academic-sessions/current` | `season.current.read` | Aktif sezon (cache'li) ⭐ |
+| POST | `/api/v1/academic-sessions` | `season.draft.create` | Yeni sezon (Setup) |
+| PUT | `/api/v1/academic-sessions/{id}` | `season.update` | Sezon güncelle (sadece Setup) |
+| POST | `/api/v1/academic-sessions/{id}/activate` | `season.activate` | Sezonu aktive et |
+| POST | `/api/v1/academic-sessions/{id}/archive` | `season.archive` | Sezonu arşivle (manuel) |
 
 ### Sezon Rollover (Sihirbaz) — yeni (2026-06-09)
 
@@ -26,18 +26,18 @@
 
 | Method | Path | Permission | Amaç |
 |---|---|---|---|
-| GET | `/api/v1/season-drafts/current` | `academic-sessions.create` ⚠️ | Sihirbaz taslağını oku (tenant başına 1) |
-| PUT | `/api/v1/season-drafts/current` | `academic-sessions.create` ⚠️ | Taslağı upsert ("Taslağı Kaydet") |
-| DELETE | `/api/v1/season-drafts/current` | `academic-sessions.create` ⚠️ | Taslağı sil (Vazgeç) |
-| GET | `/api/v1/academic-sessions/{sourceId}/rollover-preview` | `academic-sessions.create` ⚠️ | Terfi haritası önizleme (salt-okunur) |
-| POST | `/api/v1/academic-sessions/open-from-draft` | `academic-sessions.create` | Sezonu Aç → Setup sezon + dönemler + boş şubeler; **taslağı silmez**, `OpenedSessionId` ile bağlar |
-| POST | `/api/v1/academic-sessions/{id}/activate-rollover` | `academic-sessions.activate` | Aktifleştir → aktivasyon + terfi + görevlendirme kopyası (tek transaction); bağlı taslağı siler |
-| POST | `/api/v1/academic-sessions/{id}/promote-students` | `students.promote` | §4.9 bağımsız (re-run); building-block |
+| GET | `/api/v1/season-drafts/current` | `season.draft.create` ⚠️ | Sihirbaz taslağını oku (tenant başına 1) |
+| PUT | `/api/v1/season-drafts/current` | `season.draft.create` ⚠️ | Taslağı upsert ("Taslağı Kaydet") |
+| DELETE | `/api/v1/season-drafts/current` | `season.draft.create` ⚠️ | Taslağı sil (Vazgeç) |
+| GET | `/api/v1/academic-sessions/{sourceId}/rollover-preview` | `season.draft.create` ⚠️ | Terfi haritası önizleme (salt-okunur) |
+| POST | `/api/v1/academic-sessions/open-from-draft` | `season.draft.create` | Sezonu Aç → Setup sezon + dönemler + boş şubeler; **taslağı silmez**, `OpenedSessionId` ile bağlar |
+| POST | `/api/v1/academic-sessions/{id}/activate-rollover` | `season.activate` | Aktifleştir → aktivasyon + terfi + görevlendirme kopyası (tek transaction); bağlı taslağı siler |
+| POST | `/api/v1/academic-sessions/{id}/promote-students` | `season.student.promote` | §4.9 bağımsız (re-run); building-block |
 | POST | `/api/v1/academic-sessions/{id}/copy-assignments?sourceSessionId=` | `teaching-assignments.assign` | §5.9 bağımsız (re-run); building-block |
-| POST | `/api/v1/academic-sessions/{id}/reopen-to-draft` | `academic-sessions.create` | Setup sezonu sihirbaza geri al — şubeler + tatiller + sezon soft-delete, taslak bağı temizlenir; 200 → taslak Id (data) |
-| POST | `/api/v1/academic-sessions/{id}/cancel-setup` | `academic-sessions.create` | Setup sezonu tamamen iptal et — reopen ile aynı geri alma + taslak da silinir; 204 |
+| POST | `/api/v1/academic-sessions/{id}/reopen-to-draft` | `season.draft.create` | Setup sezonu sihirbaza geri al — şubeler + tatiller + sezon soft-delete, taslak bağı temizlenir; 200 → taslak Id (data) |
+| POST | `/api/v1/academic-sessions/{id}/cancel-setup` | `season.draft.create` | Setup sezonu tamamen iptal et — reopen ile aynı geri alma + taslak da silinir; 204 |
 
-> ⚠️ **İzin sapması (onaylı):** Tasarımda `academic-sessions.manage` öngörülmüştü ama seed'de yok; taslak/önizleme uçları mevcut `academic-sessions.create` ile gate edildi. `students.promote` yeni eklendi (seed+migration). `teachers.assign` yerine mevcut `teaching-assignments.assign` kullanıldı. Bkz. `completion_status.md` → Spec Dışına Çıkılanlar.
+> ⚠️ **İzin sapması (onaylı):** Tasarımda `academic-sessions.manage` öngörülmüştü ama seed'de yok; taslak/önizleme uçları mevcut `season.draft.create` ile gate edildi. `season.student.promote` yeni eklendi (seed+migration). `teachers.assign` yerine mevcut `teaching-assignments.assign` kullanıldı. Bkz. `completion_status.md` → Spec Dışına Çıkılanlar.
 
 #### `open-from-draft` davranış değişikliği (2026-06-10)
 
@@ -55,7 +55,7 @@ Bağlı taslak varken yeni bir `open-from-draft` denemesi **409** → `academic-
 
 #### `POST /api/v1/academic-sessions/{id}/reopen-to-draft` — Sezonu Sihirbaza Geri Al (2026-06-10)
 
-**Permission:** `academic-sessions.create`
+**Permission:** `season.draft.create`
 
 **Koşul:** `{id}` sezonunun `Status = Setup` ve bağlı bir `SeasonDraft.OpenedSessionId` olması gerekir.
 
@@ -87,7 +87,7 @@ Bağlı taslak varken yeni bir `open-from-draft` denemesi **409** → `academic-
 
 #### `POST /api/v1/academic-sessions/{id}/cancel-setup` — Setup Sezonu İptal Et (2026-06-10)
 
-**Permission:** `academic-sessions.create`
+**Permission:** `season.draft.create`
 
 **Davranış:** `reopen-to-draft` ile aynı `SetupSeasonReverter` adımlarını uygular; ek olarak bağlı `SeasonDraft`'ı da soft-delete eder (tam iptal).
 
@@ -112,9 +112,9 @@ Bağlı taslak varken yeni bir `open-from-draft` denemesi **409** → `academic-
 
 | Method | Path | Permission | Amaç |
 |---|---|---|---|
-| GET | `/api/v1/academic-sessions/{sessionId}/terms` | `academic-sessions.view` | Sezonun dönemleri |
-| POST | `/api/v1/academic-sessions/{sessionId}/terms/{termId}/activate` | `academic-sessions.activate-term` | Dönemi aktive et |
-| POST | `/api/v1/academic-sessions/{sessionId}/terms/{termId}/close` | `academic-sessions.close-term` | Dönemi kapat ⚠️ |
+| GET | `/api/v1/academic-sessions/{sessionId}/terms` | `season.list.read` | Sezonun dönemleri |
+| POST | `/api/v1/academic-sessions/{sessionId}/terms/{termId}/activate` | `season.term.activate` | Dönemi aktive et |
+| POST | `/api/v1/academic-sessions/{sessionId}/terms/{termId}/close` | `season.term.close` | Dönemi kapat ⚠️ |
 
 ### ClassRoom (Şube)
 
@@ -187,7 +187,7 @@ Tüm öğeler `source = "OFFICIAL"` ve `startDate` artan sırada döner.
 
 ### ⭐ `GET /api/v1/academic-sessions/current`
 
-**Permission:** `academic-sessions.view-current` (genellikle her authenticated rol için açık)
+**Permission:** `season.current.read` (genellikle her authenticated rol için açık)
 
 **Önbellek:** Redis, tenant başına. Key: `oksis:tenant:{schoolId}:current-session`. TTL: 1 saat. Cache invalidation: `AcademicSessionActivatedEvent`, `AcademicTermActivatedEvent`, `AcademicTermClosedEvent`.
 
@@ -252,7 +252,7 @@ Her `AcademicSessionDto` öğesi için:
 
 ### `POST /api/v1/academic-sessions`
 
-**Permission:** `academic-sessions.create`
+**Permission:** `season.draft.create`
 
 **Request body:**
 ```json
@@ -292,7 +292,7 @@ Her `AcademicSessionDto` öğesi için:
 
 ### ⚠️ `POST /api/v1/academic-sessions/{id}/activate`
 
-**Permission:** `academic-sessions.activate`
+**Permission:** `season.activate`
 
 **Davranış:** Mevcut aktif sezon varsa otomatik `Archived`'a düşürülür (BR-AS-001, atomik transaction).
 
@@ -331,7 +331,7 @@ Her `AcademicSessionDto` öğesi için:
 
 ### ⚠️ `POST /api/v1/academic-sessions/{sessionId}/terms/{termId}/close`
 
-**Permission:** `academic-sessions.close-term`
+**Permission:** `season.term.close`
 
 **Davranış (BR-AS-005, terminal):**
 1. `AcademicTerm.Status = Closed`

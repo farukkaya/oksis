@@ -15,7 +15,7 @@
 | `/auth/logout-all` | POST | Bearer | `204` | `401` |
 | `/auth/switch-profile` | POST | Bearer | `200` yeni AuthResult | `400` profil erişilemez, `401` |
 | `/auth/switch-child` | POST | Bearer | `200` ContextView (aynı token) | `400`/`403` ABAC, `401` |
-| `/auth/switch-season` | POST | Bearer | `200` yeni AuthResult | `403` seasons.view-archived yok |
+| `/auth/switch-season` | POST | Bearer | `200` yeni AuthResult | `403` season.archive.view yok |
 | `/auth/me/context` | GET | Bearer | `200` ContextView | `401` |
 | `/auth/me/available-contexts` | GET | Bearer | `200` AvailableContextsView | `401` |
 | `/auth/forgot-password` | POST | Anonim | `202` (uniform, kanal sızdırmaz) | `429` |
@@ -74,7 +74,7 @@ Sadece `ParentProfile` aktifken. ABAC: route/body'deki `childId` `ParentStudentR
 
 ### `POST /auth/switch-season`
 
-`activeSeasonId` değişir → **yeni JWT**. `seasons.view-archived` permission gerekir (veliye kendi çocuğunun sınırlı geçmişi için ABAC ile otomatik). Geçmiş sezon = salt-okunur (`ActiveSeasonWritePolicy` yazma endpoint'lerini `403` ile korur). `SeasonSwitched` audit.
+`activeSeasonId` değişir → **yeni JWT**. `season.archive.view` permission gerekir (veliye kendi çocuğunun sınırlı geçmişi için ABAC ile otomatik). Geçmiş sezon = salt-okunur (`ActiveSeasonWritePolicy` yazma endpoint'lerini `403` ile korur). `SeasonSwitched` audit.
 
 ### `GET /auth/me/context` · `GET /auth/me/available-contexts`
 

@@ -39,7 +39,7 @@
 
 **Uygulama:**
 - Backend: `AcademicSession.Activate()` invariant: yeni sezon aktif olduğunda eski sezon zorunlu `Archived`.
-- Application: `ActivateAcademicSessionCommand` handler permission check (`academic-sessions.activate`) + audit log.
+- Application: `ActivateAcademicSessionCommand` handler permission check (`season.activate`) + audit log.
 
 **Edge case'ler:** Manuel `Archive` çağrısında sezon `Setup` ise reddedilir (yalnızca `Active` arşivlenebilir).
 
