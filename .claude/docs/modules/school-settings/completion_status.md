@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: **mvp-ready**   ·   Güncel: 2026-06-11 (Genel Bilgiler sekmesi görsel yeniden tasarım)
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: **mvp-ready**   ·   Güncel: 2026-06-24 (Faz A shell tamamlandı)
 
 > Temel: Baseline (21 endpoint + 6 tab) **live**. 2026-05-25 ihtiyaç analiziyle açılan
 > 22 issue'luk genişletme **tamamlandı** (API #1–14 + Web #15–22). 2026-05-28 ek
@@ -28,6 +28,15 @@
 - **Mobile akademik ekranları (2026-05-28):** Operasyonel gruba `AcademicStructureScreen` (haftalık ders günleri, günlük ders sayısı, öğrenci no prefix/uzunluk, timezone) ve `AcademicPolicyScreen` (geçme notu, mezun veri saklama, şube onayı, otomatik karne) eklendi. Veri zaten `GET /school-settings` → `basicInfo` (SchoolSettingsDetailDto) içinde geliyordu; mobil tip akademik politika alanlarıyla genişletildi. Yeni route'lar `SchoolSettingsAcademicStructure` / `SchoolSettingsAcademicPolicy`, hub'da iki yeni satır. `defaultGradeScaleId` mobilde isim sözlüğü olmadığı için gösterilmiyor (GUID). Yeni i18n: `sections.academicStructure/Policy`, `academicStructure.*`, `academicPolicy.*`, `common.yes/no` (tr/en).
 - **Mobile gösterim düzeltmeleri (2026-05-28):** (1) Hub aktif modül sayacı plan-aware (`isAvailableInPlan && isEnabled`) — eskiden hep 6/6 idi. (2) Kimlik ekranı Q6 `schoolTypes` (çoklu) okuyup lokalize ediyor; eski `schoolType` (tekil) ve yanlış i18n etiket haritası düzeltildi; eğitim dili de lokalize. (3) Bildirim eşiği `dayUnit` i18n v3 plural formatına çevrildi (`_one/_other` v3'te çözülmüyordu, ham anahtar görünüyordu). (4) Tatiller `useHolidays(year)` mevcut yılı gönderiyor (eksik year → backend Year=0 → boş liste); ekran Yaklaşan/Geçmiş iki bölüme ayrıldı. (5) `SchoolBrandingHeader` logo kırık/yüklenemezse `onError` ile okul ikonuna (FontAwesome5 `school`) düşüyor.
 - **Mobile plan-aware hizalama (2026-05-28):** `ModulesScreen` + `ModuleConfigDto` Q-Plan-Modules sözleşmesine taşındı. Eski `isPlanRestricted` alanı kaldırılıp `isAvailableInPlan` ile değiştirildi; ekran etkin durumu artık `isAvailableInPlan && isEnabled` ile hesaplıyor (web `ModuleToggleCard` ile aynı kural). Bug: backend plan dışı modüllerde `isEnabled=true` koruduğu, mobil ise yalnızca `isEnabled`'a baktığı için **tüm modüller "Aktif" görünüyordu** → kapandı. Plan dışı modüller artık "Plan dışı" rozeti + gerekli plan etiketi gösteriyor. Yeni i18n: `modules.status.planLocked`, `modules.planLocked`, `modules.planUpgrade` (tr/en). typecheck + lint temiz.
+
+## ✅ Faz A — Shell + PageHeader + Ortak Desenler (2026-06-24)
+
+- Task 1: `SchoolSettingsShell` subtitle/breadcrumb (Task 1)
+- Task 2: `SettingsHeaderActionContext` provider + `useSettingsHeaderAction` / `useSettingsHeaderActionSlot` hook'ları
+- Task 3–4: `PageHeader.tabs` + `SchoolSettingsTabs` kaldırıldı (K4 PageHeader geçişi — eski bileşen yerine standart sekme destekli `PageHeader` kullanımına geçildi)
+- Task 5: `settings.css` paylaşımlı savebar + kart stilleri oluşturuldu
+- Task 6: `SettingsSideCard` (icon + title + body yan kartı)
+- Task 7: `WhereUsedCard` (Nerede Kullanılır yan kartı, `SettingsSideCard` üzerine), `settings.css`'e `.yap-uses`/`.yap-use`/`.gnl-note` stilleri, `components/index.ts`'e tüm Faz A bileşen re-export'ları eklendi
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
