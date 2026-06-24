@@ -4,11 +4,13 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `████░░░░░░` %40   ·   Status: backend kısmen + frontend-first   ·   Güncel: 2026-06-24
+**İlerleme:** `██████░░░░` %60   ·   Status: subjects backend-bağlı + branşlar mock   ·   Güncel: 2026-06-24
 
 > Web **Dersler & Branşlar** ekranı (sekmeli: Dersler / Branşlar) frontend-first
-> teslim edildi (tasarıma hi-fi sadık). Veri katmanı hâlâ **mock** (FE-S2'de gerçeğe
-> bağlanacak). **BE-S1 (2026-06-24):** Subject CRUD artık kademeleri
+> teslim edildi (tasarıma hi-fi sadık). **FE-S2 (2026-06-24):** Subjects veri katmanı
+> mock→gerçek `/academics/subjects`'e bağlandı (global master, spec D1); levels
+> backend `gradeLevelIds` ile eşlenir; weeklyHours/branş Debt. Branşlar hâlâ mock
+> (D6). **BE-S1 (2026-06-24):** Subject CRUD kademeleri
 > (`subject_grade_levels` tam-replace) + `Description` yönetir; `SubjectDto` levels +
 > description + hasAssignments döndürür (spec `subjects-cekirdek-genisletme-spec.md`).
 
@@ -20,8 +22,18 @@
   - Sekmeli tek ekran: **Dersler** (tablo + arama/branş/seviye/tür filtreleri + boş/filtre-boş durumları) ve **Branşlar** (tablo + bağlı ders/öğretmen sayaçları + boş durum).
   - **CourseDrawer** (ders ekle/düzenle, "Kaydet ve Yeni Ekle" art arda giriş) + **BranchModal** (paylaşılan `Modal` ile).
   - Branş rozeti, tür/seviye/durum rozetleri, 3-nokta satır menüsü (pasife al/sil-kilidi).
-  - Veri katmanı: tipli mock store + API + React Query (tenant-scoped keys) + **Debt mutasyonları** ("(mock)" toast).
-  - i18n `subjects` namespace (tr/en). 16 birim/entegrasyon testi (derive, RowMenu, CourseDrawer, BranchModal, SubjectsPage).
+  - Veri katmanı (subjects): **GERÇEK** `/academics/subjects` (manage/create/update/status) + React Query **global** key'ler (D1, tenant prefix YOK — `subjectKeys.subjects()`); düz başarı toast'ı (mock-suffix yok).
+  - Veri katmanı (branşlar): hâlâ tipli mock store + tenant-scoped key + "(mock)" Debt toast (D6).
+  - i18n `subjects` namespace (tr/en). 18 birim/entegrasyon testi (derive, RowMenu, CourseDrawer, BranchModal, SubjectsPage, useSubjectMutations save-path).
+
+## ✅ FE-S2 (2026-06-24) — subjectsApi mock→gerçek (frontend)
+
+- **api:** `subjectsApi.listSubjects/createSubject/updateSubject/setSubjectStatus` → `utils/api` ile gerçek `/academics/subjects[/manage|/{id}|/{id}/status]`. Branş işlemleri mock kaldı (D6).
+- **keys:** subjects key'leri **global** (`["subjects",...]`, tenant prefix YOK — D1); branş key'i tenant-scope mock.
+- **hooks:** `useSubjectsQuery` subjects + `useMasterGradeLevels`'i birleştirir; `SubjectDto → Subject` eşler. `gradeLevelId (Guid) → Level`: master lookup `code` ("5".."12") → `Number`. `useSaveSubject` `Level → gradeLevelId`: `String(level) → code → id`. Eşleme **hook katmanında** (raw api fonksiyonlarında değil).
+- **Debt (gösterimli):** `recommendedWeeklyHours = null` (D4 — kolon başlığı "(Debt)"); `branchId = ""` (D6 — `BranchBadge` undefined'a düşer, çökmez).
+- **Tüketiciler:** Akademik Yapı "Ders Kataloğu" kartı `(Debt)` rozeti **kaldırıldı** (gerçek artık); Haft. Saat kolonu Debt işaretli. `SubjectsPage` Dersler sekmesi gerçek; Branşlar sekmesi mock.
+- **Test:** build + tsc (yeni hata yok, baseline ~60) + `subjects` vitest yeşil + `StructureTab` vitest yeşil.
 - **Sidebar:** Yeni **Akademik** grubu (Dersler & Branşlar aktif; Görevlendirmeler "Yakında" pasif; Ders Programı + Nöbet Yönetimi "Okul"dan buraya taşındı).
 
 ## ✅ BE-S1 (2026-06-24) — Subject çekirdek genişletme (backend)
@@ -34,8 +46,7 @@
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **FE-S2 (Debt):** `subjectsApi` mock→gerçek `/academics/subjects`; global key'ler (D1); FE eşleme (levels/description) — yapılmadı.
-- **Ders silme:** tasarım gereği her zaman disabled (pasife-al öncelikli); gerçek hard-delete yok (zaten hard-delete yasağı var).
+- **Ders silme:** tasarım gereği her zaman disabled (pasife-al öncelikli); gerçek hard-delete yok (zaten hard-delete yasağı var). FE delete-kilidi `hasAssignments` sinyaline güvenir (D7).
 - **Backend (Debt):** `Branch` domain entity/CRUD — yok (spec D6, kapsam dışı). `recommendedWeeklyHours` persist yok (spec D4, CurriculumHourTemplate entegrasyonu ayrı iş).
 - **İzinler (Debt):** `subjects.*` izinleri yok; `/admin/subjects` geçici olarak `class-rooms.view` ile gate'li (timetable rooms-first precedent'i gibi).
 - **Doküman içeriği:** domain-model / api-contracts / database-schema / business-rules / permissions hâlâ `{{TBD}}` — teknik analizden doldurulacak (veri modeli: branslar/dersler/ders_seviye/ogretmen_brans/gorevlendirmeler).
