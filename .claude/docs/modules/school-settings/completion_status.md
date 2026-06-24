@@ -38,6 +38,43 @@
 - Task 6: `SettingsSideCard` (icon + title + body yan kartı)
 - Task 7: `WhereUsedCard` (Nerede Kullanılır yan kartı, `SettingsSideCard` üzerine), `settings.css`'e `.yap-uses`/`.yap-use`/`.gnl-note` stilleri, `components/index.ts`'e tüm Faz A bileşen re-export'ları eklendi
 
+## ✅ Faz C — Sekme İçerikleri Handoff Birebir Port (2026-06-24, FRONTEND-only)
+
+> 8 sekmenin içeriği yeni handoff tasarımına portlandı (2-kolon `SettingsTwoColumn` + yan kartlar + tek üst Kaydet + dirty savebar + K3 `ReadOnlyBanner`). **Backend'e dokunulmadı**; eksik backend alanları ekranda `BackendDebtBadge` ile işaretlendi ve kaydet payload'larından dışlandı (her sekmede testle kilitlendi). 8 sekme + 2 review-fix = 10 commit; settings testleri 187 yeşil, `npm run build` temiz.
+
+- **Genel Bilgiler** (`3627c14`): Kurum Kimliği + İletişim 2-kolon; sağ Önizleme/Kayıt Bilgisi/Kurum Yetkilisi. Persist: officialName/contact/address/logo. K2: tema renk + vergi no/faks/vergi dairesi UI'dan kaldırıldı (logo kaldı).
+- **Derslikler** (`0600edc`): handoff tablo+kart+drawer+DeactivateDialog; inuse pill + sil-guard.
+- **Modüller** (`7e99a95`): 2-kolon kart ızgarası + PlanStatusCard; toggle persistence korundu.
+- **Akademik Yapı** (`2adb180`, fix `0eecb78`): Kademeler + Ders Kataloğu (Subjects, branşsız AS-1) + statik Şube Adlandırma (K6); kademe kilit iskeleti.
+- **Akademik Politikalar** (`a1e584b`): Not/Sınav/Devamsızlık/Belge kartları + canlı INV-POL; MEB reset (client). Persist: geçme notu + autoPublish + seviye skalaları.
+- **Zil Programı** (`6741304`): Tam/Yarım şablon + timeline + üretici + gün atamaları; yalnız aktif şablon düz satırları persist.
+- **Tatil Takvimi** (`85cd2d5`): tür filtre + ay ayırıcı + sezon özeti; yalnız "Okul" tatili CRUD; enum güvenli (`ClosedDay`).
+- **Bildirim Ayarları** (`cbe2e52`, fix `5f304bd`): olay×kanal matrisi + sessiz saatler + SMS limiti + SMS kotası kartı; persist yalnız 4 kanal toggle + 2 eşik.
+
+### ⚠️ Spec Dışına Çıkılanlar / Otonom Kararlar (2026-06-24)
+- **FE-only otonom yürütme:** Kullanıcı uyurken "bitirene kadar durma" talimatıyla Faz A+C subagent-driven uygulandı; backend (oksis-api) hiç değiştirilmedi. Review-fix commit'leri bu yetki kapsamında atıldı (normalde "Fix'lerde Auto-Commit YOK").
+- **K2 backend temizliği ertelendi:** Tema renk kolonları + tax/fax/vergi dairesi yalnız UI'dan kaldırıldı; backend kolon drop'u Debt (sabah onayıyla yapılacak).
+
+### 🧾 Backend Debt Envanteri (Faz C'den — bekleyen API işleri)
+- SchoolSettings: `DisplayName`, `OwnershipType`, `FoundingYear`, `SchoolAuthority` VO, `recordInfo` (audit→DTO); K2 ölü kolon temizliği (tema renk/tax/fax).
+- Akademik Politika genişlemesi: yuvarlama, yazılı/perf sayısı, ağırlıklar, devamsızlık limitleri, takdir/teşekkür eşikleri, parentNotify (+ INV-POL domain).
+- Derslik: `RoomType` 4→7, `Room.Note`, inuse hesabı; `class-rooms`/rooms izin slug netleştirme.
+- Akademik Yapı: kademe şube sayısı (Class agregasyonu, AS-3), Subjects CRUD + inuse.
+- Zil: `TemplateKey` + `BellDayAssignment` (+ üretici param persist — AS-7 client).
+- Tatil: `HolidayType`'a `AraTatil` (AS-4) + birleşik kaynak (MEB katalog + Sezon yarıyıl) + seasonId scope.
+- Bildirim: olay×kanal matrisi (`notification_types`) + quiet hours + daily SMS limit + SMS kotası (AS-6) + GET endpoint.
+- Modül: `ModuleTier` enum + seed 6→10 + plan yenileme tarihi.
+- İzin seed'leri: Sekreter `school-settings.view` (K3), Yetkili `manage-authority` (K5).
+- **İzin slug uyumsuzluğu (final review):** `school-settings.update-academic-policy`, `school-settings.update-academic-structure`, `class-rooms.update` `permission-matrix.md`'de yok — backend seed öncesi matrise eklenmeli ya da mevcut slug'a hizalanmalı (yoksa gate'ler hiç açılmaz).
+
+### 🧹 FE Final-Polish Backlog (Faz C review minor'ları)
+- C1: Debt "Görünen Ad" `required *` kaldırıldı (final review must-fix — `fix` commit ile çözüldü).
+- BellScheduleTab `fmtDur` `sa`/`dk` birimleri hardcoded TR (i18n'e taşı — C7-M4 ile birlikte).
+- C2-M1: RoomsTab toggle hata toast'ı yanlış i18n key; C2/C4 büyük tab dosyaları (bölme).
+- C6: kullanılmayan BellScheduleGrid/FormModal/SlotTypePill + dead i18n keys.
+- C7-M4: HolidaysTab MONTHS_TR hardcoded TR (Intl/i18n'e taşı); C7-M3 delete try/catch.
+- C5: dead i18n key + weight-bar inline style; test getByRole scope sağlamlaştırma.
+
 ## ⏳ Eksik / Bekleyen Yapılar
 
 _(Yok — modül mvp-ready.)_
