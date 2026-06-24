@@ -44,6 +44,21 @@
 
 - **Genel Bilgiler** (`3627c14`): Kurum Kimliği + İletişim 2-kolon; sağ Önizleme/Kayıt Bilgisi/Kurum Yetkilisi. Persist: officialName/contact/address/logo. K2: tema renk + vergi no/faks/vergi dairesi UI'dan kaldırıldı (logo kaldı).
 - **BE-2 — Genel Bilgiler backend Debt kapandı (2026-06-24):** Domain `SchoolSettings`'e `DisplayName`/`OwnershipType`(`SchoolOwnershipType` enum)/`FoundingYear` + owned VO `SchoolAuthority` eklendi. K2 ölü kolon DROP'u uygulandı: tema `PrimaryColor`/`SecondaryColor`, `ContactInfo.Fax`, `TaxNumber`/`TaxOffice`. Yeni `UpdateSchoolAuthorityCommand` (`PUT /school-settings/authority`, `school-settings.manage-authority` — SüperAdmin). `GetSchoolSettings` DTO'ya `displayName`/`ownershipType`/`foundingYear`/`authority`/`recordInfo` (institutionCode=School.Code + audit + updatedByName) eklendi. Migration `20260624..._school_settings_identity_fields_and_k2_cleanup` (nullable add + K2 drop, Down geri ekler). Public branding sözleşmesi korundu (renk artık sabit `#1d4ed8`). FE GeneralSettingsTab: 5 alandan `BackendDebtBadge` kaldırıldı, payload'a bağlandı; yetkili yalnız SüperAdmin düzenler (K5); recordInfo gerçek. Test: api unit yeşil (Domain/Application/Api/Tenant), web settings 188 test yeşil, iki build temiz.
+
+## ✅ Faz BE — Backend Debt Tamamlama (2026-06-24, 9/9 dilim, oksis-api `settings`)
+
+> Plan: `.claude/specs/okul-ayarlari-faz-be-debt-plan.md`. Her dilim CQRS slice + migration + unit test + review (+ fix). FE bağlama, **STRATEJİ GÜNCELLEMESİ** gereği `/admin/settings-new` ekranına yapılacak (FE-NEW fazı). BE-2..9 backend ✅; BE-2/BE-3 eski-tab FE'si sunk-cost (swap'a kadar kalır).
+
+- **BE-1 İzinler** (`d80ca3f`): `school-settings.manage-authority` (SüperAdmin-only, K5) + `class-rooms.manage` seed (EF HasData). Sekreter rolü henüz seed edilmemiş → `view` ataması Secretary rolü gelince.
+- **BE-2 Genel Bilgiler** (`70033e7`): üstte detaylı.
+- **BE-3 Derslikler** (`a9a33ab`): `RoomType` 4→7 (SportsHall/ConferenceHall/Library, int → migration yok) + `Room.Note` + `class-rooms.view/manage` endpoint bağlama.
+- **BE-4 Akademik Politika** (`f9857de` + guard fix `142150a`): 11 yeni alan (yuvarlama/yazılı/perf/ağırlıklar/devamsızlık/takdir-teşekkür/parentNotify), INV-POL **üç katman** (domain throw + FluentValidation + Zod). MEB defaults tutarlı.
+- **BE-5 Zil** (`5a1250a`): `BellSchedule.TemplateKey` + yeni `BellDayAssignment` tablosu (DayOfWeek K-GUN-1, Closed=null) + INV-ZIL.
+- **BE-6 Tatil** (`4b251a0` + cache fix `a77d61f`): `HolidayType.IntermediateBreak`, `source`/`locked` computed, seasonId scope, server-side locked-tür mutation guard.
+- **BE-7 Bildirim** (`99c2c24` + tenant-scope fix `8ac7671`): master `notification_event_types` (8) + tenant `notification_rule_configs` matrisi + quiet hours + daily SMS limit + `GET /sms-quota` (statik).
+- **BE-8 Modüller** (`f41bb95` + cache fix `ed7a042`): `ModuleConfig.Tier` (Core/Beta/PlanGated/Standard), seed 6→10 (FE catalog hizalı) + backfill, `GET /plan-status`, `School.PlanRenewalDate`, Core toggle guard (409).
+- **BE-9 Akademik Yapı** (`d0938f0`): Subjects CRUD (master, `IsActive` eklendi) + **inuse guard** (Published/Revising ScheduleProgram placement → 409) + `GET /academic-structure/levels` (kademe başına aktif derslik/şube sayısı).
+- **⚠️ KRİTİK GÜVENLİK YAKALAMASI (`8ac7671`):** BE-7 final review'ı, `ExecuteDeleteAsync`'in EF Core global query filter'ı UYGULAMADIĞINI ortaya çıkardı. Aynı desen BE-5'in iki bulk delete'inde de vardı (BE-5 review kaçırmıştı) → bildirim + zil + gün-atama bulk delete'leri `SchoolId`'ye açıkça scope'landı. Aksi halde bir okulun kaydetmesi TÜM okulların kayıtlarını siliyordu.
 - **Derslikler** (`0600edc`): handoff tablo+kart+drawer+DeactivateDialog; inuse pill + sil-guard.
 - **Modüller** (`7e99a95`): 2-kolon kart ızgarası + PlanStatusCard; toggle persistence korundu.
 - **Akademik Yapı** (`2adb180`, fix `0eecb78`): Kademeler + Ders Kataloğu (Subjects, branşsız AS-1) + statik Şube Adlandırma (K6); kademe kilit iskeleti.
@@ -60,13 +75,14 @@
 ### 🧾 Backend Debt Envanteri
 - ⚠️ **BE-6 yan not:** `AcademicSessions.Enums.HolidayType` ayrı enum (4 değer, `IntermediateBreak` yok). `Schools.Enums.HolidayType` 5 değere çıktı. CopyHolidays sezon-feed'i `IntermediateBreak` kopyalarsa eşleşmez — sezon-feed Debt'iyle birlikte senkronlanmalı. (Faz C'den — bekleyen API işleri)
 - ~~SchoolSettings: `DisplayName`, `OwnershipType`, `FoundingYear`, `SchoolAuthority` VO, `recordInfo` (audit→DTO); K2 ölü kolon temizliği (tema renk/tax/fax).~~ ✅ **BE-2 ile kapatıldı (2026-06-24).**
-- Akademik Politika genişlemesi: yuvarlama, yazılı/perf sayısı, ağırlıklar, devamsızlık limitleri, takdir/teşekkür eşikleri, parentNotify (+ INV-POL domain).
-- Derslik: `RoomType` 4→7, `Room.Note`, inuse hesabı; `class-rooms`/rooms izin slug netleştirme.
-- Akademik Yapı: kademe şube sayısı (Class agregasyonu, AS-3), Subjects CRUD + inuse.
-- Zil: `TemplateKey` + `BellDayAssignment` (+ üretici param persist — AS-7 client).
-- Tatil: `HolidayType`'a `AraTatil` (AS-4) + birleşik kaynak (MEB katalog + Sezon yarıyıl) + seasonId scope.
-- Bildirim: olay×kanal matrisi (`notification_types`) + quiet hours + daily SMS limit + SMS kotası (AS-6) + GET endpoint.
-- Modül: `ModuleTier` enum + seed 6→10 + plan yenileme tarihi.
+- ~~Akademik Politika genişlemesi (INV-POL domain).~~ ✅ **BE-4.**
+- ~~Derslik: `RoomType` 4→7, `Room.Note`; izin bağlama.~~ ✅ **BE-3.**
+- ~~Akademik Yapı: kademe şube sayısı (AS-3), Subjects CRUD + inuse.~~ ✅ **BE-9.**
+- ~~Zil: `TemplateKey` + `BellDayAssignment`.~~ ✅ **BE-5** (üretici param AS-7 client kalır).
+- ~~Tatil: `AraTatil` (AS-4) + seasonId scope.~~ ✅ **BE-6.** Kalan: birleşik kaynak (MEB katalog + Sezon yarıyıl feed) hâlâ Debt.
+- ~~Bildirim: matrisi + quiet hours + SMS limit + SMS kotası + GET.~~ ✅ **BE-7.** Kalan Debt: (a) `notification_rule_configs` henüz **dispatch pipeline'ına bağlı değil** (ayarlanır ama gönderimde uygulanmıyor); (b) `sms-quota` statik placeholder (NetGSM feed yok); (c) `daily SMS limit` enforcement.
+- ~~Modül: `ModuleTier` + seed 6→10 + plan yenileme tarihi.~~ ✅ **BE-8.** Kalan: `School.PlanRenewalDate` doldurma mekanizması yok (null); eski 3 modül (homework/messaging/reports) FE catalog dışı.
+- **Kalan backend Debt (BE sonrası):** (1) bildirim dispatch wiring; (2) PlanRenewalDate abonelik kaynağı; (3) Subjects mutation sonrası `academics:subjects` cache invalidation (24h stale); (4) `ListSubjects` artık `IsActive` filtreliyor — endpoint doc; (5) `AcademicSessions.Enums.HolidayType` ↔ `Schools.Enums.HolidayType` senkron; (6) tatil birleşik kaynak feed.
 - **BE-1 ✅:** `manage-authority` (SüperAdmin-only, K5) + `class-rooms.manage` seed edildi. **K3 Sekreter notu:** Sekreter/Secretary rolü henüz seed edilmemiş (5 MVP rolü var); Sekreter `school-settings.view` ataması Secretary rolü eklenince yapılacak (ayrı iş).
 - **İzin slug uyumsuzluğu (final review):** `school-settings.update-academic-policy`, `school-settings.update-academic-structure`, `class-rooms.update` `permission-matrix.md`'de yok — backend seed öncesi matrise eklenmeli ya da mevcut slug'a hizalanmalı (yoksa gate'ler hiç açılmaz).
 
