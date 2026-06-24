@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: **mvp-ready**   ·   Güncel: 2026-06-24 (Faz A shell tamamlandı)
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: **mvp-ready**   ·   Güncel: 2026-06-24 (BE-2: Genel Bilgiler backend Debt kapatıldı)
 
 > Temel: Baseline (21 endpoint + 6 tab) **live**. 2026-05-25 ihtiyaç analiziyle açılan
 > 22 issue'luk genişletme **tamamlandı** (API #1–14 + Web #15–22). 2026-05-28 ek
@@ -43,6 +43,7 @@
 > 8 sekmenin içeriği yeni handoff tasarımına portlandı (2-kolon `SettingsTwoColumn` + yan kartlar + tek üst Kaydet + dirty savebar + K3 `ReadOnlyBanner`). **Backend'e dokunulmadı**; eksik backend alanları ekranda `BackendDebtBadge` ile işaretlendi ve kaydet payload'larından dışlandı (her sekmede testle kilitlendi). 8 sekme + 2 review-fix = 10 commit; settings testleri 187 yeşil, `npm run build` temiz.
 
 - **Genel Bilgiler** (`3627c14`): Kurum Kimliği + İletişim 2-kolon; sağ Önizleme/Kayıt Bilgisi/Kurum Yetkilisi. Persist: officialName/contact/address/logo. K2: tema renk + vergi no/faks/vergi dairesi UI'dan kaldırıldı (logo kaldı).
+- **BE-2 — Genel Bilgiler backend Debt kapandı (2026-06-24):** Domain `SchoolSettings`'e `DisplayName`/`OwnershipType`(`SchoolOwnershipType` enum)/`FoundingYear` + owned VO `SchoolAuthority` eklendi. K2 ölü kolon DROP'u uygulandı: tema `PrimaryColor`/`SecondaryColor`, `ContactInfo.Fax`, `TaxNumber`/`TaxOffice`. Yeni `UpdateSchoolAuthorityCommand` (`PUT /school-settings/authority`, `school-settings.manage-authority` — SüperAdmin). `GetSchoolSettings` DTO'ya `displayName`/`ownershipType`/`foundingYear`/`authority`/`recordInfo` (institutionCode=School.Code + audit + updatedByName) eklendi. Migration `20260624..._school_settings_identity_fields_and_k2_cleanup` (nullable add + K2 drop, Down geri ekler). Public branding sözleşmesi korundu (renk artık sabit `#1d4ed8`). FE GeneralSettingsTab: 5 alandan `BackendDebtBadge` kaldırıldı, payload'a bağlandı; yetkili yalnız SüperAdmin düzenler (K5); recordInfo gerçek. Test: api unit yeşil (Domain/Application/Api/Tenant), web settings 188 test yeşil, iki build temiz.
 - **Derslikler** (`0600edc`): handoff tablo+kart+drawer+DeactivateDialog; inuse pill + sil-guard.
 - **Modüller** (`7e99a95`): 2-kolon kart ızgarası + PlanStatusCard; toggle persistence korundu.
 - **Akademik Yapı** (`2adb180`, fix `0eecb78`): Kademeler + Ders Kataloğu (Subjects, branşsız AS-1) + statik Şube Adlandırma (K6); kademe kilit iskeleti.
@@ -53,10 +54,11 @@
 
 ### ⚠️ Spec Dışına Çıkılanlar / Otonom Kararlar (2026-06-24)
 - **FE-only otonom yürütme:** Kullanıcı uyurken "bitirene kadar durma" talimatıyla Faz A+C subagent-driven uygulandı; backend (oksis-api) hiç değiştirilmedi. Review-fix commit'leri bu yetki kapsamında atıldı (normalde "Fix'lerde Auto-Commit YOK").
-- **K2 backend temizliği ertelendi:** Tema renk kolonları + tax/fax/vergi dairesi yalnız UI'dan kaldırıldı; backend kolon drop'u Debt (sabah onayıyla yapılacak).
+- **K2 backend temizliği TAMAMLANDI (2026-06-24, BE-2):** Tema renk kolonları + tax/fax/vergi dairesi hem UI'dan hem DB'den kaldırıldı (migration ile DROP).
+- **⚠️ CROSS-TIER MOBİL KIRILMASI (BE-2 yan etkisi, takip gerek):** Paylaşılan `GET /school-settings` DTO'sundan `taxNumber`/`taxOffice`/`fax`/tema renkleri kaldırıldı. `oksis-mobile` (kapsam dışı, `master` dalı) bu alanları ~5 ekranda okuyor → artık `undefined`. Mobil takip dilimi gerekir. Web/api `settings` dalında, mobil `master`'da — merge sırasında dikkat.
 
 ### 🧾 Backend Debt Envanteri (Faz C'den — bekleyen API işleri)
-- SchoolSettings: `DisplayName`, `OwnershipType`, `FoundingYear`, `SchoolAuthority` VO, `recordInfo` (audit→DTO); K2 ölü kolon temizliği (tema renk/tax/fax).
+- ~~SchoolSettings: `DisplayName`, `OwnershipType`, `FoundingYear`, `SchoolAuthority` VO, `recordInfo` (audit→DTO); K2 ölü kolon temizliği (tema renk/tax/fax).~~ ✅ **BE-2 ile kapatıldı (2026-06-24).**
 - Akademik Politika genişlemesi: yuvarlama, yazılı/perf sayısı, ağırlıklar, devamsızlık limitleri, takdir/teşekkür eşikleri, parentNotify (+ INV-POL domain).
 - Derslik: `RoomType` 4→7, `Room.Note`, inuse hesabı; `class-rooms`/rooms izin slug netleştirme.
 - Akademik Yapı: kademe şube sayısı (Class agregasyonu, AS-3), Subjects CRUD + inuse.
@@ -64,7 +66,7 @@
 - Tatil: `HolidayType`'a `AraTatil` (AS-4) + birleşik kaynak (MEB katalog + Sezon yarıyıl) + seasonId scope.
 - Bildirim: olay×kanal matrisi (`notification_types`) + quiet hours + daily SMS limit + SMS kotası (AS-6) + GET endpoint.
 - Modül: `ModuleTier` enum + seed 6→10 + plan yenileme tarihi.
-- İzin seed'leri: Sekreter `school-settings.view` (K3), Yetkili `manage-authority` (K5).
+- **BE-1 ✅:** `manage-authority` (SüperAdmin-only, K5) + `class-rooms.manage` seed edildi. **K3 Sekreter notu:** Sekreter/Secretary rolü henüz seed edilmemiş (5 MVP rolü var); Sekreter `school-settings.view` ataması Secretary rolü eklenince yapılacak (ayrı iş).
 - **İzin slug uyumsuzluğu (final review):** `school-settings.update-academic-policy`, `school-settings.update-academic-structure`, `class-rooms.update` `permission-matrix.md`'de yok — backend seed öncesi matrise eklenmeli ya da mevcut slug'a hizalanmalı (yoksa gate'ler hiç açılmaz).
 
 ### 🧹 FE Final-Polish Backlog (Faz C review minor'ları)
