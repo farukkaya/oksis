@@ -1,3 +1,12 @@
+# ⚠️ STRATEJİ GÜNCELLEMESİ (2026-06-24, kullanıcı kararı)
+Kullanıcı izole yeni ekran `/admin/settings-new` kurdu (handoff'a birebir, backend-bağımsız; "Rebuild > Patch"). KARAR:
+- **BE-5..9 artık BACKEND-ONLY** (eski `/admin/settings` sekmelerine DOKUNMA; her dilimdeki "FE un-Debt" adımı ATLANIR).
+- **FE-NEW fazı (backend bitince):** `/admin/settings-new`'i gerçek API'lere bağla (mock `data.ts` → React Query/RHF, 8 tab, BE-1..9 alanları dahil).
+- **SWAP fazı:** rota `/admin/settings → settings-new`, eski `portals/admin/settings` klasörü kaldırılır.
+- BE-1..4'te yapılan eski-tab FE un-Debt'i değiştirilmez (swap'a kadar eski ekran çalışır kalır; sunk cost).
+
+---
+
 # Okul Ayarları — Faz BE (Backend Debt Tamamlama) · Full-Stack Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: superpowers:subagent-driven-development. Implementer'lar **Opus 4.8** ([[feedback-implementer-opus]]).
