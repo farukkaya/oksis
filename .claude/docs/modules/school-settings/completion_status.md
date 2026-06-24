@@ -57,7 +57,8 @@
 - **K2 backend temizliği TAMAMLANDI (2026-06-24, BE-2):** Tema renk kolonları + tax/fax/vergi dairesi hem UI'dan hem DB'den kaldırıldı (migration ile DROP).
 - **⚠️ CROSS-TIER MOBİL KIRILMASI (BE-2 yan etkisi, takip gerek):** Paylaşılan `GET /school-settings` DTO'sundan `taxNumber`/`taxOffice`/`fax`/tema renkleri kaldırıldı. `oksis-mobile` (kapsam dışı, `master` dalı) bu alanları ~5 ekranda okuyor → artık `undefined`. Mobil takip dilimi gerekir. Web/api `settings` dalında, mobil `master`'da — merge sırasında dikkat.
 
-### 🧾 Backend Debt Envanteri (Faz C'den — bekleyen API işleri)
+### 🧾 Backend Debt Envanteri
+- ⚠️ **BE-6 yan not:** `AcademicSessions.Enums.HolidayType` ayrı enum (4 değer, `IntermediateBreak` yok). `Schools.Enums.HolidayType` 5 değere çıktı. CopyHolidays sezon-feed'i `IntermediateBreak` kopyalarsa eşleşmez — sezon-feed Debt'iyle birlikte senkronlanmalı. (Faz C'den — bekleyen API işleri)
 - ~~SchoolSettings: `DisplayName`, `OwnershipType`, `FoundingYear`, `SchoolAuthority` VO, `recordInfo` (audit→DTO); K2 ölü kolon temizliği (tema renk/tax/fax).~~ ✅ **BE-2 ile kapatıldı (2026-06-24).**
 - Akademik Politika genişlemesi: yuvarlama, yazılı/perf sayısı, ağırlıklar, devamsızlık limitleri, takdir/teşekkür eşikleri, parentNotify (+ INV-POL domain).
 - Derslik: `RoomType` 4→7, `Room.Note`, inuse hesabı; `class-rooms`/rooms izin slug netleştirme.
