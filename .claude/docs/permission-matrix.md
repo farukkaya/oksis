@@ -75,11 +75,11 @@ Aksiyonlar:
 
 ### School Settings (endpoint bazlı detay yetki)
 
-Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırılımlı izinler. Backend seed: `permissions` tablosunda `SCHOOL_SETTINGS` modülü altında 10 satır, `role_permissions` tablosunda SCHOOL_ADMIN'e otomatik atanır.
+Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırılımlı izinler. Backend seed: `permissions` tablosunda `SCHOOL_SETTINGS` modülü altında 13 satır, `role_permissions` tablosunda (manage-authority hariç tümü) SCHOOL_ADMIN'e otomatik atanır. `school-settings.manage-authority` yalnız SuperAdmin'e seed edilir (K5).
 
 | İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Secretary |
 |---|---|---|---|---|---|---|---|
-| `school-settings.view` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `school-settings.view` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | ✅ |
 | `school-settings.update-basic` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `school-settings.update-contact` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `school-settings.update-address` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
@@ -89,8 +89,20 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | `school-settings.manage-holidays` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `school-settings.manage-modules` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `school-settings.manage-notifications` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `school-settings.update-academic-structure` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `school-settings.update-academic-policy` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `school-settings.manage-authority` | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 
 > **Not:** `schools.update` ile `school-settings.*` paralel — bu izinler özellikle Okul Ayarları ekranındaki sekme bazlı yetki kırılımı için. Detay: `modules/school-settings/permissions.md`.
+
+### Class Rooms (Derslik / fiziksel Room)
+
+`CLASS_ROOMS` modülü. `class-rooms.view` + `class-rooms.manage` Okul Ayarları Derslikler sekmesini (RoomsTab CRUD) besler; endpoint bağlama BE-3'te yapılır. Backend seed: SuperAdmin + SchoolAdmin (master `AllPermissionIds()` kataloğu). Şube/öğrenci atama gibi diğer `class-rooms.*` slug'ları AcademicSessions modülünde tanımlı.
+
+| İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Secretary |
+|---|---|---|---|---|---|---|---|
+| `class-rooms.view` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `class-rooms.manage` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 
 ### Students
 
