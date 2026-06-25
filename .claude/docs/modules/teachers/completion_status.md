@@ -192,6 +192,26 @@
   hedef Undefined (gri) gösterilir, yanlış toplam üretilmez. Tam TTK per-seviye seed (ilkokul/ortaokul 6-8/lise)
   follow-up veri işi (model gerçek). Ayrıca: Müfredat tam modülü (override UI/import/INV-3) ertelendi (§5b).
 
+## 🗺️ Görevlendirme v2 — Yol Haritası (2026-06-25)
+
+> v2 çekirdeği master'da CANLI ve DevTools ile uçtan-uca doğrulandı (BE+FE; bkz. 2026-06-25 günlük girdisi).
+> Aşağıdaki boşluklar kod üzerinden teyitlidir; öncelik sırasıyla.
+
+**Boşluklar (kod-teyitli):**
+- **G1 🔴 Yan branş yönetim ucu yok** — `TeacherProfile.SetSecondaryBranches`'i çağıran komut/UI yok; öğretmen yan branşı hiç set edilmiyor → üçlü uyumun **YanBrans ayağı pratikte ölü** (gerçekte yalnız Uyumlu/Alan-dışı çıkar). v2'nin çekirdek tasarım kararlarından biri yarım.
+- **G2 🟠 `SubjectAssignmentChangedEvent` tüketicisi yok** — event atılıyor ama dinleyen yok → downstream Şube Dağıtımı / Ders Programı senkronu + bildirim eksik.
+- **G3 🟠 Teacher portalı ekranı yok (GRV-İ-11)** — BE'de `assignments.view` var ama öğretmen kendi görevlerini göremiyor (FE ekranı yok).
+- **G4 🟡 Copy-season canlı test edilmedi** — komut + dialog var; FE kaynak-sezon seçimi sezgisel (`previousSessionId`), uçtan-uca doğrulanmadı.
+- **G5 🟡 Kademe yapılandırma bağımlılığı** — okul `SchoolGradeLevel` tanımlamazsa kademe filtresi fallback'e düşer (tüm dersler).
+- **G6 🟡 Branş-isim normalizasyonu (AS-5)** — serbest metin `Branch` ↔ `Subject.Name` eşitlik; eşanlamlı (Edebiyat↔Türk Dili) haritası yok → bazı uyumlar yanlış Alan-dışı.
+- **G7 ⚪ Housekeeping** — FE test kapsamı dar (3 render); handoff materyalleri untracked; ayrı `modules/assignments` doküman klasörü yok (teachers altında).
+
+**Faz planı:**
+- **Kısa vade:** G1 (yan branş yönetimi — komut + öğretmen detay çoklu branş seçimi; **en yüksek değer**) · G3 (teacher portalı read-only) · G4 (kaynak-sezon seçici + canlı doğrulama).
+- **Orta vade:** G2 (`INotificationHandler<SubjectAssignmentChangedEvent>` + downstream Şube Dağıtımı/Ders Programı senkronu, analiz §5.1) · G5 (okul kurulumunda kademe zorunluluğu).
+- **Uzun vade / ayrı iş:** G6 (eşanlamlı haritası) · Mobil (§4.4) · Müfredat Saati modülü (D-1, koparıldı) · Şube Dağıtımı modülü (zincirin downstream'i).
+- **Housekeeping:** G7.
+
 ## ⚠️ Spec Dışına Çıkılanlar
 
 - **2026-06-24 (spec v1 → v2) — Görevlendirme modeli kökten değişti:** v1 sınıf×saat/doluluk modeli
