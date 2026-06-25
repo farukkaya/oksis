@@ -82,7 +82,9 @@ Sezon:         { id, label, sub, status:'active'|'archived' }
 > `TeachingAssignment` DOKUNULMADI (downstream). `TeacherProfile.SecondaryBranches` eklendi (AS-3, üçlü uyum).
 > **Tablo:** `academic.subject_teacher_assignments` + `teacher_secondary_branches` JSON; migration `20260625_…`.
 > **İzinler (yeni):** `assignments.{view,assign,copy-season}` (SchoolAdmin tam, Teacher view, copy-season SCHOOL_ADMIN-only).
-> **Ders havuzu:** `Subject.IsActive` global (AS-2 — sezon/okul filtresi yok). **Türetim server-side** (üçlü uyum tr-TR bellekte).
+> **Ders havuzu + seviye:** `Subject.IsActive` ∩ **okul kademesi** (`SchoolGradeLevel`) — Lise okulu ortaokul derslerini/
+> seviyelerini görmez (AS-2 2026-06-25'te kademe-scope ile çözüldü; kademe tanımsızsa geri-uyum = tüm dersler).
+> **Türetim server-side** (üçlü uyum tr-TR bellekte).
 >
 > **Controller `api/v1/assignments`:**
 > | Uç | İzin |

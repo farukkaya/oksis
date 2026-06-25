@@ -4,7 +4,20 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `████████░░` %78   ·   Status: in-progress   ·   Güncel: 2026-06-25 (Görevlendirme **v2 BE + FE bağlama** — BE: aggregate/4 komut/6 sorgu/controller/migration (12 domain + 9 integration yeşil); FE: stub→gerçek `/api/v1/assignments/*`, server-side türetim, izin `ASSIGNMENTS_*`, route guard (3 FE testi + build yeşil). **Kalan: canlı uçtan-uca run (API+DB+login).**)
+**İlerleme:** `█████████░` %85   ·   Status: in-progress   ·   Güncel: 2026-06-25 (Görevlendirme **v2 BE+FE CANLI doğrulandı** — DevTools uçtan-uca (okuma+drawer+yazma+invalidation+iki eksen); fix'ler: atayan adı (Account→Person), kategori i18n, secondaryBranches null-guard, **kademe filtresi** (seviye+ders havuzu okul SchoolGradeLevel'ı ile); eski v1 `assignments/` silindi. 12 domain + 9 integration + 3 FE testi yeşil.)
+
+> 2026-06-25 (fix/test): **Görevlendirme v2 canlı doğrulama + düzeltmeler.** API (docker SQL Server) + FE dev
+> üzerinde Chrome DevTools ile uçtan-uca test edildi (müdür login → okuma 200, drawer adayları, çoklu atama
+> POST 200, React Query invalidation, ders↔öğretmen eksen geçişi). Bulgu/düzeltmeler: (1) **Atayan adı** "—"
+> çıkıyordu — `CreatedBy`=Account.Id, Person.Id değil → `LoadCreatorNamesAsync` Account→PersonId→Person köprüsü.
+> (2) **Kademe filtresi** (AS-2 çözümü): Lise okulu ortaokul seviyelerini (5-8) ve ortaokul-özel derslerini
+> (Fen Bilimleri, Sosyal Bilgiler…) görüyordu → seviye türetimi + ders havuzu okulun aktif `SchoolGradeLevel`'ı
+> ile kesiştirildi (`LoadSubjectLevelsAsync` ∩ kademe, `LoadSchoolScopedSubjectIdsAsync`); kademe tanımsızsa
+> geri-uyum (tüm dersler). Doğrulandı: Lise 22→16 ders, Almanca 5-12→9-12. (3) **secondaryBranches null-guard**:
+> migration öncesi öğretmen satırları NULL kolon → EF null → FE crash; BE DTO'da `[]` coalesce + FE `BranchTags`
+> null-dayanıklı. (4) **FE kategori i18n**: ders kategorileri (Math/Science…) Türkçe (Matematik/Fen…). (5) Eski
+> v1 sınıf-merkezli `oksis-web/.../admin/assignments/` (21 dosya) silindi; route v2'de. Commit'ler: feat (önceki)
+> + fix (ef0582a api, 1216bd9 web).
 
 > 2026-06-25: **Görevlendirme v2 BACKEND (oksis-api).** Teknik analiz `Gorevlendirmeler-v2-Teknik-Analiz.docx`
 > esas alındı; kullanıcı kararları: aggregate `SubjectTeacherAssignment`, izin prefix `assignments.*` (yeni),
@@ -197,9 +210,11 @@
   tutarlılık + EF sadeliği için typed-ID kullanılmadı. Onay: kullanıcı (2026-06-25, AS-1 "ben öneririm"). Etki: minör; kimlik ham Guid.
 - **2026-06-25 (AS-4 → son mesaj) — izin prefix `assignments.*`:** Analiz `course-assignments.*` önermişti; kullanıcı
   "course-assignments olmasın, sadece assignments, yeni izin" dedi → yeni `assignments.{view,assign,copy-season}`. Onay: kullanıcı (2026-06-25).
-- **2026-06-25 (AS-2 sonucu — gözlem) — global ders havuzu:** Ders havuzu = tüm aktif master Subject (28 MEB seed +
-  eklenenler), sezon/okul filtresi YOK (AS-2 "Subject.IsActive global"). Sonuç: her okul tüm dersleri görür → "Atanmamış
-  Ders" yüksek. Onay: kullanıcı (2026-06-24 AS-2). İleride okul-kapsamlı daraltma değerlendirilebilir (AS-2 takip).
+- **2026-06-25 (AS-2 → ÇÖZÜLDÜ) — ders havuzu + seviye okul kademesine göre:** İlk uygulamada ders havuzu = tüm aktif
+  master Subject (sezon/okul filtresi yok) idi → Lise okulu ortaokul derslerini/seviyelerini görüyordu. Kullanıcı bunu
+  yanlış buldu (2026-06-25); **düzeltildi:** seviye türetimi (`LoadSubjectLevelsAsync`) ve ders havuzu
+  (`LoadSchoolScopedSubjectIdsAsync`) okulun aktif `SchoolGradeLevel`'larıyla kesiştirilir; kademe tanımsızsa geri-uyum
+  (tüm dersler). Onay: kullanıcı (2026-06-25). Etki: Lise yalnız 9-12 + Lise derslerini görür (canlı doğrulandı 22→16).
 
 - **2026-06-14 (S-1) — `HomeroomAssignment` entity iptal:** Docx'in `HomeroomAssignment`'ı yapılmadı;
   homeroom zaten `ClassRoom.HomeroomTeacherId`'de (classrooms sorumluluğu). `set-homeroom` izni de eklenmedi.
