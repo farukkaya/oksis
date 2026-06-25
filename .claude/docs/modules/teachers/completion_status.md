@@ -4,7 +4,36 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `███████░░░` %65   ·   Status: in-progress   ·   Güncel: 2026-06-14 (Görevlendirme Hub + Müfredat Saati çekirdeği — sınıf-merkezli hub ekranı, gerçek hedef saat, sezon kopyalama; BE+FE tam)
+**İlerleme:** `████████░░` %78   ·   Status: in-progress   ·   Güncel: 2026-06-25 (Görevlendirme **v2 BE + FE bağlama** — BE: aggregate/4 komut/6 sorgu/controller/migration (12 domain + 9 integration yeşil); FE: stub→gerçek `/api/v1/assignments/*`, server-side türetim, izin `ASSIGNMENTS_*`, route guard (3 FE testi + build yeşil). **Kalan: canlı uçtan-uca run (API+DB+login).**)
+
+> 2026-06-25: **Görevlendirme v2 BACKEND (oksis-api).** Teknik analiz `Gorevlendirmeler-v2-Teknik-Analiz.docx`
+> esas alındı; kullanıcı kararları: aggregate `SubjectTeacherAssignment`, izin prefix `assignments.*` (yeni),
+> `TeacherProfile.SecondaryBranches` eklendi (AS-3, üçlü uyum), ders havuzu `Subject.IsActive` global (AS-2),
+> türetim **server-side** (6 zengin sorgu). **Domain:** `SubjectTeacherAssignment` (sezon-scope, saat/şube YOK,
+> soft-close + denetim izi) + `SubjectAssignmentChangedEvent` + `AssignmentStatus`; mevcut `TeachingAssignment`
+> DOKUNULMADI (downstream tüketici). **Persistence:** `academic.subject_teacher_assignments` (filtreli unique
+> `(Session,Subject,Teacher)` WHERE Active + 2 kapsayıcı index) + `teacher_secondary_branches` JSON kolonu;
+> migration `20260625_subject_teacher_assignments`. **İzinler:** `assignments.{view,assign,copy-season}` seed
+> (SchoolAdmin tam, Teacher view, copy-season SchoolAdmin-only). **Application:** komutlar AssignSubjectTeachers
+> (çoklu, branşsız hard-block, alan-dışı gerekçe), Close (soft-close), UpdateJustification, CopyFromPreviousSeason;
+> sorgular Summary / CoursesWithCoverage / TeachersWithDutyCount / GetCourseAssignments / GetTeacherDuties /
+> ListAssignableCandidates (EF projection, üçlü uyum tr-TR bellekte). **Controller:** `api/v1/assignments` (10 uç).
+> **Test:** 12 domain (xUnit) + 9 integration (gerçek SQL Server — SecondaryBranches JSON round-trip, üçlü uyum,
+> tüm sorgular, Assign/Close) yeşil. Sapma: bkz. ⚠️ Spec Dışına Çıkılanlar 2026-06-25. **Kalan:** FE'yi gerçek
+> uçlara bağlama (stub→HTTP, izin sabitleri, server-derived DTO'lara refactor) + doküman.
+
+> 2026-06-24: **Görevlendirme v2 FE yeniden tasarımı (yalnız oksis-web).** Spec `.claude/specs/gorevlendirme-hub-spec.md`
+> **v2'ye yükseltildi** (kullanıcı onaylı 2026-06-24) — v1 sınıf×saat/doluluk modelini geçersiz kılar. Yeni ekran yalnız
+> **yetkin öğretmen ↔ ders** eşlemesi üretir; **haftalık saat/şube YOK** (KARAR 1/3), iki eksen (Derslere/Öğretmenlere göre),
+> metrik = kapsama boşluğu, uyum **üçlü** (içi/yan/dışı + öğretmen yan branşları), yaşam döngüsü **soft-close + denetim izi**
+> (`by/at/gerekçe`, kayıt silinmez). İzole klasör `src/portals/admin/assignments-new/` (academic-sessions deseni: types/seed/
+> derivations(+test)/keys/api/hooks/components/pages/styles). Handoff `handoff_gorevlendirmeler_v2/` birebir port edildi
+> (kapsama kapsülü, görev özeti şeridi, gerekçe/iz bloğu, seçim drawer'ı; shadcn Sheet değil — drawer `.asg-body` içinde
+> absolute; PageHeader stats + Popover satır menüsü). **Yaklaşım: frontend-first / backend Debt** — `assignmentsApi` §3.2
+> v2 kontratını döndüren **stub** (seed); gerçek backend gelince yalnız adaptör değişir. 17 vitest yeşil (13 türetim + 4 sayfa
+> render), modülde 0 tip hatası. **Henüz swap edilmedi:** mevcut v1 `assignments/` + route korunuyor; `/admin/assignments`
+> hâlâ v1 gösteriyor (kullanıcı doğrulaması sonrası swap + v1 silme). Debt-BE-1..4 (saat'siz görevlendirme entity'si, audit/
+> soft-close alanları, üçlü uyum+yan branş, kopyala v2 semantiği) ayrı backend işi. Sapma: bkz. ⚠️ Spec Dışına Çıkılanlar 2026-06-24.
 
 > 2026-06-14: **Görevlendirme Hub'ı (sınıf-merkezli) + Müfredat Saati çekirdeği (oksis-api + oksis-web).**
 > Spec `.claude/specs/gorevlendirme-hub-spec.md` (bağlayıcı). Mevcut `TeachingAssignment` çekirdeği
@@ -151,6 +180,26 @@
   follow-up veri işi (model gerçek). Ayrıca: Müfredat tam modülü (override UI/import/INV-3) ertelendi (§5b).
 
 ## ⚠️ Spec Dışına Çıkılanlar
+
+- **2026-06-24 (spec v1 → v2) — Görevlendirme modeli kökten değişti:** v1 sınıf×saat/doluluk modeli
+  (`fillStatus`, `targetHours`, `ListAssignmentClasses/ListClassAssignments`) Görevlendirme ekranından **geçersiz**;
+  v2 ders↔öğretmen yetkinlik eşlemesi (saat/şube yok, üçlü uyum, soft-close+audit). Onay: kullanıcı (2026-06-24).
+  Etki: yeni bağlayıcı spec v2; backend v2'yi karşılamadığı için **frontend-first + Debt-BE** (Debt-BE-1..4).
+- **2026-06-24 (D-1) — Müfredat Saati çekirdeği Görevlendirme'den koparıldı (yerinde kalır):** v1'de Görevlendirme'yi
+  besleyen `CurriculumHourTemplate`/`SchoolWeeklyHourOverride`/`IRequiredHoursResolver`/`curriculum-hours.view` backend'de
+  **dokunulmadan** duruyor; v2 ekran bunları artık kullanmaz (KARAR 1/3 saat'i kaldırdı). Onay: kullanıcı (2026-06-24,
+  "yerinde kalsın, dokunma"). Etki: çekirdek ileride kendi modülünde yaşar; Görevlendirme bağı koptu.
+- **2026-06-24 (frontend-first) — v2 backend Debt-BE:** v2 modelini besleyecek backend bu işte yazılmadı; FE `assignmentsApi`
+  stub'ı §3.2 kontratını döndürür. Açık sorular AS-1..5 (saat'siz entity, v1 veri köprüsü, yan branş modeli, kopyala v2 anlamı).
+  Onay: kullanıcı (2026-06-24). Etki: gerçek backend gelince yalnız adaptör değişir; UI sözleşmesi sabit.
+- **2026-06-25 (AS-1 çözüm) — typed-ID value object atlandı:** Aggregate adı `SubjectTeacherAssignment`; analiz
+  `SubjectTeacherAssignmentId` value object öneriyordu ama kardeş `TeachingAssignment` ham `Guid Id` kullandığından
+  tutarlılık + EF sadeliği için typed-ID kullanılmadı. Onay: kullanıcı (2026-06-25, AS-1 "ben öneririm"). Etki: minör; kimlik ham Guid.
+- **2026-06-25 (AS-4 → son mesaj) — izin prefix `assignments.*`:** Analiz `course-assignments.*` önermişti; kullanıcı
+  "course-assignments olmasın, sadece assignments, yeni izin" dedi → yeni `assignments.{view,assign,copy-season}`. Onay: kullanıcı (2026-06-25).
+- **2026-06-25 (AS-2 sonucu — gözlem) — global ders havuzu:** Ders havuzu = tüm aktif master Subject (28 MEB seed +
+  eklenenler), sezon/okul filtresi YOK (AS-2 "Subject.IsActive global"). Sonuç: her okul tüm dersleri görür → "Atanmamış
+  Ders" yüksek. Onay: kullanıcı (2026-06-24 AS-2). İleride okul-kapsamlı daraltma değerlendirilebilir (AS-2 takip).
 
 - **2026-06-14 (S-1) — `HomeroomAssignment` entity iptal:** Docx'in `HomeroomAssignment`'ı yapılmadı;
   homeroom zaten `ClassRoom.HomeroomTeacherId`'de (classrooms sorumluluğu). `set-homeroom` izni de eklenmedi.

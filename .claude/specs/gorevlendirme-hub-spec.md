@@ -1,226 +1,213 @@
-# Görevlendirme Hub'ı (Sınıf-Merkezli) — Tasarım Spec'i
+# Görevlendirme Hub'ı (Ders ↔ Öğretmen Yetkinlik Eşlemesi) — Tasarım Spec'i · v2
 
-**Kapsam:** Akademik / Görevlendirmeler sınıf-merkezli hub ekranı + okuma tarafı + sezon kopyalama
-**Hedef katmanlar:** `oksis-api` + `oksis-web`
-**Modüller:** `teachers` (TeachingAssignment), `subjects/curriculum` (Müfredat Saati — çekirdek), `timetable` (bağıntı — değişmez)
-**Durum:** Tasarım kararları (v1) — kullanıcı onaylı (2026-06-14)
-**Mimari bağlam:** Modular Monolith · Vertical Slice · CQRS/MediatR · Clean Architecture · Multi-tenant
-**Kaynaklar:** Görevlendirme Teknik Analizi (docx, 2026-06) · Müfredat Saati Teknik Analizi (docx, 2026-06) · Design handoff (`handoff_gorevlendirmeler_kademe/`) · admin-ekranlari-mimari-spec §5.7 · ders-programi-modulu-spec §10/K0.6
-**Tarih:** 2026-06-14
+**Kapsam:** Akademik / Görevlendirmeler ekranının **yeniden tasarımı (v2)** + okuma/yazma tarafı + sezon kopyalama
+**Hedef katmanlar:** `oksis-web` (bu işte gerçek) · `oksis-api` (Debt-BE — bu işte yalnız kontrat sabitlenir)
+**Modüller:** `teachers` (TeachingAssignment) · `subjects/academics` (ders havuzu) · `timetable` (downstream — değişmez)
+**Durum:** v2 tasarım kararları — **kullanıcı onaylı 2026-06-24** (v1 sınıf×saat modelini geçersiz kılar)
+**Yaklaşım:** **Frontend-first / backend Debt** (kullanıcı kararı 2026-06-24) — FE handoff'a birebir kurulur; backend uçları v2 kontratına göre stub ile beslenir, eksikler Debt işaretlenir.
+**Kaynaklar:** Handoff `handoff_gorevlendirmeler_v2/` (README + `assignments.jsx` v2 + screenshots) · admin-ekranlari-mimari-spec §5.7 · ders-programi-modulu-spec §10/K0.6
+**Tarih:** 2026-06-24
 
 > Bu dosya `.claude/specs/` altındadır → **bağlayıcı anlaşma** (CLAUDE.md Absolute Rule #6).
 > Numaralı maddeler pazarlık dışıdır. Aykırılıkta dur, madde no ile bildir.
 
 ---
 
-## 0. İlke ve mevcut durum
+## 0. v1 → v2: kavramsal değişim (bu sürüm v1'in yerini alır)
 
-Görevlendirme çekirdeği **zaten mevcuttur ve korunur:**
+Bu spec'in **v1 sürümü** (sınıf-merkezli, haftalık saat, müfredat hedefi/doluluk) **geçersizdir**.
+v2, ekranın ürettiği şeyi değiştirir:
 
-| Mevcut parça | Konum |
-|---|---|
-| `TeachingAssignment` entity (teacher×classroom×subject + weeklyHours, soft-delete `RevokedAt`) | `Domain/Modules/Teachers/Entities/` |
-| EF config + `academic.teaching_assignments` tablosu + filtreli unique index | `Infrastructure/.../Teachers/` |
-| `TeachingAssignmentChangedEvent` (Assigned/Unassigned) | `Domain/Modules/Teachers/Events/` |
-| `AssignSubjectClassCommand` / `UnassignSubjectClassCommand` | `Application/Modules/Teachers/Commands/` |
-| `GetTeacherAssignmentsQuery` / `GetAssignmentHistoryQuery` | `Application/Modules/Teachers/Queries/` |
-| Controller `api/v1/teachers/{teacherId}/assignments` | `Api/Controllers/V1/` |
-| İzinler `teaching-assignments.view` / `.assign` | seed |
-| Timetable portu `ITeachingAssignmentSource` | `Application/Modules/Timetable/Ports/` |
-| FE öğretmen detay `TeacherAssignmentsTab` + `AddAssignmentDialog` | `oksis-web/.../admin/teachers/` |
-| Homeroom (sınıf öğretmenliği) — `ClassRoom.HomeroomTeacherId` + `AssignHomeroom`/`RemoveHomeroom` + event | `Domain/Modules/AcademicSessions/` |
-
-**K0.1 — Sahiplik sınırı değişmez.** Görevlendirme = arz ("kim hangi dersi kaç saat"), Ders Programı = çizelge ("hangi gün/saat"). Program görevlendirmeyi tüketir, üretmez (admin spec §5.7, ders-programı §10). Bu dilim bu sınırı **değiştirmez.**
-
-**K0.2 — Yeniden kullanım.** Bu dilim yeni bir aggregate/yazma yolu **eklemez**; yalnız okuma tarafı + sezon kopyalama + yeni hub ekranı ekler. "Yeni Görevlendirme" modalı mevcut `assign`/`unassign` endpoint'lerini çağırır.
-
----
-
-## 1. Docx'ten onaylı sapmalar (Rule #6)
-
-- **S-1:** Docx'in `HomeroomAssignment` entity'si **YAPILMAZ.** Homeroom zaten `ClassRoom.HomeroomTeacherId`'de mevcut (classrooms modülünün sorumluluğu). `teaching-assignments.set-homeroom` izni de eklenmez.
-- **S-2:** Docx'in "TeachingAssignment rename + migration Debt"i **geçersiz** — entity zaten doğru adda; rename gerekmez.
-- **S-3:** `BranchMatch` entity'de **persist edilmez**; query-time hesaplanır (öğretmen branşı değişince bayatlamasın).
-- **S-4:** Docx'in ayrı `GetTeacherWorkloadQuery` + `view-workload` izni **eklenmez**; öğretmen yükü mevcut `GetTeacherAssignmentsQuery` (teacher-centric, `.view` izni) ile zaten karşılanıyor.
-
----
-
-## 2. Backend (oksis-api)
-
-`Oksis.Application/Modules/Teachers/TeachingAssignments/` altında (mevcut Teachers dilimiyle yan yana).
-
-### 2.1 Yeni query'ler (EF Core projection — `IApplicationDbContext` + `.AsNoTracking()` + `.Join`)
-
-> **Not (kullanıcı kararı 2026-06-14):** Dapper kullanılmaz — projede yüklü değil ve daha önce de vazgeçildi (timetable Hub sorguları da EF projection'a ertelendi). Tüm okumalar mevcut `GetTeacherAssignmentsQueryHandler` desenindeki gibi EF Core projection ile yapılır.
-
-| Query | Girdi | Çıktı |
+| | Eski (v1 · geçersiz) | **Yeni (v2 · bu spec)** |
 |---|---|---|
-| `GetAssignmentSummaryQuery` | `sessionId` | `{ totalAssignments, missingClasses, mismatchedAssignments }` (üst metrikler 102/9/1) |
-| `ListAssignmentClassesQuery` | `sessionId` | sol panel: `[{ classRoomId, fullName, gradeLevelCode, educationLevel, subjectCount, totalWeeklyHours, targetHours, fillStatus }]` |
-| `ListClassAssignmentsQuery` | `classRoomId, sessionId` | sağ panel: `[{ id, subjectId, subjectName, teacherId, teacherName, teacherBranch, branchMatch, weeklyHours }]` |
+| Ekranın ürettiği | Sınıf → ders → öğretmen → **haftalık saat** | **Yetkin öğretmen ↔ ders** eşlemesi |
+| Şube / saat | Ekranda girilir | **Ekranda YOK** — downstream (şube dağıtımı / Ders Programı) |
+| Birincil eksen | Sınıf listesi (kademe-gruplu) | **Ders** ↔ **Öğretmen** (segmented, iki eksen) |
+| Birincil metrik | Doluluk (`fillStatus`, `targetHours`) | **Kapsama boşluğu** (0 öğretmenli ders) |
+| Uyum | `branchMatch` **boolean** | **Üçlü**: branş-içi / yan branş / **alan-dışı** |
+| Yaşam döngüsü | soft-delete (`RevokedAt`) | **soft-close** (`status/closedAt/closedReason`) + **denetim izi** (`by/at/gerekçe`) |
 
-- **`branchMatch`** (`Uyumlu`/`YanBrans`): `TeacherProfile.Branch` ile `Subject.Name` normalize (`Trim()` + **`ToUpper(tr-TR)` kültürü** [İ/ı doğruluğu için; ToUpperInvariant DEĞİL] + boşluk temizliği) string karşılaştırması. Eşitse `Uyumlu`, değilse `YanBrans`. Query-time, persist yok (S-3). **Normalizasyon SQL'e çevrilemeyeceği için:** handler ham alanları (`teacherBranch`, `subjectName`) projeksiyonla çeker, `branchMatch`'i `ToArrayAsync` sonrası **bellekte** hesaplar.
-- **`mismatchedAssignments`** = aktif görevlendirmelerden `branchMatch == YanBrans` sayısı.
-- **`fillStatus`**: `targetHours == 0` (müfredat tanımsız) → `Undefined`(gri); aksi halde `totalWeeklyHours` vs `targetHours` → `Below`(amber) / `OnTarget`(yeşil) / `Over`(kırmızı). `totalWeeklyHours == 0` (hiç atama) yine gri (`Empty`).
-- **`missingClasses`** = `targetHours > 0 && totalWeeklyHours < targetHours` olan sezon-aktif şube sayısı (hedefi tanımsız sınıflar sayılmaz).
-- **`targetHours`**: §2.2 `IRequiredHoursResolver.RequiredTotalHours(sessionId, gradeLevelCode)` ile; seed yoksa 0 → `Undefined`.
+**Üç tasarım kararı (handoff KARAR 1–3 ile birebir):**
+- **KARAR 1 — Ders bazında görevlendirme.** Ekran yalnız *yetkin öğretmen ↔ ders* eşlemesi üretir. **Haftalık saat ve şube YOKTUR.** Seviye, dersin havuzundan otomatik türetilir.
+- **KARAR 2 — Yalnız okul-admini.** Tek yazma rolü; onay iş akışı yerine **öz-denetim + denetim izi** (kim / ne zaman / neden).
+- **KARAR 3 — Görev özeti bilgilendiricidir.** Öğretmen başına kaç farklı ders / hangi seviyeler / uyum dağılımı; **haftalık ders saati bu ekranda ASLA gösterilmez.**
 
-### 2.2 targetHours — Müfredat Saati çekirdeği (GERÇEK kaynak, borç değil)
+**İki ilke:** (1) **Kapsama görünürlüğü** — "her açılan dersin en az bir yetkin öğretmeni var mı?" bir bakışta okunur. (2) **Yetkinlik dürüstlüğü** — branş-içi / yan-branş / alan-dışı renkle okunur; alan-dışı **engellenmez** ama gerekçe + otomatik iz ister.
 
-`targetHours` artık **stub değil**; Müfredat Saati modülünün çekirdeği bu spec'te geliştirilir (kullanıcı kararı 2026-06-14: "borç olarak alma, bu spec'te geliştir"). Müfredat Saati Teknik Analizi'nin (docx) **yalnız çekirdeği** alınır; tam yönetim ekranı/override-UI/import/INV-3 **ayrı işe** kalır (§5 Ertelenenler).
+---
 
-**K2.2 — MEB gerçeği:** Hedef toplam saat sabit 30 değildir; kademeye/seviyeye göre değişir (ilkokul 30, ortaokul 35, lise sınıfa göre ~). Bu yüzden hedef `RequiredTotalHours(grade)` ile hesaplanır, sabit kodlanmaz.
+## 1. v1'den taşınan/geçersiz kılınan kararlar (Rule #6 kaydı)
 
-**Entity'ler** (`Domain/Modules/Academics/Curriculum/` — Subjects ile yan yana):
+- **D-1 (geçersiz):** v1'in **Müfredat Saati çekirdeği** (`CurriculumHourTemplate`, `SchoolWeeklyHourOverride`, `IRequiredHoursResolver`, `targetHours`, `curriculum-hours.view`) bu ekranın **kapsamı dışıdır** — KARAR 1/3 saat ekseni kaldırdığı için Görevlendirme ekranı bunları kullanmaz. (Müfredat Saati modülü kendi başına ayrı iştir; bu spec ona dokunmaz, yalnız Görevlendirme'den bağını koparır.)
+- **D-2 (geçersiz):** v1'in `fillStatus` / `missingClasses` / `ListAssignmentClassesQuery` (sınıf listesi) / `ListClassAssignmentsQuery(classRoomId)` metrik ve query'leri Görevlendirme v2'de kullanılmaz; yerlerine §2 kapsama/eksen query'leri gelir.
+- **D-3 (korunur):** Sahiplik sınırı değişmez (v1 K0.1). Görevlendirme = arz ("kim hangi dersi vermeye yetkili"), Ders Programı = çizelge ("hangi gün/saat, hangi şube, kaç saat"). Saat/şube **Program'ın** işidir. v2 bu sınırı **güçlendirir** (saat'i tümüyle Program'a bırakır).
+- **D-4 (korunur):** `branchMatch` persist edilmez; query-time hesaplanır (v1 S-3). v2'de **üçlü** (`ok/yan/no`) olur ve öğretmenin **yan branşlarını** da okur.
+
+---
+
+## 2. Veri modeli (v2)
 
 ```
-// MASTER — MEB Haftalık Ders Çizelgesi (tenant-agnostik, sürümlü) : MasterEntity
-CurriculumHourTemplate {
-  EducationLevel EducationLevel   // çekirdekte kademe ekseni (Primary/Middle/High)
-  string         GradeLevelCode   // "5","9"... (GradeLevel.Code ile hizalı)
-  Guid           SubjectId
-  int            WeeklyHours      // zorunlu/seçmeli saat
-  bool           IsElective
-  string         MebDecision      // "2025/04 TTK"
-  string         Version          // aktif sürüm sabiti (çekirdek: tek aktif sürüm)
-}
-
-// OVERRIDE — Okula özel (tenant) : TenantEntity
-SchoolWeeklyHourOverride {
-  Guid SchoolId; Guid AcademicSessionId;
-  string GradeLevelCode; Guid SubjectId;
-  int WeeklyHours; string? Reason;
-}
+Branş:         { id, ad, mebKodu, durum }                              // ders havuzundan
+Öğretmen:      { id, ad, brans, yanBranslar:[bransId], initials, n }   // n = avatar renk tohumu
+Ders:          { id, ad, kod, brans, seviye:[int], tur:'Zorunlu'|'Seçmeli', durum:'Aktif'|'Pasif' }
+Görevlendirme: { id, courseId, teacherId, by, at, gerekce,
+                 status:'aktif'|'kapali', closedAt, closedReason }
+Sezon:         { id, label, sub, status:'active'|'archived' }
 ```
 
-> **S-5 (çekirdek sadeleştirmesi):** Analizdeki ince `SchoolKind` (AnadoluLisesi/FenLisesi/İmamHatip…) çekirdekte **EducationLevel**'a indirgenir (Primary/Middle/High) — `GradeLevel.EducationLevel` zaten var. `School.SchoolType` → ince çizelge seçimi tam modüle ertelenir.
+**Görevlendirme kaydının kritik alanları (KARAR 1–2):**
+- `courseId`, `teacherId` — eşlemenin iki ucu. **`weeklyHours`/`classRoomId` YOKTUR.**
+- `by`, `at` — **denetim izi**: atayan admin + tarih (otomatik damgalanır).
+- `gerekce` — yalnız **alan-dışı** (`uyum==='no'`) kayıtlarda anlamlı; serbest metin.
+- `status` — `'aktif'`/`'kapali'`. **Kayıt asla silinmez**; yıl-içi devirde `closedAt`+`closedReason` ile tarihlenerek kapatılır (iz korunur).
+
+**Türetilen mantık (FE, persist yok):**
+- `uyum(courseBrans, teacher)` → `'ok'` (öğretmen ana branşı = ders branşı) · `'yan'` (ders branşı öğretmenin `yanBranslar`'ında) · `'no'` (alan-dışı). teacher yoksa `'no'`.
+- `byCourse` / `byTeacher` — aktif kayıtların ders/öğretmen kırılımı.
+- `gaps` (kapsama boşluğu) — aktif görevlendirmesi 0 olan **Aktif** dersler.
+- `disiCount` — `uyum==='no'` aktif atama sayısı.
+- öğretmen **özeti** — verdiği derslerin seviyelerinin birleşimi + uyum dağılımı (ana/yan/dış).
+
+---
+
+## 3. Backend (oksis-api) — **GELİŞTİRİLDİ (2026-06-25)**
+
+> **Güncelleme 2026-06-25:** Backend `Gorevlendirmeler-v2-Teknik-Analiz.docx` esas alınarak **geliştirildi**
+> (Debt-BE kalktı). Aşağıdaki §3.1/3.2 tarihsel bağlam; gerçek uçlar ve tasarım bu kutuda. Detay + sapmalar:
+> `teachers/completion_status.md` (2026-06-25).
 >
-> **S-6 (override yazma yolu yok):** Override **entity + tablo + resolver katmanı** bu spec'te var; ancak override **oluşturma UI/command'i ertelenir**. Resolver override'ı okur (şimdilik boş → master'a düşer). Bu, resolver'ı geleceğe hazır tutar, çift implementasyon gerektirmez.
+> **Aggregate:** `SubjectTeacherAssignment : TenantEntity` (sezon-scope: SessionId/SubjectId/TeacherId/Status/
+> Justification/Closed*; **saat/şube YOK**; soft-close + audit; kimlik ham Guid — typed-ID atlandı). Mevcut
+> `TeachingAssignment` DOKUNULMADI (downstream). `TeacherProfile.SecondaryBranches` eklendi (AS-3, üçlü uyum).
+> **Tablo:** `academic.subject_teacher_assignments` + `teacher_secondary_branches` JSON; migration `20260625_…`.
+> **İzinler (yeni):** `assignments.{view,assign,copy-season}` (SchoolAdmin tam, Teacher view, copy-season SCHOOL_ADMIN-only).
+> **Ders havuzu:** `Subject.IsActive` global (AS-2 — sezon/okul filtresi yok). **Türetim server-side** (üçlü uyum tr-TR bellekte).
+>
+> **Controller `api/v1/assignments`:**
+> | Uç | İzin |
+> |---|---|
+> | GET `/summary` · `/courses` · `/teachers` · `/by-course/{subjectId}` · `/by-teacher/{teacherId}` · `/candidates?mode=&anchorId=` | `assignments.view` |
+> | POST `/` (çoklu atama) · POST `/{id}/close` · PATCH `/{id}/justification` | `assignments.assign` |
+> | POST `/copy-season` | `assignments.copy-season` |
+>
+> **Test:** 12 domain + 9 integration (gerçek SQL Server) yeşil. **Kalan:** FE'yi bu uçlara bağla (stub→HTTP).
 
-**Persistence — master/tenant şema uyumu (zorunlu):**
-- `CurriculumHourTemplate` → **MASTER**: `MasterEntity` (SchoolId YOK), EF config `ToMasterTable("curriculum_hour_templates")` (`OksisSchemas.Master`). Standart: audit + `IsDeleted` default false + `RowVersion` `IsRowVersion()` + `Ignore(DomainEvents)` + enum `HasConversion<string>()` + unique index `HasFilter("is_deleted = 0")`. Seed `HasData(...)` + **deterministik** `SeedGuid`/`MasterSeedIds` (Subject/GradeLevel deseni birebir).
-- `SchoolWeeklyHourOverride` → **TENANT**: `TenantEntity` (SchoolId zorunlu + tenant query filter), `ToAcademicTable("school_weekly_hour_overrides")` (`academic`). Seed yok.
-- **Katman ayrımı (sıfır-km seed kuralı):** master SchoolId taşımaz; tenant SchoolId zorunlu. Yanlış katman = cross-tenant açık.
+> **(Tarihsel) Kullanıcı kararı 2026-06-24:** v2 modelini besleyecek backend bu işte geliştirilmez. FE, aşağıdaki adaptör kontratına göre kurulur ve **stub/mock** ile beslenir. → **2026-06-25'te geliştirildi (yukarı kutu).**
 
-**Resolver (Application abstraction `IRequiredHoursResolver`, Infrastructure impl):**
-- `Effective(sessionId, gradeLevelCode, subjectId)` = override varsa onun saati, yoksa aktif `CurriculumHourTemplate`.
-- `RequiredTotalHours(sessionId, gradeLevelCode)` = o seviyedeki tüm effective saatlerin toplamı (zorunlu+seçmeli). Hub'ın `targetHours`'u budur.
-- Hub query'leri (summary/classes) bu resolver'ı **toplu** çağırır (sezondaki tüm seviyeler için dict). Redis uzun TTL cache (`curriculum:{level}:{version}:{grade}`); override değişince ilgili anahtar (ileride) temizlenir.
+### 3.1 Mevcut backend gerçeği (v1)
+- `TeachingAssignment` entity = teacher × **classroom** × subject + **weeklyHours**, soft-delete `RevokedAt`. → v2 modeli (classroom/saat'siz, audit/soft-close'lu) ile **birebir örtüşmez**.
+- Controller `api/v1/teaching-assignments`: `summary` / `classes` / `by-class/{id}` / `copy-season` — hepsi **sınıf-merkezli**.
+- Yazma: `api/v1/teachers/{teacherId}/assignments` (assign/unassign), `weeklyHours` ve `classRoomId` zorunlu.
 
-**Query:** `GetRequiredTotalHoursQuery(sessionId, gradeLevelCode)` → `int` (Müfredat ekranı gelene kadar tek dışa açık uç; `.view` korumalı).
+### 3.2 v2 adaptör kontratı (FE'nin bağlanacağı hedef sözleşme — backend bunu karşılamalı)
+FE tek adaptörde (`assignmentsApi`) izole; backend gelene kadar **stub** döner. Kontrat:
 
-**Seed:** `MebCurriculumSeed_2025_04` — Müfredat Saati Analizi §8'in doğrulanmış değerleri (kademe toplamları + ortaokul tam set + çekirdek dersler). Tam TTK per-seviye listesi **follow-up seed işi** (kod borcu değil; model gerçek). Seed eksik olan seviyelerde resolver 0 dönerse hub o sınıfı "hedef tanımsız" (gri) gösterir — yanlış toplam üretmez.
+| İşlev | İmza (öneri) | Döner |
+|---|---|---|
+| Ders havuzu | `GET /teaching-assignments/courses?sessionId=` | `[{ id, ad, kod, brans, seviye[], tur, durum }]` (yalnız Aktif) |
+| Öğretmen havuzu | `GET /teaching-assignments/teachers?sessionId=` | `[{ id, ad, brans, yanBranslar[], initials }]` |
+| Görevlendirmeler | `GET /teaching-assignments/competency?sessionId=` | `[{ id, courseId, teacherId, by, at, gerekce, status, closedAt, closedReason }]` |
+| Özet | `GET /teaching-assignments/summary?sessionId=` | `{ totalActive, unassignedCourses, outOfFieldAssignments }` |
+| Ekle (çoklu) | `POST /teaching-assignments/competency` | body `{ items:[{ courseId, teacherId, gerekce? }] }` |
+| Kapat (devret) | `POST /teaching-assignments/competency/{id}/close` | body `{ closedReason }` |
+| Gerekçe güncelle | `PATCH /teaching-assignments/competency/{id}` | body `{ gerekce }` |
+| Sezon kopyala | `POST /teaching-assignments/copy-season` | `{ copiedCount, skipped[] }` |
 
-**İzin:** `curriculum-hours.view` (SuperAdmin oku, SchoolAdmin tam, Teacher oku). `.override` / `.import-template` izinleri tam modülde eklenir.
+### 3.3 Backend Debt kalemleri (ayrı iş)
 
-### 2.3 Yeni command
+> **BE faz kaynağı:** v2 backend'i için teknik analiz dökümanı kullanıcı tarafından sağlandı —
+> `Gorevlendirmeler-v2-Teknik-Analiz.docx` (2026-06-24, başlangıçta `~/Downloads/`). BE fazına
+> geçilince (FE swap+commit sonrası) bu analiz esas alınır. Pointer: hafıza `reference_gorevlendirme_v2_be_analiz`.
 
-**`CopyAssignmentsToNewSeasonCommand(sourceSessionId, targetSessionId)`** → `Result<CopyAssignmentsResult>`:
-- Kaynak sezonun **aktif** görevlendirmelerini hedef sezona kopyalar.
-- **Sınıf eşlemesi:** hedef `ClassRoom.SourceClassRoomId == kaynak.ClassRoomId` üzerinden (Sezon Rollover köken bağı). Eşleşmeyen kaynak şube atlanır.
-- **Atlama kuralları:** `TeacherProfile.IsTerminated` → atla; hedef şube arşiv (`Archived`) → atla; hedefte aynı (classRoomId, subjectId) aktif atama varsa → atla (idempotency).
-- **Çıktı:** `{ copiedCount, skipped: [{ reason, classRoomId, subjectId, teacherId }] }`.
-- Her kopyalanan kayıt için `TeachingAssignmentChangedEvent(Assigned)`; bitişte `AssignmentsCopiedEvent(sourceSessionId, targetSessionId, copiedCount)` yayar.
-- Workload cache (`teachers:workload:*`) invalidate edilir.
-
-### 2.4 Mevcut `AssignSubjectClassCommand` geliştirmesi
-
-- **Branşsız öğretmene atama hard-block:** `TeacherProfile.Branch is null/whitespace` → `Result.Failure` ("Branşı olmayan öğretmene görevlendirme yapılamaz."). (Mevcut handler'da yoksa eklenir.)
-- **"İzinli öğretmen" engeli:** leave-status modellenmediği için **Debt-BE** (şimdilik atlanır, completion_status'a not).
-
-### 2.5 İzinler
-
-- **İki yeni izin:**
-  - `teaching-assignments.copy-season` (SCHOOL_ADMIN; SuperAdmin yok).
-  - `curriculum-hours.view` (SuperAdmin oku, SCHOOL_ADMIN tam, Teacher oku) — Müfredat çekirdeği okuma.
-- Her ikisi de Migration + seed + RolePermission ile eklenir.
-- `view` (summary/list okuma) ve `assign` (modal yazma) **mevcut**, yeniden kullanılır.
-- `curriculum-hours.override` / `.import-template` → tam Müfredat modülünde (ertelendi).
-
-### 2.6 Yeni controller
-
-`api/v1/teaching-assignments`:
-
-| Uç | İzin |
-|---|---|
-| `GET /summary?sessionId=` | `teaching-assignments.view` |
-| `GET /classes?sessionId=` | `teaching-assignments.view` |
-| `GET /by-class/{classRoomId}?sessionId=` | `teaching-assignments.view` |
-| `POST /copy-season` (body: source/target sessionId) | `teaching-assignments.copy-season` |
-
-Yazma (assign/unassign) mevcut `api/v1/teachers/{teacherId}/assignments`'tan devam. Controller tek satır (`mediator.Send` + `ToHttpResult`). Hatalar ProblemDetails.
-
-### 2.7 Kademe
-
-`GradeLevel.EducationLevel` enum'undan (Preschool/Primary/Middle/High) türetilir; yeni config yok. Sol panel grupları bu eksene göre.
+- **Debt-BE-1:** v2 yaşam döngüsü (audit `by/at/gerekce` + soft-close `status/closedAt/closedReason`) — entity/tablo kararı (mevcut `TeachingAssignment`'ı genişlet **mi** yoksa yeni `TeachingCompetency` aggregate **mi**) ertelendi. **Açık soru AS-2.**
+- **Debt-BE-2:** classroom/saat'siz görevlendirme — mevcut entity bunları zorunlu tutuyor; v2 kontratı saat'siz. Şube dağıtımı Program'a devredildiğinden bu alanlar v2'de opsiyonel/anlamsız olmalı.
+- **Debt-BE-3:** üçlü uyum + öğretmenin **yan branşları** — backend'de `TeacherProfile` yan branş alanı modellenmemiş olabilir; FE `yanBranslar`'ı kontrata göre okur, backend gelene kadar stub.
+- **Debt-BE-4:** "Önceki Sezondan Kopyala" v2 anlamı (ayrılan öğretmen → boş bırak → kapsama boşluğu) — mevcut `copy-season` v1 semantiğiyle hizalanmalı.
+- Yetki: `teaching-assignments.view` + `.assign` mevcut, yeniden kullanılır; `.copy-season` mevcut. **Yeni v2-özel izin eklenmez** (KARAR 2: tek yazma rolü = school-admin).
 
 ---
 
-## 3. Frontend (oksis-web)
+## 4. Frontend (oksis-web) — bu işin gerçek teslimi
 
-Yeni sayfa `src/portals/admin/assignments/` (mevcut `teachers/` deseni: `pages/ components/ hooks/ keys/ api/ types/ schemas/`).
+İzole yeni klasör (mevcut ekranı bozmadan): handoff `assignments-new/` içinde kurulur, bittiğinde mevcut `assignments/`'ın yerine swap edilir (Handoff: Rebuild > Patch deseni). Yapı `academic-sessions/` desenini birebir mirror eder: `api/ hooks/ keys/ types/ schemas/ components/ pages/`.
 
-### 3.1 Ekran (handoff `assignments.jsx` + screenshot referans)
-- **Master-detail.** Üst şerit: breadcrumb (Akademik > Görevlendirmeler), sezon seçici (aktif rozet), 3 özet metrik (Görevlendirme / Eksik Sınıf / Uyumsuz Atama), aksiyonlar ("Önceki Sezondan Kopyala" + "+ Yeni Görevlendirme").
-- **Sol panel:** sınıf arama + **kademe-gruplu seviye filtresi** (`ORTAOKUL [5..8]` / `LİSE [9..12]`, boş gruplar elenir), sınıf listesi + doluluk rozeti (amber/yeşil/kırmızı/gri).
-- **Sağ panel:** seçili şubenin tablosu (shadcn `DataTable` wrapper): DERS · ÖĞRETMEN (avatar+ad+branş) · BRANŞ UYUMU (Uyumlu/Yan branş rozeti) · HAFTALIK SAAT. Başlıkta "9-A — Görevlendirmeler · N ders · hedef X saat/hafta" + "Y/X saat" rozeti.
+### 4.1 Ekran (handoff §6 birebir)
+1. **Üst bağlam çubuğu** — breadcrumb (Akademik › Görevlendirmeler) + `<h1>` + özet sayaçlar (**Görevlendirme** / **Atanmamış Ders** [amber nokta] / **Alan-dışı Atama** [kırmızı nokta]) + **Önceki Sezondan Kopyala** (ghost) + **Yeni Görevlendirme** (primary). Sezon seçici üst çubukta (paylaşımlı SeasonTermSwitcher).
+2. **Eksen çubuğu** — segmented: **Derslere göre** (`book-open`) ↔ **Öğretmenlere göre** (`users`) + eksene göre ipucu satırı.
+3. **Kapsama boşluğu uyarı şeridi** — atanmamış ders varsa amber şerit + ders adları + "Boşlukları gör" + kapat.
+4. **Sol panel (master)** — *ders modu:* arama + kapsam çipleri (Tümü/Zorunlu/Seçmeli/Boşluk) + Zorunlu/Seçmeli gruplu ders listesi + **kapsama kapsülü** (ok/has-disi/gap/muted). *öğretmen modu:* arama + çipler (Tümü/Alan-dışı/Görevsiz) + öğretmen listesi (avatar + branş + görev sayısı pill).
+5. **Sağ panel (detail)** — *ders modu:* başlık (ad + branş + tür + türetilen seviye) + "Öğretmen Ata" + atanan öğretmen kartları (avatar + branş etiketleri + üçlü uyum rozeti + satır menüsü + alan-dışı gerekçe/iz bloğu) **veya** boş-durum kartı. *öğretmen modu:* başlık (avatar + ad + branş etiketleri) + "Ders Ata" + **görev özeti şeridi** (farklı ders / türetilen seviyeler / uyum dağılımı + "saat gösterilmez" notu) + verdiği ders kartları. Her iki modda **Kapatılmış görevler** bölümü (iz korunur).
+6. **Seçim drawer'ı** (`GrvAssignDrawer`) — iki modlu (course/teacher), uyuma göre **gruplu** aday listesi (Önerilen/Yan branş/Alan-dışı), çoklu seçim, alan-dışı gerekçe bloğu + otomatik iz, footer "{n} seçildi · İptal · Görevlendir".
+7. **"Önceki Sezondan Kopyala"** — paylaşımlı ConfirmModal (handoff §8 metinleri birebir).
 
-### 3.2 Standartlar
-- Server state **yalnız** React Query; tenant-prefixed key factory:
+### 4.2 Standartlar (workspace frontend kuralları)
+- **Server state yalnız React Query**; tenant-prefixed key factory (schoolId + sessionId):
+  - `['teaching-assignments','courses',schoolId,sessionId]`
+  - `['teaching-assignments','teachers',schoolId,sessionId]`
+  - `['teaching-assignments','competency',schoolId,sessionId]`
   - `['teaching-assignments','summary',schoolId,sessionId]`
-  - `['teaching-assignments','classes',schoolId,sessionId]`
-  - `['teaching-assignments','class',schoolId,classId,sessionId]`
-- **Yeni Görevlendirme** modalı: **RHF + Zod** (handoff'taki manuel `useState` yerine standart pattern). Şema: `{ classId, subjectId, teacherId, weeklyHours: int 1..40 }`. Mevcut `assign` endpoint'ini çağırır.
-- Seçili sınıf + sezon → URL search params + hafif Zustand store.
-- İzin gate'leri: `usePermission` / `RequirePermission` (izin yoksa buton render edilmez).
-- Durum varyantları (hepsi Türkçe): boş (pozitif çerçeve), yükleniyor (skeleton — spinner yasak), hata (ProblemDetails), dolu. Doluluk rozeti `Undefined` (hedef tanımsız → gri) durumunu da kapsar.
-- Named export; inline style yasak; `any` yasak.
-- Sidebar'da "Görevlendirmeler" route'u (`assignments`) bağlanır.
+- **Türetilenler** (gaps/byCourse/byTeacher/uyum/özet) FE'de `useMemo` ile; persist yok (D-4).
+- **Drawer & gerekçe formu** RHF + Zod (handoff'taki manuel `useState` yerine). Şema: ekle `{ items: [{ courseId, teacherId }], gerekce?: string }`; kapat `{ closedReason: string min 1 }`.
+- **Tasarım dili:** handoff `brand.css` token'ları (Tailwind theme'de mevcut olanlar kullanılır, eksikler eklenir); shadcn primitive'leri (Button, Input, Checkbox, DropdownMenu, Sheet/Drawer, Badge, Skeleton) net eşleşen yerlerde; ekrana özel parçalar (kapsama kapsülü, uyum rozetleri, görev özeti, gerekçe/iz bloğu, seçim drawer'ı) handoff CSS'inden birebir port edilir.
+- **İkonlar:** lucide-react (handoff ikon adları birebir Lucide).
+- **Avatar:** deterministik renk + baş harf helper (mevcut varsa yeniden kullan, yoksa `stuAvClass` köprüsünü port et).
+- İzin gate'leri: `RequirePermission` / `usePermission` (`teaching-assignments.assign` yoksa yazma butonları render edilmez). KARAR 2: yalnız school-admin.
+- Durum varyantları (hepsi Türkçe): boş (pozitif çerçeve), yükleniyor (**skeleton** — spinner yasak), hata (ProblemDetails + tekrar dene), dolu.
+- Named export; inline style yasak (handoff'taki `style={{background:b.fg}}` gibi **dinamik renk** dot'ları için `cn` + CSS var veya data-attr ile çözülür); `any` yasak.
+- Seçili ders/öğretmen + eksen + sezon → URL search params (derin link) + hafif Zustand (gerekiyorsa).
+- **Backend stub sınırı:** `assignmentsApi` adaptörü §3.2 kontratını döndüren bir stub modülüne bağlanır (gerçek backend gelince yalnız adaptör değişir). Stub seed = handoff `GRV_INIT` + `academicsBase` verisi. Stub olduğu her dosyada açık `// Debt-BE: stub` notu.
 
-### 3.3 Mobil
-Bu dilim kapsamı dışı (mobil yalnız okuma; ayrı iş).
+### 4.3 Tweaks (handoff §11 → production varsayılanları)
+Açılış ekseni = **Derslere göre** · görev özeti = **açık** · kapsama boşluğu = **göster** · drawer gruplama = **açık** · yoğunluk = **sıkı**. (Tweak'ler config'e bağlanmaz; tek varsayılana sabitlenir, gerekirse sonra ayar.)
 
----
-
-## 4. Test (TDD)
-
-- **Domain/handler:** `CopyAssignmentsToNewSeason` (SourceClassRoomId eşleme, terminated/archived/duplicate atlama, idempotency, rapor); branşsız hard-block; `AssignmentsCopiedEvent`.
-- **Müfredat çekirdeği:** `IRequiredHoursResolver` — Effective (override > master), `RequiredTotalHours` toplamı, seed eksik seviyede 0 dönüşü; seed sanity testi (kademe toplamları analiz §8 ile tutarlı).
-- **Query (EF Core projection, integration, tenant-filtreli):** summary sayımları, branchMatch hesaplama (Uyumlu/YanBrans), fillStatus eşikleri (Undefined dahil), missingClasses (hedefsiz sınıf sayılmaz).
-- **FE (vitest):** hub render + durum varyantları (boş/yükleniyor/hata/dolu/hedef tanımsız), kademe gruplama (tek/çok kademe), izin gate, modal RHF+Zod validasyonu, branş-uyum + doluluk rozeti.
+### 4.4 Mobil
+Kapsam dışı (ayrı iş).
 
 ---
 
-## 5. Kabul kriterleri
+## 5. Test (TDD — FE odaklı)
 
-- [ ] `GetAssignmentSummaryQuery` / `ListAssignmentClassesQuery` / `ListClassAssignmentsQuery` çalışır, tenant-filtreli, `.view` korumalı.
-- [ ] `branchMatch` query-time hesaplanır; `YanBrans` sayısı summary `mismatchedAssignments` ile tutarlı.
-- [ ] `CopyAssignmentsToNewSeasonCommand` SourceClassRoomId ile eşler, atlama kurallarını uygular, idempotent, rapor döner, `.copy-season` korumalı.
-- [ ] `teaching-assignments.copy-season` + `curriculum-hours.view` izinleri migration + seed + RolePermission ile eklenir.
-- [ ] Müfredat çekirdeği: `CurriculumHourTemplate` + `SchoolWeeklyHourOverride` entity/tablo/seed + `IRequiredHoursResolver` çalışır; hub `targetHours` gerçek (seed varsa) / `Undefined` (seed yoksa).
-- [ ] `AssignSubjectClassCommand` branşsız öğretmeni hard-block eder.
-- [ ] FE hub: master-detail, kademe gruplama, özet metrikler, doluluk rozetleri (Undefined dahil), branş-uyum rozetleri, RHF+Zod modal, durum varyantları; mevcut assign/unassign ile uçtan uca çalışır.
-- [ ] `teachers/completion_status.md`: ilerleme + Debt-BE (izinli-öğretmen engeli) + ⚠️ Spec Dışına Çıkılanlar (S-1 HomeroomAssignment iptal, S-2 rename gereksiz, S-5 SchoolKind→EducationLevel, S-6 override yazma ertelendi) güncel.
+- **Türetim saflığı (unit):** `uyum` üçlü (ok/yan/no, yan branş okuma, teacher yok → no); `gaps` (0 atamalı Aktif ders); `disiCount`; `byCourse/byTeacher`; öğretmen `özet` (seviye birleşimi + uyum dağılımı).
+- **Render + durum varyantları (vitest):** iki eksen geçişi; kapsama boşluğu şeridi (var/yok/kapat); kapsama kapsülü dört varyantı; üçlü uyum rozeti; görev özeti şeridi + "saat gösterilmez" notu; boş-durum kartları; kapatılmış görev bölümü; izin gate.
+- **Drawer (vitest):** gruplu aday listesi (uyuma göre sıralı/gruplu), zaten-atanmış eleme, alan-dışı gerekçe bloğunun koşullu belirişi, çoklu seçim + Görevlendir disabled mantığı, RHF+Zod validasyonu.
+- **Adaptör/stub:** kontrat şekli (§3.2) + key factory tenant-scope; optimistic-update şekli korunur.
 
 ---
 
-## 5b. Ertelenenler (ayrı/sonraki iş — bu spec kapsamı DIŞI)
+## 6. Kabul kriterleri
 
-- **Müfredat Saati tam modülü:** yönetim ekranı (web `curriculum-hours/`), `UpsertSchoolHourOverride` + override UI, `ImportMebTemplate` (master sürüm yükleme), `GetEffectiveWeeklyHours`/`ListGradeCurriculum` query'leri, `.override`/`.import-template` izinleri.
-- **Timetable INV-3 entegrasyonu:** yerleşim sayısı vs effective saat doğrulaması (ders-programı modülünün işi).
-- **İnce `SchoolKind` çözümü** (AnadoluLisesi/FenLisesi…) ve `School.SchoolType` → çizelge seçimi.
-- **Tam TTK per-seviye seed** (tüm dersler/seviyeler) — model gerçek, veri yüklemesi follow-up.
-- **İzinli öğretmen engeli** (leave-status modellenince) — **Debt-BE**.
-
----
-
-## 6. Açık sorular / riskler
-
-- **AS-1:** Seed eksikliği → bazı seviyelerde `targetHours == 0` (`Undefined`); hub bunu gri/"hedef tanımsız" gösterir, yanlış toplam üretmez. Tam TTK seed gelince kapanır.
-- **AS-2:** `CopyAssignmentsToNewSeason` yalnız Rollover ile köken bağı kurulmuş (`SourceClassRoomId`) şubeleri eşler; manuel açılmış yeni şubeler eşleşmez → raporda "eşleşmeyen şube" olarak listelenmeli.
-- **AS-3:** branchMatch serbest-metin `TeacherProfile.Branch` ile `Subject.Name` karşılaştırmasına dayanır; isim varyasyonları (örn. "Türk Dili ve Edebiyatı" vs "Edebiyat") yanlış `YanBrans` üretebilir → normalizasyon kuralları test edilecek, gerekirse eşanlamlı haritası sonraki iş.
-- **AS-4:** `RequiredTotalHours` toplamı yalnız o seviye için seed **tam** ise doğrudur; kısmi seed yanlış toplam vermesin diye seed seviye-bazında ya tam ya hiç yüklenir (resolver kısmi seviyeyi `Undefined` saymalı mı? → seed'de seviye tamlık bayrağı yerine, eksik seviye hiç seed edilmez kuralı benimsenir).
+- [ ] İki eksenli master-detail (ders ↔ öğretmen) tek veriden beslenir; segmented + çapraz geçiş (kart menüleri) çalışır.
+- [ ] Kapsama boşluğu: üst sayaç + uyarı şeridi + sol panel "Atanmamış" rozeti + "Boşlukları gör" hepsi aynı türetimden.
+- [ ] Üçlü uyum (branş-içi/yan/alan-dışı) her satırda renkle; alan-dışı **engellenmez** ama gerekçe + otomatik iz (`by/at`) ister.
+- [ ] Görev özeti bilgilendiricidir; **haftalık saat hiçbir yerde gösterilmez** (KARAR 3).
+- [ ] Soft-close: kayıt silinmez; kapatma tarihlenir; "Kapatılmış görevler" izde kalır.
+- [ ] Seçim drawer'ı iki modlu, gruplu aday, çoklu seçim, alan-dışı gerekçe + iz; RHF+Zod.
+- [ ] "Önceki Sezondan Kopyala" ConfirmModal (handoff metinleri).
+- [ ] Tüm server state React Query, tenant-prefixed key; türetimler `useMemo`; named export; inline style/any yok.
+- [ ] `assignmentsApi` stub §3.2 kontratını döndürür; gerçek backend gelince yalnız adaptör değişir.
+- [ ] İzole `assignments-new/`'da kurulur, mevcut ekranla swap edilir; eski v1 dosyaları kaldırılır.
+- [ ] `teachers/completion_status.md`: v2 ilerleme + Debt-BE-1..4 + ⚠️ Spec Dışına Çıkılanlar (v1 sınıf×saat modeli geçersiz, Müfredat Saati çekirdeği Görevlendirme'den koparıldı) güncel.
 
 ---
 
-*Oksis — Görevlendirme Hub Tasarım Spec · v1 · 2026-06-14*
+## 7. Açık sorular / riskler
+
+- **AS-1:** v2 "saat'siz görevlendirme" mevcut `TeachingAssignment`'ı (classroom/weeklyHours zorunlu) doğrudan kullanamaz → backend yeni aggregate mi, genişletme mi? (Debt-BE-1, kullanıcı/backend kararı.)
+- **AS-2:** Mevcut `teaching_assignments` tablosundaki v1 verisi (sınıf×saat) v2'ye nasıl köprülenir? (Migration/okuma stratejisi — Debt-BE.)
+- **AS-3:** Üçlü uyum öğretmenin **yan branş** verisine dayanır; backend'de yoksa ya modellenmeli ya FE seed'den gelmeli. (Debt-BE-3.)
+- **AS-4:** "Önceki Sezondan Kopyala" v2 semantiği (saat'siz, ayrılan → boşluk) mevcut command ile hizalanmalı. (Debt-BE-4.)
+- **AS-5:** Branş eşleşmesi serbest-metin isim karşılaştırmasına dayanırsa varyasyon riski (v1 AS-3 ile aynı) — normalizasyon kuralı korunur.
+
+---
+
+## 8. Ertelenenler (bu spec kapsamı DIŞI)
+
+- v2 backend'in tamamı (entity/tablo/migration/command/query/event) — Debt-BE, ayrı iş.
+- Müfredat Saati modülü (v1'de çekirdeği vardı; v2'de Görevlendirme'den koparıldı, kendi modülünde devam eder).
+- Mobil görünüm.
+- Şube/saat dağıtımı (Ders Programı modülünün işi — D-3).
+
+---
+
+*Oksis — Görevlendirme Hub Tasarım Spec · v2 · 2026-06-24 · v1 sınıf×saat modelini geçersiz kılar (kullanıcı onaylı).*
