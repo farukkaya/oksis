@@ -357,6 +357,7 @@ Modal/feature içerikleri için `lazy` opsiyonel; sayfa initial bundle'ı zorluy
 - ❌ Yetkisiz kullanıcıya bile render edip "disabled" geçmek (server-side hala kontrol etmeli ama UI'de göstermek leak).
 - ❌ Component'in iç state'ini parent'ın `useEffect`'le yönetmesi (controlled/uncontrolled karışıklığı).
 - ❌ Inline anonymous prop function (`onClick={() => ...}`) heavy listede (re-render trigger; küçük liste için OK).
+- ❌ **Türkçe component/identifier adı** (örn. `AkademikYapiTab`, `GenelBilgilerTab`, `ZilProgramiTab`). Kod tanımlayıcıları **İngilizce, PascalCase** olmalı: `AcademicStructureTab`, `GeneralInfoTab`, `BellScheduleTab` (CLAUDE.md "code identifiers in English"). UI metni/i18n Türkçe; sınıf, fonksiyon, prop, dosya adı İngilizce. (Mevcut `settings/` tab'ları handoff portundan Türkçe kaldı — yeni kodda tekrarlama; refactor fırsatı çıkarsa İngilizceye çevir.)
 
 ---
 

@@ -432,6 +432,39 @@ export function StudentDetailPage() {
 
 ---
 
+### ❌ NEVER put a mutation result object in a hook dependency array
+
+`useMutation()` returns a **new result object on every render** (the wrapper holding
+`isPending`, `data`, etc.). Only `mutate` / `mutateAsync` are referentially stable.
+Putting the whole mutation object into a `useCallback`/`useMemo`/`useEffect` dep array
+makes that callback/value **new every render**. If that value then feeds an effect that
+calls `setState` (e.g. a "push my save button to the page header" effect), you get an
+**infinite render loop** (`Maximum update depth exceeded`).
+
+This actually shipped in `/admin/settings` (4 tabs) — see session 2026-06-26.
+
+```typescript
+// ❌ WRONG — basicMutation is a new object every render → handleSave unstable →
+//    the head-action node it builds is new → useSetHeadAction effect setState → loop
+const basicMutation = useUpdateBasicInfo();
+const handleSave = useCallback(() => {
+  basicMutation.mutateAsync(payload);
+}, [basicMutation]);            // 🔥 whole object in deps
+
+// ✅ CORRECT — destructure the stable mutateAsync; depend on that
+const basicMutation = useUpdateBasicInfo();
+const { mutateAsync: saveBasic } = basicMutation;
+const isSaving = basicMutation.isPending;   // read transient flags directly, NOT via deps
+const handleSave = useCallback(() => {
+  saveBasic(payload);
+}, [saveBasic]);                // ✅ stable reference
+```
+
+Rule: in dependency arrays use the **stable functions** (`mutate`/`mutateAsync`), never
+the mutation result object. Read `isPending`/`data`/`error` directly in render.
+
+---
+
 ## 7. Mock Data Strategy
 
 ### Mock Data Structure
