@@ -33,6 +33,22 @@
 > artık aynı `CopyAssignmentsToNewSeasonCommand`'a evrildi → `CopyAssignmentsResult` şeklini döner
 > (eskiden basit sayım). Müfredat hedef saati: `GET` curriculum-hours sorgusu (`curriculum-hours.view`).
 
+### Müfredat Saati — `api/v1/curriculum-hours`
+
+> Ders × seviye haftalık saat (MEB master `CurriculumHourTemplate` + okul/sezon override
+> `SchoolWeeklyHourOverride`, resolver effective). Ders Kataloğu (Akademik Yapı) tüketir (B0.2H).
+
+| Method | Path | Permission | Amaç |
+|---|---|---|---|
+| GET | `/api/v1/curriculum-hours/required-total?sessionId=&gradeLevelCode=` | `curriculum-hours.view` | Seviyenin gerekli toplam hedef saati (int) |
+| GET | `/api/v1/curriculum-hours/subject/{subjectId}?sessionId=` | `curriculum-hours.view` | Dersin atanmış seviyelerindeki satırlar (MEB+okul+effective) |
+| GET | `/api/v1/curriculum-hours/catalog?sessionId=` | `curriculum-hours.view` | Ders başına effective saat min–max (liste kolonu) |
+| PUT | `/api/v1/curriculum-hours/subject/{subjectId}` | `curriculum-hours.override` | Ders × seviye saatlerini ayarla (bulk reconcile; body `{sessionId?, items:[{gradeLevelCode, weeklyHours}]}`) |
+
+> PUT reconcile: effective hedef MEB master'a (master ?? 0) eşitse override silinir (varsayılana dön),
+> farklıysa upsert. `sessionId` null → aktif sezon. Seviye dersin `subject_grade_levels`'ından olmalı
+> (değilse 409 Conflict). Saat 0–40.
+
 ---
 
 ## Detay

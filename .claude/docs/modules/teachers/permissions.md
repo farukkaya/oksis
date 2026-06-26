@@ -18,10 +18,11 @@
 | `teaching-assignments.view` | Görevlendirme okuma (hub summary/list, öğretmen yükü) — *mevcut* |
 | `teaching-assignments.assign` | Görevlendirme yaz (assign/unassign) — *mevcut* |
 | `teaching-assignments.copy-season` | Önceki sezondan görevlendirme kopyala — *2026-06-14, yalnız SchoolAdmin* |
-| `curriculum-hours.view` | Müfredat haftalık saat görüntüleme (hedef saat) — *2026-06-14* |
+| `curriculum-hours.view` | Müfredat haftalık saat görüntüleme (hedef saat + ders×seviye satırları) — *2026-06-14* |
+| `curriculum-hours.override` | Ders × seviye haftalık saat override (okul/sezon) yaz — *2026-06-26 (B0.2H), yalnız SchoolAdmin (SuperAdmin salt-oku)* |
 | `teachers.{{TBD}}` | {{TBD}} |
 
-> `curriculum-hours.override` / `.import-template` izinleri tam Müfredat Saati modülünde eklenecek (ertelendi, spec §5b).
+> ~~`curriculum-hours.override` ertelendi (§5b)~~ → **eklendi (B0.2H, 2026-06-26):** Ders Kataloğu seviye-bazlı saat düzenlemesi için. `.import-template` (MEB şablon içe aktarımı) hâlâ ertelendi (tam Müfredat Saati modülü).
 
 ---
 

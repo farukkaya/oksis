@@ -51,7 +51,7 @@ eksik seviye resolver'da 0 → hub `Undefined`/gri (yanlış toplam üretilmez).
 
 ### `academic.school_weekly_hour_overrides` (TENANT)
 
-Okula özel haftalık saat override'ı. Effective çözümde master'ın önüne geçer. Bu spec'te **yazma yolu yok** (S-6); resolver okur.
+Okula özel haftalık saat override'ı. Effective çözümde master'ın önüne geçer. ~~Bu spec'te yazma yolu yok (S-6)~~ → **B0.2H (2026-06-26): yazma yolu eklendi** — `SetSubjectWeeklyHoursCommand` (bulk reconcile: effective master'a eşit → override sil, farklı → upsert) + `SchoolWeeklyHourOverride.UpdateHours()`. Yazım Ders Kataloğu (Akademik Yapı) Ders Düzenle drawer'ından, ders × seviye bazında, aktif sezona pinli; izin `curriculum-hours.override`. Resolver hâlâ effective çözümü için okur.
 
 ```sql
 CREATE TABLE academic.school_weekly_hour_overrides (

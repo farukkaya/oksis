@@ -188,9 +188,30 @@
 - Mobile: öğretmen rolü ekranları (yok).
 - **Debt-BE (izinli öğretmen engeli):** "İzinli öğretmen" görevlendirme engeli leave-status modeli
   olmadığından şimdilik atlandı (§2.4). Leave-status modeli gelince `AssignSubjectClass`/copy-season'a eklenir.
-- **Debt-BE (tam TTK müfredat seed):** Şu an yalnız ortaokul 5 seed'li; eksik seviyeler resolver'da
-  hedef Undefined (gri) gösterilir, yanlış toplam üretilmez. Tam TTK per-seviye seed (ilkokul/ortaokul 6-8/lise)
-  follow-up veri işi (model gerçek). Ayrıca: Müfredat tam modülü (override UI/import/INV-3) ertelendi (§5b).
+- **Debt-BE (tam TTK müfredat seed):** Demo seed 5–12 var (her ders/seviye yaklaşık değer); gerçek MEB
+  per-seviye TTK seti follow-up veri işi (model gerçek). Eksik seviye resolver'da Undefined (gri), yanlış
+  toplam üretmez. `.import-template` (MEB şablon içe aktarımı) hâlâ ertelendi (§5b).
+
+## ✅ B0.2H — Müfredat Saati yazma yolu (2026-06-26, BE+FE+E2E)
+
+> Ders Kataloğu haftalık saatini seviye-bazlı `CurriculumHourTemplate`/`SchoolWeeklyHourOverride`
+> modeline bağlar (spec subjects D4 ezildi; `gorevlendirme-hub-spec` S-6 "yazma yolu yok" geçersiz —
+> Müfredat Saati modülünü §8'e göre başlatır, çakışma değil). Yeni kolon EKLENMEDİ (Option A).
+
+- **Domain:** `SchoolWeeklyHourOverride.UpdateHours(0–40)`.
+- **Application:** `SetSubjectWeeklyHoursCommand` (+validator) bulk reconcile (effective master'a eşit →
+  override sil/varsayılana dön, farklı → upsert; seviye dersin `subject_grade_levels`'ından olmalı;
+  sezon null → aktif). `GetSubjectWeeklyHoursQuery` (drawer satırları) + `GetCatalogWeeklyHoursQuery`
+  (liste min–max). N+1'siz EF projection; resolver dokunulmadı.
+- **İzin:** `curriculum-hours.override` (yalnız SchoolAdmin; SuperAdmin salt-oku) + seed (3 dosya) +
+  migration `20260626_curriculum_hours_override_permission`.
+- **API:** `CurriculumHoursController` → `GET subject/{id}`, `GET catalog`, `PUT subject/{id}`.
+- **FE (oksis-web):** `settings/api/curriculumHours/*` (tenant+sezon-scoped key'ler) +
+  `WeeklyHoursSection` (Ders Düzenle drawer'ında seviye×{MEB,okul,effective} tablosu, kendi
+  "Saatleri Kaydet"i, yeni derste 2-adım) + katalog kolonu "(Debt)" → effective aralık.
+- **Test:** Domain 452 + Application 1187 yeşil; vitest (`buildCatalogHoursMap` + StructureTab) yeşil.
+  **E2E (Chrome DevTools):** liste aralığı, drawer editör, kaydet→override→liste güncelle, ↺
+  varsayılana dön→override sil, yeni-ders 2-adım, konsol temiz (sonsuz döngü yok) doğrulandı.
 
 ## 🗺️ Görevlendirme v2 — Yol Haritası (2026-06-25)
 

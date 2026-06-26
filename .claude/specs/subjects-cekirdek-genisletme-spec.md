@@ -47,9 +47,17 @@
 - **D3 — Levels (kademeler) gerçek bağlanır.** Subject Create/Update `gradeLevelIds:
   Guid[]` alır ve `subject_grade_levels`'ı tam-replace yazar. `SubjectDto` + GetSubjects
   `levels`/`gradeLevelIds` döndürür (M2M join okunur).
-- **D4 — recommendedWeeklyHours bu spec'te DEBT.** Tek-değer ↔ seviye-bazlı
-  `CurriculumHourTemplate` uyuşmazlığı nedeniyle backend'e bağlanmaz; frontend'de
-  gösterilirse `(Debt)` işaretli, persist edilmez. Müfredat-saat entegrasyonu ayrı iş.
+- **D4 — recommendedWeeklyHours.** ⚠️ **GÜNCELLENDİ / EZİLDİ (kullanıcı onayı
+  2026-06-26, B0.2H).** Orijinal karar: "tek-değer ↔ seviye-bazlı uyuşmazlığı
+  nedeniyle backend'e bağlanmaz, `(Debt)`, persist edilmez." → **Geçersiz.**
+  Uygulanan: haftalık saat **seviye-bazlı** modele bağlandı — `CurriculumHourTemplate`
+  (MEB master) + `SchoolWeeklyHourOverride` (okul/sezon override) + reconcile
+  (master'a eşit → override sil, farklı → upsert). Ders global master kaydında saat
+  TAŞINMAZ; saat **okul + sezon** kapsamlı ayrı yazma yoludur. Tek `recommendedWeeklyHours`
+  alanı kaldırıldı; UI seviye×saat tablosu (Ders Düzenle drawer'ı, kendi "Saatleri
+  Kaydet"i) + katalog liste kolonunda effective min–max aralığı gösterir. `(Debt)`
+  rozeti kalktı. Yeni: `curriculum-hours.override` izni (SchoolAdmin). Detay:
+  `modules/subjects/completion_status.md` + `modules/teachers/*` (müfredat-saat dokümanı).
 - **D5 — description**: Subject'e nullable `Description` kolonu eklenir (frontend
   alanı gerçek persist olur). Küçük, D3 ile aynı migration'da.
 - **D6 — Branch (branş).** ⚠️ **GÜNCELLENDİ / EZİLDİ (kullanıcı onayı 2026-06-26).**
@@ -104,7 +112,8 @@
 
 ## 4. Kapsam Dışı / Debt (bilinçli)
 - Branch (branş) backend + `subject.branchId` (D6).
-- recommendedWeeklyHours backend persist (D4 — CurriculumHourTemplate entegrasyonu).
+- ~~recommendedWeeklyHours backend persist (D4)~~ → **UYGULANDI (2026-06-26, B0.2H):**
+  seviye-bazlı `CurriculumHourTemplate`/`SchoolWeeklyHourOverride` entegrasyonu yapıldı.
 - Per-school subject override modeli (D1).
 - hasAssignments tam agregasyonu belirsizse (D7).
 
