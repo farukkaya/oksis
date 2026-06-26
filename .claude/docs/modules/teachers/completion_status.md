@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `█████████░` %85   ·   Status: in-progress   ·   Güncel: 2026-06-25 (Görevlendirme **v2 BE+FE CANLI doğrulandı** — DevTools uçtan-uca (okuma+drawer+yazma+invalidation+iki eksen); fix'ler: atayan adı (Account→Person), kategori i18n, secondaryBranches null-guard, **kademe filtresi** (seviye+ders havuzu okul SchoolGradeLevel'ı ile); eski v1 `assignments/` silindi. 12 domain + 9 integration + 3 FE testi yeşil.)
+**İlerleme:** `█████████░` %85   ·   Status: in-progress   ·   Güncel: 2026-06-26 (öğretmen branşı **string→branchId FK**, master.branches; bkz. Spec Dışına 2026-06-26) · 2026-06-25 (Görevlendirme **v2 BE+FE CANLI doğrulandı** — DevTools uçtan-uca (okuma+drawer+yazma+invalidation+iki eksen); fix'ler: atayan adı (Account→Person), kategori i18n, secondaryBranches null-guard, **kademe filtresi** (seviye+ders havuzu okul SchoolGradeLevel'ı ile); eski v1 `assignments/` silindi. 12 domain + 9 integration + 3 FE testi yeşil.)
 
 > 2026-06-25 (fix/test): **Görevlendirme v2 canlı doğrulama + düzeltmeler.** API (docker SQL Server) + FE dev
 > üzerinde Chrome DevTools ile uçtan-uca test edildi (müdür login → okuma 200, drawer adayları, çoklu atama
@@ -214,6 +214,7 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-06-26 (öğretmen branşı string → `branchId` FK) — kullanıcı onayı:** Öğretmen branşı eskiden serbest string (`TeacherProfile.Branch` + `SecondaryBranches` string[]) idi. Yeni `master.branches` global lookup tablosuyla birlikte öğretmen branşı **FK'ye taşındı**: `teacher.branchId` (Guid? → master.branches) + `secondaryBranchIds` (Guid[]); **legacy string alanları drop-column migration ile kaldırıldı** + mevcut veri normalize-ad eşleşmesiyle FK'ye taşındı. Görevlendirme + vekalet eşleşmesi (`SubjectBranchMatch`/`BranchFitResolver`/`BranchMatching`) artık branş adını FK'den **resolve edip** ad-bazlı eşleştiriyor (semantik aynı, kaynak FK). Branş picker'ı (HireTeacher/edit) `api/v1/branches` lookup'ından beslenir (eski iki mock liste kaldırıldı). subjects spec **D6 ezildi** (artık bağımsız Branch entity + teacher FK var). **Etki:** öğretmen branş kaynağı tek + gerçek; branşsız öğretmene görevlendirme hard-block `branchId==null` ile çalışır. Detay: `modules/subjects/completion_status.md` 2026-06-26 + oturum `2026-06-26-branch-katalogu-acceptance-and-followup-fixes.md`.
 - **2026-06-24 (spec v1 → v2) — Görevlendirme modeli kökten değişti:** v1 sınıf×saat/doluluk modeli
   (`fillStatus`, `targetHours`, `ListAssignmentClasses/ListClassAssignments`) Görevlendirme ekranından **geçersiz**;
   v2 ders↔öğretmen yetkinlik eşlemesi (saat/şube yok, üçlü uyum, soft-close+audit). Onay: kullanıcı (2026-06-24).

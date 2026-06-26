@@ -52,10 +52,18 @@
   gösterilirse `(Debt)` işaretli, persist edilmez. Müfredat-saat entegrasyonu ayrı iş.
 - **D5 — description**: Subject'e nullable `Description` kolonu eklenir (frontend
   alanı gerçek persist olur). Küçük, D3 ile aynı migration'da.
-- **D6 — Branch (branş) bu spec KAPSAMI DIŞI.** `subject.branchId` ve bağımsız
-  Branch entity/CRUD eklenmez; `/admin/subjects` "Branşlar" sekmesi mock+Debt kalır.
-  AS-1 gereği Akademik Yapı katalogu zaten **branşsız** — katalog Branch'a ihtiyaç
-  duymaz.
+- **D6 — Branch (branş).** ⚠️ **GÜNCELLENDİ / EZİLDİ (kullanıcı onayı 2026-06-26).**
+  Orijinal karar: "bağımsız Branch entity/CRUD eklenmez; `/admin/subjects` Branşlar
+  sekmesi mock+Debt kalır." → **Geçersiz.** Uygulanan (master'a merge edildi):
+  - Yeni **`master.branches`** global lookup tablosu (16 MEB branşı seed) + CRUD
+    (`api/v1/branches`); Akademik Yapı'ya **"Branş Kataloğu"** kartı.
+  - Öğretmen branşı **`branchId` FK** (`teacher.branchId` + `secondaryBranchIds`,
+    legacy string alanlar kaldırıldı); görevlendirme/vekalet eşleşmesi FK→ad resolve.
+  - `/admin/subjects` route+ekran+mock **silindi** (D9); tek ders kaynağı Akademik
+    Yapı katalogu (`master.subjects`). FE-S2'nin "Branşlar sekmesi mock kalır" kısmı geçersiz.
+  - **Ders katalogu yine branşsız (D8/AS-1 KORUNUR)** — Branch ayrı katalog.
+  Detay: `modules/subjects/completion_status.md` + `modules/teachers/completion_status.md`
+  "Spec Dışına Çıkılanlar"; oturum `2026-06-26-branch-katalogu-acceptance-and-followup-fixes.md`.
 - **D7 — inuse/hasAssignments**: Ders, aktif ders programı/görevlendirmede
   kullanılıyorsa silinemez (pasife alınır). Backend `DeleteSubject` guard'ı varsa
   korunur; `SubjectDto.hasAssignments` mümkünse `TeachingAssignment`/`LessonPlacement`
@@ -87,9 +95,10 @@
   mockToast subjects için kaldırılır. Branch işlemleri mock kalır (D6).
 - Subject ↔ backend eşleme: type↔IsElective, status↔IsActive, levels↔gradeLevelIds,
   description; weeklyHours **Debt** (D4); category gönderilmez (D2).
-- Tüketiciler: Akademik Yapı katalog kartı (branşsız, AS-1) + `SubjectsPage`
-  "Dersler" sekmesi gerçeğe bağlanır, `(Debt)` rozeti kaldırılır. "Branşlar" sekmesi
-  + weeklyHours Debt kalır.
+- Tüketiciler: Akademik Yapı katalog kartı (branşsız, AS-1) gerçeğe bağlandı, `(Debt)`
+  rozeti kaldırıldı. ⚠️ **GÜNCELLENDİ (2026-06-26):** `SubjectsPage` (`/admin/subjects`)
+  ve "Branşlar" sekmesi **tamamen silindi** (D6/D9) — tek ders kaynağı Akademik Yapı
+  katalogu. weeklyHours hâlâ Debt (D4 — B0.2H ile ayrı ele alınacak).
 - Test: save-path (create/update doğru payload incl. gradeLevelIds), build, ilgili
   vitest yeşil.
 

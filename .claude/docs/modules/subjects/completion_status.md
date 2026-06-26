@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `██████░░░░` %60   ·   Status: subjects backend-bağlı + branşlar mock   ·   Güncel: 2026-06-24
+**İlerleme:** `███████░░░` %70   ·   Status: subjects backend-bağlı; branş GERÇEK (master.branches + öğretmen branchId FK); /admin/subjects silindi; weeklyHours Debt (B0.2H)   ·   Güncel: 2026-06-26
 
 > Web **Dersler & Branşlar** ekranı (sekmeli: Dersler / Branşlar) frontend-first
 > teslim edildi (tasarıma hi-fi sadık). **FE-S2 (2026-06-24):** Subjects veri katmanı
@@ -31,7 +31,7 @@
 - **api:** `subjectsApi.listSubjects/createSubject/updateSubject/setSubjectStatus` → `utils/api` ile gerçek `/academics/subjects[/manage|/{id}|/{id}/status]`. Branş işlemleri mock kaldı (D6).
 - **keys:** subjects key'leri **global** (`["subjects",...]`, tenant prefix YOK — D1); branş key'i tenant-scope mock.
 - **hooks:** `useSubjectsQuery` subjects + `useMasterGradeLevels`'i birleştirir; `SubjectDto → Subject` eşler. `gradeLevelId (Guid) → Level`: master lookup `code` ("5".."12") → `Number`. `useSaveSubject` `Level → gradeLevelId`: `String(level) → code → id`. Eşleme **hook katmanında** (raw api fonksiyonlarında değil).
-- **Debt (gösterimli):** `recommendedWeeklyHours = null` (D4 — kolon başlığı "(Debt)"); `branchId = ""` (D6 — `BranchBadge` undefined'a düşer, çökmez).
+- **Debt (gösterimli):** `recommendedWeeklyHours = null` (D4 — kolon başlığı "(Debt)", B0.2H ile ele alınacak). ~~`branchId = ""` (D6)~~ → **artık geçerli değil:** branş gerçek (`master.branches` + öğretmen `branchId` FK, 2026-06-26); `/admin/subjects` silindi. Bkz. aşağıda "Spec Dışına Çıkılanlar".
 - **Tüketiciler:** Akademik Yapı "Ders Kataloğu" kartı `(Debt)` rozeti **kaldırıldı** (gerçek artık); Haft. Saat kolonu Debt işaretli. `SubjectsPage` Dersler sekmesi gerçek; Branşlar sekmesi mock.
 - **Test:** build + tsc (yeni hata yok, baseline ~60) + `subjects` vitest yeşil + `StructureTab` vitest yeşil.
 - **Sidebar:** Yeni **Akademik** grubu (Dersler & Branşlar aktif; Görevlendirmeler "Yakında" pasif; Ders Programı + Nöbet Yönetimi "Okul"dan buraya taşındı).
@@ -56,6 +56,8 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar / Kararlar
 
+- **2026-06-26 (spec D6/D9/FE-S2 EZİLDİ — kullanıcı onayı)** — Orijinal D6 "bağımsız Branch entity/CRUD eklenmez, `/admin/subjects` Branşlar sekmesi mock kalır" diyordu. **Uygulandı (master'a merge):** (1) `/admin/subjects` route+ekran+mock **silindi** — tek ders kaynağı Akademik Yapı katalogu (`master.subjects`, global, D1). (2) Yeni **`master.branches`** global lookup tablosu (16 MEB branşı seed) + CRUD (`api/v1/branches`) + Akademik Yapı'da **"Branş Kataloğu"** kartı. (3) Öğretmen branşı **`branchId` FK** (`teacher.branchId` + `secondaryBranchIds`; legacy string alanlar drop migration ile kaldırıldı); görevlendirme/vekalet eşleşmesi FK→ad resolve'a uyarlandı. **AS-1/D8 KORUNDU** (ders katalogu branşsız; Branch ayrı katalog). **Onay:** kullanıcı (bug-temizleme planı A1.1+A1.4). **Etki:** Branch artık gerçek backend; subjects spec D6/FE-S2 + okul-ayarları akışı güncellendi. Detay: oturum `2026-06-26-branch-katalogu-acceptance-and-followup-fixes.md`. İlgili: `modules/teachers/completion_status.md`.
+- **2026-06-26 (B0.2 — kullanıcı onayı)** — Yeni Ders create: FE `displayOrder=0` + boş `code` gönderdiğinden 400 dönüyordu. **Backend `CreateSubjectCommand`'dan `DisplayOrder` kaldırıldı**, handler mevcut max+10 ile otomatik atar (validator `>0` kalktı); FE Kısa Kod **zorunlu** yapıldı. **Etki:** create çalışır; DisplayOrder tek kaynak (backend).
 - **2026-06-24 (AS-Q1, spec D2)** — UI Category göndermediğinden `SubjectCategory` enum'una nötr **`Other = 11`** değeri eklendi; yeni dersler create'te `Other` ile oluşur, update Category'yi korur. **Neden güvenli:** Duties yerine-öğretmen eşleştirmesi (`BranchFitResolver`) kategoriyi **tam-eşitlikle** karşılaştırır (`s.Category == absentCategory`) → `Other` hiçbir spesifik branşla eşleşmez, mevcut seed dersler kendi kategorisini korur, davranış değişmez. Category string-stored (HasConversion<string>) → şema değişmedi. **Onay:** spec D2/AS-Q1 önerisi. **Etki:** Category korundu (silinmedi).
 - **2026-06-24 (spec BE-S1 madde, küçük sapma)** — Spec "aggregate `subject_grade_levels` çocuklarını yönetir" diyor; modelde Subject→SubjectGradeLevel navigation YOK (`HasOne<Subject>().WithMany()` navigation'sız M:N, SubjectGradeLevel kendi MasterEntity'si). Bu yüzden kademeler **handler-managed tam-replace** ile yönetildi (UpsertBellDayAssignments deseni) — entity çocuk koleksiyonu yapılmadı. Sonuç spec D3 niyetiyle birebir (tam-replace, SubjectId scope). **Etki:** yok; davranış aynı.
 - **2026-06-11** — Tasarım brief'indeki **sınıf-merkezli "Görevlendirmeler" ekranı yapılmadı.** Bağlayıcı spec `oksis-admin-ekranlari-mimari-spec.md` §5.7 görevlendirmeyi (`TeachingAssignment`) **öğretmen-merkezli** ve Öğretmen detayında konumlandırıyor; brief'in ayrı sınıf-merkezli düzenleme ekranı bu sahiplik sınırıyla çelişiyordu. **Karar:** spec'e sadık kalındı; Görevlendirmeler menüde "Yakında" pasif. **Onay:** kullanıcı. **Etki:** bu round yalnız Dersler & Branşlar; görevlendirme ileride Öğretmen detayında ele alınır.
