@@ -15,6 +15,8 @@
 | `classrooms.create` | Oluşturma |
 | `classrooms.update` | Güncelleme |
 | `classrooms.delete` | Silme (soft) |
+| `class-rooms.archive` | Şube arşivleme (soft-delete; canlı uç `POST /class-rooms/{id}/archive`) |
+| `class-rooms.delete` | Şube kalıcı silme (hard delete; canlı uç `DELETE /class-rooms/{id}` → `is_deleted=1`, slot serbest) |
 | `classrooms.{{TBD}}` | {{TBD}} |
 
 ---
@@ -29,6 +31,11 @@
 | `classrooms.create` | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} |
 | `classrooms.update` | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} |
 | `classrooms.delete` | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} | {{TBD}} |
+| `class-rooms.archive` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `class-rooms.delete` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+
+> `class-rooms.delete` seed: `PermissionSeedData.cs` + migration
+> `20260628_add_class_rooms_delete_permission` (SuperAdmin + SchoolAdmin).
 
 ---
 

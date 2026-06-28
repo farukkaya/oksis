@@ -103,6 +103,9 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 |---|---|---|---|---|---|---|---|
 | `class-rooms.view` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
 | `class-rooms.manage` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `class-rooms.archive` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Şube arşivleme (soft-delete) — POST /class-rooms/{id}/archive. rename/status ile aynı yetki seviyesi (yalnız admin). Backend seed: PermissionSeedData.cs:114. 2026-06-28 eklendi (FE şube arşivleme). -->
+| `class-rooms.delete` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Şube kalıcı silme (hard delete) — DELETE /class-rooms/{id} → is_deleted=1, slot serbest (aynı isim yeniden açılabilir). archive ile aynı yetki seviyesi (yalnız admin). 409: aktif öğrenci (ClassRoom.HasActiveStudents). Backend seed: PermissionSeedData.cs + migration 20260628_add_class_rooms_delete_permission (SuperAdmin+SchoolAdmin). 2026-06-28 eklendi (FE+BE şube kalıcı silme). -->
+
 
 ### Students
 

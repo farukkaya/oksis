@@ -67,15 +67,15 @@ Bu modül hangi modüllerle konuşur?
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-10
+- **Last Updated:** 2026-06-28
 - **Files:**
   - [x] README.md
   - [x] domain-model.md (iskelet)
-  - [x] api-contracts.md (iskelet)
+  - [x] api-contracts.md (şube arşivleme + kalıcı silme ucu eklendi)
   - [x] database-schema.md
-  - [x] permissions.md (iskelet)
+  - [x] permissions.md (class-rooms.archive + class-rooms.delete eklendi)
   - [x] notifications.md (iskelet)
-  - [x] ui-flows.md (dolduruldu — admin dashboard akışı)
-  - [x] business-rules.md (iskelet)
+  - [x] ui-flows.md (admin dashboard akışı + şube arşivleme + kalıcı silme)
+  - [x] business-rules.md (şube arşivleme + kalıcı silme kuralları)
   - [x] open-questions.md (iskelet)
   - [x] completion_status.md

@@ -153,6 +153,16 @@ public sealed class TenantSaveChangesInterceptor : SaveChangesInterceptor
 - Cross-tenant insert/update/delete `SecurityException` fırlatır → 500 değil, **403** mapping.
 - `SchoolId` **immutable** (asla update edilemez).
 
+**Interceptor zinciri (sıra önemli):** `SaveChangesInterceptor`'lar DI'da kayıt sırasıyla çalışır:
+`TenantSaveChangesInterceptor` → `StudentClassroomSyncInterceptor` → `SoftDeleteInterceptor`.
+`StudentClassroomSyncInterceptor`, öğrencinin denormalize güncel şubesi
+(`StudentProfile.CurrentClassroomId`) alanını tek doğruluk kaynağı `class_room_students`
+(aktif satır, `left_at IS NULL`) defterinden **aynı transaction içinde türetir** — tenant
+doldurulduktan sonra, soft-delete işaretlenmeden önce. Böylece defteri değiştiren her yol
+(atama/transfer/çıkarma komutları + seeder gibi yan yollar) ayna alanı otomatik tutarlı
+tutar; handler'larda manuel senkron yoktur. Modül detayı: students/classrooms
+`business-rules.md` (BR-students-001 / BR-classrooms-001).
+
 ---
 
 ## 5. Pipeline Behavior (MediatR)

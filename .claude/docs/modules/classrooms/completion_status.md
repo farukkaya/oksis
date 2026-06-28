@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `██████░░░░` %60   ·   Status: in-progress   ·   Güncel: 2026-06-10
+**İlerleme:** `███████░░░` %67   ·   Status: in-progress   ·   Güncel: 2026-06-28
 
 > Temel: Web admin dashboard ekranı (design handoff classes_v2) 1:1 aktarıldı ve
 > gerçek `class-rooms` uçlarına bağlandı. Backend CQRS tarafı AcademicSessions
@@ -53,9 +53,33 @@
   açık TÜM kademelerini şubesiz de gösterir (boş seviye = yalnız "Şube ekle"
   kartı); Ortaokul+Lise okulda boş Ortaokul artık görünür. Not: uç
   `school-settings.view` ister (SchoolAdmin'de var; Secretary için ⚙).
-- **Profil senkronu (2026-06-10):** assign/transfer/remove handler'ları artık
-  `StudentProfile.CurrentClassroomId`'yi aynı transaction'da günceller — roster
+- **Şube arşivleme — FE (2026-06-28):** DetailPanel alt barına "Arşivle" butonu
+  (izin `class-rooms.archive`; aktif öğrencisi olan şubede disabled + tooltip),
+  `ArchiveSectionModal` (zorunlu sebep ≤500, "geri-alma yok" notu), `useArchiveSection`
+  hook (409 `ClassRoom.HasActiveStudents`'ta backend Türkçe mesajı toast'lanır — hibrit).
+  Gerçek uç `POST /class-rooms/{id}/archive` (backend zaten hazırdı, izin seed'de mevcut).
+- **Şube kalıcı silme — FE+BE (2026-06-28):** DetailPanel alt barına "Sil" (danger)
+  butonu (izin `class-rooms.delete`; aktif öğrencisi olan şubede disabled + tooltip),
+  `DeleteSectionModal` (sebep YOK, "geri alınamaz" uyarısı), `useDeleteSection` hook.
+  Backend: `DELETE /class-rooms/{id}` hard delete (`TenantSaveChangesInterceptor` →
+  `is_deleted=1`, slot serbest → aynı isim yeniden açılabilir); `ClassRoom.EnsureDeletable()`
+  + 409 `ClassRoom.HasActiveStudents`. Yeni izin `class-rooms.delete` seed'e eklendi +
+  migration `20260628_add_class_rooms_delete_permission` (SuperAdmin + SchoolAdmin).
+  "Arşivle" butonu korundu (artık ghost stil; arşiv = slot dolu kalır, sil = slot serbest).
+- **Profil senkronu (2026-06-10):** assign/transfer/remove handler'ları
+  `StudentProfile.CurrentClassroomId`'yi aynı transaction'da güncelliyordu — roster
   ve bekleyen havuz atama sonrası tutarlı (önceden sadece UpdateProfile yazıyordu).
+  **(2026-06-28 ile değiştirildi — aşağıya bakın.)**
+- **Güncel şube senkronu interceptor'a taşındı (2026-06-28, mimari değişiklik):**
+  assign/transfer/remove handler'larından manuel `profile.AssignToClassroom/RemoveFromClassroom`
+  çağrıları **kaldırıldı**. Yeni `StudentClassroomSyncInterceptor` (EF Core
+  `SaveChangesInterceptor`) `current_classroom_id`'yi tek doğruluk kaynağı
+  `class_room_students`'tan (aktif satır, `left_at IS NULL`) aynı transaction içinde
+  türetir (aktif yoksa `null`); defteri değiştiren her yol (komutlar + seeder yan yolları)
+  ayna alanı otomatik tutarlı tutar → iki-yazım drift'i yapısal olarak imkânsız. DI
+  zincirinde `TenantSaveChangesInterceptor` sonrası, `SoftDeleteInterceptor` öncesi;
+  entegrasyon test fixture'ına eklendi. Kural: classrooms `business-rules.md`
+  BR-classrooms-001 + students BR-students-001.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
@@ -71,6 +95,8 @@
 - Sihirbaz Mod A (toplu sezon kurulum/devir) — academic-years modülünde; bu ekran
   yalnızca yönlendirir.
 - Mobil ekran yok (admin-only, kapsam dışı olabilir — netleşmedi).
+- Şube arşivden geri alma (unarchive/restore) **ertelendi** — backend ucu yok;
+  bilinçli kapsam dışı (gerekirse ayrı BE+FE işi). Modal kullanıcıya not gösterir.
 
 ## ⚠️ Spec Dışına Çıkılanlar
 

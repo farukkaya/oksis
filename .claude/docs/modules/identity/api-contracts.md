@@ -93,6 +93,8 @@ Aktif bağlamı ve seçenekleri (profil/çocuk/sezon) döner. UI switcher'ları 
 
 `displayName`/`className`, `PersonDirectory.FindActiveChildrenAsync` içinde tek EF projection sorgusuyla (N+1/lazy-load yok, tenant filter otomatik) çözülür. `CurrentClassroomId` zaten güncel sınıfı tuttuğundan ekstra aktif-sezon filtresi gerekmez.
 
+> **Not (2026-06-28, mimari değişiklik — okuma tarafı DEĞİŞMEDİ):** `CurrentClassroomId` hâlâ denormalize tutulur, ancak artık komut handler'larında manuel senkronlanmaz; `StudentClassroomSyncInterceptor` ile tek doğruluk kaynağı `academic.class_room_students` (aktif satır, `left_at IS NULL`) defterinden türetilir (interceptor-derived). Bu projeksiyon (`PersonDirectory` child `className`) aynen çalışır — okuma sözleşmesi etkilenmez. Detay: students `business-rules.md` BR-students-001.
+
 ### `POST /auth/forgot-password` · `/reset-password` · `/change-password`
 
 Forgot uniform `202` döner (enumeration koruması, kanal sızdırmaz). Reset token tek kullanımlık + kısa ömürlü; başarılı reset/change tüm oturumları logout eder.
