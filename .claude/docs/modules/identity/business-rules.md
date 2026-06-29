@@ -19,15 +19,17 @@
 
 ---
 
-## BR-identity-002 (TR-auth-002): TCKN login'de tip düzeyinde reddedilir
+## BR-identity-002 (TR-auth-002): TCKN login'de tip düzeyinde reddedilir; StudentNumber eklendi
 
-**Kural:** `FindForLoginAsync` yalnızca Email ve Phone kabul eder; TCKN gelirse `PersonLookupResult.Rejected` döner. Recovery (`FindForRecoveryAsync`) Email/Phone/TCKN kabul eder (TCKN tenant-tuzlu hash ile).
+**Kural:** `FindForLoginAsync` Email, Phone ve StudentNumber kabul eder; TCKN gelirse `PersonLookupResult.Rejected` döner. Recovery (`FindForRecoveryAsync`) Email/Phone/TCKN kabul eder (TCKN tenant-tuzlu hash ile).
 
-**Sebep:** TCKN ağda dolaşmamalı; tek metot yazılırsa ileride biri TCKN kapısını login'e açabilir. İki ayrı imza bunu derleyici düzeyinde engeller.
+**StudentNumber login (Faz 1B-BE, 2026-06-30):** `Identifier.Create` 1-9 haneli sayısal girdiyi `IdentifierType.StudentNumber` olarak sınıflandırır. `IPersonDirectory.FindByStudentNumberAsync(studentNumber, schoolId, ct)` tenant-scope ile çalışır; `SchoolHint` (okul ID'si) zorunludur — tenant olmadan StudentNumber global namespace'de anlamsız. Hesapsız (küçük-kademe, Anaokulu/İlkokul) öğrenci için uniform not-found döner (`PersonLookupResult.NotFound`); ayrı hata kodu sızdırmaz. Öğrenci-no format/kabul kuralları (E4.4/E2.3) ayrı spec'e ertelendi; login resolver format-agnostic (1-9 hane).
 
-**Uygulama:** Login ve recovery için ayrı port metotları; TCKN normalizasyonu `NationalIdHash(value, tenantSalt)`.
+**Sebep:** TCKN ağda dolaşmamalı; iki ayrı imza bunu derleyici düzeyinde engeller. StudentNumber okul-scoped (SchoolHint zorunlu) — global eşleşme riski yok.
 
-**Test referansı:** `IdentifierResolverTests.Login_Rejects_Tckn`.
+**Uygulama:** Login ve recovery için ayrı port metotları; TCKN normalizasyonu `NationalIdHash(value, tenantSalt)`; StudentNumber için `IPersonDirectory.FindByStudentNumberAsync`.
+
+**Test referansı:** `IdentifierResolverTests.Login_Rejects_Tckn`, `IdentifierResolverTests.Login_StudentNumber_Resolves_With_SchoolHint`.
 
 ---
 
@@ -133,3 +135,4 @@
 |---|---|---|
 | 2026-05-15 | İlk skeleton oluşturuldu | İlk implementasyon |
 | 2026-05-30 | Teknik analize göre TR-auth-001…018 kuralları işlendi | Login & Profile Switch teknik analizi (Sürüm 1.0) |
+| 2026-06-30 | BR-identity-002 güncellendi: StudentNumber login eklendi (Faz 1B-BE) | Öğrenci hesabı + öğrenci-no login resolver; SchoolHint zorunlu; format ayrı spec |

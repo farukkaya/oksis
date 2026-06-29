@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `█████░░░░░` %50   ·   Status: in-progress (Faz 2 — liste/detay backend)   ·   Güncel: 2026-06-29
+**İlerleme:** `██████░░░░` %60   ·   Status: in-progress (Faz 2 — liste/detay backend)   ·   Güncel: 2026-06-30
+
+> 2026-06-30 (Faz 1B-BE): **Faz 1B-BE tamamlandı — öğrenci hesabı + geçici şifre + öğrenci-no login + küçük-kademe carve-out.** Domain: `EducationLevelClassifier` (grade-no → EducationLevel; `IsSmallGrade`). `ITemporaryPasswordGenerator` + `TemporaryPasswordGenerator` (crypto-RNG, okunabilir karakter seti, 8 hane). `IStudentAccountProvisioner` + `StudentAccountProvisioner` — EnrollStudent transaction içinde öğrenci Account'ı geçici şifreyle açar; küçük-kademe (Anaokulu/İlkokul) → hesap açılmaz (E2.6 otomatik carve-out); idempotent. `EnrollStudentResult` yeni alanları: `TemporaryPassword: string?` + `StudentAccountCreated: bool`; replay → TemporaryPassword null, StudentAccountCreated hesap varlığına bakılır. Login resolver: `IdentifierType.StudentNumber`, `Identifier.Create` 1-9 haneli sayısalı sınıflandırır, `IPersonDirectory.FindByStudentNumberAsync` (tenant-scope), `IdentifierResolver` StudentNumber dalı (SchoolHint zorunlu). FE: `EnrollResult` +temporaryPassword/studentAccountCreated; `IdentityBox` üç-durum satırı (gerçek şifre / replay notu / küçük-kademe notu); DebtBadge kaldırıldı; başarı ekranı şifre kutusu Debt KAPANDI. Branch: `student-enrollment-be`.
 
 > 2026-06-29 (Faz 1B): **Faz 1B (Frontend) sihirbazı tamamlandı.** 5-adımlı `EnrollStudentSheet` sihirbazı implement edildi ve Faz 1A backend uçlarına bağlandı. Kapsam: `enrollWizardSchema` + `toEnrollCommand`, 5 API hook (`useEnrollStudentMutation`, `useCheckNationalIdQuery`, `useBranchCapacityQuery`, `useGuardianSearchQuery`, `studentKeys`), `EnrollStudentSheet` (kabuk + `WizardRail`), 5 adım bileşeni (`StepType`, `StepStudent`, `StepPlacement`, `StepGuardians`, `StepSummary`) + `EnrollSuccess` başarı ekranı. Eski `EnrollStudentDialog` mock kaldırıldı; `studentsDebtApi.enroll` debt fallback temizlendi. Başarı ekranı şifre satırı **Debt** (E2.6/E2.7 Faz 1B-BE'ye ertelendi — bkz. Spec Dışına Çıkılanlar). Branch: `oksis-web:student-enrollment-fe`.
 
@@ -27,24 +29,29 @@
   - Domain: `StudentEnrollment` aggregate, `StudentDocument`, `EnrollmentIdempotency`, `StudentNumberCounter` POCO, `EnrollmentType`/`EnrollmentStatus`/`DocumentType` enum'ları, `StudentEnrolledEvent`.
   - Migration: `20260629_student_enrollment_core` — 4 tablo (`student_enrollments`, `student_documents`, `enrollment_idempotency`, `student_number_counters`; `academic` schema).
   - `IStudentNumberGenerator`: atomic `{yıl}{5-hane}`, per-tenant, bir kez üretilir (E2.3).
-  - CQRS: `EnrollStudentCommand` — tek transaction (Person+StudentProfile+StudentEnrollment+ClassRoom.AssignStudent+guardians+idempotency+event); `ClientRequestId` idempotency; hard kapasite kontrolü; aktif sezon kontrolü. Yanıt: `studentNumber` döner (öğrenci hesabı + geçici şifre Faz 1B'ye ertelendi).
+  - CQRS: `EnrollStudentCommand` — tek transaction (Person+StudentProfile+StudentEnrollment+ClassRoom.AssignStudent+guardians+idempotency+event+`StudentAccountProvisioner`); `ClientRequestId` idempotency; hard kapasite kontrolü; aktif sezon kontrolü. Yanıt: `studentNumber` + `temporaryPassword?` + `studentAccountCreated` döner (Faz 1B-BE ile tamamlandı).
   - Queries: `CheckNationalIdDuplicate`, `GetBranchCapacity`, `SearchGuardians`.
-  - Post-commit: `StudentEnrolledEventHandler` → `IPostCommitDispatcher` → veli daveti (`InvitationCreationHelper`). Öğrenci hesabı oluşturma (Account.Create, requirePasswordChange=true) Faz 1B'ye ertelendi (E2.6/E2.7).
+  - Post-commit: `StudentEnrolledEventHandler` → `IPostCommitDispatcher` → veli daveti (`InvitationCreationHelper`). Öğrenci hesabı oluşturma → Faz 1B-BE'de (2026-06-30) `StudentAccountProvisioner` ile transaction içinde yapıldı (E2.6/E2.7).
   - REST: `POST students:enroll`, `POST students:transfer-in`, `GET students/check-national-id`, `GET branches/capacity`, `GET guardians:search`.
   - Permissions seed (8 izin): `students.view`, `view-detail`, `create`, `update`, `renew`, `manage`, `import`, `export` — SuperAdmin+SchoolAdmin tümü; Teacher `view`+`view-detail`.
 - **Faz 1B Frontend (2026-06-29, `oksis-web:student-enrollment-fe`):**
   - Şema + mantık: `enrollWizardSchema.ts` — `EnrollWizardForm`, `GuardianDraft`, `isStepValid`, `gradeLevelToInt`, `toEnrollCommand`; `EnrollStudentCommandBody`/`GuardianInputBody` tipleri.
   - API katmanı: `studentsApi.ts` +5 fonksiyon; `studentKeys.ts` +4 anahtar (tenant-scoped).
   - Hooks: `useEnrollStudentMutation` (enroll|transfer-in + invalidate), `useCheckNationalIdQuery` (debounced), `useBranchCapacityQuery`, `useGuardianSearchQuery`.
-  - UI: `EnrollStudentSheet` (kabuk + `WizardRail`), `StepType`, `StepStudent` (TCKN dupe inline), `StepPlacement` (kapasite grid, HARD disabled), `StepGuardians` (arama + yeni + 5 bayrak), `StepSummary` (özet + davet kanalı), `EnrollSuccess` (gerçek öğrenci no + şifre satırı Debt).
+  - UI: `EnrollStudentSheet` (kabuk + `WizardRail`), `StepType`, `StepStudent` (TCKN dupe inline), `StepPlacement` (kapasite grid, HARD disabled), `StepGuardians` (arama + yeni + 5 bayrak), `StepSummary` (özet + davet kanalı), `EnrollSuccess` (gerçek öğrenci no + şifre satırı Debt — Faz 1B-BE ile KAPANDI).
   - Eski `EnrollStudentDialog` + `studentsDebtApi.enroll` mock kaldırıldı; `enrollModal.*` i18n temizlendi; `enrollWizard.*` anahtarları eklendi.
   - Giriş noktası: `/admin/students` → "Yeni Öğrenci" butonu → `EnrollStudentSheet` (sağ sheet); `modal.kind === "enroll"` tetikler.
+- **Faz 1B-BE (2026-06-30, `student-enrollment-be` — BE+FE):**
+  - Domain: `EducationLevelClassifier`, `ITemporaryPasswordGenerator` + `TemporaryPasswordGenerator`, `IStudentAccountProvisioner` + `StudentAccountProvisioner`.
+  - `EnrollStudentResult` yeni alanlar: `TemporaryPassword: string?` + `StudentAccountCreated: bool`. Handler adım 7.5'te provisioner'ı çağırır; replay → TemporaryPassword null, StudentAccountCreated hesap varlığına bakılır.
+  - Küçük-kademe otomatik carve-out (E2.6): Anaokulu/İlkokul → hesap açılmaz, Parent-only. Ortaokul/Lise → hesap otomatik.
+  - Login resolver: `IdentifierType.StudentNumber`, `Identifier.Create` 1-9 haneli sayısalı sınıflandırır, `IPersonDirectory.FindByStudentNumberAsync` (tenant-scope), `IdentifierResolver` StudentNumber dalı (SchoolHint zorunlu). Format-agnostic (format spec ayrı).
+  - FE: `EnrollResult` +temporaryPassword/studentAccountCreated; `IdentityBox` üç-durum satırı; DebtBadge kaldırıldı; i18n tr+en güncellendi. Başarı ekranı şifre kutusu Debt KAPANDI.
 
 ---
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Faz 1B-BE (öğrenci hesabı + geçici şifre):** `Account.Create` (E2.6/E2.7) — `EnrollStudentEventHandler`'a öğrenci hesabı açma ve geçici şifre üretimi eklenecek; başarı ekranında şifre satırı gerçek değerle dolacak.
 - **Faz 2 backend:** `ListStudents`/`GetStudentDetail`/`GetEnrollmentHistory` slice'ları (web tüketici hazır, uç açılınca beslenir), Freeze/Withdraw/Transfer/Graduate endpoint'leri, server-side `seasonId` filtresi.
 - **Faz 2 FE:** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı.
 - **Faz 3+:** `students.import` toplu aktarım, document upload UI.
@@ -56,7 +63,8 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
-- **2026-06-29 — Faz 1B FE: Başarı ekranı geçici-şifre kutusu Debt olarak port edildi (öğrenci hesabı + geçici şifre E2.6/E2.7 gereği Faz 1B-BE'ye ertelendi) · onay: kullanıcı · etki: FE'de "D" rozeti + "hesap backend ile açılacak" notu, sahte şifre basılmaz; BE açılınca dolacak.**
+- **2026-06-30 — Öğrenci no format/kabul (E4.4/E2.3) ayrı spec'e ertelendi · onay: kullanıcı · login resolver format-agnostic (1-9 hane) olarak yazıldı, gelecekteki format spec'ini kırmaz; numara üretimi + format doğrulaması ayrı tasarım turuna bırakıldı.**
+- **~~2026-06-29 — Faz 1B FE: Başarı ekranı geçici-şifre kutusu Debt olarak port edildi~~ → KAPANDI (2026-06-30, Faz 1B-BE ile çözüldü). IdentityBox üç-durum satırı gerçek şifreyi/replay notunu/küçük-kademe notunu gösteriyor; DebtBadge kaldırıldı.**
 - **2026-06-29 — Faz 1B FE ertelenen minörler:** GuardianPicker ayrı bileşene çıkarılmadı (`StepGuardians` ~400 satır); özet kademe·şube "5-A" gösterir, "Ortaokul · 5-A" değil (kademe adı form state'inde yok); öksüz `debt.enroll.*` i18n anahtarları (debt-temizlik turunda kaldırılacak).
 - **2026-06-29 — Faz 1A'dan Faz 1B'ye erteleme: öğrenci hesabı + geçici şifre (E2.6/E2.7).** `EnrollStudent` POST yanıtı ve post-commit handler, şimdi yalnız veli davetini gönderiyor. Öğrenci Account oluşturma (kullanıcı adı = öğrenci-no, şifre = geçici, requirePasswordChange=true) spec E2.6 (küçük-kademe yalnız veli) ve E2.7 (kullanıcı-adı = öğrenci-no giriş yolu henüz kurulmadı) gereği Faz 1B'de uygulanacak. İnert hesap oluşturmayı önlemek için Faz 1A'da ertelendi. Onaylayan: kullanıcı (spec gözden geçirme 2026-06-28). İmpakt: Faz 1A ve Faz 1B'nin sınırı bu noktada keskin; web'de mock temp-password cred-box göstermeye devam edebilir (Faz 1B'de gerçek değer yapılacak).
 - **2026-06-29 — E2.3: EnrollmentNo kaldırıldı, öğrenci-no kişiye sabit (ONAYLANMIŞ KARAR, sapma değil).** Spec başlangıç taslağı per-season `EnrollmentNo` öngörmüştü; spec E2.3 bunu revize etti: öğrenci numarası (`StudentNumber`) kişiye sabit, `{yıl}{5-hane}` formatında, bir kez üretilir, mezuniyete kadar değişmez. `EnrollmentNo` alanı hiç oluşturulmadı. Karar: spec E2.3 revizyon (kullanıcı onayladı).

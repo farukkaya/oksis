@@ -8,7 +8,7 @@
 
 ## Endpoint Özeti
 
-### Faz 1A (Canlı — oksis-api `student-enrollment` dalı) · FE bağlandı (Faz 1B, 2026-06-29)
+### Faz 1A + 1B-BE (Canlı) · FE bağlandı (Faz 1B FE, 2026-06-29) · Hesap+şifre (Faz 1B-BE, 2026-06-30)
 
 | Method | Path | Permission | Amaç | FE Durumu |
 |---|---|---|---|---|
@@ -85,12 +85,21 @@
   "data": {
     "studentId": "...",
     "enrollmentId": "...",
-    "studentNumber": "20250001"
+    "studentNumber": "20250001",
+    "temporaryPassword": "Xk7mQ3pR",
+    "studentAccountCreated": true
   },
   "errors": null,
   "correlationId": "..."
 }
 ```
+
+> **`temporaryPassword` / `studentAccountCreated` notları (Faz 1B-BE, 2026-06-30):**
+> - `temporaryPassword`: Geçici şifre plain-text yalnız bu yanıtta döner; plain hâli asla saklanmaz (hash'li tutulur). `null` olduğu durumlar:
+>   - Küçük-kademe (Anaokulu/İlkokul) — E2.6 carve-out; Parent-only, hesap açılmaz.
+>   - Replay (`clientRequestId` tekrar) — plain şifre kayıtlı olmadığından `null`; `studentAccountCreated` gerçek hesap varlığına bakılır.
+> - `studentAccountCreated`: `true` → hesap bu istekte açıldı. Replay'de hesap zaten varsa `true`, küçük-kademede `false`.
+> - Login: öğrenci numarası giriş yolu artık aktif — `identifier` alanına öğrenci numarası (1-9 hane rakam) + `SchoolHint` (okul ID'si) ile giriş yapılabilir. Bkz. identity `api-contracts.md` / `business-rules.md`.
 
 **Errors:**
 - `400` — validation hatası
@@ -100,7 +109,7 @@
 - `409 NATIONAL_ID_DUPLICATE` — bu TC aktif sezonda zaten kayıtlı
 - `422 IDEMPOTENCY_REPLAY` — `clientRequestId` tekrar, aynı başarı sonucu döner
 
-**Domain Event:** `StudentEnrolledEvent` → Outbox → post-commit: veli daveti (Faz 1A). Öğrenci hesabı + geçici şifre oluşturma Faz 1B'de eklenecek.
+**Domain Event:** `StudentEnrolledEvent` → Outbox → post-commit: veli daveti (Faz 1A). Öğrenci hesabı + geçici şifre: `StudentAccountProvisioner` transaction içinde çalışır (Faz 1B-BE, 2026-06-30); küçük-kademede atlanır (E2.6 carve-out).
 
 ---
 

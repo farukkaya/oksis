@@ -36,7 +36,9 @@
   "profileType": "Parent" }   // opsiyonel — çok profilli kullanıcı 409 sonrası seçimini bununla bildirir
 ```
 
-**Akış (özet, tam akış Bölüm 18.1):** guard → `FindForLoginAsync` (TCKN reddi) → password verify → lifecycle gate → consent gate → policy gate → context resolve → permission cache → token issue.
+**Desteklenen `identifier` tipleri:** Email, Phone, StudentNumber (Faz 1B-BE, 2026-06-30). StudentNumber için `SchoolHint` (okul ID'si) zorunlu; hesapsız/küçük-kademe öğrenci → uniform `401`. TCKN login'de tip düzeyinde reddedilir (BR-identity-002).
+
+**Akış (özet, tam akış Bölüm 18.1):** guard → `FindForLoginAsync` (TCKN reddi; StudentNumber → `FindByStudentNumberAsync` tenant-scope) → password verify → lifecycle gate → consent gate → policy gate → context resolve → permission cache → token issue.
 
 **Response 200:**
 ```jsonc
