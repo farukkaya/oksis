@@ -296,8 +296,8 @@ const { hasPermission } = usePermission();
 if (!hasPermission('students.create')) return null;
 
 // Component
-<RequirePermission permission="students.delete">
-  <DeleteButton />
+<RequirePermission permission="students.manage">
+  <ManageButton />
 </RequirePermission>
 
 // Menu
