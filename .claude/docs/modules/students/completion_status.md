@@ -4,9 +4,11 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `████░░░░░░` %40   ·   Status: in-progress (Faz 1B — FE wizard)   ·   Güncel: 2026-06-29 (Faz 1A backend tamamlandı)
+**İlerleme:** `█████░░░░░` %50   ·   Status: in-progress (Faz 2 — liste/detay backend)   ·   Güncel: 2026-06-29
 
-> 2026-06-29: **Faz 1A backend tamamlandı.** Domain (`StudentEnrollment`, `StudentDocument`, `EnrollmentIdempotency`, `StudentNumberCounter`), migration `20260629_student_enrollment_core`, `EnrollStudentCommand` (tek-transaction: Person+Enrollment+ClassRoom.AssignStudent+guardians+idempotency+event), 3 yardımcı query, 5 REST endpoint, 8 permission seed (STUDENTS modülü). Post-commit: `StudentEnrolledEventHandler` → veli daveti + öğrenci hesabı. Detay: `.claude/specs/ogrenci-kayit-enrollment-spec.md`, plan: `.claude/specs/ogrenci-kayit-faz1-backend-plan.md`. Branch: `oksis-api:student-enrollment`.
+> 2026-06-29 (Faz 1B): **Faz 1B (Frontend) sihirbazı tamamlandı.** 5-adımlı `EnrollStudentSheet` sihirbazı implement edildi ve Faz 1A backend uçlarına bağlandı. Kapsam: `enrollWizardSchema` + `toEnrollCommand`, 5 API hook (`useEnrollStudentMutation`, `useCheckNationalIdQuery`, `useBranchCapacityQuery`, `useGuardianSearchQuery`, `studentKeys`), `EnrollStudentSheet` (kabuk + `WizardRail`), 5 adım bileşeni (`StepType`, `StepStudent`, `StepPlacement`, `StepGuardians`, `StepSummary`) + `EnrollSuccess` başarı ekranı. Eski `EnrollStudentDialog` mock kaldırıldı; `studentsDebtApi.enroll` debt fallback temizlendi. Başarı ekranı şifre satırı **Debt** (E2.6/E2.7 Faz 1B-BE'ye ertelendi — bkz. Spec Dışına Çıkılanlar). Branch: `oksis-web:student-enrollment-fe`.
+
+> 2026-06-29 (Faz 1A): **Faz 1A backend tamamlandı.** Domain (`StudentEnrollment`, `StudentDocument`, `EnrollmentIdempotency`, `StudentNumberCounter`), migration `20260629_student_enrollment_core`, `EnrollStudentCommand` (tek-transaction: Person+Enrollment+ClassRoom.AssignStudent+guardians+idempotency+event), 3 yardımcı query, 5 REST endpoint, 8 permission seed (STUDENTS modülü). Post-commit: `StudentEnrolledEventHandler` → veli daveti + öğrenci hesabı. Detay: `.claude/specs/ogrenci-kayit-enrollment-spec.md`, plan: `.claude/specs/ogrenci-kayit-faz1-backend-plan.md`. Branch: `oksis-api:student-enrollment`.
 
 > 2026-06-28: **Güncel şube tek doğruluk kaynağı + ayna alan kuralı (mimari değişiklik).** `academic.class_room_students` (aktif satır, `left_at IS NULL`) güncel şubenin tek doğruluk kaynağı; `StudentProfile.CurrentClassroomId` ondan `StudentClassroomSyncInterceptor` ile aynı transaction içinde türetilen denormalize ayna alandır (aktif yoksa `null`). Atama/transfer/çıkarma handler'larındaki manuel senkron kaldırıldı → iki-yazım drift'i yapısal olarak imkânsız. Doküman: `business-rules.md` BR-students-001 dolduruldu (skeleton değildi artık) + tarihsel not. İlgili: classrooms BR-classrooms-001, identity api-contracts notu.
 
@@ -30,12 +32,19 @@
   - Post-commit: `StudentEnrolledEventHandler` → `IPostCommitDispatcher` → veli daveti (`InvitationCreationHelper`). Öğrenci hesabı oluşturma (Account.Create, requirePasswordChange=true) Faz 1B'ye ertelendi (E2.6/E2.7).
   - REST: `POST students:enroll`, `POST students:transfer-in`, `GET students/check-national-id`, `GET branches/capacity`, `GET guardians:search`.
   - Permissions seed (8 izin): `students.view`, `view-detail`, `create`, `update`, `renew`, `manage`, `import`, `export` — SuperAdmin+SchoolAdmin tümü; Teacher `view`+`view-detail`.
+- **Faz 1B Frontend (2026-06-29, `oksis-web:student-enrollment-fe`):**
+  - Şema + mantık: `enrollWizardSchema.ts` — `EnrollWizardForm`, `GuardianDraft`, `isStepValid`, `gradeLevelToInt`, `toEnrollCommand`; `EnrollStudentCommandBody`/`GuardianInputBody` tipleri.
+  - API katmanı: `studentsApi.ts` +5 fonksiyon; `studentKeys.ts` +4 anahtar (tenant-scoped).
+  - Hooks: `useEnrollStudentMutation` (enroll|transfer-in + invalidate), `useCheckNationalIdQuery` (debounced), `useBranchCapacityQuery`, `useGuardianSearchQuery`.
+  - UI: `EnrollStudentSheet` (kabuk + `WizardRail`), `StepType`, `StepStudent` (TCKN dupe inline), `StepPlacement` (kapasite grid, HARD disabled), `StepGuardians` (arama + yeni + 5 bayrak), `StepSummary` (özet + davet kanalı), `EnrollSuccess` (gerçek öğrenci no + şifre satırı Debt).
+  - Eski `EnrollStudentDialog` + `studentsDebtApi.enroll` mock kaldırıldı; `enrollModal.*` i18n temizlendi; `enrollWizard.*` anahtarları eklendi.
+  - Giriş noktası: `/admin/students` → "Yeni Öğrenci" butonu → `EnrollStudentSheet` (sağ sheet); `modal.kind === "enroll"` tetikler.
 
 ---
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Faz 1B (FE wizard):** Kayıt sihirbazı FE portu (`EnrollStudentDialog` → gerçek backend bağlantısı; şu an mock+D). `POST /api/v1/students:enroll` ve `transfer-in` uçları canlı → mock'lar kaldırılacak.
+- **Faz 1B-BE (öğrenci hesabı + geçici şifre):** `Account.Create` (E2.6/E2.7) — `EnrollStudentEventHandler`'a öğrenci hesabı açma ve geçici şifre üretimi eklenecek; başarı ekranında şifre satırı gerçek değerle dolacak.
 - **Faz 2 backend:** `ListStudents`/`GetStudentDetail`/`GetEnrollmentHistory` slice'ları (web tüketici hazır, uç açılınca beslenir), Freeze/Withdraw/Transfer/Graduate endpoint'leri, server-side `seasonId` filtresi.
 - **Faz 2 FE:** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı.
 - **Faz 3+:** `students.import` toplu aktarım, document upload UI.
@@ -47,6 +56,8 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-06-29 — Faz 1B FE: Başarı ekranı geçici-şifre kutusu Debt olarak port edildi (öğrenci hesabı + geçici şifre E2.6/E2.7 gereği Faz 1B-BE'ye ertelendi) · onay: kullanıcı · etki: FE'de "D" rozeti + "hesap backend ile açılacak" notu, sahte şifre basılmaz; BE açılınca dolacak.**
+- **2026-06-29 — Faz 1B FE ertelenen minörler:** GuardianPicker ayrı bileşene çıkarılmadı (`StepGuardians` ~400 satır); özet kademe·şube "5-A" gösterir, "Ortaokul · 5-A" değil (kademe adı form state'inde yok); öksüz `debt.enroll.*` i18n anahtarları (debt-temizlik turunda kaldırılacak).
 - **2026-06-29 — Faz 1A'dan Faz 1B'ye erteleme: öğrenci hesabı + geçici şifre (E2.6/E2.7).** `EnrollStudent` POST yanıtı ve post-commit handler, şimdi yalnız veli davetini gönderiyor. Öğrenci Account oluşturma (kullanıcı adı = öğrenci-no, şifre = geçici, requirePasswordChange=true) spec E2.6 (küçük-kademe yalnız veli) ve E2.7 (kullanıcı-adı = öğrenci-no giriş yolu henüz kurulmadı) gereği Faz 1B'de uygulanacak. İnert hesap oluşturmayı önlemek için Faz 1A'da ertelendi. Onaylayan: kullanıcı (spec gözden geçirme 2026-06-28). İmpakt: Faz 1A ve Faz 1B'nin sınırı bu noktada keskin; web'de mock temp-password cred-box göstermeye devam edebilir (Faz 1B'de gerçek değer yapılacak).
 - **2026-06-29 — E2.3: EnrollmentNo kaldırıldı, öğrenci-no kişiye sabit (ONAYLANMIŞ KARAR, sapma değil).** Spec başlangıç taslağı per-season `EnrollmentNo` öngörmüştü; spec E2.3 bunu revize etti: öğrenci numarası (`StudentNumber`) kişiye sabit, `{yıl}{5-hane}` formatında, bir kez üretilir, mezuniyete kadar değişmez. `EnrollmentNo` alanı hiç oluşturulmadı. Karar: spec E2.3 revizyon (kullanıcı onayladı).
 - **2026-06-29 — Secretary rolü Faz 1A seed'inde yok.** `students.*` izinleri seed'inde SecretaryRoleId yok (MVP rolleri: SuperAdmin, SchoolAdmin, Teacher, Parent, Student); Secretary ileride. `permissions.md` ve `permission-matrix.md` hedef tasarımı gösterir. Bkz. `permission-matrix.md` § 1 MVP notu.

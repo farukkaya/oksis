@@ -8,15 +8,15 @@
 
 ## Endpoint Özeti
 
-### Faz 1A (Canlı — oksis-api `student-enrollment` dalı)
+### Faz 1A (Canlı — oksis-api `student-enrollment` dalı) · FE bağlandı (Faz 1B, 2026-06-29)
 
-| Method | Path | Permission | Amaç |
-|---|---|---|---|
-| `POST` | `/api/v1/students:enroll` | `students.create` | Yeni öğrenci kaydı |
-| `POST` | `/api/v1/students:transfer-in` | `students.create` | Nakil gelen öğrenci kaydı |
-| `GET` | `/api/v1/students/check-national-id` | `students.create` | TC kimlik tekrar kontrolü (wizard adım 1) |
-| `GET` | `/api/v1/branches/capacity` | `students.create` | Şube doluluk kontrolü (wizard adım 2) |
-| `GET` | `/api/v1/guardians:search` | `students.create` | Mevcut veli arama (wizard veli sekmesi) |
+| Method | Path | Permission | Amaç | FE Durumu |
+|---|---|---|---|---|
+| `POST` | `/api/v1/students:enroll` | `students.create` | Yeni öğrenci kaydı | ✅ FE bağlandı (Faz 1B) |
+| `POST` | `/api/v1/students:transfer-in` | `students.create` | Nakil gelen öğrenci kaydı | ✅ FE bağlandı (Faz 1B) |
+| `GET` | `/api/v1/students/check-national-id` | `students.create` | TC kimlik tekrar kontrolü (sihirbaz Adım 2) | ✅ FE bağlandı (Faz 1B) |
+| `GET` | `/api/v1/branches/capacity` | `students.create` | Şube doluluk kontrolü (sihirbaz Adım 3) | ✅ FE bağlandı (Faz 1B) |
+| `GET` | `/api/v1/guardians:search` | `students.create` | Mevcut veli arama (sihirbaz Adım 4) | ✅ FE bağlandı (Faz 1B) |
 
 ### Faz 2+ (Henüz Yok)
 
