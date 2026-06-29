@@ -109,14 +109,18 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 
 ### Students
 
+> Faz 1A seed (2026-06-29): SuperAdmin + SchoolAdmin tüm 8 izni alır; Teacher view+view-detail. SchoolStaff/Secretary/Parent/Student hedef tasarım (MVP seed'de henüz yok). `students.delete` **yoktur** — yaşam-döngüsü `students.manage` ile yönetilir.
+
 | İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Secretary |
 |---|---|---|---|---|---|---|---|
 | `students.view` | ✅ | ✅ | ✅ | 👁 (sınıflarındakiler) | 👁 (çocukları) | 👁 (kendisi) | ✅ |
 | `students.view-detail` | ✅ | ✅ | ✅ | 👁 (sınıflarındakiler) | 👁 (çocukları) | 👁 (kendisi) | ✅ |
-| `students.create` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
-| `students.update` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
-| `students.delete` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
-| `students.import` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
+| `students.create` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
+| `students.update` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
+| `students.renew` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ | <!-- Sezon yenileme (Renewal). Faz 1A seed. 2026-06-29 eklendi. -->
+| `students.manage` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Kayıt dondur/çek/nakil çıkışı (yaşam-döngüsü). Faz 1A seed. 2026-06-29 eklendi. -->
+| `students.import` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ |
+| `students.export` | ✅ | ✅ | ✅ | 🚫 | 🚫 | 🚫 | ✅ | <!-- Dışa aktarma (Excel/PDF). Faz 1A seed. 2026-06-29 eklendi. -->
 | `season.student.promote` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Sezon terfisi (§4.9). 2026-06-09 eklendi; ActivateSeasonRollover + bağımsız uç. -->
 
 ### Teachers

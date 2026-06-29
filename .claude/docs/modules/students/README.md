@@ -67,7 +67,7 @@ Bu modül hangi modüllerle konuşur?
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-28
+- **Last Updated:** 2026-06-29
 - **Files:**
   - [x] README.md
   - [x] enrollment-needs-analysis.md (kayıt ihtiyaç + altyapı uygunluk analizi, 2026-06-28)
