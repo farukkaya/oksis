@@ -133,11 +133,11 @@
 
 | Event | Tetiklenme Anı | Payload |
 |---|---|---|
-| `StudentEnrolledEvent` | `StudentEnrollment.Create(...)` sonrası (`SaveChanges` öncesi — Outbox pattern) | `StudentId`, `EnrollmentId`, `SchoolId`, `ClassRoomId`, `GuardianChannel`, `GuardianEmails[]`, `TemporaryPassword` (şifreli değil — post-commit handler kullanır) |
+| `StudentEnrolledEvent` | `StudentEnrollment.Create(...)` sonrası (`SaveChanges` öncesi — Outbox pattern) | `StudentId`, `EnrollmentId`, `SchoolId`, `ClassRoomId`, `GuardianChannel`, `GuardianEmails[]` (öğrenci hesabı + geçici şifre payload alanı Faz 1B'de eklenecek — E2.6/E2.7) |
 
 > `StudentEnrolledEventHandler` (post-commit, `IPostCommitDispatcher`):
-> 1. Veli(ler)e davet gönderir (`InvitationCreationHelper`, kanal event'ten gelir).
-> 2. Öğrenci için hesap açar (`Account.Create`, `requirePasswordChange=true`; kullanıcı adı = öğrenci no; `person.LinkAccount`).
+> 1. Veli(ler)e davet gönderir (`InvitationCreationHelper`, kanal event'ten gelir). — Faz 1A
+> 2. (Faz 1B) Öğrenci için hesap açar (`Account.Create`, `requirePasswordChange=true`; kullanıcı adı = öğrenci no; `person.LinkAccount`). E2.6 (küçük-kademe yalnız veli) + E2.7 (kullanıcı-adı = öğrenci-no giriş yolu) gereği ertelendi.
 > Event'lerin bildirim akışları için bkz. `notifications.md`.
 
 ---

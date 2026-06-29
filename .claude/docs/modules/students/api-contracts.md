@@ -85,8 +85,7 @@
   "data": {
     "studentId": "...",
     "enrollmentId": "...",
-    "studentNumber": "20250001",
-    "temporaryPassword": "X9k#mP2q"
+    "studentNumber": "20250001"
   },
   "errors": null,
   "correlationId": "..."
@@ -101,7 +100,7 @@
 - `409 NATIONAL_ID_DUPLICATE` — bu TC aktif sezonda zaten kayıtlı
 - `422 IDEMPOTENCY_REPLAY` — `clientRequestId` tekrar, aynı başarı sonucu döner
 
-**Domain Event:** `StudentEnrolledEvent` → Outbox → post-commit: veli daveti + öğrenci hesabı oluşturma.
+**Domain Event:** `StudentEnrolledEvent` → Outbox → post-commit: veli daveti (Faz 1A). Öğrenci hesabı + geçici şifre oluşturma Faz 1B'de eklenecek.
 
 ---
 

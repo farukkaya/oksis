@@ -25,9 +25,9 @@
   - Domain: `StudentEnrollment` aggregate, `StudentDocument`, `EnrollmentIdempotency`, `StudentNumberCounter` POCO, `EnrollmentType`/`EnrollmentStatus`/`DocumentType` enum'ları, `StudentEnrolledEvent`.
   - Migration: `20260629_student_enrollment_core` — 4 tablo (`student_enrollments`, `student_documents`, `enrollment_idempotency`, `student_number_counters`; `academic` schema).
   - `IStudentNumberGenerator`: atomic `{yıl}{5-hane}`, per-tenant, bir kez üretilir (E2.3).
-  - CQRS: `EnrollStudentCommand` — tek transaction (Person+StudentProfile+StudentEnrollment+ClassRoom.AssignStudent+guardians+idempotency+event); `ClientRequestId` idempotency; hard kapasite kontrolü; aktif sezon kontrolü; `TemporaryPassword` sonuçta.
+  - CQRS: `EnrollStudentCommand` — tek transaction (Person+StudentProfile+StudentEnrollment+ClassRoom.AssignStudent+guardians+idempotency+event); `ClientRequestId` idempotency; hard kapasite kontrolü; aktif sezon kontrolü. Yanıt: `studentNumber` döner (öğrenci hesabı + geçici şifre Faz 1B'ye ertelendi).
   - Queries: `CheckNationalIdDuplicate`, `GetBranchCapacity`, `SearchGuardians`.
-  - Post-commit: `StudentEnrolledEventHandler` → `IPostCommitDispatcher` → veli daveti (`InvitationCreationHelper`) + öğrenci hesabı (`Account.Create`, `requirePasswordChange=true`; kullanıcı adı = öğrenci no).
+  - Post-commit: `StudentEnrolledEventHandler` → `IPostCommitDispatcher` → veli daveti (`InvitationCreationHelper`). Öğrenci hesabı oluşturma (Account.Create, requirePasswordChange=true) Faz 1B'ye ertelendi (E2.6/E2.7).
   - REST: `POST students:enroll`, `POST students:transfer-in`, `GET students/check-national-id`, `GET branches/capacity`, `GET guardians:search`.
   - Permissions seed (8 izin): `students.view`, `view-detail`, `create`, `update`, `renew`, `manage`, `import`, `export` — SuperAdmin+SchoolAdmin tümü; Teacher `view`+`view-detail`.
 
@@ -47,6 +47,7 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-06-29 — Faz 1A'dan Faz 1B'ye erteleme: öğrenci hesabı + geçici şifre (E2.6/E2.7).** `EnrollStudent` POST yanıtı ve post-commit handler, şimdi yalnız veli davetini gönderiyor. Öğrenci Account oluşturma (kullanıcı adı = öğrenci-no, şifre = geçici, requirePasswordChange=true) spec E2.6 (küçük-kademe yalnız veli) ve E2.7 (kullanıcı-adı = öğrenci-no giriş yolu henüz kurulmadı) gereği Faz 1B'de uygulanacak. İnert hesap oluşturmayı önlemek için Faz 1A'da ertelendi. Onaylayan: kullanıcı (spec gözden geçirme 2026-06-28). İmpakt: Faz 1A ve Faz 1B'nin sınırı bu noktada keskin; web'de mock temp-password cred-box göstermeye devam edebilir (Faz 1B'de gerçek değer yapılacak).
 - **2026-06-29 — E2.3: EnrollmentNo kaldırıldı, öğrenci-no kişiye sabit (ONAYLANMIŞ KARAR, sapma değil).** Spec başlangıç taslağı per-season `EnrollmentNo` öngörmüştü; spec E2.3 bunu revize etti: öğrenci numarası (`StudentNumber`) kişiye sabit, `{yıl}{5-hane}` formatında, bir kez üretilir, mezuniyete kadar değişmez. `EnrollmentNo` alanı hiç oluşturulmadı. Karar: spec E2.3 revizyon (kullanıcı onayladı).
 - **2026-06-29 — Secretary rolü Faz 1A seed'inde yok.** `students.*` izinleri seed'inde SecretaryRoleId yok (MVP rolleri: SuperAdmin, SchoolAdmin, Teacher, Parent, Student); Secretary ileride. `permissions.md` ve `permission-matrix.md` hedef tasarımı gösterir. Bkz. `permission-matrix.md` § 1 MVP notu.
 - **2026-06-08 — Students DEBT mock-fallback: backend'siz aksiyonlar gerçek istek atar ama mock döner + "D" rozeti (oksis-web, bu oturum):** Design-handoff 1:1 boşlukları kapatılırken backend ucu **henüz açılmamış** öğrenci işlemleri `shared/api/debtFallback.attemptRealThenMock` ile sarıldı. Kapsam: Enroll, AssignClass, Promote, Edit. Gerekçe: kullanıcı talimatı. Geçiş: Faz 1B uçlar açılınca `studentsDebtApi`'de mock kaldırılır; UI dokunulmaz.
