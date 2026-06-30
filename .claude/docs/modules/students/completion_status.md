@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `██████░░░░` %60   ·   Status: in-progress (Faz 2 — liste/detay backend)   ·   Güncel: 2026-06-30
+**İlerleme:** `███████░░░` %68   ·   Status: in-progress (Faz 2B — lifecycle komutları)   ·   Güncel: 2026-06-30
+
+> 2026-06-30 (Faz 2A — Liste & Okuma): **Faz 2A tamamlandı — enrollment-bazlı liste/detay/geçmiş (3 query + REST + FE swap + lifecycle pasif).** BE (`oksis-api`, branch `student-faz2a`): `ListStudentsQuery` + `StudentListItemDto` (sezon-bazlı, varsayılan aktif sezon, EnrollmentStatus filtresi + cinsiyet/kademe/arama, sayfalı, önbelleksiz, tenant-izoleli); `GetStudentDetailQuery` + `StudentDetailDto` (kimlik + HasNationalId/NationalIdType, no plain TCKN, aktif-sezon CurrentEnrollment + veliler); `GetEnrollmentHistoryQuery` + `EnrollmentHistoryItemDto` (tüm sezonlar yeniden eskiye). `StudentsController`: `GET /students`, `GET /students/{id}`, `GET /students/{id}/enrollments` — `students.view` / `students.view-detail` izni. FE (`oksis-web`, branch `student-faz2a`): `studentsApi.list/detail/enrollmentHistory` → yeni `/students*` uçlarına bağlandı; `StudentStatus` union enrollment durumlarıyla genişletildi; BE↔FE durum eşleyicileri; "Durum" filtresi → enrollment statuses; durum rozetleri + i18n tr+en; drawer "Kayıt Geçmişi" sekmesi gerçek alanları gösteriyor (sezon/kademe/şube/tür/durum/tarih). Yaşam-döngüsü satır aksiyonları (Mezun Et/Dondur/Yeniden Etkinleştir/Nakil Çıkışı/Pasife Al) 2A'da `notReadyHint="2B"` ile DISABLED (Faz 2B enrollment komutlarına ertelendi). Eski `/users/persons*` uçları korundu (Users ekranı tüketiyor); öğrenciler ekranı artık bunları çağırmıyor. Review düzeltmeleri: cross-tenant test (GetStudentDetail) + 2-sezon sıralama testi (history). Branch: `oksis-api:student-faz2a`, `oksis-web:student-faz2a`.
 
 > 2026-06-30 (Faz 1B-BE): **Faz 1B-BE tamamlandı — öğrenci hesabı + geçici şifre + öğrenci-no login + küçük-kademe carve-out.** Domain: `EducationLevelClassifier` (grade-no → EducationLevel; `IsSmallGrade`). `ITemporaryPasswordGenerator` + `TemporaryPasswordGenerator` (crypto-RNG, okunabilir karakter seti, 8 hane). `IStudentAccountProvisioner` + `StudentAccountProvisioner` — EnrollStudent transaction içinde öğrenci Account'ı geçici şifreyle açar; küçük-kademe (Anaokulu/İlkokul) → hesap açılmaz (E2.6 otomatik carve-out); idempotent. `EnrollStudentResult` yeni alanları: `TemporaryPassword: string?` + `StudentAccountCreated: bool`; replay → TemporaryPassword null, StudentAccountCreated hesap varlığına bakılır. Login resolver: `IdentifierType.StudentNumber`, `Identifier.Create` 1-9 haneli sayısalı sınıflandırır, `IPersonDirectory.FindByStudentNumberAsync` (tenant-scope), `IdentifierResolver` StudentNumber dalı (SchoolHint zorunlu). FE: `EnrollResult` +temporaryPassword/studentAccountCreated; `IdentityBox` üç-durum satırı (gerçek şifre / replay notu / küçük-kademe notu); DebtBadge kaldırıldı; başarı ekranı şifre kutusu Debt KAPANDI. Branch: `student-enrollment-be`.
 
@@ -53,13 +55,19 @@
   - Tarayıcı E2E (Chrome eklentisi): tüm Faz 1B-BE çıktıları canlı doğrulandı — gerçek geçici şifre başarı ekranında, öğrenci-no login resolver (API), `RequirePasswordChange=1`.
   - CSS fix (`d08c75d`): `.enroll-sheet` scoped temel form stilleri — sihirbaz inputları artık doğru render (handoff port boşluğu).
   - TCKN opsiyonel (E2.4, `ec1ce2f`): boş VEYA 11 hane; label `*` → "· ops.". **Yabancı uyruk (E2.4):** "Yabancı uyruklu öğrenci" checkbox → "Yabancı Kimlik No" serbest format, `NationalIdType=Ykn`. BE değişmedi. Schema TDD 9/9 + 2 component test; students suite 95/95; tsc+build temiz.
+- **Faz 2A — Liste & Okuma (2026-06-30, `oksis-api:student-faz2a` + `oksis-web:student-faz2a`):**
+  - BE: `ListStudentsQuery` (sezon-bazlı, enrollment-primary, EnrollmentStatus/cinsiyet/kademe/arama filtresi, sayfalı, tenant-izoleli, önbelleksiz).
+  - BE: `GetStudentDetailQuery` (HasNationalId/NationalIdType — plain TCKN yok; aktif-sezon CurrentEnrollment; veliler).
+  - BE: `GetEnrollmentHistoryQuery` (tüm sezonlar yeniden eskiye).
+  - REST: `GET /students` (`students.view`), `GET /students/{id}` (`students.view-detail`), `GET /students/{id}/enrollments` (`students.view-detail`).
+  - FE: `studentsApi.list/detail/enrollmentHistory` yeni uçlara bağlandı; `StudentStatus` union + BE↔FE durum eşleyicileri; durum rozetleri + i18n tr+en; drawer "Kayıt Geçmişi" gerçek verilerle; lifecycle aksiyonları `notReadyHint="2B"` DISABLED.
 
 ---
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Faz 2 backend:** `ListStudents`/`GetStudentDetail`/`GetEnrollmentHistory` slice'ları (web tüketici hazır, uç açılınca beslenir), Freeze/Withdraw/Transfer/Graduate endpoint'leri, server-side `seasonId` filtresi.
-- **Faz 2 FE:** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı.
+- **Faz 2B — Lifecycle komutları (backend + FE):** `FreezeEnrollmentCommand`, `ResumeEnrollmentCommand`, `WithdrawStudentCommand`, `ArchiveStudentCommand` + ilgili endpoint'ler; FE'de lifecycle satır aksiyonlarının `notReadyHint="2B"` engelinin kaldırılması ve gerçek mutasyonlara bağlanması.
+- **Faz 2 FE (devam):** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı.
 - **Faz 3+:** `students.import` toplu aktarım, document upload UI.
 - **Doküman içeriği:** `domain-model.md`, `api-contracts.md`, `database-schema.md` Faz 1A ile dolduruldu; `notifications.md`, `ui-flows.md`, `business-rules.md`, `open-questions.md` hâlâ iskelet/TBD.
 - **Mobile:** öğrenci rolü ekranları (yok).

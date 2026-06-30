@@ -16,19 +16,26 @@
 | `POST` | `/api/v1/students:transfer-in` | `students.create` | Nakil gelen öğrenci kaydı | ✅ FE bağlandı (Faz 1B) |
 | `GET` | `/api/v1/students/check-national-id` | `students.create` | TC kimlik tekrar kontrolü (sihirbaz Adım 2) | ✅ FE bağlandı (Faz 1B) |
 | `GET` | `/api/v1/branches/capacity` | `students.create` | Şube doluluk kontrolü (sihirbaz Adım 3) | ✅ FE bağlandı (Faz 1B) |
-| `GET` | `/api/v1/guardians:search` | `students.create` | Mevcut veli arama (sihirbaz Adım 4) | ✅ FE bağlandı (Faz 1B) |
+| `GET` | `/api/v1/guardians:search` | `students.create` | Mevcut veli arama (sihirzar Adım 4) | ✅ FE bağlandı (Faz 1B) |
 
-### Faz 2+ (Henüz Yok)
+### Faz 2A (Canlı, 2026-06-30) · FE bağlandı
+
+| Method | Path | Permission | Amaç | FE Durumu |
+|---|---|---|---|---|
+| `GET` | `/api/v1/students` | `students.view` | Öğrenci listesi (enrollment-bazlı, sezon eksenli) | ✅ FE bağlandı (Faz 2A) |
+| `GET` | `/api/v1/students/{id}` | `students.view-detail` | Öğrenci detayı | ✅ FE bağlandı (Faz 2A) |
+| `GET` | `/api/v1/students/{id}/enrollments` | `students.view-detail` | Kayıt geçmişi | ✅ FE bağlandı (Faz 2A) |
+
+### Faz 2B+ (Henüz Yok)
 
 | Method | Path | Permission | Amaç |
 |---|---|---|---|
-| `GET` | `/api/v1/students` | `students.view` | Öğrenci listesi (sezon eksenli) |
-| `GET` | `/api/v1/students/{id}` | `students.view-detail` | Öğrenci detayı |
-| `GET` | `/api/v1/students/{id}/enrollment-history` | `students.view-detail` | Kayıt geçmişi |
 | `PUT` | `/api/v1/students/{id}` | `students.update` | Öğrenci güncelleme |
 | `POST` | `/api/v1/students/{id}:freeze` | `students.manage` | Kayıt dondurma |
+| `POST` | `/api/v1/students/{id}:resume` | `students.manage` | Dondurulmuş kaydı devam ettirme |
 | `POST` | `/api/v1/students/{id}:withdraw` | `students.manage` | Kayıt çekme/ayrılma |
 | `POST` | `/api/v1/students/{id}:transfer-out` | `students.manage` | Nakil çıkışı |
+| `POST` | `/api/v1/students/{id}:archive` | `students.manage` | Mezun/pasif arşivleme |
 | `POST` | `/api/v1/students:import` | `students.import` | Toplu öğrenci aktarımı (Excel) |
 | `POST` | `/api/v1/students/{id}/documents` | `students.update` | Belge yükleme |
 
@@ -221,6 +228,177 @@ Eğer `isDuplicate: true` → `existingStudentId` dolu gelir (FE'ye bağlantı i
   "correlationId": "..."
 }
 ```
+
+---
+
+---
+
+## Detay — Faz 2A Endpoint'leri
+
+### `GET /api/v1/students`
+
+**Permission:** `students.view`
+
+**Amaç:** Enrollment-bazlı öğrenci listesi. Her satır seçili sezonun bir enrollment kaydına karşılık gelir; Durum = `StudentEnrollment.Status` (enrollment durumu).
+
+**Query params:**
+
+| Param | Tip | Zorunlu | Açıklama |
+|---|---|---|---|
+| `sessionId` | uuid | hayır | Akademik sezon ID'si; belirtilmezse aktif sezon varsayılır |
+| `status` | string | hayır | `EnrollmentStatus` değeri: `Active \| Frozen \| Withdrawn \| TransferredOut \| Archived` |
+| `gender` | string | hayır | `Male \| Female \| Other` |
+| `gradeLevel` | int | hayır | Sınıf seviyesi (örn. 5) |
+| `search` | string | hayır | Ad/soyad veya öğrenci numarası — min 2 karakter |
+| `page` | int | hayır | Sayfa no (default 1) |
+| `pageSize` | int | hayır | Sayfa boyutu (default 20, max 100) |
+
+**Response 200 — `StudentListItemDto`:**
+```json
+{
+  "data": [
+    {
+      "studentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+      "studentNumber": "20260001",
+      "firstName": "Zeynep",
+      "lastName": "Kaya",
+      "gender": "Female",
+      "birthDate": "2015-03-22",
+      "enrollmentId": "...",
+      "enrollmentStatus": "Active",
+      "enrollmentType": "New",
+      "gradeLevel": 5,
+      "classRoomId": "...",
+      "classRoomName": "5-A",
+      "sessionId": "...",
+      "sessionName": "2025-2026",
+      "primaryGuardianName": "Fatma Kaya",
+      "primaryGuardianPhone": "+90 555 000 0001"
+    }
+  ],
+  "meta": { "page": 1, "pageSize": 20, "totalItems": 142, "totalPages": 8 },
+  "errors": null,
+  "correlationId": "..."
+}
+```
+
+> **Notlar:**
+> - `enrollmentStatus`: `StudentEnrollment.Status.ToString()` — `EnrollmentStatus` enum string değeri (FE `ENROLLMENT_STATUS` map anahtarlarıyla birebir).
+> - Sezon kaydı olmayan öğrenciler bu listeye dahil edilmez (o sezonda kayıt yok).
+> - Eski `/users/persons*` list endpoint'i Users ekranı tarafından tüketilmeye devam eder; bu endpoint sadece öğrenci ekranı içindir.
+
+**Errors:**
+- `403` — `students.view` izni yok
+- `404` — `sessionId` belirtilmiş ama okul için bulunamadı
+
+---
+
+### `GET /api/v1/students/{id}`
+
+**Permission:** `students.view-detail`
+
+**Amaç:** Tek öğrencinin kimlik + aktif sezon enrollment + velileri. TCKN / yabancı kimlik numarası plain-text olarak DÖNMEDİĞİNE dikkat et.
+
+**Path params:**
+- `{id}` — `StudentProfileId` (uuid)
+
+**Response 200 — `StudentDetailDto`:**
+```json
+{
+  "data": {
+    "studentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "studentNumber": "20260001",
+    "firstName": "Zeynep",
+    "lastName": "Kaya",
+    "gender": "Female",
+    "birthDate": "2015-03-22",
+    "hasNationalId": true,
+    "nationalIdType": "Tckn",
+    "currentEnrollment": {
+      "enrollmentId": "...",
+      "sessionId": "...",
+      "sessionName": "2025-2026",
+      "enrollmentStatus": "Active",
+      "enrollmentType": "New",
+      "gradeLevel": 5,
+      "classRoomId": "...",
+      "classRoomName": "5-A",
+      "startDate": "2025-09-09",
+      "endDate": null
+    },
+    "guardians": [
+      {
+        "personId": "...",
+        "firstName": "Fatma",
+        "lastName": "Kaya",
+        "guardianType": "Mother",
+        "phone": "+90 555 000 0001",
+        "email": "fatma@example.com",
+        "isPrimary": true
+      }
+    ]
+  },
+  "errors": null,
+  "correlationId": "..."
+}
+```
+
+> **Güvenlik notu:** `nationalId` (TCKN / yabancı kimlik) plain-text olarak hiçbir zaman response'a dahil edilmez. `hasNationalId: bool` + `nationalIdType: "Tckn" | "Ykn" | "Passport"` ile varlık/tip bilgisi verilir. `currentEnrollment` aktif sezondaki kayıt kaydıdır; öğrenci aktif sezonda kaydı yoksa `null` gelir.
+
+**Errors:**
+- `403` — `students.view-detail` izni yok
+- `404` — öğrenci bulunamadı veya bu okula ait değil (cross-tenant)
+
+---
+
+### `GET /api/v1/students/{id}/enrollments`
+
+**Permission:** `students.view-detail`
+
+**Amaç:** Öğrencinin tüm sezonlardaki kayıt geçmişi, yeniden eskiye sıralı.
+
+**Path params:**
+- `{id}` — `StudentProfileId` (uuid)
+
+**Response 200 — `EnrollmentHistoryItemDto[]`:**
+```json
+{
+  "data": [
+    {
+      "enrollmentId": "...",
+      "sessionId": "...",
+      "sessionName": "2025-2026",
+      "enrollmentStatus": "Active",
+      "enrollmentType": "New",
+      "gradeLevel": 5,
+      "classRoomId": "...",
+      "classRoomName": "5-A",
+      "startDate": "2025-09-09",
+      "endDate": null
+    },
+    {
+      "enrollmentId": "...",
+      "sessionId": "...",
+      "sessionName": "2024-2025",
+      "enrollmentStatus": "Archived",
+      "enrollmentType": "New",
+      "gradeLevel": 4,
+      "classRoomId": "...",
+      "classRoomName": "4-A",
+      "startDate": "2024-09-09",
+      "endDate": "2025-06-20"
+    }
+  ],
+  "errors": null,
+  "correlationId": "..."
+}
+```
+
+> Sıralama: `startDate DESC` (en yeni sezon önce). `endDate: null` → aktif/devam eden kayıt.
+
+**Errors:**
+- `403` — `students.view-detail` izni yok
+- `404` — öğrenci bulunamadı veya bu okula ait değil (cross-tenant)
 
 ---
 
