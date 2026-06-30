@@ -36,6 +36,13 @@
 | `POST` | `/api/v1/students/{id}:transfer-out` | `students.manage` | Nakil çıkışı | ✅ FE bağlandı (Faz 2B) |
 | `POST` | `/api/v1/students/{id}:graduate` | `students.manage` | Öğrenci mezuniyeti | ✅ FE bağlandı (Faz 2B) |
 
+### Faz 3A (Canlı, 2026-06-30) · Branch: `student-faz3a`
+
+| Method | Path | Permission | Amaç | FE Durumu |
+|---|---|---|---|---|
+| `GET` | `/api/v1/enrollments/renewal-candidates` | `students.renew` | Yenileme adayları listesi + KPI niyet dağılımı | ✅ FE bağlandı (Faz 3A) |
+| `POST` | `/api/v1/enrollments:set-intent` | `students.renew` | Toplu (veya tekil) yenileme niyeti setleme | ✅ FE bağlandı (Faz 3A) |
+
 ### Faz 3+ / Ertelenen (Henüz Yok)
 
 | Method | Path | Permission | Amaç |
@@ -508,6 +515,106 @@ Tüm lifecycle endpoint'leri için ortak kurallar:
 **MVP kısıtı:** Frozen öğrenci doğrudan mezun edilemez; önce `:resume` çağrılmalı.
 
 **Response:** `204 No Content`
+
+---
+
+## Detay — Faz 3A Endpoint'leri
+
+### `GET /api/v1/enrollments/renewal-candidates`
+
+**Permission:** `students.renew`
+
+**Amaç:** Cari sezondaki `Status==Active` enrollment'ları yenileme adayı olarak döndürür. Yanıta KPI niyet dağılımı (tüm filtrelenmiş küme üzerinden) eklenir.
+
+**Query params:**
+
+| Param | Tip | Zorunlu | Açıklama |
+|---|---|---|---|
+| `sessionId` | uuid | hayır | Akademik sezon ID'si; belirtilmezse aktif sezon varsayılır |
+| `gradeLevel` | int | hayır | Sınıf seviyesi (örn. 5) |
+| `intent` | string | hayır | `Renewing \| Undecided \| Leaving` — filtre |
+| `search` | string | hayır | Ad/soyad veya öğrenci numarası — min 2 karakter |
+| `page` | int | hayır | Sayfa no (default 1) |
+| `pageSize` | int | hayır | Sayfa boyutu (default 20) |
+
+**Response 200 — `RenewalCandidatesResult`:**
+```json
+{
+  "data": {
+    "items": [
+      {
+        "enrollmentId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+        "studentPersonId": "...",
+        "studentNumber": "20260001",
+        "firstName": "Zeynep",
+        "lastName": "Kaya",
+        "gender": "Female",
+        "gradeLevel": 5,
+        "classRoomId": "...",
+        "classRoomName": "5-A",
+        "currentIntent": null
+      }
+    ],
+    "page": 1,
+    "pageSize": 20,
+    "totalCount": 142,
+    "renewingCount": 89,
+    "undecidedCount": 41,
+    "leavingCount": 12
+  },
+  "errors": null,
+  "correlationId": "..."
+}
+```
+
+> **KPI notları:**
+> - `renewingCount`, `undecidedCount`, `leavingCount` — tüm filtrelenmiş küme üzerinden hesaplanır (sayfa değil). Yani `intent` filtresi uygulanmış olsa bile KPI tüm kümeyi sayar.
+> - `currentIntent: null` = hiç işaretlenmemiş; `null` intent ≠ `Undecided` (açıkça kararsız). KPI sayılarında `null` intentli adaylar **hiçbir kategoriye dahil edilmez**.
+
+**Errors:**
+- `403` — `students.renew` izni yok
+- `404` — explicit `sessionId` belirtilmiş ama bu okul için bulunamadı
+
+---
+
+### `POST /api/v1/enrollments:set-intent`
+
+**Permission:** `students.renew`
+
+**Amaç:** Seçili enrollment'lara toplu (veya tek-id ile tekil) yenileme niyeti set eder. Yalnız cari (aktif) sezon + `Status==Active` enrollment'lar güncellenir; bilinmeyen veya uygun olmayan id'ler **sessizce atlanır**.
+
+**Request body:**
+```json
+{
+  "enrollmentIds": [
+    "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "..."
+  ],
+  "intent": "Renewing"
+}
+```
+
+- `enrollmentIds` — required, min 1 eleman; `Guid[]`
+- `intent` — required; `Renewing | Undecided | Leaving`
+
+**Response 200:**
+```json
+{
+  "data": {
+    "updatedCount": 3
+  },
+  "errors": null,
+  "correlationId": "..."
+}
+```
+
+> **Atlanma kuralları:** Bilinmeyen id, başka okula ait id (cross-tenant), `Status!=Active` enrollment, cari olmayan sezon enrollment → sessizce atlanır. `updatedCount` gerçekten güncellenen sayıyı verir. Aktif sezon yoksa `updatedCount=0` döner (başarı — 200).
+
+> **Tekil niyet:** Ayrı tekil `SetRenewalIntent` endpoint'i açılmadı; tek-elemanlı liste ile bu endpoint kullanılır (bkz. ⚠️ Spec Dışına Çıkılanlar D3).
+
+**Errors:**
+- `400` — `enrollmentIds` boş veya `intent` geçersiz
+- `403` — `students.renew` izni yok
 
 ---
 

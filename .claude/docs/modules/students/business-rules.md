@@ -72,6 +72,18 @@ imkânsız kılmak gerekti.
 
 ---
 
+### BR-students-003: Yenileme niyeti yalnız cari sezon aktif kayda set edilir
+
+**Kural:** `Intent` (`RenewalIntent?`) yalnız `Status==Active` + cari (aktif) sezon enrollment'a set edilebilir (mevcut `StudentEnrollment.SetRenewalIntent` metodu). Frozen / terminal (`Withdrawn`, `TransferredOut`, `Graduated`, `Archived`) durumundaki kayıtlara intent set edilemez; toplu komutta (`BulkSetRenewalIntent`) bu id'ler **sessizce atlanır** (`updatedCount` gerçekten güncellenen sayıyı verir).
+
+**`null` intent ≠ `Undecided`:** `Intent == null` = "hiç işaretlenmemiş" (henüz sınıflandırılmamış aday). `Intent == Undecided` = açıkça kararsız olarak işaretlenmiş. KPI sayıları (`renewingCount` / `undecidedCount` / `leavingCount`) tüm filtrelenmiş aday kümesinden hesaplanır; `null` intentli adaylar hiçbir KPI kategorisine dahil edilmez.
+
+**Bildirim yok:** Niyet set etmek domain event veya bildirim **üretmez**. `EnrollmentRenewedEvent` (sezon geçişini tetikleyecek olaylar) Faz 3B'ye aittir; Faz 3A yalnız niyet toplama (intent collection) faz'ıdır.
+
+**İzin:** `students.renew` — `BulkSetRenewalIntent` komutu ve `ListRenewalCandidates` query'si bu izni gerektirir.
+
+---
+
 ## Sınır Durumlar
 
 | Senaryo | Beklenen Davranış |
@@ -91,5 +103,6 @@ imkânsız kılmak gerekti.
 | 2026-05-15 | İlk kurallar tanımlandı | İlk implementasyon |
 | 2026-06-28 | BR-students-001: güncel şube tek doğruluk kaynağı `class_room_students`; `CurrentClassroomId` `StudentClassroomSyncInterceptor` ile ondan türetilen ayna alan oldu (manuel senkron kaldırıldı) | İki-yazım drift'ini yapısal olarak engelleme |
 | 2026-06-30 | BR-students-002: beş lifecycle komutu koordineli iki-eksen (enrollment.Status + Person.LifecycleState) geçiş kuralı; Frozen→terminal kısıtı; ikili eksen koruması; `Person.Transfer(Guid?)` nullable; `AssignmentReason.Withdrawal/TransferOut` eklendi | Faz 2B lifecycle implementasyonu |
+| 2026-06-30 | BR-students-003: Yenileme niyeti yalnız cari sezon aktif kayda set edilir; `null` intent ≠ `Undecided`; KPI tüm kümeden; niyet set bildirim üretmez (event Faz 3B) | Faz 3A yenileme niyeti implementasyonu |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.

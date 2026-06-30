@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `████████░░` %78   ·   Status: in-progress (Faz 2 devam — AssignClass/Promote gerçek; belgeler; hesap sekmesi)   ·   Güncel: 2026-06-30
+**İlerleme:** `████████░░` %82   ·   Status: in-progress (Faz 3A canlı; Faz 3B + AssignClass/Promote + belgeler bekliyor)   ·   Güncel: 2026-06-30
+
+> 2026-06-30 (Faz 3A — Yenileme Niyeti Toplama): **Faz 3A tamamlandı — `ListRenewalCandidates` query + `BulkSetRenewalIntent` komut + `EnrollmentsController` (2 REST ucu, `students.renew`) + FE `reenroll.jsx` birebir port (RenewalPage + 5 parça: KPI kart grubu, intent segment kontrolü, toplu aksiyon çubuğu, sezon köprüsü, null/Undecided kavram ayrımı) + i18n (tr+en) + route + nav bağlama.** BE: `oksis-api`, branch `student-faz3a` — 8/8 unit test. FE: `oksis-web`, branch `student-faz3a` — students suite 110/110. Uçlar: `GET /api/v1/enrollments/renewal-candidates` (KPI dahil `RenewalCandidatesResult`) + `POST /api/v1/enrollments:set-intent` (bulk, tek-id ile tekil de karşılar). Spec dışı sapmalar bkz. ⚠️ D2/D3/E6.3/FE-sınıf filtresi.
 
 > 2026-06-30 (Faz 2B — Lifecycle Komutları): **Faz 2B tamamlandı — 5 yaşam-döngüsü komutu + koordineli iki-eksen + FE satır aksiyonları.** BE: `FreezeEnrollmentCommand`, `ResumeEnrollmentCommand`, `WithdrawStudentCommand`, `TransferOutStudentCommand`, `GraduateStudentCommand` — her biri `students.manage` izni; cari (`IsCurrent`) sezon enrollment çözümlenir; `enrollment.Status` + `Person.LifecycleState` iki ekseni koordineli mutasyona uğrar; geçersiz geçiş → 409 Conflict (`students.errors.invalid-lifecycle-transition`). İkili eksen koruması: her handler mutasyondan önce her iki ekseni doğrular. Domain: `Person.Transfer(Guid?)` nullable (null = OKSİS dışı nakil); `AssignmentReason.Withdrawal` + `AssignmentReason.TransferOut` eklendi. REST: `POST /students/{id}:freeze|:resume|:withdraw|:transfer-out|:graduate` — 204 No Content. FE: 5 satır-aksiyonu (`Dondur`, `Yeniden Etkinleştir`, `Pasife Al`, `Nakil Çıkışı`, `Mezun Et`) `notReadyHint="2B"` → gerçek `useMutation`'larla etkinleştirildi; `students.delete` → `students.manage` izin hatası düzeltildi; paylaşımlı `LifecycleActionDialog` (Dondur/Pasife Al için zorunlu sebep; Nakil Çıkışı için opsiyonel hedef+sebep). Ertelenenler: ArchiveEnrollment + lifecycle domain event/bildirim (bkz. ⚠️ Spec Dışına Çıkılanlar).
 
@@ -68,12 +70,20 @@
   - REST: `POST /students/{id}:freeze|:resume|:withdraw|:transfer-out|:graduate` — 204 No Content; 403/404/409.
   - Domain: `Person.Transfer(Guid?)` nullable; `AssignmentReason.Withdrawal/TransferOut` eklendi.
   - FE: `LifecycleActionDialog` (sebep/hedef toplama); 5 satır-aksiyonu etkin; `students.delete` → `students.manage` izin düzeltmesi.
+- **Faz 3A — Yenileme Niyeti Toplama (2026-06-30, `oksis-api:student-faz3a` + `oksis-web:student-faz3a`):**
+  - BE: `ListRenewalCandidatesQuery` — `Status==Active` + cari sezon filtresi; `gradeLevel?`/`intent?`/`search?`/`page?`/`pageSize?` param'ları; `RenewalCandidatesResult` (`items[]` + `page/pageSize/totalCount` + KPI: `renewingCount/undecidedCount/leavingCount` tüm kümeden, `null` intent dışarıda).
+  - BE: `BulkSetRenewalIntentCommand` — `enrollmentIds[]` + `intent` (`Renewing|Undecided|Leaving`); yalnız cari sezon + `Status==Active` enrollment'lar güncellenir; uygun olmayan id'ler sessizce atlanır; `updatedCount` döner. Aktif sezon yoksa `updatedCount=0` (200).
+  - REST: `GET /api/v1/enrollments/renewal-candidates` (`students.renew`) + `POST /api/v1/enrollments:set-intent` (`students.renew`) — `EnrollmentsController`.
+  - Domain: `StudentEnrollment.SetRenewalIntent(RenewalIntent)` — guard: yalnız `Status==Active`.
+  - FE: `RenewalPage` + KPI kart grubu + intent segment kontrolü (filtre) + toplu aksiyon çubuğu + sezon köprüsü + null/Undecided kavram ayrımı; `reenroll.jsx` handoff birebir port; `students.renew` izin kapısı; i18n tr+en; `/admin/students/renewal` route + nav bağlama.
+  - Test: BE 8/8 unit test; FE students suite 110/110; tsc+build temiz.
 
 ---
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - **Faz 2 FE (devam):** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı. (Lifecycle satır aksiyonları Faz 2B ile tamamlandı.)
+- **Faz 3B+:** Sezon geçiş gating (`ActivateSeasonRollover`/`PromoteStudents` kapısı); `EnrollmentRenewedEvent` domain event + bildirim; "Yenilemeyi Başlat" / "Dışa Aktar" UI; class-bazlı filtre + hedef-sezon adı bağlama.
 - **Faz 3+:** `students.import` toplu aktarım, document upload UI.
 - **Doküman içeriği:** `domain-model.md`, `api-contracts.md`, `database-schema.md` Faz 1A ile, `business-rules.md` (BR-001+BR-002) Faz 2A/2B ile dolduruldu; `notifications.md`, `ui-flows.md`, `open-questions.md` hâlâ iskelet/TBD.
 - **Mobile:** öğrenci rolü ekranları (yok).
@@ -83,6 +93,10 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-06-30 — [Faz 3A / E6.3] docx §5.1 yerine spec E6.3 izlendi (köprü tetik noktası → `ActivateSeasonRollover`/`PromoteStudents` gating, Faz 3B). Sebep: §5.1 sezon-geçiş akışını Faz 3A kapsamına çekiyordu; spec E6.3 bunu ayrı faz olarak tanımlar. Onay: kullanıcı. İmpakt: Faz 3A yalnız niyet toplama; sezon köprüsü tetik Faz 3B'ye Debt.**
+- **2026-06-30 — [Faz 3A / D2] KPI niyet dağılımı (`renewingCount`/`undecidedCount`/`leavingCount`) BE'de `RenewalCandidatesResult` içinde döner (handoff'ta client-side KPI hesabı öngörülmüştü). Sebep: sayfalama doğruluğu — client yalnızca geçerli sayfayı görür; tüm küme KPI için BE hesabı gerekir. Onay: kullanıcı.**
+- **2026-06-30 — [Faz 3A / D3] Tekil `SetRenewalIntent` komutu açılmadı; `BulkSetRenewalIntent` tek-elemanlı id listesiyle tekil güncellemeyi karşılar (tek `:set-intent` endpoint, spec E8 ile uyumlu). Sebep: ayrı tekil endpoint gereksiz — tek-id liste ile aynı sonuç. Onay: kullanıcı.**
+- **2026-06-30 — [Faz 3A / FE sınıf filtresi] FE "Sınıf" filtresi `gradeLevel`'e bağlandı (BE 3A class-level filtre desteklemiyor; seçenekler yüklü sayfadan türetiliyor). Class-bazlı filtre + hedef-sezon adı bağlama + "Yenilemeyi Başlat"/"Dışa Aktar" Faz 3B'ye Debt. Onay: kullanıcı.**
 - **2026-06-30 — ArchiveEnrollment komutu/uç/butonu ertelendi (Faz 2B kapsam dışı, UI yok). Sebep: terminal→Archived geçişi ayrı iş. Onay: kullanıcı.**
 - **2026-06-30 — Lifecycle domain event'leri + veli bildirimi ertelendi (Faz 2B kapsam dışı). Sebep: bildirim/outbox ayrı iş. Onay: kullanıcı.**
 - **2026-06-30 — Öğrenci no format/kabul (E4.4/E2.3) ayrı spec'e ertelendi · onay: kullanıcı · login resolver format-agnostic (1-9 hane) olarak yazıldı, gelecekteki format spec'ini kırmaz; numara üretimi + format doğrulaması ayrı tasarım turuna bırakıldı.**
