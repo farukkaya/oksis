@@ -71,7 +71,8 @@
 **Validation:**
 - `clientRequestId` — required, uuid
 - `firstName` / `lastName` — required, maks 100 karakter
-- `nationalId` — required, 11 hane rakam; duplicate kontrolü (CheckNationalIdDuplicate)
+- `nationalId` — **opsiyonel** (E2.4); TCKN ise 11 hane rakam, yabancı uyrukta serbest format; doluysa duplicate kontrolü (CheckNationalIdDuplicate). Boş bırakılabilir (yabancı uyruklu / kimliksiz başvuru).
+- `nationalIdType` — opsiyonel; `Tckn` (varsayılan) | `Ykn` (yabancı uyruk) | `Passport`. FE "Yabancı uyruklu öğrenci" işaretliyse `Ykn` gönderir. BE tipe göre format zorlamaz (protector tip-agnostik).
 - `birthDate` — required, ISO 8601 date; geçmişte olmalı
 - `gender` — required; `Male | Female | Other`
 - `classRoomId` — required; şube kapasitesi aşılırsa 409 `CAPACITY_EXCEEDED`
@@ -141,7 +142,7 @@
 **Amaç:** Kayıt sihirbazı 1. adım — TC kimlik numarasının aktif sezonda başka öğrenciye ait olup olmadığını kontrol eder.
 
 **Query params:**
-- `nationalId` (required) — 11 hane TC kimlik numarası
+- `nationalId` (required) — kimlik numarası (TCKN 11 hane veya yabancı kimlik/pasaport serbest format)
 - `sessionId` (required) — kontrol edilecek akademik sezon ID'si
 
 **Response 200:**

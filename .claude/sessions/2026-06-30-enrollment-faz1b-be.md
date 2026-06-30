@@ -58,6 +58,22 @@ These are tracked separately and do not block this branch.
 
 ---
 
+## E2E Browser Verification + Follow-up Fixes (2026-06-30)
+
+Stood up the full stack (docker SQL+Redis+Mailpit, `oksis-api :5112`, `oksis-web :5173` via vite proxy, `DevDataSeeder`) and drove the enrollment wizard end-to-end with the Chrome extension as a seeded SchoolAdmin (`mudur.s1@oksis.local`, school "OKSİS Dev Okulu", grades 9–12).
+
+**Verified live:** 5-step wizard → success screen with REAL student number (`202600001`) + REAL temporary password (`kXnTNYVR`, readable charset). Student-number login resolver verified via API: with `SchoolHint` → credentials accepted (reached consent-onboarding gate = resolver + password OK); without `SchoolHint` → uniform invalid-credentials. DB confirmed `require_password_change = 1`. Capacity grid + duplicate-check endpoints worked.
+
+**Three real defects surfaced and addressed:**
+
+1. **CSS — bare wizard form fields (FIXED, commit `d08c75d`):** `EnrollStudentSheet` root (`.enroll-sheet`) carries neither `.modal` nor `.scr`, but the shared base form-control styles (`.inp`/`.fld`/`.fld-row`/`.sel`) in `modal.css` are scoped under `.modal`. Inputs rendered unstyled. Fix: ported the base form-control rules scoped to `.enroll-sheet` in `enroll.css`. Pre-existing Phase 1B FE handoff-port gap, not Phase 1B-BE.
+2. **TCKN effectively mandatory (FIXED, commit `ec1ce2f`):** `tcknOk` required exactly 11 digits, so an empty national ID blocked the wizard — violating spec E2.4/E11.1 (TCKN optional). Now optional (empty OR 11 digits); label `*` → "· optional".
+3. **Foreign-national gap closed (E2.4, commit `ec1ce2f`):** Added a "Foreign national student" checkbox. When checked, the ID field becomes "Foreign ID No" (free format, no 11-digit rule) and the command sends `NationalIdType=Ykn`. Backend unchanged (`IdType.Ykn` exists; `NationalIdProtector.Protect` is type-agnostic). Schema TDD (9/9) + 2 component tests; students suite 95/95; tsc + build clean; live-verified.
+
+**Operational finding (root cause of an enroll 403):** Enroll endpoints returned 403 `students.create` for the SchoolAdmin because the dev DB (`oksis_dev`, ~8h old) was missing the `20260628235823_20260629_students_permissions` migration — **the API does NOT auto-migrate on startup**. The seed code is correct (`PermissionSeedData` defines the 8 students permissions; `RolePermissionSeedData.AllPermissionIds` grants them to SuperAdmin + SchoolAdmin). Applied via `dotnet ef database update`; SchoolAdmin now has all 8 `students.*` permissions. The separate `MasterRoleSeedTests` failure (its own Testcontainers DB) remains unexplained, tracked apart.
+
+---
+
 ## Remaining Roadmap
 
 | Phase | Scope |
