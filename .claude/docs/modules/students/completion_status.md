@@ -75,7 +75,7 @@
 
 - **Faz 2 FE (devam):** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı. (Lifecycle satır aksiyonları Faz 2B ile tamamlandı.)
 - **Faz 3+:** `students.import` toplu aktarım, document upload UI.
-- **Doküman içeriği:** `domain-model.md`, `api-contracts.md`, `database-schema.md` Faz 1A ile dolduruldu; `notifications.md`, `ui-flows.md`, `business-rules.md`, `open-questions.md` hâlâ iskelet/TBD.
+- **Doküman içeriği:** `domain-model.md`, `api-contracts.md`, `database-schema.md` Faz 1A ile, `business-rules.md` (BR-001+BR-002) Faz 2A/2B ile dolduruldu; `notifications.md`, `ui-flows.md`, `open-questions.md` hâlâ iskelet/TBD.
 - **Mobile:** öğrenci rolü ekranları (yok).
 - **ISSUE-05 küçük not:** `export` ucu yeni `gradeCode`/`hasGuardian` param'larını henüz tüketmiyor → web zararsız geçirir (export filtre paritesi ileride).
 
