@@ -26,16 +26,22 @@
 | `GET` | `/api/v1/students/{id}` | `students.view-detail` | Öğrenci detayı | ✅ FE bağlandı (Faz 2A) |
 | `GET` | `/api/v1/students/{id}/enrollments` | `students.view-detail` | Kayıt geçmişi | ✅ FE bağlandı (Faz 2A) |
 
-### Faz 2B+ (Henüz Yok)
+### Faz 2B (Canlı, 2026-06-30) · FE bağlandı
+
+| Method | Path | Permission | Amaç | FE Durumu |
+|---|---|---|---|---|
+| `POST` | `/api/v1/students/{id}:freeze` | `students.manage` | Kayıt dondurma | ✅ FE bağlandı (Faz 2B) |
+| `POST` | `/api/v1/students/{id}:resume` | `students.manage` | Dondurulmuş kaydı devam ettirme | ✅ FE bağlandı (Faz 2B) |
+| `POST` | `/api/v1/students/{id}:withdraw` | `students.manage` | Kayıt çekme (pasife al) | ✅ FE bağlandı (Faz 2B) |
+| `POST` | `/api/v1/students/{id}:transfer-out` | `students.manage` | Nakil çıkışı | ✅ FE bağlandı (Faz 2B) |
+| `POST` | `/api/v1/students/{id}:graduate` | `students.manage` | Öğrenci mezuniyeti | ✅ FE bağlandı (Faz 2B) |
+
+### Faz 3+ / Ertelenen (Henüz Yok)
 
 | Method | Path | Permission | Amaç |
 |---|---|---|---|
 | `PUT` | `/api/v1/students/{id}` | `students.update` | Öğrenci güncelleme |
-| `POST` | `/api/v1/students/{id}:freeze` | `students.manage` | Kayıt dondurma |
-| `POST` | `/api/v1/students/{id}:resume` | `students.manage` | Dondurulmuş kaydı devam ettirme |
-| `POST` | `/api/v1/students/{id}:withdraw` | `students.manage` | Kayıt çekme/ayrılma |
-| `POST` | `/api/v1/students/{id}:transfer-out` | `students.manage` | Nakil çıkışı |
-| `POST` | `/api/v1/students/{id}:archive` | `students.manage` | Mezun/pasif arşivleme |
+| `POST` | `/api/v1/students/{id}:archive` | `students.manage` | Terminal kayıt arşivleme (Debt — ertelendi) |
 | `POST` | `/api/v1/students:import` | `students.import` | Toplu öğrenci aktarımı (Excel) |
 | `POST` | `/api/v1/students/{id}/documents` | `students.update` | Belge yükleme |
 
@@ -399,6 +405,109 @@ Eğer `isDuplicate: true` → `existingStudentId` dolu gelir (FE'ye bağlantı i
 **Errors:**
 - `403` — `students.view-detail` izni yok
 - `404` — öğrenci bulunamadı veya bu okula ait değil (cross-tenant)
+
+---
+
+## Detay — Faz 2B Endpoint'leri (Lifecycle Komutları)
+
+Tüm lifecycle endpoint'leri için ortak kurallar:
+- **Permission:** `students.manage`
+- **Başarı:** `204 No Content`
+- **Hata 403:** `students.manage` izni yok veya tenant claim eksik.
+- **Hata 404:** Öğrenci bulunamadı veya cari (`IsCurrent`) sezon enrollment'ı yok.
+- **Hata 409:** Geçersiz durum geçişi — `Error.Conflict("students.errors.invalid-lifecycle-transition")` (yanlış enrollment.Status veya yanlış Person.LifecycleState).
+
+---
+
+### `POST /api/v1/students/{id}:freeze`
+
+**Amaç:** Aktif kaydı dondurur. Şube koltuğu KORUNUR (koltuk kalmaya devam eder).
+
+**Path param:** `{id}` — `StudentProfileId` (uuid)
+
+**Request body:**
+```json
+{ "reason": "Hastalık nedeniyle geçici devamsızlık" }
+```
+- `reason` — zorunlu, boş bırakılamaz.
+
+**Durum geçişi:** `enrollment.Status` Active → Frozen · `Person.LifecycleState` Active → Suspended
+
+**Response:** `204 No Content`
+
+---
+
+### `POST /api/v1/students/{id}:resume`
+
+**Amaç:** Dondurulmuş kaydı yeniden etkinleştirir.
+
+**Path param:** `{id}` — `StudentProfileId` (uuid)
+
+**Request body:** yok (boş body veya `{}`)
+
+**Durum geçişi:** `enrollment.Status` Frozen → Active · `Person.LifecycleState` Suspended → Active
+
+**Response:** `204 No Content`
+
+---
+
+### `POST /api/v1/students/{id}:withdraw`
+
+**Amaç:** Öğrenciyi çeker / pasife alır. Şube koltuğu KAPATILIR; `CurrentClassroomId` temizlenir; `IsActiveStudent=false`.
+
+**Path param:** `{id}` — `StudentProfileId` (uuid)
+
+**Request body:**
+```json
+{ "reason": "Aile kararıyla ayrılma" }
+```
+- `reason` — zorunlu, boş bırakılamaz.
+
+**Durum geçişi:** `enrollment.Status` Active → Withdrawn · `Person.LifecycleState` Active → Suspended
+
+**MVP kısıtı:** Frozen öğrenci doğrudan withdraw edilemez; önce `:resume` çağrılmalı.
+
+**Response:** `204 No Content`
+
+---
+
+### `POST /api/v1/students/{id}:transfer-out`
+
+**Amaç:** Öğrencinin nakil çıkışını kaydeder. Şube koltuğu KAPATILIR; `CurrentClassroomId` temizlenir.
+
+**Path param:** `{id}` — `StudentProfileId` (uuid)
+
+**Request body:**
+```json
+{
+  "targetSchoolId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "reason": "Veli isteğiyle nakil"
+}
+```
+- `targetSchoolId` — opsiyonel (`Guid?`); `null` = OKSİS dışı / harici okul nakli.
+- `reason` — opsiyonel.
+
+**Durum geçişi:** `enrollment.Status` Active → TransferredOut · `Person.LifecycleState` Active → Transferred
+
+**MVP kısıtı:** Frozen öğrenci doğrudan transfer-out edilemez; önce `:resume` çağrılmalı.
+
+**Response:** `204 No Content`
+
+---
+
+### `POST /api/v1/students/{id}:graduate`
+
+**Amaç:** Öğrenciyi mezun eder. Şube koltuğu KAPATILIR; `CurrentClassroomId` temizlenir.
+
+**Path param:** `{id}` — `StudentProfileId` (uuid)
+
+**Request body:** yok (boş body veya `{}`)
+
+**Durum geçişi:** `enrollment.Status` Active → Graduated · `Person.LifecycleState` Active → Graduated
+
+**MVP kısıtı:** Frozen öğrenci doğrudan mezun edilemez; önce `:resume` çağrılmalı.
+
+**Response:** `204 No Content`
 
 ---
 

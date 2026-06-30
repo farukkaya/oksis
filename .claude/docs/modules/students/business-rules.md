@@ -40,9 +40,35 @@ imkânsız kılmak gerekti.
 
 ---
 
-### BR-students-002: {{TBD}}
+### BR-students-002: Öğrenci kaydı yaşam-döngüsü — koordineli iki-eksen geçiş
 
-{{TBD}}
+**Kural:** Her lifecycle komutu `enrollment.Status` ve `Person.LifecycleState` eksenlerini koordineli mutasyona uğratır. Şube koltuğu (`ClassRoomStudent`) da komuta göre kapatılır ya da tutulur. Her komut, mutasyondan önce her iki ekseni de doğrular.
+
+**Geçiş Tablosu:**
+
+| Komut | Gerekli enrollment.Status | Gerekli Person.LifecycleState | Yeni enrollment.Status | ClassRoomStudent | Yeni Person.LifecycleState |
+|---|---|---|---|---|---|
+| `:freeze` | Active | Active | Frozen | Korunur (koltuk açık kalır) | Suspended |
+| `:resume` | Frozen | Suspended | Active | Korunur | Active |
+| `:withdraw` | Active | Active | Withdrawn | Kapatılır; `CurrentClassroomId → null`; `IsActiveStudent=false` | Suspended |
+| `:transfer-out` | Active | Active | TransferredOut | Kapatılır; `CurrentClassroomId → null` | Transferred |
+| `:graduate` | Active | Active | Graduated | Kapatılır; `CurrentClassroomId → null` | Graduated |
+
+**Kısıtlar:**
+
+1. **Frozen öğrenci terminal geçiş yapamaz.** `Frozen` durumundaki bir öğrenci doğrudan `Withdrawn` / `TransferredOut` / `Graduated` statüsüne geçirilemez; önce `:resume` çağrılmalıdır. Bu kısıt entity guard'larında uygulanır (`enrollment.Status == Active` zorunlu kılar).
+2. **İkili eksen koruması.** Her komut handler'ı mutasyondan önce hem `enrollment.Status` hem `person.LifecycleState`'i doğrular. Bu sayede legacy person endpoint'leri ile enrollment ekseni arasındaki olası sapma, 500 yerine 409 Conflict'e dönüştürülür.
+3. **Hata kodu.** Geçersiz geçiş → `409 Conflict`, `Error.Conflict("students.errors.invalid-lifecycle-transition")`.
+
+**`Person.Transfer(Guid?)` — nullable hedef okul.**
+
+`:transfer-out` komutu `targetSchoolId?: Guid?` kabul eder. `null` = OKSİS dışı (harici okul) nakil. `Person.Transfer(Guid?)` Faz 2B'de nullable yapıldı.
+
+**`AssignmentReason` genişlemesi.**
+
+`AssignmentReason.Withdrawal` ve `AssignmentReason.TransferOut` değerleri Faz 2B'de eklendi; şube koltuğu kapatma işlemleri bu nedenlerle loglanır.
+
+**MVP kısıtı.** `ArchiveEnrollment` (terminal → Archived geçişi) Faz 2B kapsamı dışında bırakıldı; UI ve endpoint yok (bkz. `completion_status.md` ⚠️ Spec Dışına Çıkılanlar).
 
 ---
 
@@ -50,8 +76,11 @@ imkânsız kılmak gerekti.
 
 | Senaryo | Beklenen Davranış |
 |---|---|
-| {{TBD}} | {{TBD}} |
-| {{TBD}} | {{TBD}} |
+| Frozen öğrenciye doğrudan `:withdraw` | 409 Conflict (`students.errors.invalid-lifecycle-transition`) |
+| Cari sezon enrollment yok | 404 Not Found |
+| `students.manage` izni yok | 403 Forbidden |
+| `person.LifecycleState` ile `enrollment.Status` birbirinden sapmış (eski person uçlarından kaynaklı) | 409 Conflict — iki-eksen koruması devreye girer |
+| `targetSchoolId=null` ile `:transfer-out` | OKSİS dışı nakil — geçerli; `Person.LifecycleState` = Transferred |
 
 ---
 
@@ -61,5 +90,6 @@ imkânsız kılmak gerekti.
 |---|---|---|
 | 2026-05-15 | İlk kurallar tanımlandı | İlk implementasyon |
 | 2026-06-28 | BR-students-001: güncel şube tek doğruluk kaynağı `class_room_students`; `CurrentClassroomId` `StudentClassroomSyncInterceptor` ile ondan türetilen ayna alan oldu (manuel senkron kaldırıldı) | İki-yazım drift'ini yapısal olarak engelleme |
+| 2026-06-30 | BR-students-002: beş lifecycle komutu koordineli iki-eksen (enrollment.Status + Person.LifecycleState) geçiş kuralı; Frozen→terminal kısıtı; ikili eksen koruması; `Person.Transfer(Guid?)` nullable; `AssignmentReason.Withdrawal/TransferOut` eklendi | Faz 2B lifecycle implementasyonu |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.

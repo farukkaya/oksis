@@ -67,16 +67,16 @@ Bu modül hangi modüllerle konuşur?
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-30 (Faz 1B-BE: öğrenci hesabı + geçici şifre + öğrenci-no login)
+- **Last Updated:** 2026-06-30 (Faz 2B: lifecycle komutları — 5 komut canlı; Archive + event/bildirim Debt)
 - **Files:**
   - [x] README.md
   - [x] enrollment-needs-analysis.md (kayıt ihtiyaç + altyapı uygunluk analizi, 2026-06-28)
   - [x] domain-model.md (iskelet)
-  - [x] api-contracts.md (Faz 1A+1B dolu)
+  - [x] api-contracts.md (Faz 1A+1B+2A+2B dolu)
   - [x] database-schema.md (iskelet)
   - [x] permissions.md (iskelet)
   - [x] notifications.md (iskelet)
   - [x] ui-flows.md (Faz 1B sihirbaz akışı dolu)
-  - [x] business-rules.md (iskelet)
+  - [x] business-rules.md (BR-001 + BR-002 dolu)
   - [x] open-questions.md (iskelet)
   - [x] completion_status.md

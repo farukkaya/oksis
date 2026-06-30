@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `███████░░░` %68   ·   Status: in-progress (Faz 2B — lifecycle komutları)   ·   Güncel: 2026-06-30
+**İlerleme:** `████████░░` %78   ·   Status: in-progress (Faz 2 devam — AssignClass/Promote gerçek; belgeler; hesap sekmesi)   ·   Güncel: 2026-06-30
+
+> 2026-06-30 (Faz 2B — Lifecycle Komutları): **Faz 2B tamamlandı — 5 yaşam-döngüsü komutu + koordineli iki-eksen + FE satır aksiyonları.** BE: `FreezeEnrollmentCommand`, `ResumeEnrollmentCommand`, `WithdrawStudentCommand`, `TransferOutStudentCommand`, `GraduateStudentCommand` — her biri `students.manage` izni; cari (`IsCurrent`) sezon enrollment çözümlenir; `enrollment.Status` + `Person.LifecycleState` iki ekseni koordineli mutasyona uğrar; geçersiz geçiş → 409 Conflict (`students.errors.invalid-lifecycle-transition`). İkili eksen koruması: her handler mutasyondan önce her iki ekseni doğrular. Domain: `Person.Transfer(Guid?)` nullable (null = OKSİS dışı nakil); `AssignmentReason.Withdrawal` + `AssignmentReason.TransferOut` eklendi. REST: `POST /students/{id}:freeze|:resume|:withdraw|:transfer-out|:graduate` — 204 No Content. FE: 5 satır-aksiyonu (`Dondur`, `Yeniden Etkinleştir`, `Pasife Al`, `Nakil Çıkışı`, `Mezun Et`) `notReadyHint="2B"` → gerçek `useMutation`'larla etkinleştirildi; `students.delete` → `students.manage` izin hatası düzeltildi; paylaşımlı `LifecycleActionDialog` (Dondur/Pasife Al için zorunlu sebep; Nakil Çıkışı için opsiyonel hedef+sebep). Ertelenenler: ArchiveEnrollment + lifecycle domain event/bildirim (bkz. ⚠️ Spec Dışına Çıkılanlar).
 
 > 2026-06-30 (Faz 2A — Liste & Okuma): **Faz 2A tamamlandı — enrollment-bazlı liste/detay/geçmiş (3 query + REST + FE swap + lifecycle pasif).** BE (`oksis-api`, branch `student-faz2a`): `ListStudentsQuery` + `StudentListItemDto` (sezon-bazlı, varsayılan aktif sezon, EnrollmentStatus filtresi + cinsiyet/kademe/arama, sayfalı, önbelleksiz, tenant-izoleli); `GetStudentDetailQuery` + `StudentDetailDto` (kimlik + HasNationalId/NationalIdType, no plain TCKN, aktif-sezon CurrentEnrollment + veliler); `GetEnrollmentHistoryQuery` + `EnrollmentHistoryItemDto` (tüm sezonlar yeniden eskiye). `StudentsController`: `GET /students`, `GET /students/{id}`, `GET /students/{id}/enrollments` — `students.view` / `students.view-detail` izni. FE (`oksis-web`, branch `student-faz2a`): `studentsApi.list/detail/enrollmentHistory` → yeni `/students*` uçlarına bağlandı; `StudentStatus` union enrollment durumlarıyla genişletildi; BE↔FE durum eşleyicileri; "Durum" filtresi → enrollment statuses; durum rozetleri + i18n tr+en; drawer "Kayıt Geçmişi" sekmesi gerçek alanları gösteriyor (sezon/kademe/şube/tür/durum/tarih). Yaşam-döngüsü satır aksiyonları (Mezun Et/Dondur/Yeniden Etkinleştir/Nakil Çıkışı/Pasife Al) 2A'da `notReadyHint="2B"` ile DISABLED (Faz 2B enrollment komutlarına ertelendi). Eski `/users/persons*` uçları korundu (Users ekranı tüketiyor); öğrenciler ekranı artık bunları çağırmıyor. Review düzeltmeleri: cross-tenant test (GetStudentDetail) + 2-sezon sıralama testi (history). Branch: `oksis-api:student-faz2a`, `oksis-web:student-faz2a`.
 
@@ -61,13 +63,17 @@
   - BE: `GetEnrollmentHistoryQuery` (tüm sezonlar yeniden eskiye).
   - REST: `GET /students` (`students.view`), `GET /students/{id}` (`students.view-detail`), `GET /students/{id}/enrollments` (`students.view-detail`).
   - FE: `studentsApi.list/detail/enrollmentHistory` yeni uçlara bağlandı; `StudentStatus` union + BE↔FE durum eşleyicileri; durum rozetleri + i18n tr+en; drawer "Kayıt Geçmişi" gerçek verilerle; lifecycle aksiyonları `notReadyHint="2B"` DISABLED.
+- **Faz 2B — Lifecycle komutları (2026-06-30):**
+  - BE: `FreezeEnrollmentCommand`, `ResumeEnrollmentCommand`, `WithdrawStudentCommand`, `TransferOutStudentCommand`, `GraduateStudentCommand` — `students.manage`, cari sezon enrollment, koordineli iki-eksen (enrollment.Status + Person.LifecycleState), ikili eksen koruması.
+  - REST: `POST /students/{id}:freeze|:resume|:withdraw|:transfer-out|:graduate` — 204 No Content; 403/404/409.
+  - Domain: `Person.Transfer(Guid?)` nullable; `AssignmentReason.Withdrawal/TransferOut` eklendi.
+  - FE: `LifecycleActionDialog` (sebep/hedef toplama); 5 satır-aksiyonu etkin; `students.delete` → `students.manage` izin düzeltmesi.
 
 ---
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Faz 2B — Lifecycle komutları (backend + FE):** `FreezeEnrollmentCommand`, `ResumeEnrollmentCommand`, `WithdrawStudentCommand`, `ArchiveStudentCommand` + ilgili endpoint'ler; FE'de lifecycle satır aksiyonlarının `notReadyHint="2B"` engelinin kaldırılması ve gerçek mutasyonlara bağlanması.
-- **Faz 2 FE (devam):** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı.
+- **Faz 2 FE (devam):** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı. (Lifecycle satır aksiyonları Faz 2B ile tamamlandı.)
 - **Faz 3+:** `students.import` toplu aktarım, document upload UI.
 - **Doküman içeriği:** `domain-model.md`, `api-contracts.md`, `database-schema.md` Faz 1A ile dolduruldu; `notifications.md`, `ui-flows.md`, `business-rules.md`, `open-questions.md` hâlâ iskelet/TBD.
 - **Mobile:** öğrenci rolü ekranları (yok).
@@ -77,6 +83,8 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-06-30 — ArchiveEnrollment komutu/uç/butonu ertelendi (Faz 2B kapsam dışı, UI yok). Sebep: terminal→Archived geçişi ayrı iş. Onay: kullanıcı.**
+- **2026-06-30 — Lifecycle domain event'leri + veli bildirimi ertelendi (Faz 2B kapsam dışı). Sebep: bildirim/outbox ayrı iş. Onay: kullanıcı.**
 - **2026-06-30 — Öğrenci no format/kabul (E4.4/E2.3) ayrı spec'e ertelendi · onay: kullanıcı · login resolver format-agnostic (1-9 hane) olarak yazıldı, gelecekteki format spec'ini kırmaz; numara üretimi + format doğrulaması ayrı tasarım turuna bırakıldı.**
 - **~~2026-06-29 — Faz 1B FE: Başarı ekranı geçici-şifre kutusu Debt olarak port edildi~~ → KAPANDI (2026-06-30, Faz 1B-BE ile çözüldü). IdentityBox üç-durum satırı gerçek şifreyi/replay notunu/küçük-kademe notunu gösteriyor; DebtBadge kaldırıldı.**
 - **2026-06-29 — Faz 1B FE ertelenen minörler:** GuardianPicker ayrı bileşene çıkarılmadı (`StepGuardians` ~400 satır); özet kademe·şube "5-A" gösterir, "Ortaokul · 5-A" değil (kademe adı form state'inde yok); öksüz `debt.enroll.*` i18n anahtarları (debt-temizlik turunda kaldırılacak).
