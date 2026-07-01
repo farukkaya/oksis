@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: complete (API + web + mobile)   ·   Güncel: 2026-06-28 (CurrentClassroomId artık interceptor-derived; okuma tarafı değişmedi)
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: complete (API + web + mobile)   ·   Güncel: 2026-07-01 (BR-identity-002: `IdentifierResolver` okul-farkında prefix dalı — öğrenci-no format mini-spec ile netleşti)
+
+> 2026-07-01: **`IdentifierResolver` okul-farkında login prefix dalı (BR-identity-002 genişlemesi).** Öğrenci Numarası Format mini-spec'i (`.claude/specs/ogrenci-numarasi-format-design.md`) ile: okulun `SchoolSettings.StudentNumberPrefix`'i doluysa ve login girdisi bu prefix ile başlıyorsa resolver doğrudan öğrenci-no çözümüne gider (`FindByStudentNumberAsync`, tam stored değer); aksi halde mevcut şekil-tabanlı sınıflandırma (1-9 hane/telefon/TCKN) korunur. "Öğrenci-no format ayrı spec'e ertelendi" notu ÇÖZÜLDÜ. Bkz. `students` modülü BR-students-005 (school-settings BR-SS-017 ile aynı desen).
 
 > 2026-06-28: **`CurrentClassroomId` kaynağı interceptor-derived oldu (mimari değişiklik — identity okuma tarafı DEĞİŞMEDİ).** `StudentProfile.CurrentClassroomId` hâlâ denormalize tutulur ama artık komut handler'larında manuel senkronlanmaz; `StudentClassroomSyncInterceptor` ile tek doğruluk kaynağı `academic.class_room_students` (aktif satır, `left_at IS NULL`) defterinden türetilir. `PersonDirectory.FindActiveChildrenAsync` child `className` projeksiyonu aynen çalışır; available-contexts sözleşmesi etkilenmez. Detay: students `business-rules.md` BR-students-001 + classrooms BR-classrooms-001.
 

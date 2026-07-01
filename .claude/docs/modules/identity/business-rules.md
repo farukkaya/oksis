@@ -23,13 +23,15 @@
 
 **Kural:** `FindForLoginAsync` Email, Phone ve StudentNumber kabul eder; TCKN gelirse `PersonLookupResult.Rejected` döner. Recovery (`FindForRecoveryAsync`) Email/Phone/TCKN kabul eder (TCKN tenant-tuzlu hash ile).
 
-**StudentNumber login (Faz 1B-BE, 2026-06-30):** `Identifier.Create` 1-9 haneli sayısal girdiyi `IdentifierType.StudentNumber` olarak sınıflandırır. `IPersonDirectory.FindByStudentNumberAsync(studentNumber, schoolId, ct)` tenant-scope ile çalışır; `SchoolHint` (okul ID'si) zorunludur — tenant olmadan StudentNumber global namespace'de anlamsız. Hesapsız (küçük-kademe, Anaokulu/İlkokul) öğrenci için uniform not-found döner (`PersonLookupResult.NotFound`); ayrı hata kodu sızdırmaz. Öğrenci-no format/kabul kuralları (E4.4/E2.3) ayrı spec'e ertelendi; login resolver format-agnostic (1-9 hane).
+**StudentNumber login (Faz 1B-BE, 2026-06-30):** `Identifier.Create` 1-9 haneli sayısal girdiyi `IdentifierType.StudentNumber` olarak sınıflandırır. `IPersonDirectory.FindByStudentNumberAsync(studentNumber, schoolId, ct)` tenant-scope ile çalışır; `SchoolHint` (okul ID'si) zorunludur — tenant olmadan StudentNumber global namespace'de anlamsız. Hesapsız (küçük-kademe, Anaokulu/İlkokul) öğrenci için uniform not-found döner (`PersonLookupResult.NotFound`); ayrı hata kodu sızdırmaz.
+
+**Okul-farkında prefix dalı (2026-07-01, çözüldü — bkz. `students` BR-students-005):** `IdentifierResolver` artık **okul-farkında**: `SchoolHint` mevcut okulun `SchoolSettings.StudentNumberPrefix`'i doluysa ve girdi bu prefix ile **başlıyorsa** → doğrudan öğrenci-no çözümüne gider (`FindByStudentNumberAsync`, tam stored değer — prefix dahil). Prefix eşleşmezse (veya okulda prefix yoksa) mevcut şekil-tabanlı sınıflandırma **değişmeden** çalışır (salt-rakam 1-9 hane → StudentNumber; 10-13 hane → Phone; 11 hane → TCKN reddi, TR-auth-002). Pre-auth okul ayarı okuması (`SchoolSettings` sorgusu) `IgnoreQueryFilters` ile tek-tenant scope'ta yapılır — `PersonDirectory` BR-identity-001 (read-only, tek yönlü) deseniyle aynı. ~~Öğrenci-no format/kabul kuralları (E4.4/E2.3) ayrı spec'e ertelendi~~ → **ÇÖZÜLDÜ**: bağlayıcı mini-spec `.claude/specs/ogrenci-numarasi-format-design.md` ile format+üretim+login kabul kuralları netleşti (bkz. `students` modülü BR-students-005).
 
 **Sebep:** TCKN ağda dolaşmamalı; iki ayrı imza bunu derleyici düzeyinde engeller. StudentNumber okul-scoped (SchoolHint zorunlu) — global eşleşme riski yok.
 
 **Uygulama:** Login ve recovery için ayrı port metotları; TCKN normalizasyonu `NationalIdHash(value, tenantSalt)`; StudentNumber için `IPersonDirectory.FindByStudentNumberAsync`.
 
-**Test referansı:** `IdentifierResolverTests.Login_Rejects_Tckn`, `IdentifierResolverTests.Login_StudentNumber_Resolves_With_SchoolHint`.
+**Test referansı:** `IdentifierResolverTests.Login_Rejects_Tckn`, `IdentifierResolverTests.Login_StudentNumber_Resolves_With_SchoolHint`, `IdentifierResolverTests` (prefix'li giriş senaryoları, bkz. `students` BR-students-005).
 
 ---
 
@@ -136,3 +138,4 @@
 | 2026-05-15 | İlk skeleton oluşturuldu | İlk implementasyon |
 | 2026-05-30 | Teknik analize göre TR-auth-001…018 kuralları işlendi | Login & Profile Switch teknik analizi (Sürüm 1.0) |
 | 2026-06-30 | BR-identity-002 güncellendi: StudentNumber login eklendi (Faz 1B-BE) | Öğrenci hesabı + öğrenci-no login resolver; SchoolHint zorunlu; format ayrı spec |
+| 2026-07-01 | BR-identity-002 güncellendi: okul-farkında prefix dalı eklendi (`IdentifierResolver`); "ayrı spec'e ertelendi" notu ÇÖZÜLDÜ | Öğrenci Numarası Format mini-spec (`.claude/specs/ogrenci-numarasi-format-design.md`) + `students` BR-students-005 |

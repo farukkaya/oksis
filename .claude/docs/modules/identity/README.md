@@ -79,7 +79,7 @@ Modülün ana akışı (login + context resolution):
 - **Sprint:** Sprint 1–6
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-22
+- **Last Updated:** 2026-07-01 (BR-identity-002: `IdentifierResolver` okul-farkında prefix dalı — öğrenci-no format mini-spec ile netleşti)
 - **Files:**
   - [x] README.md
   - [x] domain-model.md

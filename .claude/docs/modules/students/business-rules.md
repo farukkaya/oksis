@@ -117,6 +117,8 @@ imkânsız kılmak gerekti.
 
 **Okul-farkında login:** `IdentifierResolver` — `SchoolHint` mevcut okulun `StudentNumberPrefix`'i doluysa ve girdi bu prefix ile **başlıyorsa** → doğrudan öğrenci-no çözümü (tam stored değer, prefix dahil, `IgnoreQueryFilters` ile pre-auth tek-tenant scope, `PersonDirectory` BR-identity-001 deseniyle aynı). Aksi halde mevcut şekil-tabanlı sınıflandırma (salt-rakam 1-9 hane → öğrenci-no; 10-13 → telefon; 11 → TCKN) korunur.
 
+**Prefixsiz uzunluk kısıtı (`StudentNumberLength ≤ 9`, zorunlu):** `StudentNumberPrefix` boşken `StudentNumberLength` **≤9** olmalı (prefix set edilmişse 1-10 serbest). `UpdateAcademicStructureCommand` validator'ı bunu zorlar. Sebep: prefixsiz otomatik üretilen numaralar 10 haneye ulaşırsa login'de telefon-şekliyle (10-13 hane) çakışır — bu kısıt o çakışmayı üretim ayarı seviyesinde önler. Bkz. `school-settings` BR-SS-017.
+
 **Mevcut numaralar değişmez:** Bu değişiklik yalnız **bundan sonraki üretimi** etkiler; `StudentNumberLength` migration'ı mevcut tüm satırları `NULL`'a çeker ama zaten üretilmiş/atanmış numaralar (`StudentProfile.StudentNumber`) **dokunulmaz** (immutability korunur, E4.4.2). Bir okulda eski format (`{yıl}{5-hane}`) ile yeni format (`100…`) **karışık** bulunabilir — kabul edilen bir durum, renumber kapsam dışı.
 
 **Sebep:** Sabit `{yıl}{5-hane}` formatı okul-yapılandırılabilir ve import'a hazır bir sisteme dönüştürüldü; `SchoolSettings.StudentNumberPrefix/Length` alanları zaten vardı ama generator onları görmezden geliyordu — bu kural o boşluğu kapatır.
@@ -140,7 +142,7 @@ imkânsız kılmak gerekti.
 | `RenewEnrollment` aynı hedef sezona ikinci kez çağrılır | Zaten taslağı olan öğrenciler `Skipped` — yeni taslak açılmaz (idempotent) |
 | `RenewEnrollment` sırasında öğrencinin bir üst kademesi yok (terminal) | `Skipped` — taslak açılmaz (mezuniyet mantığıyla hizalı) |
 | Manuel öğrenci-no <100 veya harf içeriyor (ayar boşken) | `400`, `students.errors.student-number-invalid-format` |
-| Manuel öğrenci-no zaten başka öğrencide kullanılıyor | `400`, `students.errors.duplicate-student-number` |
+| Manuel öğrenci-no zaten başka öğrencide kullanılıyor | `409`, `students.errors.duplicate-student-number` |
 | Öğrenci-no boş bırakılır | Otomatik üretim (`generator.NextAsync`) — okulun ayarına göre |
 | Login'de girdi okulun `StudentNumberPrefix`'i ile başlıyor | Öğrenci-no çözümü (okul-farkında dal); prefix eşleşmezse şekil-tabanlı sınıflandırmaya düşer |
 

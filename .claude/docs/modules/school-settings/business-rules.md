@@ -162,13 +162,13 @@ Sprint 1'de sadece ilk 6 satır aktif; devamsızlık ayarları Sprint 2'de `atte
 
 ### BR-SS-017 — Öğrenci No prefix/length ayarı opsiyonel, generator tarafından tüketilir (2026-07-01)
 
-**Kural:** `SchoolSettings.StudentNumberPrefix : string?` (opsiyonel, önceden de vardı) ve `StudentNumberLength` **artık `int?`** (önceden `int` non-null, default 4) — `null` = default davranış (öneksiz, min 3 hane, 100'den başlar; bkz. `students` modülü BR-students-005). `UpdateAcademicStructure` (`StructureTab`) bu iki alanı düzenletmeye devam eder; validator: `length` null veya 1-10.
+**Kural:** `SchoolSettings.StudentNumberPrefix : string?` (opsiyonel, önceden de vardı) ve `StudentNumberLength` **artık `int?`** (önceden `int` non-null, default 4) — `null` = default davranış (öneksiz, min 3 hane, 100'den başlar; bkz. `students` modülü BR-students-005). `UpdateAcademicStructure` (`StructureTab`) bu iki alanı düzenletmeye devam eder; validator: `length` null veya 1-10; **`prefix` boşken `length ≤ 9` zorunlu** (prefix set edilmişse 1-10 serbest) — bkz. aşağıdaki paragraf.
 
 **Sebep:** Bu iki alan zaten vardı ve settings UI'da düzenlenebiliyordu, ama `students` modülündeki `StudentNumberGenerator` onları **görmezden geliyordu** (sabit `{yıl}{5-hane}` üretiyordu). Öğrenci Numarası Format mini-spec'i (`.claude/specs/ogrenci-numarasi-format-design.md`) bu boşluğu kapattı — generator artık bu ayarı gerçekten tüketir.
 
 **Migration notu:** `StudentNumberLength` kolonu nullable'a çevrilirken **mevcut tüm satırlar `NULL`'a çekildi** — her okul default'a (3 hane/100'den) geçti. Generator zaten tüketmiyordu, bu yüzden **basılı/atanmış eski öğrenci numaraları etkilenmez** (immutability `students` modülünde korunur); yalnız bundan sonra üretilecek numaraları etkiler.
 
-**Uygulama:** `UpdateAcademicStructureCommandHandler` null-akışını korur (`request.StudentNumberLength ?? settings.StudentNumberLength`). Prefixsiz (salt-rakam) durumda `length ≤ 9` önerisi (login'de telefon-aralığı 10-13 ile çakışmasın); prefix varsa uzunluk serbest.
+**Uygulama:** `UpdateAcademicStructureCommandHandler` null-akışını korur (`request.StudentNumberLength ?? settings.StudentNumberLength`). Prefixsiz (salt-rakam) durumda `length ≤ 9` **zorunlu** kural olarak validator'da uygulanır (prefix boş + `length ≥ 10` → validasyon hatası); prefix set edilmişse `length` 1-10 serbest. Sebep: login'de telefon-aralığı (10-13 hane) ile çakışmayı üretim ayarı seviyesinde imkânsız kılmak — prefixsiz otomatik-üretilen numaralar hiçbir zaman 10 haneye ulaşamaz.
 
 **Kapsam:** `schools`/`school-settings` yalnız **ayarı** tutar; üretim/doğrulama/login mantığı `students`/`identity` modüllerinde (bkz. o modüllerin `business-rules.md`'si).
 

@@ -106,7 +106,7 @@
 - `gender` — required; `Male | Female | Other`
 - `classRoomId` — required; şube kapasitesi aşılırsa 409 `CAPACITY_EXCEEDED`
 - `enrollmentType` — required; `New | TransferIn | Renewal`; `Renewal` için öğrenci önceki sezonda kayıtlı olmalı
-- `studentNumber` — **opsiyonel** (`string?`, 2026-07-01, bkz. `.claude/specs/ogrenci-numarasi-format-design.md`). Boş/`null` → otomatik üretim (`IStudentNumberGenerator`, okulun ayarına göre). Doluysa `IStudentNumberValidator` ile doğrulanır (format + `(SchoolId, StudentNumber)` global benzersizlik); geçersizse `400` (`students.errors.student-number-invalid-format` / `duplicate-student-number`).
+- `studentNumber` — **opsiyonel** (`string?`, 2026-07-01, bkz. `.claude/specs/ogrenci-numarasi-format-design.md`). Boş/`null` → otomatik üretim (`IStudentNumberGenerator`, okulun ayarına göre). Doluysa `IStudentNumberValidator` ile doğrulanır (format + `(SchoolId, StudentNumber)` global benzersizlik); format hatasında `400` (`students.errors.student-number-invalid-format`), benzersizlik ihlalinde `409` (`students.errors.duplicate-student-number`).
 - `guardians` — required, min 1; max 5; `isPrimary` tam olarak 1 kez `true`
 - Guardian `email` veya `phone` — en az biri zorunlu; `invitationChannel=Email` → `email` zorunlu
 
@@ -116,7 +116,7 @@
   "data": {
     "studentId": "...",
     "enrollmentId": "...",
-    "studentNumber": "20250001",
+    "studentNumber": "100",
     "temporaryPassword": "Xk7mQ3pR",
     "studentAccountCreated": true
   },
@@ -129,7 +129,7 @@
 > - `temporaryPassword`: Geçici şifre plain-text yalnız bu yanıtta döner; plain hâli asla saklanmaz (hash'li tutulur). `null` olduğu durumlar:
 >   - Küçük-kademe (Anaokulu/İlkokul) — E2.6 carve-out; Parent-only, hesap açılmaz.
 >   - Replay (`clientRequestId` tekrar) — plain şifre kayıtlı olmadığından `null`; `studentAccountCreated` gerçek hesap varlığına bakılır.
-> - **`studentNumber` format notu (2026-07-01):** Örnekteki `"20250001"` **eski** (yıl-öncelikli) formatı gösterir — güncel format yılsız `{prefix?}{sıra}` (default: öneksiz, 100'den başlar, örn. `"100"`; okul prefix ayarlamışsa örn. `"ATL0100"`). Bkz. BR-students-005 / `.claude/specs/ogrenci-numarasi-format-design.md`.
+> - **`studentNumber` format notu (2026-07-01):** Örnekteki `"100"` güncel (yılsız) formatı gösterir — `{prefix?}{sıra}` (default: öneksiz, 100'den başlar; okul prefix ayarlamışsa örn. `"ATL0100"`). Eski `{yıl}{5-hane}` formatlı (örn. `"20250001"`) numaralar da mevcut kayıtlarda görülebilir — karışık format kabul edilir, renumber yapılmaz. Bkz. BR-students-005 / `.claude/specs/ogrenci-numarasi-format-design.md`.
 > - `studentAccountCreated`: `true` → hesap bu istekte açıldı. Replay'de hesap zaten varsa `true`, küçük-kademede `false`.
 > - Login: öğrenci numarası giriş yolu artık aktif — `identifier` alanına öğrenci numarası (1-9 hane rakam) + `SchoolHint` (okul ID'si) ile giriş yapılabilir. Bkz. identity `api-contracts.md` / `business-rules.md`.
 
@@ -141,7 +141,7 @@
 - `409 NATIONAL_ID_DUPLICATE` — bu TC aktif sezonda zaten kayıtlı
 - `422 IDEMPOTENCY_REPLAY` — `clientRequestId` tekrar, aynı başarı sonucu döner
 - `400 students.errors.student-number-invalid-format` — manuel `studentNumber` formatı okulun ayarına (veya default'a) uymuyor
-- `400 students.errors.duplicate-student-number` — manuel `studentNumber` bu okulda zaten kullanılıyor (global benzersizlik)
+- `409 students.errors.duplicate-student-number` — manuel `studentNumber` bu okulda zaten kullanılıyor (global benzersizlik; `Result.Conflict` → `Error.Conflict`)
 
 **Domain Event:** `StudentEnrolledEvent` → Outbox → post-commit: veli daveti (Faz 1A). Öğrenci hesabı + geçici şifre: `StudentAccountProvisioner` transaction içinde çalışır (Faz 1B-BE, 2026-06-30); küçük-kademede atlanır (E2.6 carve-out).
 
