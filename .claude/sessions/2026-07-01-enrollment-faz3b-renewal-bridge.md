@@ -75,10 +75,19 @@ E2E → finishing (push + PRs). Every task reviewed clean before advancing; prog
   blind spot); "Yenilemeyi Başlat" renders and is correctly **disabled** with permission tooltip
   ("Yenileme dönemini başlatma yetkiniz yok" — `season.renewal.open` default-deny gate works);
   Export disabled (S6); season bridge empty state ("Hedef taslak sezon yok"); KPI 20 Kararsız/22%.
-- **Not executed live (test-covered):** full Start→OpenRenewalPeriod→RenewEnrollment→badge-flip —
-  blocked by the by-design default-deny permission + absence of a Setup season. Covered by Task 2/5
-  integration, Task 10 unit (incl. badge-invalidation fix test), Task 6/7 gating integration. To
-  demo live: admin grants `season.renewal.open` + creates a target Setup season (realistic first-use).
+- **Full flow verified live (user granted `season.renewal.open` to SCHOOL_ADMIN in dev DB):** created
+  a Setup season 2027-2028 via the rollover wizard ("Sezonu Aç", not activated), marked 2 students
+  (10-A, 10-B) Renewing, clicked "Yenilemeyi Başlat" → ConfirmDialog → OpenRenewalPeriod (bridge badge
+  flipped "Taslak"→"Dönem açık" with no reload, confirming the badge-invalidation fix live) →
+  RenewEnrollment → toast "2 taslak kayıt oluşturuldu, 0 atlandı". DB confirms: 2027-2028
+  renewal_period_opened_at set and status STILL Setup (E11.6 respected); 2 Renewal/Draft/grade-11
+  (=10+1)/ClassRoomId=NULL enrollments.
+- **CSS bug found + fixed live (commit 07e4e12, web):** RenewalPage did NOT import `modal.css` (a
+  page-level import pattern; StudentsPage does it). The ConfirmDialog's `.modal`/`.modal-scrim` were
+  unstyled (position:static) so the dialog rendered at ~1950px down the page, invisible. Unit tests
+  (jsdom, query by role/text) could not catch it — **only the screen test did (the 3A `.scr-*` lesson
+  repeating)**. Fix = one-line import; build clean, RenewalPage 12/12. Minor observation: two
+  "Yenilemeyi Başlat" buttons render (header + empty-state) — worth a later look.
 
 ## Notes for user
 - 3A still not merged; 3B PRs are based on `student-faz3a` for a clean diff. Merge 3A first, then
