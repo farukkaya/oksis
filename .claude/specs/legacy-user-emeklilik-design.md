@@ -1,0 +1,161 @@
+# Legacy `User` Emeklilik Tasarımı (Faz 2 / OQ-identity-001 kapanışı)
+
+> **Tür:** Onaylı tasarım (design doc) · **Tarih:** 2026-07-02 · **Durum:** Onaylandı (farukkaya)
+> **İlgili:** `.claude/specs/adr-001-legacy-user-kaldirma.md` (ADR-001),
+> `.claude/docs/modules/identity/open-questions.md` (OQ-identity-001),
+> `identity/completion_status.md` (Faz 1 okuma göçü, 2026-06-08)
+
+## 1. Amaç ve kapsam
+
+Legacy `identity.User` modeli **kalıntısız** kaldırılır: tüm auth/yazma/okuma yolları
+`Person` + `Account` + `Profile` + `RoleAssignment` modeline taşınır, ardından `User`
+entity + `UserConfiguration` + `DbSet<User>` + `[identity].[users]` tablosu silinir.
+
+**Kapsam kararları (brainstorming, 2026-07-02, farukkaya):**
+
+1. **Veri göçü script'i YOK — dev reseed.** Tek gerçek ortam dev; taşınacak gerçek veri
+   yok. Bu, **ADR-001 Aşama 2'den bilinçli sapmadır** (idempotent migration script şartı);
+   Faz 5'te `completion_status.md → Spec Dışına Çıkılanlar`a işlenir, ADR'ye not düşülür.
+2. **`identity-invite-accept-route` branch'i (oksis-web `ca498d2`) göçten ÖNCE merge edilir** (Faz 0).
+3. **Sert kaldırma:** legacy uçlar + istemci fallback'leri + `PermissionReader` legacy
+   `permissions` claim fallback'i deprecation penceresi olmadan silinir (dev-only ortam;
+   web+mobil zaten Account akışında).
+4. **Minimal kapsam:** Kullanıcılar ekranının "D" rozetli eksik account-axis admin uçları
+   (SendPasswordReset, AdminUnlock ucu, Suspend, RevokeSessions, rol atama, security GET)
+   bu göçe **dahil değil** — ayrı iş.
+5. **Davet UX borcu dahil:** `InvitationAcceptPage` accept hatasının ekranda gösterimi
+   (onError → görünür TR mesaj) Faz 3'te yapılır ([[project-invite-accept-error-debt]] kapanır).
+6. **Faz başına branch + PR**; her faz sonunda Chrome E2E.
+7. **Yaklaşım A:** her faz kendi legacy'sini aynı fazda siler (repoint + sil birlikte);
+   hiçbir fazda çift yol yaşamaz.
+
+## 2. Hedef mimari ve değişmezler
+
+Tek kimlik modeli: `Person` (kişi/PII) + `Account` (login/parola/kilit) + `Profile`
+(TPH rol verisi) + `RoleAssignment` (sezonsal rol). ADR-001 madde 3'teki "giriş kimliği"
+rolü tamamen `Account`'ta.
+
+**Değişmezler:**
+- `/auth/account/*` uç sözleşmeleri değişmez (web+mobil tüketiyor).
+- Kullanıcılar ekranı okuma DTO'ları (`UserListDto`/`UserDetailDto`/`UserStatsDto`) değişmez; `{id}` = `Account.Id`.
+- `Person.LinkedAccountId` her yerde **gerçek `Account.Id`** (bugün davet yolu legacy
+  `User.Id` yazıyor — tutarsızlık kapanır).
+- Tenant izolasyonu, TR-auth kuralları (uniform 401, TCKN reddi, timing-safe verify) aynen.
+
+**Kilit model kararı (onaylı):** **"Account yalnız parola doğduğunda doğar."**
+Person (+ Profile + RoleAssignment) davet/oluşturma anında; `Account` yalnız davet
+kabulünde (kullanıcı parolasını belirlediğinde) yaratılır. Parolasız/kilitli yarı-canlı
+Account hiç var olmaz. *(Planlama notu: `StudentAccountProvisioner`'ın eager-Account
+davranışıyla çelişki planlamada netleştirilecek — bkz. §6.)*
+
+## 3. Fazlar
+
+Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review → PR → merge.
+
+### Faz 0 — Taban (web + db)
+- `identity-invite-accept-route` (`ca498d2`, `/invite/:token` route fix) master'a merge.
+- Dev DB reseed doğrulaması (`ef database drop` + `update` + run) + Chrome smoke login.
+
+### Faz 1 — Login/Refresh (api + web + mobile)
+- **API sil:** `POST /auth/login|refresh|revoke` uçları; `LoginCommandHandler`,
+  `RefreshTokenCommandHandler`, `RevokeTokenCommand(Handler)`; `IJwtTokenService` + impl;
+  `IRefreshTokenStore` (InMemory + DB; DB tablosu varsa drop migration bu fazda);
+  `RefreshTokenCookie`. `PermissionReader.cs:62-67` legacy `permissions` claim fallback'i.
+- **Web:** `refreshTokenManager.ts` legacy `/auth/refresh` fallback dalı silinir;
+  `httpClient.ts` public-path listesinden legacy yollar çıkar.
+- **Mobil:** `client.ts` legacy refresh fallback silinir; `auth.api.ts` cold-start
+  kurtarması `/auth/account/refresh`'e **repoint** (aktif yol — silinmez).
+- **Sıra:** istemci repoint + uç silme aynı fazda; api PR'ı ile web+mobil PR'ı birlikte merge edilir.
+
+### Faz 2 — Parola (api)
+- `POST /auth/reset-password|confirm-reset` uçları + `ResetPasswordCommand`,
+  `ConfirmPasswordResetCommand`, `ChangePasswordCommand` (controller'a bağlı olmayan ölü
+  handler) + validator/test silinir. Account eşleri (`account/forgot|reset|change-password`) zaten canlı.
+- Ön kontrol: legacy parola uçlarını çağıran istemci kodu sıfır (grep ile teyit).
+
+### Faz 3 — Davet + kullanıcı oluşturma (api + web)
+- `UserCreationService` → **`PersonCreationService`** semantiği: admin "Yeni Kullanıcı" =
+  `Person` + uygun `Profile` + `RoleAssignment` + davet. `User.Create` yolu silinir.
+- `InvitationToken.PreCreatedUserId` → **`PersonId`** (rename migration): davet doğrudan
+  kişiye bağlanır; Faz 1 okuma göçünün "bellek-içi e-posta korelasyonu" zayıflığı da kapanır.
+- İki `AcceptInvitation` zinciri (**Modules/Users** — `UserInvitationsController` ve
+  **Modules/Identity** — `PublicInvitationsController`) **tek handler'da birleşir**:
+  accept → `Account.Create(parola)` → `person.LinkAccount(account.Id)` → `RoleAssignment`
+  gerçek Account.Id ile. `InvitationAccountProvisioner` `StudentAccountProvisioner`
+  desenine çekilir ya da ortak provisioner'a birleşir (planlamada koda bakılıp karar).
+- `BulkCreateInvitation`, `GetInvitationPreview`, `GetExpiredInvitation`,
+  `RequestInvitationRefresh`, `SendInvitationNotificationJob` yeni semantiğe repoint.
+- **Web:** `InvitationAcceptPage` accept `onError` → görünür TR hata (409 "hesap zaten
+  var" + genel hata; toast/inline).
+
+### Faz 4 — CRUD/okuma (api)
+- Alan sahipliği: ad/e-posta/telefon → `Person`; aktiflik/kilit → `Account`; yaşam
+  döngüsü → `Person.LifecycleState`.
+- `UpdateUser` → Person (+ gerekirse Account identifier); `DeactivateUser` →
+  `Account.Deactivate`; `SoftDeleteUser` → Person lifecycle + Account deaktivasyon;
+  `GetUserProfile` → `Account`⋈`Person` projeksiyonu. DTO sözleşmeleri korunur.
+- `GetSchoolSettingsQueryHandler.cs:98` UpdatedBy ad çözümü → `Persons`.
+- Not: `GetUserActivity` handler'ı mevcut değil (2026-07-02 keşfiyle doğrulandı) — kapsam dışı.
+
+### Faz 5 — Emeklilik (api + docs)
+- `User.cs`, `UserConfiguration`, `DbSet<User>` (`IApplicationDbContext` + `OksisDbContext`),
+  kalan tip referansları, ilgili unit testler silinir/taşınır.
+- `[identity].[users]` tablosunu düşüren final migration.
+- Solution-genelinde legacy tip grep'i = 0 doğrulaması + tüm auth akışları smoke E2E.
+- Docs: OQ-identity-001 kapatılır, ADR-001 durumu "Uygulandı" + Aşama 2 sapma notu,
+  `identity/completion_status.md` güncellenir (sapma kaydı dahil), memory güncellenir.
+
+## 4. Veri ve şema
+
+- Migration'lar şema değiştirir, veri taşımaz: Faz 1 (legacy refresh token tablosu varsa
+  drop), Faz 3 (`pre_created_user_id` → `person_id` rename), Faz 5 (`users` drop).
+- Stale `LinkedAccountId` (legacy User.Id) değerleri reseed ile yok olur.
+- Prod'da auto-migrate yok (mevcut kural); tüm migration'lar `--idempotent` script üretilebilir.
+
+## 5. Test ve geri dönüş
+
+- **TDD + subagent-driven:** her repoint önce test; ~13 legacy-User test dosyası kendi
+  fazında Account⋈Person'a yeniden yazılır ya da handler'la birlikte silinir. Her faz
+  `dotnet test` / `vitest` / mobil `typecheck+jest` yeşil olmadan PR'a gitmez.
+- **Chrome E2E (faz sonu, canlı dev):**
+  - Faz 0-1: login → korumalı sayfa → 401 → sessiz refresh → logout.
+  - Faz 2: forgot → token → reset → yeni parolayla login; change-password.
+  - Faz 3: "Yeni Kullanıcı"/davet → `/invite/:token` sihirbazı → accept → yeni hesapla
+    login; **hata senaryosu:** aynı daveti ikinci kez accept → ekranda TR hata.
+  - Faz 4: Kullanıcılar ekranı güncelle/pasife al/soft-delete + profil.
+  - Faz 5: tüm auth akışları smoke.
+- **Geri dönüş:** faz-başına PR → tek revert; dev DB her an drop+reseed.
+- **Riskli noktalar → panzehir:** mobil cold-start repoint (jest + manuel akış); accept
+  birleşimi (entegrasyon testi: LinkedAccountId = gerçek Account.Id + RoleAssignment
+  doğru); PermissionReader fallback kaldırımı (reseed sonrası eski token kalmaz, E2E kanıtlar).
+- Süreç: her faz PR'ı öncesi ayrı review; fix'lerde onaysız commit yok; OKSİS commit formatı.
+
+## 6. Planlamada netleşecekler (tasarımı değiştirmez)
+
+1. `StudentAccountProvisioner` eager-Account davranışı ile "Account accept anında doğar"
+   kararının çelişip çelişmediği; gerekiyorsa ortak provisioner tasarımı.
+2. Legacy `IRefreshTokenStore`'un DB tablosu var mı (varsa Faz 1 drop migration'ı).
+3. `SendInvitationNotificationJob` repoint'inin Faz 3'te mi Faz 4'te mi yapılacağı
+   (davet semantiği Faz 3'te değiştiğinden büyük olasılıkla Faz 3).
+4. İki AcceptInvitation zincirinin tekilleştirmede hangi controller ucunun kalacağı
+   (public `/invite` sözleşmesi korunur).
+
+## 7. Keşif kanıtları (2026-07-02 doğrulaması)
+
+- Legacy uçlar: `AuthController.cs` — login:53, refresh:118, revoke:134, reset-password:148,
+  confirm-reset:157; hepsi `db.Users` okuyan handler'lara gidiyor (revoke hariç — yalnız
+  `IRefreshTokenStore`).
+- `InvitationAccountProvisioner.cs:40-46` — `User.Create` + `db.Users.Add`; dönen
+  "AccountId" aslında legacy User.Id → `AcceptInvitationCommandHandler` (Users):132
+  `person.LinkAccount(legacy User.Id)`, :137 `RoleAssignment.Create(..., legacy User.Id)`.
+- İkinci legacy accept: `Modules/Identity/Commands/AcceptInvitation/...:94-108`
+  (`PublicInvitationsController:76`).
+- `UserCreationService.cs:57-66` — `User.Create` + `db.Users.Add` (admin `POST /users`).
+- `InvitationToken.PreCreatedUserId` (`InvitationToken.cs:20`) — açık FK yok, gevşek Guid;
+  set eden: `BulkCreateInvitationCommandHandler.cs:73`.
+- İstemci fallback'leri: web `refreshTokenManager.ts:56`, mobil `client.ts:94`,
+  mobil cold-start `auth.api.ts:22`.
+- Identity dışı `db.Users`: `GetSchoolSettingsQueryHandler.cs:98`,
+  `SendInvitationNotificationJob.cs:91`; tip refs: `IApplicationDbContext.cs:46`,
+  `IJwtTokenService.cs:7`.
+- `PermissionReader.cs:62-67` — legacy `permissions` claim fallback.
