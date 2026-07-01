@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `████████▓░` %86   ·   Status: in-progress (Faz 3B canlı — yenileme+rollover köprüsü; AssignClass/Promote UI + belgeler bekliyor)   ·   Güncel: 2026-07-01
+**İlerleme:** `████████▓░` %86   ·   Status: in-progress (Faz 3B **master'a merge edildi** — yenileme+rollover köprüsü canlı; AssignClass/Promote UI + belgeler + import bekliyor)   ·   Güncel: 2026-07-01
 
 > 2026-07-01 (Faz 3B — Yenileme + Rollover Köprüsü): **Faz 3B tamamlandı — `RenewEnrollmentCommand` (Renewing→`Type=Renewal/Status=Draft` taslak) + `EnrollmentRenewedEvent` (veli bildirimi, sınıfsız) + REST `POST /enrollments:renew` (`students.renew`) + `ListRenewalCandidates` `classRoomId?` filtresi.** BE: `oksis-api`, branch `student-faz3b`. Köprü tetik noktası `academic-years` modülündeki `PromoteStudents` E6.3 gating'i (bkz. o modülün completion_status'u); bu modül yalnız taslak açma + event tarafını kapatır. Doküman borcu (§7) kapatıldı: `domain-model.md` `Intent`/`RenewalIntent` naming notu + güncel davranış listesi + `EnrollmentRenewedEvent`; `business-rules.md` BR-students-004; `api-contracts.md` `:renew` + `classRoomId?`. Spec dışı sapmalar bkz. ⚠️ Debt-N2 + legacy-promote-enrollment-boşluğu (academic-years tarafında).
 
