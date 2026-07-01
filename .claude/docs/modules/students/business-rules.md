@@ -84,6 +84,29 @@ imkânsız kılmak gerekti.
 
 ---
 
+### BR-students-004: Yenileme köprüsü — taslak-sürücülü gating, terminal-kademe eleme, idempotency
+
+**Kural:** `RenewEnrollment` (cari aktif sezon → hedef Setup sezon) yalnız `Status==Active` + `Intent==Renewing` kayıtlar için hedef sezonda `Type=Renewal, Status=Draft, ClassRoomId=null` idari taslak açar. `PromoteStudents`'ın terfi köprüsü (E6.3), hedef sezonun `RenewalPeriodOpenedAt` bayrağına göre **koşullu** çalışır — köprü **taslak-sürücülü**dür: tek doğruluk kaynağı enrollment defteridir, roster'ın kendisi değil.
+
+**S2 — Gating (taslak-sürücülü):**
+- Hedef sezonda `RenewalPeriodOpenedAt != null` (dönem AÇIK) → `PromoteStudentsCommandHandler` yalnız hedef sezonda `Type=Renewal, Status=Draft` taslağı olan roster öğrencisini koltuğa yerleştirir; yerleştirirken taslağı `Draft→Active` + `ClassRoomId` (yeni koltuk) olarak aktive eder (`StudentEnrollment.Activate(Guid)`, E1.3 — `ClassRoomStudent` defteri tek doğruluk kaynağı, enrollment mirror'lar). Taslağı **olmayan** roster öğrencisi atlanır (`Skipped`) — koltuk taşınmaz.
+- Hedef sezonda `RenewalPeriodOpenedAt == null` (dönem KAPALI) → **legacy davranış aynen korunur**: tüm roster terfi eder/mezun olur, `StudentEnrollment`'a hiç dokunulmaz. Bu, E6.3'ün "korunur" ibaresiyle birebir — geriye uyumluluk.
+- Mezuniyet/terminal-kademe mantığı (bir üst kademe teklif edilmiyorsa mezun et) her iki modda da **değişmez**.
+
+**Terminal-kademe eleme (RenewEnrollment içinde, `PromoteStudents` ile aynı mekanizma):** `SchoolGradeLevels.IsActive` üzerinden `GradeLevel.DisplayOrder` kümesinde `kaynak.GradeLevel + 1` teklif edilmiyorsa (bir üst kademe yok — öğrenci mezun olacak) aday **atlanır** (`Skipped`), taslak açılmaz.
+
+**İdempotency:** `RenewEnrollment` ikinci kez aynı hedef sezona çağrılırsa, hedef sezonda o `StudentPersonId` için zaten `Type=Renewal` kaydı olan öğrenciler tekrar taslak açmaz (`Skipped`). `PromoteStudents` gated modda da idempotenttir: taslak zaten `Active` ise (ilk çalıştırmada aktive edilmiş) tekrar `Activate` çağrılmaz (guard: yalnız hâlâ `Draft` ise).
+
+**S3 — yalnız Renewing→taslak:** `RenewEnrollment` yalnız `Intent==Renewing` kayıtları işler. `Leaving`/`Undecided`/`null` intent'li kayıtlar **no-op** — otomatik `Withdraw` **yapılmaz** (cari aktif sezon kaydını kapatmak riskli bir otomasyon; admin gerekirse Faz 2B `:withdraw` ile manuel kapatır). `StudentNumber` değişmez (E4.4.2) — taslak yeni numara üretmez, mevcut `StudentProfile.StudentNumber` korunur.
+
+**`EnrollmentRenewedEvent`:** Her taslak için `RenewEnrollment` **anında** (taslak SaveChanges'i ile aynı transaction, Outbox pattern) raise edilir — "yenileme" eylemi taslağın kendisidir, promote/aktivasyon anını beklemez. Veliye taslakta koltuk olmadığından **sınıfsız** bildirim gider (S4, bkz. `domain-model.md` Domain Events).
+
+**Sebep:** Tek doğruluk kaynağı ilkesi (E1.3) korunurken, sezon geçişi (`ActivateSeasonRollover`/`PromoteStudents`) toplanan yenileme niyetiyle **köprülenir** (E6.2/E6.3). Roster'ın kendisini sürücü almak (örn. "hedef sezonda şube var mı" gibi dolaylı sinyaller) çift-kaynak riski taşırdı; taslak enrollment tek gerçek kaynak olarak seçildi.
+
+**Test referansı:** `OpenRenewalPeriodCommandHandlerTests`, `RenewEnrollmentCommandHandlerTests`, `PromoteStudentsCommandHandlerTests` (gating senaryoları), `ActivateSeasonRolloverCommandHandlerTests` (uçtan uca gated promote)
+
+---
+
 ## Sınır Durumlar
 
 | Senaryo | Beklenen Davranış |
@@ -93,6 +116,9 @@ imkânsız kılmak gerekti.
 | `students.manage` izni yok | 403 Forbidden |
 | `person.LifecycleState` ile `enrollment.Status` birbirinden sapmış (eski person uçlarından kaynaklı) | 409 Conflict — iki-eksen koruması devreye girer |
 | `targetSchoolId=null` ile `:transfer-out` | OKSİS dışı nakil — geçerli; `Person.LifecycleState` = Transferred |
+| Hedef sezonda `RenewalPeriodOpenedAt != null` ama öğrencinin yenileme taslağı yok | `PromoteStudents` bu öğrenciyi atlar (`Skipped`); koltuk taşınmaz |
+| `RenewEnrollment` aynı hedef sezona ikinci kez çağrılır | Zaten taslağı olan öğrenciler `Skipped` — yeni taslak açılmaz (idempotent) |
+| `RenewEnrollment` sırasında öğrencinin bir üst kademesi yok (terminal) | `Skipped` — taslak açılmaz (mezuniyet mantığıyla hizalı) |
 
 ---
 
@@ -104,5 +130,6 @@ imkânsız kılmak gerekti.
 | 2026-06-28 | BR-students-001: güncel şube tek doğruluk kaynağı `class_room_students`; `CurrentClassroomId` `StudentClassroomSyncInterceptor` ile ondan türetilen ayna alan oldu (manuel senkron kaldırıldı) | İki-yazım drift'ini yapısal olarak engelleme |
 | 2026-06-30 | BR-students-002: beş lifecycle komutu koordineli iki-eksen (enrollment.Status + Person.LifecycleState) geçiş kuralı; Frozen→terminal kısıtı; ikili eksen koruması; `Person.Transfer(Guid?)` nullable; `AssignmentReason.Withdrawal/TransferOut` eklendi | Faz 2B lifecycle implementasyonu |
 | 2026-06-30 | BR-students-003: Yenileme niyeti yalnız cari sezon aktif kayda set edilir; `null` intent ≠ `Undecided`; KPI tüm kümeden; niyet set bildirim üretmez (event Faz 3B) | Faz 3A yenileme niyeti implementasyonu |
+| 2026-07-01 | BR-students-004: Yenileme köprüsü — `PromoteStudents` E6.3 gating taslak-sürücülü (S2); terminal-kademe eleme; `RenewEnrollment` idempotency; yalnız Renewing→taslak (S3); `EnrollmentRenewedEvent` RenewEnrollment anında | Faz 3B yenileme + rollover köprüsü implementasyonu |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.

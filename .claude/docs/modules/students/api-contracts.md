@@ -43,6 +43,14 @@
 | `GET` | `/api/v1/enrollments/renewal-candidates` | `students.renew` | Yenileme adayları listesi + KPI niyet dağılımı | ✅ FE bağlandı (Faz 3A) |
 | `POST` | `/api/v1/enrollments:set-intent` | `students.renew` | Toplu (veya tekil) yenileme niyeti setleme | ✅ FE bağlandı (Faz 3A) |
 
+### Faz 3B (Canlı, 2026-07-01) · Branch: `student-faz3b`
+
+| Method | Path | Permission | Amaç | FE Durumu |
+|---|---|---|---|---|
+| `POST` | `/api/v1/enrollments:renew` | `students.renew` | Renewing→taslak (`Type=Renewal, Status=Draft`) toplu köprü + `EnrollmentRenewedEvent` | ✅ FE bağlandı (Faz 3B, "Yenilemeyi Başlat") |
+
+> `GET /api/v1/enrollments/renewal-candidates` Faz 3B'de yeni `classRoomId?` (uuid) query param'ı aldı — bkz. aşağıdaki güncellenmiş detay. `POST /api/v1/academic-sessions/{id}/open-renewal-period` (`season.renewal.open`) — academic-sessions modülüne ait, bkz. `academic-years/api-contracts.md`.
+
 ### Faz 3+ / Ertelenen (Henüz Yok)
 
 | Method | Path | Permission | Amaç |
@@ -536,6 +544,7 @@ Tüm lifecycle endpoint'leri için ortak kurallar:
 | `search` | string | hayır | Ad/soyad veya öğrenci numarası — min 2 karakter |
 | `page` | int | hayır | Sayfa no (default 1) |
 | `pageSize` | int | hayır | Sayfa boyutu (default 20) |
+| `classRoomId` | uuid | hayır | **(Faz 3B)** Şube ID'si — sonuç + KPI dağılımı bu şubeye filtrelenir (FE sınıf-bazlı filtre, Faz 3A'daki `gradeLevel` fallback'inin yerini aldı) |
 
 **Response 200 — `RenewalCandidatesResult`:**
 ```json
@@ -615,6 +624,39 @@ Tüm lifecycle endpoint'leri için ortak kurallar:
 **Errors:**
 - `400` — `enrollmentIds` boş veya `intent` geçersiz
 - `403` — `students.renew` izni yok
+
+---
+
+## Detay — Faz 3B Endpoint'leri
+
+### `POST /api/v1/enrollments:renew`
+
+**Permission:** `students.renew`
+
+**Amaç:** Cari **aktif** sezonda `Status==Active` + `Intent==Renewing` olan kayıtlar için hedef (Setup) sezonda `Type=Renewal, Status=Draft, ClassRoomId=null` idari taslak açar (E6.2/E8) ve her taslak için `EnrollmentRenewedEvent` raise eder (veli bildirimi — sınıfsız, bkz. `domain-model.md` Domain Events).
+
+**Request body:**
+```json
+{ "targetSessionId": "3fa85f64-5717-4562-b3fc-2c963f66afa6" }
+```
+- `targetSessionId` — required, `Guid`; hedef sezon `Status==Setup` olmalı (değilse 409). Hedef sezonda `RenewalPeriodOpenedAt` ön-koşulu aranmaz — dönem bayrağı yalnız `PromoteStudents` gating'i içindir, `RenewEnrollment` kendi başına idempotent çalışır (bkz. `business-rules.md` BR-students-004).
+
+**Response 200 — `RenewEnrollmentResult`:**
+```json
+{
+  "data": { "created": 34, "skipped": 6 },
+  "errors": null,
+  "correlationId": "..."
+}
+```
+
+> **Eleme (`skipped`):** (a) hedef sezonda öğrenci için zaten `Type=Renewal` kaydı varsa — idempotent, ikinci çağrı yeni taslak açmaz; (b) öğrencinin bir üst aktif sınıf seviyesi yoksa (terminal kademe — mezun olacak). `StudentNumber` değişmez (E4.4.2); `EnrollmentDate` = komutun çalıştığı gün (`clock.Today`).
+
+**Errors:**
+- `400` — `targetSessionId` boş
+- `403` — `students.renew` izni yok veya tenant claim eksik
+- `404` — cari aktif sezon yok veya `targetSessionId` bulunamadı
+- `409` — hedef sezon `Setup` değil (`students.errors.renewal-target-not-setup`)
 
 ---
 

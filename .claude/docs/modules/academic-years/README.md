@@ -135,15 +135,15 @@ Karar kullanıcıya bırakılmıştır.
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-06-22
+- **Last Updated:** 2026-07-01 (Faz 3B: `RenewalPeriodOpenedAt` bayrağı + `PromoteStudents` E6.3 gating — BR-AS-016 eklendi)
 - **Files:**
   - [x] README.md
   - [x] domain-model.md
-  - [x] api-contracts.md
+  - [x] api-contracts.md (Faz 3B: `open-renewal-period` + liste DTO `renewalPeriodOpenedAt` eklendi)
   - [x] database-schema.md
   - [x] permissions.md
   - [x] notifications.md
   - [x] ui-flows.md
-  - [x] business-rules.md
+  - [x] business-rules.md (BR-AS-016 eklendi, BR-AS-015 genişletildi)
   - [x] open-questions.md
   - [x] completion_status.md

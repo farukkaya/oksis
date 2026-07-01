@@ -18,28 +18,42 @@
 |---|---|---|---|
 | `Id` | `Guid` | Primary key | Otomatik |
 | `SchoolId` | `Guid` | Tenant | Zorunlu, immutable |
-| `StudentId` | `Guid` | FK → Persons (Person entity) | Zorunlu, immutable |
+| `StudentPersonId` | `Guid` | FK → Persons (Person entity) | Zorunlu, immutable |
 | `AcademicSessionId` | `Guid` | FK → academic_sessions | Zorunlu, immutable |
+| `GradeLevel` | `int` | Kademe numarası (denormalize — `GradeLevel.DisplayOrder` ile aynı sayı uzayı, FK değil) | Zorunlu |
 | `Type` | `EnrollmentType` | Kayıt türü (New / TransferIn / Renewal) | Zorunlu |
 | `Status` | `EnrollmentStatus` | Durum makinesi alanı | Zorunlu, başlangıç Draft |
 | `ClassRoomId` | `Guid?` | Atandığı şube FK → class_rooms | Nullable |
-| `StudentNumber` | `string` | Öğrenci no (`{yıl}{5 hane}`, bir kez üretilir) | Nullable — kayıt sırasında atanır, mezuniyete kadar sabit (E2.3) |
-| `Intent` | `string?` | Başvuru/kabul notu | Nullable, maks 500 karakter |
+| `Intent` | `RenewalIntent?` | Yenileme niyeti (`Renewing`/`Undecided`/`Leaving`) — bkz. aşağıdaki naming notu | Nullable; `SetRenewalIntent(RenewalIntent)` ile set edilir |
 | `PreviousSchool` | `string?` | Nakil kayıtlarda önceki okul adı | Nullable; TransferIn için zorunlu |
 | `EnrollmentDate` | `DateOnly` | Kayıt tarihi | Zorunlu |
+
+> **`Intent` naming notu (Faz 3B doküman borcu kapatıldı, 2026-07-01):** Bu dosyanın önceki sürümü `Intent`'i `string?` tipli bir "başvuru/kabul notu" alanı olarak tanımlıyordu. **Kod gerçeği farklı:** `StudentEnrollment.Intent` alanı, entity'nin ilk implementasyonundan (Faz 2B, 2026-06-29) beri `RenewalIntent?` (yenileme niyeti enum'u) tipindedir; bu entity üzerinde ayrı bir string "başvuru notu" alanı **hiç var olmadı** — `EnrollStudentCommand`'da da böyle bir parametre yok (bkz. `api-contracts.md` `students:enroll` örneğindeki `"intent"` alanı da bu yüzden bayat/kod dışı; ayrı bir düzeltme gerektirir, bu görevin kapsamı dışıdır). Kısacası: **tek `Intent` alanı var, tipi `RenewalIntent?`, anlamı yenileme niyeti** — çakışan iki ayrı kavram yoktur, önceki doküman satırı yanlıştı.
+>
+> `StudentNumber` bu entity'de **yoktur** — öğrenci numarası `Oksis.Domain.Modules.Users.Entities.StudentProfile.StudentNumber` üzerinde tutulur (Users modülü); `RenewEnrollment` taslak açarken numaraya dokunmaz (E4.4.2).
 
 **Invariants:**
 
 - `PreviousSchool` → `EnrollmentType.TransferIn` olduğunda zorunludur.
-- `StudentNumber` bir kez set edildikten sonra değiştirilemez (immutable after assignment).
-- `Status` sadece izin verilen geçişler üzerinden ilerleyebilir (Draft→Active en temel; Faz 2'de diğer geçişler).
+- `Status` sadece izin verilen geçişler üzerinden ilerleyebilir (bkz. `EnrollmentStatus` tablosu — tam durum makinesi Faz 2B ile canlı).
 - Aynı Student × AcademicSession çifti için yalnızca bir aktif kayıt olabilir (UX index).
+- `Intent` yalnız `Status==Active` kayıtta set edilebilir (bkz. `business-rules.md` BR-students-003).
 
 **Davranışlar (method'lar):**
 
-- `Create(...)` — Static factory; Draft status ile başlar, `StudentEnrolledEvent` raise eder.
-- `Activate()` — Draft → Active (E2.5; post-commit event işlendikten sonra çağrılabilir).
-- Faz 2: `Freeze()`, `Withdraw()`, `TransferOut()`, `Graduate()`, `Archive()` — henüz yok.
+- `Create(...)` — Static factory; Draft status ile başlar (`Type=New/TransferIn/Renewal`), `RaiseEnrolled(...)` ile event dışarıdan raise edilir.
+- `Activate()` — Draft → Active, koltuk değişmez (E2.5; post-commit event işlendikten sonra çağrılabilir).
+- `Activate(Guid classRoomId)` — **(Faz 3B)** Yenileme taslağını (`Type=Renewal`, `ClassRoomId=null`) bir şubeye yerleştirerek aktive eder: Draft → Active + `ClassRoomId` set. `PromoteStudents` E6.3 gating tarafından kullanılır (E1.3 — `ClassRoomStudent` defteri tek doğruluk kaynağı, bu çağrı onu mirror'lar).
+- `Freeze()` — Active → Frozen (Faz 2B).
+- `Resume()` — Frozen → Active (Faz 2B).
+- `Withdraw()` — Active → Withdrawn (Faz 2B).
+- `TransferOut()` — Active → TransferredOut (Faz 2B).
+- `Graduate()` — Active → Graduated (Faz 2B).
+- `Archive()` — Graduated/Withdrawn/TransferredOut → Archived (Faz 2B; UI/uç yok — Debt, bkz. `completion_status.md`).
+- `SetClassRoom(Guid? classRoomId)` — `ClassRoomId`'yi doğrudan set eder (Faz 2B lifecycle handler'ları tarafından kullanılır).
+- `SetRenewalIntent(RenewalIntent intent)` — **(Faz 3A)** `Intent` alanını set eder; guard uygulama katmanında (yalnız `Status==Active` — bkz. BR-students-003).
+- `RaiseEnrolled(StudentEnrolledEvent e)` — `AggregateRoot.Raise` protected olduğundan event raise etmeyi dışarı açan köprü metot (`EnrollStudentCommand` orkestrasyonu için).
+- `RaiseRenewed(EnrollmentRenewedEvent e)` — **(Faz 3B)** `RenewEnrollment` için event raise köprüsü; `SourceEnrollmentId`/`GuardianPersonIds` entity tarafından çözülemediğinden uygulama katmanı sağlar.
 
 ---
 
@@ -134,10 +148,14 @@
 | Event | Tetiklenme Anı | Payload |
 |---|---|---|
 | `StudentEnrolledEvent` | `StudentEnrollment.Create(...)` sonrası (`SaveChanges` öncesi — Outbox pattern) | `StudentId`, `EnrollmentId`, `SchoolId`, `ClassRoomId`, `GuardianChannel`, `GuardianEmails[]` (öğrenci hesabı + geçici şifre payload alanı Faz 1B'de eklenecek — E2.6/E2.7) |
+| `EnrollmentRenewedEvent` **(Faz 3B)** | `RenewEnrollmentCommand` içinde, her yenileme taslağı (`Type=Renewal, Status=Draft`) oluşturulduğunda `RaiseRenewed(...)` ile (`SaveChanges` öncesi — Outbox pattern) | `EnrollmentId`, `SchoolId`, `StudentPersonId`, `AcademicSessionId` (hedef Setup sezon), `SourceEnrollmentId` (cari sezondaki kaynak kayıt), `GuardianPersonIds: IReadOnlyList<Guid>` |
 
 > `StudentEnrolledEventHandler` (post-commit, `IPostCommitDispatcher`):
 > 1. Veli(ler)e davet gönderir (`InvitationCreationHelper`, kanal event'ten gelir). — Faz 1A
 > 2. (Faz 1B) Öğrenci için hesap açar (`Account.Create`, `requirePasswordChange=true`; kullanıcı adı = öğrenci no; `person.LinkAccount`). E2.6 (küçük-kademe yalnız veli) + E2.7 (kullanıcı-adı = öğrenci-no giriş yolu) gereği ertelendi.
+>
+> `EnrollmentRenewedEventHandler` **(Faz 3B)** — `INotificationHandler<DomainEventNotification<EnrollmentRenewedEvent>>` (Hangfire kuyruk üzerinden, senkron iş yapmaz — E10): `GuardianPersonIds` boşsa no-op; değilse `INotificationRecipientResolver.ResolveGuardianAccountsAsync` ile veli hesapları çözülür, `RenewalNotificationContent.Renewed()` ile başlık/gövde üretilir (sınıf bilgisi YOK — taslakta koltuk yok, S4) ve `INotificationEnqueuer.Enqueue(...)` ile in-app bildirim kuyruklanır (`NotificationKind.EnrollmentRenewed`). Bildirim metni sabit Türkçe — bkz. `completion_status.md` ⚠️ Spec Dışına Çıkılanlar (Debt-N2).
+>
 > Event'lerin bildirim akışları için bkz. `notifications.md`.
 
 ---

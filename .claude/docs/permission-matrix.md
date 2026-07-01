@@ -143,6 +143,7 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 |---|---|---|---|---|---|---|---|
 | `academic-calendar.manage` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Akademik Takvim yönetim aksiyonları (etkinlik ekle/dışa aktar/sezon ekseni). Ekran süperadmin hariç TÜM rollerde görünür ama salt-okunur; bu izin yalnız yönetimi açar. SchoolStaff okul ayarına göre kısıtlanabilir. 2026-06-09 eklendi. -->
 | `season.archive.view` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- switch-season ile geçmiş/arşiv sezona salt-okunur geçiş (B2). Setup sezona geçiş `season.update` ister; current sezon izinsiz. Yalnız SuperAdmin+SchoolAdmin seed (ACADEMIC_SESSIONS/ARCHIVE_VIEW). 2026-06-22 eklendi. -->
+| `season.renewal.open` | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | <!-- Sezonun yenileme (rollover köprüsü) dönemini aç — POST /academic-sessions/{id}/open-renewal-period. YALNIZ Setup statüde, idempotent. Faz 3B (öğrenci kayıt yenileme köprüsü) yeni izin — DEFAULT-DENY, hiçbir role seed'de verilmedi (bilinçli en-az-yetki kararı, S5). Backend seed: PermissionSeedData.cs. 2026-07-01 eklendi. -->
 
 ### Classes / Timetable
 

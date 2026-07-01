@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `████████░░` %82   ·   Status: in-progress (Faz 3A canlı; Faz 3B + AssignClass/Promote + belgeler bekliyor)   ·   Güncel: 2026-06-30
+**İlerleme:** `████████▓░` %86   ·   Status: in-progress (Faz 3B canlı — yenileme+rollover köprüsü; AssignClass/Promote UI + belgeler bekliyor)   ·   Güncel: 2026-07-01
+
+> 2026-07-01 (Faz 3B — Yenileme + Rollover Köprüsü): **Faz 3B tamamlandı — `RenewEnrollmentCommand` (Renewing→`Type=Renewal/Status=Draft` taslak) + `EnrollmentRenewedEvent` (veli bildirimi, sınıfsız) + REST `POST /enrollments:renew` (`students.renew`) + `ListRenewalCandidates` `classRoomId?` filtresi.** BE: `oksis-api`, branch `student-faz3b`. Köprü tetik noktası `academic-years` modülündeki `PromoteStudents` E6.3 gating'i (bkz. o modülün completion_status'u); bu modül yalnız taslak açma + event tarafını kapatır. Doküman borcu (§7) kapatıldı: `domain-model.md` `Intent`/`RenewalIntent` naming notu + güncel davranış listesi + `EnrollmentRenewedEvent`; `business-rules.md` BR-students-004; `api-contracts.md` `:renew` + `classRoomId?`. Spec dışı sapmalar bkz. ⚠️ Debt-N2 + legacy-promote-enrollment-boşluğu (academic-years tarafında).
 
 > 2026-06-30 (Faz 3A — Yenileme Niyeti Toplama): **Faz 3A tamamlandı — `ListRenewalCandidates` query + `BulkSetRenewalIntent` komut + `EnrollmentsController` (2 REST ucu, `students.renew`) + FE `reenroll.jsx` birebir port (RenewalPage + 5 parça: KPI kart grubu, intent segment kontrolü, toplu aksiyon çubuğu, sezon köprüsü, null/Undecided kavram ayrımı) + i18n (tr+en) + route + nav bağlama.** BE: `oksis-api`, branch `student-faz3a` — 8/8 unit test. FE: `oksis-web`, branch `student-faz3a` — students suite 110/110. Uçlar: `GET /api/v1/enrollments/renewal-candidates` (KPI dahil `RenewalCandidatesResult`) + `POST /api/v1/enrollments:set-intent` (bulk, tek-id ile tekil de karşılar). Spec dışı sapmalar bkz. ⚠️ D2/D3/E6.3/FE-sınıf filtresi.
 
@@ -77,13 +79,22 @@
   - Domain: `StudentEnrollment.SetRenewalIntent(RenewalIntent)` — guard: yalnız `Status==Active`.
   - FE: `RenewalPage` + KPI kart grubu + intent segment kontrolü (filtre) + toplu aksiyon çubuğu + sezon köprüsü + null/Undecided kavram ayrımı; `reenroll.jsx` handoff birebir port; `students.renew` izin kapısı; i18n tr+en; `/admin/students/renewal` route + nav bağlama.
   - Test: BE 8/8 unit test; FE students suite 110/110; tsc+build temiz.
+- **Faz 3B — Yenileme + Rollover Köprüsü (2026-07-01, `oksis-api:student-faz3b` + `oksis-web:student-faz3b`):**
+  - BE: `RenewEnrollmentCommand(TargetSessionId)` — cari aktif sezonda `Status==Active`+`Intent==Renewing` kayıtlar için hedef Setup sezonda `Type=Renewal, Status=Draft, ClassRoomId=null, GradeLevel=kaynak+1` taslak açar; eleme: idempotent (taslak zaten varsa atla) + terminal-kademe (bir üst aktif kademe yoksa atla); `StudentNumber` değişmez; `EnrollmentDate=clock.Today`.
+  - Domain: `EnrollmentRenewedEvent(EnrollmentId, SchoolId, StudentPersonId, AcademicSessionId, SourceEnrollmentId, GuardianPersonIds)` — her taslak için `RenewEnrollment` anında raise; `StudentEnrollment.Activate(Guid classRoomId)` (Renewal taslağını koltukla aktive eder, `PromoteStudents` gating tarafından kullanılır) + `RaiseRenewed(...)` köprü metodu.
+  - `EnrollmentRenewedEventHandler` — velilere sınıfsız "kaydınız yenilendi" bildirimi (in-app, Hangfire kuyruk üzerinden); metin sabit Türkçe (bkz. ⚠️ Debt-N2).
+  - REST: `POST /api/v1/enrollments:renew` (`students.renew`) — `{ created, skipped }` döner.
+  - `ListRenewalCandidatesQuery` yeni `classRoomId?` param'ı (KPI + sonuç bu şubeye filtrelenir).
+  - Köprünün terfi tarafı (`PromoteStudents` E6.3 gating — dönem açıksa yalnız taslaklı öğrenci terfi eder + taslak `Draft→Active`) `academic-years` modülünde; bkz. o modülün `business-rules.md` BR-AS-016 + `completion_status.md`.
+  - FE: "Yenilemeyi Başlat" etkin (`OpenRenewalPeriod` → `RenewEnrollment` sıralı mutation, tek buton); gerçek hedef-sezon + `RenewalPeriodOpenedAt` durumu; sınıf-bazlı (`classRoomId`) gerçek filtre; `season.renewal.open`+`students.renew` izin kapısı; `.scr-*` global CSS sistemi (Chrome E2E doğrulanmış).
+  - Test: BE unit+integration yeşil (OpenRenewalPeriod, RenewEnrollment, PromoteStudents gating, reopen/cancel guard, ActivateSeasonRollover uçtan uca); FE vitest yeşil; `dotnet build`/`format` + `npm run build`/`vitest` temiz.
 
 ---
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
 - **Faz 2 FE (devam):** AssignClass / PromoteStudents mock+D → gerçek; Belgeler sekmesi aktifleşmesi; Hesap sekmesi bağlantısı. (Lifecycle satır aksiyonları Faz 2B ile tamamlandı.)
-- **Faz 3B+:** Sezon geçiş gating (`ActivateSeasonRollover`/`PromoteStudents` kapısı); `EnrollmentRenewedEvent` domain event + bildirim; "Yenilemeyi Başlat" / "Dışa Aktar" UI; class-bazlı filtre + hedef-sezon adı bağlama.
+- **Faz 3B+:** "Dışa Aktar" (Export) UI Faz 3B'de bilinçli ertelendi (pasif `notReadyHint` kalır, S6) — bağımsız iş, ayrı faza.
 - **Faz 3+:** `students.import` toplu aktarım, document upload UI.
 - **Doküman içeriği:** `domain-model.md`, `api-contracts.md`, `database-schema.md` Faz 1A ile, `business-rules.md` (BR-001+BR-002) Faz 2A/2B ile dolduruldu; `notifications.md`, `ui-flows.md`, `open-questions.md` hâlâ iskelet/TBD.
 - **Mobile:** öğrenci rolü ekranları (yok).
@@ -93,6 +104,11 @@
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
+- **2026-07-01 — [Faz 3B / Debt-N2] `EnrollmentRenewedEvent` bildirim metni sabit Türkçe** (`RenewalNotificationContent.Renewed()`), mevcut kardeş event handler'ların (`DutyRosterPublishedNotificationHandler` vb.) desenine uyularak. Sebep: bildirim-i18n altyapısı (çok-dilli şablon sistemi) henüz yok — genel bir platform işi, Faz 3B kapsamı değil. Onay: kullanıcı. Etki: düşük — UI dili zaten Türkçe (MVP tek-dil okul).
+- **2026-07-01 — [Faz 3B] Legacy (dönem KAPALI) `PromoteStudents` yolu hâlâ yeni-sezon `StudentEnrollment` oluşturmaz.** Bu, Faz 3B öncesinden gelen bir boşluktur (rollover'ın enrollment kaydı yönetmemesi); Faz 3B kapsamı **değildi** — yalnız gated (dönem AÇIK) yol enrollment yönetir/aktive eder. Onay: tasarım dokümanı §5.1 (bağlayıcı). Detay: `academic-years/business-rules.md` BR-AS-016 + `completion_status.md`.
+- **2026-07-01 — [Faz 3B] `RenewEnrollment` taslağının `EnrollmentDate`'i komutun çalıştığı gün (`clock.Today`).** Kaynak enrollment'ın orijinal kayıt tarihi değil, yenileme işleminin (taslak açılma) tarihi kullanılır. Onay: tasarım dokümanı §4.1 (kararlı, sapma değil — burada netlik için not düşüldü).
+- **2026-07-01 — [Faz 3B] `AcademicSessionDetailDto` (`GET /academic-sessions/{id}`) `renewalPeriodOpenedAt` döndürmüyor** — yalnız **liste** DTO'sunda (`AcademicSessionDto`) var. FE 3B akışı liste DTO'sunu kullandığından işlevsel engel yok; ama parite boşluğu açık kaldı, ileride detay ekranı bu alana ihtiyaç duyarsa kapatılmalı. Onay: kullanıcı (kapsam dışına not düşme).
+- **2026-07-01 — [Task 2, `student-faz3b`] `MasterRoleSeedTests`'te ön-var bir hata düzeltildi** (`assignments.copy-season` / `curriculum-hours.override` istisna listesi). Test-only değişiklik, üretim koduna sıfır etki; commit Faz 3B Task 2 ile birlikte gitti.
 - **2026-06-30 — [Faz 3A / E6.3] docx §5.1 yerine spec E6.3 izlendi (köprü tetik noktası → `ActivateSeasonRollover`/`PromoteStudents` gating, Faz 3B). Sebep: §5.1 sezon-geçiş akışını Faz 3A kapsamına çekiyordu; spec E6.3 bunu ayrı faz olarak tanımlar. Onay: kullanıcı. İmpakt: Faz 3A yalnız niyet toplama; sezon köprüsü tetik Faz 3B'ye Debt.**
 - **2026-06-30 — [Faz 3A / D2] KPI niyet dağılımı (`renewingCount`/`undecidedCount`/`leavingCount`) BE'de `RenewalCandidatesResult` içinde döner (handoff'ta client-side KPI hesabı öngörülmüştü). Sebep: sayfalama doğruluğu — client yalnızca geçerli sayfayı görür; tüm küme KPI için BE hesabı gerekir. Onay: kullanıcı.**
 - **2026-06-30 — [Faz 3A / D3] Tekil `SetRenewalIntent` komutu açılmadı; `BulkSetRenewalIntent` tek-elemanlı id listesiyle tekil güncellemeyi karşılar (tek `:set-intent` endpoint, spec E8 ile uyumlu). Sebep: ayrı tekil endpoint gereksiz — tek-id liste ile aynı sonuç. Onay: kullanıcı.**

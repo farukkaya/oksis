@@ -18,6 +18,7 @@
 | POST | `/api/v1/academic-sessions` | `season.draft.create` | Yeni sezon (Setup) |
 | PUT | `/api/v1/academic-sessions/{id}` | `season.update` | Sezon güncelle (sadece Setup) |
 | POST | `/api/v1/academic-sessions/{id}/activate` | `season.activate` | Sezonu aktive et |
+| POST | `/api/v1/academic-sessions/{id}/open-renewal-period` | `season.renewal.open` | **(Faz 3B)** Sezonun yenileme (rollover köprüsü) dönemini aç — yalnız `Setup`, idempotent |
 | POST | `/api/v1/academic-sessions/{id}/archive` | `season.archive` | Sezonu arşivle (manuel) |
 
 ### Sezon Rollover (Sihirbaz) — yeni (2026-06-09)
@@ -247,6 +248,28 @@ Her `AcademicSessionDto` öğesi için:
 | `archivedAt` | `DateTimeOffset?` | Arşivleme zamanı |
 | `studentCount` | `int` | Sezona kayıtlı distinct öğrenci (ayrılanlar dahil) — 2026-06-09 |
 | `graduateCount` | `int` | `Reason == Graduation` ile kapatılmış distinct atama sayısı — 2026-06-09 |
+| `renewalPeriodOpenedAt` | `DateTimeOffset?` | **(Faz 3B)** Yenileme döneminin açıldığı zaman damgası; yalnız `Setup` sezonlarda set edilebilir (`AcademicSession.OpenRenewalPeriod`). FE "Yenilemeyi Başlat" akışının hedef Setup sezonunu bulmak ve dönemin açık/kapalı olduğunu göstermek için kullanır. **Parite notu:** bu alan yalnız **liste** DTO'sunda (`AcademicSessionDto`) var; `GET /api/v1/academic-sessions/{id}` **detay** DTO'su (`AcademicSessionDetailDto`) henüz `RenewalPeriodOpenedAt` döndürmüyor — açık parite boşluğu, bkz. `completion_status.md` ⚠️ Spec Dışına Çıkılanlar. |
+
+---
+
+### `POST /api/v1/academic-sessions/{id}/open-renewal-period` — Yenileme Dönemini Aç (Faz 3B, 2026-07-01)
+
+**Permission:** `season.renewal.open` (yeni izin, default-deny — hiçbir role seed'de verilmez)
+
+**Amaç:** Hedef Setup sezonda `RenewalPeriodOpenedAt` bayrağını set eder; `students` modülündeki `RenewEnrollment`/`PromoteStudents` köprüsünün önkoşuludur (bkz. `business-rules.md` BR-AS-016).
+
+**Koşul:** `{id}` sezonunun `Status = Setup` olması gerekir. Statü değiştirmez.
+
+**Request body:** yok.
+
+**Davranış:** `AcademicSession.OpenRenewalPeriod(now)` çağrılır — **idempotent**: `RenewalPeriodOpenedAt` zaten doluysa ikinci çağrı no-op (mevcut timestamp korunur, hata yok).
+
+**Response 204:** Body yok.
+
+**Errors:**
+- `403` — `season.renewal.open` izni yok
+- `404` — sezon bulunamadı
+- `409` — sezon `Setup` değil (`InvalidAcademicSessionStateException`)
 
 ---
 

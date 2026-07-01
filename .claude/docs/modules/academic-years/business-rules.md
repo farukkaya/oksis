@@ -287,6 +287,8 @@
 - Geri alma işlemi: Setup şubeleri + sezona bağlı tatiller + sezon soft-delete; bağlı taslaktan `OpenedSessionId` temizlenir; taslak üzerinden sihirbaz devam edilebilir.
 - Şubelerde veri varsa geri alma reddedilir (`reopen-has-data`).
 
+**Guard genişletmesi (Faz 3B, 2026-07-01 — yenileme köprüsü veri-kaybı fix):** `reopen-to-draft` ve `cancel-setup`'ın ortak çekirdeği `SetupSeasonReverter`, şube/görevlendirme kontrolüne ek olarak şunu da kontrol eder — hedef sezonda `RenewalPeriodOpenedAt != null` **veya** `Type=Renewal, Status=Draft` bir enrollment mevcutsa **red (409 `reopen-has-data`)**, şubelerde hiç veri olmasa bile. **Sebep:** yenileme taslakları `ClassRoomId=null` olduğundan şubelerde görünmez — eski guard bu veriyi göremiyordu; toplanmış yenileme dönemi/taslakları sessizce reopen/cancel ile kaybolabiliyordu. Bkz. `students/business-rules.md` BR-students-004.
+
 **Hazır (Setup) sezon varken yeni taslak kısıtlaması:**
 - Bir tenant'ta bağlı Setup sezonu bulunan taslak (`OpenedSessionId != null`) mevcutsa `open-from-draft` çağrısı reddedilir (`draft-already-opened`).
 - UI: "Hazır" (Setup) sezon varken "Yeni Sezon Aç" bir bilgi modalıyla bloklanır; kullanıcı önce mevcut Setup sezonu aktifleştirmeli ya da iptal etmelidir.
@@ -305,6 +307,26 @@
 
 ---
 
+### BR-AS-016 ⭐: Yenileme dönemi bayrağı + terfi köprüsü gating (E6.3, Faz 3B)
+
+**Kural:** `AcademicSession.RenewalPeriodOpenedAt : DateTimeOffset?` — sezonun yenileme (rollover köprüsü) dönemini açıp açmadığını gösteren explicit bayrak. `OpenRenewalPeriod(now)` davranışı yalnız `Status == Setup` iken çağrılabilir (Active/Archived → `InvalidAcademicSessionStateException`); statü değiştirmez, yalnız nullable timestamp set eder (BR-AS-002 tek-yön invariant'ını ihlal etmez). **İdempotent:** `RenewalPeriodOpenedAt != null` ise ikinci çağrı no-op (hata fırlatmaz, mevcut timestamp korunur).
+
+**Komut/uç:** `OpenRenewalPeriodCommand(SessionId)` → `POST /api/v1/academic-sessions/{id}/open-renewal-period`, izin **`season.renewal.open`** (yeni, default-deny — hiçbir role seed'de verilmez; granüler `season.*` taksonomisiyle tutarlı, en-az-yetki: dönem-açma ≠ sezon-aktive).
+
+**E6.3 — `PromoteStudents` gating (spec E6.3 zorunlu):** `PromoteStudentsCommandHandler`, hedef sezonun `RenewalPeriodOpenedAt` bayrağını okuyarak **koşullu** davranır:
+- **Dönem AÇIK** (`!= null`): yalnız hedef sezonda `Type=Renewal, Status=Draft` taslağı olan roster öğrencisi koltuğa yerleştirilir; taslak aynı işlemde `Draft→Active` + `ClassRoomId` (yeni koltuk) olarak aktive edilir (`StudentEnrollment.Activate(Guid)`). Taslağı olmayan roster öğrencisi **atlanır** (`Skipped`) — seat taşınmaz.
+- **Dönem KAPALI** (`== null`): **legacy davranış aynen korunur** — tüm roster terfi eder/mezun olur, `StudentEnrollment`'a hiç dokunulmaz. Bu geriye-uyumluluktur; E6.3'ün "korunur" ibaresiyle birebir.
+- Mezuniyet/terminal-kademe mantığı her iki modda da değişmez.
+- **Tetik noktası köprü içindedir:** `RenewEnrollmentCommand` (students modülü) doğrudan promote **tetiklemez**; gating `PromoteStudentsCommandHandler`'ın kendi içindedir. `ActivateSeasonRollover` orkestratörü (`PromoteStudents(ExcludePassive=true)` çağırır) transparan şekilde gated davranışı miras alır — imza/akış değişmedi.
+
+**Bilinen boşluk (kapsam dışı, Faz 3B'de kapatılmadı):** Dönem KAPALI (legacy) yolda `PromoteStudents` yeni-sezon `StudentEnrollment` **hiç oluşturmaz** — bu Faz 3B öncesinden gelen bir boşluktur, yalnız gated (dönem AÇIK) yol enrollment yönetir. Bkz. `completion_status.md` ⚠️ Spec Dışına Çıkılanlar.
+
+**Sebep:** Faz 3A'da toplanan veli yenileme niyetini (`Renewing`) gerçek bir gelecek-sezon kaydına ve sınıf terfisine köprülemek (E6.2/E6.3); `ClassRoomStudent` defterinin tek doğruluk kaynağı olma ilkesi (E1.3) korunurken sezon geçişinin toplanan taslaklarla senkronize kalması sağlanır.
+
+**Test referansı:** `OpenRenewalPeriodCommandHandlerTests`, `OpenRenewalPeriodCommandValidatorTests`, `PromoteStudentsCommandHandlerTests` (gating senaryoları — dönem açık/kapalı), `ActivateSeasonRolloverCommandHandlerTests` (uçtan uca gated promote)
+
+---
+
 ## Sınır Durumlar
 
 | Senaryo | Beklenen Davranış |
@@ -319,6 +341,9 @@
 | Mezun öğrenci yanlışlıkla bir sonraki sezona atanmaya çalışılıyor | `GraduatedStudentReenrollmentException` — özel akış (Sprint 5+) ile sınıf tekrarı yapılmalı |
 | Onay bekleyen şube üzerinde öğrenci atama denemesi | Engellenir; "Şube önce onaylanmalı" uyarısı |
 | Saklama süresi 0 yıl yapılmaya çalışılıyor | Reddedilir (min 1 yıl) |
+| `OpenRenewalPeriod` Active/Archived sezonda çağrılıyor | 409 Conflict (`InvalidAcademicSessionStateException`) |
+| `OpenRenewalPeriod` zaten açık (`RenewalPeriodOpenedAt != null`) sezonda tekrar çağrılıyor | İdempotent no-op — mevcut timestamp korunur, hata yok |
+| Hedef sezonda `RenewalPeriodOpenedAt != null` veya `Type=Renewal, Status=Draft` enrollment varken `reopen-to-draft`/`cancel-setup` çağrılıyor | 409 `reopen-has-data` (BR-AS-015 genişlemesi) |
 
 ---
 
@@ -332,5 +357,6 @@
 | 2026-05-25 | `ClassRoom.AcademicTermId` kaldırıldı, sadece `AcademicSessionId` | "Tam yıl şube" pratiği — dönem-bağlı olanlar notlar/devamsızlık |
 | 2026-05-25 | `ClassRoom`, `ClassRoomStudent`, `SchoolHoliday` bu modüle dahil edildi | Domain bütünlüğü: şubesiz sezon, sezonsuz şube anlamsız |
 | 2026-06-10 | BR-AS-015 eklendi — `SeasonDraft` yaşam döngüsü + `reopen-to-draft` + `cancel-setup` | Setup sezonu geri alma ve tam iptal akışları netleştirildi |
+| 2026-07-01 | BR-AS-016 eklendi — `RenewalPeriodOpenedAt` bayrağı + `OpenRenewalPeriod` (`season.renewal.open`) + `PromoteStudents` E6.3 gating; BR-AS-015 reopen/cancel guard'ı yenileme dönemi/taslak varlığını da kapsayacak şekilde genişletildi | Faz 3B yenileme + rollover köprüsü implementasyonu |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.
