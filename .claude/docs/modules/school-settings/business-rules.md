@@ -160,7 +160,7 @@ Sprint 1'de sadece ilk 6 satır aktif; devamsızlık ayarları Sprint 2'de `atte
 
 ---
 
-### BR-SS-017 — Öğrenci No prefix/length ayarı opsiyonel, generator tarafından tüketilir (2026-07-01)
+### BR-SS-017 — Öğrenci No prefix/length ayarı opsiyonel, generator tarafından tüketilir (2026-07-01, consent/kilit/preview eklendi)
 
 **Kural:** `SchoolSettings.StudentNumberPrefix : string?` (opsiyonel, önceden de vardı) ve `StudentNumberLength` **artık `int?`** (önceden `int` non-null, default 4) — `null` = default davranış (öneksiz, min 3 hane, 100'den başlar; bkz. `students` modülü BR-students-005). `UpdateAcademicStructure` (`StructureTab`) bu iki alanı düzenletmeye devam eder; validator: `length` null veya 1-10; **`prefix` boşken `length ≤ 9` zorunlu** (prefix set edilmişse 1-10 serbest) — bkz. aşağıdaki paragraf.
 
@@ -168,9 +168,17 @@ Sprint 1'de sadece ilk 6 satır aktif; devamsızlık ayarları Sprint 2'de `atte
 
 **Migration notu:** `StudentNumberLength` kolonu nullable'a çevrilirken **mevcut tüm satırlar `NULL`'a çekildi** — her okul default'a (3 hane/100'den) geçti. Generator zaten tüketmiyordu, bu yüzden **basılı/atanmış eski öğrenci numaraları etkilenmez** (immutability `students` modülünde korunur); yalnız bundan sonra üretilecek numaraları etkiler.
 
-**Uygulama:** `UpdateAcademicStructureCommandHandler` null-akışını korur (`request.StudentNumberLength ?? settings.StudentNumberLength`). Prefixsiz (salt-rakam) durumda `length ≤ 9` **zorunlu** kural olarak validator'da uygulanır (prefix boş + `length ≥ 10` → validasyon hatası); prefix set edilmişse `length` 1-10 serbest. Sebep: login'de telefon-aralığı (10-13 hane) ile çakışmayı üretim ayarı seviyesinde imkânsız kılmak — prefixsiz otomatik-üretilen numaralar hiçbir zaman 10 haneye ulaşamaz.
+**Uygulama (2026-07-01 amendman — önceki not düzeltildi):** `UpdateAcademicStructureCommandHandler` prefix/length'i **`request`'ten DOĞRUDAN atar** — `?? settings.X` coalescing bu iki alan için **KULLANILMAZ** (tek caller `StructureTab` full-PUT gönderir; coalescing "temizlenemiyor" bug'ına yol açıyordu). `null`/boş gönderilirse alan gerçekten **temizlenir** ve üretim varsayılanına (öneksiz, min 3 hane, 100'den başlar) döner; boş/whitespace prefix de `null`'a normalize edilir. Prefixsiz (salt-rakam) durumda `length ≤ 9` **zorunlu** kural olarak validator'da uygulanır (prefix boş + `length ≥ 10` → validasyon hatası); prefix set edilmişse `length` 1-10 serbest, **hiçbir zaman kilitlenmez**. Sebep: login'de telefon-aralığı (10-13 hane) ile çakışmayı üretim ayarı seviyesinde imkânsız kılmak — prefixsiz otomatik-üretilen numaralar hiçbir zaman 10 haneye ulaşamaz.
 
-**Kapsam:** `schools`/`school-settings` yalnız **ayarı** tutar; üretim/doğrulama/login mantığı `students`/`identity` modüllerinde (bkz. o modüllerin `business-rules.md`'si).
+**Prefix-kullanımda-kilit (Option A):** kayıtlı önek dolu **ve** istek onu **değiştiriyor/temizliyorsa**, o öneki taşıyan en az bir `StudentProfile.StudentNumber` varsa (`StartsWith(prefix)`, tenant-scope) → **409 `schools.errors.prefix-in-use`**, kayıt yapılmaz. Yeni önek **eklemek** (kayıtlı boştan doluya) her zaman serbesttir — yalnız kullanımdaki öneği kaldırmak/değiştirmek kilitlenir. `length` hiçbir koşulda kilitlenmez.
+
+**Prefix onay-kapısı (consent gate) — sunucu-tarafı zorunlu:** önek **yeni/farklı bir dolu değere** atanıyorsa (yukarıdaki kilide takılmadıysa) `UpdateAcademicStructureCommand.PrefixConsentAcknowledged : bool` alanı `true` olmalı; değilse **400 `schools.errors.prefix-consent-required`**. Prefix değişmiyorsa, temizleniyorsa veya yalnız `length` değişiyorsa onay **istenmez**. Yalnızca UI kontrolü değil — sunucu tarafında zorunlu (gerçek kanıt; FE ayrıca "Okudum, onaylıyorum" zorunlu checkbox'lı modal gösterir, `StructureTab`).
+
+**Onay audit kaydı ("koz"):** onay-kapısı geçildiğinde handler, aynı transaction'da **`school.student_number_prefix_consents`** tablosuna değişmez (immutable, append-only) bir satır yazar: `SchoolId`, `Prefix` (onaylanan önek), `ConsentedBy` (auth context — idareci), `ConsentedAt` (UTC), `ConsentText` (onaylanan metnin **BE'nin kendi kanonik sabitinden üretilen tam anlık kopyası** — FE'den gelen metne güvenilmez), `ConsentTextVersion` (ör. `"v1"`). Mutator yok; kanıt satırı olarak kalır.
+
+**Canlı önizleme (FE, `StructureTab`):** Prefix/Uzunluk alanlarının altında belirgin bir "Örnek öğrenci no: {preview}" satırı, alanlar değiştikçe **anlık** (generator formülüyle birebir: `{prefix}` + `100`'ün `length ?? 3` haneye sıfır-dolgulu hali) güncellenir. Yalnız FE gösterimi; sunucu davranışını etkilemez.
+
+**Kapsam:** `schools`/`school-settings` yalnız **ayarı** tutar; üretim/doğrulama/login mantığı `students`/`identity` modüllerinde (bkz. o modüllerin `business-rules.md`'si, BR-students-005).
 
 ---
 
@@ -193,3 +201,4 @@ Sprint 1'de sadece ilk 6 satır aktif; devamsızlık ayarları Sprint 2'de `atte
 | Sprint 1 başlangıcı | 9 iş kuralı (BR-SS-001 → BR-SS-009), 21 endpoint, 10 permission |
 | 2026-05-25 | 7 yeni iş kuralı (BR-SS-010 → BR-SS-016), 2 yeni tablo, 5 yeni kolon, 2 yeni permission |
 | 2026-07-01 | BR-SS-017: `StudentNumberLength` nullable oldu (`int?`, null=default); generator artık prefix/length ayarını tüketir (öğrenci-no format mini-spec, `students` modülü) |
+| 2026-07-01 | BR-SS-017 amendman: clear-fix (`?? settings.X` kaldırıldı, prefix/length gerçekten temizlenebilir); prefix-kullanımda-kilit (409 `prefix-in-use`); sunucu-tarafı consent gate (400 `prefix-consent-required`); `school.student_number_prefix_consents` audit tablosu; FE canlı önizleme + onay modalı |

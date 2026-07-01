@@ -171,6 +171,30 @@ CREATE UNIQUE INDEX ux_sgls_school_grade
 
 ---
 
+### `student_number_prefix_consents` (schema `school`) — öğrenci-no önek onay audit'i (2026-07-01)
+
+Öğrenci numarası önekine (`school_settings.student_number_prefix`) yeni/farklı dolu bir değer atanırken idarecinin verdiği onayın **değişmez (append-only)** kanıt satırı (öğrenci-numarası-format mini-spec §11.2/§11.3). `UpdateAcademicStructureCommandHandler` onay-kapısından geçildiğinde aynı transaction'da bir satır yazar; mutator yok.
+
+```sql
+CREATE TABLE [school].[student_number_prefix_consents] (
+    id                     uniqueidentifier  not null  constraint pk_snpc primary key,
+    school_id              uniqueidentifier  not null,
+    prefix                 nvarchar(50)      not null,   -- onaylanan önek
+    consented_by           uniqueidentifier  not null,   -- idareci (auth context)
+    consented_at           datetimeoffset    not null,   -- UTC
+    consent_text           nvarchar(4000)    not null,   -- onaylanan metnin verbatim anlık kopyası (BE kanonik)
+    consent_text_version   nvarchar(20)      not null,   -- ör. "v1"
+    -- audit (created_at/created_by) + soft-delete + row_version (TenantEntity)
+);
+
+CREATE INDEX ix_student_number_prefix_consents_school_id_consented_at
+  ON [school].[student_number_prefix_consents](school_id, consented_at);
+```
+
+> Kayıt asla güncellenmez/silinmez (append-only kanıt); FK yok (öğrenci numarasına değil, karara bağlı). Migration: `20260701133402_20260701_student_number_prefix_consents`.
+
+---
+
 ## Sprint 2'de Eklenecek Tablolar (planlama)
 
 ### `school_exam_type_overrides` (Sprint 2 — sınav ağırlığı override)

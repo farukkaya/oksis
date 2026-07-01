@@ -37,6 +37,12 @@
 > ⚠️ **#6 Q6 (2026-05-28) — payload değişimi:** Tekil `schoolType: "HighSchool"` alanı **kaldırıldı**. Yeni alan: `schoolTypes: ["MiddleSchool", "HighSchool"]` (array, en az 1). Null gönderilirse mevcut değer korunur; boş array (`[]`) reddedilir. Backend `SchoolSettingsDetailDto.schoolTypes` olarak döner.
 >
 > ⚠️ **#6 (2026-07-01, BR-SS-017) — `studentNumberLength` artık `int?` (opsiyonel):** `studentNumberPrefix: string?` (önceden de vardı) + `studentNumberLength: int?` (önceden non-null, default 4) `UpdateAcademicStructure` body'sinde düzenlenebilir. `null` → generator default'u kullanır (öneksiz, min 3 hane, 100'den başlar — bkz. `students/business-rules.md` BR-students-005). Validator: `length` null veya 1-10. Detay: `.claude/specs/ogrenci-numarasi-format-design.md`.
+>
+> ⚠️ **#6 (2026-07-01, BR-SS-017 amendman) — `prefixConsentAcknowledged` yeni request alanı + 2 yeni hata kodu:**
+> - **Request:** `prefixConsentAcknowledged: bool` (default `false`). Yalnız önek **yeni/farklı bir dolu değere** atanırken anlamlıdır; temizleme/length-only/değişmeyen prefix'te dikkate alınmaz.
+> - **409 Conflict `schools.errors.prefix-in-use`:** kayıtlı önek dolu ve istek onu değiştiriyor/temizliyorsa, o öneki taşıyan en az bir öğrenci numarası varsa döner (kayıt yapılmaz). Yeni önek eklemek (boştan doluya) her zaman serbesttir.
+> - **400 Bad Request `schools.errors.prefix-consent-required`:** yeni/farklı dolu önek + `prefixConsentAcknowledged != true` → döner. Sunucu-tarafı zorunlu (yalnız FE kontrolü değil).
+> - Onay geçerliyse aynı transaction'da `school.student_number_prefix_consents` audit satırı yazılır (bkz. `database-schema.md` + `business-rules.md` BR-SS-017). Detay: `.claude/specs/ogrenci-numarasi-format-design.md` §11.
 
 ---
 

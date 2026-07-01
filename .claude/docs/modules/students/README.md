@@ -67,7 +67,7 @@ Bu modül hangi modüllerle konuşur?
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-07-01 (Öğrenci Numarası Format mini-spec: BR-students-005 eklendi — yılsız üretim, okul-yapılandırılabilir format, global benzersizlik, okul-farkında login)
+- **Last Updated:** 2026-07-01 (Öğrenci Numarası Format mini-spec: BR-students-005 eklendi — yılsız üretim, okul-yapılandırılabilir format, global benzersizlik, okul-farkında login; ayrıca çapraz-referans: consent/kilit/preview eklentisi `school-settings` BR-SS-017'de)
 - **Files:**
   - [x] README.md
   - [x] enrollment-needs-analysis.md (kayıt ihtiyaç + altyapı uygunluk analizi, 2026-06-28)
