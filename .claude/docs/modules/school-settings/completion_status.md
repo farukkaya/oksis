@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: **mvp-ready**   ·   Güncel: 2026-06-24 (Faz FE-NEW kapandı: /admin/settings artık handoff'a birebir tek-sayfa ekran, 8/8 sekme backend'e bağlı, eski UI kaldırıldı)
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %100   ·   Status: **mvp-ready**   ·   Güncel: 2026-07-01 (BR-SS-017: `StudentNumberLength` nullable — öğrenci-no format mini-spec ile davranış netleşti; ayrıca bkz. 2026-06-24 Faz FE-NEW kapanışı)
 
 > Temel: Baseline (21 endpoint + 6 tab) **live**. 2026-05-25 ihtiyaç analiziyle açılan
 > 22 issue'luk genişletme **tamamlandı** (API #1–14 + Web #15–22). 2026-05-28 ek
@@ -94,6 +94,8 @@
 - C6: kullanılmayan BellScheduleGrid/FormModal/SlotTypePill + dead i18n keys.
 - C7-M4: HolidaysTab MONTHS_TR hardcoded TR (Intl/i18n'e taşı); C7-M3 delete try/catch.
 - C5: dead i18n key + weight-bar inline style; test getByRole scope sağlamlaştırma.
+
+> **2026-07-01 — Öğrenci No prefix/length ayarı davranışı netleşti (BR-SS-017):** `StudentNumberPrefix`/`StudentNumberLength` alanları önceden vardı ve `StructureTab`'da düzenlenebiliyordu ama `students` modülündeki generator onları tüketmiyordu (sabit `{yıl}{5-hane}` üretiyordu) — Öğrenci Numarası Format mini-spec'i (`.claude/specs/ogrenci-numarasi-format-design.md`) bu boşluğu kapattı. Bu modülde değişen: `StudentNumberLength` `int?` oldu (null=default 3/100'den), migration mevcut satırları `NULL`'a çekti. Üretim/doğrulama/login mantığı `students`/`identity` modüllerinde — bkz. o modüllerin `completion_status.md`/`business-rules.md`'si.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 

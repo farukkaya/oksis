@@ -98,6 +98,14 @@ zorunlu), `Intent?` (RenewalIntent — yalnız yenileme sürecinde). **`Enrollme
 ### E4.4 `StudentNumber` politikası (E2.3 / G7)
 - **E4.4.1** `IStudentNumberGenerator` — format `{SezonYılı}{5-hane-sıra}`, tenant bazlı
   atomik sıra (SQL sequence veya tablo + UPDLOCK).
+
+  > **⚠️ AMENDMENT (2026-07-01):** Bu madde **süperseded** — format artık **yılsız**:
+  > `{prefix?}{sıra}` (`prefix` opsiyonel okul ayarı; `sıra` = minimum genişlik/sıfır-dolgu,
+  > tavan değil). Ayar boşsa: öneksiz, min 3 hane, **100'den** başlar (`100, 101, … 999, 1000, …` —
+  > tükenmez). Sayaç artık yıla göre anahtarlanmaz (okul-ömür-boyu tek monoton sıra).
+  > Bağlayıcı detay/kararlar: `.claude/specs/ogrenci-numarasi-format-design.md`
+  > (bu mini-spec E4.4.1'i geçersiz kılar/süpersede eder; onay: kullanıcı, 2026-07-01).
+  > E4.4.2 (ilk-kayıtta üretim, sonradan immutable) **değişmedi** — bkz. aşağıda.
 - **E4.4.2** Yalnız **ilk kayıtta** (Person'ın `StudentProfile.StudentNumber`'ı boşsa)
   üretilir; sonradan **değişmez**, mezuniyete kadar aynı.
 

@@ -94,17 +94,20 @@
 
 ### `StudentNumberCounter` (POCO)
 
-**Sorumluluk:** Okul+yıl bazında öğrenci numarası sıra sayacı. `IStudentNumberGenerator` implementasyonu bu tablodan atomic increment ile alır. IHasTenant entity DEĞİL — composite PK üzerinden yönetilir; soft-delete yoktur.
+**Sorumluluk:** Okul bazında öğrenci numarası sıra sayacı. `StudentNumberGenerator` bu tablodan atomik (SQL `MERGE ... HOLDLOCK`) artırım ile alır. IHasTenant entity DEĞİL — PK üzerinden yönetilir; soft-delete yoktur.
+
+> **Güncellendi (2026-07-01, Öğrenci Numarası Format mini-spec — `.claude/specs/ogrenci-numarasi-format-design.md`):** Tablo **`school_id` tek anahtarla yeniden kuruldu** — `year` kolonu **düştü** (sayaç artık yıla göre anahtarlanmaz; okul-ömür-boyu tek monoton sıra). Eski `(school_id, year)` composite-PK satırları migration ile atılır; yeni sayaç okul başına **100'den** başlar. Eski üretilmiş numaralar (`StudentProfile.StudentNumber`) etkilenmez — immutable.
 
 **Properties:**
 
 | İsim | Tip | Açıklama | Kısıt |
 |---|---|---|---|
-| `SchoolId` | `Guid` | Okul ID (composite PK parça 1) | Zorunlu |
-| `Year` | `int` | Kayıt yılı (composite PK parça 2) | Zorunlu |
-| `NextCounter` | `int` | Sıradaki sayaç değeri (atomik artırılır) | Zorunlu, başlangıç 1 |
+| `SchoolId` | `Guid` | Okul ID (PK) | Zorunlu |
+| `NextValue` | `int` | Sıradaki sayaç değeri (atomik artırılır) | Zorunlu, başlangıç **100** |
 
-**`IStudentNumberGenerator`:** `GenerateAsync(schoolId, year)` → `"{year}{counter:D5}"` formatında string döner; her çağrıda `NextCounter` atomic increment ile artar, per-tenant izole.
+**`StudentNumberGenerator.NextAsync(Guid schoolId, CancellationToken ct)`:** `year` parametresi **kaldırıldı**. Okulun `SchoolSettings.StudentNumberPrefix`/`StudentNumberLength` ayarını okur (`length ?? 3` — minimum genişlik/sıfır-dolgu, tavan değil) ve `$"{prefix}{seq}"` döner (`seq`, `length` haneye sıfır-dolgulu; `≥100` başladığından default'ta dolgu gereksiz). Sayaç `NOT MATCHED → INSERT NextValue=100`; `MATCHED → NextValue+1` (atomik, eşzamanlı-güvenli). Örnek: ayar boş → `"100"`, `"101"`, …; `prefix="ATL"` + `length=4` → `"ATL0100"`.
+
+**`IStudentNumberValidator.ValidateAsync(Guid schoolId, string candidate, CancellationToken ct)`** — manuel/import numarası kabul politikası (yeni, 2026-07-01): format kuralı (ayar doluysa `{prefix}{≥length hane}` pattern; boşsa salt-rakam ≥100/min 3 hane) **ve** global benzersizlik (`(SchoolId, StudentNumber)` içinde hiç yok — tenant-scope). `EnrollStudentCommand`'ın manuel-no yolu ve gelecekteki `students:import` bu servisi tüketir. Bkz. `business-rules.md` BR-students-005.
 
 ---
 
@@ -176,7 +179,7 @@ EnrollmentIdempotency
   └── (standalone, SchoolId tenant scope)
 
 StudentNumberCounter
-  └── (composite PK: SchoolId + Year, no FK)
+  └── (PK: SchoolId, no FK — `Year` kolonu 2026-07-01'de düştü)
 ```
 
 ---

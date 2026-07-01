@@ -107,6 +107,26 @@ imkânsız kılmak gerekti.
 
 ---
 
+### BR-students-005: Öğrenci numarası — yılsız üretim, okul-yapılandırılabilir format, global benzersizlik
+
+**Kural:** Öğrenci numarası artık **yıl içermez**. `StudentNumberGenerator.NextAsync(schoolId, ct)` okulun `SchoolSettings.StudentNumberPrefix`/`StudentNumberLength` ayarını okur (`length ?? 3`) ve `{prefix}{sıra:min-length}` üretir; sayaç okul-ömür-boyu tek monoton sıra olup **100'den** başlar (`100, 101, … 999, 1000, …` — tükenmez, `length` tavan değil minimum genişliktir). Ayar boşsa (`prefix=null`, `length=null`): öneksiz, min 3 hane, 100'den başlar (default).
+
+**Benzersizlik:** `(SchoolId, StudentNumber)` **global** UNIQUE — bir okulda hiçbir numara (otomatik veya manuel) daha önce kullanılmamış olmalı.
+
+**Manuel/import kabul:** `IStudentNumberValidator.ValidateAsync(schoolId, candidate, ct)` — hem format hem benzersizlik doğrular: (a) ayar doluysa `{prefix}{≥length hane rakam}` pattern'ine uymalı; ayar boşsa salt-rakam, sayısal değer **≥100** (min 3 hane); (b) `(SchoolId, StudentNumber)` içinde bu numara hiç yok. Geçersiz format → `students.errors.student-number-invalid-format`; zaten kullanılan numara → `students.errors.duplicate-student-number`. `EnrollStudentCommand.StudentNumber : string?` — boş → otomatik üretim (generator); dolu → validator ile doğrulanır, geçerliyse aynen kullanılır.
+
+**Okul-farkında login:** `IdentifierResolver` — `SchoolHint` mevcut okulun `StudentNumberPrefix`'i doluysa ve girdi bu prefix ile **başlıyorsa** → doğrudan öğrenci-no çözümü (tam stored değer, prefix dahil, `IgnoreQueryFilters` ile pre-auth tek-tenant scope, `PersonDirectory` BR-identity-001 deseniyle aynı). Aksi halde mevcut şekil-tabanlı sınıflandırma (salt-rakam 1-9 hane → öğrenci-no; 10-13 → telefon; 11 → TCKN) korunur.
+
+**Mevcut numaralar değişmez:** Bu değişiklik yalnız **bundan sonraki üretimi** etkiler; `StudentNumberLength` migration'ı mevcut tüm satırları `NULL`'a çeker ama zaten üretilmiş/atanmış numaralar (`StudentProfile.StudentNumber`) **dokunulmaz** (immutability korunur, E4.4.2). Bir okulda eski format (`{yıl}{5-hane}`) ile yeni format (`100…`) **karışık** bulunabilir — kabul edilen bir durum, renumber kapsam dışı.
+
+**Sebep:** Sabit `{yıl}{5-hane}` formatı okul-yapılandırılabilir ve import'a hazır bir sisteme dönüştürüldü; `SchoolSettings.StudentNumberPrefix/Length` alanları zaten vardı ama generator onları görmezden geliyordu — bu kural o boşluğu kapatır.
+
+**Detay/kararlar:** `.claude/specs/ogrenci-numarasi-format-design.md` (bağlayıcı mini-spec, K1-K7).
+
+**Test referansı:** `StudentNumberGeneratorTests`, `StudentNumberValidatorTests`, `EnrollStudentCommandHandlerTests` (manuel-no yolu), `IdentifierResolverTests` (prefix'li giriş)
+
+---
+
 ## Sınır Durumlar
 
 | Senaryo | Beklenen Davranış |
@@ -119,6 +139,10 @@ imkânsız kılmak gerekti.
 | Hedef sezonda `RenewalPeriodOpenedAt != null` ama öğrencinin yenileme taslağı yok | `PromoteStudents` bu öğrenciyi atlar (`Skipped`); koltuk taşınmaz |
 | `RenewEnrollment` aynı hedef sezona ikinci kez çağrılır | Zaten taslağı olan öğrenciler `Skipped` — yeni taslak açılmaz (idempotent) |
 | `RenewEnrollment` sırasında öğrencinin bir üst kademesi yok (terminal) | `Skipped` — taslak açılmaz (mezuniyet mantığıyla hizalı) |
+| Manuel öğrenci-no <100 veya harf içeriyor (ayar boşken) | `400`, `students.errors.student-number-invalid-format` |
+| Manuel öğrenci-no zaten başka öğrencide kullanılıyor | `400`, `students.errors.duplicate-student-number` |
+| Öğrenci-no boş bırakılır | Otomatik üretim (`generator.NextAsync`) — okulun ayarına göre |
+| Login'de girdi okulun `StudentNumberPrefix`'i ile başlıyor | Öğrenci-no çözümü (okul-farkında dal); prefix eşleşmezse şekil-tabanlı sınıflandırmaya düşer |
 
 ---
 
@@ -131,5 +155,6 @@ imkânsız kılmak gerekti.
 | 2026-06-30 | BR-students-002: beş lifecycle komutu koordineli iki-eksen (enrollment.Status + Person.LifecycleState) geçiş kuralı; Frozen→terminal kısıtı; ikili eksen koruması; `Person.Transfer(Guid?)` nullable; `AssignmentReason.Withdrawal/TransferOut` eklendi | Faz 2B lifecycle implementasyonu |
 | 2026-06-30 | BR-students-003: Yenileme niyeti yalnız cari sezon aktif kayda set edilir; `null` intent ≠ `Undecided`; KPI tüm kümeden; niyet set bildirim üretmez (event Faz 3B) | Faz 3A yenileme niyeti implementasyonu |
 | 2026-07-01 | BR-students-004: Yenileme köprüsü — `PromoteStudents` E6.3 gating taslak-sürücülü (S2); terminal-kademe eleme; `RenewEnrollment` idempotency; yalnız Renewing→taslak (S3); `EnrollmentRenewedEvent` RenewEnrollment anında | Faz 3B yenileme + rollover köprüsü implementasyonu |
+| 2026-07-01 | BR-students-005: Öğrenci no yılsız + okul-yapılandırılabilir format (`{prefix?}{sıra,min-length,100'den}`); global benzersizlik; `IStudentNumberValidator` manuel/import kabul; okul-farkında login prefix çözümü; mevcut numaralar immutable/karışık format kabul | Öğrenci Numarası Format mini-spec implementasyonu (`.claude/specs/ogrenci-numarasi-format-design.md`) |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.

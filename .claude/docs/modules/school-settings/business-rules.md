@@ -160,6 +160,20 @@ Sprint 1'de sadece ilk 6 satır aktif; devamsızlık ayarları Sprint 2'de `atte
 
 ---
 
+### BR-SS-017 — Öğrenci No prefix/length ayarı opsiyonel, generator tarafından tüketilir (2026-07-01)
+
+**Kural:** `SchoolSettings.StudentNumberPrefix : string?` (opsiyonel, önceden de vardı) ve `StudentNumberLength` **artık `int?`** (önceden `int` non-null, default 4) — `null` = default davranış (öneksiz, min 3 hane, 100'den başlar; bkz. `students` modülü BR-students-005). `UpdateAcademicStructure` (`StructureTab`) bu iki alanı düzenletmeye devam eder; validator: `length` null veya 1-10.
+
+**Sebep:** Bu iki alan zaten vardı ve settings UI'da düzenlenebiliyordu, ama `students` modülündeki `StudentNumberGenerator` onları **görmezden geliyordu** (sabit `{yıl}{5-hane}` üretiyordu). Öğrenci Numarası Format mini-spec'i (`.claude/specs/ogrenci-numarasi-format-design.md`) bu boşluğu kapattı — generator artık bu ayarı gerçekten tüketir.
+
+**Migration notu:** `StudentNumberLength` kolonu nullable'a çevrilirken **mevcut tüm satırlar `NULL`'a çekildi** — her okul default'a (3 hane/100'den) geçti. Generator zaten tüketmiyordu, bu yüzden **basılı/atanmış eski öğrenci numaraları etkilenmez** (immutability `students` modülünde korunur); yalnız bundan sonra üretilecek numaraları etkiler.
+
+**Uygulama:** `UpdateAcademicStructureCommandHandler` null-akışını korur (`request.StudentNumberLength ?? settings.StudentNumberLength`). Prefixsiz (salt-rakam) durumda `length ≤ 9` önerisi (login'de telefon-aralığı 10-13 ile çakışmasın); prefix varsa uzunluk serbest.
+
+**Kapsam:** `schools`/`school-settings` yalnız **ayarı** tutar; üretim/doğrulama/login mantığı `students`/`identity` modüllerinde (bkz. o modüllerin `business-rules.md`'si).
+
+---
+
 ## Sınır Durumlar
 
 | Senaryo | Beklenen Davranış |
@@ -178,3 +192,4 @@ Sprint 1'de sadece ilk 6 satır aktif; devamsızlık ayarları Sprint 2'de `atte
 |---|---|
 | Sprint 1 başlangıcı | 9 iş kuralı (BR-SS-001 → BR-SS-009), 21 endpoint, 10 permission |
 | 2026-05-25 | 7 yeni iş kuralı (BR-SS-010 → BR-SS-016), 2 yeni tablo, 5 yeni kolon, 2 yeni permission |
+| 2026-07-01 | BR-SS-017: `StudentNumberLength` nullable oldu (`int?`, null=default); generator artık prefix/length ayarını tüketir (öğrenci-no format mini-spec, `students` modülü) |

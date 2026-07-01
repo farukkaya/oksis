@@ -67,16 +67,16 @@ Bu modül hangi modüllerle konuşur?
 - **Sprint:** Sprint 1
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-07-01 (Faz 3B: yenileme + rollover köprüsü — RenewEnrollment/EnrollmentRenewedEvent canlı; BR-students-004 eklendi)
+- **Last Updated:** 2026-07-01 (Öğrenci Numarası Format mini-spec: BR-students-005 eklendi — yılsız üretim, okul-yapılandırılabilir format, global benzersizlik, okul-farkında login)
 - **Files:**
   - [x] README.md
   - [x] enrollment-needs-analysis.md (kayıt ihtiyaç + altyapı uygunluk analizi, 2026-06-28)
-  - [x] domain-model.md (Faz 3B: Intent/RenewalIntent naming notu + güncel davranışlar + EnrollmentRenewedEvent ile dolduruldu)
-  - [x] api-contracts.md (Faz 1A+1B+2A+2B+3A+3B dolu)
+  - [x] domain-model.md (Faz 3B + Öğrenci Numarası Format: generator/validator/StudentNumberCounter güncel)
+  - [x] api-contracts.md (Faz 1A+1B+2A+2B+3A+3B + Öğrenci Numarası Format dolu)
   - [x] database-schema.md (iskelet)
   - [x] permissions.md (iskelet)
   - [x] notifications.md (iskelet)
   - [x] ui-flows.md (Faz 1B sihirbaz akışı dolu)
-  - [x] business-rules.md (BR-001..004 dolu)
+  - [x] business-rules.md (BR-001..005 dolu)
   - [x] open-questions.md (iskelet)
   - [x] completion_status.md

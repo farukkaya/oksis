@@ -35,6 +35,8 @@
 > ⚠️ **#6 Breaking change:** Permission `update-basic` → `update-academic-structure` (BR-SS-015). Migration'da SCHOOL_ADMIN rolüne yeni permission otomatik eklenir.
 >
 > ⚠️ **#6 Q6 (2026-05-28) — payload değişimi:** Tekil `schoolType: "HighSchool"` alanı **kaldırıldı**. Yeni alan: `schoolTypes: ["MiddleSchool", "HighSchool"]` (array, en az 1). Null gönderilirse mevcut değer korunur; boş array (`[]`) reddedilir. Backend `SchoolSettingsDetailDto.schoolTypes` olarak döner.
+>
+> ⚠️ **#6 (2026-07-01, BR-SS-017) — `studentNumberLength` artık `int?` (opsiyonel):** `studentNumberPrefix: string?` (önceden de vardı) + `studentNumberLength: int?` (önceden non-null, default 4) `UpdateAcademicStructure` body'sinde düzenlenebilir. `null` → generator default'u kullanır (öneksiz, min 3 hane, 100'den başlar — bkz. `students/business-rules.md` BR-students-005). Validator: `length` null veya 1-10. Detay: `.claude/specs/ogrenci-numarasi-format-design.md`.
 
 ---
 

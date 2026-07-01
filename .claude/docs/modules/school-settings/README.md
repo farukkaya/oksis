@@ -133,4 +133,4 @@ Bu modül önceki sürümünden şu farkları içerir:
 - **Status:** `mvp-ready`
 - **Sprint:** Sprint 1 (tamamlandı)
 - **Owner:** Faruk Kaya
-- **Last Updated:** 2026-05-28 — **mvp-ready** ✅ (10-maddelik QA tamamlandı; Q6 multi `school_types` + Q-Plan-Modules + bildirim kanal toggle'ları tam stack uygulandı; multi-tenant izolasyon ikinci tenant ile doğrulandı)
+- **Last Updated:** 2026-07-01 — BR-SS-017: `StudentNumberLength` nullable (öğrenci-no format mini-spec ile generator ayarı tüketir hale geldi). Önceki: 2026-05-28 — **mvp-ready** ✅ (10-maddelik QA tamamlandı; Q6 multi `school_types` + Q-Plan-Modules + bildirim kanal toggle'ları tam stack uygulandı; multi-tenant izolasyon ikinci tenant ile doğrulandı)
