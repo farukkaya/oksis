@@ -55,7 +55,7 @@ onları **görmezden geliyor** (sabit `{EnrollmentDate.Year}{5-hane}` üretiyor)
 - EF config + migration: kolon nullable'a çevrilir. **Migration mevcut tüm satırları `NULL`'a çeker** →
   her okul yeni default'a (3/100) geçer. Zaten generator tüketmiyordu → **basılı/atanmış eski numaralar
   değişmez** (immutability korunur); yalnız bundan sonra üretilenler etkilenir.
-- `Create`/factory ve `UpdateAcademicStructureCommandHandler`: null-akışı korunur (`request.X ?? settings.X`).
+- `UpdateAcademicStructureCommandHandler`: **prefix + length `request`'ten DOĞRUDAN atanır (null = temizle → varsayılan).** `?? settings.X` coalescing bu iki alan için **KULLANILMAZ** (form full-PUT gönderir; coalescing "temizlenemiyor" bug'ına yol açar — bkz. §11 clear-fix). Diğer alanların akışı değişmez. (2026-07-01 amendman — önceki "null-akışı korunur" notu clear niyetiyle çelişiyordu, düzeltildi.)
 - Validator (`UpdateAcademicStructure`): length null VEYA 1-10; **prefixsiz (salt-rakam) durumda length ≤ 9**
   önerisi (login telefon-aralığı 10-13 ile çakışmasın — bkz. §6). Prefix varsa length serbest (prefix zaten ayırt eder).
 
@@ -146,3 +146,52 @@ Prefix'li numaralarda uzunluk serbest (prefix ayırt eder).
 ## 10. Bitiş tanımı (DoD)
 
 Generator settings'i tüketir + yıl yok + 100'den başlar; length nullable + migration; `IStudentNumberValidator` canlı; EnrollStudent opsiyonel manuel no; login okul-farkında (prefix); StructureTab + enroll FE; BE+FE testleri yeşil; Chrome E2E (default + prefix + manuel + login) doğrulanmış; şemsiye spec E4.4 amendment notu + `students/business-rules.md` yeni BR + completion_status güncel.
+
+---
+
+## 11. Clear-fix + Prefix onay-kapısı + Kilit (2026-07-01 amendman — onaylı)
+
+E2E'de bulunan bug + kullanıcı kararları. Bu bölüm §4.1'i somutlaştırır.
+
+### 11.1 Clear-fix (temizlenebilirlik)
+`UpdateAcademicStructureCommandHandler` prefix/length'i `request`'ten **doğrudan atar** (null = temizle). `?? settings.X` bu iki alan için kullanılmaz (form full-PUT; tek caller `StructureTab`). Böylece set edilmiş prefix/length **varsayılana döndürülebilir**. Empty/whitespace prefix → null normalize edilir.
+
+### 11.2 Prefix onay-kapısı (consent gate) — sunucu-tarafı zorunlu
+- **Tetik:** prefix **boştan-dolu veya farklı bir dolu değere** değiştiriliyorsa (yeni önek atanıyorsa). Prefix değişmiyorsa / temizleniyorsa / length değişiyorsa → onay YOK.
+- **Komut alanı:** `UpdateAcademicStructureCommand.PrefixConsentAcknowledged : bool`.
+- **Handler kuralı:** yeni/değişen dolu prefix + `PrefixConsentAcknowledged != true` → **`Result.Failure` (400, `schools.errors.prefix-consent-required`)**. Yalnız UI değil, sunucu zorunlu → gerçek kanıt.
+- **FE modal (§ StructureTab):** bilgilendirme metni + **zorunlu** "Okudum, onaylıyorum" checkbox; işaretlenmeden modaldaki "Onayla ve Kaydet" pasif; Vazgeç → prefix kaydedilmez, form geri alınır.
+
+### 11.3 Onay kaydı (audit — "koz")
+Yeni entity/tablo **`student_number_prefix_consents`** (schema `school`), TenantEntity:
+| Alan | Tip |
+|---|---|
+| `id` | Guid |
+| `school_id` | Guid (tenant) |
+| `prefix` | string (onaylanan önek) |
+| `consented_by` | Guid (admin person/account — auth context'ten) |
+| `consented_at` | DateTimeOffset (UTC) |
+| `consent_text` | string (**onaylanan metnin TAM anlık kopyası** — verbatim kanıt) |
+| `consent_text_version` | string (ör. `v1`) |
+
+Değişmez audit satırı; onay-kapısı geçildiğinde handler yazar. Kanonik consent metni + sürüm BE'de sabit (constants/i18n); FE aynı metni gösterir.
+
+### 11.4 Prefix-kullanımda-kilit (Option A)
+- **Kural:** o an kayıtlı prefix'i **taşıyan** en az bir `StudentProfile.StudentNumber` varsa (`StartsWith(prefix)`), prefix **değiştirilemez/temizlenemez** → **`Result.Conflict` (409, `schools.errors.prefix-in-use`)**. `AnyAsync` (tenant, no IgnoreQueryFilters).
+- **Önek eklemek her zaman serbest** (öneksiz mevcutlar şekil-tespitiyle çözülür — §6). Yalnız **kullanımdaki öneki kaldırmak/değiştirmek** kilitlenir.
+- Sıralama: prefix onay+set (kullanılmadan) → öğrenci kaydolunca kilit devreye girer.
+
+### 11.5 Length
+Serbest — onay/kilit YOK. Yalnız yeni numaraların dolgu genişliğini etkiler; login prefix-eşleşmesi uzunluktan bağımsız; mevcut numaralar değişmez.
+
+## 12. Canlı numara önizleme (StructureTab)
+
+Öğrenci No Öneki / Uzunluğu alanlarının **altında**, ayrı **belirgin** satır:
+- **İçerik:** "Örnek öğrenci no: **{preview}**" — prefix/length değiştikçe **anlık** güncellenir.
+- **Formül (generator birebir):** `{prefix}` + `(100)`'ün `length ?? 3` haneye `padStart('0')`'ı. Öneksiz → düz sayı. Ör. ATL+4 → `ATL0100`; boş+boş → `100`; OK+6 → `OK000100`.
+- **Stil:** mono + kalın + hafif arka plan/kenarlıklı chip — **placeholder gibi silik DEĞİL**, belirgin.
+
+## 13. Ek testler (11-12)
+- **BE:** clear-fix (prefix/length null→temizlenir); onay-zorunlu (yeni prefix + ack yok → 400); onay kaydı yazılır (schoolId/prefix/user/timestamp/text/version); kilit (kullanımdaki prefix değiştir/temizle → 409); prefix değişmiyorsa onay istenmez; length serbest; tenant izolasyon.
+- **FE:** preview canlı güncelleme (prefix/length) + belirgin stil; onay modalı (yeni prefix → açılır; checkbox zorunlu → işaretsiz kaydetme pasif; işaretli → ack ile PUT); prefix değişmeyince modal yok.
+- **Chrome E2E:** onaysız→red; onaylı→kayıt+audit satırı; kullanımdaki prefix→kilit; öneksiz→serbest; canlı preview.
