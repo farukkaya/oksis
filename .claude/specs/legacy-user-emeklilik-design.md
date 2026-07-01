@@ -1,6 +1,11 @@
 # Legacy `User` Emeklilik Tasarımı (Faz 2 / OQ-identity-001 kapanışı)
 
 > **Tür:** Onaylı tasarım (design doc) · **Tarih:** 2026-07-02 · **Durum:** Onaylandı (farukkaya)
+> **Amendman (2026-07-02, onaylı):** Faz 1 plan keşfi 4 sınır düzeltmesi getirdi — `RefreshTokenCookie`
+> Account akışının çekirdeği olduğundan HİÇ silinmez; `IJwtTokenService`+`JwtTokenService` ve
+> `PermissionReader` legacy claim fallback'i davet-kabul bağımlılığı nedeniyle **Faz 3'e**;
+> `IRefreshTokenStore`+impl'leri (ConfirmPasswordReset/ChangePassword/SoftDeleteUser bağımlılığı)
+> **Faz 4'e** kaydı. Legacy refresh store Redis tabanlı — DB tablosu yok, Faz 1 drop migration maddesi düştü.
 > **İlgili:** `.claude/specs/adr-001-legacy-user-kaldirma.md` (ADR-001),
 > `.claude/docs/modules/identity/open-questions.md` (OQ-identity-001),
 > `identity/completion_status.md` (Faz 1 okuma göçü, 2026-06-08)
@@ -56,15 +61,22 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
 - `identity-invite-accept-route` (`ca498d2`, `/invite/:token` route fix) master'a merge.
 - Dev DB reseed doğrulaması (`ef database drop` + `update` + run) + Chrome smoke login.
 
-### Faz 1 — Login/Refresh (api + web + mobile)
-- **API sil:** `POST /auth/login|refresh|revoke` uçları; `LoginCommandHandler`,
-  `RefreshTokenCommandHandler`, `RevokeTokenCommand(Handler)`; `IJwtTokenService` + impl;
-  `IRefreshTokenStore` (InMemory + DB; DB tablosu varsa drop migration bu fazda);
-  `RefreshTokenCookie`. `PermissionReader.cs:62-67` legacy `permissions` claim fallback'i.
-- **Web:** `refreshTokenManager.ts` legacy `/auth/refresh` fallback dalı silinir;
-  `httpClient.ts` public-path listesinden legacy yollar çıkar.
-- **Mobil:** `client.ts` legacy refresh fallback silinir; `auth.api.ts` cold-start
-  kurtarması `/auth/account/refresh`'e **repoint** (aktif yol — silinmez).
+### Faz 1 — Login/Refresh (api + web + mobile) *(amendmanla daraltıldı)*
+- **API sil:** `POST /auth/login|refresh|revoke` uçları + `IssueSession` yardımcısı;
+  `LoginCommand/Handler/Validator`, `RefreshTokenCommand/Handler`, `RevokeTokenCommand/Handler`;
+  `LoginBody` + `LoginResponse` (yalnız legacy kullanıyor); `LoginCommandHandlerTests`.
+- **API KALIR (paylaşılan/sonraki faz):** `RefreshTokenCookie` (Account çekirdeği — kalıcı),
+  `RefreshTokenBody`/`RevokeTokenBody` (account/refresh + account/logout paylaşıyor),
+  `IsMobileClient()`, `IJwtTokenService`+impl (AcceptInvitation → Faz 3),
+  `PermissionReader` legacy claim fallback (davet token'ları → Faz 3),
+  `IRefreshTokenStore`+impl'ler (ConfirmPasswordReset/ChangePassword/SoftDeleteUser → Faz 4).
+- **Web:** `refreshTokenManager.ts` legacy `/auth/refresh` fallback dalı (+ `applyLegacySession`,
+  `isAuthError`, `LoginResponse` importu) silinir; `httpClient.ts` `NO_REFRESH_PATHS`'ten
+  `/auth/login` + `/auth/refresh` çıkar; `authStore` logout'taki legacy `/auth/revoke` dalı
+  account-only sadeleşir; ilgili MSW mock'ları account-only olur.
+- **Mobil:** `client.ts` legacy refresh fallback dalı silinir; `useAuthBootstrap` cold-start
+  kurtarması `authApi.refresh` yerine account refresh'e taşınır, ardından `auth.api.ts` +
+  `BackendLoginPayload` silinir.
 - **Sıra:** istemci repoint + uç silme aynı fazda; api PR'ı ile web+mobil PR'ı birlikte merge edilir.
 
 ### Faz 2 — Parola (api)
@@ -85,6 +97,9 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
   desenine çekilir ya da ortak provisioner'a birleşir (planlamada koda bakılıp karar).
 - `BulkCreateInvitation`, `GetInvitationPreview`, `GetExpiredInvitation`,
   `RequestInvitationRefresh`, `SendInvitationNotificationJob` yeni semantiğe repoint.
+- **Amendmanla Faz 3'e taşındı:** `IJwtTokenService` + `JwtTokenService` silinir (son tüketici
+  AcceptInvitation bu fazda Account token'a geçer) ve `PermissionReader.cs:61-67` legacy
+  `permissions` claim fallback'i aynı PR'da kaldırılır (claim'i üreten tek yer JwtTokenService'ti).
 - **Web:** `InvitationAcceptPage` accept `onError` → görünür TR hata (409 "hesap zaten
   var" + genel hata; toast/inline).
 
@@ -95,6 +110,9 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
   `Account.Deactivate`; `SoftDeleteUser` → Person lifecycle + Account deaktivasyon;
   `GetUserProfile` → `Account`⋈`Person` projeksiyonu. DTO sözleşmeleri korunur.
 - `GetSchoolSettingsQueryHandler.cs:98` UpdatedBy ad çözümü → `Persons`.
+- **Amendmanla Faz 4'e taşındı:** `IRefreshTokenStore` + `RefreshTokenStore` (Redis) +
+  `InMemoryRefreshTokenStore` silinir (son tüketici `SoftDeleteUser` bu fazda repoint edilir;
+  Faz 2'de `ConfirmPasswordReset`/`ChangePassword` zaten ölmüş olur).
 - Not: `GetUserActivity` handler'ı mevcut değil (2026-07-02 keşfiyle doğrulandı) — kapsam dışı.
 
 ### Faz 5 — Emeklilik (api + docs)
@@ -107,8 +125,9 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
 
 ## 4. Veri ve şema
 
-- Migration'lar şema değiştirir, veri taşımaz: Faz 1 (legacy refresh token tablosu varsa
-  drop), Faz 3 (`pre_created_user_id` → `person_id` rename), Faz 5 (`users` drop).
+- Migration'lar şema değiştirir, veri taşımaz: Faz 3 (`pre_created_user_id` → `person_id`
+  rename), Faz 5 (`users` drop). *(Amendman: legacy refresh store Redis tabanlı — DB tablosu
+  yok, Faz 1 migration'ı düştü.)*
 - Stale `LinkedAccountId` (legacy User.Id) değerleri reseed ile yok olur.
 - Prod'da auto-migrate yok (mevcut kural); tüm migration'lar `--idempotent` script üretilebilir.
 
@@ -134,7 +153,8 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
 
 1. `StudentAccountProvisioner` eager-Account davranışı ile "Account accept anında doğar"
    kararının çelişip çelişmediği; gerekiyorsa ortak provisioner tasarımı.
-2. Legacy `IRefreshTokenStore`'un DB tablosu var mı (varsa Faz 1 drop migration'ı).
+2. ~~Legacy `IRefreshTokenStore`'un DB tablosu var mı~~ **Yanıtlandı (2026-07-02 amendman):**
+   yok — Redis/in-memory; drop migration gerekmez.
 3. `SendInvitationNotificationJob` repoint'inin Faz 3'te mi Faz 4'te mi yapılacağı
    (davet semantiği Faz 3'te değiştiğinden büyük olasılıkla Faz 3).
 4. İki AcceptInvitation zincirinin tekilleştirmede hangi controller ucunun kalacağı
