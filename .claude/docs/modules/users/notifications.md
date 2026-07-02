@@ -57,7 +57,7 @@ Geçerlilik: {ExpiresAtShort}
 
 **Kapsam Kontrolü:**
 - Person `SchoolId` ile event `SchoolId` eşleşmek zorunda.
-- Token plain text **sadece** email/SMS body'sine girer; log'a, header'a, audit'e yazılmaz.
+- Token plain text yalnızca (a) email/SMS body'sine ve (b) daveti oluşturan **yetkili admin'e dönen `POST /users` · `POST /users/invitations` · `.../resend` HTTPS yanıtına** girer (oluşturma anında bir kez; admin linki manuel iletebilsin diye — MVP'de e-posta dispatch'i henüz bağlı değil). Her iki durumda da token log'a, header'a, audit'e, DB'ye veya InApp bildirime **yazılmaz**. (İstisna kararı: farukkaya, 2026-07-02 — davet-linki Option A.)
 - `Person.PrimaryEmail` null ve `Channel = Email` ise event silently skip (audit'e "no email" not düşülür).
 
 ---
@@ -413,7 +413,7 @@ Bazı kanalların kullanımı için kullanıcının özel onay vermiş olması g
 - ❌ Sync olarak Command handler içinde bildirim göndermek — MediatR domain event + queue zorunlu.
 - ❌ Template'de TCKN, telefon, email, parola, davet token plain text gibi PII.
 - ❌ Cross-tenant alıcı — recipient `SchoolId` farklıysa.
-- ❌ Davet token'ı log'a, audit'e veya InApp bildirime yazmak (sadece dış kanal body).
+- ❌ Davet token'ı log'a, audit'e, DB'ye veya InApp bildirime yazmak (yalnızca dış kanal body'si veya davet eden admin'e dönen HTTPS create/resend yanıtı — bkz. Kapsam Kontrolü).
 - ❌ Onay (`Consent`) gerektiren kanalı onay yokken kullanmak.
 - ❌ `QuietHours` içinde Low priority bildirim göndermek.
 - ❌ Aynı event için aynı recipient'a `cooldown` ihlali (Redis sayaç ihlal etmesin).

@@ -98,6 +98,7 @@
 - Backend: `Invitation` aggregate domain'de state machine ile geçişleri korur; her geçiş `AccountLifecycleEvent` üretir.
 - Frontend: "Davet Geçmişi" sayfası — kim, ne zaman, hangi sezon, hangi rol için, hangi durum.
 - DB: `invitations.batch_id` toplu davetleri gruplar; Hangfire job ile expiry sweep.
+- **Link teslimi:** ham davet token'ı `POST /users` · `POST /users/invitations[/resend]` yanıtında döner; frontend `origin + /invite/<token>` linkini kurup admin'e "Kopyala" ile sunar (admin manuel iletir). E-posta ile otomatik teslim (`UserInvitedEvent` → dispatch handler) **post-MVP borcu**; token teslim istisnası `notifications.md` Kapsam Kontrolü'nde. (Davet-linki Option A, 2026-07-02.)
 
 **Edge case'ler:**
 - Davet süresi dolduysa: kullanıcı linke tıklayınca 410 + "Davet süresi dolmuş, yöneticinize ulaşın" mesajı.
