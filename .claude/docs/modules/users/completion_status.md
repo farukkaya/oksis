@@ -4,7 +4,9 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %99   ·   Status: in-progress (API ISSUE-01–10 + Web ISSUE-11–15 + Mobile ISSUE-16 commit'li; mobil davet-kabul akışı identity revizyonuna ertelendi)   ·   Güncel: 2026-06-01
+**İlerleme:** `▓▓▓▓▓▓▓▓▓▓` %99   ·   Status: in-progress (API ISSUE-01–10 + Web ISSUE-11–15 + Mobile ISSUE-16 commit'li; mobil davet-kabul akışı identity revizyonuna ertelendi)   ·   Güncel: 2026-07-02 (davet zinciri tekilleşti — legacy User emeklilik Faz 3)
+
+> 2026-07-02: **Davet zinciri tekilleşti (legacy User emeklilik Faz 3, api#33/web#64):** legacy Identity `InvitationToken` dünyası tümden emekli; bu modülün Person-merkezli `Invitation` zinciri artık TEK yol. `POST /users` da Person(+profil)+`Invitation` üretir (`PersonUserCreationService`); davet kabulünde gerçek `Account` doğar (`Person.LinkedAccountId` = Account.Id). Ayrıntı + açık borçlar (ham davet linkinin üretim yolundan elde edilememesi dahil): `identity/completion_status.md` 2026-07-02 (3) kaydı.
 
 > Temel: Doküman büyük ölçüde dolu (≈7 `{{TBD}}`). Web'de admin `users` sayfası mevcut;
 > backend kullanıcı yetenekleri `identity` modülü üzerinden gelir (bu modül onunla örtüşür).
