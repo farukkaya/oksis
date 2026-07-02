@@ -46,3 +46,14 @@ Faz 2 (password) — its plan will be written when started; carry-overs listed i
 - Web scripts are `oksis:dev`/`oksis:test` (CLAUDE.md says `npm run dev/test` — docs drift, still open).
 - Chrome extension form automation (form_input/type) fails to trigger RHF submits on forgot/change-password pages (no console errors) — future E2E should fall back to curl for those flows.
 - A subagent accidentally popped the user's `demotable` stash; original intact at `stash@{1}`, duplicate parked at `stash@{0}` (user to decide drop).
+
+---
+
+# Addendum 2 — Faz 3 (invitations + user creation) completed, 2 PRs awaiting merge
+
+- Faz 2 PRs merged (web#63 → mobile#17 → api#32). Faz 3 executed subagent-driven (7 tasks, 3 Important findings fixed on-branch, final whole-branch review: both repos YES).
+- **api#33 (ready)**: provisioner now creates a real Account (`Person.LinkedAccountId` = Account.Id — proven live: JWT sub == accounts.id == linked_account_id, auto Staff profile); Kullanıcılar read invitation correlation → Users `Invitations` (PersonId-keyed, DTO status map); `POST /users` → Person+invitation (`PersonUserCreationService`, 5-role limit, `INVITE_EXPIRE_DAYS` from SystemSettings, distinct error codes); 65-file legacy teardown incl. `IJwtTokenService` + PermissionReader legacy-claim fallback; `invitation_tokens` DROP migration. Final suite at head: single known pre-existing FK fail.
+- **web#64**: dead `modules/invitations` deleted; MVP-dışı roles removed from modals; **InvitationAcceptPage visible onError** (the 2026-07-01 debt CLOSED — E2E screenshot proof: "Bu davet için hesap zaten oluşturulmuş"). Memory file for that debt deleted.
+- **Chrome E2E:** full invitation lifecycle (create 201 → wizard accept 200 → login with new account 200 → repeat-accept visible error → deleted endpoints 404). Token obtained via dev-DB hash override — which exposed the sharp finding below.
+- **SHARP DEBT:** the raw invitation link is now unreachable from ANY production path (not in create/resend responses; `UserInvitedEvent` has no handler so no email; the legacy create-with-link path was deleted). Candidate quick fix: return the invite link in create/resend responses, or wire an email handler. Decision pending with the user.
+- Merge order: web#64 first, then api#33. Next phase: Faz 4 (CRUD/reads + IRefreshTokenStore retirement).
