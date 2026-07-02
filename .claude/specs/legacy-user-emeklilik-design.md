@@ -127,6 +127,20 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
 > Ayrıca `IJwtTokenService`+`JwtTokenService` (son kullanıcı Identity accept ile
 > gider), `PermissionReader` legacy claim fallback'i ve `CurrentUser`'ın legacy
 > `permissions` okuması bu fazda silinir.
+> **(3f)** Kullanıcılar ekranı okuma uçlarının davet korelasyonu (`AccountUserQuery`)
+> `db.InvitationTokens`'tan **Users `db.Invitations`'a repoint** edilir (PersonId
+> anahtarlı); `UserListDto.invitationStatus` SÖZLEŞMESİ KORUNUR — Users status'u
+> mevcut değerlere map edilir (Created/Sent/Opened→Pending). Web dokunulmaz.
+> **(3g)** `POST /users` 5-rol sınırına iner (SystemRole'ü olan roller; SuperAdmin
+> reddi sürer) — 2026-06-05 MVP rol kararının uygulanması; web modalından MVP-dışı
+> idari rol seçenekleri kaldırılır. İdari (SchoolAdmin) kişiye **Staff profili
+> otomatik** eklenir (`Person.Activate` ≥1 profil invariant'ı korunur); Gender
+> body'ye eklenmez, default ile Person yaratılır (DTO sözleşmesi korunur).
+> **(3h)** Legacy davet bildirim kanalları (Email/Sms/WhatsApp channel+dispatcher)
+> legacy zincirle silinir; **Users davet bildirimi (UserInvitedEvent handler +
+> kanal bağlama) AÇIK BORÇ** olarak kaydedilir — bugün de gönderilmiyor, fiili
+> durum değişmez. Anonim `request-refresh` özelliği emekli (Users'ta yalnız
+> admin-tetiklemeli resend var).
 - `UserCreationService` → **`PersonCreationService`** semantiği: admin "Yeni Kullanıcı" =
   `Person` + uygun `Profile` + `RoleAssignment` + davet. `User.Create` yolu silinir.
 - `InvitationToken.PreCreatedUserId` → **`PersonId`** (rename migration): davet doğrudan
