@@ -16,7 +16,9 @@
 **Bağımlılıklar:** `users` modülünün Person/Profile yazma tasarımı (OKSMVP-2) ile birlikte kararlaştırılmalı.
 **Sorulacak:** Mimar + ürün. **Hedef karar tarihi:** Sprint 1 planlama öncesi.
 
-**Karar: A (Account aggregate) — kademeli göç.** Account+Person modeli kuruldu, login/seed Account yolunda canlı (2026-05-31). **2026-06-08 — Faz 1:** Kullanıcılar ekranının okuma uçları (`ListUsers`/`GetUserById`/`GetUserStats`/`ExportUsers`) legacy `db.Users`'tan `Account`⋈`Person`'a taşındı (DTO sözleşmesi korundu; bkz. completion_status 2026-06-08). **Faz 2 (bekliyor):** yazma/auth akışları (login/refresh/invite/password-reset/admin CRUD/`GetUserActivity`/`GetUserProfile`) hâlâ `User`'da — bunlar taşınınca `User` entity + `[identity].[users]` tablosu + legacy `/auth/login` emekli edilip silinebilir. Bu issue bu noktaya kadar **kısmen kapalı.**
+**Karar: A (Account aggregate) — kademeli göç.** Account+Person modeli kuruldu, login/seed Account yolunda canlı (2026-05-31). **2026-06-08 — Faz 1:** Kullanıcılar ekranının okuma uçları (`ListUsers`/`GetUserById`/`GetUserStats`/`ExportUsers`) legacy `db.Users`'tan `Account`⋈`Person`'a taşındı (DTO sözleşmesi korundu; bkz. completion_status 2026-06-08).
+
+**✅ KAPATILDI (2026-07-02).** Legacy `User` kalıntısız emekliye ayrıldı; göç `legacy-user-emeklilik-design.md` Faz 0-5 ile tamamlandı: login/refresh (Faz 1) → parola (Faz 2) → davet+oluşturma (Faz 3) → CRUD/okuma (Faz 4) → `User` entity + `UserConfiguration` + `DbSet<User>` + tüketicisiz `User*` event'leri + `[identity].[users]` tablosu drop (Faz 5, migration `20260702_drop_users`). Auth yalnız `Account` doğrular; `UserRole`/`UserStatus`/Identity `InvitationStatus` enum'ları yaşayan Users yüzeyi için korundu. Kapanış ayrıntısı ve Aşama 2 sapması: `.claude/specs/adr-001-legacy-user-kaldirma.md` (Durum: Uygulandı) + `completion_status.md`.
 
 ---
 

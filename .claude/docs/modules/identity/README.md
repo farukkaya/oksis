@@ -58,9 +58,8 @@ Modülün ana akışı (login + context resolution):
 - Hangi sprint'te? → **Sprint 1–6** (teknik analiz Bölüm 22 sprint kırılımı). Foundation Sprint 1.
 - MVP scope'unda mı? → **Evet** (login + switch çekirdeği). OTP/2FA Sprint 5–6.
 - Hangi parçaları yapıldı / kaldı?
-  - ✅ Master tablolar: `system_roles` (7), `permissions` (32), `role_permissions` (66) + deterministik seed
-  - ✅ Mevcut `User` tabanlı login/refresh/invite/password-reset akışı (`Oksis.Application/Modules/Identity` ≈77 cs)
-  - ⏳ **`Account` aggregate** (auth/session sahibi) — teknik analiz hedef modeli; mevcut `User` ile uzlaştırma kararı bekliyor (bkz. `open-questions.md` OQ-identity-001)
+  - ✅ Master tablolar: `system_roles` (5 — MVP), `permissions`, `role_permissions` + deterministik seed
+  - ✅ **`Account` aggregate** (auth/session sahibi) auth'un tek modeli — login/refresh/parola/davet/CRUD/okuma yollarının tümü `Account`/`Person`/`RoleAssignment` üzerinde. **Legacy `User` entity + `[identity].[users]` tablosu emekli (2026-07-02, Faz 5; OQ-identity-001 KAPATILDI).**
   - ⏳ Context resolution (`IContextResolver`), identifier resolver (`IIdentifierResolver` / `IPersonDirectory`)
   - ⏳ Switch (profile/child/season) + permission cache (Redis) + `perms_ver`
   - ⏳ Refresh rotation + reuse detection, access token blacklist
@@ -79,7 +78,7 @@ Modülün ana akışı (login + context resolution):
 - **Sprint:** Sprint 1–6
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-07-02 (Legacy User emeklilik Faz 4: son db.Users tüketicileri bitirildi [üretimde db.Users=0], stacked PR api#34 — bkz. completion_status)
+- **Last Updated:** 2026-07-02 (Legacy User emeklilik **Faz 5 FİNAL**: `User` entity + `[identity].[users]` tablosu kalıntısız emekli, `20260702_drop_users` drop migration, OQ-identity-001 KAPATILDI, ADR-001 "Uygulandı" — bkz. completion_status + adr-001)
 - **Files:**
   - [x] README.md
   - [x] domain-model.md
