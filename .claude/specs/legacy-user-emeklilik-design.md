@@ -159,6 +159,21 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
   var" + genel hata; toast/inline).
 
 ### Faz 4 — CRUD/okuma (api)
+
+> **Amendman-4 (2026-07-02, onaylı — Faz 4 keşfi öncülleri düzeltti):**
+> **(4a)** `PUT /users/{id}` (UpdateUser), `DELETE /users/{id}` (SoftDeleteUser) ve
+> `GET /users/me` (GetUserProfile) web+mobilde SIFIR tüketicili (karşılıkları
+> Person-eksenli `/users/persons/*` + `/users/self` canlı) → "repoint" yerine
+> **üçü de dilimleriyle SİLİNİR** (`UserProfileDto`/`UpdateUserBody` dahil).
+> **(4b)** `DeactivateUser` web'de CANLI ("Pasife al") ama **bugün fiilen 404**:
+> web `Account.Id` gönderiyor (liste id'si), handler legacy `db.Users`'ta arıyor.
+> Repoint = `db.Accounts` + `Account.Suspend(now)` — hem göç hem gerçek bug fix.
+> **(4c)** `GetSchoolSettings` UpdatedBy alanı fiilen **Account.Id** taşıyor
+> (JWT sub = account.Id; koddaki "User.Id" yorumu bayat) → ad çözümü bugün hep
+> null; repoint Account⋈Person join'iyle gerçek düzeltme.
+> **(4d)** `IRefreshTokenStore` + iki impl + DI kayıtları TAMAMEN silinir — auth
+> zaten `Account` domain koleksiyonunu kullanıyor; SoftDeleteUser (tek tüketici)
+> 4a ile gittiğinden port bütünüyle ölü.
 - Alan sahipliği: ad/e-posta/telefon → `Person`; aktiflik/kilit → `Account`; yaşam
   döngüsü → `Person.LifecycleState`.
 - `UpdateUser` → Person (+ gerekirse Account identifier); `DeactivateUser` →
