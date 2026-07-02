@@ -25,3 +25,24 @@ Login ✓; reload → `POST /auth/account/refresh` 200, session restored, ZERO l
 
 ## Next
 Faz 2 (password) — its plan will be written when started; carry-overs listed in the ledger and in memory (`project_legacy_user_retirement`).
+
+---
+
+# Addendum — Faz 0+1 merged, AdminLayout fix, Faz 2 completed (same day)
+
+## Merges + logout fix
+- All three Faz 0+1 PRs merged in order (web#62 `2ebbb91` → mobile#16 `e6ee777` → api#31 `af72bf4`).
+- AdminLayout logout bug fixed on web master (`c162dfe`): all four portal layouts now call a shared `performLogout` (server logout → localStorage.clear → redirect); TDD (2 new tests) + live Chrome proof (logout 204, session does NOT survive reload).
+
+## Faz 2 (password) — shipped, 3 PRs open (api#32 / web#63 / mobile#17, merge order web+mobile→api)
+- Design amendment-2a (discovery corrected a premise: `ChangePasswordCommand` was live-but-clientless via `POST /users/me/change-password` — user approved deleting endpoint+slice) and amendment-2b (orphaned `PasswordResetToken` + `identity.password_reset_tokens` dropped this phase via migration with full Down).
+- api: 2 legacy password endpoints + 3 slices + 3 contract records + TenantFreeEndpoints entries + token infra deleted; postman/curl/manual-test docs converted to account endpoints. web: 4 dead payload types. mobile: 2 dead zod schemas (changePasswordSchema kept).
+- Verification: insurance full suite at api head (sole pre-existing FK fail); deleted endpoints 404; `account/forgot` 202 (token persisted, log-proven); change-password contract chain via curl (204 → old pw 401 → new pw 200 → revert 204 → original 200; dev password restored); Chrome login/bootstrap-refresh live. 6/6 task reviews + final whole-branch review (fable) clean; 2 Minors closed on-branch.
+
+## New root-cause diagnosis (pre-existing debt, separate work)
+**Cross-tab refresh double-spend:** the httpOnly `oksis_rt` cookie is shared across tabs; concurrent per-tab bootstrap refreshes make the second present an already-rotated token → reuse detection revokes the whole chain → all tabs die; with no re-entrancy guard on the interceptor→logout path this cascades into a ~1000-request 401 storm (reproduced live twice today). Candidate fix: cross-tab refresh lock (BroadcastChannel/localStorage), add `/auth/account/logout` to `NO_REFRESH_PATHS`, logout re-entrancy guard.
+
+## Tooling notes
+- Web scripts are `oksis:dev`/`oksis:test` (CLAUDE.md says `npm run dev/test` — docs drift, still open).
+- Chrome extension form automation (form_input/type) fails to trigger RHF submits on forgot/change-password pages (no console errors) — future E2E should fall back to curl for those flows.
+- A subagent accidentally popped the user's `demotable` stash; original intact at `stash@{1}`, duplicate parked at `stash@{0}` (user to decide drop).
