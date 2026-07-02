@@ -79,7 +79,7 @@ Modülün ana akışı (login + context resolution):
 - **Sprint:** Sprint 1–6
 - **Owner:** {{TBD}}
 - **Created:** 2026-05-15
-- **Last Updated:** 2026-07-02 (Legacy User emeklilik Faz 3: legacy davet dünyası + IJwtTokenService söküldü, 2 PR açık — bkz. completion_status)
+- **Last Updated:** 2026-07-02 (Legacy User emeklilik Faz 4: son db.Users tüketicileri bitirildi [üretimde db.Users=0], stacked PR api#34 — bkz. completion_status)
 - **Files:**
   - [x] README.md
   - [x] domain-model.md
