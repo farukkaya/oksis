@@ -79,11 +79,26 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
   `BackendLoginPayload` silinir.
 - **Sıra:** istemci repoint + uç silme aynı fazda; api PR'ı ile web+mobil PR'ı birlikte merge edilir.
 
-### Faz 2 — Parola (api)
+### Faz 2 — Parola (api + web + mobile) *(2026-07-02 amendman-2 ile genişletildi, onaylı)*
 - `POST /auth/reset-password|confirm-reset` uçları + `ResetPasswordCommand`,
-  `ConfirmPasswordResetCommand`, `ChangePasswordCommand` (controller'a bağlı olmayan ölü
-  handler) + validator/test silinir. Account eşleri (`account/forgot|reset|change-password`) zaten canlı.
-- Ön kontrol: legacy parola uçlarını çağıran istemci kodu sıfır (grep ile teyit).
+  `ConfirmPasswordResetCommand` dilimleri + `ResetPasswordBody`/`ConfirmResetBody` silinir.
+- **Amendman-2a (öncül düzeltmesi):** `ChangePasswordCommand` "controller'sız ölü handler"
+  DEĞİLDİ — canlı `POST /users/me/change-password` (UsersController) ucuna bağlıydı ama
+  **istemcisi sıfır** (web+mobil `/auth/account/change-password` kullanıyor). Kullanıcı
+  kararı: uç + dilim (command/handler/validator/test) + `ChangePasswordBody` Faz 2'de silinir.
+- **Amendman-2b:** legacy `identity.password_reset_tokens` tablosu + `PasswordResetToken`
+  entity/config/DbSet/testi iki handler silinince tamamen yetim → **bu fazda drop migration**
+  ile düşürülür (Account'ın `account_password_reset_tokens`'ı AYRI ve KALIR).
+- `TenantContextMiddleware.TenantFreeEndpoints`'ten `reset-password`/`confirm-reset` girdileri silinir.
+- Web: ölü tipler silinir (`LoginPayload`, `ResetPasswordPayload`, `ConfirmResetPayload`,
+  `ChangePasswordPayload` — üretim kullanıcıları yok). Mobil: ölü legacy şemalar silinir
+  (`resetPasswordSchema`/`confirmResetSchema` + testleri); `changePasswordSchema` KALIR
+  (form-validasyonu, account ucuna gidiyor).
+- api docs temizliği: postman koleksiyonu + curl reference + test/invitations script'lerindeki
+  legacy uç kayıtları (Faz 1+2 silinenleri) temizlenir.
+- **KALIR:** `IPasswordResetEmailSender` + `PasswordResetEmailSender` + `PasswordResetEmailJob`
+  + DI kayıtları (AccountForgotPassword da kullanıyor); tüm `Account*` parola dilimleri;
+  `IRefreshTokenStore` (bu fazdan sonra kalan TEK tüketicisi `SoftDeleteUser` → Faz 4).
 
 ### Faz 3 — Davet + kullanıcı oluşturma (api + web)
 - `UserCreationService` → **`PersonCreationService`** semantiği: admin "Yeni Kullanıcı" =
@@ -125,9 +140,9 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
 
 ## 4. Veri ve şema
 
-- Migration'lar şema değiştirir, veri taşımaz: Faz 3 (`pre_created_user_id` → `person_id`
-  rename), Faz 5 (`users` drop). *(Amendman: legacy refresh store Redis tabanlı — DB tablosu
-  yok, Faz 1 migration'ı düştü.)*
+- Migration'lar şema değiştirir, veri taşımaz: **Faz 2 (`password_reset_tokens` drop —
+  amendman-2b)**, Faz 3 (`pre_created_user_id` → `person_id` rename), Faz 5 (`users` drop).
+  *(Amendman: legacy refresh store Redis tabanlı — DB tablosu yok, Faz 1 migration'ı düştü.)*
 - Stale `LinkedAccountId` (legacy User.Id) değerleri reseed ile yok olur.
 - Prod'da auto-migrate yok (mevcut kural); tüm migration'lar `--idempotent` script üretilebilir.
 
