@@ -101,6 +101,32 @@ Her faz: kendi branch'i → TDD → testler yeşil → Chrome E2E → review →
   `IRefreshTokenStore` (bu fazdan sonra kalan TEK tüketicisi `SoftDeleteUser` → Faz 4).
 
 ### Faz 3 — Davet + kullanıcı oluşturma (api + web)
+
+> **Amendman-3 (2026-07-02, onaylı — Faz 3 keşfi öncülleri düzeltti):**
+> **(3a)** Web `/invite/:token` ZATEN Person-merkezli Users accept'ini kullanıyor
+> (`POST /users/invitations/accept`: Person davetten önce var, Account accept'te,
+> token dönmez → login'e yönlendirir, KVKK rızaları kaydedilir). "İki zincir tek
+> handler'da birleşir" maddesi yerine gerçek iş: **`InvitationAccountProvisioner`'ın
+> `User.Create` yapan gövdesi gerçek `Account.Create`'e çevrilir** (bugün
+> `Person.LinkedAccountId`'ye User.Id yazılıyor — ana tutarsızlık burada).
+> **(3b)** Legacy Identity davet zinciri **TÜMDEN emekli**: `InvitationToken`
+> entity+config+`invitation_tokens` tablosu (drop migration), `InvitationsController`
+> + `PublicInvitationsController`, Identity AcceptInvitation (auto-login'li) /
+> BulkCreateInvitation / RequestInvitationRefresh / GetInvitationPreview /
+> GetExpiredInvitation dilimleri, `InvitationCreationService`,
+> `SendInvitationNotificationJob` + testleri. Accept auto-login modeli: token
+> DÖNDÜRMEZ (mevcut Users davranışı standart).
+> **(3c)** `PreCreatedUserId` → `PersonId` **rename İPTAL** — aggregate komple
+> düştüğü için yerine `invitation_tokens` DROP migration'ı gelir.
+> **(3d)** `StudentAccountProvisioner` eager-Account'u (temp parola +
+> requirePasswordChange, E2.6) **istisna olarak korunur** — "Account yalnız parola
+> doğduğunda doğar" ilkesi davet akışlarına özgüdür; öğrenci enroll akışına dokunulmaz.
+> **(3e)** `POST /users` (Yeni Kullanıcı) **Person+davet akışına yeniden yazılır**
+> (temp parola + welcome yerine Person (+uygun Profile/RoleAssignment) + Users daveti);
+> `ImportUsers` aynı yeni servise geçer. Uç korunur, web repoint gerekmez.
+> Ayrıca `IJwtTokenService`+`JwtTokenService` (son kullanıcı Identity accept ile
+> gider), `PermissionReader` legacy claim fallback'i ve `CurrentUser`'ın legacy
+> `permissions` okuması bu fazda silinir.
 - `UserCreationService` → **`PersonCreationService`** semantiği: admin "Yeni Kullanıcı" =
   `Person` + uygun `Profile` + `RoleAssignment` + davet. `User.Create` yolu silinir.
 - `InvitationToken.PreCreatedUserId` → **`PersonId`** (rename migration): davet doğrudan
