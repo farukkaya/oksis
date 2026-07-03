@@ -18,6 +18,7 @@
 - Kod tanımlayıcıları İngilizce, XML doc yorumları Türkçe (mevcut kalıp).
 - `async void`, `Task.Result`, `.Wait()`, AutoMapper, repository wrapper YASAK.
 - Test stili: xUnit `[Fact]` + FluentAssertions, metot adları `Snake_case_davranış` İngilizce (mevcut kalıp: `Create_sets_name_type_block_floor`).
+- **Naming (.editorconfig 49-57, IDE1006):** TÜM private alanlar `_camelCase` (required_prefix `_`). Bu plandaki Task 2/3 test kod bloklarında ve Task 4 registry'sinde ilk sürümde bu kural ihlal edilmişti (PascalCase static alanlar, `Policies`); uygulamada `_schoolId`, `_yearId`, `_storedFileId`, `_entityId`, `_policies` olarak düzeltildi (2026-07-04 kullanıcı bildirimi). Kod bloklarını birebir kopyalarken bu düzeltmeyi uygula.
 
 ---
 
@@ -1109,7 +1110,7 @@ public sealed class FileCategoryPolicyRegistry : IFileCategoryPolicyRegistry
 {
     private const long Mb = 1024 * 1024;
 
-    private static readonly Dictionary<string, FileCategoryPolicy> Policies =
+    private static readonly Dictionary<string, FileCategoryPolicy> _policies =
         new FileCategoryPolicy[]
         {
             new(FileCategories.AssignmentSubmission,
@@ -1140,10 +1141,10 @@ public sealed class FileCategoryPolicyRegistry : IFileCategoryPolicyRegistry
                 RetentionPeriod: TimeSpan.FromDays(365)),                       // Sezon + 1 yıl
         }.ToDictionary(p => p.Category);
 
-    public IReadOnlyCollection<FileCategoryPolicy> All => Policies.Values;
+    public IReadOnlyCollection<FileCategoryPolicy> All => _policies.Values;
 
     public FileCategoryPolicy? Find(string category) =>
-        Policies.GetValueOrDefault(category);
+        _policies.GetValueOrDefault(category);
 
     public FileCategoryPolicy GetRequired(string category) =>
         Find(category) ?? throw new DocumentsDomainException(
