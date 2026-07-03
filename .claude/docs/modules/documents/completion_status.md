@@ -34,4 +34,4 @@ _Yok._ (Retention yorumunun somutlaştırılması — `business-rules.md` — sp
 
 ## Branch Notu
 
-Tüm Faz 0-1 işi `oksis-api` reposunda `feature/dosya-yonetimi-faz0-1` branch'inde. Merge/PR kararı kullanıcıya soruldu, henüz alınmadı.
+Faz 0-1 işi `feature/dosya-yonetimi-faz0-1` branch'inde geliştirildi ve kullanıcı kararıyla doğrudan **master'a merge edildi** (`d752f98`, 2026-07-04, no-ff); branch silindi. Faz 2 master üzerinden yeni branch'le başlar.
