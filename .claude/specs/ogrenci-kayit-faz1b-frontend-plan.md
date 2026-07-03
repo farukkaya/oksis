@@ -24,7 +24,7 @@
 - **EnrollStudentResult:** `StudentPersonId, EnrollmentId, StudentNumber, HasGuardianWarning`. **Geçici şifre / öğrenci hesabı YOK** (E2.6/E2.7 ertelendi) → başarı ekranında şifre satırı **Debt**, sahte değer basılmaz.
 - **Enum JSON değerleri:** `Gender` → `Female`/`Male`; `EnrollmentType` → `New`/`TransferIn`; `IdType` → `Tckn`; `InvitationChannel` → `Email`/`Sms`/`WhatsApp`; `RelationType` → `Mother`/`Father`/`Guardian`/`Other`. (Backend enum string serileştirme; mevcut `studentsApi` örneklerindeki kasayı izle.)
 - **Handoff kaynağı (birebir port):** `enroll_wizard.jsx` (scratchpad: `design/app/enroll_wizard.jsx`) ve `flows.css`. JSX yapısı buradan portlanır; mock `W_*` sabitleri hook/prop ile değiştirilir.
-- **TDD:** Her task RED→GREEN. Odaklı test: `npm run test -- <path>`; commit öncesi bir kez tüm süit: `npm run test`.
+- **TDD:** Her task RED→GREEN. **Test runner `npx vitest run` (npm `test` script'i YOK).** Odaklı test: `npx vitest run <path>`; commit öncesi bir kez tüm süit: `npx vitest run`. Build: `npm run build`. (Plan gövdesindeki `npm run test -- <path>` komutlarını `npx vitest run <path>` olarak uygula.)
 
 ---
 
@@ -344,7 +344,7 @@ git commit -m "2026-06-29 feat,test: Öğrenci kayıt sihirbazı Zod şeması + 
 - Produces (hepsi `studentsApi` nesnesine eklenir):
   - `checkNationalId(nationalId: string, idType: "Tckn", signal?): Promise<NationalIdDuplicate>`
   - `branchCapacity(academicSessionId: string, gradeLevelId: string | null, signal?): Promise<BranchCapacity[]>`
-  - `searchGuardians(query: string, signal?): Promise<GuardianSearchItem[]>`
+  - `searchEnrollGuardians(query: string, signal?): Promise<GuardianSearchItem[]>` (**YENİ ad** — mevcut `searchGuardians` (drawer, `/users/persons`) ile çakışmamak için; onu EZME)
   - `enroll(body: EnrollStudentCommandBody): Promise<EnrollResult>`
   - `transferIn(body: EnrollStudentCommandBody): Promise<EnrollResult>`
   - Tipler: `NationalIdDuplicate { exists; personId; fullName; studentNumber }`, `BranchCapacity { classRoomId; fullName; used; capacity }`, `GuardianSearchItem { personId; fullName; phone; email }`, `EnrollResult { studentPersonId; enrollmentId; studentNumber; hasGuardianWarning }`.
@@ -427,7 +427,7 @@ branchCapacity: async (academicSessionId, gradeLevelId, signal) => {
     "/branches/capacity", { params: { academicSessionId, gradeLevelId }, signal });
   return unwrap(res.data);
 },
-searchGuardians: async (query, signal) => {
+searchEnrollGuardians: async (query, signal) => {   // YENİ ad (eski searchGuardians'ı EZME)
   const res = await httpClient.get<ApiEnvelope<GuardianSearchItem[]>>(
     "/guardians:search", { params: { query }, signal });
   return unwrap(res.data);
@@ -564,7 +564,7 @@ export function useGuardianSearchQuery(query: string) {
   const term = query.trim();
   return useQuery({
     queryKey: studentKeys.guardianSearch(schoolId, term),
-    queryFn: ({ signal }) => studentsApi.searchGuardians(term, signal),
+    queryFn: ({ signal }) => studentsApi.searchEnrollGuardians(term, signal),
     enabled: term.length >= 2,
   });
 }
