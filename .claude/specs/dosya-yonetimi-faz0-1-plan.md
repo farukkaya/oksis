@@ -18,7 +18,7 @@
 - Kod tanımlayıcıları İngilizce, XML doc yorumları Türkçe (mevcut kalıp).
 - `async void`, `Task.Result`, `.Wait()`, AutoMapper, repository wrapper YASAK.
 - Test stili: xUnit `[Fact]` + FluentAssertions, metot adları `Snake_case_davranış` İngilizce (mevcut kalıp: `Create_sets_name_type_block_floor`).
-- **Naming (.editorconfig 49-57, IDE1006):** TÜM private alanlar `_camelCase` (required_prefix `_`). Bu plandaki Task 2/3 test kod bloklarında ve Task 4 registry'sinde ilk sürümde bu kural ihlal edilmişti (PascalCase static alanlar, `Policies`); uygulamada `_schoolId`, `_yearId`, `_storedFileId`, `_entityId`, `_policies` olarak düzeltildi (2026-07-04 kullanıcı bildirimi). Kod bloklarını birebir kopyalarken bu düzeltmeyi uygula.
+- **Naming (.editorconfig 49-57, IDE1006):** TÜM private alanlar `_camelCase` (required_prefix `_`). Bu plandaki Task 2/3 test kod bloklarında ve Task 4 registry'sinde ilk sürümde bu kural ihlal edilmişti (PascalCase static alanlar, `Policies`); uygulamada `_schoolId`, `_yearId`, `_storedFileId`, `_entityId`, `_policies`, `_mb` (const dahil) olarak düzeltildi (2026-07-04 kullanıcı bildirimi). Kod bloklarını birebir kopyalarken bu düzeltmeyi uygula.
 
 ---
 
@@ -1108,7 +1108,7 @@ namespace Oksis.Application.Modules.Documents.Services;
 /// </summary>
 public sealed class FileCategoryPolicyRegistry : IFileCategoryPolicyRegistry
 {
-    private const long Mb = 1024 * 1024;
+    private const long _mb = 1024 * 1024;
 
     private static readonly Dictionary<string, FileCategoryPolicy> _policies =
         new FileCategoryPolicy[]
@@ -1116,28 +1116,28 @@ public sealed class FileCategoryPolicyRegistry : IFileCategoryPolicyRegistry
             new(FileCategories.AssignmentSubmission,
                 ["pdf", "docx", "jpg", "png"],
                 ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/jpeg", "image/png"],
-                20 * Mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
+                20 * _mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
                 RetentionPeriod: TimeSpan.FromDays(365)),                       // Sezon + 1 yıl
             new(FileCategories.ExamDocument,
                 ["pdf"], ["application/pdf"],
-                50 * Mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
+                50 * _mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
                 RetentionPeriod: TimeSpan.FromDays(730)),                       // Sezon + 2 yıl
             new(FileCategories.VirtualBook,
                 ["pdf", "epub"], ["application/pdf", "application/epub+zip"],
-                500 * Mb, RequiresVirusScan: true, ForcePresigned: true, AllowMultipart: true,
+                500 * _mb, RequiresVirusScan: true, ForcePresigned: true, AllowMultipart: true,
                 RetentionPeriod: null),                                         // Sözleşme süresi (offboarding imhası)
             new(FileCategories.SchoolLogo,
                 ["png", "svg"], ["image/png", "image/svg+xml"],
-                2 * Mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
+                2 * _mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
                 RetentionPeriod: null),                                         // Süresiz
             new(FileCategories.ClubDocument,
                 ["pdf", "docx", "jpg"],
                 ["application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "image/jpeg"],
-                20 * Mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
+                20 * _mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
                 RetentionPeriod: TimeSpan.FromDays(365)),                       // Sezon + 1 yıl
             new(FileCategories.AnnouncementAttachment,
                 ["pdf", "jpg", "png"], ["application/pdf", "image/jpeg", "image/png"],
-                10 * Mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
+                10 * _mb, RequiresVirusScan: true, ForcePresigned: false, AllowMultipart: false,
                 RetentionPeriod: TimeSpan.FromDays(365)),                       // Sezon + 1 yıl
         }.ToDictionary(p => p.Category);
 
