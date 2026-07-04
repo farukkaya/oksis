@@ -70,13 +70,15 @@
 2. **Faz 2 plan kalıbı:** tenant query-filter doğrulaması snapshot grep'iyle YAPILAMAZ (EF snapshot query filter serileştirmez — projede 0 adet `HasQueryFilter`). Doğru yöntem: entegrasyon testi veya `dbContext.Model.FindEntityType(typeof(X)).GetQueryFilter() != null` assert'i.
 3. **Faz 3:** `FileCategoryPolicyRegistry.Find(null)` `ArgumentNullException` fırlatır; API'ye kategori string'i açılırken FluentValidation `NotEmpty` önde olmalı + `Find`'a null-toleransı değerlendirilmeli.
 4. **Faz 4:** purge/retention job'ları `Status=SoftDeleted` kayıtları ancak **gerekçeli `IgnoreQueryFilters()`** ile görebilir (tenant filter `!IsDeleted` içeriyor) — Hard Ban istisna prosedürüyle (gerekçe + audit) planlanmalı; `ix_stored_files_school_status` bu taramayı destekler.
-5. **Faz 3:** `GetPresignedDownloadUrlAsync`'e ResponseHeaderOverrides (Content-Disposition/Content-Type) opsiyonu — spec § 3.3.2 indirme adı için ŞART.
-6. **Faz 3:** Confirm akışı ExistsAsync-önce (StatAsync Amazon istisnası Application'da yakalanamaz).
-7. **Faz 3:** upload guard `!CanSeek`'e genişletilsin.
-8. **Faz 5:** S3StorageOptions ValidateOnStart doğrulaması.
+5. ~~**Faz 3:** `GetPresignedDownloadUrlAsync`'e ResponseHeaderOverrides (Content-Disposition/Content-Type) opsiyonu — spec § 3.3.2 indirme adı için ŞART.~~ **ÇÖZÜLDÜ (Faz 3, commit `9b763f4`):** `PresignedDownloadHeaderOverrides` overload + RFC 5987 `ContentDispositionBuilder` eklendi; Garage'a karşı gerçek HTTP `Content-Disposition` header'ı doğrulandı (Task 3/4 E2E).
+6. ~~**Faz 3:** Confirm akışı ExistsAsync-önce (StatAsync Amazon istisnası Application'da yakalanamaz).~~ **ÇÖZÜLDÜ (Faz 3, commit `143e7a7`):** `ConfirmFileUploadCommandHandler` `ExistsAsync`-önce kontrol uyguluyor.
+7. ~~**Faz 3:** upload guard `!CanSeek`'e genişletilsin.~~ **ÇÖZÜLDÜ (Faz 3, commit `9b763f4`):** Ampirik Garage testiyle doğrulandı (non-seekable+known-length SigV4 imzasıyla çalışmıyor — `InvalidRequestException`); `S3CompatibleStorageService.UploadAsync` guard'ı `ContentLength is null && !CanSeek` → `!CanSeek`'e genişletildi. Buffer'lama yerine `HashingStreamWrapper` (seekable inner stream zorunlu) çözümü seçildi — plan dokümanının "İPTAL" notu ampirik olarak yanlış çıktı, brief yetkisiyle geri alındı.
+8. **Faz 5:** S3StorageOptions ValidateOnStart doğrulaması. _(Açık — henüz ele alınmadı.)_
 
 ---
 
 ## Karar Verilenler (Arşiv)
 
-_Henüz yok._
+- **OQ-documents-008 madde 5** (Content-Disposition/Content-Type override) — ÇÖZÜLDÜ Faz 3, commit `9b763f4`. Bkz. yukarı.
+- **OQ-documents-008 madde 6** (Confirm ExistsAsync-önce) — ÇÖZÜLDÜ Faz 3, commit `143e7a7`. Bkz. yukarı.
+- **OQ-documents-008 madde 7** (upload guard `!CanSeek`) — ÇÖZÜLDÜ Faz 3, commit `9b763f4`. Bkz. yukarı.

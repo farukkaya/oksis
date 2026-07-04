@@ -7,9 +7,11 @@
 
 ---
 
-## ⚠️ Backend Bağlaması — Faz 3'te
+## ✅ Backend Bağlaması — Faz 3'te UYGULANDI
 
-Bu dosyadaki matris **spec'ten kopyalanmıştır, henüz kodda uygulanmamıştır.** Faz 0-1 yalnız domain + persistence teslim etti; `[RequirePermission]` decorator'ları, `usePermission`/`RequirePermission` frontend gate'leri ve `permission-matrix.md` (proje kökü) satırları **Faz 3'te** (CQRS yüzeyi açılınca) eklenecek. O zamana kadar bu izin kodları koda bağlı değildir — yalnızca tasarım referansıdır.
+Bu dosyadaki matris **Faz 3'te backend'e bağlandı**: seed (`MasterSeedIds`/`PermissionSeedData`/`RolePermissionSeedData`, migration `20260704065241_20260704_files_permissions`, 20 `role_permission` satırı) + her komut/sorguda `[RequirePermission("files.*")]` + `[Tenancy(Required)]` (commit `10acbfa` + Task 2-3). `permission-matrix.md` (proje kökü) satırları eklendi. Frontend `usePermission`/`RequirePermission` gate'leri henüz yok (Faz 5, web `shared/files` ile birlikte).
+
+**Secretary seed boşluğu:** Aşağıdaki matriste Secretary→`files.view/upload/download` "Kapsamlı" olarak tanımlı, ancak Secretary rolü **MVP seed'inde yok** (Issue #1, 5-rol seti). Bu satırlar Secretary'ye seed'lenmedi — hedef/gelecek tasarımdır (DUTIES modülü emsali). Diğer 5 rol (SuperAdmin/SchoolAdmin/Teacher/Parent/Student) matrisle birebir seed'lendi. Detay: `completion_status.md → Spec Dışına Çıkılanlar`.
 
 ---
 
@@ -61,4 +63,4 @@ Permission yetmez, kapsam (scope) da kontrol edilir:
 
 Matriste açıkça verilmemiş = **erişim yok**. Yeni permission eklendiğinde tüm rollere default `—` gelir.
 
-> Detay: `permission-matrix.md` § 7 (bu modülün satırları henüz eklenmedi — Faz 3).
+> Detay: `permission-matrix.md` § 7 (bu modülün satırları eklendi — Faz 3, bkz. "Documents (Dosya Yönetimi)" bölümü).

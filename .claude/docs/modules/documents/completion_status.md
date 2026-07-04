@@ -4,7 +4,7 @@
 > durumları raporlar. İlgili her geliştirmede ANINDA güncellenir.
 > Status snapshot'tır, kural deposu değil (tam kurallar `business-rules.md`).
 
-**İlerleme:** `▓▓▓▓▓░░░░░` %45 (Faz 0-2 / 5 faz tamam)   ·   Status: in-progress   ·   Güncel: 2026-07-04
+**İlerleme:** `▓▓▓▓▓▓▓░░░` %65 (Faz 0-3 / 5 faz tamam)   ·   Status: in-progress   ·   Güncel: 2026-07-04
 
 ---
 
@@ -19,10 +19,15 @@
   - Build + tüm test suite yeşil doğrulandı (2204/2205, 1 bilinen pre-existing flake — Documents ile ilgisiz).
   - Final whole-branch review (2026-07-04): **merge onaylı (Yes)**, sıfır Critical/Important; iki dokunuş uygulandı — csproj yorum konumu + `Confirm` negatif boyut guard'ı + regression testi (13. StoredFile testi — commit `bb49ff1`). Devirler `open-questions.md` OQ-documents-008'de.
 - **Faz 2 — Depolama Soyutlaması + S3 + Provisioning:** `IStorageService` abstraction (spec § 3.2 + capability modeli, 3 onaylı multipart eki — commit `2cc17c8`); `S3CompatibleStorageService` Garage entegrasyon testleri 9/9 gerçek uçtan uca (UseChunkEncoding=false + presigned scheme fix — T1'in çalışmayan upload'ını yakaladı — commit `f5c4089`); `ProvisionSchoolBucket` + `SchoolCreatedEvent` otomatik provisioning (post-commit Hangfire, idempotent — commit `ef08bbb`); final review YES (reviewer 10/10 entegrasyonu kendisi yeniden koştu), master merge `d6ce6a9`.
+- **Faz 3 — CQRS Yüzeyi + Permissions:**
+  - **İzin altyapısı:** `files.*` 6 izin + 20 `role_permission` satırı seed'lendi (SuperAdmin 4, SchoolAdmin 5, Teacher 4, Parent 3, Student 4), `FILES_*` hata kodları + `ResultExtensions.MapStatusCode` bloğu (commit `10acbfa`).
+  - **Upload orkestrasyonu:** proxy (`UploadFile`) + iki-fazlı/multipart (`InitiateFileUpload`/`ConfirmFileUpload`), `HashingStreamWrapper` (checksum-sırasında-hesaplama, seekable guard — Garage'a karşı ampirik doğrulandı: non-seekable+known-length SigV4 ile çalışmıyor, guard `!CanSeek`'e genişletildi), RFC 5987 `ContentDispositionBuilder`, `IStorageQuotaService`/`StorageQuotaService` (Redis sayaç + DB SUM reconcile) (commits `9b763f4`/`143e7a7`).
+  - **Bağ/yaşam döngüsü + sorgular:** `AttachFile`/`DetachFile`/`DeleteFile` + `IFileAccessGuard`/`FileAccessGuard` (kayıt-defteri, `"School"` çözümleyici canlı, kayıtsız tip → 404) + `GetFileDownloadUrl` (audit `files.download.url-issued` + Content-Disposition override) + `ListFilesByEntity`/`GetSchoolStorageUsage` (`[Cacheable]`)/`GetFileCategoryPolicy` (commit `24bb3d7`); review fix — silme audit logu (`files.delete.soft`) + kota `ReleaseAsync` (commit `00e3b8b`).
+  - **`FilesController`:** 10 endpoint (`api/v1/files` proxy/initiate/confirm/attach/detach/delete/download-url/by-entity/usage/policies) + Garage'a karşı iki-fazlı uçtan uca entegrasyon testi (commit `2c3b9a1`).
+  - Branch `feature/dosya-yonetimi-faz3` (`10acbfa`→`2c3b9a1`), henüz **master'a merge edilmedi** — final review + merge kontrolcüde.
 
 ## ⏳ Eksik / Bekleyen Yapılar
 
-- **Faz 3:** CQRS yüzeyi (proxy upload, initiate/confirm, multipart, attach/detach/delete, download-url, listeler, policies endpoint) + `files.*` izinlerinin backend'e bağlanması + resource-scope.
 - **Faz 4:** Hangfire job'ları (`VirusScanJob`, `OrphanUploadCleanupJob`, `SoftDeletePurgeJob`, `RetentionEnforcementJob`, `ThumbnailGenerationJob`) + log kataloğu + redaction.
 - **Faz 5:** SchoolLogo göçü + eski `IFileStorageService`/`FileStorageService` silinmesi + web `shared/files` + logo ekranı swap.
 
@@ -33,13 +38,16 @@
 - **Seeder okulları auto-provision olmaz:** `INotificationEnqueuer` boşluğuyla tutarlı. Faz 3 mitigasyonu: upload öncesi idempotent `EnsureBucket`.
 - **Garage entegrasyon test cleanup'ı sessiz catch{}:** leaked-bucket körlüğü (bir kez 29 bucket elle temizlendi). Faz 3 test işinde tek satır teşhis eklenecek.
 - **Plan kusuru kaydı:** `MultipartUploadSession.PartUrls` ölü alan (plan T1 imza çelişkisi). Faz 3'te değerlendirilecek.
+- **FAZ 4 GUARDRAIL:** `SoftDeletePurgeJob` `ReleaseAsync`'i TEKRAR çağırmamalı — bayt kota sayacından `DeleteFileCommand` anında (soft-delete'te) düşürülmüştür; purge job yalnız fiziksel S3 nesnesini siler, kota rezervasyonuna dokunmaz (bkz. Faz 3 Task 3 fix-round-1).
+- **`GetFileCategoryPolicy` Tenancy-Required:** query şu an `[Tenancy(Required)]` + `files.view` gerektiriyor; anonim/login-öncesi policy okuma ihtiyacı doğarsa Faz 5'te revisit edilecek.
 
 ## ⚠️ Spec Dışına Çıkılanlar
 
 - `2026-07-04` — spec § 3.4 `ProvisionSchoolBucket` "SuperAdmin" izni: repo'da SuperAdmin komut emsali/`TenancyMode.SuperAdminOnly` kullanımı YOK; izin anahtarı uydurulmadı, `[Tenancy(Required)]` + handler tenant-guard uygulandı, HTTP endpoint'i yok. Gelecekteki SuperAdmin onboarding endpoint'inde nitelik kararlaştırılacak. Onay: gece otonomi mandatı + reviewer.
+- `2026-07-04` — Faz 3 Task 1 (`files.*` izin altyapısı): permissions.md/faz3-plan matrisindeki "Secretary→view,upload,download" hedef ataması **seed'lenmedi** — Secretary rolü MVP seed'inde yok (Issue #1, 5-rol seti: SuperAdmin/SchoolAdmin/Teacher/Parent/Student). Aynı DUTIES modülü emsali izlendi ("Secretary→duties.view eşlemesi ertelendi"). Diğer 5 rol matrisle birebir seed'lendi (SuperAdmin 4, SchoolAdmin 5, Teacher 4, Parent 3, Student 4). Secretary rolü seed'lendiğinde `RolePermissionSeedData.cs`'e eklenecek. Onay: plan kendisi (dosya-yonetimi-faz3-plan.md Task 1) + kod emsali.
 
 ---
 
 ## Branch Notu
 
-Faz 0-1 işi `feature/dosya-yonetimi-faz0-1` branch'inde geliştirildi ve kullanıcı kararıyla doğrudan **master'a merge edildi** (`d752f98`, 2026-07-04, no-ff); branch silindi. Faz 2 de master'a merge oldu (`d6ce6a9`, 2026-07-04). Faz 3 master üzerinden yeni branch'le başlar.
+Faz 0-1 işi `feature/dosya-yonetimi-faz0-1` branch'inde geliştirildi ve kullanıcı kararıyla doğrudan **master'a merge edildi** (`d752f98`, 2026-07-04, no-ff); branch silindi. Faz 2 de master'a merge oldu (`d6ce6a9`, 2026-07-04). Faz 3, `feature/dosya-yonetimi-faz3` branch'inde (base `d6ce6a9`, commit'ler `10acbfa`→`2c3b9a1`) tamamlandı; **henüz master'a merge edilmedi** — final review + merge kontrolcüde.

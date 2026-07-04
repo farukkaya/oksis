@@ -22,7 +22,7 @@ Documents modülü, OKSİS genelinde tüm modüllerin (ödev, sınav, sanal kita
 | Teacher / Parent / Student / Secretary | Kapsamlı (resource-level scope ile) yükleme/indirme/silme — bkz. `permissions.md` |
 | SuperAdmin | Denetim amaçlı `files.view`/`files.download` (yalnız `X-Tenant-Override` + audit); upload/delete yapamaz |
 
-> Tam yetki matrisi için bkz. `permissions.md` (bu klasörde) ve proje kökü `permission-matrix.md` (Faz 3'te bağlanacak).
+> Tam yetki matrisi için bkz. `permissions.md` (bu klasörde) ve proje kökü `permission-matrix.md` (Faz 3'te bağlandı).
 
 ---
 
@@ -53,9 +53,9 @@ Modülün ana akışı (Faz 3'te CQRS yüzeyi açılınca aktif olacak):
 
 ## Mevcut Durum
 
-- Hangi sprint'te? → `feature/dosya-yonetimi-faz0-1` branch'i, Faz 0-1 tamamlandı (bkz. `completion_status.md`)
+- Hangi sprint'te? → `feature/dosya-yonetimi-faz3` branch'i, Faz 0-3 tamamlandı, henüz master'a merge edilmedi (bkz. `completion_status.md`)
 - MVP scope'unda mı? → Evet, altyapı MVP kapsamında; canlı tüketici Faz 5'te (SchoolLogo)
-- Hangi parçaları yapıldı / kaldı? → Faz 0 (dev altyapı) + Faz 1 (domain + persistence) ✅; Faz 2-5 ⏳ (bkz. `completion_status.md`)
+- Hangi parçaları yapıldı / kaldı? → Faz 0 (dev altyapı) + Faz 1 (domain + persistence) + Faz 2 (depolama/S3/provisioning) + Faz 3 (CQRS yüzeyi + izinler) ✅; Faz 4-5 ⏳ (bkz. `completion_status.md`)
 
 > Açık sorular için bkz. `open-questions.md`.
 
@@ -65,14 +65,14 @@ Modülün ana akışı (Faz 3'te CQRS yüzeyi açılınca aktif olacak):
 
 - **Slug:** documents
 - **Status:** in-progress
-- **Sprint:** Dosya Yönetimi Faz 0-2
+- **Sprint:** Dosya Yönetimi Faz 0-3
 - **Owner:** {{TBD}}
 - **Created:** 2026-07-04
 - **Last Updated:** 2026-07-04
 - **Files:**
   - [x] README.md
   - [x] domain-model.md
-  - [ ] api-contracts.md
+  - [x] api-contracts.md
   - [x] database-schema.md
   - [x] permissions.md
   - [ ] notifications.md

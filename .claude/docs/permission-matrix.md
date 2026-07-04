@@ -242,6 +242,22 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | `finance.view` | 🚫 | ✅ | 🚫 | 🚫 | 👁 (çocukları) | 🚫 | ✅ |
 | `finance.manage` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | ✅ |
 
+### Documents (Dosya Yönetimi) — Faz 3 (2026-07-04)
+
+> Kaynak: `modules/documents/permissions.md` + spec § 4. Backend'e bağlandı: seed (20 `role_permission` satırı, migration `20260704065241_20260704_files_permissions`) + `[RequirePermission]` (commit `10acbfa`). Kapsam ihlali (Teacher/Parent/Student "kapsamlı" satırları) **404** döner, izin yokluğu **403** (bkz. `modules/documents/permissions.md` § Resource-Level Scope).
+
+| İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Secretary |
+|---|---|---|---|---|---|---|---|
+| `files.view` | ✅ | ✅ | 🚫 | 👁 (kapsam) | 👁 (kapsam) | 👁 (kapsam) | 👁 (kapsam)¹ |
+| `files.upload` | 🚫 | ✅ | 🚫 | 👁 (kapsam) | 👁 (kapsam) | 👁 (kapsam) | 👁 (kapsam)¹ |
+| `files.download` | ✅ | ✅ | 🚫 | 👁 (kapsam) | 👁 (kapsam) | 👁 (kapsam) | 👁 (kapsam)¹ |
+| `files.delete` | 🚫 | ✅ | 🚫 | 👁 (kapsam) | 🚫 | 👁 (kapsam) | 🚫 |
+| `files.quota.view` | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `files.policies.manage` | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+
+> ¹ **Secretary rolü MVP seed'inde yok** (bkz. § 1 uyarısı — 5-rol seti). `files.*` satırları bu yüzden Secretary'ye **seed'lenmedi**; yukarıdaki `files.view/upload/download` "👁" hedef/gelecek tasarımdır, runtime'da atanamaz (Faz 3 kaydı — `modules/documents/completion_status.md → Spec Dışına Çıkılanlar`, DUTIES modülü emsaliyle tutarlı). Secretary seed'lendiğinde `RolePermissionSeedData.cs` + bu tablo güncellenir.
+> SuperAdmin `files.upload`/`files.delete` yapamaz (denetim amaçlı yalnız view/download/quota.view/policies.manage).
+
 ---
 
 ## 4. Erişim Kapsam Kuralları (Resource-level)
