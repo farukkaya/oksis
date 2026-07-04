@@ -1,7 +1,7 @@
 # Documents (Dosya Yönetimi)
 
 > Bu modülün **tek kaynak gerçek** dokümantasyonu. Diğer dosyalar bu modülün alt başlıklarını detaylandırır.
-> Bağlayıcı spec: `.claude/specs/dosya-yonetimi-spec.md` — bu doküman spec'in Faz 0-1 teslim durumunu yansıtır, spec'in yerini almaz.
+> Bağlayıcı spec: `.claude/specs/dosya-yonetimi-spec.md` — bu doküman spec'in Faz 0-5 (MVP tamam) teslim durumunu yansıtır, spec'in yerini almaz.
 
 ---
 
@@ -44,7 +44,7 @@ Modülün ana akışı (Faz 3'te CQRS yüzeyi açılınca aktif olacak):
 
 | Modül | İlişki |
 |---|---|
-| `school-settings` | SchoolLogo kategorisi ile ilk canlı tüketici (Faz 5, mevcut logo akışının göçü) |
+| `school-settings` | SchoolLogo kategorisi ile ilk canlı tüketici — Faz 5'te göç tamamlandı (`LogoStoredFileId` + public logo proxy) |
 | `homework` | Gelecekte `AssignmentSubmission` kategorisi ile bağlanacak (Application katmanı henüz boş — B2) |
 | `announcements` | Gelecekte `AnnouncementAttachment` kategorisi ile bağlanacak (B2) |
 | `identity` | Onboarding sırasında `ProvisionSchoolBucketCommand` (Faz 2) |
@@ -53,9 +53,9 @@ Modülün ana akışı (Faz 3'te CQRS yüzeyi açılınca aktif olacak):
 
 ## Mevcut Durum
 
-- Hangi sprint'te? → `feature/dosya-yonetimi-faz3` branch'i, Faz 0-3 tamamlandı, henüz master'a merge edilmedi (bkz. `completion_status.md`)
-- MVP scope'unda mı? → Evet, altyapı MVP kapsamında; canlı tüketici Faz 5'te (SchoolLogo)
-- Hangi parçaları yapıldı / kaldı? → Faz 0 (dev altyapı) + Faz 1 (domain + persistence) + Faz 2 (depolama/S3/provisioning) + Faz 3 (CQRS yüzeyi + izinler) ✅; Faz 4-5 ⏳ (bkz. `completion_status.md`)
+- Hangi sprint'te? → Faz 0-5 TAMAM (MVP kapsamı bitti). Faz 0-4 `master`'a merge edildi; Faz 5 (api+web `feature/dosya-yonetimi-faz5`) henüz master'a merge edilmedi — final review sonrası kontrolcü merge edecek (bkz. `completion_status.md`)
+- MVP scope'unda mı? → Evet; altyapı + ilk canlı tüketici (SchoolLogo, Faz 5) MVP kapsamında tamamlandı
+- Hangi parçaları yapıldı / kaldı? → Faz 0 (dev altyapı) + Faz 1 (domain + persistence) + Faz 2 (depolama/S3/provisioning) + Faz 3 (CQRS yüzeyi + izinler) + Faz 4 (Hangfire job'ları + log kataloğu) + Faz 5 (SchoolLogo göçü + public logo proxy + web shared/files + eski `IFileStorageService` emekliliği) ✅ — kalan işler post-MVP borç (bkz. `completion_status.md` Known Gaps + `open-questions.md`)
 
 > Açık sorular için bkz. `open-questions.md`.
 
@@ -64,11 +64,11 @@ Modülün ana akışı (Faz 3'te CQRS yüzeyi açılınca aktif olacak):
 ## Metadata
 
 - **Slug:** documents
-- **Status:** in-progress
-- **Sprint:** Dosya Yönetimi Faz 0-4
+- **Status:** complete (MVP tamam)
+- **Sprint:** Faz 0-5 TAMAM
 - **Owner:** {{TBD}}
 - **Created:** 2026-07-04
-- **Last Updated:** 2026-07-04
+- **Last Updated:** 2026-07-05
 - **Files:**
   - [x] README.md
   - [x] domain-model.md

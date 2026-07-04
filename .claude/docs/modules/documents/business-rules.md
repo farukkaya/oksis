@@ -98,6 +98,38 @@
 
 ---
 
+## Logo Göçü Kuralları (Faz 5 — KTK-1/KTK-2)
+
+### BR-documents-010: School entity'sine yazma yalnız SchoolAdmin'e açıktır
+
+**Kural:** `"School"` entity tipi için `FileAccessGuard` intent-bazlı ayrım yapar: **Read** (indirme/listeleme) tenant-wide serbesttir (`CurrentSchoolId == entityId`); **Write** (attach/detach/delete) yalnız `school-settings.upload-logo` iznine sahip kullanıcıya (fiilen SchoolAdmin) veya SuperAdmin'e (bypass) açıktır. Teacher/Parent/Student School'a yazamaz.
+
+**Sebep:** `files.delete`/`files.upload` izinleri Teacher ve Student'a da verilidir (kapsamlı) ve bu yüzden School yazma-kapsamını SchoolAdmin'e daraltmakta ayırt edici sinyal olarak kullanılamaz; School bir öğrencinin/öğretmenin kendi entity'si değildir (spec §4.1.3). Guard bu ayrımı taşımazsa herhangi bir tenant üyesi okul logosunu silip yerine kendi dosyasını koyabilirdi.
+
+**Uygulama:** Backend: `IFileAccessGuard.CanAccessAsync(entityType, entityId, FileAccessIntent Read|Write, ct)`; `SchoolEntityScopeResolver` Write yolunda `IPermissionReader.HasPermissionAsync("school-settings.upload-logo")` kontrolü. Yetkisiz Write → `FILES_NOT_FOUND` (404, kaynak varlığını sızdırmama — spec §4.1.4), 403 değil.
+
+---
+
+### BR-documents-011: SchoolLogo yalnız public unauthenticated proxy ile servis edilir; tek gerçek kaynak `LogoStoredFileId`
+
+**Kural:** Okul logosu, `GET /api/v1/public/schools/{schoolId}/logo` (`[AllowAnonymous]`) üzerinden servis edilir; yalnız `StoredFile.Status == Active && VirusScanStatus ∈ {Clean, Skipped}` (yani `CanBeDownloaded`) ise stream edilir, aksi halde `404` (`Cache-Control: no-store`, tarama-bekleme penceresinde stale-404 önlenir). Başarı yolu `Cache-Control: public, max-age=300`. Tek gerçek kaynak `SchoolSettings.LogoStoredFileId`'dir — okuma DTO'ları (`SchoolSettingsDetailDto`, `SchoolBrandingDto`, `InvitationTokenPreviewDto`) `LogoUrl`'ü `ISchoolLogoUrlBuilder` ile bu alandan türetir (derive-at-read), asla ham storage URL'i saklamaz.
+
+**Sebep:** Logo, giriş öncesi de gösterilir (login branding, davet önizleme); Documents'ın standart `GetFileDownloadUrl` akışı presigned+kısa-TTL+`files.download` izni gerektirdiğinden anonim/pre-login kullanıcı için çalışmaz. Stabil public proxy hem pre-login erişimi çözer hem presigned-anonim / 24h-TTL-sızıntı risklerinden kaçınır hem de `<img src>` tarafından cache'lenebilir.
+
+**Uygulama:** Backend: `PublicSchoolLogoController` → `GetSchoolLogoStreamQueryHandler` (`IgnoreQueryFilters()` + çift `SchoolId`/`Id` eşitliğiyle cross-tenant sızıntı imkansız kılınır — SECURITY yorumlu, test kanıtlı). `Theme.LogoUrl` VO alanı domain'de kalır ama yönetilen logo akışı artık ona yazmaz; yalnızca Faz 5 öncesi elle yazılmış eski logolar için `ISchoolLogoUrlBuilder`'ın 3. parametresi (`legacyLogoUrl`) geriye-dönük güvenlik ağı sağlar.
+
+---
+
+### BR-documents-012: Eski yerel-disk dosya depolama servisi emekli — tüm dosyalar Garage'da, tenant başına bucket
+
+**Kural:** `IFileStorageService`/`FileStorageService`/`FileStorageOptions` (yerel disk, tenant-izolasyonsuz) Faz 5 Task 3'te tamamen silindi (B1 sıfır-borç — kod-tarafı grep sıfır referans). Artık **tüm** dosyalar Documents altyapısı üzerinden Garage (S3-uyumlu) object storage'a, okul başına ayrılmış bucket'a (`oksis-t{SchoolId}`) yazılır.
+
+**Sebep:** Yerel disk depolama tenant-izolasyonu sağlamıyordu (K1 kazancının önkoşulu — bkz. K1-K6 tablosu) ve B1 "kod-tarafı sıfır borç" gereğiydi.
+
+**Uygulama:** Backend: `src/Oksis.Infrastructure/DependencyInjection.cs`'te ilgili DI kaydı + `appsettings.json` `FileStorage` bölümü kaldırıldı; `SchoolLogo` dahil hiçbir modül artık `IFileStorageService`'e referans veremez (tip repoda yok).
+
+---
+
 ## Retention Yorumu (bağlayıcı not — Task 4'te sabitlendi)
 
 **Kural:** `FileCategoryPolicy.RetentionPeriod`, ilgili sezonun (`AcademicYear`) bitişinden itibaren geçerli süredir. `null` = **otomatik retention YOK** — `RetentionEnforcementJob` (Faz 4) bu kaydı hiç işlemez.
@@ -145,5 +177,6 @@
 |---|---|---|
 | 2026-07-04 | İlk kurallar tanımlandı (Faz 0-1 kapanışı) | `dosya-yonetimi-spec.md` § 1.3/§2.4/§7.3'ün ilk implementasyonu |
 | 2026-07-04 | BR-006..009 eklendi (Faz 4 kapanışı) | Fail-closed tarama, checksum reconcile, thumbnail modeli, purge/kota ayrımı — `dosya-yonetimi-spec.md` § 3.4/§3.5 |
+| 2026-07-05 | BR-010..012 eklendi (Faz 5 kapanışı — MVP tamam) | School yazma-kapsamı intent-aware guard (KTK-2), public logo proxy + derive-at-read LogoUrl (KTK-1), eski yerel-disk servis emekliliği (spec § 9) |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.
