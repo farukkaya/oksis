@@ -65,7 +65,7 @@ Modülün ana akışı (Faz 3'te CQRS yüzeyi açılınca aktif olacak):
 
 - **Slug:** documents
 - **Status:** in-progress
-- **Sprint:** Dosya Yönetimi Faz 0-3
+- **Sprint:** Dosya Yönetimi Faz 0-4
 - **Owner:** {{TBD}}
 - **Created:** 2026-07-04
 - **Last Updated:** 2026-07-04
@@ -75,7 +75,7 @@ Modülün ana akışı (Faz 3'te CQRS yüzeyi açılınca aktif olacak):
   - [x] api-contracts.md
   - [x] database-schema.md
   - [x] permissions.md
-  - [ ] notifications.md
+  - [x] notifications.md
   - [ ] ui-flows.md
   - [x] business-rules.md
   - [x] open-questions.md

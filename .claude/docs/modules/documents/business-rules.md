@@ -58,6 +58,46 @@
 
 ---
 
+## Virüs Tarama Kuralları (Faz 4)
+
+### BR-documents-006: Tarama fail-closed'dır — daemon arızası ASLA otomatik-temiz üretmez
+
+**Kural:** `IVirusScanner`'ın `Skipped` sonucu (tarama yapılmadı) yalnız operatörün bilinçli olarak `ClamAv:Enabled=false` seçtiği durumda üretilir. ClamAV daemon'una erişilemediğinde (`Enabled=true` iken outage) tarama `VirusScanException` fırlatır; dosya `Quarantined` kalır ve Hangfire job'ı yeniden dener. Bir altyapı arızası hiçbir koşulda dosyayı otomatik olarak "temiz" statüsüne düşürmez.
+
+**Sebep:** `NullVirusScanner`'ın "erişilemedi = temiz say" davranışı, ClamAV daemon çöktüğünde tüm yüklemelerin sessizce taramasız geçmesine yol açan bir üretim güvenlik açığıydı (Task 1 fix round 1).
+
+**Uygulama:** Backend: `VirusScanVerdict {Clean, Infected, Skipped}` tri-state; DI gate `Enabled=false` → `NullVirusScanner` (tek `Skipped` yolu), `Enabled=true` → HER ZAMAN `ClamAvScanner` (startup ping probu yalnız log amaçlı, kayıt kararını etkilemez).
+
+---
+
+### BR-documents-007: VirusScanJob, presigned yüklemelerin checksum-mutabakat noktasıdır (spec § 3.4)
+
+**Kural:** `ConfirmFileUploadCommand` presigned (S3 Stat) yolunda istemcinin beyan ettiği SHA-256'yı gerçek içerikle karşılaştıramaz (S3 Stat yalnız ETag verir). Bu doğrulama, dosyayı tam okuyan tek nokta olan `VirusScanJob`'a ertelenmiştir: tarama sırasında `ForwardHashingStream` ile SHA-256 yeniden hesaplanır, `StoredFile.Sha256Checksum` ile uyuşmazsa dosya `Quarantined`'a çekilir (Signature=`CHECKSUM_MISMATCH`) ve Critical log yazılır.
+
+**Uygulama:** Backend: `VirusScanJob`, indirilen stream'i `ForwardHashingStream`'e sararak ClamAV taraması ile SHA-256 hesaplamasını RAM'e tam yükleme yapmadan tek geçişte yürütür; yalnız `Verdict=Clean` yolunda checksum karşılaştırması yapılır.
+
+---
+
+### BR-documents-008: Thumbnail'lar ayrı `StoredFile`'lardır, `FileAttachment` DEĞİLDİR
+
+**Kural:** `ThumbnailGenerationJob`'ın ürettiği önizleme, parent dosyaya `FileAttachment` ile değil, `StoredFile.ParentFileId` (nullable, FK constraint'siz düz çapraz-referans) ile bağlı **bağımsız bir `StoredFile` satırıdır**. Kendi kategorisi (`Thumbnail`, `RequiresVirusScan=false`) vardır ve yalnız sunucu tarafından üretilir — istemci tarafından yüklenemez (3 upload/policy handler'ında `CategoryUnknown` guard'ı ile korunur).
+
+**Sebep:** Thumbnail bir "iş entity'sine bağlı ek" değil, parent dosyanın türetilmiş bir temsilidir; `FileAttachment`'ın polimorfik entity-bağlama modeli buraya uymaz.
+
+**Uygulama:** Backend: `StoredFile.MarkAsThumbnailOf(parentFileId)`; çift katman sonsuz-döngü koruması (enqueuer content-type/kategori filtresi + job'da `parent.ParentFileId is not null` no-op).
+
+---
+
+### BR-documents-009: SoftDeletePurgeJob kota rezervasyonunu TEKRAR düşürmez
+
+**Kural:** Kota bayt sayacı, dosya soft-delete edildiği anda (`DeleteFileCommand` veya `RetentionEnforcementJob`) `IStorageQuotaService.ReleaseAsync` ile geri alınır. `SoftDeletePurgeJob` yalnız fiziksel S3 nesnesini ve DB satırını kalıcı siler — kota rezervasyonuna bir daha DOKUNMAZ.
+
+**Sebep:** Aynı bayt miktarının iki kez release edilmesi kota sayacını gerçek kullanımın üzerine şişirir (double-subtract).
+
+**Uygulama:** Backend: `SoftDeletePurgeJob` ctor'unda `IStorageQuotaService` parametresi hiç YOK — çifte-release yapısal olarak imkânsız kılınmıştır (reflection testiyle doğrulanır).
+
+---
+
 ## Retention Yorumu (bağlayıcı not — Task 4'te sabitlendi)
 
 **Kural:** `FileCategoryPolicy.RetentionPeriod`, ilgili sezonun (`AcademicYear`) bitişinden itibaren geçerli süredir. `null` = **otomatik retention YOK** — `RetentionEnforcementJob` (Faz 4) bu kaydı hiç işlemez.
@@ -104,5 +144,6 @@
 | Tarih | Değişiklik | Sebep |
 |---|---|---|
 | 2026-07-04 | İlk kurallar tanımlandı (Faz 0-1 kapanışı) | `dosya-yonetimi-spec.md` § 1.3/§2.4/§7.3'ün ilk implementasyonu |
+| 2026-07-04 | BR-006..009 eklendi (Faz 4 kapanışı) | Fail-closed tarama, checksum reconcile, thumbnail modeli, purge/kota ayrımı — `dosya-yonetimi-spec.md` § 3.4/§3.5 |
 
 > Eski kural değişikliği geriye dönük etki yaratıyorsa migration / data fix planı `database-schema.md`'de bahsedilir.
