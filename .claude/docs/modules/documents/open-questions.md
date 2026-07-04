@@ -66,10 +66,14 @@
 
 **Kaynak:** Faz 0-1 final whole-branch review (2026-07-04, merge onaylı). Kod değişikliği gerektirmeyen, sonraki faz planlarına yazılacak maddeler:
 
-1. **Faz 2:** sha256 için 64-hex şekil guard'ı — domain'e eklenir VEYA `IChecksumCalculator` sözleşmesine yazılır (bugün yalnız non-blank kontrolü var; kolon `char(64)`).
+1. **Faz 2:** sha256 için 64-hex şekil guard'ı — domain'e eklenir VEYA `IChecksumCalculator` sözleşmesine yazılır (bugün yalnız non-blank kontrolü var; kolon `char(64)`). → Faz 2'de kısmen kapandı: `IChecksumCalculator` XML doc 64-hex lowercase sözleşmesi yazıldı; domain-side shape guard Faz 3'e.
 2. **Faz 2 plan kalıbı:** tenant query-filter doğrulaması snapshot grep'iyle YAPILAMAZ (EF snapshot query filter serileştirmez — projede 0 adet `HasQueryFilter`). Doğru yöntem: entegrasyon testi veya `dbContext.Model.FindEntityType(typeof(X)).GetQueryFilter() != null` assert'i.
 3. **Faz 3:** `FileCategoryPolicyRegistry.Find(null)` `ArgumentNullException` fırlatır; API'ye kategori string'i açılırken FluentValidation `NotEmpty` önde olmalı + `Find`'a null-toleransı değerlendirilmeli.
 4. **Faz 4:** purge/retention job'ları `Status=SoftDeleted` kayıtları ancak **gerekçeli `IgnoreQueryFilters()`** ile görebilir (tenant filter `!IsDeleted` içeriyor) — Hard Ban istisna prosedürüyle (gerekçe + audit) planlanmalı; `ix_stored_files_school_status` bu taramayı destekler.
+5. **Faz 3:** `GetPresignedDownloadUrlAsync`'e ResponseHeaderOverrides (Content-Disposition/Content-Type) opsiyonu — spec § 3.3.2 indirme adı için ŞART.
+6. **Faz 3:** Confirm akışı ExistsAsync-önce (StatAsync Amazon istisnası Application'da yakalanamaz).
+7. **Faz 3:** upload guard `!CanSeek`'e genişletilsin.
+8. **Faz 5:** S3StorageOptions ValidateOnStart doğrulaması.
 
 ---
 

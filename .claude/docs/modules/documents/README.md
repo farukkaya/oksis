@@ -65,7 +65,7 @@ Modülün ana akışı (Faz 3'te CQRS yüzeyi açılınca aktif olacak):
 
 - **Slug:** documents
 - **Status:** in-progress
-- **Sprint:** Dosya Yönetimi Faz 0-1
+- **Sprint:** Dosya Yönetimi Faz 0-2
 - **Owner:** {{TBD}}
 - **Created:** 2026-07-04
 - **Last Updated:** 2026-07-04

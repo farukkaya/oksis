@@ -42,6 +42,14 @@
 
 ---
 
+### BR-documents-005: SchoolBucketProvisionedEvent idempotency
+
+**Kural:** `SchoolBucketProvisionedEvent` her başarılı provision koşumunda YENİDEN yayınlanır (Hangfire retry semantiği) — tüketiciler idempotent olmak ZORUNDA.
+
+**Uygulama:** Backend: event handler'ları `SchoolBucketProvisionedEvent` alınca daha önce işlenmiş bucket'a karşı idempotent davranış sergiler; `provision_id` tekil kısıtlama veya duplicate-key handling ile.
+
+---
+
 ## CanBeDownloaded Kuralı (spec § 7.3.3)
 
 **Kural:** İndirme yalnız `StoredFile.Status == Active && VirusScanStatus ∈ {Clean, Skipped}` iken serbesttir. `Quarantined` (tarama Pending veya Infected) durumunda indirme reddedilir — anlamlı hata döner (Faz 3'te uygulanacak).
