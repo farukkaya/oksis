@@ -469,9 +469,9 @@ public sealed class AnnouncementPermissionSeedTests
     [Fact]
     public async Task Should_SeedEightGranularKeys_When_MasterDataApplied()
     {
-        await using var fixture = await TestDbFixture.CreateAsync();
+        await using var ctx = _fixture.CreateDbContext();
 
-        var codes = await fixture.Db.Permissions
+        var codes = await ctx.Permissions
             .Where(p => p.Code.StartsWith("announcements."))
             .Select(p => p.Code)
             .ToListAsync();
@@ -483,9 +483,9 @@ public sealed class AnnouncementPermissionSeedTests
     public async Task Should_NotSeedDeleteKey_When_MasterDataApplied()
     {
         // INV-1: duyuru silinmez, dolayısıyla silme izni de yoktur.
-        await using var fixture = await TestDbFixture.CreateAsync();
+        await using var ctx = _fixture.CreateDbContext();
 
-        var exists = await fixture.Db.Permissions.AnyAsync(p => p.Code == "announcements.delete");
+        var exists = await ctx.Permissions.AnyAsync(p => p.Code == "announcements.delete");
 
         exists.Should().BeFalse();
     }
@@ -494,12 +494,12 @@ public sealed class AnnouncementPermissionSeedTests
     public async Task Should_NotGrantModerateToSecretary_When_RolePermissionsSeeded()
     {
         // §4.2: moderasyon yalnız SchoolAdmin'dedir — sekreter okul geneli ayarı değiştiremez.
-        await using var fixture = await TestDbFixture.CreateAsync();
+        await using var ctx = _fixture.CreateDbContext();
 
         var granted = await (
-            from rp in fixture.Db.RolePermissions
-            join p in fixture.Db.Permissions on rp.PermissionId equals p.Id
-            join r in fixture.Db.SystemRoles on rp.RoleId equals r.Id
+            from rp in ctx.RolePermissions
+            join p in ctx.Permissions on rp.PermissionId equals p.Id
+            join r in ctx.SystemRoles on rp.RoleId equals r.Id
             where p.Code == "announcements.moderate"
             select r.Code).ToListAsync();
 
@@ -509,6 +509,27 @@ public sealed class AnnouncementPermissionSeedTests
 }
 ```
 
+> **Fixture kalıbı (Görev 6'da doğrulandı — tahmin değil).** Integration test sınıfı şu
+> iskelete oturur; `AnnouncementPersistenceTests.cs` çalışan emsaldir, ona bak:
+>
+> ```csharp
+> using Oksis.Infrastructure.IntegrationTests.Fixtures;
+>
+> [Collection(DatabaseCollection.Name)]
+> public sealed class AnnouncementPermissionSeedTests : IAsyncLifetime
+> {
+>     private readonly DatabaseFixture _fixture;
+>
+>     public AnnouncementPermissionSeedTests(DatabaseFixture fixture) => _fixture = fixture;
+>
+>     public async Task InitializeAsync() => await _fixture.EnsureDatabaseCreatedAsync();
+>
+>     public Task DisposeAsync() => Task.CompletedTask;
+>
+>     // testler: await using var ctx = _fixture.CreateDbContext();
+> }
+> ```
+>
 > `Db.Permissions`, `Db.SystemRoles` ve `SystemRole.Code` adlarını **Step 2'de doğrula**;
 > farklıysa teste uyarla.
 
@@ -588,6 +609,13 @@ Run:
 dotnet ef migrations add 20260802_announcements_permission_keys \
   --project src/Oksis.Infrastructure --startup-project src/Oksis.Api
 ```
+
+> **Üretimden hemen sonra `dotnet format` çalıştır — testlerden ÖNCE.** EF'in migration
+> şablonu bu deponun `IDE0161` (file-scoped namespace) kuralını ihlal eder ve o kural
+> error seviyesindedir; formatlamadan test projesi **derlenmez**. Görev 6'da öğrenildi.
+> `dotnet format` ayrıca şu üç ilgisiz dosyayı her seferinde yeniden yazar (BOM) —
+> kendi migration'ını koruyup yalnız bunları geri al:
+> `20260701133402_*`, `20260713211752_*`, `20260713225158_*`
 
 - [ ] **Step 8: Testlerin geçtiğini doğrula**
 
