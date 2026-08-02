@@ -784,9 +784,11 @@ public sealed class GetAudiencePoolQueryHandlerTests
         var tenant = Substitute.For<ITenantContext>();
         tenant.CurrentSchoolId.Returns((Guid?)null);
 
+        // Ctor sırası handler ile BİREBİR olmalı — IPermissionReader dördüncü sıradadır.
         var sut = new GetAudiencePoolQueryHandler(
             Substitute.For<IApplicationDbContext>(), tenant,
-            Substitute.For<ICurrentUser>(), Substitute.For<IAudienceResolver>());
+            Substitute.For<ICurrentUser>(), Substitute.For<IPermissionReader>(),
+            Substitute.For<IAudienceResolver>());
 
         var result = await sut.Handle(new GetAudiencePoolQuery(null), CancellationToken.None);
 
@@ -978,24 +980,34 @@ public static class AnnouncementCallerResolver
     public static Task<bool> CanUseInventoryAsync(IPermissionReader permissionReader, CancellationToken ct) =>
         permissionReader.HasPermissionAsync("announcements.create", ct);
 
-    /// <summary>Okulun aktif sezonu.</summary>
+    /// <summary>
+    /// Okulun aktif sezonu. <c>AcademicSession</c>'da <c>IsActive</c> diye bir alan YOKTUR —
+    /// yaşam döngüsü <c>Status</c> ile ifade edilir (<c>Setup → Active → Archived</c>).
+    /// </summary>
     public static async Task<Guid?> ResolveActiveSessionIdAsync(
         IApplicationDbContext db, Guid schoolId, CancellationToken ct) =>
         await db.AcademicSessions.AsNoTracking()
-            .Where(s => s.SchoolId == schoolId && s.IsActive)
+            .Where(s => s.SchoolId == schoolId && s.Status == AcademicSessionStatus.Active)
             .Select(s => (Guid?)s.Id)
             .FirstOrDefaultAsync(ct);
 }
 ```
 
-- [ ] **Step 5: Rol kodlarını ve aktif sezon alanını doğrula**
+- [ ] **Step 5: Rol kodlarını ve aktif sezon alanını teyit et**
 
 Run:
 ```bash
-grep -rn "\"Teacher\"\|\"SchoolAdmin\"\|\"Secretary\"" src/Oksis.Infrastructure/Persistence/Seed/MasterData/SystemRoleSeedData.cs | head
-grep -n "IsActive\|Status" src/Oksis.Domain/Modules/AcademicSessions/Entities/AcademicSession.cs | head
+grep -n "Code\|\"[A-Z_]*\"" src/Oksis.Infrastructure/Persistence/Seed/MasterData/SystemRoleSeedData.cs | head
+grep -n "Status" src/Oksis.Domain/Modules/AcademicSessions/Entities/AcademicSession.cs | head
 ```
-Expected: Gerçek rol kodları ve aktif sezon alanı. Farklıysa `AnnouncementCallerResolver`'ı düzelt.
+
+**Doğrulanmış (2026-08-02):**
+- Rol kodları UPPER_SNAKE_CASE'dir ve **yalnız beş tanedir**: `SUPER_ADMIN`, `SCHOOL_ADMIN`,
+  `TEACHER`, `PARENT`, `STUDENT`. `SECRETARY` ve `SCHOOL_STAFF` seed'lenmiş rol DEĞİLDİR.
+- Aktif sezon `Status == AcademicSessionStatus.Active` ile bulunur.
+
+Bu ikisi farklı çıkarsa DUR ve bildir — yanlış sezon çözümlemesi her yayını sessizce
+"sezon bulunamadı" ile düşürür ve sezonu sahteleyen hiçbir test bunu yakalamaz.
 
 - [ ] **Step 6: Testleri çalıştır**
 
