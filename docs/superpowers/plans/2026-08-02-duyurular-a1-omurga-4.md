@@ -164,7 +164,8 @@ using Oksis.Shared;
 namespace Oksis.Application.Modules.Announcements.Queries.GetAnnouncements;
 
 public sealed class GetAnnouncementsQueryHandler(
-    IApplicationDbContext db, ITenantContext tenant, ICurrentUser currentUser)
+    IApplicationDbContext db, ITenantContext tenant, ICurrentUser currentUser,
+    IPermissionReader permissionReader)
     : IQueryHandler<GetAnnouncementsQuery, PagedResult<AnnouncementDto>>
 {
     private const int DefaultPageSize = 50;
@@ -182,21 +183,24 @@ public sealed class GetAnnouncementsQueryHandler(
         // vardır — ama o izin GELEN KUTUSU içindir. Envanter onlara hiç açılmaz; açılsaydı
         // okul geneli duyuru listesini, taslakları ve yayınlayan bilgisini görürlerdi.
         // İzin ucu açar, bu kontrol yüzeyi ayırır.
-        if (!AnnouncementCallerResolver.CanUseInventory(currentUser))
+        if (!await AnnouncementCallerResolver.CanUseInventoryAsync(permissionReader, cancellationToken))
         {
             return Result<PagedResult<AnnouncementDto>>.Forbidden();
         }
 
         var scope = request.Scope ?? "school";
-        var teacherPersonId = await AnnouncementCallerResolver.ResolveTeacherOnlyPersonIdAsync(
-            db, currentUser, schoolId, cancellationToken);
+
+        // Yönetim yetkisi yoksa (öğretmen) kapsam kendi kayıtlarına daralır. İzinden
+        // sorulur, rolden DEĞİL — IsInRole bu depoda ölü koddur.
+        var scopedPublisherId = await AnnouncementCallerResolver.ResolveScopedPublisherIdAsync(
+            db, currentUser, permissionReader, cancellationToken);
 
         var myPersonId = await AnnouncementCallerResolver.ResolveMyPersonIdAsync(
             db, currentUser.Id, cancellationToken) ?? Guid.Empty;
 
         // Öğretmen okul envanterini GÖREMEZ — bu bir filtre değil güvenlik sınırıdır.
         // announcements.view izni onda vardır ama kapsamı kendi kayıtlarıdır.
-        if (teacherPersonId is not null && scope is "school")
+        if (scopedPublisherId is not null && scope is "school")
         {
             return Result<PagedResult<AnnouncementDto>>.Forbidden();
         }
@@ -211,7 +215,7 @@ public sealed class GetAnnouncementsQueryHandler(
             _ => query,
         };
 
-        if (teacherPersonId is { } tid && scope is not "mine")
+        if (scopedPublisherId is { } tid && scope is not "mine")
         {
             query = query.Where(a => a.PublisherId == tid);
         }
@@ -468,7 +472,8 @@ namespace Oksis.Application.Modules.Announcements.Queries.GetAnnouncementById;
 /// kafa karıştırır. İz yönetim tarafında tutulur."</para>
 /// </summary>
 public sealed class GetAnnouncementByIdQueryHandler(
-    IApplicationDbContext db, ITenantContext tenant, ICurrentUser currentUser)
+    IApplicationDbContext db, ITenantContext tenant, ICurrentUser currentUser,
+    IPermissionReader permissionReader)
     : IQueryHandler<GetAnnouncementByIdQuery, AnnouncementDto>
 {
     private static readonly AnnouncementStatus[] ReaderVisible =
@@ -498,11 +503,13 @@ public sealed class GetAnnouncementByIdQueryHandler(
             .Select(r => new { r.IsRead, r.ChildPersonId })
             .FirstOrDefaultAsync(cancellationToken);
 
+        // Sahiplik VEYA yönetim yetkisi — Attendance'ın `isOwner || HasPermissionAsync(manage)`
+        // kalıbının birebir karşılığı (GetSessionRosterQueryHandler:30-40). Rol kontrolü
+        // YAPILMAZ: IsInRole bu depoda ölü koddur (JWT'ye ClaimTypes.Role claim'i hiç
+        // yazılmaz), sessizce false döner ve yöneticiyi okuyucu sanırdı.
         var isPublisher = announcement.PublisherId == myPersonId;
         var canSeeFullRecord = isPublisher
-            || currentUser.IsInRole("SchoolAdmin")
-            || currentUser.IsInRole("SchoolStaff")
-            || currentUser.IsInRole("Secretary");
+            || await AnnouncementCallerResolver.IsManagerAsync(permissionReader, cancellationToken);
 
         if (!canSeeFullRecord)
         {

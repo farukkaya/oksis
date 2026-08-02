@@ -841,6 +841,7 @@ public sealed class GetAudiencePoolQueryHandler(
     IApplicationDbContext db,
     ITenantContext tenant,
     ICurrentUser currentUser,
+    IPermissionReader permissionReader,
     IAudienceResolver resolver)
     : IQueryHandler<GetAudiencePoolQuery, AudiencePoolDto>
 {
@@ -859,13 +860,13 @@ public sealed class GetAudiencePoolQueryHandler(
                 new Error("Announcements.Session.NotFound", "Aktif sezon bulunamadı."));
         }
 
-        // Öğretmen SADECE öğretmense havuz daralır. Aynı kişi hem öğretmen hem idareciyse
-        // geniş havuzu görür — daraltma bir ceza değil, kapsam ifadesidir.
-        var teacherPersonId = await AnnouncementCallerResolver.ResolveTeacherOnlyPersonIdAsync(
-            db, currentUser, schoolId, cancellationToken);
+        // Yönetim yetkisi YOKSA havuz çağıranın kendi şube/derslerine daralır (DYR-K-06).
+        // Yetki sorusu izinden sorulur, rolden DEĞİL — bu depoda IsInRole ölü koddur.
+        var scopedPublisherId = await AnnouncementCallerResolver.ResolveScopedPublisherIdAsync(
+            db, currentUser, permissionReader, cancellationToken);
 
         var pool = await resolver.GetPoolAsync(
-            new AudienceScope(schoolId, sessionId.Value, teacherPersonId), cancellationToken);
+            new AudienceScope(schoolId, sessionId.Value, scopedPublisherId), cancellationToken);
 
         return Result<AudiencePoolDto>.Success(pool);
     }
@@ -933,21 +934,37 @@ public static class AnnouncementCallerResolver
             .FirstOrDefaultAsync(ct);
 
     /// <summary>
-    /// Çağıran YALNIZ öğretmense <c>Person.Id</c>, değilse null. Aynı kişi hem öğretmen
-    /// hem idareciyse null döner ve geniş havuzu görür — daraltma bir ceza değil,
-    /// kapsam ifadesidir.
+    /// Çağıran yönetim yetkisine mi sahip? <b>Rol kontrolü YAPILMAZ</b> — bu depoda
+    /// <c>ICurrentUser.Roles</c> HER ZAMAN BOŞTUR: <c>AccountTokenIssuer</c> JWT'ye hiç
+    /// <c>ClaimTypes.Role</c> claim'i yazmaz, dolayısıyla <c>IsInRole(...)</c> her yerde
+    /// ölü koddur (<c>TenantContext.IsSuperAdmin</c> dahil). Yetki sorusu izinden sorulur.
+    ///
+    /// <para>Attendance emsali: <c>HasPermissionAsync("attendance.manage")</c>
+    /// (<c>GetSessionRosterQueryHandler</c>, <c>StudentAttendanceScopeGuard</c>).
+    /// Duyuru karşılığı olarak <c>announcements.approve</c> seçildi: seed'de yalnız
+    /// SCHOOL_ADMIN'dedir ve anlamı tam olarak "başkasının duyurusu hakkında karar
+    /// verebilir"dir.</para>
     /// </summary>
-    public static async Task<Guid?> ResolveTeacherOnlyPersonIdAsync(
-        IApplicationDbContext db, ICurrentUser currentUser, Guid schoolId, CancellationToken ct)
-    {
-        var isTeacherOnly = currentUser.IsInRole("Teacher")
-            && !currentUser.IsInRole("SchoolAdmin")
-            && !currentUser.IsInRole("SchoolStaff")
-            && !currentUser.IsInRole("Secretary");
+    public static Task<bool> IsManagerAsync(IPermissionReader permissionReader, CancellationToken ct) =>
+        permissionReader.HasPermissionAsync("announcements.approve", ct);
 
-        return isTeacherOnly
-            ? await ResolveMyPersonIdAsync(db, currentUser.Id, ct)
-            : null;
+    /// <summary>
+    /// Hedef havuzu ve envanter kendi kapsamına daraltılacak kişinin <c>Person.Id</c>'si;
+    /// çağıran yönetimse null (daraltma yok).
+    ///
+    /// <para>Daraltma bir ceza değil kapsam ifadesidir: yönetim yetkisi olmayan yayınlayan
+    /// yalnız kendi şube ve derslerini hedefleyebilir (DYR-K-06).</para>
+    /// </summary>
+    public static async Task<Guid?> ResolveScopedPublisherIdAsync(
+        IApplicationDbContext db, ICurrentUser currentUser,
+        IPermissionReader permissionReader, CancellationToken ct)
+    {
+        if (await IsManagerAsync(permissionReader, ct))
+        {
+            return null;
+        }
+
+        return await ResolveMyPersonIdAsync(db, currentUser.Id, ct);
     }
 
     /// <summary>
@@ -955,13 +972,11 @@ public static class AnnouncementCallerResolver
     ///
     /// <para>Veli ve öğrencide de <c>announcements.view</c> izni vardır — ama o izin gelen
     /// kutusu içindir. Envanter onlara açılırsa okul geneli duyuru listesini, taslakları ve
-    /// yayınlayan bilgisini görürler. İzin ucu açar; bu kontrol yüzeyi ayırır.</para>
+    /// yayınlayan bilgisini görürler. Ayırt edici <c>announcements.create</c>'tir: envanter
+    /// yazanların yüzeyidir, okuyanların değil.</para>
     /// </summary>
-    public static bool CanUseInventory(ICurrentUser currentUser) =>
-        currentUser.IsInRole("SchoolAdmin")
-        || currentUser.IsInRole("SchoolStaff")
-        || currentUser.IsInRole("Secretary")
-        || currentUser.IsInRole("Teacher");
+    public static Task<bool> CanUseInventoryAsync(IPermissionReader permissionReader, CancellationToken ct) =>
+        permissionReader.HasPermissionAsync("announcements.create", ct);
 
     /// <summary>Okulun aktif sezonu.</summary>
     public static async Task<Guid?> ResolveActiveSessionIdAsync(
@@ -1305,6 +1320,7 @@ public sealed class CreateAnnouncementCommandHandler(
     IApplicationDbContext db,
     ITenantContext tenant,
     ICurrentUser currentUser,
+    IPermissionReader permissionReader,
     IAudienceResolver resolver,
     IDateTimeProvider clock)
     : ICommandHandler<CreateAnnouncementCommand, AnnouncementDto>
@@ -1327,13 +1343,16 @@ public sealed class CreateAnnouncementCommandHandler(
         var myPersonId = await AnnouncementCallerResolver.ResolveMyPersonIdAsync(
             db, currentUser.Id, cancellationToken) ?? Guid.Empty;
 
-        var teacherPersonId = await AnnouncementCallerResolver.ResolveTeacherOnlyPersonIdAsync(
-            db, currentUser, schoolId, cancellationToken);
+        // Yönetim yetkisi yoksa yayınlayan kendi kapsamına daralır (DYR-K-06). İzinden
+        // sorulur, rolden DEĞİL — IsInRole bu depoda ölü koddur.
+        var scopedPublisherId = await AnnouncementCallerResolver.ResolveScopedPublisherIdAsync(
+            db, currentUser, permissionReader, cancellationToken);
 
-        // İmza: öğretmen kendi adına, diğer herkes kurum adına konuşur (KR-06/DYR-K-09).
-        // Sekreter yayınlasa bile etiket "Okul Müdürlüğü"dür; gerçek yazar denetim izinde saklanır.
+        // İmza: kapsamı daralmış yayınlayan (öğretmen) kendi adına, yönetim kurum adına
+        // konuşur (KR-06/DYR-K-09). Sekreter yayınlasa bile etiket "Okul Müdürlüğü"dür;
+        // gerçek yazar denetim izinde saklanır.
         var (label, signature, type) = await BuildSignatureAsync(
-            db, myPersonId, teacherPersonId, cancellationToken);
+            db, myPersonId, scopedPublisherId, cancellationToken);
 
         var scheduledAt = ParseInstant(request.ScheduledAt);
         var validUntil = ParseInstant(request.ValidUntil);
@@ -1360,7 +1379,7 @@ public sealed class CreateAnnouncementCommandHandler(
         // alıcı yüzeyinde ham kimlik görünürdü. Havuz etiketin tek otoritesidir ve etiket
         // yayın anında donar (INV-2) — şube adı sonradan değişse bile duyuru kime
         // gittiğini kendi kelimeleriyle anlatmaya devam eder.
-        var scopeForLabels = new AudienceScope(schoolId, sessionId.Value, teacherPersonId);
+        var scopeForLabels = new AudienceScope(schoolId, sessionId.Value, scopedPublisherId);
         var labels = await BuildLabelMapAsync(resolver, scopeForLabels, cancellationToken);
 
         var targets = request.Audience
@@ -1396,7 +1415,7 @@ public sealed class CreateAnnouncementCommandHandler(
         // A1 kapsamında moderasyon daima `open` varsayılır.
 
         var recipients = await resolver.ResolveAsync(
-            new AudienceScope(schoolId, sessionId.Value, teacherPersonId),
+            new AudienceScope(schoolId, sessionId.Value, scopedPublisherId),
             request.Audience, cancellationToken);
 
         db.AnnouncementRecipients.AddRange(recipients.Select(r =>
@@ -1471,9 +1490,9 @@ Handler'a ekle:
     /// alıcı yüzeyinde sekreterin adı GÖRÜNMEZ (KR-06).
     /// </summary>
     private static async Task<(string Label, string? Signature, AnnouncementType Type)> BuildSignatureAsync(
-        IApplicationDbContext db, Guid myPersonId, Guid? teacherPersonId, CancellationToken ct)
+        IApplicationDbContext db, Guid myPersonId, Guid? scopedPublisherId, CancellationToken ct)
     {
-        if (teacherPersonId is null)
+        if (scopedPublisherId is null)
         {
             return ("Okul Müdürlüğü", null, AnnouncementType.Institutional);
         }
