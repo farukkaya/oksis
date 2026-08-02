@@ -194,9 +194,18 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Secretary |
 |---|---|---|---|---|---|---|---|
 | `announcements.view` | ✅ | ✅ | ✅ | ✅ | ✅ (kendisine hedefli) | ✅ (kendisine hedefli) | ✅ |
-| `announcements.create` | 🚫 | ✅ (her hedef) | ✅ (her hedef) | ✅ (sadece kendi sınıfları) | 🚫 | 🚫 | 🚫 |
-| `announcements.update` | 🚫 | ✅ | ✅ | ✅ (kendi oluşturduğu) | 🚫 | 🚫 | 🚫 |
-| `announcements.delete` | 🚫 | ✅ | ✅ | ✅ (kendi oluşturduğu) | 🚫 | 🚫 | 🚫 |
+| `announcements.create` | 🚫 | ✅ (her hedef) | ✅ (her hedef) | ✅ (sadece kendi sınıfları) | 🚫 | 🚫 | ✅ |
+| `announcements.update` | 🚫 | ✅ | ✅ | ✅ (kendi oluşturduğu) | 🚫 | 🚫 | ✅ |
+| `announcements.withdraw` | 🚫 | ✅ | ✅ | ✅ (kendi oluşturduğu) | 🚫 | 🚫 | 🚫 |
+| `announcements.approve` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+| `announcements.moderate` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
+| `announcements.template.manage` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+| `announcements.report.view` | 🚫 | ✅ | ✅ | ✅ | 🚫 | 🚫 | ✅ |
+
+> `announcements.delete` 2026-08-02'de kaldırıldı: duyuru kurumsal kayıttır ve silinmez
+> (INV-1). Yerine `announcements.withdraw` gelir — geri çekilen duyuru arşivde "geri çekildi"
+> olarak kalır. Ayrıca `announcements.read` / `announcements.manage` seed anahtarları bu
+> tarihte emekliye ayrıldı; kanonik küme yukarıdaki 8 anahtardır.
 
 ### Messaging
 
