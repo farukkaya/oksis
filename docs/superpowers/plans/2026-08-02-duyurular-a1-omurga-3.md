@@ -1539,7 +1539,41 @@ Expected: Gerçek alanlar (`First`/`Last` veya `FirstName`/`LastName`). Koda uya
     }
 ```
 
-- [ ] **Step 9: Testlerin geçtiğini doğrula**
+- [ ] **Step 9: `MapStatusCode`'a `Announcements.` kovası ekle**
+
+`src/Oksis.Api/Extensions/ResultExtensions.cs` içindeki `MapStatusCode`, modül önekli
+kovalarla çalışır (`USERS_`, `FILES_`, `Attendance.` …). **`Announcements.` önekinin kovası
+yoktur**, dolayısıyla bu modülün TÜM hataları son satırdaki `422 Unprocessable Entity`'ye
+gerilemektedir — "aktif sezon yok" dahil, ki mevcut emsali (`no-active-season`, satır ~133)
+**409 Conflict** döner. Görev 11'in incelemesinde tespit edildi; burada kapatılıyor çünkü
+bu görev modülün hata kodlarının çoğunu ilk kez üretiyor.
+
+`Attendance.` kovasının hemen yanına ekle:
+
+```csharp
+        // Duyuru (Announcements) modülü — hata kodları `Announcements.` önekiyle gelir.
+        if (code.StartsWith("Announcements.", StringComparison.Ordinal))
+        {
+            // Aktif sezon yok → 409 (identity.user.no-active-season emsali).
+            if (code.Contains("Session.NotFound", StringComparison.Ordinal))
+                return StatusCodes.Status409Conflict;
+            // Yaşam döngüsü ihlali (yayınlanmış duyuruyu yeniden yayınlama vb.) → 409.
+            if (code.Contains("InvalidStatus", StringComparison.Ordinal))
+                return StatusCodes.Status409Conflict;
+            // Başlık/gövde/hedef doğrulaması → 400.
+            return StatusCodes.Status400BadRequest;
+        }
+```
+
+- [ ] **Step 10: Durum kodunu test et**
+
+`tests/Oksis.Api.UnitTests` altında `MapStatusCode`'u sınayan mevcut testi bul ve aynı
+kalıpta üç vaka ekle: `Announcements.Session.NotFound` → 409,
+`Announcements.Publish.InvalidStatus` → 409, `Announcements.Title.Invalid` → 400.
+Böyle bir test yoksa handler'ın hata dalını sınayan bir test yaz — **bu dal bugün hiçbir
+katmanda test edilmiyor** (Görev 11 incelemesi bunu ayrıca not etti).
+
+- [ ] **Step 11: Testlerin geçtiğini doğrula**
 
 Run:
 ```bash
@@ -1548,12 +1582,12 @@ dotnet test tests/Oksis.Infrastructure.IntegrationTests --filter "FullyQualified
 ```
 Expected: PASS (6 test)
 
-- [ ] **Step 10: Tüm testleri çalıştır**
+- [ ] **Step 12: Tüm testleri çalıştır**
 
 Run: `dotnet build && dotnet test`
 Expected: PASS — regresyon yok.
 
-- [ ] **Step 11: Commit**
+- [ ] **Step 13: Commit**
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
