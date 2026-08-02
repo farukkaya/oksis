@@ -1,4 +1,4 @@
-# Duyurular A1 — Omurga Implementation Plan (2/3)
+# Duyurular A1 — Omurga Implementation Plan (2/4)
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 >
@@ -1154,7 +1154,6 @@ kalan sublabel ile ACIKCA gosterilir — sessiz filtreleme kabul edilemez."
 
 ---
 
-> **Görev 10–18 üçüncü dosyadadır:** `2026-08-02-duyurular-a1-omurga-3.md` —
-> `IAudienceResolver` ve implementasyonu, `GET /audience`, `POST /announcements` +
-> materyalizasyon, envanter/detay sorguları, gelen kutusu, okundu damgası, bildirim
-> zinciri ve uçtan uca duman testi.
+> **Görev 10–12 üçüncü dosyadadır:** `2026-08-02-duyurular-a1-omurga-3.md` —
+> `IAudienceResolver` ve implementasyonu, `GET /audience` + controller iskeleti,
+> `POST /announcements` + alıcı materyalizasyonu.

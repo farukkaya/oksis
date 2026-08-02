@@ -1248,6 +1248,16 @@ git commit -m "feat(announcements): duyuru sablonu entity'si eklendi"
 
 ---
 
-> **Görev 6–18 bu planın devamıdır ve ayrı bir dosyada sürdürülür:**
-> `2026-08-02-duyurular-a1-omurga-2.md` — EF configuration + migration, izin anahtarları,
-> DTO'lar, kademe kuralı, `IAudienceResolver`, ve dilim 1–3'ün uçları.
+## Plan dosyaları
+
+Bu plan dört dosyaya bölünmüştür. Sırayla çalıştırılır; her dosya bir öncekinin
+tamamlanmış olmasını varsayar. Global Constraints ve dosya yapısı **yalnız bu dosyadadır**.
+
+| Dosya | Görevler | Kapsam |
+|---|---|---|
+| `2026-08-02-duyurular-a1-omurga.md` (bu dosya) | 1–5 | Domain katmanı |
+| `...-omurga-2.md` | 6–9 | EF eşleme + migration, izin anahtarları, DTO'lar, kademe kuralı |
+| `...-omurga-3.md` | 10–12 | `IAudienceResolver`, `GET /audience`, `POST /announcements` |
+| `...-omurga-4.md` | 13–18 | Envanter, detay, gelen kutusu, okundu damgası, bildirim, duman testi |
+
+**A1 tamamlanma ölçütü 4. dosyanın sonundadır.**

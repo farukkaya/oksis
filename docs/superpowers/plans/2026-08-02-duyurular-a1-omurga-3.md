@@ -1098,6 +1098,27 @@ public sealed class CreateAnnouncementTests
     }
 
     [Fact]
+    public async Task Should_FreezeHumanReadableLabel_When_SectionTargeted()
+    {
+        // Gövde yalnız (dimension, key, bucket) taşır; `section` katmanında key bir
+        // GUID'dir. Etiket havuzdan çözülmezse alıcı yüzeyinde ham kimlik görünür.
+        await using var fixture = await AnnouncementAudienceFixture.CreateAsync();
+
+        var dto = await fixture.CreateAnnouncementAsync(
+            title: "9-A veli bilgilendirmesi",
+            body: "Sınav takvimi güncellenmiştir.",
+            audience: [("section", fixture.HighSchoolClassRoomId.ToString(), "parent")],
+            asDraft: false);
+
+        var target = await fixture.Db.AnnouncementTargets
+            .SingleAsync(t => t.AnnouncementId == Guid.Parse(dto.Id));
+
+        target.Label.Should().NotBe(fixture.HighSchoolClassRoomId.ToString());
+        target.Label.Should().Contain("9-A");
+        dto.AudienceLabel.Should().Contain("9-A");
+    }
+
+    [Fact]
     public async Task Should_NotMaterializeRecipients_When_SavedAsDraft()
     {
         await using var fixture = await AnnouncementAudienceFixture.CreateAsync();
@@ -1340,11 +1361,20 @@ public sealed class CreateAnnouncementCommandHandler(
 
         db.Announcements.Add(announcement);
 
+        // Etiket HAVUZDAN çözülür, gövdeden değil. Gövde yalnız (dimension, key, bucket)
+        // taşır; `section` katmanında key bir GUID'dir ve doğrudan etiket olarak yazılırsa
+        // alıcı yüzeyinde ham kimlik görünürdü. Havuz etiketin tek otoritesidir ve etiket
+        // yayın anında donar (INV-2) — şube adı sonradan değişse bile duyuru kime
+        // gittiğini kendi kelimeleriyle anlatmaya devam eder.
+        var scopeForLabels = new AudienceScope(schoolId, sessionId.Value, teacherPersonId);
+        var labels = await BuildLabelMapAsync(resolver, scopeForLabels, cancellationToken);
+
         var targets = request.Audience
             .Select(s => AnnouncementTarget.Create(
                 schoolId, announcement.Id,
                 AnnouncementEnumWire.ParseDimension(s.Dimension), s.Key,
-                AnnouncementEnumWire.ParseBucket(s.Bucket), s.Key))
+                AnnouncementEnumWire.ParseBucket(s.Bucket),
+                labels.GetValueOrDefault(($"{s.Dimension}", s.Key), s.Key)))
             .ToList();
 
         if (request.AsDraft)
@@ -1400,6 +1430,39 @@ public sealed class CreateAnnouncementCommandHandler(
 
     private static DateTimeOffset? ParseInstant(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : DateTimeOffset.Parse(value);
+
+    /// <summary>
+    /// Havuzdaki her seçeneğin insan okunur etiketini <c>(dimension, key)</c> anahtarıyla
+    /// düzleştirir. Tek havuz çağrısıdır — seçim başına ayrı çağrı N+1 üretirdi.
+    /// </summary>
+    private static async Task<IReadOnlyDictionary<(string Dimension, string Key), string>> BuildLabelMapAsync(
+        IAudienceResolver resolver, AudienceScope scope, CancellationToken ct)
+    {
+        var pool = await resolver.GetPoolAsync(scope, ct);
+        var map = new Dictionary<(string, string), string>();
+
+        void Absorb(string dimension, IReadOnlyList<AudienceOptionDto>? options)
+        {
+            foreach (var option in options ?? [])
+            {
+                map[(dimension, option.Key)] = option.Label;
+            }
+        }
+
+        if (pool.All is { } all)
+        {
+            map[("all", all.Key)] = all.Label;
+        }
+
+        Absorb("role", pool.Role);
+        Absorb("schoolStage", pool.SchoolStage);
+        Absorb("gradeLevel", pool.GradeLevel);
+        Absorb("section", pool.Section);
+        Absorb("person", pool.Person);
+        Absorb("course", pool.Course);
+
+        return map;
+    }
 }
 ```
 
@@ -1458,7 +1521,7 @@ Run:
 docker compose up -d
 dotnet test tests/Oksis.Infrastructure.IntegrationTests --filter "FullyQualifiedName~CreateAnnouncementTests"
 ```
-Expected: PASS (5 test)
+Expected: PASS (6 test)
 
 - [ ] **Step 10: Tüm testleri çalıştır**
 
