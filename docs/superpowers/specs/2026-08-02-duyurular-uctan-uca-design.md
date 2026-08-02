@@ -129,17 +129,34 @@ announcements.update            announcements.moderate
 announcements.report.view       announcements.template.manage
 ```
 
-**Risksiz:** `RolePermissionSeedData.cs`'te duyuru satırı yoktur — bugün hiçbir role duyuru izni atanmamıştır, yeniden adlandırma kimseyi kırmaz. Migration ikisini siler, sekizini ekler, `RolePermissionSeedData`'ya teknik analiz §4.2 rol matrisini yazar. `permission-matrix.md` aynı commit'te düzeltilir.
+**DÜZELTME (2026-08-02, Görev 7 kapısı).** Bu belgenin ilk sürümü "`RolePermissionSeedData.cs`'te duyuru satırı yoktur, yeniden adlandırma kimseyi kırmaz" diyordu. **Yanlıştı** — ilk tarama yalnız doğrudan sabit adını arıyordu, oysa izinler `AllPermissionIds()` katalogu üzerinden de dağıtılıyor. Gerçek durum:
+
+| Anahtar | Kim alıyor (mevcut) |
+|---|---|
+| `announcements.read` | SuperAdmin, SchoolAdmin (katalog) + Teacher, Parent, Student (satır 50, 81, 96) |
+| `announcements.manage` | SuperAdmin, SchoolAdmin (katalog) |
+
+Yeniden adlandırma yine de **gerçek bir erişimi iptal etmez**, ama gerekçe farklıdır: bugün hiçbir duyuru ucu yoktur, dolayısıyla bu anahtarlar hiçbir şeye erişim vermez.
+
+**KARAR:** hedef dağılım teknik analiz §4.2'ye birebir uyar.
+
+- `announcements.view` → **yedi rolün tamamı** (SuperAdmin, SchoolAdmin, SchoolStaff, Teacher, Parent, Student, Secretary). Veli/öğrenci için "kendisine hedefli" bir izin niteliği değil, handler'daki self-only sınırıdır — iki katman birlikte çalışır.
+- Kalan yedi anahtar yalnız yönetim/sekreter/öğretmen dağılımında (§4.2 tablosu).
+- **SuperAdmin yalnız `view` alır.** Yedi yazma anahtarı `AllPermissionIds()` katalogundan bilinçli olarak DIŞARIDA bırakılır — dosyanın `DutiesManage`/`AttendanceManage` için zaten kullandığı kalıp ve aynı gerekçe: platform hesabı okul adına karar veremez.
+
+Migration `read`/`manage`'i siler, sekizini ekler, `RolePermissionSeedData`'yı bu dağılıma göre yazar. `permission-matrix.md` aynı commit'te düzeltilir.
 
 ### 4.1 Kapı nasıl kurulur
 
-Altyapı hazır ama **kullanılmamış**: `PermissionPolicyProvider` `perm:` önekiyle dinamik policy üretir, `PermissionRequirementHandler` kayıtlıdır — ancak hiçbir controller `[Authorize(Policy = ...)]` kullanmaz. Teknik analizdeki #5 boşluğu modüle özel değil, sistemiktir.
-
-Duyuru controller'ı kapıyı kuran ilk tüketici olacaktır:
+Kapı **komut/sorgu sınıfının özniteliğidir, controller'ın değil.** `AuthorizationBehavior` (MediatR pipeline) `[RequirePermission]` özniteliklerini `TRequest` tipinden okur, `IPermissionReader.HasPermissionAsync` ile doğrular, reddederse `ForbiddenException` atar ve izin adını gövdeye sızdırmaz. Birden çok öznitelik **VE**'lenir. Attendance bu kalıbı bugün kullanmaktadır:
 
 ```csharp
-[Authorize(Policy = "perm:announcements.create")]
+[Tenancy(TenancyMode.Required)]
+[RequirePermission("announcements.create")]
+public sealed record CreateAnnouncementCommand(...) : ICommand<AnnouncementDto>;
 ```
+
+> Teknik analizin #5 boşluğu ("yetki kapısı yok") bu mekanizmayı gözden kaçırmıştır — kapı vardır ve çalışır. `Oksis.Api/Authorization/PermissionPolicyProvider` (controller seviyesi `perm:` policy'leri) ayrı ve kullanılmayan bir yoldur; duyuru modülü onu **kullanmaz**, mevcut komut-seviyesi kalıbı izler.
 
 > **İzin anahtarı rolü kapatır; rol içi daraltmayı kapatmaz.** "Öğretmen başkasının duyurusunu geri çekemez" bir izin sorusu değil, bir sahiplik sorusudur — `ICurrentUser` ile handler'da zorlanır ve **her daraltma kendi testini alır**.
 
@@ -390,5 +407,5 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 | Risk | Etki |
 |---|---|
 | `oksis-ui` mock verisi kendi içinde tutarsız (`all.breakdown.students = 48` ama `role.student = 612`) | Mock sayıları referans alınamaz; kabul testleri gerçek veriye karşı yapılmalı |
-| Yetki kapısı sistemik olarak kurulmamış — hiçbir controller `Authorize(Policy=...)` kullanmıyor | Duyuru ilk tüketici olacak; kapının çalıştığı ayrıca doğrulanmalı |
+| `TenantEntity`, `ISoftDeletable`'ı paketliyor — INV-1'in "`IsDeleted` alanı yok" şartı mevcut temelle karşılanamıyor | `Domain/Common`'a `PermanentTenantEntity` eklenir (Görev 1). Paylaşılan temele dokunur; soft-delete filtresi `typeof(ISoftDeletable).IsAssignableFrom(...)` korumalı olduğu için additive |
 | `AnnouncementRecipient` fan-out'u büyük okulda satır sayısını hızla büyütür | Sezon bazlı arşivleme stratejisi V2'de ele alınmalı |

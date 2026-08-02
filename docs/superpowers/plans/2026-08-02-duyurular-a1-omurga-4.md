@@ -100,6 +100,19 @@ public sealed class GetAnnouncementsTests
     }
 
     [Fact]
+    public async Task Should_ReturnForbidden_When_ParentRequestsInventory()
+    {
+        // Velinin announcements.view izni VARDIR ama o izin gelen kutusu içindir.
+        // Envanter bir yönetim yüzeyidir: açılsaydı veli okul geneli duyuru listesini,
+        // taslakları ve yayınlayan bilgisini görürdü.
+        await using var fixture = await AnnouncementAudienceFixture.CreateAsync();
+
+        var act = () => fixture.ListAsync(asAccountId: fixture.ParentAccountId, scope: "school");
+
+        await act.Should().ThrowAsync<Exception>();
+    }
+
+    [Fact]
     public async Task Should_CapPageSize_When_ClientAsksForTooMany()
     {
         // Sayfalama gerçek olmalıdır: 200. duyurudan sonrası sessizce kaybolamaz.
@@ -161,6 +174,15 @@ public sealed class GetAnnouncementsQueryHandler(
         GetAnnouncementsQuery request, CancellationToken cancellationToken)
     {
         if (tenant.CurrentSchoolId is not { } schoolId)
+        {
+            return Result<PagedResult<AnnouncementDto>>.Forbidden();
+        }
+
+        // Envanter bir YÖNETİM yüzeyidir. Veli ve öğrencide de `announcements.view` izni
+        // vardır — ama o izin GELEN KUTUSU içindir. Envanter onlara hiç açılmaz; açılsaydı
+        // okul geneli duyuru listesini, taslakları ve yayınlayan bilgisini görürlerdi.
+        // İzin ucu açar, bu kontrol yüzeyi ayırır.
+        if (!AnnouncementCallerResolver.CanUseInventory(currentUser))
         {
             return Result<PagedResult<AnnouncementDto>>.Forbidden();
         }
@@ -308,7 +330,7 @@ Task 8'de yazdığın dosyaya:
 - [ ] **Step 7: Testleri çalıştır ve commit**
 
 Run: `docker compose up -d && dotnet test tests/Oksis.Infrastructure.IntegrationTests --filter "FullyQualifiedName~GetAnnouncementsTests"`
-Expected: PASS (5 test)
+Expected: PASS (6 test)
 
 ```bash
 dotnet format
@@ -417,10 +439,12 @@ using Oksis.Application.Modules.Announcements.DTOs;
 namespace Oksis.Application.Modules.Announcements.Queries.GetAnnouncementById;
 
 /// <summary>
-/// Duyuru detayı. İzin GEREKTİRMEZ — veli ve öğrenci de kendi duyurusunu okur.
-/// Güvenlik sınırı handler'daki alıcı/yayınlayan eşleşmesidir.
+/// Duyuru detayı. <c>announcements.view</c> izni yedi rolün tamamında vardır — veli ve
+/// öğrenci de kendi duyurusunu okur. İzin ucu AÇAR; hangi kaydı göreceğini handler'daki
+/// alıcı/yayınlayan eşleşmesi belirler.
 /// </summary>
 [Tenancy(TenancyMode.Required)]
+[RequirePermission("announcements.view")]
 public sealed record GetAnnouncementByIdQuery(Guid Id) : IQuery<AnnouncementDto>;
 ```
 
@@ -653,10 +677,13 @@ namespace Oksis.Application.Modules.Announcements.Queries.GetAnnouncementInbox;
 /// Veli/öğrenci gelen kutusu. <c>ChildId</c> yalnız velide anlamlıdır; verilmezse
 /// tüm çocuklar ("Tümü" — mobil varsayılanı).
 ///
-/// <para><b>İzin özniteliği YOKTUR</b> ve olmamalıdır: veli/öğrenci <c>announcements.view</c>
-/// iznine sahip değildir. Güvenlik sınırı alıcı satırı eşleşmesidir (self-only).</para>
+/// <para><b>İki katmanlı sınır.</b> <c>announcements.view</c> izni ucu AÇAR — veli ve
+/// öğrenci de bu izne sahiptir. HANGİ satırları göreceğini ise self-only alıcı eşleşmesi
+/// belirler: sorgu <c>AnnouncementRecipient</c>'tan yürür ve <c>PersonId</c> ile kesilir.
+/// Biri diğerinin yerine geçmez.</para>
 /// </summary>
 [Tenancy(TenancyMode.Required)]
+[RequirePermission("announcements.view")]
 public sealed record GetAnnouncementInboxQuery(Guid? ChildId) : IQuery<IReadOnlyList<AnnouncementDto>>;
 ```
 
@@ -752,7 +779,7 @@ public sealed class GetAnnouncementInboxQueryHandler(
 - [ ] **Step 5: Testleri çalıştır ve commit**
 
 Run: `dotnet test tests/Oksis.Infrastructure.IntegrationTests --filter "FullyQualifiedName~GetAnnouncementInboxTests"`
-Expected: PASS (5 test)
+Expected: PASS (6 test)
 
 ```bash
 dotnet format
@@ -855,9 +882,11 @@ namespace Oksis.Application.Modules.Announcements.Commands.MarkAnnouncementRead;
 
 /// <summary>
 /// Okundu damgası. Duyuru AÇILDIĞINDA çağrılır — ayrı bir "okudum" eylemi değildir
-/// (o V2'dedir, KR-02). İzin özniteliği yoktur; sınır self-only'dir.
+/// (o V2'dedir, KR-02). <c>announcements.view</c> ucu açar; hangi satırın işaretleneceğini
+/// self-only eşleşmesi belirler — sorgu <c>PersonId</c> ile kesilir, id ile değil.
 /// </summary>
 [Tenancy(TenancyMode.Required)]
+[RequirePermission("announcements.view")]
 public sealed record MarkAnnouncementReadCommand(Guid Id) : ICommand<AnnouncementDto>;
 ```
 

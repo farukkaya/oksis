@@ -408,7 +408,7 @@ Run:
 docker compose up -d
 dotnet test tests/Oksis.Infrastructure.IntegrationTests --filter "FullyQualifiedName~AnnouncementPersistenceTests"
 ```
-Expected: PASS (3 test)
+Expected: PASS (5 test)
 
 - [ ] **Step 11: Commit**
 
@@ -439,9 +439,14 @@ velinin ayni duyuruyu iki kez almasini DB seviyesinde engeller."
 **Interfaces:**
 - Produces: 8 izin kodu — `announcements.view`, `.create`, `.update`, `.withdraw`, `.approve`, `.moderate`, `.template.manage`, `.report.view`. Task 11–16 bunları `[RequirePermission("...")]` ile tüketir.
 
-> **Kaldırılanlar:** `announcements.read` ve `announcements.manage`. `RolePermissionSeedData`'da
-> duyuru satırı **yoktur** — yani bu ikisi bugün hiçbir role atanmamıştır ve kaldırma kimseyi
-> kırmaz. **Step 2'de bunu doğrula.**
+> **Kaldırılanlar:** `announcements.read` ve `announcements.manage`.
+>
+> **Bunlar bugün BAZI rollere atanmıştır** (`RolePermissionSeedData.cs`): `read` →
+> SuperAdmin + SchoolAdmin (`AllPermissionIds()` katalogu üzerinden) **ve** Teacher,
+> Parent, Student (satır 50, 81, 96); `manage` → SuperAdmin + SchoolAdmin (katalog).
+> Kaldırma yine de gerçek bir erişimi iptal etmez, çünkü **bugün hiçbir duyuru ucu yoktur**
+> — bu anahtarlar hiçbir şeye erişim vermez. Step 2 mevcut hâli kayda geçirmek içindir,
+> kapı değil.
 
 - [ ] **Step 1: Failing test yaz**
 
@@ -506,6 +511,42 @@ public sealed class AnnouncementPermissionSeedTests
         granted.Should().NotContain("Secretary");
         granted.Should().Contain("SchoolAdmin");
     }
+
+    [Fact]
+    public async Task Should_GrantOnlyViewToSuperAdmin_When_RolePermissionsSeeded()
+    {
+        // Platform hesabı okul adına duyuru YAYINLAYAMAZ — DutiesManage/AttendanceManage
+        // ile aynı ilke. AllPermissionIds() katalogunda yalnız `view` durur.
+        await using var ctx = _fixture.CreateDbContext();
+
+        var granted = await (
+            from rp in ctx.RolePermissions
+            join p in ctx.Permissions on rp.PermissionId equals p.Id
+            join r in ctx.SystemRoles on rp.RoleId equals r.Id
+            where r.Code == "SuperAdmin" && p.Code.StartsWith("announcements.")
+            select p.Code).ToListAsync();
+
+        granted.Should().BeEquivalentTo(["announcements.view"]);
+    }
+
+    [Fact]
+    public async Task Should_GrantViewToParentAndStudent_When_RolePermissionsSeeded()
+    {
+        // Gelen kutusu ucu bu izinle kapılanır; HANGİ satırları göreceği ayrı bir sınırdır
+        // (handler'daki self-only alıcı eşleşmesi). İki katman birlikte çalışır.
+        await using var ctx = _fixture.CreateDbContext();
+
+        var granted = await (
+            from rp in ctx.RolePermissions
+            join p in ctx.Permissions on rp.PermissionId equals p.Id
+            join r in ctx.SystemRoles on rp.RoleId equals r.Id
+            where p.Code.StartsWith("announcements.")
+                && (r.Code == "Parent" || r.Code == "Student")
+            select new { Role = r.Code, Permission = p.Code }).ToListAsync();
+
+        granted.Should().OnlyContain(g => g.Permission == "announcements.view");
+        granted.Select(g => g.Role).Should().Contain(["Parent", "Student"]);
+    }
 }
 ```
 
@@ -543,7 +584,10 @@ grep -n "DbSet<Permission>\|DbSet<SystemRole>" src/Oksis.Application/Common/Abst
 grep -n "public .* Code" src/Oksis.Domain/Modules/Identity/Entities/SystemRole.cs
 ```
 
-Expected: `RolePermissionSeedData`'da duyuru satırı **yok** (boş çıktı). Varsa **DUR** — kaldırma güvenli değildir, bulguyu bildir.
+Beklenen (2026-08-02 itibarıyla doğrulanmış): `RolePermissionSeedData`'da **beş** duyuru
+satırı var — `AnnouncementsRead` satır 50 (Teacher), 81 (Parent), 96 (Student) ve
+`AllPermissionIds()` içinde satır 235–236 (`Read` + `Manage` → SuperAdmin ve SchoolAdmin).
+Bu beklenen hâldir; kapı değildir. Farklı bir tablo görürsen bildir.
 
 - [ ] **Step 3: Testin kırıldığını doğrula**
 
@@ -585,22 +629,36 @@ Expected: FAIL — `read`/`manage` dönüyor, 8 anahtar yok.
 
 - [ ] **Step 6: `RolePermissionSeedData`'ya rol matrisini yaz**
 
-Dosyadaki mevcut satır kalıbını izleyerek ekle. Matris (teknik analiz §4.2):
+Dosyadaki mevcut satır kalıbını izleyerek ekle. Matris **teknik analiz §4.2'ye birebir uyar**
+(kullanıcı kararı 2026-08-02):
 
-| İzin | SchoolAdmin | SchoolStaff | Teacher | Secretary |
-|---|---|---|---|---|
-| `view` | ✓ | ✓ | ✓ | ✓ |
-| `create` | ✓ | ✓ | ✓ | ✓ |
-| `update` | ✓ | ✓ | ✓ | ✓ |
-| `withdraw` | ✓ | ✓ | ✓ | — |
-| `approve` | ✓ | ✓ | — | — |
-| `moderate` | ✓ | — | — | — |
-| `template.manage` | ✓ | ✓ | — | — |
-| `report.view` | ✓ | ✓ | ✓ | ✓ |
+| İzin | SuperAdmin | SchoolAdmin | SchoolStaff | Teacher | Parent | Student | Secretary |
+|---|---|---|---|---|---|---|---|
+| `view` | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| `create` | — | ✓ | ✓ | ✓ | — | — | ✓ |
+| `update` | — | ✓ | ✓ | ✓ | — | — | ✓ |
+| `withdraw` | — | ✓ | ✓ | ✓ | — | — | — |
+| `approve` | — | ✓ | ✓ | — | — | — | — |
+| `moderate` | — | ✓ | — | — | — | — | — |
+| `template.manage` | — | ✓ | ✓ | — | — | — | — |
+| `report.view` | — | ✓ | ✓ | ✓ | — | — | ✓ |
 
-`SuperAdmin`, `Parent` ve `Student` hiçbir duyuru izni **almaz**. Veli/öğrenci gelen kutusu
-`announcements.view` gerektirmez — Task 15/16 uçları `[RequirePermission]` taşımaz, güvenlik
-sınırı self-only alıcı eşleşmesidir.
+**İki nokta bu tablonun kolayca yanlış uygulanacağı yer:**
+
+1. **SuperAdmin yalnız `view` alır.** `AllPermissionIds()` katalogu SuperAdmin ve SchoolAdmin'e
+   içindeki HER anahtarı verir. Bu yüzden **yalnız `AnnouncementsView` katalogda durur**;
+   kalan yedi anahtar katalogun DIŞINDA bırakılıp SchoolAdmin'e tek tek yazılır. Dosya bu
+   kalıbı `DutiesManage`/`AttendanceManage` için zaten kullanıyor ve gerekçe aynı: platform
+   hesabı okul adına karar veremez. Emsal yorumu birebir izle.
+
+2. **Parent ve Student `view` ALIR.** Veli/öğrenci gelen kutusu (Task 15) ve okundu damgası
+   (Task 16) uçları `[RequirePermission("announcements.view")]` taşır. İzin rolü açar;
+   **hangi satırları göreceğini açmaz** — self-only alıcı eşleşmesi handler'da AYRICA durur.
+   İki katman birlikte çalışır, biri diğerinin yerine geçmez.
+
+Mevcut `AnnouncementsRead` satırlarını (Teacher 50, Parent 81, Student 96) `AnnouncementsView`
+ile değiştir; `AllPermissionIds()` içindeki `Read`/`Manage` satırlarını (235–236) tek bir
+`AnnouncementsView` satırıyla değiştir.
 
 - [ ] **Step 7: Migration üret**
 
@@ -620,7 +678,7 @@ dotnet ef migrations add 20260802_announcements_permission_keys \
 - [ ] **Step 8: Testlerin geçtiğini doğrula**
 
 Run: `dotnet test tests/Oksis.Infrastructure.IntegrationTests --filter "FullyQualifiedName~AnnouncementPermissionSeedTests"`
-Expected: PASS (3 test)
+Expected: PASS (5 test)
 
 - [ ] **Step 9: `permission-matrix.md`'yi düzelt**
 

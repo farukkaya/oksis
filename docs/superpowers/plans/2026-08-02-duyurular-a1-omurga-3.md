@@ -950,6 +950,19 @@ public static class AnnouncementCallerResolver
             : null;
     }
 
+    /// <summary>
+    /// Çağıran duyuru ENVANTERİNİ kullanabilir mi (yönetim yüzeyi)?
+    ///
+    /// <para>Veli ve öğrencide de <c>announcements.view</c> izni vardır — ama o izin gelen
+    /// kutusu içindir. Envanter onlara açılırsa okul geneli duyuru listesini, taslakları ve
+    /// yayınlayan bilgisini görürler. İzin ucu açar; bu kontrol yüzeyi ayırır.</para>
+    /// </summary>
+    public static bool CanUseInventory(ICurrentUser currentUser) =>
+        currentUser.IsInRole("SchoolAdmin")
+        || currentUser.IsInRole("SchoolStaff")
+        || currentUser.IsInRole("Secretary")
+        || currentUser.IsInRole("Teacher");
+
     /// <summary>Okulun aktif sezonu.</summary>
     public static async Task<Guid?> ResolveActiveSessionIdAsync(
         IApplicationDbContext db, Guid schoolId, CancellationToken ct) =>
