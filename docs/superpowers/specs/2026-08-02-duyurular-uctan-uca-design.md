@@ -285,9 +285,27 @@ Enum'da 15 değer vardır, **hiçbiri duyuru değildir**. Eklenecek: `Announceme
 
 Dedup anahtarı: `DeterministicGuid.Combine(schoolId, announcementId, "ANNOUNCEMENT_PUBLISHED")`.
 
-### 8.3 Acil duyuru
+### 8.3 Acil duyuru — teslim davranışı DEĞİŞTİRMEZ (düzeltme, 2026-08-02)
 
-`NotificationPriority.Critical` ile gider ve `NotificationConfig.QuietHours*` kontrolünü atlar. Sessiz saat delme zaten bu alanla modellenmiştir, yeniden icat edilmez. Her acil işaret denetim izine ayrıca yazılır — kimin ne zaman sessiz saati deldiği sorulabilir olmalıdır.
+Bu belgenin ilk sürümü "acil duyuru `NotificationPriority.Critical` ile gider ve sessiz saat kısıtını deler" diyordu. **Yanlıştı.** Depoda doğrulanan gerçek:
+
+- **`NotificationPriority` enum'u yoktur.**
+- `INotificationEnqueuer.Enqueue(eventId, schoolId, kind, title, body, deepLink, recipientAccountIds)` imzasında **öncelik parametresi yoktur**.
+- `InAppNotificationChannel` sessiz saate **hiç bakmaz** — `NotificationConfig.QuietHours*` alanları mevcut ama gönderim anında tüketen kod yok. Bu yalnız duyuruda değil, tüm bildirimlerde böyle.
+
+Yani delinecek bir kısıt kurulmamıştır. **Acil işaretinin A1'deki gerçek etkisi:**
+
+| Etki | Durum |
+|---|---|
+| Alıcı listesinde en üste sabitlenme ve görsel ayrışma | ✅ Çalışır (istemci `urgent` alanını okur) |
+| Denetim izine ayrıca yazılma | ✅ Çalışır (Görev 12) |
+| Bildirim başlığında "Acil duyuru: …" ön eki | ✅ Çalışır |
+| Sessiz saat delme | ❌ **Delecek kısıt yok** |
+| E-posta kanalının ayrıca açılması | ❌ Kanal yok (K-2) |
+
+Sessiz saat ve öncelik, teslim kanallarının (D) konusudur ve o iş yapıldığında `AnnouncementPublishedEvent.Urgent` zaten olayda taşındığı için handler değişmeden bağlanabilir. Bugün acil işareti bir **sunum ve kayıt** işaretidir, bir teslim değiştirici değil.
+
+> Yetkinin yönetimde kalması (KR-07) yine de doğrudur ve uygulanır — işaretin bugün teknik bir gücü olmaması, yarın olmayacağı anlamına gelmez.
 
 ### 8.4 Derin bağlantı
 

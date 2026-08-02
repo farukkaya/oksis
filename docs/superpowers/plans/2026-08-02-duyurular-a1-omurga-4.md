@@ -283,8 +283,17 @@ public sealed class GetAnnouncementsQueryHandler(
             childIds: [],
             seenCount: a.PublishedAt is null ? null : seenCounts.GetValueOrDefault(a.Id, 0))).ToList();
 
+        // PagedResult'ın konumsal yapıcısı YOKTUR — yalnız init-only property'ler
+        // (src/Oksis.Shared/PagedResult.cs). TotalPages/HasPreviousPage/HasNextPage
+        // hesaplanmış property'lerdir, verilmez.
         return Result<PagedResult<AnnouncementDto>>.Success(
-            new PagedResult<AnnouncementDto>(items, page, pageSize, totalCount));
+            new PagedResult<AnnouncementDto>
+            {
+                Items = items,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount,
+            });
     }
 }
 ```
@@ -1138,8 +1147,13 @@ Expected: FAIL — metot yok.
 Step 1'de okuduğun en büyük değerin bir fazlasıyla:
 
 ```csharp
-    /// <summary>Duyuru yayınlandı. Acil duyuruda öncelik Critical olur ve sessiz saat delinir.</summary>
-    AnnouncementPublished = 15, // ← Step 1'de okuduğun gerçek sayıyla değiştir
+    /// <summary>
+    /// Duyuru yayınlandı. Acil duyuruda bildirim başlığı "Acil duyuru: …" ön eki alır;
+    /// TESLİM DAVRANIŞI DEĞİŞMEZ — bu depoda öncelik kavramı ve gönderim anında sessiz
+    /// saat kontrolü yoktur (bkz. spec §8.3). Olay `Urgent` alanını taşır, böylece teslim
+    /// kanalları geldiğinde handler değişmeden bağlanabilir.
+    /// </summary>
+    AnnouncementPublished = 16, // mevcut en büyük değer 15; Step 1'de teyit et
 ```
 
 - [ ] **Step 7: Bildirim handler'ını yaz**
@@ -1212,13 +1226,23 @@ public sealed class AnnouncementPublishedNotificationHandler(
 }
 ```
 
-- [ ] **Step 8: `INotificationEnqueuer.Enqueue` imzasını doğrula**
+- [ ] **Step 8: `INotificationEnqueuer.Enqueue` imzasını teyit et**
 
 Run: `grep -rn -A12 "interface INotificationEnqueuer" src/Oksis.Application`
-Expected: Gerçek parametre sırası ve öncelik parametresi olup olmadığı. **Acil duyuru
-`Critical` öncelik almalıdır** — imzada öncelik yoksa `DailyLeaveGrantedNotificationHandler`
-nasıl yapıyor bak ve aynı yolu izle. Öncelik geçirilemiyorsa bunu bir sonraki adımda bildir,
-uydurma parametre ekleme.
+
+**Doğrulanmış (2026-08-02):** imza tam olarak yukarıda kullanılan sıradadır ve **öncelik
+parametresi YOKTUR**:
+
+```csharp
+void Enqueue(Guid eventId, Guid schoolId, NotificationKind kind,
+    string title, string body, string? deepLink, IReadOnlyList<Guid> recipientAccountIds);
+```
+
+Senkrondur (`void`, `Task` değil) ve alıcılar `IReadOnlyList<Guid>` hesap kimlikleridir.
+**Öncelik/sessiz saat için parametre arama, uydurma da ekleme** — bu depoda `NotificationPriority`
+enum'u yok ve `InAppNotificationChannel` sessiz saate hiç bakmıyor (spec §8.3). Acil işaretinin
+teslimdeki tek etkisi başlıktaki "Acil duyuru: " ön ekidir. Gerçek şekil bundan farklıysa DUR
+ve bildir.
 
 - [ ] **Step 9: Testleri çalıştır ve commit**
 
