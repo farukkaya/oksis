@@ -578,7 +578,7 @@ katmanı için `StudentEnrollment`'a join at (aktif sezon + `EnrollmentStatus` a
     };
 ```
 
-- [ ] **Step 11: Şube seçeneklerini ve öğretmen havuzunu yaz**
+- [ ] **Step 11: Şube seçeneklerini yaz**
 
 ```csharp
     /// <summary>
@@ -599,15 +599,26 @@ katmanı için `StudentEnrollment`'a join at (aktif sezon + `EnrollmentStatus` a
 
         var isTeacherPool = scope.TeacherPersonId is not null;
 
+        // Veli sayıları döngüden ÖNCE hesaplanır: `Select` içinde `await` edilemez ve
+        // `GetAwaiter().GetResult()` Global Constraints ile yasaktır.
+        var parentsBySection = new Dictionary<Guid, int>();
+        if (isTeacherPool)
+        {
+            foreach (var id in ids)
+            {
+                var inSection = students.Where(s => s.ClassRoomId == id).ToList();
+                parentsBySection[id] = (await ResolveParentsOfAsync(scope.SchoolId, inSection, ct)).Count;
+            }
+        }
+
         return names
             .OrderBy(n => n.FullName, StringComparer.Create(new System.Globalization.CultureInfo("tr-TR"), true))
             .Select(n =>
             {
-                var inSection = students.Where(s => s.ClassRoomId == n.Id).ToList();
                 var count = isTeacherPool
-                    ? ResolveParentsOfAsync(scope.SchoolId, inSection, ct).GetAwaiter().GetResult().Count
-                    : inSection.Count(s =>
-                        AnnouncementAudienceRules.ReceivesAnnouncements(s.Level, AudienceBucket.Student));
+                    ? parentsBySection[n.Id]
+                    : students.Count(s => s.ClassRoomId == n.Id
+                        && AnnouncementAudienceRules.ReceivesAnnouncements(s.Level, AudienceBucket.Student));
 
                 return new AudienceOptionDto
                 {
@@ -623,28 +634,7 @@ katmanı için `StudentEnrollment`'a join at (aktif sezon + `EnrollmentStatus` a
     }
 ```
 
-> **`GetAwaiter().GetResult()` KULLANILAMAZ** — Global Constraints bunu yasaklar.
-> **Step 12'de** veli sayılarını döngüden ÖNCE tek toplu çağrıyla hesapla ve sözlükten oku.
-
-- [ ] **Step 12: Senkron bloklamayı kaldır**
-
-`BuildSectionOptionsAsync`'i şöyle düzelt: döngüden önce
-
-```csharp
-        var parentsBySection = new Dictionary<Guid, int>();
-        if (isTeacherPool)
-        {
-            foreach (var id in ids)
-            {
-                var inSection = students.Where(s => s.ClassRoomId == id).ToList();
-                parentsBySection[id] = (await ResolveParentsOfAsync(scope.SchoolId, inSection, ct)).Count;
-            }
-        }
-```
-
-ve `Select` içinde `parentsBySection[n.Id]` oku. `Select` artık `async` içermez.
-
-- [ ] **Step 13: Öğretmen havuzunu yaz**
+- [ ] **Step 12: Öğretmen havuzunu yaz**
 
 ```csharp
     /// <summary>
@@ -711,7 +701,7 @@ ve `Select` içinde `parentsBySection[n.Id]` oku. `Select` artık `async` içerm
     }
 ```
 
-- [ ] **Step 14: DI kaydı**
+- [ ] **Step 13: DI kaydı**
 
 `src/Oksis.Infrastructure/DependencyInjection.cs` — mevcut `AddScoped` bloğuna:
 
@@ -719,12 +709,12 @@ ve `Select` içinde `parentsBySection[n.Id]` oku. `Select` artık `async` içerm
         services.AddScoped<IAudienceResolver, AudienceResolver>();
 ```
 
-- [ ] **Step 15: `Subjects` DbSet adını doğrula**
+- [ ] **Step 14: `Subjects` DbSet adını doğrula**
 
 Run: `grep -n "DbSet<Subject>\|DbSet<TeacherProfile>\|DbSet<Profile>" src/Oksis.Application/Common/Abstractions/IApplicationDbContext.cs`
 Expected: Gerçek adlar. Farklıysa koda uyarla.
 
-- [ ] **Step 16: Testlerin geçtiğini doğrula**
+- [ ] **Step 15: Testlerin geçtiğini doğrula**
 
 Run:
 ```bash
@@ -733,7 +723,7 @@ dotnet test tests/Oksis.Infrastructure.IntegrationTests --filter "FullyQualified
 ```
 Expected: PASS (7 test)
 
-- [ ] **Step 17: Commit**
+- [ ] **Step 16: Commit**
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
@@ -803,25 +793,16 @@ public sealed class GetAudiencePoolQueryHandlerTests
         result.IsSuccess.Should().BeFalse();
     }
 
-    [Fact]
-    public async Task Should_PassTeacherPersonId_When_CallerIsTeacherOnly()
-    {
-        // Havuzun daralması yetkiyle değil KAPSAMLA olur; handler bunu resolver'a bildirir.
-        var resolver = Substitute.For<IAudienceResolver>();
-        resolver.GetPoolAsync(Arg.Any<AudienceScope>(), Arg.Any<CancellationToken>())
-            .Returns(new AudiencePoolDto());
-
-        // ... fixture kurulumu: tenant dolu, currentUser yalnız "Teacher" rolünde
-        // ve AnnouncementCallerResolver bir personId döndürecek şekilde hazırlanır.
-
-        await Task.CompletedTask;
-    }
 }
 ```
 
-> İkinci test `AnnouncementCallerResolver`'ın DB'ye gitmesi nedeniyle birim testte zordur.
-> **Step 3'te karar ver:** ya `ICallerResolver` arayüzü çıkar ve mock'la, ya bu testi
-> integration seviyesine taşı. **Yarım test bırakma.**
+> **Bu handler tek birim testi alır.** "Öğretmen havuzu daralır" davranışı
+> `AnnouncementCallerResolver`'ın DB'ye gitmesini gerektirir, dolayısıyla birim testte
+> mock yığmak yerine integration seviyesinde doğrulanır — Task 10'un
+> `Should_HideAllOptionFromTeacher_When_PoolBuiltForTeacher` testi ve Task 18'in
+> `Should_HideAllOptionFromTeacher_When_AudiencePoolRequested` testi bu yolu uçtan uca
+> kapsar. Buraya `ICallerResolver` arayüzü ÇIKARMA: tek amacı test edilebilirlik olan
+> bir soyutlama, üç satırlık statik bir yardımcı için fazladan katmandır.
 
 - [ ] **Step 3: Query, handler ve controller'ı yaz**
 

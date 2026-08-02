@@ -169,6 +169,9 @@ public sealed class GetAnnouncementsQueryHandler(
         var teacherPersonId = await AnnouncementCallerResolver.ResolveTeacherOnlyPersonIdAsync(
             db, currentUser, schoolId, cancellationToken);
 
+        var myPersonId = await AnnouncementCallerResolver.ResolveMyPersonIdAsync(
+            db, currentUser.Id, cancellationToken) ?? Guid.Empty;
+
         // Öğretmen okul envanterini GÖREMEZ — bu bir filtre değil güvenlik sınırıdır.
         // announcements.view izni onda vardır ama kapsamı kendi kayıtlarıdır.
         if (teacherPersonId is not null && scope is "school")
@@ -180,8 +183,7 @@ public sealed class GetAnnouncementsQueryHandler(
 
         query = scope switch
         {
-            "mine" => query.Where(a => a.PublisherId == teacherPersonId
-                || a.PublisherId == GetMyPersonIdOrEmpty(db, currentUser.Id)),
+            "mine" => query.Where(a => a.PublisherId == myPersonId),
             "archive" => query.Where(a => a.Status == AnnouncementStatus.Expired
                 || a.Status == AnnouncementStatus.Withdrawn),
             _ => query,
@@ -261,27 +263,7 @@ public sealed class GetAnnouncementsQueryHandler(
 }
 ```
 
-> `GetMyPersonIdOrEmpty` senkron bir yardımcıdır ve **yazılmamalıdır** —
-> `Task.Result` yasağını ihlal eder. **Step 5'te düzelt.**
-
-- [ ] **Step 5: `mine` kapsamını senkron çağrı olmadan düzelt**
-
-Handler'ın başında, `teacherPersonId` çözümlemesinden hemen sonra:
-
-```csharp
-        var myPersonId = await AnnouncementCallerResolver.ResolveMyPersonIdAsync(
-            db, currentUser.Id, cancellationToken) ?? Guid.Empty;
-```
-
-ve `scope switch` içindeki `mine` dalını sadeleştir:
-
-```csharp
-            "mine" => query.Where(a => a.PublisherId == myPersonId),
-```
-
-`GetMyPersonIdOrEmpty` çağrısını **tamamen sil**.
-
-- [ ] **Step 6: `AnnouncementEnumWire`'a parse metotlarını ekle**
+- [ ] **Step 5: `AnnouncementEnumWire`'a parse metotlarını ekle**
 
 Task 8'de yazdığın dosyaya:
 
@@ -306,7 +288,7 @@ Task 8'de yazdığın dosyaya:
     };
 ```
 
-- [ ] **Step 7: Controller'a ucu ekle**
+- [ ] **Step 6: Controller'a ucu ekle**
 
 ```csharp
     [HttpGet]
@@ -323,7 +305,7 @@ Task 8'de yazdığın dosyaya:
     }
 ```
 
-- [ ] **Step 8: Testleri çalıştır ve commit**
+- [ ] **Step 7: Testleri çalıştır ve commit**
 
 Run: `docker compose up -d && dotnet test tests/Oksis.Infrastructure.IntegrationTests --filter "FullyQualifiedName~GetAnnouncementsTests"`
 Expected: PASS (5 test)

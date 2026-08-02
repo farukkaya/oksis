@@ -184,13 +184,14 @@ public sealed class AnnouncementConfiguration : IEntityTypeConfiguration<Announc
         builder.Property(x => x.RowVersion).IsRowVersion();
 
         // Kanallar küçük ve sabit bir kümedir; ayrı tablo yerine virgülle ayrılmış int
-        // listesi olarak saklanır. Kanala göre SORGULAMA yapılmaz — yalnız okunur.
+        // listesi olarak tek kolona yazılır. Kanala göre SORGU YAPILMAZ (yalnız okunur),
+        // bu yüzden normalleştirme gereksizdir. `Channels` salt-okunur bir görünümdür
+        // ve eşlenmez; EF, entity'deki private `ChannelsRaw` property'sini yazar.
         builder.Property<string>("ChannelsRaw")
             .HasColumnName("channels")
             .IsRequired()
             .HasMaxLength(32);
 
-        builder.Navigation(x => x.Channels).Metadata.SetField(null);
         builder.Ignore(x => x.Channels);
 
         // Sıcak okuma yolları: envanter (okul + statü), gelen kutusu sıralaması (yayın anı).
@@ -200,27 +201,10 @@ public sealed class AnnouncementConfiguration : IEntityTypeConfiguration<Announc
 }
 ```
 
-> **DİKKAT — `Channels` eşlemesi.** Yukarıdaki `ChannelsRaw` yaklaşımı `Ignore` ile
-> birlikte çalışmaz; `IReadOnlyList<DeliveryChannel>` bir field-backed koleksiyondur.
-> **Step 5'te doğru eşlemeyi kur.**
+- [ ] **Step 5: `Announcement`'a EF'in yazacağı ham gösterimi ekle**
 
-- [ ] **Step 5: `Channels` eşlemesini value converter ile düzelt**
-
-Step 4'teki `ChannelsRaw` / `Ignore` bloğunu **sil** ve yerine şunu koy:
-
-```csharp
-        // _channels field-backed koleksiyondur; küçük ve sabit bir küme olduğu için ayrı
-        // tablo açılmaz, virgülle ayrılmış int dizisi olarak tek kolona yazılır.
-        // Kanala göre SORGU YAPILMAZ (yalnız okunur) — bu yüzden normalleştirme gereksizdir.
-        builder.Property<string>("_channelsRaw")
-            .HasColumnName("channels")
-            .IsRequired()
-            .HasMaxLength(32);
-```
-
-ve `Announcement` entity'sine (Task 3 dosyası) EF'in yazacağı gölge alanı besleyen
-dönüşümü ekle — `src/Oksis.Domain/Modules/Announcements/Entities/Announcement.cs` içinde
-`_channels` tanımının hemen altına:
+`src/Oksis.Domain/Modules/Announcements/Entities/Announcement.cs` içinde (Task 3'te yazdığın
+dosya) `_channels` tanımının hemen altına ekle:
 
 ```csharp
     /// <summary>
@@ -243,15 +227,10 @@ dönüşümü ekle — `src/Oksis.Domain/Modules/Announcements/Entities/Announce
     }
 ```
 
-ve configuration'da gölge alan yerine bu private property'yi eşle:
-
-```csharp
-        builder.Property<string>("ChannelsRaw")
-            .HasColumnName("channels")
-            .IsRequired()
-            .HasMaxLength(32);
-        builder.Ignore(x => x.Channels);
-```
+Step 4'teki `builder.Property<string>("ChannelsRaw")` eşlemesi bu private property'yi
+hedefler. **Doğrula:** `dotnet build src/Oksis.Infrastructure` — EF private property'yi
+bulamazsa `IsRequired()` çağrısı çalışma zamanında patlar; Step 10'daki round-trip testi
+bunu yakalar.
 
 - [ ] **Step 6: Kalan 4 configuration'ı yaz**
 
