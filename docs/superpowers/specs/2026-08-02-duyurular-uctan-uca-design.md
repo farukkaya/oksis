@@ -357,9 +357,14 @@ Tek seferde, A bittikten sonra:
 1. Backend ayağa kalkar; Swagger duyuru uçlarını içerir
 2. Codegen çalıştırılır → `packages/api/src/generated/schema.ts` yenilenir
 3. `paths.ts` augmentation'ı generated tiplerle çakışır ve **typecheck kırılır** — bilinçli drift bekçisi
-4. Şekil farkları giderilir. **İkisi önceden bilinir ve istemci tarafında düzeltilir:**
-   - `endpoints.ts:247` `bucket`'ı gövdeye yazacak şekilde düzeltilir (§5.1)
-   - `CreateAnnouncementBody`'ye `attachmentFileId` eklenir ve compose formu doldurur (§7)
+4. Şekil farkları giderilir. **İkisi önceden bilinir ve istemci tarafında düzeltilir** —
+   backend bu iki alanı A'da zaten yazdı, yani drift bekçisi burada bilerek çalar:
+   - `contract.ts` → `AudienceSelectionBody`'ye **`bucket: "parent" | "teacher" | "student"`**
+     eklenir (§5.1), ve `endpoints.ts:247` onu gövdeye yazacak şekilde düzeltilir. Bugün o
+     satır `bucket`'ı düşürüyor; değer formda zaten mevcut (`AudienceSelection extends
+     AudienceOption`), yalnız gönderilmiyor.
+   - `contract.ts` → `CreateAnnouncementBody`'ye **`attachmentFileId: string | null`** eklenir
+     ve compose formu doldurur (§7).
 5. `contract.ts` + `paths.ts` **silinir**; `endpoints.ts`'teki eşleyiciler (`toAnnouncement` vb.) yerinde kalır
 6. `packages/api-mocks` tiplerini generated şemadan almaya geçirilir — bugün `contract.ts`'ten alır, silinince kırılır; **bu adım atlanamaz**
 7. İki app typecheck + lint

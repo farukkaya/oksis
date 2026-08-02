@@ -722,7 +722,7 @@ git commit -m "docs(announcements): izin matrisi 8 granuler anahtara guncellendi
 
 **Interfaces:**
 - Produces:
-  - `AnnouncementDto` — 22 alan, `packages/api/src/announcements/contract.ts` ile birebir
+  - `AnnouncementDto` — 25 alan, `packages/api/src/announcements/contract.ts` ile birebir
   - `AnnouncementAttachmentDto`, `AudienceOptionDto`, `AudienceRoleSplitDto`, `AudiencePoolDto`, `AudienceSelectionBody`
   - `AnnouncementEnumWire.ToWire(AnnouncementStatus) → string` ve kardeşleri; `AnnouncementEnumWire.ParseDimension(string) → AudienceDimension`, `ParseBucket(string) → AudienceBucket`
   - Task 11–16 bu tipleri döner.
@@ -737,7 +737,7 @@ Run:
 sed -n '30,100p' /Users/farukkaya/Repositories/oksis-ui/packages/api/src/announcements/contract.ts
 ```
 
-Expected: `AnnouncementDto`'nun 22 alanı ve null'lanabilirlikleri görünür. DTO'yu buna göre yaz.
+Expected: `AnnouncementDto`nun 25 alanı ve nullʼlanabilirlikleri görünür. DTOʼyu buna göre yaz — sayıyı buradan değil DOSYADAN doğrula.
 
 - [ ] **Step 2: Failing test yaz**
 
