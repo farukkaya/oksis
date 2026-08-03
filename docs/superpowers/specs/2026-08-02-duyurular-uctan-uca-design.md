@@ -42,9 +42,9 @@ Görev: bu sözleşmeyi karşılayan backend'i yazmak ve iki uygulamayı mock'ta
 ### Teslim sırası
 
 ```
-A  oksis-api Announcements modülü      (9 dilim)
+A  oksis-api Announcements modülü      (9 dilim → A1 ✅ / A2 ⬜ / A3 ⬜)
    ↓
-B  Mock → gerçek geçiş                  (tek seferde — paths.ts bölünemez)
+B  Mock → gerçek geçiş                  (A'nın ÜÇÜ de bitince, tek seferde)
    ↓
 C  Frontend boşlukları
    ‖
