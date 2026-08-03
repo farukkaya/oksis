@@ -597,6 +597,19 @@ Geri çekme — **gerekçe zorunlu**, `StatusBeforeWithdraw` saklanır (INV-4'ü
 - Modify: `src/Oksis.Api/Controllers/V1/AnnouncementsController.cs`
 - Modify: `tests/.../AnnouncementPermissionSurfaceTests.cs`, `AnnouncementAudienceFixture.cs`
 - Test: `tests/Oksis.Infrastructure.IntegrationTests/Persistence/WithdrawAnnouncementTests.cs`
+- Test: `tests/Oksis.Infrastructure.IntegrationTests/Persistence/AnnouncementWithdrawnNotificationTests.cs` — **ZORUNLU**
+
+> **Bildirim handler'ı TESTSİZ BIRAKILMAZ** (Görev 7 inceleme bulgusu, 2026-08-03).
+> A1'de `AnnouncementPublishedNotificationHandler` testsiz gitti ve bir sonraki görevde geriye
+> dönük kapatılmak zorunda kalındı — `AnnouncementNotificationsTests.cs:16-19` bunu kaydeder.
+> Görev 7'de aynı şey tekrarlandı ve fix turuna girdi. Bu handler için en az şunlar sınanır:
+> - kendi kaydını geri çeken kişiye bildirim **GİTMEZ** (`DidNotReceive`)
+> - başkasının duyurusunu geri çeken yönetim → **yayınlayana** bildirim gider (`Received(1)`)
+> - bildirimin alıcısı YAYINLAYANDIR, duyurunun alıcı kitlesi DEĞİL — bu, ihtiyaç analizi
+>   §16.3'ün ("sessizce kaybolsun; izin alıcıda kalması kafa karıştırır") tek otomatik kanıtıdır
+>
+> Kalıp: `AnnouncementNotificationsTests.cs` — olayı elle kur, gerçek recipient resolver +
+> NSubstitute `INotificationEnqueuer`.
 
 **Interfaces:**
 - Consumes: `Announcement.Withdraw(string reason, Guid withdrawnBy, DateTimeOffset now)` (Görev 5), Görev 6'nın üç parçası, Görev 7'nin kurduğu handler kalıbı

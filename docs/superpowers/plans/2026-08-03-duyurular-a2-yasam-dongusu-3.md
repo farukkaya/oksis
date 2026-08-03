@@ -1467,6 +1467,23 @@ Onay kuyruğu ve kararı. **D-2 uygulanır:** red gerekçesi `WithdrawReason`'a 
 - Modify: controller, izin yüzeyi tablosu, fixture
 - Test: `tests/Oksis.Domain.UnitTests/.../AnnouncementLifecycleTests.cs`
 - Test: `tests/Oksis.Infrastructure.IntegrationTests/Persistence/AnnouncementApprovalTests.cs`
+- Test: `tests/Oksis.Infrastructure.IntegrationTests/Persistence/AnnouncementDecisionNotificationTests.cs` — **ZORUNLU**
+
+> **Bildirim handler'ları TESTSİZ BIRAKILMAZ** (Görev 7 inceleme bulgusu, 2026-08-03).
+> A1'de `AnnouncementPublishedNotificationHandler` testsiz gitti ve geriye dönük kapatıldı
+> (`AnnouncementNotificationsTests.cs:16-19`); Görev 7'de tekrarlandı ve fix turuna girdi.
+> Bu görevin İKİ handler'ı için en az şunlar sınanır:
+> - **Approved:** bildirim YAYINLAYAN ÖĞRETMENE gider. Alıcı kitlesine giden "yeni duyuru"
+>   haberi AYRI bir olaydan (`AnnouncementPublishedEvent`) gelir — onay iki farklı kişiye iki
+>   farklı şey söyler ve testin bunları ayırt etmesi gerekir.
+> - **Rejected:** bildirim gövdesi RED GEREKÇESİNİ taşır. Bu, D-2 kararının tek çalışan
+>   sonucudur: gerekçe `WithdrawReason`'a yazılmadığı için öğretmenin onu öğrenmesinin bugünkü
+>   TEK yolu bu bildirimdir. Gerekçe gövdede yoksa karar sessizce anlamsızlaşır.
+> - **Rejected dedup:** aynı duyuru düzeltilip yeniden gönderilip yeniden reddedilebilir —
+>   iki reddin FARKLI dedup anahtarı ürettiği sınanır (`OccurredAt.UtcTicks` bunun içindir).
+>
+> Kalıp: `AnnouncementNotificationsTests.cs` — olayı elle kur, gerçek recipient resolver +
+> NSubstitute `INotificationEnqueuer`.
 
 **Interfaces:**
 - Consumes: `Announcement.{Publish, MarkPendingApproval, PublisherId, AcademicSessionId, Type}`, `AnnouncementTarget.{Dimension, Key, Bucket}`, `IAudienceResolver.ResolveAsync`, `AnnouncementEnumWire.ToWire(AudienceDimension|AudienceBucket)`, Görev 6'nın üç parçası
