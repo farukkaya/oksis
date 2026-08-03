@@ -398,7 +398,7 @@ public sealed class AmendAnnouncementCommandHandler(
 
         try
         {
-            announcement.Amend(request.Title, request.Body, request.Silent, clock.UtcNow);
+            announcement.Amend(request.Title, request.Body, request.Silent);
         }
         catch (AnnouncementDomainException ex)
         {
@@ -1107,7 +1107,7 @@ kaydini geri ceken kisiye hic gitmez."
 - Test: `tests/Oksis.Infrastructure.IntegrationTests/Persistence/RestoreAnnouncementTests.cs`
 
 **Interfaces:**
-- Consumes: `Announcement.Restore(DateTimeOffset now)` ve `Announcement.Expire(DateTimeOffset now)` (Görev 5), Görev 6'nın üç parçası
+- Consumes: `Announcement.Restore()` ve `Announcement.Expire()` (Görev 5), Görev 6'nın üç parçası
 - Produces:
   - `sealed record RestoreAnnouncementCommand(Guid Id) : ICommand<AnnouncementDto>` — `[Tenancy(Required)]` + `[RequirePermission("announcements.withdraw")]`
   - Fixture yardımcıları: `Task<AnnouncementDto> RestoreAsync(Guid asAccountId, Guid announcementId)` ve `Task ExpireAsync(Guid announcementId)`
@@ -1296,7 +1296,7 @@ public sealed class RestoreAnnouncementTests : IAsyncLifetime
     public async Task ExpireAsync(Guid announcementId)
     {
         var entity = await _context.Announcements.SingleAsync(a => a.Id == announcementId);
-        entity.Expire(DateTimeOffset.UtcNow);
+        entity.Expire();
         await _context.SaveChangesAsync();
     }
 ```
@@ -1393,7 +1393,7 @@ public sealed class RestoreAnnouncementCommandHandler(
 
         try
         {
-            announcement.Restore(clock.UtcNow);
+            announcement.Restore();
         }
         catch (AnnouncementDomainException ex)
         {

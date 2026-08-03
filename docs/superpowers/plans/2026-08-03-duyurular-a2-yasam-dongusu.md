@@ -752,7 +752,7 @@ Yayın sonrası düzeltme. **INV-2'nin domain seviyesindeki kanıtı `Amend()`'i
 **Interfaces:**
 - Consumes: `Announcement.CreateDraft(...)` (mevcut, 14 parametre), `Announcement.Publish(AnnouncementReach reach, int recipientCount, DateTimeOffset now)`, `AnnouncementDomainException(string code, string message)`, `AggregateRoot.Raise(IDomainEvent)`, `IDomainEvent.OccurredAt`
 - Produces:
-  - `void Announcement.Amend(string title, string body, bool silent, DateTimeOffset now)` — hedef parametresi **YOK** (INV-2). `Amended` bayrağını `!silent` olduğunda açar; **hiçbir zaman kapatmaz**.
+  - `void Announcement.Amend(string title, string body, bool silent)` — hedef parametresi **YOK** (INV-2); saat parametresi de yok (`UpdatedAt`'i `AuditingInterceptor` yazar). `Amended` bayrağını `!silent` olduğunda açar; **hiçbir zaman kapatmaz**.
   - `sealed record AnnouncementAmendedEvent(Guid SchoolId, Guid AnnouncementId, string Title, bool Silent, DateTimeOffset OccurredAt) : IDomainEvent`
 
 - [ ] **Step 1: Failing testleri yaz**
@@ -807,7 +807,7 @@ public sealed class AnnouncementLifecycleTests
 
         amend.Should().NotBeNull();
         amend!.GetParameters().Select(p => p.Name)
-            .Should().BeEquivalentTo(["title", "body", "silent", "now"],
+            .Should().BeEquivalentTo(["title", "body", "silent"],
                 "INV-2: hedef yayin aninda donar — duzeltme onu ALAMAZ");
     }
 
@@ -1009,10 +1009,13 @@ public sealed record AnnouncementAmendedEvent(
     /// <c>silentAmendment</c>). Rozet TEK YÖNLÜDÜR: bir kez açıldıysa sonraki sessiz bir
     /// düzeltme onu kapatmaz — alıcı duyurunun değiştiğini öğrendiyse o bilgi geri alınamaz.</para>
     ///
-    /// <para><paramref name="now"/> İŞ zamanıdır. Olayın <c>OccurredAt</c>'i ondan DEĞİL
-    /// ambient saatten gelir (bkz. <see cref="Publish"/> yorumu).</para>
+    /// <para><b>Saat parametresi YOKTUR.</b> Düzeltmenin zaman damgası <c>UpdatedAt</c>'tir ve
+    /// onu <c>AuditingInterceptor</c> kayıt anında yazar — entity çağırandan iş zamanı ALMAZ.
+    /// Okunmayan bir parametre, metodun bir zaman kaydettiği yalanını söylerdi ve bu depoda
+    /// <c>TreatWarningsAsErrors</c> + IDE0060 onu doğru şekilde build hatasına çevirir.
+    /// Olayın <c>OccurredAt</c>'i ise ambient saatten gelir (bkz. <see cref="Publish"/>).</para>
     /// </summary>
-    public void Amend(string title, string body, bool silent, DateTimeOffset now)
+    public void Amend(string title, string body, bool silent)
     {
         if (Status is not AnnouncementStatus.Published)
         {
@@ -1122,8 +1125,8 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
 - Consumes: Görev 4'ün ürettiği her şey + `AnnouncementStatus` (Draft=0, Scheduled=1, PendingApproval=2, Published=3, Expired=4, Withdrawn=5, Archived=6)
 - Produces:
   - `void Announcement.Withdraw(string reason, Guid withdrawnBy, DateTimeOffset now)` — `StatusBeforeWithdraw`'ı saklar, `WithdrawReason/WithdrawnAt/WithdrawnBy` yazar, `AnnouncementWithdrawnEvent` yayar.
-  - `void Announcement.Restore(DateTimeOffset now)` — `StatusBeforeWithdraw`'a döner (INV-4), geri çekme alanlarını temizler. Olay YAYMAZ.
-  - `void Announcement.Expire(DateTimeOffset now)` — `Published` → `Expired`. Olay YAYMAZ (spec §9: "Bildirim üretmez").
+  - `void Announcement.Restore()` — `StatusBeforeWithdraw`'a döner (INV-4), geri çekme alanlarını temizler. Olay YAYMAZ.
+  - `void Announcement.Expire()` — `Published` → `Expired`. Olay YAYMAZ (spec §9: "Bildirim üretmez").
   - `sealed record AnnouncementWithdrawnEvent(Guid SchoolId, Guid AnnouncementId, string Title, string Reason, DateTimeOffset OccurredAt) : IDomainEvent`
 
 - [ ] **Step 1: Failing testleri yaz**
@@ -1160,10 +1163,10 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
     public void Should_ReturnToExpired_When_WithdrawnExpiredAnnouncementIsRestored()
     {
         var a = Published();
-        a.Expire(_now.AddDays(30));
+        a.Expire();
         a.Withdraw("Arsivden de kaldirilmali.", _actor, _now.AddDays(31));
 
-        a.Restore(_now.AddDays(32));
+        a.Restore();
 
         a.Status.Should().Be(AnnouncementStatus.Expired,
             "INV-4: geri alma ONCEKI statuye doner, kosulsuz published'a DEGIL");
@@ -1175,7 +1178,7 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
         var a = Published();
         a.Withdraw("Yanlislikla yayinlandi.", _actor, _now.AddHours(1));
 
-        a.Restore(_now.AddHours(2));
+        a.Restore();
 
         a.Status.Should().Be(AnnouncementStatus.Published);
     }
@@ -1191,7 +1194,7 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
         var a = Published();
         a.Withdraw("Gerekce metni.", _actor, _now.AddHours(1));
 
-        a.Restore(_now.AddHours(2));
+        a.Restore();
 
         a.WithdrawReason.Should().BeNull();
         a.WithdrawnAt.Should().BeNull();
@@ -1223,7 +1226,7 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
         a.Withdraw("Gerekce metni.", _actor, _now.AddHours(1));
         a.ClearDomainEvents();
 
-        a.Restore(_now.AddHours(2));
+        a.Restore();
 
         a.DomainEvents.Should().BeEmpty();
     }
@@ -1299,7 +1302,7 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
     {
         var a = Published();
 
-        var act = () => a.Restore(_now);
+        var act = () => a.Restore();
 
         act.Should().Throw<AnnouncementDomainException>()
             .Which.Code.Should().Be("Announcements.Restore.InvalidStatus");
@@ -1312,7 +1315,7 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
     {
         var a = Published();
 
-        a.Expire(_now.AddDays(30));
+        a.Expire();
 
         a.Status.Should().Be(AnnouncementStatus.Expired);
     }
@@ -1323,7 +1326,7 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
     {
         var a = Published();
 
-        a.Expire(_now.AddDays(30));
+        a.Expire();
 
         a.DomainEvents.Should().BeEmpty();
     }
@@ -1338,7 +1341,7 @@ Bu, MSW mock'unun (`announcement-handlers.ts:220-226`) yaptığının tersidir �
         if (status is AnnouncementStatus.Scheduled) a.MarkScheduled(_now.AddDays(1));
         if (status is AnnouncementStatus.PendingApproval) a.MarkPendingApproval();
 
-        var act = () => a.Expire(_now);
+        var act = () => a.Expire();
 
         act.Should().Throw<AnnouncementDomainException>()
             .Which.Code.Should().Be("Announcements.Expire.InvalidStatus");
@@ -1433,7 +1436,7 @@ public sealed record AnnouncementWithdrawnEvent(
     /// <para>Olay YAYMAZ: alıcı duyuruyu zaten görmüştü ve geri çekilme sırasında listeden
     /// düştü; geri gelmesi yeni bir haber değildir. Denetim izi çağıran tarafından yazılır.</para>
     /// </summary>
-    public void Restore(DateTimeOffset now)
+    public void Restore()
     {
         if (Status is not AnnouncementStatus.Withdrawn || StatusBeforeWithdraw is not { } previous)
         {
@@ -1459,7 +1462,7 @@ public sealed record AnnouncementWithdrawnEvent(
     ///
     /// <para>Bildirim ÜRETMEZ (spec §9) — olay da yaymaz.</para>
     /// </summary>
-    public void Expire(DateTimeOffset now)
+    public void Expire()
     {
         if (Status is not AnnouncementStatus.Published)
         {
@@ -1472,7 +1475,15 @@ public sealed record AnnouncementWithdrawnEvent(
     }
 ```
 
-> `Expire`'ın `now` parametresi bugün okunmuyor. **Bırak** — A3'ün job'ı `ExpiredAt` benzeri bir alan eklerse imza değişmez ve bu, "iş zamanı çağırandan gelir" kuralının imzada görünür kalmasını sağlar. Derleyici uyarısı çıkarsa (`IDE0060`) bir `// reason:` yorumu **değil**, yukarıdaki XML-doc yeterlidir; analizör yine de şikâyet ederse parametreyi kaldırmak yerine **DUR ve bildir** (imza kararı planındır).
+> **`Restore()` ve `Expire()` saat parametresi ALMAZ — `Withdraw(reason, withdrawnBy, now)` alır.**
+> Ayrım keyfi değil: `Withdraw` gerçekten `WithdrawnAt = now` yazar; diğer ikisi hiçbir iş
+> zamanı kaydetmez (`Restore` alanları temizler, `Expire` yalnız statü değiştirir). Okunmayan
+> bir parametre, metodun bir zaman kaydettiği yalanını söyler — ve bu depoda
+> `TreatWarningsAsErrors` + IDE0060 onu doğru şekilde **build hatasına** çevirir.
+>
+> Bu, planın ilk sürümünün hatasıydı ve Görev 4'te ölçülerek düzeltildi (`Amend` de aynı
+> sebeple saatini kaybetti). A3 ileride `ExpiredAt` isterse parametre o zaman, kendi testiyle
+> eklenir — bugünden konmuş boş bir parametre o ihtiyacı karşılamaz, yalnız analizörü susturur.
 
 - [ ] **Step 5: Testin geçtiğini doğrula**
 
