@@ -2827,7 +2827,13 @@ dogrulaniyor, denetim izi bes satirla kapaniyor."
 
 - [ ] Dört süit de yeşil; yalnız Documents/S3 tabanı kırık ve sayısı dal öncesiyle aynı.
 - [ ] Swagger 12 duyuru yolu / 15 operasyon sunuyor, `DELETE` yok.
-- [ ] `grep -rn "ForceStatusAsync" tests/` boş (Görev 11).
+- [ ] `ForceStatusAsync` **çağrısı ve tanımı** kalmadı (Görev 11). Dizeyi düz aramak YANLIŞ
+      ölçüttür: Görev 11'in kendi brief'i o adı hayatta kalan açıklama yorumlarına yazdırır
+      (`ForceChildAsync`'in çapraz atfı ve dönüştürülen testlerin gerekçeleri), dolayısıyla
+      `grep -rn "ForceStatusAsync" tests/` **boş çıkmaz ve çıkmamalıdır**. Doğru kontrol:
+      metot tanımı silinmiş, hiçbir çağrı yok, ve `AnnouncementAuditWriterTests`'teki yansıma
+      bekçisi yerinde. (İki implementer bu çelişkiyi bağımsız olarak bildirdi — ölçüt hatalıydı,
+      kod değil.)
 - [ ] `AnnouncementPermissionSurfaceTests` 15 istek keşfediyor ve tablosu tam (Görev 3).
 - [ ] Nihai bir **dal-geneli** inceleme yapıldı (A1'in BLOCKER'ı yalnız beş handler yan yana konunca görülmüştü — A2'nin beş yeni handler'ı `AnnouncementLifecycleGuard`'ı paylaşıyor, ama incelemenin sorusu yine "hepsi aynı şeyi mi yapıyor" olmalı).
 - [ ] Ledger'da (`oksis-api/.superpowers/sdd/2026-08-03-duyurular-a2-yasam-dongusu/progress.md`) her mutasyon denetiminin sonucu, her plan hatası ve A3'e taşınan her karar yazılı.
