@@ -38,182 +38,98 @@ kümesini verirdi.
 
 - [ ] **Step 1: Failing entegrasyon testlerini yaz**
 
-`tests/Oksis.Infrastructure.IntegrationTests/Persistence/GetAnnouncementPublishersTests.cs`:
+> **PLAN DÜZELTMESİ (2026-08-04, kontrolör).** Bu adımın önceki sürümü
+> `AnnouncementAudienceFixture.BuildAsync(_db)` ve bir `Scene` tipi kullanıyordu.
+> **İKİSİ DE YOKTUR — uydurmaydı.** Fixture'ın gerçek yüzeyi depodan okundu:
+>
+> | Uydurma (SİLİNDİ) | Gerçek |
+> |---|---|
+> | `AnnouncementAudienceFixture.BuildAsync(db)` | `AnnouncementAudienceFixture.CreateAsync(DatabaseFixture database, bool teacherIsAlsoParent = false)` — fixture'ın KENDİSİNİ döner, `IAsyncDisposable` |
+> | `Scene` tipi, `_scene.SchoolId` | `fixture.AdminScope.SchoolId` (`AudienceScope`) |
+> | `_scene.TeacherPersonId` / `AdminPersonId` | `fixture.TeacherPersonId` / `fixture.AdminPersonId` (doğru, aynen var) |
+> | elle `SeedPublishedAsync` yazmak | `fixture.CreateAnnouncementAsync(title, body, audience, asDraft:)` (yönetici imzasıyla yayınlar) ve `fixture.CreateAnnouncementAsAsync(accountId, title, body, audience, asDraft:, scheduledAt:, urgent:)` |
+>
+> `audience` parametresi `IReadOnlyList<(string Dimension, string Key, string Bucket)>`'tır —
+> örnek: `[("all", "all", "parent")]`.
+>
+> `FakeCurrentUser` / `FakePermissionReader` / `FakeTenantContext` bu depoda **paylaşılan
+> tipler değildir**; her test dosyası kendi `private sealed class`'ını yazar
+> (`Attendance/AttendanceExcuseTests.cs` emsali). Sen de öyle yap.
+>
+> **Kurulum kalıbının tek doğru emsali `GetAnnouncementsTests.cs`'tir — ONU OKU ve izle.**
+> **`AnnouncementAudienceFixture.cs`'ye SATIR EKLEME** (A1'de bu iki kez sessizce altı testi
+> kırdı).
+
+`tests/Oksis.Infrastructure.IntegrationTests/Persistence/GetAnnouncementPublishersTests.cs`
+oluştur. **Aşağıdaki yedi testin ADLARI ve DOC YORUMLARI plan-mandated'dır** — birebir
+kullan, zayıflatma, silme. Kurulum kodunu `GetAnnouncementsTests.cs`'ten alarak sen yaz.
 
 ```csharp
-using FluentAssertions;
-using NSubstitute;
-using Oksis.Application.Common.Abstractions;
-using Oksis.Application.Modules.Announcements.Queries.GetAnnouncementPublishers;
-using Xunit;
-
-namespace Oksis.Infrastructure.IntegrationTests.Persistence;
-
 /// <summary>
-/// Yayınlayan filtresi seçenekleri (A3 dilim 6). Envanter listesindeki
-/// <c>?publisherId=</c> filtresinin seçenek kaynağıdır — yani bir YÖNETİM yüzeyidir.
+/// Yayınlayan filtresi seçenekleri (A3 dilim 6). Envanter listesindeki `?publisherId=`
+/// filtresinin seçenek kaynağıdır — yani bir YÖNETİM yüzeyidir.
 /// </summary>
 [Collection(DatabaseCollection.Name)]
-public sealed class GetAnnouncementPublishersTests : IAsyncLifetime
+public sealed class GetAnnouncementPublishersTests(DatabaseFixture database)
 {
-    private readonly DatabaseFixture _fixture;
-    private OksisDbContext _db = default!;
-    private AnnouncementAudienceFixture.Scene _scene = default!;
-
-    public GetAnnouncementPublishersTests(DatabaseFixture fixture) => _fixture = fixture;
-
-    public async Task InitializeAsync()
-    {
-        _db = _fixture.CreateDbContext();
-        _scene = await AnnouncementAudienceFixture.BuildAsync(_db);
-    }
-
-    public Task DisposeAsync()
-    {
-        _db.Dispose();
-        return Task.CompletedTask;
-    }
+    // Kurulum: GetAnnouncementsTests kalıbı. Her test kendi fixture'ını kurar:
+    //   await using var fixture = await AnnouncementAudienceFixture.CreateAsync(database);
+    // Handler doğrudan kurulur:
+    //   await using var db = database.CreateDbContext(fixture.AdminScope.SchoolId);
+    //   var handler = new GetAnnouncementPublishersQueryHandler(db, tenant, permissions);
 
     /// <summary>
-    /// D-2: <c>announcements.view</c> velide ve öğrencide de vardır. Envanter yetkisi
-    /// olmayan çağıran okulun personel listesini GÖRMEZ — bu bir roster sızıntısı olurdu.
+    /// D-2: `announcements.view` velide ve öğrencide de vardır. Envanter yetkisi olmayan
+    /// çağıran okulun personel listesini GÖRMEZ — bu bir roster sızıntısı olurdu.
     /// </summary>
     [Fact]
-    public async Task Should_ReturnForbidden_When_CallerCannotUseInventory()
-    {
-        var handler = new GetAnnouncementPublishersQueryHandler(
-            _db, Tenant(_scene.SchoolId), Permissions(canUseInventory: false));
+    public async Task Should_ReturnForbidden_When_CallerCannotUseInventory() { }
 
-        var result = await handler.Handle(new GetAnnouncementPublishersQuery(), CancellationToken.None);
-
-        result.IsFailure.Should().BeTrue();
-        result.Error.Code.Should().Be("Error.Forbidden");
-    }
-
+    /// <summary>Aynı kişi iki duyuru yayınladıysa filtrede BİR kez görünür.</summary>
     [Fact]
-    public async Task Should_ReturnDistinctPublishers_When_OnePersonPublishedTwice()
-    {
-        await SeedPublishedAsync(_scene.TeacherPersonId, "Ayşe Yılmaz", "Ayşe Yılmaz");
-        await SeedPublishedAsync(_scene.TeacherPersonId, "Ayşe Yılmaz", "Ayşe Yılmaz");
-
-        var handler = new GetAnnouncementPublishersQueryHandler(
-            _db, Tenant(_scene.SchoolId), Permissions(canUseInventory: true));
-
-        var result = await handler.Handle(new GetAnnouncementPublishersQuery(), CancellationToken.None);
-
-        result.Value!.Where(p => p.Id == _scene.TeacherPersonId.ToString())
-            .Should().ContainSingle("aynı kişi iki duyuru yayınladıysa filtrede BİR kez görünür");
-    }
+    public async Task Should_ReturnDistinctPublishers_When_OnePersonPublishedTwice() { }
 
     /// <summary>
-    /// Kurumsal duyuruda <c>PublisherLabel</c> "Okul Müdürlüğü"dür — filtre etiketi olarak
-    /// kullanılırsa üç farklı yönetici tek satıra çöker ve <c>publisherId</c> filtresi
-    /// anlamsızlaşır. Bu yüzden ad <c>PublisherRealName</c>'den gelir; yoksa etikete düşer.
+    /// Kurumsal duyuruda `PublisherLabel` "Okul Müdürlüğü"dür — filtre etiketi olarak
+    /// kullanılırsa üç farklı yönetici tek satıra çöker ve `publisherId` filtresi
+    /// anlamsızlaşır. Bu yüzden ad `PublisherRealName`'den gelir.
     /// </summary>
     [Fact]
-    public async Task Should_UseRealName_When_PublisherLabelIsInstitutional()
-    {
-        await SeedPublishedAsync(_scene.AdminPersonId, "Okul Müdürlüğü", "Mehmet Demir");
+    public async Task Should_UseRealName_When_PublisherLabelIsInstitutional() { }
 
-        var handler = new GetAnnouncementPublishersQueryHandler(
-            _db, Tenant(_scene.SchoolId), Permissions(canUseInventory: true));
-
-        var result = await handler.Handle(new GetAnnouncementPublishersQuery(), CancellationToken.None);
-
-        result.Value!.Should().ContainSingle(p => p.Id == _scene.AdminPersonId.ToString())
-            .Which.Name.Should().Be("Mehmet Demir");
-    }
-
+    /// <summary>Gerçek ad yoksa etikete düşülür.</summary>
     [Fact]
-    public async Task Should_FallBackToLabel_When_RealNameIsNull()
-    {
-        await SeedPublishedAsync(_scene.AdminPersonId, "Okul Müdürlüğü", realName: null);
-
-        var handler = new GetAnnouncementPublishersQueryHandler(
-            _db, Tenant(_scene.SchoolId), Permissions(canUseInventory: true));
-
-        var result = await handler.Handle(new GetAnnouncementPublishersQuery(), CancellationToken.None);
-
-        result.Value!.Should().ContainSingle(p => p.Id == _scene.AdminPersonId.ToString())
-            .Which.Name.Should().Be("Okul Müdürlüğü");
-    }
+    public async Task Should_FallBackToLabel_When_RealNameIsNull() { }
 
     /// <summary>
     /// Filtre seçenekleri BAŞKA OKULUN yayınlayanlarını içeremez. Bu testin ayırt ediciliği,
-    /// handler'ın <c>SchoolId</c> yüklemini gerçekten taşıdığını göstermesidir.
+    /// handler'ın `SchoolId` yüklemini gerçekten taşıdığını göstermesidir.
+    /// İkinci bir okul için İKİNCİ bir `AnnouncementAudienceFixture.CreateAsync` çağır —
+    /// her çağrı kendi okulunu kurar.
     /// </summary>
     [Fact]
-    public async Task Should_ExcludePublishers_When_TheyBelongToAnotherSchool()
-    {
-        var otherSchoolId = Guid.NewGuid();
-        var otherPersonId = Guid.NewGuid();
-        await SeedPublishedAsync(otherPersonId, "Başka Okul", "Başka Kişi", schoolId: otherSchoolId);
-
-        var handler = new GetAnnouncementPublishersQueryHandler(
-            _db, Tenant(_scene.SchoolId), Permissions(canUseInventory: true));
-
-        var result = await handler.Handle(new GetAnnouncementPublishersQuery(), CancellationToken.None);
-
-        result.Value!.Should().NotContain(p => p.Id == otherPersonId.ToString());
-    }
+    public async Task Should_ExcludePublishers_When_TheyBelongToAnotherSchool() { }
 
     /// <summary>
     /// TASLAK duyurunun yayınlayanı filtrede GÖRÜNMEZ — filtre, envanterde GÖRÜNEN
     /// duyuruların yayınlayanlarıdır; hiç yayınlanmamış bir taslağın sahibi bir filtre
     /// seçeneği değildir ve seçilirse boş sonuç verirdi.
+    /// (`asDraft: true` ile kur.)
     /// </summary>
     [Fact]
-    public async Task Should_ExcludePublisher_When_TheyOnlyHaveDrafts()
-    {
-        await SeedDraftAsync(_scene.TeacherPersonId, "Ayşe Yılmaz");
+    public async Task Should_ExcludePublisher_When_TheyOnlyHaveDrafts() { }
 
-        var handler = new GetAnnouncementPublishersQueryHandler(
-            _db, Tenant(_scene.SchoolId), Permissions(canUseInventory: true));
-
-        var result = await handler.Handle(new GetAnnouncementPublishersQuery(), CancellationToken.None);
-
-        result.Value!.Should().NotContain(p => p.Id == _scene.TeacherPersonId.ToString());
-    }
-
+    /// <summary>Seçenekler ada göre sıralı döner.</summary>
     [Fact]
-    public async Task Should_OrderByName_When_PublishersAreReturned()
-    {
-        await SeedPublishedAsync(_scene.AdminPersonId, "Okul Müdürlüğü", "Zeynep Ak");
-        await SeedPublishedAsync(_scene.TeacherPersonId, "Ayşe Yılmaz", "Ayşe Yılmaz");
-
-        var handler = new GetAnnouncementPublishersQueryHandler(
-            _db, Tenant(_scene.SchoolId), Permissions(canUseInventory: true));
-
-        var result = await handler.Handle(new GetAnnouncementPublishersQuery(), CancellationToken.None);
-
-        result.Value!.Select(p => p.Name).Should().ContainInOrder("Ayşe Yılmaz", "Zeynep Ak");
-    }
-
-    private static ITenantContext Tenant(Guid? schoolId)
-    {
-        var tenant = Substitute.For<ITenantContext>();
-        tenant.CurrentSchoolId.Returns(schoolId);
-        return tenant;
-    }
-
-    private static IPermissionReader Permissions(bool canUseInventory)
-    {
-        var reader = Substitute.For<IPermissionReader>();
-        reader.HasPermissionAsync("announcements.create", Arg.Any<CancellationToken>())
-            .Returns(canUseInventory);
-        return reader;
-    }
+    public async Task Should_OrderByName_When_PublishersAreReturned() { }
 }
 ```
 
-> **Implementer'a not — ÖNEMLİ:** `AnnouncementAudienceFixture`'ın GERÇEK API'sini
-> (`BuildAsync` var mı, `Scene` tipinin alanları neler, `TeacherPersonId`/`AdminPersonId`
-> gerçekten var mı) DOSYADAN OKU ve testi ona uydur. Fixture'a **satır EKLEME** —
-> A1'de bu iki kez sessizce 6 test kırdı. Uygun alanlar yoksa bu sınıf kendi izole verisini
-> kursun. `SeedPublishedAsync` / `SeedDraftAsync` yardımcılarını da sen yaz:
-> `Announcement.CreateDraft(...)` + (yayın için) `Publish(reach, count, now)` çağırarak,
-> **statüyü elle set etmeden**. Var olan `CreateAnnouncementTests`/`GetAnnouncementsTests`
-> dosyalarındaki kurulum kalıbını emsal al.
+> **Doc yorumlarındaki her iddiayı harfiyen sına.** "Benzer bir şey" yazma, iddiayı
+> zayıflatma. `Should_FallBackToLabel_When_RealNameIsNull` için `PublisherRealName`'i
+> null olan bir satıra ihtiyacın var — fixture bunu üretmiyorsa duyuruyu fixture ile
+> oluşturup ardından `PublisherRealName`'i doğrudan veritabanında null'a çekmen
+> gerekebilir; hangi yolu seçtiğini rapora yaz.
 
 - [ ] **Step 2: Testlerin DERLENMEDİĞİNİ doğrula**
 
