@@ -33,7 +33,14 @@ Bunlar A1'in Global Constraints'inin **tamamını** kapsar ve A2'ye özgü olanl
 - **Yorumlar Türkçe**, tanımlama noktalarında; tanımlayıcılar İngilizce.
 - **Test isimlendirme:** `Should_{ExpectedBehavior}_When_{Condition}`, sınıf `{SystemUnderTest}Tests`.
 - **Commit formatı:** `<type>(<scope>): türkçe açıklama` — scope `announcements` veya `repo`, sonda nokta yok.
-- **Her commit'ten önce `dotnet format`.** Migration üreten görevlerde `dotnet format` **test derlemesinden ÖNCE** de çalıştırılır (EF şablonu IDE0161'i kırar — A1 Görev 6 kaydı).
+- **`dotnet format` ÇALIŞTIRILMAZ — biçim kapısı `dotnet build`'dir.** `Directory.Build.props:6,9`
+  `TreatWarningsAsErrors=true` + `EnforceCodeStyleInBuild=true` ilan eder, yani stil ihlali zaten
+  derlemeyi kırar; `format` elle yazılan kod için gereksiz bir tekrardır. Bu depoda ölçüldü
+  (2026-08-03): tüm solution'da >15 dk sürüyor, `--include` ile daraltmak bile 2 dk'yı aşıyor —
+  maliyet dosyalarda değil, MSBuild workspace yüklemesinde. A1'in "her commit'ten önce format"
+  kuralı bu ölçümle emekliye ayrılmıştır.
+  **TEK İSTİSNA Görev 12:** EF'in ürettiği migration şablonu IDE0161'i kırar ve o dosya
+  derlenmez; orada `format` bir kez, migration'dan hemen sonra çalıştırılır.
 - **Enum'lar tel'de string anahtar** döner, DB'de `int` saklanır — dönüşüm `AnnouncementEnumWire`'dadır, çağrı yerinde tahmin edilmez.
 
 ### A2'ye özgü, DOĞRULANMIŞ kısıtlar (A1 kaydından — tahmin etme)
@@ -342,7 +349,6 @@ Expected: yalnız ~37 Documents/S3 (Garage) hatası. Duyuru/AudienceResolver/Per
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Application/Modules/Announcements/Commands/CreateAnnouncement/CreateAnnouncementCommandHandler.cs \
         tests/Oksis.Infrastructure.IntegrationTests/Persistence/CreateAnnouncementTests.cs
 git commit -m "fix(announcements): reach hedef ve alici tek secim kumesinden turetiliyor
@@ -555,7 +561,6 @@ Expected: PASS. Özellikle `GetAnnouncementsTests`'in mevcut sıralama testleri 
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Application/Modules/Announcements/Commands/CreateAnnouncement/CreateAnnouncementCommandValidator.cs \
         src/Oksis.Api/Controllers/V1/AnnouncementsController.cs \
         src/Oksis.Application/Modules/Announcements/Queries/GetAnnouncements/GetAnnouncementsQueryHandler.cs \
@@ -727,7 +732,6 @@ Expected: PASS, regresyon yok.
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add tests/Oksis.Application.UnitTests/Modules/Announcements/AnnouncementPermissionSurfaceTests.cs
 git commit -m "test(announcements): izin yuzeyi reflection tablosuyla sabitlendi
 
@@ -1094,7 +1098,6 @@ Expected: PASS, regresyon yok. `AnnouncementTests`'in başlık/gövde doğrulama
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Domain/Modules/Announcements/Entities/Announcement.cs \
         src/Oksis.Domain/Modules/Announcements/Events/AnnouncementAmendedEvent.cs \
         tests/Oksis.Domain.UnitTests/Modules/Announcements/AnnouncementLifecycleTests.cs
@@ -1513,7 +1516,6 @@ Expected: PASS. `AnnouncementHardDeleteGuardTests`'in (INV-1 yansıma testi) hâ
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Domain/Modules/Announcements/Entities/Announcement.cs \
         src/Oksis.Domain/Modules/Announcements/Events/AnnouncementWithdrawnEvent.cs \
         tests/Oksis.Domain.UnitTests/Modules/Announcements/AnnouncementLifecycleTests.cs
@@ -1942,7 +1944,6 @@ Expected: PASS. `AnnouncementPermissionSurfaceTests` (Görev 3) hâlâ 6 istek b
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Domain/Modules/Notifications/Enums/NotificationKind.cs \
         src/Oksis.Application/Modules/Announcements/Common/AnnouncementLifecycleGuard.cs \
         src/Oksis.Application/Modules/Announcements/Common/AnnouncementAuditWriter.cs \

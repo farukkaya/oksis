@@ -573,7 +573,6 @@ Expected: Documents/S3 tabanı dışında sıfır hata. **`AnnouncementsControll
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Application/Modules/Announcements/Commands/AmendAnnouncement/ \
         src/Oksis.Application/Modules/Announcements/Events/Notifications/AnnouncementAmendedNotificationHandler.cs \
         src/Oksis.Api/Controllers/V1/AnnouncementsController.cs \
@@ -1081,7 +1080,6 @@ Expected: PASS (9 withdraw testi). Tam süitte yalnız `AnnouncementsControllerT
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Application/Modules/Announcements/Commands/WithdrawAnnouncement/ \
         src/Oksis.Application/Modules/Announcements/Events/Notifications/AnnouncementWithdrawnNotificationHandler.cs \
         src/Oksis.Api/Controllers/V1/AnnouncementsController.cs \
@@ -1461,7 +1459,6 @@ Expected: Documents/S3 tabanı + `AnnouncementsControllerTests` uç sayısı bek
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Application/Modules/Announcements/Commands/RestoreAnnouncement/ \
         src/Oksis.Api/Controllers/V1/AnnouncementsController.cs tests/
 git commit -m "feat(api): geri cekmeyi geri alma ucu eklendi
@@ -1900,7 +1897,6 @@ Expected: PASS (5 iz testi). Tam süitte Görev 16'ya bırakılan controller bek
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Application/Modules/Announcements/DTOs/AnnouncementAuditEntryDto.cs \
         src/Oksis.Application/Modules/Announcements/Queries/GetAnnouncementAuditTrail/ \
         src/Oksis.Application/Modules/Announcements/Common/ActorInitials.cs \
@@ -2013,7 +2009,6 @@ Expected: Documents/S3 tabanı + Görev 16'ya bırakılan controller bekçisi d�
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add tests/
 git commit -m "test(announcements): statu zorlayan test dikisi kaldirildi
 

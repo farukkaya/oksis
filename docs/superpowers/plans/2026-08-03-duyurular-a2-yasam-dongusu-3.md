@@ -223,7 +223,6 @@ Expected: PASS. `SchoolSettingsUniqueIndexTests` ve `SchoolSettingsMappingsTests
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Domain/Modules/Schools/Entities/SchoolSettings.cs \
         src/Oksis.Infrastructure/Persistence/Configurations/Schools/SchoolSettingsConfiguration.cs \
         src/Oksis.Infrastructure/Persistence/Migrations/ tests/
@@ -706,7 +705,6 @@ Expected: PASS (6 moderasyon ucu testi). Tam süitte Görev 16'ya bırakılan co
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/Oksis.Application/Modules/Announcements/ src/Oksis.Api/Controllers/V1/AnnouncementsController.cs tests/
 git commit -m "feat(api): moderasyon okuma ve yazma uclari eklendi
 
@@ -1441,7 +1439,6 @@ Expected: Görev 16'ya bırakılan controller bekçisi + Documents/S3 tabanı d�
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/ tests/
 git commit -m "feat(api): esikli moderasyon yayin akisina baglandi
 
@@ -2547,7 +2544,6 @@ Expected: PASS (12 onay testi). Tam süitte Görev 16'ya bırakılan controller 
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add src/ tests/
 git commit -m "feat(api): onay kuyrugu ve karar uclari eklendi
 
@@ -2798,7 +2794,6 @@ Expected: yalnız ~37 Documents/S3 (Garage) hatası — Görev 1 Step 6'da not e
 
 ```bash
 cd /Users/farukkaya/Repositories/oksis-api
-dotnet format
 git add tests/
 git commit -m "test(announcements): uctan uca yasam dongusu ve API yuzey bekcisi
 
