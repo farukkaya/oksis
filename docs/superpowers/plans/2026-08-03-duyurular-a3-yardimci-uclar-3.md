@@ -1210,6 +1210,63 @@ restore testinin kurulumunda dolaylı)."*
     }
 ```
 
+### 17c-bis — Görev 4'ten devreden zayıf test (PLAN KUSURU)
+
+Görev 4'ün incelemesinden: `AnnouncementTemplateValidatorTests.Should_ApplySameNameLimit_When_UpdateValidatorIsUsed`
+**doc yorumunun iddia ettiği şeyi doğrulamıyor.** Test yalnız Update validator'ını 120/121
+sınırında koşuyor; Update `.MaximumLength(120)` diye DÜZ SAYI yazsaydı da yeşil kalırdı, ve
+`NameMaxLength` ileride 100'e çekildiğinde iki validator ayrışırken test yine yeşil kalırdı —
+yani "önlediğini" söylediği ayrışmayı YAKALAMAZ.
+
+Kod doğru (`UpdateAnnouncementTemplateCommandValidator.cs:21,25` sabitleri gerçekten
+`CreateAnnouncementTemplateCommandValidator`'dan alıyor); **zayıf olan testtir** ve testi
+brief birebir dikte etmişti — bu bir plan kusurudur, uygulama kusuru değil.
+
+- [ ] **Step 9c: Testi ayırt edici hâle getir**
+
+İki validator'ı **aynı** girdiyle karşılaştır; sabitleri okuma, davranışı karşılaştır:
+
+```csharp
+    /// <summary>
+    /// İki validator AYNI sınırları uygulamalıdır. Ayrışırlarsa düzenleme, oluşturmanın
+    /// kabul etmeyeceği bir adı kabul ederdi — ve o ad kolona sığmayıp 500 üretirdi.
+    ///
+    /// <para><b>Görev 4 incelemesinin düzelttiği hâl:</b> önceki sürüm yalnız Update
+    /// validator'ını 120/121'de koşuyordu ve Update düz sayı yazsa bile yeşil kalırdı —
+    /// yani önlediğini söylediği ayrışmayı yakalamıyordu. Şimdi İKİ validator AYNI girdiyle
+    /// koşuluyor ve verdict'leri karşılaştırılıyor: sabit paylaşımı bozulursa (biri 120,
+    /// diğeri 100) bu test kırılır. Sabitleri doğrudan karşılaştırmak ise yalnız aynı sayıyı
+    /// iki kez okumak olurdu ve kanıt üretmezdi.</para>
+    /// </summary>
+    [Theory]
+    [InlineData(119)]
+    [InlineData(120)]
+    [InlineData(121)]
+    public void Should_AgreeOnNameLimit_When_BothValidatorsSeeTheSameName(int length)
+    {
+        var name = new string('a', length);
+
+        var createValid = new CreateAnnouncementTemplateCommandValidator()
+            .Validate(new CreateAnnouncementTemplateCommand(name, "M", false)).IsValid;
+
+        var updateValid = new UpdateAnnouncementTemplateCommandValidator()
+            .Validate(new UpdateAnnouncementTemplateCommand(Guid.NewGuid(), name, "M", false)).IsValid;
+
+        updateValid.Should().Be(createValid,
+            "iki validator ad uzunluğu sınırını PAYLAŞIR — ayrışırlarsa düzenleme, "
+            + "oluşturmanın reddedeceği bir adı kabul eder ve o ad kolona sığmaz");
+    }
+```
+
+Eski `Should_ApplySameNameLimit_When_UpdateValidatorIsUsed` **silinir** (yerini bu alır;
+aynı kuralı iki testle ölçmenin değeri yok ve zayıf olan yanıltıcıdır).
+
+**Zorunlu mutasyon denetimi:** `UpdateAnnouncementTemplateCommandValidator`'daki
+`CreateAnnouncementTemplateCommandValidator.NameMaxLength` referansını GEÇİCİ olarak düz
+`100` yap ve testi koş. Beklenen: `[InlineData(119)]` ve `[InlineData(120)]` vakaları
+**FAIL** (create kabul eder, update reddeder). Mutasyonu GERİ AL ve gözlemi rapora yaz.
+Eski testin bu mutasyonda **yeşil kaldığını** da göster — zayıflığın kanıtı budur.
+
 ### 17d — Spec ve B fazı drift listesinin güncellenmesi
 
 - [ ] **Step 9: Spec §13'e beşinci drift maddesini ekle**
