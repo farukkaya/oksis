@@ -1664,7 +1664,16 @@ public sealed class UpdateAnnouncementTemplateCommandHandler(
 
         try
         {
-            template.Update(request.Name, request.Description, request.Urgent);
+            // `normalizedName` geçilir, `request.Name` DEĞİL. Yukarıdaki
+            // `(request.Name ?? string.Empty)` ifadesi derleyiciye `request.Name`'in
+            // null OLABİLECEĞİNİ öğretir; ham değeri `Update`'in non-nullable `name`
+            // parametresine geçmek CS8604 üretir ve `TreatWarningsAsErrors` altında
+            // BUILD'İ KIRAR. `request.Name!` ile susturmak da yanlış olurdu — bir üst
+            // satırda null'ı açıkça ele alan kodla çelişirdi.
+            // Davranış AYNIDIR: `NormalizeName` idempotent trim uygular ve boş/null adı
+            // yine `Announcements.Template.NameRequired` ile reddeder.
+            // (Görev 3'ün implementer'ının bulduğu plan kusuru, 2026-08-04.)
+            template.Update(normalizedName, request.Description, request.Urgent);
         }
         catch (AnnouncementDomainException ex)
         {
