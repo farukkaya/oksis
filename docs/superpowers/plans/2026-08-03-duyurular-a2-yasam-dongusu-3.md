@@ -1347,8 +1347,52 @@ public sealed class ThresholdedModerationTests : IAsyncLifetime
 
         created.Status.Should().Be("draft");
     }
+
+    /// <summary>
+    /// <b>Görev 1'in inceleme bulgusunun kapatıldığı yer (kullanıcı kararı 2026-08-03).</b>
+    ///
+    /// <para>Görev 1 <c>reach</c>, hedefler ve alıcıları TEK hayatta kalan seçim kümesinden
+    /// türetti, ama <c>recipients</c> yarısı testle ayırt edilemiyordu: <c>AudienceResolver</c>
+    /// zaten kendi içinde kapsam dışı seçimleri eliyor, dolayısıyla süzülmüş ve süzülmemiş
+    /// girdi aynı alıcı kümesini üretiyordu. Moderasyon politikasında ise fark GÖRÜNÜR:
+    /// politika kovaya bakar ve resolver'ın elemesinden HABERSİZDİR.</para>
+    ///
+    /// <para><b>İzolasyon:</b> öğretmenin gövdesindeki TEK seçim <c>("role","parent","parent")</c>'tır
+    /// ve öğretmen havuzunda <c>Role</c> katmanı HİÇ YOKTUR (<c>BuildTeacherPoolAsync</c>
+    /// <c>Role = null</c> döner) — yani etiketi çözülmez, hedef olarak donmaz, alıcı üretmez.
+    /// Politika SÜZÜLMEMİŞ girdiyi görseydi "veli kovası var" deyip duyuruyu onay kuyruğuna
+    /// düşürürdü: hedefi ve alıcısı sıfır olan bir duyuru, yöneticinin masasında onaylanmayı
+    /// bekler ve onaylandığında kimseye gitmezdi. Doğru sonuç <c>draft</c> DEĞİL,
+    /// <c>published</c>'dır — hayatta kalan hiçbir seçim yoktur, dolayısıyla onay da gerekmez.</para>
+    ///
+    /// <para>Bu test <c>survivingSelections</c> yerine <c>request.Audience</c> geçiren bir
+    /// regresyonu yakalar; Görev 1'in testi yakalayamıyordu.</para>
+    /// </summary>
+    [Fact]
+    public async Task Should_NotQueueForApproval_When_OnlyParentSelectionIsOutOfTeacherScope()
+    {
+        await using var fixture = await AnnouncementAudienceFixture.CreateAsync(_database);
+        await fixture.SetModerationDirectAsync(AnnouncementModeration.Thresholded);
+
+        var created = await fixture.CreateAnnouncementAsAsync(
+            fixture.TeacherAccountId, "Kapsam disi hedef", "Bu duyurunun hedefi cozulemeyecek.",
+            [("role", "parent", "parent")], asDraft: false);
+
+        created.Status.Should().Be("published",
+            "hayatta kalmayan bir veli secimi duyuruyu onay kuyruguna DUSURMEZ");
+
+        var id = Guid.Parse(created.Id);
+        (await fixture.Db.AnnouncementTargets.AsNoTracking().CountAsync(t => t.AnnouncementId == id))
+            .Should().Be(0, "secim etiketi cozulemedi — hedef donmadi");
+    }
 }
 ```
+
+> **Bu test neden `published` bekliyor?** Hayatta kalan seçim yoktur → hedef yok, alıcı yok,
+> `reach` `classScoped`. Duyuru kimseye gitmeden yayınlanır. Bu, gövdesi elle kurulmuş bir
+> istek için kabul edilmiş davranıştır (A1 Görev 10 kararı: *"kapsam dışı seçimler DÜŞÜRÜLÜR,
+> reddedilmez — sert 403 geçerli bir çoklu seçimi de yok ederdi"*). Test onay kararını sınar,
+> boş yayın politikasını değil.
 
 - [ ] **Step 10: Fixture'ı güncelle**
 
