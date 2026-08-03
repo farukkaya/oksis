@@ -231,7 +231,7 @@ ki reviewer onları "eksik" diye işaretlemesin:
 
 1. **Görev 1 bir testi BİLEREK KIRMIZI bırakır** ve o kırmızı Görev 5'e kadar sürer.
    Sebebi, D-1'in karşı testinin koruduğu üretim kodunun (silme handler'ı) henüz
-   yazılmamış olmasıdır. Kırmızı BEYAN EDİLİR, sayısı sabitlenir (domain 671/1) ve
+   yazılmamış olmasıdır. Kırmızı BEYAN EDİLİR, sayısı sabitlenir (domain 672/1) ve
    Görev 2/3/4'ün raporları onu "bilinen ve beyan edilmiş" diye taşır. Görev 5'in çıkış
    kriteri onu yeşile çevirmektir. **A2'de bir testin sekiz görev boyunca fark edilmeden
    kırmızı kalması dalın en pahalı hatasıydı; bu yüzden burada tam tersi yapılır.**
@@ -588,13 +588,13 @@ Beklenen: `Should_NeverCallRemove_OnAnnouncementDbSets_AnywhereInSource` PASS,
 ("Expected callSites to contain a single item, but the collection is empty").
 
 **Bu kırmızı DOĞRUDUR ve Görev 5'e kadar KIRMIZI KALIR.** Bunu raporuna açıkça yaz:
-"Görev 1 domain süitini `667 → 671 geçti / 1 kırmızı` bırakır; kırmızı Görev 5'te kapanır."
+"Görev 1 domain süitini `667 → 672 geçti / 1 kırmızı` bırakır; kırmızı Görev 5'te kapanır."
 
 > **KONTROLÖRE NOT:** Bu, planın bilinçli olarak kırmızı bıraktığı TEK testtir ve nedeni
 > Görev 5'in üretim kodunu henüz yazmamış olmasıdır. A2'de bir testin sekiz görev boyunca
 > fark edilmeden kırmızı kalması dalın en pahalı hatasıydı; bu yüzden burada kırmızı
 > BEYAN EDİLİR, sayısı sabitlenir ve Görev 5'in çıkış kriteri onu yeşile çevirmektir.
-> Görev 2/3/4 raporlarının hepsi "domain: 671/1, bilinen ve beyan edilmiş" yazmalıdır.
+> Görev 2/3/4 raporlarının hepsi "domain: 672/1, bilinen ve beyan edilmiş" yazmalıdır.
 
 - [ ] **Step 7: Mutasyon denetimi — yeni testin ayırt edici olduğunu kanıtla**
 
@@ -615,8 +615,15 @@ iddiasının gerçekten sınandığını kanıtlar (yalnız "liste boş" hatası
 dotnet test tests/Oksis.Domain.UnitTests
 ```
 
-Beklenen: **671 geçti / 1 kırmızı** (taban 667, delta tam +4 yeni test; kırmızı beyan edilmiş
-`Should_AllowTemplateRemoval_OnlyFrom_TheDeleteHandler`).
+Beklenen: **672 geçti / 1 kırmızı, 673 toplam** (taban 667, delta tam **+6 test VAKASI**;
+kırmızı beyan edilmiş `Should_AllowTemplateRemoval_OnlyFrom_TheDeleteHandler`).
+
+> **PLAN DÜZELTMESİ (Görev 1 implementer'ının bulgusu, 2026-08-03):** bu satır önce "+4 yeni
+> test" diyordu ve YANLIŞTI. Eklenenler üç `[Fact]` + bir `[Theory]`
+> (`Should_Reject_When_UpdatedNameIsBlank`, iki `[InlineData]`) + bir kırmızı guard testidir.
+> **xUnit her `[InlineData]`'yı AYRI test sayar**, dolayısıyla delta +6 vakadır: 5 yeşil +
+> 1 beyan edilmiş kırmızı. Sonraki görevlerin domain tabanı **673 toplam**'dır. Kod
+> DEĞİŞMEDİ — bu bir plan aritmetiği hatasıydı, bir üretim kusuru değil.
 
 - [ ] **Step 9: Solution'ı derle**
 
@@ -937,7 +944,7 @@ dotnet test tests/Oksis.Api.UnitTests
 dotnet test tests/Oksis.Infrastructure.IntegrationTests
 ```
 
-Beklenen: build 0 uyarı; Domain **671/1** (Görev 1'in beyan edilmiş kırmızısı);
+Beklenen: build 0 uyarı; Domain **672/1** (Görev 1'in beyan edilmiş kırmızısı);
 Application 1489 + 2 (izin yüzeyi Theory'si iki testli) = **1491/0**;
 Api **207/0**; Integration 726 + 4 = **730/0**.
 
@@ -1375,7 +1382,7 @@ Beklenen: hepsi PASS.
 
 ```bash
 dotnet build Oksis.slnx
-dotnet test tests/Oksis.Domain.UnitTests          # 671/1 (beyan edilmiş)
+dotnet test tests/Oksis.Domain.UnitTests          # 672/1 (beyan edilmiş)
 dotnet test tests/Oksis.Application.UnitTests      # 1491 + 7 validator + 2 izin = 1500/0
 dotnet test tests/Oksis.Api.UnitTests              # 207 + 1 = 208/0
 dotnet test tests/Oksis.Infrastructure.IntegrationTests  # 730 + 4 = 734/0
@@ -1727,7 +1734,7 @@ Beklenen: PASS.
 
 - [ ] **Step 8: Dört süiti koş, deltaları doğrula, commit**
 
-Beklenen: Domain **671/1** (beyan edilmiş); Application 1500 + 2 validator + 2 izin = **1504/0**;
+Beklenen: Domain **672/1** (beyan edilmiş); Application 1500 + 2 validator + 2 izin = **1504/0**;
 Api **208/0**; Integration 734 + 5 = **739/0**.
 
 ```bash
@@ -1756,7 +1763,7 @@ olusturma validator'undan alinir, ikinci kez yazilmaz."
   controller `NoContent` verir).
 
 **Bu görevin çıkış kriteri:** Görev 1'de beyan edilen kırmızı KAPANIR. Domain süiti
-**671/0** olmadan bu görev bitmiş sayılmaz.
+**673/0** olmadan bu görev bitmiş sayılmaz.
 
 **Dosya adı KRİTİKTİR:** `DeleteAnnouncementTemplateCommandHandler.cs`. Görev 1'in testi bu
 tam adı bekler (`TemplateDeleteHandlerFile` sabiti). Farklı bir ada koyarsan test kırmızı
@@ -1970,13 +1977,13 @@ Bu, D-1'in ikinci yarısının gerçekten koruduğunu kanıtlar — Görev 1'de 
 
 ```bash
 dotnet build Oksis.slnx
-dotnet test tests/Oksis.Domain.UnitTests                 # 671/0 — KIRMIZI KAPANDI
+dotnet test tests/Oksis.Domain.UnitTests                 # 673/0 — KIRMIZI KAPANDI
 dotnet test tests/Oksis.Application.UnitTests             # 1504 + 2 izin = 1506/0
 dotnet test tests/Oksis.Api.UnitTests                     # 208/0
 dotnet test tests/Oksis.Infrastructure.IntegrationTests   # 739 + 4 = 743/0
 ```
 
-**Domain 671/0 olmadan commit ETME.**
+**Domain 673/0 olmadan commit ETME.**
 
 - [ ] **Step 9: Commit**
 
@@ -2264,7 +2271,7 @@ Beklenen: `/api/v1/announcements/templates` yolunda `get` + `post`,
 
 - [ ] **Step 6: Dört süiti koş, deltaları doğrula, commit**
 
-Beklenen: Domain **671/0**; Application **1506/0**; Api 208 + ~8 = implementer sayar;
+Beklenen: Domain **673/0**; Application **1506/0**; Api 208 + ~8 = implementer sayar;
 Integration **743/0**.
 
 ```bash
