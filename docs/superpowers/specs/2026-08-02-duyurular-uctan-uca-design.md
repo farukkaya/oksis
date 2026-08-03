@@ -51,7 +51,19 @@ C  Frontend boşlukları
 D  Push/e-posta teslim zinciri          KAPSAM DIŞI
 ```
 
-**B neden bölünemez:** `packages/api/src/announcements/paths.ts` tek bir `declare module` augmentation'ı içinde 15 yolun tamamını ilan eder. Codegen ancak uçların hepsi yayındayken çalıştırılabilir; dilim dilim geçiş mümkün değildir.
+**A üç plana bölünmüştür** ve B, üçünün de tamamlanmasını bekler:
+
+| | Dilimler | Kapsam | Durum |
+|---|---|---|---|
+| **A1** | 0–3 | Domain, şema, izinler, DTO, alıcı çözümleme, yayın, envanter, detay, gelen kutusu, okundu | ✅ 2026-08-03, `oksis-api/master` |
+| **A2** | 4–5 | `PUT /{id}` düzeltme, `:withdraw`, `:restore`, `/audit-trail`, `GET\|PUT /moderation`, `/approvals`, `:approve`, `:reject` | ⬜ |
+| **A3** | 6–8 | Şablon CRUD, `/publishers`, `/delivery-report`, Hangfire job'ları, ek dosya (Documents) | ⬜ |
+
+**B neden A'nın tamamını bekler.** `packages/api/src/announcements/paths.ts` **15 yol / 17 operasyon** ilan eder. A1 bunların **5 yol / 6 operasyonunu** yayınladı; kalan 11 operasyon A2 ve A3'ün kapsamındadır. `contract.ts` + `paths.ts` bugün silinirse 11 endpoint fonksiyonu ve 13 hook tipsiz kalır ve iki app'in typecheck'i kırılır.
+
+> **DÜZELTME (2026-08-03).** Bu belgenin ilk sürümü "`paths.ts` tek parça olduğu için bölünemez, codegen ancak uçların hepsi yayındayken çalıştırılabilir" diyordu. **Teknik olarak yanlıştı** — augmentation'dan yalnız yayındaki yolları çıkarmak mümkündür, çünkü interface merge çakışması yalnız generated şemada karşılığı oluşan yollarda doğar; kalan yollar drift bekçisi olarak yerinde durabilir.
+>
+> Doğru gerekçe bir kısıt değil, bir **tercihtir**: yarısı generated yarısı elle yazılmış bir sözleşmeyle yaşamak, drift bekçisinin engellemek için var olduğu belirsizliği geri getirir — hangi tipin hangi kaynaktan geldiği okuma anında belirsizleşir ve kısmi geçiş her A dilimi için yeni bir eşitleme turu doğurur. Bölünebilir; **bölünmemelidir**. Zorlayıcı bir sebep çıkarsa (ör. A2/A3 uzarsa ve frontend'in yayındaki uçlara erken bağlanması gerekirse) bu bir seçenektir, sürpriz değil.
 
 ---
 
