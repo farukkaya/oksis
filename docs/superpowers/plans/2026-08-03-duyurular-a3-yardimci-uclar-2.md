@@ -1696,10 +1696,13 @@ public sealed class AnnouncementScheduleNotificationTests : IAsyncLifetime
 public sealed class AnnouncementScheduledExecutedNotificationHandler(
     INotificationRecipientResolver resolver,
     INotificationEnqueuer enqueuer)
-    : INotificationHandler<AnnouncementScheduledExecutedEvent>
+    : INotificationHandler<DomainEventNotification<AnnouncementScheduledExecutedEvent>>
 {
-    public async Task Handle(AnnouncementScheduledExecutedEvent e, CancellationToken ct)
+    public async Task Handle(
+        DomainEventNotification<AnnouncementScheduledExecutedEvent> notification, CancellationToken ct)
     {
+        var e = notification.DomainEvent;
+
         var accountMap = await resolver.ResolvePersonAccountsMapAsync(
             e.SchoolId, [e.PublisherId], ct);
 
@@ -1732,10 +1735,13 @@ public sealed class AnnouncementScheduledExecutedNotificationHandler(
 public sealed class AnnouncementScheduleFailedNotificationHandler(
     INotificationRecipientResolver resolver,
     INotificationEnqueuer enqueuer)
-    : INotificationHandler<AnnouncementScheduleFailedEvent>
+    : INotificationHandler<DomainEventNotification<AnnouncementScheduleFailedEvent>>
 {
-    public async Task Handle(AnnouncementScheduleFailedEvent e, CancellationToken ct)
+    public async Task Handle(
+        DomainEventNotification<AnnouncementScheduleFailedEvent> notification, CancellationToken ct)
     {
+        var e = notification.DomainEvent;
+
         var accountMap = await resolver.ResolvePersonAccountsMapAsync(
             e.SchoolId, [e.PublisherId], ct);
 
@@ -1760,9 +1766,21 @@ public sealed class AnnouncementScheduleFailedNotificationHandler(
 }
 ```
 
-> **Implementer'a not:** `INotificationHandler<T>` gerçek adını, `INotificationEnqueuer.Enqueue`
-> gerçek imzasını (parametre adları ve sırası) ve `DeterministicGuid.Combine` overload'larını
-> mevcut duyuru handler'larından OKU ve birebir uy. Derin bağlantı biçimini de oradan al —
+> **KONTROLÖR DOĞRULAMASI (2026-08-04) — bunlar tahmin değil, kaynaktan okundu:**
+>
+> - Handler arayüzü **`INotificationHandler<DomainEventNotification<TEvent>>`**'dir — çıplak
+>   olay tipi DEĞİL. Olay `notification.DomainEvent` ile açılır. (Planın önceki sürümü çıplak
+>   tipi yazıyordu ve **derlenmezdi**.)
+> - `INotificationEnqueuer.Enqueue(Guid eventId, Guid schoolId, NotificationKind kind,
+>   string title, string body, string? deepLink, IReadOnlyList<Guid> recipientAccountIds)` —
+>   `void`, async değil.
+> - `DeterministicGuid.Combine(params object[] parts)` — tek overload.
+> - Alıcı listesi kalıbı: `accountMap.Values.Distinct().ToList()`.
+> - Erken çıkış kalıbı: `if (accountMap.Count == 0) { return; }`.
+>
+> **Emsal dosya `AnnouncementDecisionNotificationHandlers.cs`'tir — iki handler tek dosyada,
+> aynı kalıp. ONU OKU ve birebir izle.** Derin bağlantı biçimi de oradan gelir
+> (`$"/announcements/{e.AnnouncementId}"`). Derin bağlantı biçimini de oradan al —
 > yukarıdaki dizeler yalnız NİYETİ gösterir; gerçek kalıp `AnnouncementPublishedNotificationHandler`
 > ne kullanıyorsa odur.
 
