@@ -1294,6 +1294,58 @@ yorum düzeyinde.
 Metni birebir kopyalaman gerekmiyor; gereken, **niteliksiz "deterministiktir" iddiasının
 kaynakta kalmaması**.
 
+### 17c-quater — Görev 8'den devreden eskimiş doc'lar ve iki test boşluğu
+
+Görev 8'in fix turu `DeliveryReportDto`'nun semantiğini değiştirdi ama iki doc bunu takip
+etmedi, ve iki küçük test boşluğu bilinçli olarak açık bırakıldı (delta sabitlemesi yüzünden).
+
+- [ ] **Step 9e: İki eskimiş doc'u gerçeğe uydur**
+
+1. `GetAnnouncementDeliveryReportQueryHandler` içindeki `_noAccountReason` doc'u hâlâ
+   *"Tek gerekçe: bugün ulaşılamamanın tek gerçek nedeni budur"* diyor. **Artık İKİ gerekçe
+   var** (`"Hesap bağlı değil"` ve `"Kişi kaydı silinmiş"`). İfadeyi düzelt.
+2. `DeliveryReportDto.Reached` özeti *"Bağlı hesabı olan alıcı sayısı"* diyor; yeni semantik
+   **"Person kaydı DURAN ve hesabı bağlı olan"**. Bir kelime eksik — tamamla.
+
+- [ ] **Step 9f: İki bilinçli test boşluğunu tek testle kapat**
+
+Görev 8'in re-reviewer'ının önerisi. İkisi de küçük:
+
+1. **Bilinmeyen `RoleAtPublish` ham geçer.** `AnnouncementRoleLabels.For(...)` saf statik bir
+   metot, dolayısıyla üç satırlık bir **Application birim testi** yeter — entegrasyona gerek
+   yok:
+
+```csharp
+    /// <summary>
+    /// Beklenmedik bir rol dizesi HAM geçer — veri kaybetmek, yanlış etiketlemekten kötüdür.
+    /// Bugün `AudienceBucket` yalnız üç değer üretiyor, yani bu dal üretimde ulaşılamaz;
+    /// test onu YARIN bir dördüncü rol eklendiğinde sessizce boşa düşmesin diye sabitliyor.
+    /// </summary>
+    [Theory]
+    [InlineData("Parent", "Veli")]
+    [InlineData("Teacher", "Öğretmen")]
+    [InlineData("Student", "Öğrenci")]
+    [InlineData("Secretary", "Secretary")]
+    [InlineData("", "")]
+    public void Should_MapKnownRolesAndPassThroughUnknown(string stored, string expected)
+    {
+        AnnouncementRoleLabels.For(stored).Should().Be(expected);
+    }
+```
+
+> `AnnouncementRoleLabels.For`'un gerçek metot adını ve imzasını **kaynaktan doğrula** —
+> yukarıdaki `For` bir tahmindir. Farklıysa gerçeğini kullan ve rapora yaz.
+
+2. **`tr-TR` sıralaması hiçbir testle ayırt edilmiyor** (Görev 7 ve 8'de aynı boşluk).
+   Sahnedeki adlar ASCII olduğu için `tr-TR` ile Invariant aynı sırayı veriyor.
+   `GetAnnouncementPublishersTests`'e Türkçe'ye özgü adlarla bir sıralama testi ekle —
+   ayırt edici olması için `I`/`ı`/`İ`/`i` ya da `Ç`/`Ş`/`Ğ` içeren adlar seç ve
+   `InvariantCulture` ile **farklı** sıra üreteceğini doğrula (üretmiyorsa test ayırt edici
+   değildir, adları değiştir).
+
+Bu iki test **birlikte** Görev 7 ve 8'in devrettiği "karşılaştırıcı seçimi testsiz"
+boşluğunu kapatır.
+
 ### 17d — Spec ve B fazı drift listesinin güncellenmesi
 
 - [ ] **Step 9: Spec §13'e beşinci drift maddesini ekle**
