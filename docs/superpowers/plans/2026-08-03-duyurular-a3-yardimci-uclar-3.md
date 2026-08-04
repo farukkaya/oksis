@@ -1672,7 +1672,14 @@ Beklenen: **21 operasyon** (17 duyuru + 4 şablon), DELETE **tam olarak bir tane
 | 8 | `NotificationKind` 1–21 değişmedi, 22/23 eklendi | `dotnet test --filter NotificationKindContinuityTests` |
 | 9 | İzin yüzeyi tablosu altı yeni satır aldı | `grep -c "yield return" AnnouncementPermissionSurfaceTests.cs` → 21 |
 | 10 | Her bildirim handler'ının testi var | `ls src/.../Events/Notifications/` ile `grep -l` karşılaştır |
-| 11 | `oksis-ui`'da HİÇBİR değişiklik yok | `cd ~/Repositories/oksis-ui && git status --short` → boş |
+| 11 | `oksis-ui`'da **duyuru kontratına** dokunulmadı | `cd ~/Repositories/oksis-ui && git status --short -- packages/api/src/announcements/ packages/api-mocks/` → **boş** |
+
+> **KONTROLÖR DÜZELTMESİ (Görev 17b'nin bulgusu, 2026-08-04):** 11. maddenin eski hâli
+> `git status --short` → **boş** diyordu ve **sağlanamaz**. `oksis-ui` `feature/announcements-mobile`
+> dalında ve o dalın **önceden var olan** mobil çalışması (30+ değişmiş/yeni dosya) çalışma
+> ağacında duruyor — A3 ile ilgisi yok. Doğru kontrol, A3'ün dokunmaması gereken **iki dizine**
+> daraltılmış olanıdır. Kontrolör doğruladı: o iki dizin gerçekten temiz.
+
 | 12 | `contract.ts` ve `paths.ts` DURUYOR | `ls packages/api/src/announcements/` |
 | 13 | Hiç `#pragma warning` eklenmedi | `git diff d37fc31 --stat` + `git diff d37fc31 \| grep pragma` → boş |
 | 14 | Hiç `ThrowAsync<Exception>()` yok | `grep -rn "ThrowAsync<Exception>" tests/` → boş |
