@@ -374,7 +374,7 @@ Son satır kritiktir: eşikli moderasyon kuralı bugün istemcide saf fonksiyon 
 | 3 | Okuma yüzü | `GET /inbox`, `POST /{id}:read` — self-only sınırı |
 | 4 | Yaşam döngüsü | `PUT /{id}`, `:withdraw`, `:restore`, `GET /{id}/audit-trail` |
 | 5 | Moderasyon | `GET\|PUT /moderation`, eşikli akış, `GET /approvals`, `:approve`, `:reject` |
-| 6 | Yardımcı uçlar | Şablon uçları (mevcut `GET` + 3 yeni: `POST`/`PUT`/`DELETE`), `GET /publishers`, `GET /{id}/delivery-report` |
+| 6 | Yardımcı uçlar | Şablon uçları (**dördü de yeni** — `GET` kontratta ilan edilmişti ama backend'de yoktu), `GET /publishers`, `GET /{id}/delivery-report` |
 | 7 | Job'lar | `PublishScheduledAnnouncementsJob`, `ExpireAnnouncementsJob` |
 | 8 | Ek dosya | Documents entegrasyonu, `attachmentFileId`, `FileAccessGuard` |
 
@@ -387,14 +387,40 @@ Tek seferde, A bittikten sonra:
 1. Backend ayağa kalkar; Swagger duyuru uçlarını içerir
 2. Codegen çalıştırılır → `packages/api/src/generated/schema.ts` yenilenir
 3. `paths.ts` augmentation'ı generated tiplerle çakışır ve **typecheck kırılır** — bilinçli drift bekçisi
-4. Şekil farkları giderilir. **İkisi önceden bilinir ve istemci tarafında düzeltilir** —
-   backend bu iki alanı A'da zaten yazdı, yani drift bekçisi burada bilerek çalar:
+4. Şekil farkları giderilir. **Dördü önceden bilinir ve istemci tarafında düzeltilir** —
+   backend bunları A'da zaten yazdı, yani drift bekçisi burada bilerek çalar:
    - `contract.ts` → `AudienceSelectionBody`'ye **`bucket: "parent" | "teacher" | "student"`**
      eklenir (§5.1), ve `endpoints.ts:247` onu gövdeye yazacak şekilde düzeltilir. Bugün o
      satır `bucket`'ı düşürüyor; değer formda zaten mevcut (`AudienceSelection extends
      AudienceOption`), yalnız gönderilmiyor.
    - `contract.ts` → `CreateAnnouncementBody`'ye **`attachmentFileId: string | null`** eklenir
      ve compose formu doldurur (§7).
+   - `contract.ts` + `paths.ts` → **şablon yazma uçları** (`POST`/`PUT`/`DELETE
+     /announcements/templates`) eklenir. Bugün `paths.ts:275-287` yalnız `get` ilan eder;
+     `post`/`put`/`delete` hepsi `never`'dır. Backend A3'te dördünü de yazdı
+     (`AnnouncementTemplatesController`), yani drift bekçisi burada da bilerek çalar.
+     Gövde tipleri:
+
+     ```ts
+     export interface CreateAnnouncementTemplateBody {
+       name: string
+       description: string
+       urgent: boolean
+     }
+     export interface UpdateAnnouncementTemplateBody {
+       name: string
+       description: string
+       urgent: boolean
+     }
+     ```
+
+     `DELETE` gövdesizdir ve `204` döner (`Wrapped<T>` sarmalı YOKTUR — `ToHttpResult`'ın
+     generic olmayan overload'ı `NoContentResult` üretir).
+   - `packages/api-mocks` → **`restore` mock'u koşulsuz `published` yazıyor**
+     (`announcement-handlers.ts:220-228`). Backend `StatusBeforeWithdraw`'a döndürür, yani
+     süresi dolmuş bir duyuru geri alındığında gerçek uç `expired` üretirken mock `published`
+     üretir. A2'de doğrulandı; şekil farkı değil **davranış** farkı olduğu için typecheck
+     yakalamaz — MSW handler'ı elle düzeltilmelidir.
 5. `contract.ts` + `paths.ts` **silinir**; `endpoints.ts`'teki eşleyiciler (`toAnnouncement` vb.) yerinde kalır
 6. `packages/api-mocks` tiplerini generated şemadan almaya geçirilir — bugün `contract.ts`'ten alır, silinince kırılır; **bu adım atlanamaz**
 7. İki app typecheck + lint

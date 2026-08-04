@@ -206,6 +206,14 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 > (INV-1). Yerine `announcements.withdraw` gelir — geri çekilen duyuru arşivde "geri çekildi"
 > olarak kalır. Ayrıca `announcements.read` / `announcements.manage` seed anahtarları bu
 > tarihte emekliye ayrıldı; kanonik küme yukarıdaki 8 anahtardır.
+>
+> `announcements.view-detail` de **hiç var olmadı** — jenerik CRUD şablonundan sızmış bir
+> artıktır. Detay görüntüleme `announcements.view` ile korunur; `PermissionSeedData.cs:57-64`
+> yalnız yukarıdaki 8 satırı seed'ler ve tablo onunla **birebir** hizalıdır (A3'te doğrulandı).
+> **Uyarı:** `modules/announcements/permissions.md` ve `modules/announcements/api-contracts.md`
+> hâlâ `announcements.view-detail` ve `announcements.delete` taşıyor. O dokümanlar `{{TBD}}`
+> şablonuyla üretilmiş olup henüz gerçeğe uydurulmadı (spec §15 — B fazı sonrasına bırakıldı).
+> **Çelişkide bu dosya kazanır.**
 
 ### Messaging
 

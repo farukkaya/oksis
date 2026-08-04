@@ -65,11 +65,42 @@ Sessiz saatler: **22:00 – 07:00** (kullanıcının zaman dilimi, default `Euro
 
 ### Duyuru (Announcement)
 
-| Event | Tetik | Hedef | Kanal | Öncelik | Cooldown |
+> Bu bölüm **`NotificationKind` enum'unun gerçek değerleriyle** hizalıdır
+> (`Oksis.Domain/Modules/Notifications/Enums/NotificationKind.cs`, 16–23). Alıcı sütunu
+> enum'un kendi XML doc'undan alınmıştır — **duyuru bildirimlerinin yarısı alıcılara değil,
+> yayınlayana ya da yönetime gider**; bu ayrım tesadüf değil, ihtiyaç analizi §16.3'ün
+> kararıdır.
+
+| `NotificationKind` | Tetik | Hedef | Kanal | Öncelik | Cooldown |
 |---|---|---|---|---|---|
-| `AnnouncementPublishedEvent` (default) | Duyuru yayınlandı | Hedef kitle | Push + InApp + SignalR | `Normal` | — |
-| `AnnouncementPublishedEvent` (urgent flag) | Acil duyuru | Hedef kitle | Push + InApp + SignalR + Email | `Critical` | — |
-| `AnnouncementScheduledExecutedEvent` | Zamanlı duyuru tetiklendi | Hedef kitle | Push + InApp | `Normal` | — |
+| `AnnouncementPublished` (16) | Duyuru yayınlandı | **Alıcılar** (materyalize `AnnouncementRecipient` kümesi) | InApp | — | Dedup: `(schoolId, announcementId, kind)` |
+| `AnnouncementWithdrawn` (17) | Duyuru geri çekildi | **Yalnız yayınlayan** — alıcıya GİTMEZ | InApp | — | aynı |
+| `AnnouncementAmended` (18) | Yayın sonrası düzeltme | **Alıcılar** | InApp | — | aynı |
+| `AnnouncementSubmittedForApproval` (19) | Eşikli moderasyonda onaya düştü (INV-5) | **Yönetim** (onay kuyruğu sahipleri) | InApp | — | aynı |
+| `AnnouncementApproved` (20) | Onaylandı ve yayınlandı | **Yayınlayan öğretmen** | InApp | — | aynı |
+| `AnnouncementRejected` (21) | Reddedildi, taslağa döndü | **Yayınlayan öğretmen** — gövde red gerekçesini taşır | InApp | — | aynı |
+| `AnnouncementScheduledExecuted` (22) | Zamanlanmış duyuru yayına çıktı | **Yayınlayan** — alıcılara zaten 16 gitti | InApp | — | aynı |
+| `AnnouncementScheduleFailed` (23) | Zamanlanmış yayın anında hedef kimseye çözülmedi; duyuru `scheduled` kalır | **Yayınlayan** | InApp | — | aynı |
+
+**Bu tablonun okunmasında üç tuzak:**
+
+- **`Withdrawn` alıcıya gitmez.** İhtiyaç analizi §16.3: geri çekilen duyuru alıcıda
+  "sessizce kaybolur" — alıcı duyuruyu *hiç görmemiş gibi* olmalıdır. İz yönetim tarafında
+  (denetim izi) tutulur. Yayınlayan ise bilgilendirilir, çünkü duyurusunu yönetim geri
+  çekmiş olabilir.
+- **`Amended` sessiz düzeltmede ÜRETİLMEZ.** `silentAmendment` (sözlük) tanımı gereği
+  alıcıya haber gitmez; yalnız denetim izine yazılır.
+- **`ScheduledExecuted` ile `Published` ayrı kalır** çünkü derin bağlantıları ayrıdır:
+  alıcı duyuruyu **okumaya**, yayınlayan **gönderim raporuna** gider.
+
+> **Kanal ve öncelik sütunları neden düz:** bu satırlar tasarım niyeti değil, **bugünkü
+> gerçek**. Sunucuda `INotificationChannel` olarak yalnız `InAppNotificationChannel`
+> kayıtlıdır; `NotificationPriority` **enum'u yoktur** ve `INotificationEnqueuer.Enqueue`
+> imzasında öncelik parametresi bulunmaz. `NotificationConfig.QuietHours*` alanları mevcut
+> ama gönderim anında tüketen kod yoktur — yani **acil duyuru teslim davranışını
+> DEĞİŞTİRMEZ** (`urgent` yalnız istemcide görsel vurgudur). Bu yalnız duyuruda değil, tüm
+> bildirimlerde böyledir; yukarıdaki diğer bölümlerin `Push`/`Email`/`Critical` değerleri
+> **hedef durumdur, mevcut durum değil**. Kaynak: duyuru spec'i §8.3 ve §16.
 
 ### Mesajlaşma (Messaging)
 
@@ -123,7 +154,17 @@ public interface INotificationRecipientResolver
 - `StudentRelatedResolver` → öğrenci + aktif veliler
 - `ClassRelatedResolver` → şubedeki tüm öğrenciler + velileri
 - `RoleBasedResolver` → belirli rol(ler)deki tüm kullanıcılar (okul içi)
-- `AnnouncementTargetResolver` → duyurunun `Targets` alanına göre
+- `INotificationRecipientResolver.ResolvePersonAccountsMapAsync(schoolId, personIds, ct)`
+  → verilen `PersonId` listesini `Account.Id`'ye çevirir (tek toplu sorgu, N+1 yok); bağlı
+  hesabı olmayan kişiler dışlanır. **Duyuru bildirimleri bunu kullanır.**
+
+> **Düzeltme (2026-08-03):** bu listede daha önce `AnnouncementTargetResolver → duyurunun
+> `Targets` alanına göre` satırı vardı. **Öyle bir tip hiç yazılmadı ve gerekli değildir.**
+> Duyuruda alıcı kümesi runtime'da çözülmez — yayın anında `AnnouncementRecipient`
+> satırlarına **materyalize edilir** (fan-out duyuru modülünün içindedir, bildirim
+> çekirdeğinde değil). Bildirim katmanının tek ihtiyacı, o `PersonId` kümesini hesaba
+> çevirmektir; onu da yukarıdaki `ResolvePersonAccountsMapAsync` yapar. Kaynak: duyuru
+> spec'i §8.1 ve `AnnouncementPublishedNotificationHandler`'ın doc'u.
 
 ---
 
