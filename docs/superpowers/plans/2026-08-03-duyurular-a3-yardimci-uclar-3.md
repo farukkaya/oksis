@@ -1377,6 +1377,56 @@ ve `HaveCount(17)` çıpasına **DOKUNMA**.
 **Uyarı:** bu iki ekleme uç sayısını değiştirmez, dolayısıyla `HaveCount(17)` ve iki yönlü
 tablo assertion'ı aynen geçmelidir. Geçmiyorsa yanlış bir şey yapmışsındır.
 
+### 17c-sexies — `IFileEntityScopeResolver` DI kayıtlarının bekçisi yok (ÜÇ kayıt birden)
+
+Görev 14'ün implementer'ı kendi kaydını denetlerken daha genel bir boşluk buldu ve
+doğruladı: `tests/` altında **DI konteynerini kuran hiçbir test yok**
+(`FileAccessGuardTests` sahte resolver'larla çalışıyor).
+
+Sonuç: `DependencyInjection.cs`'teki üç `AddScoped<IFileEntityScopeResolver, …>` satırından
+**biri silinse hiçbir test kırılmaz**. `FileAccessGuard` çözümleyicileri
+`IEnumerable<IFileEntityScopeResolver>` ile topluyor; kayıtsız bir `EntityType` **deny**'e
+düşer, yani o entity'nin ek erişimi **tamamen ve sessizce kapanır**.
+
+Bu, bu dilimde dört kez tekrarlanan kusur zincirinin aynısıdır: *kod yazıldı ve test edildi,
+ama üretimde onu bağlayan satırın bekçisi yok.* (A1/A2'de handler → Görev 12'de job'ın olay
+yayması → Görev 13'te job'ın Hangfire kaydı → burada resolver'ın DI kaydı.)
+
+- [ ] **Step 9h: Üç kaydı birden koruyan tek test**
+
+```csharp
+    /// <summary>
+    /// `FileAccessGuard` çözümleyicileri `IEnumerable<IFileEntityScopeResolver>` ile toplar;
+    /// KAYITSIZ bir `EntityType` deny'e düşer, yani o entity'nin ek erişimi SESSİZCE kapanır.
+    /// Bu test üç kaydı birden sabitler — biri silinirse kırılır.
+    ///
+    /// <para>Yeni bir tüketici modül eklendiğinde bu listeye satır eklemek ZORUNLUDUR;
+    /// unutulan bir kayıt, hiçbir testin söylemeyeceği bir erişim kapanmasıdır.</para>
+    /// </summary>
+    [Fact]
+    public void Should_RegisterEveryFileEntityScopeResolver()
+    {
+        // AddInfrastructure(...) ile servis sağlayıcı kur, sonra:
+        var entityTypes = provider.GetServices<IFileEntityScopeResolver>()
+            .Select(r => r.EntityType)
+            .ToList();
+
+        entityTypes.Should().BeEquivalentTo(["School", "AttendanceExcuse", "Announcement"]);
+    }
+```
+
+> **Implementer'a not:** `AddInfrastructure`'ın gerçek adını ve gerektirdiği bağımlılıkları
+> (`IConfiguration`, connection string vb.) **kaynaktan oku**. Servis sağlayıcıyı kurmak
+> harici bir bağımlılık (DB bağlantısı, Redis) gerektiriyorsa ve bu testte kurulamıyorsa,
+> **DUR ve bildir** — sahte bir soyutlama ekleme, kaydı taklit eden bir test yazma
+> (o, korumadığı bir şeyi koruduğunu iddia eden testtir; bu dilimde sekiz kez düzeltildi).
+>
+> Kurulabiliyorsa: Görev 13'ün `HangfireRecurringJobRegistrationTests`'i emsaldir — orada
+> gerçek `WebApplication.CreateBuilder()` kurulup yalnız tek bir port sahtelendi ve yan
+> etki üretmediği (`Run/StartAsync` çağrılmadığı) doğrulandı.
+
+**Zorunlu mutasyon:** üç kayıttan birini geçici sil, testin kırıldığını göster, geri al.
+
 ### 17d — Spec ve B fazı drift listesinin güncellenmesi
 
 - [ ] **Step 9: Spec §13'e beşinci drift maddesini ekle**
