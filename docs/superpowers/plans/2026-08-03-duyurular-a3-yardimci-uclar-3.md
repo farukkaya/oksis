@@ -1346,6 +1346,37 @@ Görev 8'in re-reviewer'ının önerisi. İkisi de küçük:
 Bu iki test **birlikte** Görev 7 ve 8'in devrettiği "karşılaştırıcı seçimi testsiz"
 boşluğunu kapatır.
 
+### 17c-quinquies — Görev 9'dan devreden iki eksik OpenAPI ilanı
+
+Görev 9, `AnnouncementsController`'ın tüm uçlarına 403 ve iki uca 404 ilanı ekledi. Gerekçe:
+**generated OpenAPI B fazını besler, ilan gerçeği söylemelidir.** İmplementer kalan uçları
+tarayıp "başka eksik yok" dedi; **re-review bu taramanın İKİ noktada da yanlış olduğunu
+kaynaktan gösterdi.**
+
+- [ ] **Step 9g: İki eksik ilanı tamamla**
+
+1. **`UpdateModerationAsync` → 404 eksik.**
+   `UpdateAnnouncementModerationCommandHandler.cs:44-47` `SchoolSettings` satırı null ise
+   açıkça `Result.NotFound()` döndürüyor. (Kardeş SORGU handler'ı döndürmüyor — o yüzden
+   `GetModerationAsync`'e 404 EKLEME, yalnız `UpdateModerationAsync`'e.)
+   İmplementer'ın "moderasyon kaydı okul başına tekil, 404 yolu yok" gerekçesi kaynakla
+   çelişiyordu.
+
+2. **`CreateAsync` → 400 eksik.**
+   `CreateAnnouncementCommandHandler` satır 45, 209 ve 213'te handler'ın **kendisi**
+   `Result.Failure(Error)` döndürüyor ve `ResultExtensions` bunu 400'e eşliyor. Yani eksik
+   400 yalnız `ValidationBehavior` artefaktı değil.
+   İmplementer'ın "tüm controller'larda aynı" iddiası da yanlış: aynı controller'daki
+   `UpdateModerationAsync` 400 ilan ediyor, ve depoda SchoolSettings 21, Persons 9,
+   Duties 8 ilan taşıyor.
+
+**Salt-additive ol:** yalnız eksik satırları ekle, sayısal sıraya. Mevcut hiçbir ilanı
+değiştirme, sırasını bozma. `NotContain(attr => attr is HttpDeleteAttribute)` assertion'ına
+ve `HaveCount(17)` çıpasına **DOKUNMA**.
+
+**Uyarı:** bu iki ekleme uç sayısını değiştirmez, dolayısıyla `HaveCount(17)` ve iki yönlü
+tablo assertion'ı aynen geçmelidir. Geçmiyorsa yanlış bir şey yapmışsındır.
+
 ### 17d — Spec ve B fazı drift listesinin güncellenmesi
 
 - [ ] **Step 9: Spec §13'e beşinci drift maddesini ekle**
