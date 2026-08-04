@@ -1469,6 +1469,40 @@ yayması → Görev 13'te job'ın Hangfire kaydı → burada resolver'ın DI kay
 
 **Zorunlu mutasyon:** üç kayıttan birini geçici sil, testin kırıldığını göster, geri al.
 
+### 17c-septies — Görev 14'ün bilinçli muafiyeti testsiz
+
+`AnnouncementEntityScopeResolver`'da INV-7 statü şartı **yalnız alıcı koluna** uygulandı;
+yayınlayan ve yönetim geri çekilmiş duyurunun ekini görebilmeye devam ediyor (denetim izi
+ve yeniden yayın için — bilinçli muafiyet).
+
+**Ama o muafiyetin hiç testi yok.** Görev 14'ün re-reviewer'ı gösterdi: şart metodun en
+başına, yönetim kolundan da öncesine taşınsa **11 testin tamamı yeşil kalır**. Yani
+"dokunulmadı" güvencesi yalnız **yorumla** ifade edilmiş, testle korunmuyor.
+
+- [ ] **Step 9i: Muafiyeti testle sabitle**
+
+`AnnouncementAttachmentTests`'e ekle:
+
+```csharp
+    /// <summary>
+    /// INV-7 statü şartı YALNIZ alıcı koluna uygulanır. Yayınlayan, geri çektiği duyurunun
+    /// ekini görmeye devam eder — denetim izi ve yeniden yayın için gereklidir.
+    ///
+    /// <para>Bu test o muafiyetin BEKÇİSİDİR: şart metodun başına (yayınlayan/yönetim
+    /// kollarından önce) taşınırsa kırılır. Görev 14'ün re-review'ü, muafiyetin yalnız
+    /// yorumla ifade edildiğini ve 11 testin hiçbirinin onu korumadığını gösterdi.</para>
+    /// </summary>
+    [Fact]
+    public async Task Should_AllowRead_When_PublisherReadsWithdrawnAnnouncement() { }
+```
+
+Sahne: `Should_DenyRead_When_AnnouncementIsWithdrawn` ile **aynı duyuru ve aynı geri
+çekme**, tek fark çağıranın yayınlayan olması. Böylece iki test yan yana okununca kural
+tam olarak görünür.
+
+**Zorunlu mutasyon:** statü şartını metodun **en başına** (yönetim kolundan önce) taşı,
+bu testin kırıldığını göster, geri al.
+
 ### 17d — Spec ve B fazı drift listesinin güncellenmesi
 
 - [ ] **Step 9: Spec §13'e beşinci drift maddesini ekle**
