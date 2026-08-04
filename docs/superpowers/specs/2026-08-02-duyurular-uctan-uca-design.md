@@ -387,7 +387,7 @@ Tek seferde, A bittikten sonra:
 1. Backend ayağa kalkar; Swagger duyuru uçlarını içerir
 2. Codegen çalıştırılır → `packages/api/src/generated/schema.ts` yenilenir
 3. `paths.ts` augmentation'ı generated tiplerle çakışır ve **typecheck kırılır** — bilinçli drift bekçisi
-4. Şekil farkları giderilir. **Dördü önceden bilinir ve istemci tarafında düzeltilir** —
+4. Şekil farkları giderilir. **Beşi önceden bilinir ve istemci tarafında düzeltilir** —
    backend bunları A'da zaten yazdı, yani drift bekçisi burada bilerek çalar:
    - `contract.ts` → `AudienceSelectionBody`'ye **`bucket: "parent" | "teacher" | "student"`**
      eklenir (§5.1), ve `endpoints.ts:247` onu gövdeye yazacak şekilde düzeltilir. Bugün o
@@ -395,10 +395,24 @@ Tek seferde, A bittikten sonra:
      AudienceOption`), yalnız gönderilmiyor.
    - `contract.ts` → `CreateAnnouncementBody`'ye **`attachmentFileId: string | null`** eklenir
      ve compose formu doldurur (§7).
+   - `paths.ts` → **`POST /announcements` başarı statüsü `201` → `200`.** Bugün
+     `paths.ts:76` yalnız `201` ilan ediyor; backend `AnnouncementsController.cs:144`
+     `Status200OK` ilan ediyor ve bu **bilinçli** (gerekçe `:141-143`'te yazılı:
+     `ToHttpResult` başarılı `Result<T>` için 200 döner, 201 değil — ve bir Api.UnitTests
+     bekçisi bunu kilitler). Codegen geldiğinde `201` anahtarı kaybolur ve o yanıtı okuyan
+     `data` `never`'a daralır; **typecheck'i kıracak olan tam da budur.** Aynı sapma
+     `POST /announcements/templates` için de geçerlidir (aşağıdaki maddede yeni açılacak
+     `post` slotu `200` ilan etmelidir).
    - `contract.ts` + `paths.ts` → **şablon yazma uçları** (`POST`/`PUT`/`DELETE
-     /announcements/templates`) eklenir. Bugün `paths.ts:275-287` yalnız `get` ilan eder;
+     /announcements/templates`) eklenir. Bugün `paths.ts:275-291` yalnız `get` ilan eder;
      `post`/`put`/`delete` hepsi `never`'dır. Backend A3'te dördünü de yazdı
      (`AnnouncementTemplatesController`), yani drift bekçisi burada da bilerek çalar.
+
+     **`PUT`/`DELETE` mevcut anahtarın boş slotlarına YAZILMAZ** — rotaları
+     `/announcements/templates/{id}`'dir, yani `paths.ts`'e **yeni bir path anahtarı**
+     (`"/api/v1/announcements/templates/{id}"`) açmak gerekir; yalnız `POST` mevcut
+     `"/api/v1/announcements/templates"` anahtarının `post` slotuna girer.
+
      Gövde tipleri:
 
      ```ts
