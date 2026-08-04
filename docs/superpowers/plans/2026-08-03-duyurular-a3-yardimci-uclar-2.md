@@ -1288,6 +1288,64 @@ Ve domain testine (`AnnouncementLifecycleTests.cs`) iki test ekle:
 > `InlineData`'larını gerçek statülerle doldur ve o statülere GERÇEK domain çağrılarıyla ulaş
 > (`Publish()`, `MarkPendingApproval()`) — statü zorlayan bir kısayol KULLANMA.
 
+> ═══ KONTROLÖR KARARI (Görev 10 incelemesinden, 2026-08-04) — BUNU OKUMADAN JOB'I YAZMA ═══
+>
+> `AnnouncementPublicationService.MaterializeAsync` artık **zorunlu** bir
+> `Guid? scopeTeacherPersonId` parametresi alıyor. Bu alan `AudienceScope`'un üçüncü
+> alanına gider ve anlamı **"havuz bu kişinin kendi şube/derslerine daraltılsın mı"** —
+> bir kimlik değil, bir **karar**. `null` = daraltma yok (yönetim).
+>
+> **Job'a `announcement.PublisherId` GEÇİRME.** `MarkScheduled` yolu yöneticiye de açıktır
+> (`CreateAnnouncementCommandHandler.cs:134-141` — moderasyon/rol kontrolü olmadan,
+> `scheduledAt` gelecekteyse). `PublisherId` asla null olamaz, dolayısıyla müdürün
+> zamanladığı okul geneli duyuru **müdürün kendi ders/şubelerine daralır** ve
+> `AudienceResolver.cs:70` kapsam dışı seçimleri **sessizce `continue` ile atar** —
+> istisna yok, log yok. Sonuç: duyuru sıfır alıcıyla kalır, job onu yayınlamaz,
+> `scheduled` bırakır ve yayınlayana **"hedefin boş kaldı"** bildirimi gider — hâlbuki
+> hedef doluydu. Bu arıza Görev 10'da mutasyonla **canlı olarak gösterildi** (yanlış
+> kapsam → 0 alıcı, iki test öldü).
+>
+> **`ResolveScopedPublisherIdAsync`'i de KULLANMA.** O `IPermissionReader` üzerinden
+> çalışır ve tek implementasyonu (`Infrastructure/Identity/PermissionReader.cs:24,42`)
+> **`IHttpContextAccessor`'a bağlıdır**; arka plan job'ında `HttpContext` yoktur, boş küme
+> döner, `IsManagerAsync` her zaman `false` olur ve **her yayınlayan için** (müdür dâhil)
+> non-null değer üretir — yani tuzağa aynen düşer. Ayrıca o port "oturumdaki kullanıcıyı"
+> okur; job'ın sorması gereken soru **"duyurunun YAYINLAYANI yönetim miydi"**, "job'ı kim
+> tetikledi" değil.
+>
+> **KARAR: yayınlayanın yetkisini veritabanından çöz.**
+> `IAccountPermissionResolver` (`Application/Modules/Identity/Abstractions/IAccountPermissionResolver.cs`)
+> kullanılacak — implementasyonu `Infrastructure/Identity/AccountPermissionResolver.cs:16`
+> yalnız `IApplicationDbContext` alır, **HttpContext'e bağlı DEĞİLDİR**, job'da çalışır.
+>
+> ```csharp
+> Task<IReadOnlySet<string>> ResolveAsync(
+>     Guid accountId, Guid personId, string? activeProfileType, Guid? activeSeasonId, CancellationToken ct);
+> ```
+>
+> Job şunu yapar: `announcement.PublisherId` → `Person.LinkedAccountId` → `ResolveAsync(...)`
+> → küme `"announcements.approve"` içeriyorsa **yönetim** (`null` geçir), içermiyorsa
+> **kapsamlı** (`announcement.PublisherId` geçir).
+>
+> **Doğrulaman gerekenler (tahmin etme, kaynaktan oku ve rapora yaz):**
+> - `activeProfileType` ve `activeSeasonId` parametrelerine ne geçilmeli? `null` ne anlama
+>   geliyor? Sezon için `announcement.AcademicSessionId` doğru mu?
+> - `Person.LinkedAccountId` **null olabilir** (yayınlayan okuldan ayrılmış olabilir).
+>   O hâlde ne yapılacak? Kontrolör önerisi: **kapsamlı davran** (`PublisherId` geçir) —
+>   fail-closed, çünkü "yetkisini doğrulayamadığım kişiye yönetim ayrıcalığı verme" bu
+>   deponun A1'den beri uyguladığı ilke. Farklı düşünüyorsan gerekçesini yaz.
+> - Bu ek sorgu job'ın **duyuru başına** çalıştığı yerde N+1 üretir mi? Aday duyuru sayısı
+>   genelde küçüktür (dakikalık sweep), ama ölç ve rapora yaz.
+>
+> **Ayırt edici test ZORUNLU:** yöneticinin zamanladığı **okul geneli** bir duyuru, saati
+> gelince **tam alıcı kümesiyle** yayınlansın. Bu test, yanlış kapsam geçilirse **kırılır**
+> (0 alıcı → job yayınlamaz → statü `scheduled` kalır). Bu, yukarıdaki arızanın regresyon
+> bekçisidir ve olmadan bu görev bitmiş sayılmaz.
+>
+> **`Announcement.Type` (institutional/class) bunun yerine KULLANILAMAZ** — sözlük
+> `reach`/`type`/`scope`'un birbirinden bağımsız olduğunu açıkça söylüyor ve
+> `{reach: classScoped, type: institutional}` gerçek bir hâldir.
+
 - [ ] **Step 6: Job'ı yaz**
 
 `src/Oksis.Infrastructure/BackgroundJobs/Jobs/PublishScheduledAnnouncementsJob.cs`:
