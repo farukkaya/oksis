@@ -701,6 +701,28 @@ ve `AnnouncementMapper.ToDto(..., attachment)` çağrılır.
 > üzerinden mi gitmek gerektiğine bak ve **kararı rapora yaz**. `$"..."` interpolasyonunun
 > LINQ'e çevrilmediği durumda projeksiyonu bellekte tamamla (Görev 2'nin aynı notu).
 
+> ═══ GÖREV 14'TEN DEVİR — WRITE KOLUNUN YAŞAM DÖNGÜSÜ KAPISI ═══
+>
+> Görev 14 `AnnouncementEntityScopeResolver`'ın **Read** kolunu INV-7 statü bekçisine bağladı
+> (geri çekilmiş duyurunun eki alıcıya açık kalıyordu — canlı bir sızıntıydı).
+>
+> **Write kolu bilinçli olarak açık bırakıldı** ve gerekçesi şu: yayınlayan **geri çekilmiş
+> veya arşiv** bir duyuruya hâlâ ek bağlayabiliyor. Bu kuralın yeri kapsam çözümleyicisi
+> DEĞİLDİR, çünkü:
+> - *"hangi statüde hangi işlem"* bir **yaşam döngüsü** sorusudur ve modülde zaten sahibi var;
+>   çözümleyiciye koymak kuralı ikinci kez yazmak olurdu
+> - `IFileAccessGuard` yalnız `bool` döner — **anlamlı bir hata mesajı üretemez**
+>
+> Doğru yer **bu görevin ek bağlama akışıdır**. Ek bağlarken duyurunun statüsünü kontrol et:
+> ek yalnız duyuru **henüz yayınlanmamışken** (`Draft`/`Scheduled`/`PendingApproval`) ya da
+> **yayındayken** (`Published`) bağlanabilmeli; `Withdrawn`/`Expired` reddedilmeli ve hata
+> kodu `Announcements.` kovasına düşmeli (409 — yaşam döngüsü ihlali).
+>
+> **Bu görevde ek yalnız CREATE akışında bağlanıyor**, yani duyuru zaten yeni oluşturuluyor
+> ve statü sorunu bugün doğmuyor. O yüzden **kural eklemek zorunda değilsin** — ama
+> gözlemini rapora yaz ve, eğer akış sonradan bir "mevcut duyuruya ek bağla" ucu doğuruyorsa,
+> kapının nereye konacağını belirt. Kapsamı kendiliğinden genişletme.
+
 - [ ] **Step 6: `CreateAnnouncementCommandHandler`'da eki bağla**
 
 `announcement.Publish(...)`'tan ÖNCE, `db.Announcements.Add(announcement)`'tan sonra:
@@ -1414,6 +1436,26 @@ yayması → Görev 13'te job'ın Hangfire kaydı → burada resolver'ın DI kay
         entityTypes.Should().BeEquivalentTo(["School", "AttendanceExcuse", "Announcement"]);
     }
 ```
+
+> ═══ GÖREV 14'TEN UYARI — BU BEKÇİYİ VACUOUS YAPACAK TUZAK ═══
+>
+> Depoda DI kayıt bekçisi emsalleri **var** (`NotificationEnqueuerRegistrationTests.cs:32`,
+> `AutoGenerateEnqueuerRegistrationTests.cs:34` — elle kurulmuş `ServiceCollection` +
+> `BuildServiceProvider`). **AMA o emsaller kayıtları test içinde ELLE YENİDEN YAZIYOR.**
+>
+> Yani kanıtladıkları şey *"kayıt şekli çözülebilir"*dir, **`DependencyInjection.cs`'deki
+> satırın varlığı DEĞİL.** O kalıpla yazılan bir bekçi, üretim satırı silinse **yeşil kalır**
+> — bu dilimde sekiz kez düzelttiğimiz "korumadığı şeyi koruduğunu iddia eden test" sınıfının
+> ta kendisi.
+>
+> **Somut çözüm (Görev 14 implementer'ının önerisi):** üç kaydı dar bir
+> `AddFileEntityScopeResolvers(this IServiceCollection)` extension'ına çıkar ve bekçi
+> **yalnız onu** çağırsın. Emsal kadar ucuz, ama üretim satırını gerçekten koruyor.
+> `AddInfrastructure` o extension'ı çağırır; bekçi extension'ı doğrudan çağırıp
+> `GetServices<IFileEntityScopeResolver>()`'ın `EntityType` kümesini sabitler.
+>
+> **Zorunlu mutasyon bunu ölçer:** üç kayıttan birini `AddFileEntityScopeResolvers`'ın
+> İÇİNDEN sil, testin kırıldığını göster, geri al. Test kırılmıyorsa bekçi vacuous'tur.
 
 > **Implementer'a not:** `AddInfrastructure`'ın gerçek adını ve gerektirdiği bağımlılıkları
 > (`IConfiguration`, connection string vb.) **kaynaktan oku**. Servis sağlayıcıyı kurmak
