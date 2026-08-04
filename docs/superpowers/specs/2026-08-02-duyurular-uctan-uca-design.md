@@ -387,7 +387,7 @@ Tek seferde, A bittikten sonra:
 1. Backend ayağa kalkar; Swagger duyuru uçlarını içerir
 2. Codegen çalıştırılır → `packages/api/src/generated/schema.ts` yenilenir
 3. `paths.ts` augmentation'ı generated tiplerle çakışır ve **typecheck kırılır** — bilinçli drift bekçisi
-4. Şekil farkları giderilir. **Beşi önceden bilinir ve istemci tarafında düzeltilir** —
+4. Şekil farkları giderilir. **Dokuzu önceden bilinir ve istemci tarafında düzeltilir** —
    backend bunları A'da zaten yazdı, yani drift bekçisi burada bilerek çalar:
    - `contract.ts` → `AudienceSelectionBody`'ye **`bucket: "parent" | "teacher" | "student"`**
      eklenir (§5.1), ve `endpoints.ts:247` onu gövdeye yazacak şekilde düzeltilir. Bugün o
@@ -435,7 +435,46 @@ Tek seferde, A bittikten sonra:
      süresi dolmuş bir duyuru geri alındığında gerçek uç `expired` üretirken mock `published`
      üretir. A2'de doğrulandı; şekil farkı değil **davranış** farkı olduğu için typecheck
      yakalamaz — MSW handler'ı elle düzeltilmelidir.
+
+     Kol **üçtür**, ikisi değil: `published → published`, `expired → expired`
+     ve — ME-4b'den sonra — `scheduled → scheduled`, yani geri alma zamanlanmış
+     duyuruyu yayın kuyruğuna geri koyar ve job onu tekrar denemeye devam eder.
+   - `paths.ts` + MSW + UI → **`:withdraw` artık `scheduled`'dan da çalışıyor**
+     (A3, ME-4b, 2026-08-04). Gerekçe: hedefi sıfır alıcıya çözülen zamanlanmış
+     bir duyuru yayınlanamaz (`PublishScheduledAnnouncementsJob` onu `scheduled`
+     bırakır), düzeltilemez (`Amend` yalnız `published`'dan çalışır ve hedef
+     ALMAZ — INV-2) ve silinemez (INV-1); INV-1 silmeyi yasakladığı için
+     `:withdraw` böyle bir kaydı emekliye ayırmanın TEK yoludur. Web ve mobil
+     üç ayrı yerde `status === "published"` diyordu; kural
+     `packages/core` `canWithdrawAnnouncement`'a taşındı.
+   - `generated/schema.ts` → **duyuru enum alanları düz `string`'tir.**
+     `AnnouncementDto.status`/`type`/`reach`, `channels: string[]`,
+     `AudienceOptionDto.bucket`, `AnnouncementModerationDto.mode`,
+     `AnnouncementAuditEntryDto.tone` — OpenAPI belgesinde **hiç `enum` şeması
+     yoktur**, çünkü Application DTO'ları bilinçli olarak `string` kullanır
+     (`AnnouncementDto.cs:12-14`). Bu bir kusur değil, mock-first sözleşmeyle
+     uyum kararıdır; sonucu şudur: her enum alanı `endpoints.ts`'te domain
+     union'ına daraltılmalıdır (emsal `schedule/endpoints.ts` `toStatus`).
+     Bilinmeyen statü **`archived`'a** düşer — `published`'a düşmek geri
+     çekilmiş bir duyuruyu yayında gösterirdi. B fazının uçtan uca koşusu
+     (2026-08-04) tel üzerinden gelen değerlerin `packages/core` union'larıyla
+     birebir örtüştüğünü doğruladı (backend'in `AnnouncementEnumWire.cs`
+     dosyasıyla çapraz kontrol edildi): daralma bir savunmadır, bilinen bir
+     uyuşmazlığın yaması değil.
+   - `generated/schema.ts` → **tüm int alanları `number | string`'tir**
+     (`recipientCount`, `seenCount`, `usageCount`, `total`/`reached`/`seen`,
+     `AnnouncementAttachmentDto.size`, sayfalama sayaçları). Repo genelinde
+     mevcut bir .NET OpenAPI davranışıdır; `Number(v) || 0` ile daraltılır.
+     Sayaçlarda **null korunur** — "yayınlanmadı" ile "sıfır kişi gördü"
+     aynı şey değildir.
+   - `generated/schema.ts` → **nullable alanlar OPSİYONELDİR** (`isRead?:
+     null | boolean`), oysa `contract.ts` bunları zorunlu-nullable ilan
+     ediyordu. Eşleyiciler `?? null` almalıdır, aksi hâlde alan hiç gelmediğinde
+     `undefined` domain tipine sızar.
 5. `contract.ts` + `paths.ts` **silinir**; `endpoints.ts`'teki eşleyiciler (`toAnnouncement` vb.) yerinde kalır
+   *(Yapıldı — B fazı, 2026-08-04. `packages/api/package.json` exports haritası
+   `{".": "./src/index.ts", "./*": "./src/*.ts"}` jokeridir; silme bir exports
+   düzenlemesi gerektirmedi.)*
 6. `packages/api-mocks` tiplerini generated şemadan almaya geçirilir — bugün `contract.ts`'ten alır, silinince kırılır; **bu adım atlanamaz**
 7. İki app typecheck + lint
 8. Web ve mobil gerçek uca karşı duman testi (Next `rewrites` proxy üzerinden)
@@ -453,7 +492,8 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 | Moderasyon ↔ Ayarlar bağı | Yapılır — aynı uç, iki yüzey |
 | Veli/öğrenci detay derin bağlantısı (mobil) | Yapılır |
 | Gönderim raporunda kanal tablosunun gizlenmesi | Yapılır (§10) |
-| Şablon CRUD | **A'ya taşındı** (K-6) |
+| Şablon CRUD — **backend** | **A'ya taşındı** (K-6); A3'te dört uç da yazıldı |
+| Şablon CRUD — **arayüz** | **C'de yapılır.** B fazı (2026-08-04) API katmanını bağladı: `createAnnouncementTemplate` / `updateAnnouncementTemplate` / `deleteAnnouncementTemplate` + üç hook + üç MSW handler. Web `templates-tab.tsx` ve mobil `templates-screen.tsx` hâlâ **salt okunur listedir** — oluştur/düzenle/sil düğmesi yoktur. Tasarım handoff'u gelmeden ekran icat edilmedi (CLAUDE.md handoff kuralı) |
 | **Web veli/öğrenci okuma yüzü** | **Kapsam dışı** (K-7) — tasarım çizilmemiş. Yeniden kullanılabilecek çekirdek (`filterInbox`, `partitionInboxByValidity`, `countUnreadByChild`) hazırdır; `handoff-web` ile teslim geldiğinde bağlanır |
 
 ---
