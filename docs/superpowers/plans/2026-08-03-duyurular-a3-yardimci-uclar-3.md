@@ -1503,6 +1503,40 @@ tam olarak görünür.
 **Zorunlu mutasyon:** statü şartını metodun **en başına** (yönetim kolundan önce) taşı,
 bu testin kırıldığını göster, geri al.
 
+### 17c-octies — Görev 15'ten devreden iki tutarsızlık
+
+- [ ] **Step 9j: Handler hata mesajını modül konvansiyonuna döndür**
+
+`CreateAnnouncementCommandHandler.cs:160-162` — ek kategorisi hatasının `Error.Message`'ı bir
+**i18n anahtarı** (`"announcements.errors.attachment-category-invalid"`). Announcements
+Application modülündeki **diğer bütün** `new Error(...)` çağrıları **insan okunur Türkçe**
+taşıyor: *"Aktif sezon bulunamadı."*, *"Bu adda bir şablon zaten var."*, *"Bilinmeyen
+moderasyon modu."*
+
+Anahtar-mesaj kalıbı **Documents** modülünün konvansiyonu (`FilesErrors`), Announcements'ın
+değil. Sonuç: çeviri girdisi olmayan bir istemci **ham anahtar** gösterir.
+
+Türkçe metne döndür (ör. *"Ek dosya duyuru eki olarak yüklenmiş olmalıdır."*). Alternatif —
+modül genelinde bilinçli bir konvansiyon değişikliği yapmak — bu görevin kapsamı **değildir**;
+o zaman on hata mesajının hepsi değişmeliydi.
+
+> Not: aynı görevin **validator** mesajı i18n anahtarıdır ve o **doğrudur** — validator
+> katmanında dosyadaki diğer dokuz kural da `announcements.errors.*` üretiyor. Sapan yalnız
+> **handler** hatasıdır.
+
+- [ ] **Step 9k: `file is null → FilesErrors.NotFound` kolunu testle**
+
+Ek bağlama akışının üç guard'ından ikisi sınanıyor (`InvalidStatus`, `InvalidCategory`); **var
+olmayan veya BAŞKA OKULUN `fileId`'si hiç sınanmıyor** — oysa ekin **kiracı sınırını taşıyan
+kol odur** (`StoredFile : TenantEntity`, global filtre onu görünmez yapar).
+
+`Should_Reject_When_AttachmentFileBelongsToAnotherSchool` ekle. Sahne: başka okulun
+`StoredFile`'ı `AnnouncementAttachment` kategorisinde ve `Active` durumda olsun — böylece
+ret'in tek açıklaması kiracı sınırı olur, kategori veya durum değil.
+
+**Zorunlu mutasyon:** `file is null` kolunu geçici kaldır (ya da `NotFound` yerine akışa devam
+ettir), testin kırıldığını göster, geri al.
+
 ### 17d — Spec ve B fazı drift listesinin güncellenmesi
 
 - [ ] **Step 9: Spec §13'e beşinci drift maddesini ekle**
