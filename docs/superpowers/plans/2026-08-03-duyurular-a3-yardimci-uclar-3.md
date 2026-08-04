@@ -1267,6 +1267,33 @@ aynı kuralı iki testle ölçmenin değeri yok ve zayıf olan yanıltıcıdır)
 **FAIL** (create kabul eder, update reddeder). Mutasyonu GERİ AL ve gözlemi rapora yaz.
 Eski testin bu mutasyonda **yeşil kaldığını** da göster — zayıflığın kanıtı budur.
 
+### 17c-ter — Görev 7'den devreden yanlış kod yorumu
+
+`GetAnnouncementPublishersQueryHandler.cs:112` üretim yorumunda niteliksiz **"sonuç böylece
+deterministiktir"** yazıyor. Görev 7'nin raporu (§11.3) bu iddiayı re-review sonrası GERİ
+ALDI: iki satırın da gerçek adı doluysa **ve** `PublishedAt` eşitse (toplu zamanlanmış
+yayında paylaşılabilir) **ve** kişi arada yeniden adlandırılmışsa tie çözülmez ve sonuç
+`ORDER BY`'sız SQL satır sırasına düşer.
+
+Rapor düzeltildi ama **kod yorumu düzeltilmedi** — yani bugün kaynakta, geri alınmış bir
+iddia duruyor. Bu, dilim boyunca kovaladığımız "sahte güven" sınıfının aynısı, yalnız
+yorum düzeyinde.
+
+- [ ] **Step 9d: Yorumu gerçeğe uydur**
+
+`deterministiktir` ifadesini nitelendir — örneğin:
+
+```csharp
+        // Tie-break: gerçek adı olan satır kazanır, eşitlikte en yeni PublishedAt.
+        // DAR BİR HÂLDE ÇÖZÜLMEZ: iki satırın da gerçek adı doluysa VE PublishedAt eşitse
+        // (toplu zamanlanmış yayında paylaşılabilir) VE kişi arada yeniden adlandırılmışsa
+        // sıra ORDER BY'sız SQL satır sırasına düşer. Bugün gözlemlenebilir bir etkisi yok;
+        // iddia niteliksiz bırakılırsa okuyucu var olmayan bir garantiye dayanır.
+```
+
+Metni birebir kopyalaman gerekmiyor; gereken, **niteliksiz "deterministiktir" iddiasının
+kaynakta kalmaması**.
+
 ### 17d — Spec ve B fazı drift listesinin güncellenmesi
 
 - [ ] **Step 9: Spec §13'e beşinci drift maddesini ekle**
