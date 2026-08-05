@@ -18,6 +18,17 @@
 - **Duyuru başına EN FAZLA BİR ek vardır.** `Announcement.AttachmentFileId` tekil bir kolondur. Compose formundaki çoklu dosya seçici tek dosyaya indirilir.
 - **İstemci `POST /files/{id}/attach` çağırmaz.** `CreateAnnouncementCommandHandler.cs:186-190` `FileAttachment.Create(...)` satırını zaten yazıyor; ikinci bir çağrı **çift bağ satırı** üretir.
 - `files.upload` izni SchoolAdmin, Teacher, Parent ve Student rollerinde vardır (`RolePermissionSeedData.cs`); duyuru yayınlayabilen herkes ek yükleyebilir. **SuperAdmin'de yoktur** — platform hesabı ek iliştiremez, bu bilinçlidir.
+- **GÜNCEL (2026-08-05): mobil artık tarayıcıda açılabiliyor.** C2 kapanışında
+  `packages/api-mocks/src/session/` altına oturum zinciri eklendi (`account/login`,
+  `me/context`, `me/available-contexts`, `users/self`, …) ve rol login ekranındaki DEV
+  düğmeleriyle seçiliyor. Yani `expo start --web` ile veli/öğrenci/öğretmen/yönetici
+  ekranları **gözle doğrulanabilir** — C3'ün mobil maddelerini "typecheck geçti"yle
+  kapatmayın, ekranı açıp görün. C2'de bulunan iki gerçek hata tam da bu yolla çıktı.
+  Ayrıca mock `GET /announcements/{id}` artık gelen kutusu satırlarını da çözüyor,
+  yani veli okuma akışı uçtan uca denenebilir.
+- **`apps/mobile`'a prettier ÇALIŞTIRMAYIN** — kök config mobil koduyla ters
+  (`semi:false`/`singleQuote:false`); `.prettierignore`'a `apps/mobile` eklendi ama
+  elle çağırmak yine de dosyayı baştan biçimlendirir.
 - **Kapsamlı sınır (kayda geçmiş karar):** mobilde ek **yalnız görseldir (jpg/png)**. `expo-document-picker` bağımlılığı depoda yoktur ve eklenmesi native yeniden derleme gerektirir (C3 kapsamı dışı); mevcut `expo-image-picker` PDF seçemez. Web üç türü de destekler. Mobil ekranda bu sınır **açıkça yazılır**, sessizce geçilmez.
 - Komutlar:
   - Backend test: `dotnet test --filter "FullyQualifiedName~<Sınıf>"`
@@ -785,7 +796,10 @@ Bugün form dosya seçiyor ama **hiçbir şey yüklemiyor**: kod yorumu bile "ya
   }
 ```
 
-> `mutationErrorDesc` C1 Task 2'de tanımlandı. C1 uygulanmadıysa `err instanceof ApiError ? err.message : "Bağlantınızı kontrol edip yeniden deneyin."` satırını yerinde yazın.
+> **GÜNCEL (2026-08-05, C1+C2 merge sonrası).** `mutationErrorDesc` artık
+> `packages/api/src/client/mutation-error.ts`'te yaşıyor ve **status-farkındadır**
+> (400/409/422 → `err.message`; 401/403/404/5xx ve `ApiError` olmayan → Türkçe sabit).
+> `@workspace/api`'den import edin; `apps/web` içinde yerel bir kopya **yazmayın**.
 
 Yükleme sürerken birincil düğme kilitli kalmalı: `pending` prop'unu `create.isPending || upload.isPending` yapın ve etiketini `upload.isPending ? "Ek yükleniyor…" : …` olarak ayırın.
 
