@@ -181,3 +181,43 @@ AI kod üretmeden bitirmeden önce **kendi kendine** sorar:
 10. Bu kod hata durumlarını handle ediyor mu?
 
 3 veya daha fazla "Hayır" → kod tekrar gözden geçirilir.
+
+---
+
+## 16. Gerekçe Ölçülmüş mü (2026-08-05'te eklendi)
+
+> **Nereden geldi:** Duyuru C fazında bu hata **sekiz kez** tekrarladı ve her seferinde
+> **kod doğruydu, yanına yazılan gerekçe yanlıştı.** Örnekler ölçülerek kayda geçti:
+> "acil duyuru listede en üste sabitlenir" (sıralama `urgent`'a hiç bakmıyor),
+> "bu tiebreaker silinse test kırmızıya döner" (dönmüyordu), ".NET bool'u dize
+> yayınlıyor" (şemada `boolean`), "serializer değişirse test kırılır" (guard emiyor),
+> "grep — yalnız bu tanım ve testi" (testi hiç yoktu).
+>
+> **Maliyeti teorik değil.** Spec'teki ölçülmemiş **tek bir satır** plana, oradan
+> **beş ekran metnine** taşındı ve kullanıcıya gösterilen bir yalana dönüştü. Bir başka
+> ölçülmemiş gerekçe ("mock sunucu aramasının aynı kapsamı") **gerçek bir işlevsel
+> ayrışmayı** örttü: mock alan sınırını aşan sorguları eşleştiriyordu, sunucu eşleştirmiyordu.
+
+### Yazan için
+
+- [ ] Yorumda ya da raporda yazdığın her **nedensellik iddiası** ölçüldü mü?
+      "Şu değişirse şu kırılır", "bu satır şunu koruyor", "X bunu yapıyor" cümlelerini,
+      o değişikliği **gerçekten yapıp sonucu görmeden** yazma.
+- [ ] Nasıl ölçtüğünü yanına yazdın mı? (hangi komut, hangi çıktı, hangi dosyayı açtın)
+- [ ] Dayandığın dosya **canlı** mı? Import ediliyor mu, gerçekten o mu çalışıyor?
+      (Bir tur, `staleTime` gerekçesini hiçbir yerden import edilmeyen ölü bir dosyadan aldı.)
+- [ ] Davranışını değiştirdiğin satırın yanındaki **ESKİ gerekçeyi** yeniden ölçtün mü?
+      Dokuzuncu tekrar yeni yazılan yorumda değil, güncellenmeyen eski yorumda doğdu.
+- [ ] Ölçemediysen iddiayı **yazma**, ya da açıkça "ölçülmedi" diye işaretle.
+- [ ] Referans dokümana **satır numarası yazma** — bu fazda iki kez bayatladı.
+      Dosya adı ve sembol adı yeterli.
+
+### Gözden geçiren için
+
+- [ ] Diff'teki ve rapordaki **her** nedensellik iddiasını depoya karşı sına.
+- [ ] "Bu test şunu koruyor" iddiasını **mutasyonla** doğrula: korunduğu söylenen satırı
+      geçici boz, testin gerçekten kırmızıya döndüğünü gör, `git checkout --` ile geri al,
+      `git status` ile ağacın temiz olduğunu doğrula.
+- [ ] Satır atıflarını yazarken dosyayı aç — bayat atıf, yanlış gerekçenin en sessiz hâlidir.
+- [ ] Bir iddia doğru ama **gerekçesi** yanlışsa bu da bulgudur: gerekçe kaynakta kalır ve
+      sonraki okuyucuyu yanlış yönlendirir.

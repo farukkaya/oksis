@@ -249,16 +249,34 @@ DYR-F-15 kapsam dışı kalanın ekranda **açıkça** gösterilmesini şart ko�
 | `POST /{id}:read` | `view` | **self-only** — yalnız çağıranın kendi alıcı satırı |
 | `GET /{id}` | `view` | Okuyucu ise gelen kutusu kuralı, yönetim ise tam kayıt |
 | `PUT /{id}` | `update` | Yalnız `published`; öğretmen yalnız kendi kaydı; hedef **gönderilmez** |
-| `POST /{id}:withdraw` · `:restore` | `withdraw` | Öğretmen yalnız kendi kaydı |
+| `POST /{id}:withdraw` | `withdraw` | Öğretmen yalnız kendi kaydı |
+| `POST /{id}:restore` | `withdraw` | **Yönetim VEYA duyuruyu geri çeken kişi** (`WithdrawnBy`) — yayınlayan olmak tek başına yetmez |
 | `POST /{id}:approve` · `:reject` · `GET /approvals` | `approve` | — |
 | `GET /{id}/delivery-report` · `/audit-trail` | `report.view` | Öğretmen yalnız kendi kaydı |
-| `GET\|PUT /moderation` | `moderate` | Okul geneli |
+| `GET /moderation` | `create` | Öğretmenin compose ekranı modu **okumak zorunda** — yoksa "bu duyuru onaya düşecek mi" sorusunu cevaplayamaz |
+| `PUT /moderation` | `moderate` | Okul geneli — yalnız yönetim değiştirir |
 | `GET /templates` | `view` | — |
 | `POST\|PUT\|DELETE /templates` | `template.manage` | Yalnız yönetim |
 | `GET /audience` | `create` | Rol havuzu daraltır — öğretmen "tüm okul"u **görmez**, kilitli de görmez (§4.2 tasarım notu) |
 | `GET /publishers` | `view` | — |
 
 Yaşam döngüsü fiilleri iki nokta ile ifade edilir (`{id}:withdraw`); generic `PATCH` kullanılmaz. **`DELETE /announcements/{id}` yazılmaz** — modül şablonundaki o satır INV-1 ile çelişen bir artıktır.
+
+> **DÜZELTME (2026-08-05, C2 kapanışında modül dokümanı kaynaktan yeniden yazılırken).**
+> Bu tablonun iki satırı kodla çelişiyordu ve düzeltildi:
+>
+> - **`GET /moderation` izni `moderate` değil `create`'tir.** Tabloda ikisi tek satırda
+>   birleştirilmişti; oysa okuma ile yazma farklı anahtar ister. Gerekçe kodda yazılı:
+>   öğretmenin compose ekranı modu okumak zorundadır, `moderate` istenseydi öğretmen
+>   "bu duyuru onaya düşecek mi" sorusunu hiç cevaplayamazdı.
+> - **`:restore` kapısı `:withdraw` ile aynı değil.** `CanActOn` kullanılmıyor: yönetim
+>   **veya duyuruyu geri çeken kişi** (`WithdrawnBy`) geri alabilir. Yayınlayan olmak tek
+>   başına yetmez — başkasının geri çektiği bir duyuruyu yayınlayan geri alamaz.
+>
+> Ayrıca **uç sayısı 17+3 değil, 22'dir**: 18 `AnnouncementsController` action'ı
+> (C2'de eklenen `GET /summary` dâhil) + 4 `AnnouncementTemplatesController` action'ı.
+> Üç bağımsız sayım (controller action'ları, `[RequirePermission]` öznitelikleri,
+> `generated/schema.ts` yolları) aynı sonucu verdi.
 
 ---
 
@@ -309,11 +327,29 @@ Yani delinecek bir kısıt kurulmamıştır. **Acil işaretinin A1'deki gerçek 
 
 | Etki | Durum |
 |---|---|
-| Alıcı listesinde en üste sabitlenme ve görsel ayrışma | ✅ Çalışır (istemci `urgent` alanını okur) |
+| Listede ACİL rozetiyle görsel ayrışma | ✅ Çalışır (`parts.tsx` rozeti `urgent` alanını okur) |
 | Denetim izine ayrıca yazılma | ✅ Çalışır (Görev 12) |
 | Bildirim başlığında "Acil duyuru: …" ön eki | ✅ Çalışır |
+| **Alıcı listesinde en üste sabitlenme** | ❌ **Çalışmaz** — sıralama yalnız `pinned`'e bakar |
 | Sessiz saat delme | ❌ **Delecek kısıt yok** |
 | E-posta kanalının ayrıca açılması | ❌ Kanal yok (K-2) |
+
+> **DÜZELTME (2026-08-05, C1 Task 8 gözden geçirmesi).** Bu tablonun ilk sürümü
+> sabitlenmeyi ve görsel ayrışmayı **tek satırda** "✅ Çalışır" diye yazıyordu.
+> Yarısı yanlıştı: rozet gerçekten `urgent`'ı okur, ama **sıralama okumaz** —
+> `sortAnnouncements` (o tarihte `packages/core/src/announcements/logic.ts`'teydi;
+> **C2'de silindi** — sunucu zaten sıralıyor ve istemci sıralaması `CreatedAt`
+> telde olmadığı için taslaklarda sunucudan ayrışıyordu) ve
+> `GetAnnouncementsQueryHandler.cs` yalnız `Pinned`'e bakar; `Urgent` ile
+> `Pinned` bağımsız alanlardır ve hiçbir komut birinden diğerini türetmez.
+> `AnnouncementPublishedEvent.cs:9-12` bunu zaten açıkça yazıyordu.
+>
+> Hata ucuz kalmadı: C1 Task 8 bu satıra dayanarak beş ekran metnini "acil duyuru
+> listede en üste sabitlenir" diye yazdı — yani "sessiz saat kısıtını deler"
+> asılsız vaadinin yerine **başka bir asılsız vaat** geçti. Gözden geçirme
+> yakaladı ve metinler rozete göre düzeltildi. Acil işaretinin sıralamaya
+> girmesi istenirse bu bir **ürün kararıdır** ve `urgent`'ın iki sıralamaya da
+> eklenmesini gerektirir; bugünkü davranış değildir.
 
 Sessiz saat ve öncelik, teslim kanallarının (D) konusudur ve o iş yapıldığında `AnnouncementPublishedEvent.Urgent` zaten olayda taşındığı için handler değişmeden bağlanabilir. Bugün acil işareti bir **sunum ve kayıt** işaretidir, bir teslim değiştirici değil.
 
@@ -488,7 +524,7 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 | Boşluk | Karar |
 |---|---|
 | `restore` bağlanması | Yapılır — uç ve hook hazır, hiçbir ekrana bağlı değil |
-| Sayfalama (`pageSize` 200 sabit) | Yapılır — 200. duyurudan sonrası bugün sessizce kayboluyor |
+| Sayfalama (`pageSize` 200 sabit) | ✅ **Yapıldı — C2 (2026-08-05).** Tam sunucu sayfalaması: filtre/arama/sayaçlar sunucuya taşındı, `GET /announcements/summary` açıldı (18. operasyon), gelen kutusu da sayfalandı (orada tavan bile yoktu) |
 | Moderasyon ↔ Ayarlar bağı | Yapılır — aynı uç, iki yüzey |
 | Veli/öğrenci detay derin bağlantısı (mobil) | Yapılır |
 | Gönderim raporunda kanal tablosunun gizlenmesi | Yapılır (§10) |
@@ -526,3 +562,14 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 | **`Secretary` ve `SchoolStaff` seed'lenmiş rol DEĞİL** — yalnız 5 `SystemRole` var. `UserRole` enum'unda üyeleri var ama dışa/içe aktarma etiketi olarak; `RolePermissionSeedData.cs:136-139` ve `MasterSeedIds.cs:58` ertelemeyi açıkça yazıyor | Teknik analiz §4.2'nin yedi sütunlu matrisi bugün birebir uygulanamaz. Bu ikisinin yetkileri `SCHOOL_ADMIN`'de toplandı ve gerekçesi seed dosyasına yazıldı. Secretary rolü seed'lendiğinde matris yeniden bölünmeli |
 | `TenantEntity`, `ISoftDeletable`'ı paketliyor — INV-1'in "`IsDeleted` alanı yok" şartı mevcut temelle karşılanamıyor | `Domain/Common`'a `PermanentTenantEntity` eklenir (Görev 1). Paylaşılan temele dokunur; soft-delete filtresi `typeof(ISoftDeletable).IsAssignableFrom(...)` korumalı olduğu için additive |
 | `AnnouncementRecipient` fan-out'u büyük okulda satır sayısını hızla büyütür | Sezon bazlı arşivleme stratejisi V2'de ele alınmalı |
+
+### C2'de (2026-08-05) ölçülerek eklenen riskler
+
+| Risk | Etki |
+|---|---|
+| **Arama davranışı daraldı ve kullanıcıya söylenmiyor** | İstemci araması `foldTurkish` ile aksan katlıyordu ("ogrenci" → "öğrenci"); sunucu araması katlamıyor (depo geneli kalıp, `ListStudentsQueryHandler` emsali). Kullanıcıya hiçbir yerde bildirilmiyor |
+| **Türkçe küçültme prod'da farklı davranacak** | Sunucu `ToLower()` `CurrentCulture`'a bağlı. Deponun kendi notu (`GetAnnouncementPublishersQueryHandler.cs`) prod'da Invariant'a düşüldüğünü yazıyor — Invariant `İ`ye hiç dokunmaz. Üstelik samanlık tarafı hiç .NET değil, SQL `LOWER()` yani DB collation'ı (`UseCollation` hiçbir yerde yok). Aynı arama üç ortamda üç sonuç verebilir |
+| **`PaginationNormalizer` sapması** | `src/Oksis.Shared/PaginationNormalizer.cs` doc'u "clamp mantığı handler içinde kopyalanmamalıdır" diyor ve 8 üretim dosyası onu kullanıyor; iki duyuru handler'ı kullanmıyor. Ölçülen fark: `?pageSize=-1` depo genelinde "hepsi", duyuruda **1 satır** |
+| **`?page` taşması ve bozuk sorgu parametreleri 500 döndürüyor** | `GetAnnouncementsQueryHandler`'daki `.Skip((page-1)*pageSize)` taşması (A fazından devralınmış) ve `?status=zirva` → `ParseStatus` fırlatıyor → 500. Gelen kutusunda C2'de düzeltildi, envanterde duruyor |
+| **`Mvc.Testing` yok → HTTP uç dikişi testsiz** | Routing + middleware + durum kodu katmanı hiçbir testle kapsanmıyor; `Program.cs`'te `partial` işareti de yok. C2 Task 1'de `?status=` boş değerinin 500 döndürdüğü bulgusu tam bu dikişte doğdu |
+| **Mobil UI iki turdur çalıştırılmadan sevk ediliyor** | `apps/mobile`'da test koşucusu yok ve mock ortamı oturum/`me/context` handler'ı taşımadığı için ekranlar tarayıcıda da açılamıyor. JSX katmanı yalnız tip denetleyicisi ve okumayla doğrulanıyor |
