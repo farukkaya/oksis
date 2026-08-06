@@ -252,10 +252,29 @@ export const ANNOUNCEMENT_ATTACHMENT_MIME_TYPES = [
   "image/png",
 ] as const
 
-export const ANNOUNCEMENT_ATTACHMENT_EXTENSIONS = ["pdf", "jpg", "jpeg", "png"] as const
+export const ANNOUNCEMENT_ATTACHMENT_EXTENSIONS = ["pdf", "jpg", "png"] as const
 ```
 
-> `jpeg` uzantısı listede `jpg`'ye ek olarak var: backend uzantı listesi `["pdf","jpg","png"]` olsa da politika denetimi MIME üzerinden de geçer ve kullanıcı dosyasını `.jpeg` uzantısıyla seçebilir. Ön eleme burada gevşek, backend'de kesindir.
+> **GÜNCEL (2026-08-06, C3 kapanışı) — ölçüldü, plan yanlıştı.** Bu satır önce
+> `["pdf", "jpg", "jpeg", "png"]` diyordu ve gerekçesi şuydu: *"backend uzantı listesi
+> `["pdf","jpg","png"]` olsa da politika denetimi MIME üzerinden de geçer ve kullanıcı
+> dosyasını `.jpeg` uzantısıyla seçebilir; ön eleme burada gevşek, backend'de kesindir."*
+> **Bu gerekçe ölçülünce çürüdü.** `UploadFileCommandHandler` ve
+> `InitiateFileUploadCommandHandler` politikayı şöyle sorar:
+> `!FileUploadPolicyChecker.ExtensionAllowed(...) || !FileUploadPolicyChecker.ContentTypeAllowed(...) || !SizeAllowed(...)`
+> → üçü **birlikte** tutmalıdır, "MIME'dan da geçer" diye bir yol yoktur.
+> `FileUploadPolicyChecker.ExtensionAllowed` dosya adının son noktasından sonrasını alıp
+> (`ExtractExtension`) `policy.AllowedExtensions` içinde arar; `AnnouncementAttachment`
+> politikası (`FileCategoryPolicyRegistry`) `["pdf", "jpg", "png"]` ilan eder. Yani
+> `afis.jpeg` dosyası `image/jpeg` MIME'ıyla gelse bile **uzantıdan düşer** ve
+> `FilesErrors.PolicyViolation` alır — ön elemenin "gevşek" bırakılması reddi ortadan
+> kaldırmaz, yalnızca 10 MB yüklendikten **sonraya** erteler.
+>
+> **Karar (insan ortak):** istemci listesi backend'le **birebir** kalır. Sevk edilen kod
+> `packages/core/src/announcements/constants.ts` içinde `["pdf", "jpg", "png"]`'dir ve
+> `jpeg`'in neden yok olduğu orada da yazılıdır. `ANNOUNCEMENT_ATTACHMENT_MIME_TYPES`
+> `image/jpeg` içermeye devam eder — o **content-type**tir, uzantı değil; `.jpg` dosyaları
+> tam da o MIME ile gelir.
 
 - [ ] **Step 4: Fonksiyonları yaz**
 
@@ -633,9 +652,8 @@ export const fileHandlers = [
         category,
         sizeBytes: file.size,
         sha256Checksum: "mock-checksum",
-        status: "Active",
-        // Gerçekte tarama asenkrondur ve Quarantined olabilir; mock temiz döner.
-        virusScanStatus: "Clean",
+        status: "Quarantined",
+        virusScanStatus: "Pending",
       }),
     )
   }),
@@ -658,6 +676,32 @@ export const fileHandlers = [
   }),
 ]
 ```
+
+> **GÜNCEL (2026-08-06, C3 kapanışı) — ölçüldü, plan yanlıştı.** Yükleme yanıtı önce
+> `status: "Active"`, `virusScanStatus: "Clean"` diyordu; yanındaki gerekçe *"Gerçekte
+> tarama asenkrondur ve Quarantined olabilir; mock temiz döner."* idi. **"Olabilir" değil,
+> DAİMA öyle olur.** `FileCategoryPolicyRegistry`'de `AnnouncementAttachment`
+> `RequiresVirusScan: true` ilan ediyor; taramayı gerektiren bir kategoride
+> `StoredFile.ApplyUploadCompleted` dosyayı `Quarantined`/`Pending` doğurur — yükleme
+> yanıtı **hiçbir zaman** `Clean` taşımaz, çünkü tarama o an daha başlamamıştır.
+> Ardından indirme de reddedilir: `GetFileDownloadUrlQueryHandler` `file.CanBeDownloaded`
+> false iken `FilesErrors.NotScanned` döner ve uç bunu **409** ilan eder.
+>
+> `Clean` dönen bir mock, C3'ün ek dosya akışındaki **en sık gerçek dalı** — "ek yüklendi
+> ama henüz açılamıyor" — geliştiricinin gözünden tamamen gizlerdi. Mock'un işi gerçeği
+> taklit etmektir; kolaylık sağlamak değil.
+>
+> **Karar (insan ortak):** mock gerçeği taklit eder. Sevk edilen
+> `packages/api-mocks/src/files/` şunu yapar: dosya `Quarantined`/`Pending` doğar,
+> kaydına `scanCompletesAt = Date.now() + SCAN_DELAY_MS` (**3 sn**) yazılır; bu pencere
+> içinde `GET /files/{id}/download-url` gerçek uçla aynı gövdeyi döner —
+> `409 FILES_NOT_SCANNED` / `files.errors.not-scanned` — ve pencere dolunca dosya açılır.
+> Yani karantina cümlesi arayüzde gerçekten görülebilir.
+>
+> Not: bu düzeltme **MSW handler'ı** içindir. `packages/api/src/files/endpoints.test.ts`
+> içindeki `fetchMock` fixture'ının `virusScanStatus: "Clean"` demesi **doğrudur ve
+> değişmez** — orası tarama davranışını değil, alan eşlemesini sınar; alanın taşındığını
+> göstermek için `""` dışında herhangi bir değer gerekir.
 
 - [ ] **Step 2: Handler listesine ekle**
 
@@ -872,7 +916,39 @@ git commit -m "feat(announcements): web compose ek dosyayi gercekten yukluyor"
   }
 ```
 
-`<a className="rm" href={…} download …>` etiketini düğmeyle değiştirin:
+> **GÜNCEL (2026-08-06, C3 kapanışı) — yukarıdaki taslak iki noktada sevk edilenden
+> ayrışıyor; ikisi de ölçüldü.**
+>
+> **1. `§5.3.3` atfı kaynak belgesini söylemiyordu.** Atıf
+> `oksis-api/src/Oksis.Application/Modules/Documents/DTOs/FileDownloadUrlDto.cs`'ten
+> devralınmıştı ("İstemci bu URL'i state'te uzun süre tutmamalı ve loglamamalıdır
+> (spec §5.3.3)") ve buraya belge adı olmadan taşındı — okuyanın hangi spec'e bakacağı
+> yazmıyordu. **Kaynak bulundu:** `oksis/.claude/specs/dosya-yonetimi-spec.md`, **§5.3
+> "React Query Keys ve State Kuralları", madde 3** — *"İndirme: `GET
+> /files/{id}/download-url` → dönen presigned URL yeni sekmede açılır; URL asla state'te
+> uzun süre tutulmaz (kısa TTL) ve loglanmaz."* Numaralandırma `§<bölüm>.<madde>`
+> biçimindedir (aynı depodaki emsaller: `GetFileDownloadUrlQueryHandler` doc'u "§3.3
+> madde 2", "§7.3.3", "§4.1.4" diyor), yani `§5.3.3` **döngüsel ya da uydurma değildir** —
+> yalnız belgesi eksikti. Sunucu tarafındaki tamamlayıcı kural aynı belgenin **§8.2**'sinde:
+> *"KURAL — Redaction: presigned URL asla loglanmaz."* Bundan sonra atıf
+> **`dosya-yonetimi-spec.md` §5.3 madde 3** diye yazılmalıdır.
+>
+> Kural sevk edilen kodda **uygulandı**: `openFileDownload` başarıda hiçbir şey
+> döndürmez (`{ ok: true }`), URL yalnız `open` çağrısının içinde yaşar; indirme için
+> TanStack Query hook'u bilinçli olarak **yazılmadı** (gerekçesi
+> `packages/api/src/files/queries.ts`'te). Sunucu tarafında
+> `GetFileDownloadUrlQueryHandler` audit satırına yalnız `FileId/SchoolId/RequestedByUserId/
+> TtlMinutes/EntityType/EntityId` yazıyor, URL'i yazmıyor.
+>
+> **2. Akış `apps/web`'de değil, `packages/api/src/files/download.ts`'te yaşıyor** ve
+> **yeni sekme değil AYNI SEKME** kullanıyor (`sameTabFileOpener` → `win.location.href`).
+> `window.open` ölçülerek elendi: adres `await`'ten sonra elde edildiği için tıklamanın
+> geçici etkinleştirmesi tükenebiliyor (açılır pencere engelleyicisi açıkken `null`
+> döndü) ve `noopener` verildiğinde başarıda da `null` dönüyor. Aynı sekmede gezinme
+> güvenlidir çünkü presigned adres imzalı query'sinde `Content-Disposition: attachment`
+> taşır. **Depoda çalışma zamanında tek bir `window.open` çağrısı kalmadı** — ölçüldü:
+> `grep -rn "window\.open" apps packages` (node_modules ve `.next` hariç) **11 satır**
+> buluyor, hepsi yorum ya da test açıklaması; çağrı **sıfır**.
 
 ```tsx
                   <button
