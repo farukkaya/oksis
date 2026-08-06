@@ -282,13 +282,22 @@ Yaşam döngüsü fiilleri iki nokta ile ifade edilir (`{id}:withdraw`); generic
 
 ## 7. Ek dosya (Documents entegrasyonu)
 
+✅ **Yapıldı — C3 (2026-08-05).** Aşağıdaki adımlar sevk edilen akıştır.
+
 1. İstemci ek seçer — boyut/tip ön elemesi (10 MB sınırı `packages/core` sabitinde)
-2. Documents yükleme ucundan `StoredFile` alınır; dosya doğrudan depolamaya gider
+2. Dosya **tek adımda, API üzerinden** yüklenir: `POST /api/v1/files` (multipart, `[FromForm] IFormFile file` + `category`) `StoredFile`'ı döner — **presigned akış kullanılmadı** (bkz. aşağıdaki not)
 3. `FileUploadConfirmedEvent` → virüs taraması + thumbnail job'ı
-4. Dönen id `CreateAnnouncementBody.attachmentFileId` olarak gönderilir
+4. Dönen id `CreateAnnouncementBody.attachmentFileId` olarak gönderilir; `FileAttachment` bağını **backend kendisi yazar** (`CreateAnnouncementCommandHandler`), istemci `POST /files/{id}/attach` **çağırmaz**
 5. Okumada `FileAccessGuard`, alıcı olmayanın eke erişimini keser
+6. İndirmede istemci `attachment.fileId` ile `GET /api/v1/files/{id}/download-url` çağırır, zarftan çıkan kısa ömürlü adrese gider
+
+**Presigned üç adımlı akış (`/files/initiate` → depoya PUT → `/files/{id}/confirm`) KULLANILMADI.** Gerekçe ölçüldü: `FileCategoryPolicyRegistry`'de `AnnouncementAttachment` kategorisi `ForcePresigned: false`, `AllowMultipart: false` ve üst sınır **10 MB** ilan ediyor — yani kategori proxy yüklemeye zaten uygun ve üç adımlı akışın getireceği karmaşıklığın burada karşılığı yok. `UploadFileCommandHandler` proxy yolunu `ForcePresigned || SizeBytes > ProxyMaxSizeBytes` koşuluyla kapatır; 10 MB o eşiğin (25 MB) altındadır.
+
+> **Bayat cümle düzeltildi (C3 kapanışı, 2026-08-06):** 2. adım eskiden *"dosya doğrudan depolamaya gider"* diyordu. Bu **presigned akışın** tarifidir ve sevk edilen proxy akışında yanlıştır: dosya nesne deposuna doğrudan değil, `FilesController.UploadAsync` üzerinden **API'den geçerek** gider (Kestrel `[RequestSizeLimit(26_214_400)]` ile ölçer; `FileSizeBytes` daima `IFormFile.Length`'ten alınır). 3. ve 5. adım yeniden ölçüldü ve **doğru çıktı**: `FileUploadConfirmedEvent` proxy yolunda da raise edilir (`StoredFile.ApplyUploadCompleted`) ve iki abonesi vardır (`FileUploadConfirmedScanEnqueuer`, `FileUploadConfirmedThumbnailEnqueuer` — ikisinin de XML doc'u "proxy tek adım veya iki-fazlı" der); `FileAccessGuard` gerçek bir sınıftır ve duyuru kolunu `AnnouncementEntityScopeResolver` çözer — o dosya 5. adımı **adıyla** alıntılar.
 
 **Kontrat değişikliği (ikinci):** `CreateAnnouncementBody`'ye `attachmentFileId: string | null`. Backend `FileCategoryPolicy` ile boyut/tipi yeniden doğrular — istemci ön elemesi güvenlik sınırı değildir.
+
+**Kontrat değişikliği (C3):** `AnnouncementAttachmentDto`'ya `fileId: Guid`. `url` alanı bir dosya değil, **indirme ucunun göreli yoludur** (`/api/v1/files/{id}/download-url`) ve o uç `[Authorize]`'dır; yolun biçimi tel sözleşmesinde tanımlı değildir (üretilen şemada düz `string`). İstemci yolu **ayrıştırmaz**, `fileId`'yi kullanır.
 
 ---
 
@@ -525,6 +534,7 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 |---|---|
 | `restore` bağlanması | Yapılır — uç ve hook hazır, hiçbir ekrana bağlı değil |
 | Sayfalama (`pageSize` 200 sabit) | ✅ **Yapıldı — C2 (2026-08-05).** Tam sunucu sayfalaması: filtre/arama/sayaçlar sunucuya taşındı, `GET /announcements/summary` açıldı (18. operasyon), gelen kutusu da sayfalandı (orada tavan bile yoktu) |
+| Ek dosya yükleme akışı | ✅ **Yapıldı — C3 (2026-08-05); mobilde yalnız görsel.** Tek adımlı proxy yükleme (§7): web compose gerçekten yüklüyor, web + mobil detay ve mobil okuyucu indiriyor. Mobil compose **yalnız jpg/png** alır — `expo-document-picker` depoda yok, eklenmesi native yeniden derleme gerektirir; sınır ekranda açıkça yazılıdır ("PDF eklemek için web arayüzünü kullanın") |
 | Moderasyon ↔ Ayarlar bağı | Yapılır — aynı uç, iki yüzey |
 | Veli/öğrenci detay derin bağlantısı (mobil) | Yapılır |
 | Gönderim raporunda kanal tablosunun gizlenmesi | Yapılır (§10) |
@@ -572,4 +582,21 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 | **`PaginationNormalizer` sapması** | `src/Oksis.Shared/PaginationNormalizer.cs` doc'u "clamp mantığı handler içinde kopyalanmamalıdır" diyor ve 8 üretim dosyası onu kullanıyor; iki duyuru handler'ı kullanmıyor. Ölçülen fark: `?pageSize=-1` depo genelinde "hepsi", duyuruda **1 satır** |
 | **`?page` taşması ve bozuk sorgu parametreleri 500 döndürüyor** | `GetAnnouncementsQueryHandler`'daki `.Skip((page-1)*pageSize)` taşması (A fazından devralınmış) ve `?status=zirva` → `ParseStatus` fırlatıyor → 500. Gelen kutusunda C2'de düzeltildi, envanterde duruyor |
 | **`Mvc.Testing` yok → HTTP uç dikişi testsiz** | Routing + middleware + durum kodu katmanı hiçbir testle kapsanmıyor; `Program.cs`'te `partial` işareti de yok. C2 Task 1'de `?status=` boş değerinin 500 döndürdüğü bulgusu tam bu dikişte doğdu |
-| **Mobil UI iki turdur çalıştırılmadan sevk ediliyor** | `apps/mobile`'da test koşucusu yok ve mock ortamı oturum/`me/context` handler'ı taşımadığı için ekranlar tarayıcıda da açılamıyor. JSX katmanı yalnız tip denetleyicisi ve okumayla doğrulanıyor |
+| **Mobil UI iki turdur çalıştırılmadan sevk ediliyor** | `apps/mobile`'da test koşucusu yok ve mock ortamı oturum/`me/context` handler'ı taşımadığı için ekranlar tarayıcıda da açılamıyor. JSX katmanı yalnız tip denetleyicisi ve okumayla doğrulanıyor<br><br>⚠️ **Bu satırın ikinci yarısı C2 kapanışında bayatladı (C3'te ölçülerek düzeltildi, 2026-08-06).** `packages/api-mocks/src/session/` eklendi ve `auth/account/login`, `auth/me/context`, `auth/me/available-contexts`, `users/self` handler'larını taşıyor — yani `expo start --web` ile ekranlar **artık açılabiliyor** ve C3'ün mobil maddeleri gözle doğrulandı. **Birinci yarı hâlâ geçerli:** `apps/mobile/package.json`'da `test` betiği yoktur (ölçüldü). Native tarafta mock ayrı bir sebeple hâlâ kırık — bkz. C3-3 |
+
+### C3'te (2026-08-05) ölçülerek eklenen backlog
+
+Ek dosya dilimi kapatılırken **ölçülerek** bulunan, C3 kapsamı dışında bırakılan işler.
+Hepsi kod okunarak doğrulandı; hiçbiri varsayım değildir.
+
+| # | Madde | Ölçüm ve etki |
+|---|---|---|
+| **C3-1** | **Liste DTO'suna `hasAttachment` bayrağı gerekiyor** | Üç liste yüzeyi de `row.attachment`'a bakıp ataç rozeti çiziyor (`apps/web/features/announcements/inventory-tab.tsx`; `apps/mobile/src/features/announcements/components/announcement-inbox-row.tsx` — ataç + "1 ek"; `.../announcement-row.tsx`). Ama `GetAnnouncements` / `GetAnnouncementInbox` / `GetAnnouncementApprovals` handler'larının **üçü de** `AnnouncementMapper.ToDto`'ya `attachment` argümanını geçmiyor (varsayılan `null`) → **rozetler üretimde hiç görünmüyor, yalnız mock'ta görünüyor.** `Announcement.AttachmentFileId` zaten kökte bir kolon olduğu için hafif bir `hasAttachment` bayrağı **N+1 doğurmaz** — `StoredFile`'a join gerekmez. Tam `AnnouncementAttachmentDto`'yu listede doldurmak ise dosya başına bir okuma ister; bayrak bilinçli olarak daha ucuz seçenektir |
+| **C3-2** | **`expo-document-picker` eklenmeli** | Mobilden PDF eki seçebilmek için gerekli. Paket hiçbir `package.json`'da yok (ölçüldü); mobil ek seçici bugün `expo-image-picker` + `mediaTypes: ['images']`. Eklenmesi **native yeniden derleme** gerektirir, bu yüzden C3'e alınmadı. Politika (`AnnouncementAttachment`) pdf'i zaten kabul ediyor — eksik olan yalnız istemci seçicisi |
+| **C3-3** | **Mock modu mobilde NATIVE'de kırık** | iOS simülatöründe `msw/native` Hermes'te patlıyor: `MessageEvent` global'i yok, shim'lenince bu kez `BroadcastChannel` yok. Web (`expo start --web`) etkilenmiyor ve mock orada çalışıyor. **Ölçüm iOS 26.5'te yapıldı; Android denenmedi** — kapsamı bu kadardır |
+| **C3-4** | **`excuse-create-screen.tsx` web'de `asset.file` göndermiyor** | `apps/mobile/src/features/attendance/components/excuse-create-screen.tsx` eki native köprünün beklediği `{ uri, name, type }` şeklinde kuruyor. Expo web'de bu düz bir nesnedir, `File` değildir — tarayıcı `FormData.append` çağrısında onu `"[object Object]"` diye serileştirir. C3'te ölçülen tarayıcı FormData davranışından **çıkarıldı**; mazeret akışı web'de **ayrıca doğrulanmalı** (bu turda çalıştırılmadı). Duyuru akışı bu hatadan muaftır: orası gerçek `File` taşır |
+| **C3-5** | **Duyuru DÜZENLEME ekranında Başlık/İçerik boş geliyor** | `compose.tsx` (web) ve `compose-screen.tsx` (mobil) alanları `useState(seed?.title ?? "")` ile **bir kez** ilkliyor; `seed` geç çözülen `detailQuery`'den geliyor ve bileşende `key` yok, dolayısıyla ilk render'daki `undefined` kalıcı oluyor. **C3 öncesinden var**, ek dosya işiyle ilgisiz |
+| **C3-6** | **Expo web'de sayfa yenilemesiyle rol yöneticiye düşüyor** | `/announcements/new` doğrudan yenilenerek açıldığında token öğretmen olsa bile rol yönetici çözülüyor. Görsel doğrulama yapan **her turu bozar** — moderasyon/onay davranışı role bağlı olduğu için yanlış ekran ölçülür |
+| **C3-7** | **Yükleme başarılı + duyuru oluşturma başarısız → öksüz `StoredFile`** | Akış iki ayrı isteğe bölündüğü için (önce `POST /files`, sonra `POST /announcements`) ikincisi düşerse dosya yüklenmiş ama hiçbir duyuruya bağlanmamış hâlde kalır ve **okul kotasından düşer**. Backend tarafında bir orphan temizliği gerekiyor; `dosya-yonetimi-spec.md` §8.2'de `files.upload.orphan-cleaned` log olayı zaten **tanımlı** (yani tasarım bu işi öngörmüş), duyuru akışında karşılığı yok |
+| **C3-8** | **Mock yaşam döngüsü uçları ham satır döndürüyor** | `markInboxRead` ve kardeşleri MSW handler'ında satırı doğrudan döndürüyor. Gerçek uçta `MarkAnnouncementReadCommandHandler` `attachment` argümanını **geçmez** ve kendi yorumunda "istemci detayı bu yanıttan yeniden render ETMEMELİDİR" diye uyarır. Mock bu farkı **maskeliyor**: `:read` sonrası ekin düşmesi mock'ta görülmez, üretimde görülür |
+| **C3-9** | **`sameTabFileOpener` tipi gereğinden geniş** | `packages/api/src/files/download.ts` imzası `Pick<Window, "location" \| "open">` istiyor ama gövde yalnız `win.location.href`'e yazıyor; `open` gereksiz yere zorunlu. Daraltmak test sahtelerini de basitleştirir. Zararsız ama yanıltıcı: imza, fonksiyonun `window.open` kullandığını ima ediyor — oysa tam tersi bilinçli bir karar (depoda çalışma zamanında `window.open` çağrısı **sıfırdır**, ölçüldü) |
