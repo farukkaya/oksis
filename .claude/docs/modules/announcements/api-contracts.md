@@ -222,6 +222,92 @@ kullanıcıya "12 yayında" deyip 3 satır göstermek demektir.
 
 ---
 
+## C3'ün Getirdiği Sözleşme Değişiklikleri — Ek Dosya
+
+Duyurunun **en fazla bir** eki olur (`Announcement.AttachmentFileId` tekil kolondur).
+Yükleme ve indirme uçları bu modülde **değil**, Documents modülündedir; duyuru yüzeyi
+onlara yalnız bir kimlikle bağlanır.
+
+### 1. Yükleme tek adımlıdır (proxy)
+
+`POST /api/v1/files` — multipart gövde (`[FromForm] IFormFile file` + `[FromForm] string
+category`), `category` sabittir: `AnnouncementAttachment`. Uç `StoredFileDto` döner ve
+istemci yalnız `fileId`'yi taşır.
+
+**Presigned üç adımlı akış (`/files/initiate` → depoya PUT → `/files/{id}/confirm`)
+kullanılmaz.** `FileCategoryPolicyRegistry`'de `AnnouncementAttachment` politikası
+`ForcePresigned: false`, `AllowMultipart: false`, üst sınır **10 MB** ilan eder; proxy
+yolu `ForcePresigned || boyut > 25 MB` olduğunda kapanır, bu kategori o eşiğin altındadır.
+
+### 2. Bağı backend yazar — istemci `attach` çağırmaz
+
+Dönen kimlik `POST /api/v1/announcements` gövdesinde `attachmentFileId` olarak gider.
+`CreateAnnouncementCommandHandler` bağı **iki yere birden** yazar — köke
+(`Announcement.AttachFile`) ve Documents'in `FileAttachment` tablosuna — ikisi de aynı
+transaction'dadır.
+
+❌ İstemci **`POST /api/v1/files/{id}/attach` çağırmaz**: ikinci bir çağrı çift bağ satırı
+üretir. `IFileAccessGuard` kapsamı dosyanın bağlarından okuduğu için çift satır erişim
+kararını da bulanıklaştırırdı.
+
+### 3. `AnnouncementAttachmentDto`'ya `fileId` eklendi
+
+`url` alanı **bir dosya değildir** — indirme ucunun göreli yoludur
+(`/api/v1/files/{id}/download-url`, `GetAnnouncementByIdQueryHandler.LoadAttachmentAsync`
+içinde dize interpolasyonuyla kurulur). O uç `[Authorize]`'dır ve JSON zarfı döner, yani
+`<a href>` ile açılamaz. Yolun biçimi **tel sözleşmesinde tanımlı değildir** (üretilen
+şemada düz `string`); istemci yolu ayrıştırmaz, `fileId` ile indirmeyi kendisi başlatır.
+
+### 4. İndirme: kısa ömürlü adres, taranmamış dosyada 409
+
+`GET /api/v1/files/{id}/download-url` → zarf içinde `url` + `ttlMinutes` (bugün **10 dk**,
+`GetFileDownloadUrlQueryHandler.TtlMinutes`). Adres presigned'dır ve imzalı query'sinde
+`Content-Disposition: attachment` taşır.
+
+`AnnouncementAttachment` politikası `RequiresVirusScan: true` olduğu için dosya
+**karantinada doğar** (`Quarantined`/`Pending`) — yükleme yanıtı hiçbir zaman `Clean`
+taşımaz, tarama commit sonrasına kuyruklanır. Tarama bitene kadar indirme
+**409 `FILES_NOT_SCANNED`** döner (`file.CanBeDownloaded` false → `FilesErrors.NotScanned`).
+Bu, ek dosya akışının en sık görülen geçici hata dalıdır ve arayüz onu gizlemez.
+
+Kısa ömürlü adres **hiçbir state'e girmez ve loglanmaz** —
+`dosya-yonetimi-spec.md` §5.3 madde 3 (istemci) ve §8.2 "KURAL — Redaction" (sunucu).
+İndirme için TanStack Query hook'u bilinçli olarak yazılmadı: önbelleğe alınan adres
+ikinci tıklamada süresi dolmuş bir bağlantı açardı.
+
+### 5. Ek yalnız detay ucunda dolar
+
+`AnnouncementDto.Attachment` **yalnız `GET /announcements/{id}`** yolunda doldurulur.
+Liste uçları (`GET /announcements`, `/inbox`, `/approvals`) ve yaşam döngüsü uçları
+(`:read`, `:withdraw`, `:approve`, …) `AnnouncementMapper.ToDto`'ya `attachment`
+**geçmez**, yani alan `null` döner. İstemci detayı bir yaşam döngüsü yanıtından yeniden
+render **etmemelidir** — ek kaybolur.
+
+Sonucu: **liste satırlarındaki ataç rozeti üretimde hiç görünmez** (yalnız mock'ta
+görünür). Ayrıntı ve düzeltme yolu için bkz. spec §17, C3 tablosu (C3-1).
+
+### 6. Mobilde yalnız görsel eklenebilir
+
+Mobil compose ekranı eki `expo-image-picker` ile (`mediaTypes: ['images']`) alır; yani
+**yalnız `jpg` / `png`**. `pdf` politikada izinlidir ama mobilden **seçilemez**:
+`expo-document-picker` paketi depoda yoktur (hiçbir `package.json`'da geçmez) ve
+eklenmesi **native yeniden derleme** gerektirir — C3 kapsamı dışında bırakıldı, backlog'a
+alındı (spec §17, C3-2).
+
+Sınır ekranda **açıkça** yazılır, sessizce geçilmez: *"Mobilden yalnız fotoğraf
+eklenebilir — .jpg ya da .png biçiminde, en fazla 10 MB. PDF eklemek için web arayüzünü
+kullanın."* Cümledeki uzantılar ve MB `packages/core` sabitlerinden türetilir, elle
+yazılmaz — bayatlayamazlar.
+
+**İstemci ön elemesi backend'le birebirdir**, gevşek değildir:
+`ANNOUNCEMENT_ATTACHMENT_EXTENSIONS = ["pdf", "jpg", "png"]`. `jpeg` bilinçli olarak
+**yoktur** — `UploadFileCommandHandler` uzantı ile content-type'ı **ayrı ayrı** arar
+(`!ExtensionAllowed(...) || !ContentTypeAllowed(...)`), dolayısıyla `image/jpeg` MIME'ıyla
+gelen bir `.jpeg` dosyası uzantıdan düşer. Ön elemede geçirmek reddi ortadan kaldırmaz,
+yalnız 10 MB yüklendikten **sonraya** erteler.
+
+---
+
 ## Bilinen Sınırlar
 
 Ölçülmüş ve bilinçli olarak kayda geçmiş sınırlar:
@@ -233,6 +319,8 @@ kullanıcıya "12 yayında" deyip 3 satır göstermek demektir.
 | `?page` taşması **envanterde 500** | `GetAnnouncementsQueryHandler`'da `.Skip((page - 1) * pageSize)` `int` aritmetiğinde sessizce taşar ve negatif OFFSET üretir; SQL Server bunu reddeder. **Gelen kutusunda düzeltildi**: `GetAnnouncementInboxQueryHandler` `skip`'i `long` üzerinden hesaplar ve `int.MaxValue`'ya kırpar (patolojik girdinin doğru yanıtı hata değil, boş sayfa). |
 | Gönderim raporunda **kanal kırılımı tek satır** | `DeliveryReportDto.Channels` yalnız `inApp` döner: sunucuda kayıtlı tek `INotificationChannel` odur. Gerçek kırılım teslim kanallarıyla (D fazı) gelecek. |
 | Ulaşılamayan alıcı listesi **kırpılır** | `DeliveryReportDto.Unreachable` en çok `UnreachableLimit` (100) satır döner (A3 D-4); kesin sayı `Total - Reached` ile türetilir. |
+| Liste uçlarında **ek bilgisi yok** | `AnnouncementDto.Attachment` yalnız `GET /announcements/{id}`'de dolar; üç liste ucu da `null` döner. Arayüzdeki ataç rozeti bu yüzden üretimde hiç görünmez (C3 §5). |
+| Mobilden **PDF eklenemez** | Ek seçici `expo-image-picker`'dır; `expo-document-picker` depoda yoktur ve eklenmesi native yeniden derleme ister (C3 §6). Politika pdf'i kabul eder, mobil ekran seçtiremez. |
 
 ---
 
