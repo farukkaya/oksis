@@ -17,6 +17,21 @@
 - **`oksis://` şeması yazılmaz.** Karar (2026-08-05): rol→rota çözümü istemcide yapılır. Push teslim zinciri (D fazı) gelmediği için harici derin bağlantının kaynağı da yoktur — `expo-notifications` depoda kurulu değildir (spec §16).
 - **INV-4 bağlayıcıdır:** `restore` koşulsuz `published` yapmaz, `StatusBeforeWithdraw`'a döner. Üç kol vardır: `published→published`, `expired→expired`, `scheduled→scheduled`.
 - **İstemcide yetki altyapısı yoktur** (`settings-page.tsx:73` — `const ro = false`). Moderasyon kartı izin sorgusuyla değil, **ucun 403'üyle** kendini kapatır.
+
+> **DÜZELTME (2026-08-09, C4 kapanışı) — bu kısıtın ilk yarısı fazla geniş, ikinci yarısı yanlış.**
+>
+> **Birinci yarı (yetki altyapısı yok):** üç ayağı da ölçüldü. `ContextView.permissions`
+> üretilen şemada **vardır** ve `useMyContext` ile çekilir; ama bugün onu okuyan sıfır
+> istemci kodu var (`packages/core/src/permissions/` altında `hasPermission` türü yardımcı
+> yok, grep → 0) ve MSW oturum mock'u alanı **boş** döndürür — yani bugün kurulacak bir
+> istemci izin kapısı mock'ta herkesi kilitler. Doğru ifade: *"izin verisi telde var, onu
+> okuyan kod ve kapı kuran altyapı yok."* Ayrıca satır referansı bir satır kayık
+> (`const ro = false` `:74`).
+>
+> **İkinci yarı (403'le kendini kapatır): ÇÜRÜDÜ.** Gerekçenin tam ölçümü Task 7/8'in kart
+> docblock'unun yanındadır (bkz. aşağıda, `ModerationCard` notu). Özet: okuma ucu
+> `announcements.moderate` **istemiyor**, `announcements.create` istiyor — yani öğretmen
+> 403 almaz, kartı **görür**. Kapı okumaya değil **yazmaya** kondu.
 - Komutlar:
   - Core testi: `npm run test --workspace=@workspace/core`
   - Uygulama doğrulama: `npm run typecheck --workspace=<paket>` · `npm run lint --workspace=<paket>`
@@ -360,6 +375,29 @@ git commit -m "feat(announcements): arsiv sekmesinden geri alma iptal edilebiliy
 
 `restoreMessage` doluyken ekranın üstünde `Note` ile gösterin; dokununca `null`'a çekin.
 
+> **DÜZELTME (2026-08-09, C4 kapanışı) — planın EKSİĞİ: mobilde onay katmanı öngörülmedi.**
+> Yukarıdaki akış `onPress` → `mutate` şeklindedir: **tek dokunuş, onay yok, uyarı yok.**
+> Web'de aynı eylem (Task 2) `RestoreModal`dan geçer ve modal gövdesinde açıkça
+> *"Geri çekme gerekçesi kayıttan silinir."* der.
+>
+> **Nasıl ölçüldü (2026-08-09):**
+> - `apps/mobile/.../announcement-detail-screen.tsx` içinde `Alert` geçen satır sayısı: **0**
+>   (dosyada onay diyaloğu yok; eylem doğrudan `Button` → `onRestore`).
+> - `apps/web/.../modals.tsx` `RestoreModal` OKUNDU: "Vazgeç" + onay düğmesi, gövdede
+>   "Geri çekme gerekçesi kayıttan silinir." cümlesi var.
+> - Veri kaybı gerçek: `oksis-api` `Announcement.Restore()` içinde `WithdrawReason = null`
+>   yazılır — geri alma, geri çekme gerekçesini **kalıcı olarak siler**.
+> - Kardeş eylem tutarsız: aynı mobil ekranda **"Geri çek"** bir `WithdrawSheet` +
+>   onay adımı ister; onun **iptali** hiçbir şey istemez.
+>
+> Bu bir plan kusurudur, uygulayıcı sapması değil — plan yalnız web ayağına onay yazdı.
+> Ürün kararı gerektiriyor ve spec §17'ye **I-5** olarak açık madde diye kaydedildi;
+> bu turda davranış bilinçli olarak DEĞİŞTİRİLMEDİ.
+>
+> Ayrıca **insan kararı (2026-08-06):** planın dayattığı `onError` metni
+> (`'Geri alınamadı. Yeniden deneyin.'`) 403'te asla başarılamayacak bir şey öneriyor;
+> mobil de web Task 2 ile aynı kaynağı (`mutationErrorDesc`) kullanır.
+
 - [ ] **Step 3: Doğrula ve commit**
 
 ```bash
@@ -638,6 +676,36 @@ export default async function AnnouncementDetailPage({
 }
 ```
 
+> **DÜZELTME (2026-08-09, C4 kapanışı) — ölçüldü, planın güvenlik gerekçesi YANLIŞTI.**
+> Docblock'un son cümlesi (*"bu rota yönetim yüzeyidir ve yetkisi olmayan çağıranda uç
+> zaten 403 döner"*) bir **güvenlik varsayımıdır** ve tutmuyor.
+>
+> **Nasıl ölçüldü (2026-08-09, `oksis-api` `master`):**
+> 1. `RolePermissionSeedData.Rows()` okundu. `announcements.view` **beş rolde** verilir:
+>    `SuperAdmin` + `SchoolAdmin` (`AllPermissionIds()` kataloğu üzerinden), `Teacher`,
+>    `Parent`, `Student` — dördü de rolün kendi `foreach` bloğunda açıkça. Yani veli ve
+>    öğrenci `[RequirePermission("announcements.view")]` kapısından **geçer**.
+>    (`VicePrincipal` ve `Counselor` MVP sonrasına ertelendi; seed'de 5 `SystemRole` var.)
+> 2. `GetAnnouncementByIdQueryHandler` okundu: gövdede **iki** `Forbidden()` vardır ve
+>    ikisi de yetkiyle ilgili değildir — biri tenant çözülemediğinde, biri çağıranın
+>    `Person` kaydı bulunamadığında. Alıcı olmayan / okuyucuya kapalı statüdeki çağıran
+>    `NotFound()` alır; docblock'un kendisi bunu "geri çekilmiş duyuru alıcıya **404**
+>    döner" diye zaten yazıyor.
+>
+> **Sonuç:** veli/öğrenci çağrısı 403 değil **200 ya da 404** döner. Plana birebir
+> uyulsaydı `/announcements/{id}` rotası veli, öğrenci ve öğretmene **yönetim konsolunu**
+> (onay kuyruğu sekmesi + okul geneli moderasyon ayarı) açardı.
+>
+> **Sevk edilen kod sapıyor ve sapma haklıdır:** rota `AnnouncementsPage`i doğrudan değil
+> **`AnnouncementsScreen`**i çağırır — rol kapısı orada, tek yerdedir
+> (`admin/secretary → yönetim konsolu`, `teacher → Duyurularım`, `parent/student → "şu an
+> mobil uygulamada"`). Planın "tek yüzey" gereği bozulmadı; yalnız yüzeyi seçen kapı
+> sunucudan istemciye taşındı.
+>
+> Aynı yanlış cümle spec §4'ün "yedi rolün tamamı" satırında ve modül belgesinin
+> `api-contracts.md` "Handler'daki Ek Daraltmalar" tablosunda da vardı; ikisi de bu
+> kapanışta düzeltildi.
+
 > Next.js 16'da `params` bir Promise'tir; `(dashboard)` altındaki mevcut dinamik rotaları (`attendance/sessions/[sessionId]/page.tsx`) örnek alın ve oradaki imza kalıbını birebir izleyin.
 
 - [ ] **Step 3: Bildirim satırlarını yönlendir**
@@ -716,6 +784,37 @@ Dosyanın sonuna bileşeni yazın:
  * İstemcide yetki altyapısı yok (`settings-page.tsx` → `ro = false`), bu yüzden
  * kart izin SORGUSUYLA değil, ucun 403'üyle kendini kapatır: `announcements.moderate`
  * izni olmayan kullanıcı okuma çağrısında zaten reddedilir.
+ */
+/*
+ * DÜZELTME (2026-08-09, C4 kapanışı) — ölçüldü, bu mekanizma ÇALIŞMIYOR.
+ *
+ * Nasıl ölçüldü (2026-08-09, `oksis-api` `master`):
+ *   1. `GetAnnouncementModerationQuery` üzerindeki öznitelik OKUNDU:
+ *      `[RequirePermission("announcements.create")]` — `moderate` DEĞİL. Sınıfın kendi
+ *      doc'u da bunu açıkça yazıyor ("İzni `announcements.create`'tir, `moderate` DEĞİL")
+ *      ve gerekçesini veriyor: öğretmen compose ekranında modu okumak ZORUNDADIR, yoksa
+ *      `requiresApproval` saf fonksiyonu girdisiz kalır.
+ *   2. `UpdateAnnouncementModerationCommand` üzerindeki öznitelik OKUNDU:
+ *      `[RequirePermission("announcements.moderate")]` — ve handler'da İKİNCİ bir kapı
+ *      daha var (`permissionReader.HasPermissionAsync("announcements.moderate")`).
+ *   3. `RolePermissionSeedData` SAYILDI: `announcements.create` → 2 rol (SchoolAdmin,
+ *      Teacher; SuperAdmin'de YOK, çünkü duyuru yazma izinleri bilinçli olarak
+ *      `AllPermissionIds()` kataloğu dışındadır). `announcements.moderate` → 1 rol
+ *      (SchoolAdmin).
+ *
+ * Sonuç: moderasyon yetkisi olmayan ÖĞRETMEN okuma çağrısında 403 ALMAZ — kartı
+ * GÖRÜR, hatta okur, ama kaydedemez. Kart kendini kapatmaz. Planın kurduğu tek
+ * savunma katmanı, korumak istediği kullanıcıda hiç devreye girmiyor.
+ *
+ * Sevk edilen kod sapıyor ve sapma haklıdır: kapı OKUMAYA değil YAZMAYA kondu —
+ * kaydetme denemesi 403 alınca kullanıcıya "bu ayarı değiştirme yetkiniz yok"
+ * denir. Hata metni de değişti: planın metni üç hata kolunda da (okuma hatası,
+ * ağ hatası, yetki hatası) "yetki gerekir" diyerek yalan söylüyordu.
+ *
+ * Bu yüzeyin bugünkü gerçek kullanıcısı da ölçüldü: öğretmen `apps/web`'de Ayarlar'a
+ * HİÇ giremiyor (nav sözleşmesinde öğretmen grubunda `/settings` yok), yani web'de
+ * senaryonun kullanıcısı yok; senaryo MOBİL öğretmen ekranında gerçekleşiyor (Task 8).
+ * Web'de 403-on-read'in tek gerçekçi adayı SUPER_ADMIN'dir (`create` onda yok).
  */
 function ModerationCard({ ro, api }: { ro: boolean } & Pick<SettingsTabProps, "api">) {
   const moderationQuery = useAnnouncementModeration()
@@ -827,7 +926,42 @@ git commit -m "feat(settings): duyuru moderasyon modu bildirim ayarlarindan yone
       )}
 ```
 
+> **DÜZELTME (2026-08-09, C4 kapanışı) — ölçüldü, bu cümle MOBİLDE YANLIŞ.**
+> Plan kartın altına *"Aynı ayar Duyurular ekranının Moderasyon sekmesinde de bulunur."*
+> yazdırıyordu. **Nasıl ölçüldü:** `apps/mobile/.../admin-announcements-screen.tsx` içindeki
+> `CHIPS` dizisi SAYILDI — **altı** çip var (`Tümü`, `Yayında`, `Zamanlanmış`, `Onayda`,
+> `Taslak`, `Arşiv`) ve aralarında **Moderasyon YOK**. O sekme yalnız web'de vardır
+> (`moderation-tab.tsx`). Cümle mobilde kullanıcıya var olmayan bir yere gitmesini
+> söylüyordu — bu fazın imza hatasının tam sınıfı: spec'ten plana, plandan ekran metnine
+> geçmiş, hiçbir yerde ölçülmemiş bir iddia.
+>
+> Cümle ölçülen gerçeğe göre yeniden yazıldı ve **görünür bir `Note` şeridine** kondu
+> (web'deki karşılığı `ATip` tooltip'idir; mobilde hover olmadığı için o metin zaten
+> hiç görünmezdi).
+
 > İki satır **tek seçimlidir** (radyo davranışı): seçili olana dokunmak bir şey değiştirmez, diğerine dokunmak modu değiştirir. `ToggleRow` bunu doğal olarak yapar çünkü `on` her zaman sunucudan gelen değerden okunur.
+
+> **DÜZELTME (2026-08-09, C4 kapanışı) — ölçüldü, cümle ÜÇ YÜZEYDE DE YANLIŞTI.**
+> *"Seçili olana dokunmak bir şey değiştirmez"* bir **dilek** olarak yazılmıştı, ölçüm
+> olarak değil. Üç yüzeyin üçünde de `onChange`/`onToggle` **koşulsuz** çalışıyordu:
+> mobil ayarlar kartı, web `ASeg` (`parts.tsx`) ve web `announcements-page.tsx`.
+> Görünürde hiçbir şey değişmezken uca PUT gidiyor ve başarı kolu
+> `qk.announcements.all()` **kök** anahtarını invalide ediyordu — yani seçili moda
+> dokunmak bütün duyuru sorgularını yeniden çektiriyordu.
+>
+> **İnsan kararı (2026-08-06, bağlayıcı):** seçili satıra dokunmak hiçbir şey yapmaz;
+> koruma eklenir ve **web tarafı da ölçülüp eşitlenir**.
+>
+> **Sevk edilen çözüm merkezîdir, ekran bazlı değil:** karar `packages/core`'a
+> `shouldSaveModerationChange(next, current)` olarak taşındı ve testlendi (tanım kümesi
+> 2×2 = 4 girdi, iki test dördünü de sayıyor; gözden geçirici kendi mutasyonunu koştu,
+> 2 test öldü). Üç yazma yüzeyi de aynı yüklemi okur; `moderation-tab.tsx`'in `disabled`
+> prop'u da aynı yüklemden beslenir — görsel affordance ile gerçek karar ayrışamaz.
+>
+> **Merkezileştirme ÜÇÜNCÜ bir gerçek hata buldu:** `announcements-page.tsx`'in
+> `onChange`'i de koşulsuz `mutate` çağırıyordu ve oradaki `disabled` yalnız görseldi,
+> kararı korumuyordu. Ekran bazlı bir düzeltme yapılsaydı bu yüzey **sessizce bozuk**
+> kalacaktı — CLAUDE.md'nin "yamalama kabul değil" kuralının ölçülmüş bir örneği.
 
 - [ ] **Step 2: Doğrula ve commit**
 
@@ -856,3 +990,28 @@ Uçtan uca duman testi (gerçek backend):
 Sonra `oksis` deposunda spec §14 tablosunda üç satır **Yapıldı** olarak işaretlenir: `restore` bağlanması · Moderasyon ↔ Ayarlar bağı · Veli/öğrenci detay derin bağlantısı. §8.4'e düzeltme notu düşülür:
 
 > **DÜZELTME (2026-08-05).** `oksis://parent|student/announcements/:id` biçimi **yazılmadı**. Backend bildirime tek ve rolden bağımsız bir yol yazar (`/announcements/{id}`) ve `INotificationEnqueuer.Enqueue` alıcı başına farklı bağlantı taşımadığı için rol ayrımı sunucuda üretilemez. Ayrım istemciye alındı: `resolveNotificationTarget` (packages/core) rolü okuyup okuyucu/yönetim yüzeyini seçer. Web'de `/announcements/[id]` rotası C4'te açıldı.
+
+---
+
+## Kapanış — ne yapıldı (2026-08-09)
+
+Dal `feature/announcements-c4`, HEAD `1fae5f2`; sekiz görev + bütün-dal gözden geçirmesi +
+tek düzeltme dalgası tamam, dal birleştirmeye hazır (dal **birleştirilmedi**, karar insanda).
+
+**Yukarıdaki §8.4 notu yazılmadan ÖNCE yeniden ölçüldü** (kapanış belgeleri de §16'ya
+tabidir; bu fazın imza hatası tam olarak belgelerde doğdu):
+
+| İddia | Nasıl ölçüldü | Sonuç |
+|---|---|---|
+| `oksis://…` biçimi yazılmadı | `oksis-api` `src/` altında `grep -rn "oksis://" --include="*.cs"` | **0 eşleşme** — doğru |
+| Backend tek ve rolden bağımsız yol yazar | `INotificationEnqueuer.Enqueue` imzası okundu: tek `string? deepLink`, tek `IReadOnlyList<Guid> recipientAccountIds` | Alıcı başına farklı bağlantı **taşınamaz** — doğru |
+| `resolveNotificationTarget` rolü okuyup yüzey seçer | `packages/core/src/notifications/logic.ts` okundu: imza `(deepLink, role: RoleKey \| undefined)`; `if (!role) return null`; detay kolu `announcementRoleSurface(role) === "inbox" ? "reader" : "manager"` | Doğru — üstelik **rol çözülmemişse hedef üretmiyor** |
+| Web'de `/announcements/[id]` rotası açıldı | `apps/web/app/(dashboard)/announcements/` altında `page.tsx` dosyaları listelendi: `page.tsx`, `[id]/page.tsx`, `approvals/page.tsx` | Doğru — **üç** rota |
+
+Not eklendiği hâliyle geçerlidir; §14'ün üç satırı (`restore` bağlanması · Moderasyon ↔
+Ayarlar bağı · Veli/öğrenci detay derin bağlantısı) **Yapıldı** olarak işaretlendi.
+
+C4 boyunca ölçümde çürüyen dört gerekçe ve planın bir eksiği bu dosyada, cümlelerin
+yaşadığı yerlere **DÜZELTME** notu olarak işlendi; ölçülerek bulunan ve kapsam dışı
+bırakılan işler spec §17'nin **C4 tablosuna** (C4-1…C4-20), karar bekleyen iki madde ise
+aynı bölümün **açık ürün kararları** listesine yazıldı.
