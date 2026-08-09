@@ -426,9 +426,16 @@ oksis://student/announcements/:announcementId
 > Web'de `/announcements/[id]` rotası C4'te açıldı; `/announcements` altında bugün üç
 > rota vardır (`page.tsx`, `[id]/page.tsx`, `approvals/page.tsx` — sayıldı).
 >
-> **DYR-F-18 bugün bir yerde ihlal ediliyor:** öğretmen **alıcı** olarak aldığı
-> `/announcements/{id}` bildiriminde web'de detaya değil ara listeye iniyor. Ayrıntı ve
-> üç seçenek için bkz. §17 → açık ürün kararları, **I-2**.
+> **DYR-F-18 web'de hâlâ bir yerde ihlal ediliyor** — ama artık dar bir yerde. C4
+> kapanışında yüzey seçimi bildirim türüne bağlandı: öğretmenin **okuyucu** şapkasıyla
+> aldığı bildirimler (`Published`/`Amended`) web'de artık tıklanamaz (yanlış yere
+> götürmektense hiç götürmez). Kalan ihlal **yayınlayan** şapkasında: `Approved`,
+> `Withdrawn`, `ScheduledExecuted`, `ScheduleFailed` web'de detaya değil ara listeye
+> iniyor, çünkü **web'de öğretmenin duyuru detay yüzeyi hiç yoktur** (ölçüldü:
+> `TeacherAnnouncementsPage` yalnız "yeni duyuru formu" ve "Duyurularım tablosu"
+> durumlarını tanır; detay çizen kol, parametre ya da tıklanabilir satır yok).
+> En ağırı `ScheduledExecuted`: o bildirimin var oluş sebebi gönderim raporudur ve
+> rapora web'den ulaşılamıyor. Kapatmak **yeni bir ekran** demektir → §17 → `C4-21`.
 
 ---
 
@@ -589,12 +596,12 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 
 | Boşluk | Karar |
 |---|---|
-| `restore` bağlanması | ✅ **Yapıldı — C4 (2026-08-09).** Web: Arşiv sekmesinde satır eylemi + `RestoreModal` (onay + "gerekçe silinir" uyarısı). Mobil: duyuru detayının işlem menüsünde. Eylemin adı tek metindir — **"Geri çekmeyi iptal et"** (`restoreActionLabel`, core), beş yüzeyde de aynı. Sonuç cümlesi de core'dadır (`restoreOutcomeMessage`): INV-4 gereği `restore` koşulsuz `published` yapmaz, `StatusBeforeWithdraw`'a döner — üç kolun üçü de ayrı cümle söyler. ⚠️ Mobil kolda **onay katmanı yok** (I-5) |
+| `restore` bağlanması | ✅ **Yapıldı — C4 (2026-08-09).** Web: Arşiv sekmesinde satır eylemi + `RestoreModal` (onay + "gerekçe silinir" uyarısı). Mobil: duyuru detayının işlem menüsünde. Eylemin adı tek metindir — **"Geri çekmeyi iptal et"** (`restoreActionLabel`, core), beş yüzeyde de aynı. Sonuç cümlesi de core'dadır (`restoreOutcomeMessage`): INV-4 gereği `restore` koşulsuz `published` yapmaz, `StatusBeforeWithdraw`'a döner — üç kolun üçü de ayrı cümle söyler. **Mobil kolda da onay vardır** (`RestoreSheet`, C4 kapanışı 2026-08-09): kardeş `WithdrawSheet` kalıbı, gövdede üç kolun anlatımı ve *"geri çekme gerekçesi kayıttan silinir"* uyarısı. Uyarı metni web modalıyla **tek kaynaktan** gelir (`restoreNotice`, core) — iki yüzey ayrışamaz |
 | Sayfalama (`pageSize` 200 sabit) | ✅ **Yapıldı — C2 (2026-08-05).** Tam sunucu sayfalaması: filtre/arama/sayaçlar sunucuya taşındı, `GET /announcements/summary` açıldı (18. operasyon), gelen kutusu da sayfalandı (orada tavan bile yoktu) |
 | Ek dosya yükleme akışı | ✅ **Yapıldı — C3 (2026-08-05); mobilde yalnız görsel.** Tek adımlı proxy yükleme (§7): web compose gerçekten yüklüyor, web + mobil detay ve mobil okuyucu indiriyor. Mobil compose **yalnız jpg/png** alır — `expo-document-picker` depoda yok, eklenmesi native yeniden derleme gerektirir; sınır ekranda açıkça yazılıdır ("PDF eklemek için web arayüzünü kullanın") |
 | Moderasyon ↔ Ayarlar bağı | ✅ **Yapıldı — C4 (2026-08-09).** Aynı uç, artık **üç** yüzey: web Ayarlar › Bildirimler, web Duyurular › Moderasyon, mobil Ayarlar › Bildirim Ayarları. Aynı query anahtarını paylaştıkları için biri değişince diğeri anında güncellenir. Yazma kararı core'da ve testlidir (`shouldSaveModerationChange`) — seçili moda dokunmak uca istek göndermez; etiketler de core'dan (`announcementModerationLabel`). **Kapı okumada değil yazmadadır:** okuma ucu `announcements.create` ister (öğretmen modu okumak zorundadır), yazma `announcements.moderate` — öğretmen kartı görür, kaydedemez |
-| Veli/öğrenci detay derin bağlantısı (mobil) | ✅ **Yapıldı — C4 (2026-08-09); ama `oksis://` ile DEĞİL.** Bkz. §8.4 düzeltme notu: backend rolden bağımsız tek yol yazar, ayrım istemcide `resolveNotificationTarget` + `announcementRoleSurface` ile yapılır. Veli/öğrenci `announcements/read/[id]` okuyucu ekranına gider (gönderim raporu, denetim izi ve "Geri çek" yoktur); yönetim `announcements/[id]/index`e. Karşılığı olmayan bildirim adresleri `null`a çözülür ve satır tıklanamaz kalır — kullanıcı 404 ya da "Unmatched Route" görmez |
-| Gönderim raporunda kanal tablosunun gizlenmesi | Yapılır (§10) |
+| Veli/öğrenci detay derin bağlantısı (mobil) | ✅ **Yapıldı — C4 (2026-08-09); ama `oksis://` ile DEĞİL.** Bkz. §8.4 düzeltme notu: backend rolden bağımsız tek yol yazar, ayrım istemcide `resolveNotificationTarget` ile yapılır. Veli/öğrenci `announcements/read/[id]` okuyucu ekranına gider (gönderim raporu, denetim izi ve "Geri çek" yoktur); yönetim `announcements/[id]/index`e. Karşılığı olmayan bildirim adresleri `null`a çözülür ve satır tıklanamaz kalır — kullanıcı 404 ya da "Unmatched Route" görmez.<br><br>**C4 kapanışında yüzey seçimi ROLDEN değil BİLDİRİM TÜRÜNDEN'e geçti** (`ANNOUNCEMENT_NOTIFICATION_HAT` + `announcementDetailSurface`, core'da testli). Ölçüldü: sekiz duyuru türünün her biri tek bir şapkaya düşüyor — `Published`/`Amended` alıcı kümesini `AnnouncementRecipients`'tan okur (**okuyucu**), kalan beşi tek elemanlı `[PublisherId]`'ye gider (**yayınlayan**), `SubmittedForApproval` izin zincirinden gelir (**onaycı**, ayrı kol). Böylece **başkasının duyurusunu alan öğretmen** artık yönetim ekranına düşmüyor. `kind` parametresi zorunludur — unutulan çağrı yeri typecheck'te yakalanır; bilinmeyen tür `null`a çözülür. Backend'e dokunulmadı (karşılaştırma: `Enqueue` imzasına alan eklemek 24 çağrı yeri + Hangfire job imzası + 18 test dosyası olurdu) |
+| Gönderim raporunda kanal tablosunun gizlenmesi | ✅ **Yapıldı.** `showsChannelBreakdown(report)` kapısı her iki uçta: tek kanal varken tablo çizilmiyor, başlık "Gönderim" oluyor ve altına *"Bu sürümde duyuru yalnız uygulama içinde iletilir; kanal kırılımı yoktur."* yazılıyor (web `detail.tsx`, mobil `announcement-detail-screen.tsx` — ikisi de ölçüldü 2026-08-09) |
 | Şablon CRUD — **backend** | **A'ya taşındı** (K-6); A3'te dört uç da yazıldı |
 | Şablon CRUD — **arayüz** | **C'de yapılır.** B fazı (2026-08-04) API katmanını bağladı: `createAnnouncementTemplate` / `updateAnnouncementTemplate` / `deleteAnnouncementTemplate` + üç hook + üç MSW handler. Web `templates-tab.tsx` ve mobil `templates-screen.tsx` hâlâ **salt okunur listedir** — oluştur/düzenle/sil düğmesi yoktur. Tasarım handoff'u gelmeden ekran icat edilmedi (CLAUDE.md handoff kuralı) |
 | **Web veli/öğrenci okuma yüzü** | **Kapsam dışı** (K-7) — tasarım çizilmemiş. Yeniden kullanılabilecek çekirdek (`filterInbox`, `partitionInboxByValidity`, `countUnreadByChild`) hazırdır; `handoff-web` ile teslim geldiğinde bağlanır |
@@ -693,14 +700,23 @@ kendi ürünüydü** — satır numarası, düzelttiği metnin ömründen kısa 
 | **C4-19** | **Ölçüm günlüğü ve rapor hijyeni** | Bu fazın imza hatasının artıkları. **(a)** Kod içi ölçüm günlükleri kalıcı docblock'larla karışmış durumda ve satır numarası taşıdıkları için bayatlamaya açık (mobil duyuru detayının başlık yorumu C4'te 11 satır büyüdü). **(b)** SDD görev raporlarında düzeltilmemiş üç bayat metin var: fix ÖNCESİ ölçüm yöntemini hâlâ anlatan bir seçici, "7 bildirim satırı" derken görüntüde 4 satır olan bir sayım, ve yaklaşık verilmiş bir emsal dosya yolu. **(c)** `packages/core/.../notifications/logic.test.ts`te bir zayıf negatif iddia (`not.toContain("tarih")`) mutantı sağ bırakıyor. **Kural olarak yazıldı:** kalıcı belgede satır numarası yerine sembol adı; numara zorunluysa yanına ölçüm tarihi |
 | **C4-20** | **Mock oturumunda rol tam sayfa gezintide kayıyor (C3-6'nın web ayağı)** | C3-6 bunu Expo web için kaydetmişti. C4'ün duman testlerinde **web'de de** görüldü: adres çubuğundan yapılan tam sayfa gezintide oturum yönetici profiline dönüyor. Bu yüzden C4'ün bütün rol değişimleri **uygulama içinden** yapıldı. Görsel doğrulama yapan her turu yavaşlatıyor ve rol duyarlı davranışın yanlış ölçülmesine açık kapı bırakıyor |
 
-### C4 kapanışında AÇIK KALAN ÜRÜN KARARLARI
+### C4 kapanışında (2026-08-09) eklenen backlog
 
-Bunlar backlog **değildir** — kullanıcının kararını bekleyen iki sorudur. Kod bilinçli
-olarak dokunulmadan bırakıldı; her ikisinde de bugünkü davranış değişmedi.
+| # | Konu | Ölçüm |
+|---|---|---|
+| **C4-21** | 🔶 **Web'de öğretmen duyuru DETAY yüzeyi yok — DYR-F-18'in kalan ihlali** | `TeacherAnnouncementsPage` yalnız iki durum tanır: "yeni duyuru formu" ve "Duyurularım tablosu". Detay çizen kol, alabileceği parametre, hatta tıklanabilir tablo satırı bile yok; detay bileşenlerinin (gönderim raporu, denetim izi, geri çekme) hiçbiri ithal edilmiyor. Sonuç: öğretmenin **yayınlayan** şapkalı bildirimleri web'de ara listeye iniyor. Etki ölçüldü: beş türün **dördü** (`Approved`, `Withdrawn`, `ScheduledExecuted`, `ScheduleFailed`; `Rejected` etkilenmiyor, adresi zaten liste). En ağırı `ScheduledExecuted` — bildirimin var oluş sebebi gönderim raporudur ve rapora web'den ulaşılamıyor. **Gerileme değil** (önce de aynıydı; C4 okuyucu kolunu ayırarak iyileştirdi), ama kapatmak **yeni bir ekran** = ürün kararı. Karar ne olursa olsun DYR-F-18'e karşılık ya da istisna yazılmalı. Obsidian karar defterinde `K-05` / `E-07` |
+| **C4-22** | **Bildirim türü sözleşmesinin testi yok** | Backend `NotificationKind`te **sekiz** duyuru türü var (16–23); istemcinin `NOTIFICATION_KIND_CONFIG`i **yedi** taşıyordu ve `AnnouncementScheduleFailed` satırda jenerik "Bildirim" + zil olarak görünüyordu. C4 kapanışında elle kapatıldı, ama iki tarafın eşitliğini koruyan bir sözleşme testi yok — backend'e dokuzuncu tür eklendiğinde aynı sessiz düşüş tekrarlanır. Aynı risk `ANNOUNCEMENT_NOTIFICATION_HAT` tablosu için de geçerli |
+| **C4-23** | **`modules/announcements/` dokümanlarında 107 `{{TBD}}` duruyor** | §15 "~110 `{{TBD}}` bu belgeden beslenerek doldurulur" diyordu. Ölçüldü (2026-08-09): dokuz dosyada **107** `{{TBD}}` hâlâ yerinde. C3 ve C4 yalnız `api-contracts.md`ye ekleme yaptı. `permission-matrix.md` ve `notification-matrix.md` ✅ tamamlandı — kalan iş bu dokuz modül dokümanı |
 
-#### I-2 — Öğretmen **alıcı** olduğunda `surface: "manager"` sözleşmesi
+### C4 kapanışında sorulan ÜRÜN KARARLARI — ✅ ikisi de karara bağlandı (2026-08-09)
 
-Aynı sözleşme **iki katmanda iki farklı yanlış** üretiyor ve ikisi de ölçüldü.
+Aşağıdaki iki soru bütün-dal gözden geçirmesinde çıktı, kullanıcıya sunuldu ve
+**ikisi de aynı gün karara bağlanıp uygulandı.** Sorunun kendisi tarihsel kayıt olarak
+duruyor; kararlar her bölümün sonundadır.
+
+#### I-2 — Öğretmen **alıcı** olduğunda `surface: "manager"` sözleşmesi → ✅ ÇÖZÜLDÜ
+
+Aynı sözleşme **iki katmanda iki farklı yanlış** üretiyordu ve ikisi de ölçüldü.
 
 **Nasıl oluşuyor:** yayın bildiriminin alıcıları kova listesinden gelir ve
 `{parent, teacher, student}` karışıktır — yani bir öğretmen, **başkasının** duyurusunun
@@ -719,12 +735,32 @@ alıcısı olabilir (müdürün tüm personele duyurusu). Bildirim `/announcemen
   iniyor — **DYR-F-18'in doğrudan ihlali.** Bu ayak hiçbir görev gözden geçirmesinde
   görünmemişti; yalnız bütününe bakınca çıktı.
 
-**Üç seçenek:** (1) `NotificationTarget`a bir `recipient` kolu eklemek — sözleşme beşinci
-kolunu alır; (2) öğretmeni bu bildirimde okuyucu yüzeyine yollamak — ama öğretmenin
-mobilde okuyucu ekranı `announcements-inbox` değil, karşılığı ölçülmeli; (3) bugünkü hâli
-kabul edip **belgelemek** — o zaman DYR-F-18'e bir istisna yazılması gerekir.
+> ### ✅ KARAR (2026-08-09) — yüzey ROLDEN değil BİLDİRİM TÜRÜNDEN seçilir
+>
+> Kullanıcı "backend kapsam dışı değil" dedi; bunun üzerine sekiz duyuru bildirimi
+> handler'ının alıcı kümesi kaynağında okundu. **Sonuç: backend'e dokunmaya gerek yoktu** —
+> tür, alıcının şapkasını zaten kesin söylüyor (`Published`/`Amended` → alıcı kümesi
+> `AnnouncementRecipients`; kalan beşi → `[PublisherId]`; `SubmittedForApproval` → izin
+> zinciri). Ve `kind` istemcide zaten vardı; `resolveNotificationTarget` onu almıyordu.
+>
+> **Uygulanan:** `ANNOUNCEMENT_NOTIFICATION_HAT` + `announcementDetailSurface`
+> (`packages/core`, testli). `kind` parametresi **zorunlu** — unutulan çağrı yeri
+> typecheck'te yakalanır. Bilinmeyen tür `null`a çözülür (satır tıklanamaz), testli.
+> Web'de öğretmen + okuyucu şapkası → satır tıklanamaz (K-7 gereği web'de öğretmen okuma
+> yüzü yok). Veli/öğrenci/yönetici davranışı **değişmedi** — iki erken dönüş türe hiç
+> bakmıyor ve ikisi de mutasyonla bağlı.
+>
+> **Karşılaştırma (ölçüldü):** backend'de netleştirmek `Enqueue` imzasında 24 çağrı yeri +
+> Hangfire job imzası + 18 test dosyası demekti; istemci çözümü tek parametre.
+>
+> **Yan bulgu:** `AnnouncementScheduleFailed` istemcide hem şapka tablosunda hem
+> `NOTIFICATION_KIND_CONFIG`te eksikti (backend 8 / istemci 7) — o bildirim satırda jenerik
+> "Bildirim" olarak görünüyordu. İkisi de kapatıldı. Bir sözleşme testi yok → `C4-22`.
+>
+> **Kalan:** web'de öğretmenin **yayınlayan** şapkası hâlâ ara listeye iniyor, çünkü web'de
+> öğretmen detay yüzeyi hiç yok. Yeni ekran gerektirdiği için ayrıldı → `C4-21`.
 
-#### I-5 — Mobil geri alma onaysız ve sessiz
+#### I-5 — Mobil geri alma onaysız ve sessiz → ✅ ÇÖZÜLDÜ
 
 `WithdrawReason` **veri kaybıdır**: `oksis-api` `Announcement.Restore()` içinde
 `WithdrawReason = null` yazılır, yani geri çekme gerekçesi kayıttan kalıcı olarak silinir.
@@ -736,4 +772,20 @@ kabul edip **belgelemek** — o zaman DYR-F-18'e bir istisna yazılması gerekir
   ister; onun **iptali** hiçbir şey istemez.
 
 Planın kendi kusuru: onay katmanı yalnız web ayağına yazıldı (bkz. plan, Task 3 düzeltme
-notu). Karar: mobile de onay eklensin mi, yoksa web'inki mi kaldırılsın?
+notu).
+
+> ### ✅ KARAR (2026-08-09) — mobile de onay eklendi
+>
+> `RestoreSheet` — kardeş `WithdrawSheet` kalıbı (aynı `Sheet`, aynı iki düğmeli altlık,
+> "Vazgeç" solda ghost). Gövde üç kolun ne olacağını ve *"geri çekme gerekçesi kayıttan
+> silinir"* uyarısını taşır. Cümleler web modalıyla **tek kaynaktan** gelir
+> (`restoreNotice`, core) — iki yüzey ayrışamaz. `restorePending` davranışı korundu.
+>
+> Metnin her parçası backend'de ölçüldü: `Restore()` → `Status = previous` (koşulsuz
+> `published` değil); `Withdraw` yalnız `Published/Expired/Scheduled`tan çalışır, yani
+> dönülebilecek statü **tam olarak** o üç kol; `WithdrawReason = null` gerçekten yazılır ve
+> arşiv satırındaki "Gerekçe:" satırı bu yüzden kaybolur (ekran görüntüsüyle kanıtlandı).
+>
+> Gözden geçirmede bir yan kusur daha çıktı ve düzeltildi: "Vazgeç" düğmesine konan
+> `disabled={pending}` hem etkisizdi (sheet arka plandan ve Android geri tuşundan zaten
+> kapanıyordu) hem de kardeş kalıptan sapıyordu — kaldırıldı, `WithdrawSheet` ile hizalandı.
