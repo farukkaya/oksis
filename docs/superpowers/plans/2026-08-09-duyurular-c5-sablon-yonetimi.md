@@ -34,7 +34,7 @@
 |---|---|
 | **K1** | Şablonlar **kişiseldir**. Yönetici de öğretmen de yalnız kendi şablonunu görür ve yönetir. Ortak/okul şablonu kavramı yoktur. |
 | **K2** | Duyuru görünürlüğü şablondan farklıdır: yönetici tüm duyuruları görür ve işlem yapar, öğretmen yalnız kendininkini; şablonda ikisi de yalnız kendininkini. |
-| **K3** | Şablon **güncelleme** yalnız Şablonlar sekmesinde/ekranındadır. "Şablon olarak kaydet" **her zaman YENİ** şablon üretir. |
+| **K3** | Şablon **güncelleme** yalnız Şablonlar sekmesinde/ekranındadır. "Şablon olarak kaydet" **her zaman YENİ** şablon üretir.<br>⚠️ **Ölçüm düzeltmesi (2026-08-10, Görev 10):** tasarımın çakışma uyarısındaki *"ikinci bir kayıt oluşturur"* cümlesi **yanlıştır**. Benzersiz indeks `(SchoolId, CreatedBy, Name)` sahibe indiği için aynı adla ikinci şablon **oluşmaz** — uç `Announcements.Template.NameDuplicate` (409) döner. Doğru metin: *"Bu adla kaydedemezsiniz — farklı bir ad verin ya da o şablonu Şablonlar sekmesinden düzenleyin."* |
 | **K4** | Kullanım sayacı çalıştırılacak. |
 | **K5** | *(2026-08-09, bu planın ölçümü üzerine)* Ad benzersizliği ve metin sınırı **tek migration ile** düzeltilir: benzersiz indeks `(SchoolId, CreatedBy, Name)`, `Description` 500 → 4000. |
 | **K6** | *(2026-08-09)* Kullanım sayacı **yalnız duyuru gerçekten yayına çıkınca** artar — taslak, zamanlanmış ve onay bekleyen artırmaz. Bu, sayacın **üç** yayın noktasına da bağlanmasını gerektirir. |
@@ -1869,9 +1869,8 @@ git commit -m "feat(announcements): web sablon sekmesi tam crud oldu ve sablon m
                   <DuyIcon name="alertTriangle" size={17} />
                   <div>
                     <b>“{templateClash.name}”</b> adında şablonunuz zaten var
-                    ({templateClash.usageCount} kez kullanıldı). Buradan kaydetmek onu
-                    güncellemez, ikinci bir kayıt oluşturur — güncellemek için Şablonlar
-                    sekmesinden düzenleyin.
+                    ({templateClash.usageCount} kez kullanıldı). Bu adla kaydedemezsiniz —
+                    farklı bir ad verin ya da o şablonu Şablonlar sekmesinden düzenleyin.
                   </div>
                 </div>
               ) : null}
