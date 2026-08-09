@@ -158,6 +158,42 @@ Yeniden adlandırma yine de **gerçek bir erişimi iptal etmez**, ama gerekçe f
 
 Migration `read`/`manage`'i siler, sekizini ekler, `RolePermissionSeedData`'yı bu dağılıma göre yazar. `permission-matrix.md` aynı commit'te düzeltilir.
 
+> **DÜZELTME (2026-08-09, C4 kapanışı) — "yedi rolün tamamı" HEDEF dağılımdır, seed'de
+> BEŞ rol vardır. Bu cümle C4'te bir güvenlik gerekçesine dönüştü.**
+>
+> **Nasıl ölçüldü (2026-08-09, `oksis-api` `master`):** `RolePermissionSeedData.Rows()`
+> baştan sona okundu ve `announcements.view` satırları sayıldı:
+>
+> | Rol | Nereden gelir |
+> |---|---|
+> | `SuperAdmin` | `AllPermissionIds()` kataloğu (`Rows()`in ilk döngüsü) |
+> | `SchoolAdmin` | aynı katalog |
+> | `Teacher` | Teacher bloğunda açık satır |
+> | `Parent` | Parent bloğunda açık satır |
+> | `Student` | Student bloğunda açık satır |
+>
+> **Toplam: 5.** `SchoolStaff` ve `Secretary` **seed'lenmiş rol değildir** — bu, §17'nin
+> ilk tablosunda zaten yazılı bir riskti (*"yalnız 5 `SystemRole` var"*), ama bu satır
+> ona göre güncellenmemişti. `VicePrincipal` ve `Counselor` de MVP sonrasına ertelendi
+> (seed dosyasındaki kendi notlarıyla). Yani metin **hedef tasarımı**, seed **bugünkü
+> gerçeği** anlatıyor ve ikisi arasındaki fark hiçbir yerde işaretlenmemişti.
+>
+> **Neden zararlı oldu:** cümle plana *"bu rota yönetim yüzeyidir ve yetkisi olmayan
+> çağıranda uç zaten 403 döner"* diye geçti. Ölçüldü, yanlış:
+> `GetAnnouncementByIdQueryHandler`'da **iki** `Forbidden()` vardır ve ikisi de yetkiyle
+> ilgili değildir (biri tenant çözülemediğinde, biri çağıranın `Person` kaydı
+> bulunamadığında); alıcı olmayan çağıran **`NotFound()`** alır. Veli/öğrenci `view`
+> iznini taşıdığı için kapıdan geçer ve 200/404 alır. Plana birebir uyulsaydı web'de
+> `/announcements/{id}` rotası veli, öğrenci ve öğretmene **yönetim konsolunu** açardı.
+> Rota bu yüzden rol kapılı bir bileşene (`AnnouncementsScreen`) bağlandı.
+>
+> **Doğru ifade:** *"`announcements.view` bugünkü seed'de beş rolde vardır (SuperAdmin,
+> SchoolAdmin, Teacher, Parent, Student); Secretary ve SchoolStaff seed'lendiğinde yediye
+> çıkar. İzin ucu AÇAR — yüzey ayrımını sunucu YAPMAZ, istemci yapar."*
+> Aynı düzeltme `modules/announcements/api-contracts.md` "Handler'daki Ek Daraltmalar"
+> tablosuna da işlendi. Backend docblock'ları hâlâ "yedi rolün tamamında" diyor —
+> §17, **C4-6**.
+
 ### 4.1 Kapı nasıl kurulur
 
 Kapı **komut/sorgu sınıfının özniteliğidir, controller'ın değil.** `AuthorizationBehavior` (MediatR pipeline) `[RequirePermission]` özniteliklerini `TRequest` tipinden okur, `IPermissionReader.HasPermissionAsync` ile doğrular, reddederse `ForbiddenException` atar ve izin adını gövdeye sızdırmaz. Birden çok öznitelik **VE**'lenir. Attendance bu kalıbı bugün kullanmaktadır:
@@ -373,6 +409,27 @@ oksis://parent/announcements/:announcementId
 oksis://student/announcements/:announcementId
 ```
 
+> **DÜZELTME (2026-08-09, C4 kapanışı).** Yukarıdaki `oksis://parent|student/…` biçimi
+> **yazılmadı** ve yazılmayacak. Ölçüldü (`oksis-api` `src/` altında `oksis://` araması →
+> **0 eşleşme**): backend bildirime **tek ve rolden bağımsız** bir yol yazar
+> (`/announcements/{id}`). Yazamazdı da — `INotificationEnqueuer.Enqueue` imzası tek bir
+> `string? deepLink` alıp onu `recipientAccountIds` listesinin **tamamına** yazar; alıcı
+> başına farklı bağlantı taşıyamaz. Üstelik bir duyurunun hedefi **kova listesidir** ve
+> kovalar rol karışıktır, yani sunucunun ayıracak bilgisi de yoktur.
+>
+> **Ayrım istemciye alındı.** `resolveNotificationTarget` (`packages/core`) rolü okuyup
+> okuyucu/yönetim yüzeyini seçer; rol → yüzey tablosu `announcementRoleSurface`ta tek
+> yerdedir ve testlidir. Rol henüz **çözülmemişse** (`undefined`) hedef üretilmez — satır
+> o an tıklanamaz kalır, ama yanlış bir yere de götürmez (mobilde `PORTAL_ROLE_FALLBACK`
+> yüzünden veliyi yönetim detayına atan bir yarış bu şekilde kapandı).
+>
+> Web'de `/announcements/[id]` rotası C4'te açıldı; `/announcements` altında bugün üç
+> rota vardır (`page.tsx`, `[id]/page.tsx`, `approvals/page.tsx` — sayıldı).
+>
+> **DYR-F-18 bugün bir yerde ihlal ediliyor:** öğretmen **alıcı** olarak aldığı
+> `/announcements/{id}` bildiriminde web'de detaya değil ara listeye iniyor. Ayrıntı ve
+> üç seçenek için bkz. §17 → açık ürün kararları, **I-2**.
+
 ---
 
 ## 9. Job'lar
@@ -532,11 +589,11 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 
 | Boşluk | Karar |
 |---|---|
-| `restore` bağlanması | Yapılır — uç ve hook hazır, hiçbir ekrana bağlı değil |
+| `restore` bağlanması | ✅ **Yapıldı — C4 (2026-08-09).** Web: Arşiv sekmesinde satır eylemi + `RestoreModal` (onay + "gerekçe silinir" uyarısı). Mobil: duyuru detayının işlem menüsünde. Eylemin adı tek metindir — **"Geri çekmeyi iptal et"** (`restoreActionLabel`, core), beş yüzeyde de aynı. Sonuç cümlesi de core'dadır (`restoreOutcomeMessage`): INV-4 gereği `restore` koşulsuz `published` yapmaz, `StatusBeforeWithdraw`'a döner — üç kolun üçü de ayrı cümle söyler. ⚠️ Mobil kolda **onay katmanı yok** (I-5) |
 | Sayfalama (`pageSize` 200 sabit) | ✅ **Yapıldı — C2 (2026-08-05).** Tam sunucu sayfalaması: filtre/arama/sayaçlar sunucuya taşındı, `GET /announcements/summary` açıldı (18. operasyon), gelen kutusu da sayfalandı (orada tavan bile yoktu) |
 | Ek dosya yükleme akışı | ✅ **Yapıldı — C3 (2026-08-05); mobilde yalnız görsel.** Tek adımlı proxy yükleme (§7): web compose gerçekten yüklüyor, web + mobil detay ve mobil okuyucu indiriyor. Mobil compose **yalnız jpg/png** alır — `expo-document-picker` depoda yok, eklenmesi native yeniden derleme gerektirir; sınır ekranda açıkça yazılıdır ("PDF eklemek için web arayüzünü kullanın") |
-| Moderasyon ↔ Ayarlar bağı | Yapılır — aynı uç, iki yüzey |
-| Veli/öğrenci detay derin bağlantısı (mobil) | Yapılır |
+| Moderasyon ↔ Ayarlar bağı | ✅ **Yapıldı — C4 (2026-08-09).** Aynı uç, artık **üç** yüzey: web Ayarlar › Bildirimler, web Duyurular › Moderasyon, mobil Ayarlar › Bildirim Ayarları. Aynı query anahtarını paylaştıkları için biri değişince diğeri anında güncellenir. Yazma kararı core'da ve testlidir (`shouldSaveModerationChange`) — seçili moda dokunmak uca istek göndermez; etiketler de core'dan (`announcementModerationLabel`). **Kapı okumada değil yazmadadır:** okuma ucu `announcements.create` ister (öğretmen modu okumak zorundadır), yazma `announcements.moderate` — öğretmen kartı görür, kaydedemez |
+| Veli/öğrenci detay derin bağlantısı (mobil) | ✅ **Yapıldı — C4 (2026-08-09); ama `oksis://` ile DEĞİL.** Bkz. §8.4 düzeltme notu: backend rolden bağımsız tek yol yazar, ayrım istemcide `resolveNotificationTarget` + `announcementRoleSurface` ile yapılır. Veli/öğrenci `announcements/read/[id]` okuyucu ekranına gider (gönderim raporu, denetim izi ve "Geri çek" yoktur); yönetim `announcements/[id]/index`e. Karşılığı olmayan bildirim adresleri `null`a çözülür ve satır tıklanamaz kalır — kullanıcı 404 ya da "Unmatched Route" görmez |
 | Gönderim raporunda kanal tablosunun gizlenmesi | Yapılır (§10) |
 | Şablon CRUD — **backend** | **A'ya taşındı** (K-6); A3'te dört uç da yazıldı |
 | Şablon CRUD — **arayüz** | **C'de yapılır.** B fazı (2026-08-04) API katmanını bağladı: `createAnnouncementTemplate` / `updateAnnouncementTemplate` / `deleteAnnouncementTemplate` + üç hook + üç MSW handler. Web `templates-tab.tsx` ve mobil `templates-screen.tsx` hâlâ **salt okunur listedir** — oluştur/düzenle/sil düğmesi yoktur. Tasarım handoff'u gelmeden ekran icat edilmedi (CLAUDE.md handoff kuralı) |
@@ -600,3 +657,83 @@ Hepsi kod okunarak doğrulandı; hiçbiri varsayım değildir.
 | **C3-7** | **Yükleme başarılı + duyuru oluşturma başarısız → öksüz `StoredFile`** | Akış iki ayrı isteğe bölündüğü için (önce `POST /files`, sonra `POST /announcements`) ikincisi düşerse dosya yüklenmiş ama hiçbir duyuruya bağlanmamış hâlde kalır ve **okul kotasından düşer**. Backend tarafında bir orphan temizliği gerekiyor; `dosya-yonetimi-spec.md` §8.2'de `files.upload.orphan-cleaned` log olayı zaten **tanımlı** (yani tasarım bu işi öngörmüş), duyuru akışında karşılığı yok |
 | **C3-8** | **Mock yaşam döngüsü uçları ham satır döndürüyor** | `markInboxRead` ve kardeşleri MSW handler'ında satırı doğrudan döndürüyor. Gerçek uçta `MarkAnnouncementReadCommandHandler` `attachment` argümanını **geçmez** ve kendi yorumunda "istemci detayı bu yanıttan yeniden render ETMEMELİDİR" diye uyarır. Mock bu farkı **maskeliyor**: `:read` sonrası ekin düşmesi mock'ta görülmez, üretimde görülür |
 | **C3-9** | **`sameTabFileOpener` tipi gereğinden geniş** | `packages/api/src/files/download.ts` imzası `Pick<Window, "location" \| "open">` istiyor ama gövde yalnız `win.location.href`'e yazıyor; `open` gereksiz yere zorunlu. Daraltmak test sahtelerini de basitleştirir. Zararsız ama yanıltıcı: imza, fonksiyonun `window.open` kullandığını ima ediyor — oysa tam tersi bilinçli bir karar (depoda çalışma zamanında `window.open` çağrısı **sıfırdır**, ölçüldü) |
+
+### C4'te (2026-08-09) ölçülerek eklenen backlog
+
+Yönlendirme/bağlar dilimi (bildirim → doğru ekran, `restore`, moderasyon ↔ ayarlar)
+kapatılırken **ölçülerek** bulunan, C4 kapsamı dışında bırakılan işler. Kaynak: sekiz
+görevin gözden geçirme triyajı + bütün-dal gözden geçirmesi + tek düzeltme dalgası.
+Düzeltme dalgasında **kapanan** maddeler bu tabloda YOKTUR (bayat backlog üretmemek için
+ayıklandı); burada kalanlar bilerek açık bırakılmıştır.
+
+**Atıf kuralı:** bu tabloda satır numarası kullanılmaz, sembol/dosya adı kullanılır.
+Gerekçe ölçülmüştür: bu dalda en az yedi atıf bayatladı ve **dördü düzeltme turlarının
+kendi ürünüydü** — satır numarası, düzelttiği metnin ömründen kısa yaşıyor.
+
+| # | Madde | Ölçüm ve etki |
+|---|---|---|
+| **C4-1** | 🔴 **`packages/api-mocks`'ta bildirim ucu mock'u YOK — kritik yol** | `packages/api-mocks/src/` altında dört alan var: `announcements`, `attendance`, `files`, `session` — **`notifications` yok** (dizin listelendi, 2026-08-09). Sonucu ölçüldü: C4'te bildirim yönlendirmesini ekranda görebilmek için **üç ayrı turda** geçici scaffold kuruldu ve her seferinde geri alındı (Task 5, Task 6, düzeltme dalgası). Rol duyarlı bildirim yönlendirmesi artık **iki uygulamada da kritik yoldur** ve `packages/core`'da testlidir — ama **uçtan uca hiçbir zaman mock'la koşulamıyor**, yani bir gerileme ancak gerçek backend'de fark edilir. Gereken: kalıcı bir `notificationHandlers` kümesi. İkinci bir şart daha ölçüldü: bugünkü duyuru fixture kimlikleri (`d1`, `p-zeynep`, …) **GUID biçiminde değil**, dolayısıyla `ANNOUNCEMENT_ID_PATTERN` süzgecinden geçmez — mock en az bir GUID kimlikli duyuru taşımalıdır, yoksa duyuru kolu mock'ta hiç çalışmaz |
+| **C4-2** | **`WithdrawSheet` "isteğe bağlı" diyor, uç zorunlu tutuyor** | `apps/mobile/.../withdraw-sheet.tsx` alanı `label="Gerekçe (isteğe bağlı)"` ile çiziyor; `oksis-api` `Announcement.Withdraw()` boş gerekçeyi `"Announcements.Withdraw.ReasonRequired"` / *"Geri çekme gerekçesi zorunludur."* ile **reddediyor**. Kullanıcı alanı boş bırakıp gönderiyor ve hata alıyor. C4 öncesinden var (master'da duruyor), C4'ün getirdiği değil |
+| **C4-3** | **Reddedilen öğretmenin bildirimi mobilde boş yer tutucuya gidiyor** | `AnnouncementRejectedNotificationHandler` alıcıyı `PublisherId` (= duyuruyu yazan öğretmen) olarak çözüp deepLink'e **`/announcements`** yazıyor. Mobilde `(tabs)/announcements.tsx` `role !== 'admin'` ise `PlannedScreen` — *"Bu ekran henüz boş."* — döndürüyor. Öğretmenin gerçek yüzeyi `(tabs)/my-announcements`. C4'te `announcementRoleSurface` bu eşlemeyi core'a taşıdı ve **bildirim satırı** artık doğru rotaya gidiyor; kalan kusur o sekmenin kendisinde ve C4'ün getirdiği değil |
+| **C4-4** | **Mobilde `+not-found.tsx` yok** | `apps/mobile` altında `+not-found*` dosyası **0 adet** (arandı, 2026-08-09). Karşılıksız bir yol expo-router'ın **İngilizce** yerleşik "Unmatched Route" ekranını açıyor. C4 ölü bildirim adreslerini tıklanamaz yaparak bu yüzeyi bildirimlerden **eriştirmez** hâle getirdi (dün 3 desen "Unmatched Route" veriyordu, bugün 0), ama başka her yol hâlâ oraya düşebilir |
+| **C4-5** | **Yönetici `/attendance` bildirimini alıyor, mobil karşılığı yok** | `AbsenceThresholdReachedNotificationHandler` okul yöneticilerine **ayrı** bir bildirim kuyruklıyor (`ResolveSchoolAdminAccountsAsync`) ve deepLink `/attendance`. Mobilde `AttendanceTabScreen` yalnız `teacher` ve `parent` dallarına sahip; yönetici **fallthrough** ile `StudentAttendanceScreen`e düşüyor, yani "Devamsızlığım · Kayıt bulunamadı" görüyor. Ekranın kendi docblock'u yönetici yüzeyinin `/attendance/live`e taşındığını yazıyor — oraya yollamak **yeni bir yönlendirme kararıdır**, C4'te bilinçli olarak verilmedi |
+| **C4-6** | **`oksis-api` — docblock'lar hâlâ "yedi rolün tamamında" diyor** | `GetAnnouncementByIdQuery` ve `GetAnnouncementInboxQuery` özetleri `announcements.view` iznini "yedi rolün tamamında" diye anlatıyor (grep → tam 2 dosya). Seed'de **beş** rol var (bkz. §4 düzeltme notu). İstemci artık "beş" diyor; çelişki kaynağın kendisinde. **`oksis-api` maddesi** |
+| **C4-7** | **`oksis-api` — deepLink desenleri gözden geçirilmeli** | Bildirim handler'larındaki adres literalleri sayıldı (2026-08-09): **7 desen + `null`**. Üçü istemci rotasıyla birebir tutmuyor: **`/duties`** (web rotası tekil **`duty`**), **`/announcements/approvals`** (web'de rota değil **sekme**, mobilde `announcements/queue`), **`/announcements/{id}/delivery-report`** (hiçbir uçta ayrı rota yok — rapor detayın içinde). C4 çeviriyi core'da kapalı bir tabloyla çözdü ve **istemci tarafı kapandı**; ama `Notification.DeepLink` **kalıcı bir sütundur**, yazıldığı anda donar — sunucu düzeltilse bile kutulardaki eski bildirimler eski adresi taşımaya devam eder. Yani bu iş "sunucuyu düzelt"le bitmez, çeviri katmanı kalıcıdır. Karar: desenler **istemci rota envanterine göre gözden geçirilsin**, yeni desen eklenmeden önce iki uygulamada da karşılığı olduğu ölçülsün. **`oksis-api` maddesi** |
+| **C4-8** | **Web mock'u backend'in üretmediği deepLink'leri taşıyor** | `apps/web/mocks/notifications-data.ts` içinde `/roll-call`, `/reports`, `/students`, `/duty` var; backend'in ürettiği 7 desende bunların **hiçbiri yok**. C4'ten sonra doğru şekilde **tıklanamazlar** (kapalı liste), yani zarar vermiyorlar — ama mock artık gerçeği taklit etmiyor ve "bildirim satırı neden ölü?" sorusuna yanlış cevap verdiriyor. Mock sadakati C3'te de bir madde olmuştu (C3-8) |
+| **C4-9** | **Düzeltme dalgasından park edilen dört Minor** | Kural gereği ikinci bir düzeltme dalgası açılmadı; dördü de triyajda "gerçek ama bekleyebilir" hükmü aldı: **(a)** `packages/core/.../announcements/logic.ts` ölçüm günlüğündeki satır atfı, §16'yı düzelten commit'in **kendi** ürettiği yeni §16 vakasıdır (yaşayan atıf sembol adı olduğu için kullanıcı etkisi yok). **(b)** `notif-list-screen.tsx` — rol `undefined` iken satır okundu işaretlenir ama **hiçbir geri bildirim vermez**; rol asla çözülmezse dokunuş kalıcı olarak sessizdir (eski davranıştan — yanlış ekran — yine de iyidir). **(c)** `announcements-page.tsx` "Moderasyon ayarına git" yalnız sekmeyi değiştiriyor, adres `/announcements/approvals`ta kalıyor; F5 kullanıcıyı kapalı kuyruğa geri atıyor — aynı turda yazılan `backToList` kalıbıyla tek satırda kapanır. **(d)** `approval-queue-tab.tsx` iki fazla boş satır (nit) |
+| **C4-10** | **`announcements-page.tsx` sürdürülemez büyüklüğe yaklaştı** | C4 sonunda ~690 satır ve **altıncı** modal eklendi. `activeModal` union'ına geçirmek ayrı bir görevdir; bugün her modal kendi `useState`'ini taşıyor ve iki modalın aynı anda açılabilmesini engelleyen bir tip yok |
+| **C4-11** | **Apps'ta testsiz kalan karar kuralları** | Bütün-dal gözden geçirmesi **5** test edilemez karar kuralı saydı. Düzeltme dalgası ikisini core'a taşıdı (rol bağımlı karar tablosu apps'ta **2 → 0**). Kalanlar: `entry` → sekme/görünüm eşlemesi, `AnnouncementsScreen`in rol kapısı + `entry` düşürmesi, `AREA_HREF`. Hiçbirinin koşucusu yok (`apps/web` ve `apps/mobile`'da test runner yoktur — planın kendi Global Constraint'i); core'a taşınabilecek olanlar taşınmalı |
+| **C4-12** | **`moderation = data ?? "open"` sorgu yüklenirken sessiz no-op üretiyor** | `announcements-page.tsx` moderasyon modunu sorgu inmeden `"open"` varsayıyor. Gerçek mod `thresholded` iken "Serbest yayın"a tıklamak `shouldSaveModerationChange` yüklemine `("open","open")` verir ve **hiçbir şey yapmaz** — kullanıcı tıkladığını sanır. Fix öncesinde de aynıydı (yeni hata değil), ama artık koruma yüklemi bu yanlış girdiyi okuyor. Doğru çözüm: yüklenirken kontrolü devre dışı bırakmak |
+| **C4-13** | **Mobil erişilebilirlik borçları** | Dört ölçüm: **(a)** geri alma bekleme/sonuç şeritlerinde `accessibilityLiveRegion`/`announceForAccessibility` yok — ekran okuyucu kullanıcısı şeridi ancak gezinerek bulur. **(b)** Şeritler `ScrollView` içinde ve otomatik kaydırma yok; kullanıcı aşağıdayken eylemi tetiklerse **hiçbir şerit görmez**. **(c)** `accessibilityHint`in TalkBack/VoiceOver'da fiilen seslendirilmesi **ölçülemedi** (cihaz/simülatör yok); `react-native-web`de hiçbir niteliğe çevrilmediği ölçüldü, native'de yalnız prop desteği kod düzeyinde doğrulandı. **(d)** Web'de moderasyon çapraz-referansı yalnız hover'da görünür (`ATip` → CSS `::after`), ekran okuyucuya duyurulmuyor — mobilde aynı bilgi görünür `Note` şeridine kondu, web hizalanmadı |
+| **C4-14** | **Mobilde ölü bildirim satırı tıklanabilir GÖRÜNÜYOR** | Karşılığı olmayan adres artık hiçbir yere gitmiyor (doğru), ama satır mobilde hâlâ basılabilir görünüyor ve dokunuş sessiz. Web aynı sorunu `href` vermeyerek çözüyor; mobil eşdeğeri bir **görsel** değişiklik olurdu ve C4'ün kapsamı dışında bırakıldı |
+| **C4-15** | **Mobilde kaydetme geri bildirimi eksik** | Moderasyon kartı başarıda **toast göstermiyor** (web gösteriyor). "Kaydediliyor…" ara durumu mock anında cevapladığı için **hiçbir ölçümde ekrana düşmedi** — gerçek backend'le bir kez görülmeli. Ayrıca mobil okul ayarları hub'ında "Düzenle" rozeti hâlâ yalnız İletişim'de, oysa Bildirim Ayarları artık **yazılabilir** bir alan içeriyor |
+| **C4-16** | **Gerçek uca karşı elle doğrulanacak kollar** | Mock'ta tetiklenemeyen üç dal: geri almanın **403** kolu (yönetici de değil, geri çeken de değil), **409** kolu (bayat statü) ve moderasyon yazmanın 403 kolu. Kod ve metinler ölçüldü, **ekran görünümleri ölçülmedi**. Kapanış duman testinde gerçek backend'le bir kez görülmeli |
+| **C4-17** | **Depo düzeyinde biçim kararı gerekiyor** | `.prettierrc` (printWidth 80, semi false) depo geneliyle uyuşmuyor (~100 sütun, noktalı virgüllü). Daha kötüsü ölçüldü: `notification-bell.tsx`, `core/notifications/logic.ts` ve `core/announcements/logic.ts` **C4'ün değişikliklerinden ÖNCE de** `prettier --check`i geçmiyordu (`git stash` ile doğrulandı). Bu yüzden bu turda hiçbir dosyaya prettier çalıştırılmadı, komşu biçime uyuldu. Depo düzeyinde çözülmeli |
+| **C4-18** | **Yeniden kullanım borçları (nit kümesi)** | **(a)** `{ ok: boolean; text: string }` tipi iki mobil dosyada elle tekrarlanıyor. **(b)** `archive-tab.tsx`teki `VISUALLY_HIDDEN` satır içi bir `CSSProperties` sabiti — depoda ortak `sr-only` sınıfı yok (`packages/ui/src/styles` altında 0 eşleşme); ikinci bir adsız sütun çıktığı anda kopyalanmaya davetiye. **(c)** `toasts.tsx`in `action`/`onAction`/`progress`/`sticky` alanlarının **sıfır çağıranı** var — taşındı ama kullanılmıyor. **(d)** Dar sütunda "Geri çekmeyi iptal et" üç satıra sarıyor. **(e)** `should*` öneki `packages/core`'da ilk kez kullanıldı (önce 0) — kalıp kayması olarak izlenmeye değer. **(f)** `NotificationTarget` artık **dört kollu**; iki uygulamanın `switch`leri de total olduğu için yeni kol derleme hatası verir, ama bir sonraki kol talebinde önce *"bu gerçekten yeni bir HEDEF mi, yoksa var olan bir hedefin parametresi mi?"* sorulmalı |
+| **C4-19** | **Ölçüm günlüğü ve rapor hijyeni** | Bu fazın imza hatasının artıkları. **(a)** Kod içi ölçüm günlükleri kalıcı docblock'larla karışmış durumda ve satır numarası taşıdıkları için bayatlamaya açık (mobil duyuru detayının başlık yorumu C4'te 11 satır büyüdü). **(b)** SDD görev raporlarında düzeltilmemiş üç bayat metin var: fix ÖNCESİ ölçüm yöntemini hâlâ anlatan bir seçici, "7 bildirim satırı" derken görüntüde 4 satır olan bir sayım, ve yaklaşık verilmiş bir emsal dosya yolu. **(c)** `packages/core/.../notifications/logic.test.ts`te bir zayıf negatif iddia (`not.toContain("tarih")`) mutantı sağ bırakıyor. **Kural olarak yazıldı:** kalıcı belgede satır numarası yerine sembol adı; numara zorunluysa yanına ölçüm tarihi |
+| **C4-20** | **Mock oturumunda rol tam sayfa gezintide kayıyor (C3-6'nın web ayağı)** | C3-6 bunu Expo web için kaydetmişti. C4'ün duman testlerinde **web'de de** görüldü: adres çubuğundan yapılan tam sayfa gezintide oturum yönetici profiline dönüyor. Bu yüzden C4'ün bütün rol değişimleri **uygulama içinden** yapıldı. Görsel doğrulama yapan her turu yavaşlatıyor ve rol duyarlı davranışın yanlış ölçülmesine açık kapı bırakıyor |
+
+### C4 kapanışında AÇIK KALAN ÜRÜN KARARLARI
+
+Bunlar backlog **değildir** — kullanıcının kararını bekleyen iki sorudur. Kod bilinçli
+olarak dokunulmadan bırakıldı; her ikisinde de bugünkü davranış değişmedi.
+
+#### I-2 — Öğretmen **alıcı** olduğunda `surface: "manager"` sözleşmesi
+
+Aynı sözleşme **iki katmanda iki farklı yanlış** üretiyor ve ikisi de ölçüldü.
+
+**Nasıl oluşuyor:** yayın bildiriminin alıcıları kova listesinden gelir ve
+`{parent, teacher, student}` karışıktır — yani bir öğretmen, **başkasının** duyurusunun
+alıcısı olabilir (müdürün tüm personele duyurusu). Bildirim `/announcements/{id}` taşır.
+`announcementRoleSurface("teacher")` → `"authored"` → `resolveNotificationTarget` →
+`surface: "manager"`.
+
+- **Mobilde:** öğretmen yönetim detayına (`announcements/[id]/index`) iner. Orada
+  **kendisine ait olmayan** bir duyurunun "Geri çek" düğmesini ve gönderim raporunu
+  görür; uç ikisini de **403** ile reddeder (`AnnouncementLifecycleGuard.CanActOn` →
+  `caller.IsManager || PublisherId == caller.PersonId`). Yani çalışmayan eylemler ve
+  hataya düşen bir rapor.
+- **Web'de:** `notificationHref` öğretmen için `/announcements/{id}` üretiyor, rota
+  `AnnouncementsScreen`e gidiyor, orası `activeRole === "teacher"` görünce **`entry`yi
+  düşürüp** `TeacherAnnouncementsPage`e yolluyor. Sonuç: derin bağlantı **ara listeye**
+  iniyor — **DYR-F-18'in doğrudan ihlali.** Bu ayak hiçbir görev gözden geçirmesinde
+  görünmemişti; yalnız bütününe bakınca çıktı.
+
+**Üç seçenek:** (1) `NotificationTarget`a bir `recipient` kolu eklemek — sözleşme beşinci
+kolunu alır; (2) öğretmeni bu bildirimde okuyucu yüzeyine yollamak — ama öğretmenin
+mobilde okuyucu ekranı `announcements-inbox` değil, karşılığı ölçülmeli; (3) bugünkü hâli
+kabul edip **belgelemek** — o zaman DYR-F-18'e bir istisna yazılması gerekir.
+
+#### I-5 — Mobil geri alma onaysız ve sessiz
+
+`WithdrawReason` **veri kaybıdır**: `oksis-api` `Announcement.Restore()` içinde
+`WithdrawReason = null` yazılır, yani geri çekme gerekçesi kayıttan kalıcı olarak silinir.
+
+- **Web:** `RestoreModal` — "Vazgeç" + onay düğmesi, gövdede *"Geri çekme gerekçesi
+  kayıttan silinir."*
+- **Mobil:** işlem menüsünde tek dokunuş; `Alert` geçen satır sayısı **0** (ölçüldü).
+- **Kardeş eylem tutarsız:** aynı mobil ekranda **"Geri çek"** bir sheet + onay adımı
+  ister; onun **iptali** hiçbir şey istemez.
+
+Planın kendi kusuru: onay katmanı yalnız web ayağına yazıldı (bkz. plan, Task 3 düzeltme
+notu). Karar: mobile de onay eklensin mi, yoksa web'inki mi kaldırılsın?

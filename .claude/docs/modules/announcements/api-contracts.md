@@ -114,7 +114,7 @@ geçmez. Daraltmalar `AnnouncementCallerResolver` ve `AnnouncementLifecycleGuard
 
 | Katman | Nerede | Ne yapar |
 |---|---|---|
-| Envanter kapısı | `AnnouncementCallerResolver.CanUseInventoryAsync` (= `announcements.create`) | `announcements.view` yedi rolde de vardır ama o izin gelen kutusu içindir. Envanter yazanların yüzeyidir. |
+| Envanter kapısı | `AnnouncementCallerResolver.CanUseInventoryAsync` (= `announcements.create`) | `announcements.view` **bugünkü seed'de beş rolde** vardır ama o izin gelen kutusu içindir. Envanter yazanların yüzeyidir. |
 | Yayınlayan daraltması | `AnnouncementCallerResolver.ResolveScopedPublisherIdAsync` | Yönetim yetkisi olmayan yayınlayan (öğretmen) yalnız kendi kayıtlarını/kapsamını görür. |
 | Kayıt sahipliği | `AnnouncementLifecycleGuard.CanActOn` | `caller.IsManager \|\| announcement.PublisherId == caller.PersonId` — öğretmen yalnız kendi duyurusuna dokunur. |
 | Self-only | Gelen kutusu ve okundu damgası handler'ları | Sorgu `AnnouncementRecipient`'tan yürür ve `PersonId` ile kesilir; başkasının satırı **erişilemez**, yalnız gizlenmiş değil. |
@@ -141,6 +141,135 @@ Seed'de (`RolePermissionSeedData.cs`): `announcements.view` SuperAdmin/SchoolAdm
 katalogunda, ayrıca Teacher, Parent, Student'a açıkça verilir. `create`/`update`/`withdraw`/
 `approve`/`moderate`/`template.manage`/`report.view` **katalog dışıdır** ve yalnız
 SchoolAdmin'e yazılır; Teacher bunlardan `create`/`update`/`withdraw`/`report.view` alır.
+
+> **DÜZELTME (2026-08-09, C4 kapanışı) — "yedi rol" HEDEF dağılımdı, seed'de BEŞ var.**
+> Yukarıdaki tablo "Envanter kapısı" satırında `announcements.view` iznini "yedi rolde"
+> diye anlatıyordu. **Nasıl ölçüldü:** `RolePermissionSeedData.Rows()` baştan sona okundu
+> ve `AnnouncementsView` satırları sayıldı — **beş**: `SuperAdmin` + `SchoolAdmin`
+> (`AllPermissionIds()` kataloğu üzerinden) ve `Teacher` / `Parent` / `Student` (her biri
+> kendi bloğunda açık satır). `Secretary` ve `SchoolStaff` **seed'lenmiş rol değildir**
+> (dosyanın kendi notları ertelemeyi yazıyor), `VicePrincipal` ve `Counselor` da MVP
+> sonrasına ertelendi. Alttaki düzyazı zaten doğruydu; yanlış olan tablo hücresiydi.
+>
+> **Neden önemli:** bu cümle C4'te *"veli/öğrenci çağrısında uç zaten 403 döner"*
+> varsayımına dönüştü ve bir güvenlik gerekçesi olarak kullanıldı. Ölçüldü, yanlış:
+> `GetAnnouncementByIdQueryHandler`'da **iki** `Forbidden()` vardır ve ikisi de yetkiyle
+> ilgili değildir (tenant çözülemedi · çağıranın `Person` kaydı yok); alıcı olmayan
+> çağıran **`NotFound()`** alır. Veli/öğrenci kapıdan geçer ve 200/404 alır — yani
+> **yüzey ayrımını sunucu yapmaz, istemci yapar**.
+>
+> Aynı iddia `oksis-api` docblock'larında hâlâ duruyor (`GetAnnouncementByIdQuery`,
+> `GetAnnouncementInboxQuery`) — spec §17, **C4-6**.
+
+---
+
+## C4'ün Getirdiği İstemci Sözleşmesi — Bildirim Yönlendirmesi
+
+Bu bölüm **uç sözleşmesi değildir**: backend'in `Notification.DeepLink` sütununa yazdığı
+adreslerin istemci tarafında nasıl yorumlandığını sabitler. Buraya yazılmasının sebebi,
+çevirinin **kalıcı** olması: `DeepLink` kalıcı bir sütundur ve yazıldığı anda donar —
+sunucu bir deseni sonradan düzeltse bile kutulardaki eski bildirimler eski adresi taşımaya
+devam eder. Yani çeviri katmanı geçici bir yama değil, sözleşmenin parçasıdır.
+
+### 1. Backend'in ürettiği adresler — kapalı liste
+
+Bildirim handler'larındaki adres literalleri sayıldı (2026-08-09): **7 desen + `null`**.
+
+| Desen | Nereden | İstemci karşılığı |
+|---|---|---|
+| `/announcements/{id}` | yayın · düzeltme · geri çekme · onay · zamanlama kolları | Duyuru detayı — **rol duyarlı** |
+| `/announcements/{id}/delivery-report` | zamanlanmış yayın bildirimi | **Ayrı hedef değil**: rapor iki uçta da detayın İÇİNDE çizilir (`useDeliveryReport`), aynı detaya çözülür |
+| `/announcements/approvals` | onaya gönderim bildirimi | **Rol duyarsız** ayrı kol: web'de rota değil **sekme** (`tab === "queue"`), mobilde `announcements/queue` |
+| `/announcements` | red kararı bildirimi (alıcı = yazan öğretmen) | Duyuru **listesi** — rol duyarlı |
+| `/attendance` · `/schedule` · `/duties` | Attendance · Timetable · Duties sabitleri | Alan adına çevrilir (bkz. §3) |
+| `null` | kayıt yenileme bildirimi | Hedef yok — satır tıklanamaz |
+
+### 2. `NotificationTarget` — dört kol + `null`
+
+`packages/core/src/notifications/logic.ts`:
+
+```ts
+type NotificationTarget =
+  | { kind: "announcement"; announcementId: string; surface: "reader" | "manager" }
+  | { kind: "announcementApprovals" }
+  | { kind: "announcementList"; surface: AnnouncementRoleSurface }
+  | { kind: "area"; area: NotificationArea }
+  | null
+```
+
+`resolveNotificationTarget(deepLink, role)` **rolü girdi olarak alır** ve şu sırayla çözer:
+
+1. **Rol yoksa hedef yok.** `role: RoleKey | undefined` ve `if (!role) return null`.
+   Gerekçe ölçülmüştür: mobil `useActiveRole` bağlam inmeden `PORTAL_ROLE_FALLBACK`
+   (= `"admin"`) döndürüyordu ve o an bildirime dokunan **veli**, `surface: "manager"`
+   üzerinden gönderim raporlu yönetim detayına düşüyordu. Yükleniyor hâlinin doğru cevabı
+   "yönetici gibi davran" değil, **"henüz gidilecek yer yok"**tur.
+2. **Şema ve protokol-göreli adres reddedilir.** Yalnız `/` ile başlayan uygulama-içi
+   yollar kabul edilir; `https://`, `oksis://`, `//baska.site` ve eğik çizgisiz yük
+   (`announcements/a-1`, `javascript:alert(1)`) `null` döner.
+3. **Duyuru kolları rol tablosundan geçer** — bkz. §4.
+4. **Kimlik BİÇİME göre süzülür** (`ANNOUNCEMENT_ID_PATTERN`, .NET `Guid.ToString("D")`,
+   harf duyarsız). "İkinci segment var" demek yetmez: yoksa `approvals` gibi her yeni
+   sözcük sahte bir duyuruya çözülürdü.
+5. **Tanınmayan her adres `null` döner.** Sözleşme **kapalıdır**. Ham yolu geçirmek,
+   karşılığı olmayan rotada kullanıcıyı 404'e (web) ya da İngilizce "Unmatched Route"a
+   (mobil) götürüyordu.
+
+### 3. `NotificationArea` — duyuru dışı adresler
+
+Ham yolu taşımak yetmez, çünkü **iki uygulamanın rota envanteri aynı değil**:
+
+| alan | backend deseni | web rotası | mobil rotası |
+|---|---|---|---|
+| `attendance` | `/attendance` | `/attendance` | `/attendance` |
+| `timetable` | `/schedule` | `/schedule` | **YOK** |
+| `duties` | `/duties` | **`/duty`** (tekil!) | **YOK** |
+
+Her uygulama alan adından kendi rotasını üretir; karşılığı yoksa satırı **tıklanamaz**
+bırakır. Eşleme `Record` olarak **total**dır — core'a yeni bir alan eklenirse iki uygulama
+da derlenmez, yani sessizce eksik eşleme kalamaz.
+
+### 4. `announcementRoleSurface` — rol → duyuru yüzeyi, TEK tablo
+
+`packages/core/src/announcements/logic.ts`. Hem duyuru **detayının** (okuyucu mu, yöneten
+mi) hem duyuru **listesinin** hangi ekrana çözüleceğini belirleyen tek kaynak; iki kol
+ayrışamaz.
+
+| rol | yüzey | web | mobil |
+|---|---|---|---|
+| `admin` | `manage` | yönetim konsolu | `(tabs)/announcements` |
+| `teacher` | `authored` | "Duyurularım" | `(tabs)/my-announcements` |
+| `student` · `parent` | `inbox` | **YOK** — "şu an mobil uygulamada" (spec K-7) | `(tabs)/announcements-inbox` |
+
+Detay kolunda `surface: inbox → "reader"`, diğerleri → `"manager"`. Okuyucu ekranında
+gönderim raporu, denetim izi ve "Geri çek" **yoktur**; yönetim detayında vardır.
+
+⚠️ Öğretmen bir duyurunun **alıcısı** olduğunda da `"manager"` alır ve bu bugün bilinen
+bir kusurdur — spec §17, açık ürün kararı **I-2**.
+
+### 5. `shouldSaveModerationChange` — yazma kararı core'da
+
+`shouldSaveModerationChange(next, current)` moderasyon modunun **kaydedilip
+kaydedilmeyeceğine** karar verir; seçili moda dokunmak uca istek göndermez.
+
+Kural core'a taşındı çünkü **üç yazma yüzeyi** (web Ayarlar › Bildirimler, web Duyurular ›
+Moderasyon, mobil Bildirim Ayarları) onu üç ayrı biçimde tekrarlıyordu ve hiçbirinin testi
+yoktu. Merkezileştirme **üçüncü yüzeyde gerçek bir hata buldu**: `announcements-page.tsx`in
+`onChange`'i koşulsuz `mutate` çağırıyordu ve oradaki `disabled` yalnız görsel bir
+affordance'tı, kararı korumuyordu. Yüklem başarı kolunda `qk.announcements.all()` **kök**
+anahtarını invalide ettiği için, görünürde hiçbir şey değişmezken bütün duyuru sorguları
+yeniden çekiliyordu.
+
+Bugün `disabled` prop'u da **aynı yüklemi** okur — görsel affordance ile gerçek karar
+ayrışamaz. Mod etiketleri de core'dadır (`announcementModerationLabel`), böylece
+"(varsayılan)" niteleyicisi üç yüzeyde tutarlıdır.
+
+> **Kapı hatırlatması:** okuma ucu `announcements.create`, yazma ucu
+> `announcements.moderate` ister (bkz. yukarıdaki "İki uç, adının çağrıştırdığından farklı
+> bir anahtar ister"). Sayıldı: `create` → **2 rol** (SchoolAdmin, Teacher — SuperAdmin'de
+> **yok**), `moderate` → **1 rol** (SchoolAdmin). Yani **öğretmen kartı görür ama
+> kaydedemez**; istemci kapısı okumaya değil **yazmaya** konmalıdır. "Okuma çağrısının
+> 403'ü kartı kendiliğinden kapatır" varsayımı ölçümde çürüdü.
 
 ---
 
