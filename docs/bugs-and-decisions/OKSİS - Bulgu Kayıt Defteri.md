@@ -33,7 +33,8 @@
 | ⚪ Düşük | 5 | Kozmetik / temizlik |
 | **Toplam** | **24** | 16 fonksiyonel + 7 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-10` · `B-11` · `B-15` · `TB-22` · `TB-23` · `TB-25` → **kalan 18** (bu dosyada) + `TB` kuyruğu.
+**Kapananlar:** `B-03` · `B-08` · `B-10` · `B-11` · `B-15` · `D-03` · `TB-22` · `TB-23` · `TB-25` — `D-05` kodda kapandı, ekran doğrulaması bekliyor.
+**Kalan (bu dosyada, TB kuyruğu hariç):** 15.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -170,6 +171,8 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 ### D-05 · Önizleme metriklerinde yuvarlama yok
 - **Belirti:** "Tüm sınıflar için oluştur" önizleme adımında ortalama vb. alanlar ham gösteriliyor; virgülden sonra **2 hane** olacak şekilde yuvarlanmalı.
 - **Katman:** FE · **Öncelik:** ⚪ Düşük
+- ✅ **Kod tarafı KAPANDI** *(`oksis-ui` @ `4ff222f`, 2026-08-11)*: `avgTeacherGap` ve `preferencePercent` doğrudan basılıyordu. Yuvarlama **her ekranda tek tek değil** `packages/core/src/format/tr-number.ts` içinde tek noktada: yeni `formatTrDecimal(value, maxFractionDigits = 2)` — en fazla 2 basamak, Türkçe ondalık ayırıcı (virgül), sondaki gereksiz sıfırlar atılır. Modülün "`toLocaleString` kullanma, Hermes'te ICU garanti değil" kuralına uyuyor, yani mobil de aynı yardımcıyı kullanabilir.
+- ⬜ **Ekranda doğrulanmadı:** kesirli metrik üretmek için gerçek bir otomatik program üretim koşusu gerekiyor; bu turda çalıştırılmadı. Bir sonraki turda otomatik üretim tetiklenip önizleme ekran görüntüsü alınmalı.
 
 ---
 
@@ -199,10 +202,18 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 ### B-08 · Sınıflar & Şubeler ekranında öğrenci sayısı "-" görünüyor
 - **Belirti:** Öğrenciler bölümü değer yerine `-` gösteriyor.
 - **Katman:** BE (projection'da sayı alanı) · **Öncelik:** 🟡 Orta
+- 🔍 **Belirti ekranda netleşti** *(ekran testi turu, 2026-08-11)*: Sorun **sayaçta değil künyede**. Sayaçlar doğru (`8/40`, `60 öğrenci`); "—" basan şey şube detay panelindeki **öğrenci satırının kendisi** — ad ve numara yerine `—` / `No: —`. ![[B-08-once-ogrenci-tire.png]]
+- ✅ **Kök neden DOĞRULANDI ve KAPANDI** *(`oksis-api` @ `7835ec6` + `oksis-ui` @ `4ff222f`, 2026-08-11)*:
+  - Şube detay DTO'su künyede yalnız `studentId` döndürüyordu; istemci adı ve numarayı **sayfalı** `GET /api/v1/students` listesinden eşleştiriyordu. O uç **varsayılan `pageSize=50`** ile dönüyor, okulda ise **60 öğrenci** var → ilk sayfaya sığmayan öğrenciler eşleşmiyor ve `name = meta?.name ?? "—"` satırı devreye giriyordu.
+  - **Yama olurdu:** istemcinin `pageSize`'ı büyütmesi — okul 200 öğrenciye çıkınca aynı hata geri gelirdi.
+  - **Yapılan:** ad ve numara **sözleşmeye taşındı** — `ClassRoomStudentDto.FullName` + `StudentNumber`. Künye kapasiteyle sınırlı bir liste; adını taşıması doğal yeri. Ad çözümü `FULLNAME PATTERN` ile yapıldı, yani `B-15`'in sınıf hatası burada baştan önlendi.
+  - **Ekran kanıtı:** aynı panel, `—` yerine **Yiğit Tunç · No: 202610027** ![[B-08-sonra-ogrenci-adi.png]]
 
 ### D-03 · Öğrenciler ekranındaki "Sezon Yenileme" butonu işlevsiz
 - **Karar:** Kaldırılacak.
 - **Katman:** FE · **Öncelik:** ⚪ Düşük
+- ✅ **KAPANDI** *(`oksis-ui` @ `4ff222f`, 2026-08-11)*: Buton yalnız *"Sezon Yenileme ayrı bir ekranda yürütülür"* diyen bir toast basıyordu; kaldırıldı. Sezon devri Sezon Yönetimi ekranında yaşıyor, buradaki kopya yanıltıcıydı.
+- **Ekran kanıtı:** aksiyon çubuğunda yalnız "Dışa Aktar" + "Yeni Öğrenci" ![[D-03-sonra-buton-kaldirildi.png]]
 
 ---
 
@@ -211,6 +222,11 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 ### B-03 · "Bağlı Profil" alanında GUID gösteriliyor
 - **Belirti:** Kullanıcılar ekranında bağlı profil alanı ham GUID basıyor.
 - **Katman:** BE (DTO'ya görünen ad alanı) + FE · **Öncelik:** 🟡 Orta
+- ✅ **Kök neden DOĞRULANDI ve KAPANDI** *(`oksis-ui` @ `4ff222f`, 2026-08-11)*: Backend zaten doğru davranıyordu — `UserListDto.LinkedProfileRef` insan-okunur referansı (öğrenci no / personel no) taşıyor, yoksa `null` dönüyor. Hata **istemcideki geri düşüş**teydi: `profileRef: dto.linkedProfileRef ?? dto.linkedPersonId`. Yani referans yoksa ekrana **kimlik** basılıyordu.
+- **Neden hep veliler:** `ResolveProfileRef` yalnız `StudentProfile.StudentNumber`, `TeacherProfile`/`StaffProfile.EmployeeNumber` biliyor. **`ParentProfile`'ın böyle bir numarası hiç yok** — dolayısıyla her veli satırı GUID'e düşüyordu. Rastgele değil, sistematik.
+- **Yapılan:** GUID'e düşüş kaldırıldı, `profileRef` nullable yapıldı; iki render yeri (tablo + drawer) referans yoksa yalnız profil tipini gösteriyor.
+- **Ekran kanıtı:** öğrencilerde `Öğrenci · 202610029`, velilerde yalnız `Veli` — listede hiç GUID yok ![[B-03-sonra-bagli-profil.png]]
+- ➡️ **`TB-07` ile kavşak kapandı:** bulgunun "hangi uçta düzeltilecek" belirsizliği yoktu; `users` ucu zaten doğru veriyi veriyordu.
 
 ---
 
@@ -639,6 +655,8 @@ Oysa `AssignTeacherCommand` (uç: `PUT /timetable/programs/{id}/placements/{pid}
 - **Etkisi:** CI'da tekrarlanamayan kırmızılar. Bir sonraki koşuda (2026-08-11 tam doğrulama, 3402 test) **tekrarlamadı** — yani düşük frekanslı.
 - ⬜ **Doğrulanacak:** yarışın gerçekten `GlobalSettings` mutasyonundan mı yoksa test paralelliğinden mi doğduğu; çözüm adayı tenant/test başına yalıtılmış `TypeAdapterConfig`.
 - **Kaynak:** C6 dilimi inceleme turu, `oksis-api` @ `c39391b` (2026-08-10).
+- ➕ **İkinci bir yük-kaynaklı kırmızı ölçüldü** *(ekran testi turu, 2026-08-11)*: Tam takım koşusunda (3402 test) `ClamAvScannerIntegrationTests` → *"ClamAV sunucusuna ulaşılamadı (localhost:3310)"* ile düştü. Konteyner ayakta ve sağlıklıydı; makine o sırada **load ~40** altındaydı. **İzole koşuda 4/4 geçti.** Yani `TB-51` tekil bir Mapster meselesi değil, daha geniş bir desenin bir örneği: *tam takım koşusu makineyi doyurunca zaman aşımına dayanan entegrasyon testleri tekrarlanamayan kırmızılar üretiyor.* CI'da bu, gerçek regresyonla gürültüyü ayırt etmeyi zorlaştırır.
+- ⬜ **Eklenen doğrulama:** dış servise (ClamAV, MSSQL testcontainer) bağlanan testlerin zaman aşımı sınırları yük altında yeterli mi; yoksa takım koşu paralelliği sınırlanmalı mı?
 
 ---
 
