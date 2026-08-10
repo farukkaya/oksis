@@ -39,3 +39,9 @@ generated-issues/academic-sessions
 .claude/generated-issues/school-settings
 .claude/generated-issues/roles-permissions
 .superpowers/sdd
+
+# --- Obsidian vault (docs/domain) ---
+# Panel/sekme durumu her açılışta değişir ve makineye özeldir; graph ve görünüm
+# ayarları paylaşılır, bu yüzden .obsidian'ın tamamı değil yalnız bu ikisi dışarıda.
+docs/domain/.obsidian/workspace.json
+docs/domain/.obsidian/workspace-mobile.json
