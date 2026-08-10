@@ -3,7 +3,7 @@ aliases: [AcademicTerm, Yarıyıl, T1/T2]
 tags: [domain/academic]
 table: academic_terms
 status: active
-last-synced: 2026-08-10 (db8336b)
+last-synced: 2026-08-10 (2270867)
 ---
 
 # Dönem
@@ -38,11 +38,15 @@ Dönem kapanışı bir domain event yayar ve karne üretimini tetikler (BR-AS-00
 ## İlişkiler
 
 - [[Sezon]] — sahip (owner); dönem sezonsuz var olamaz, sezonla birlikte yaratılır
-- `academic_term_types` (master veri) — `TermTypeId` ile tip referansı; henüz kavram notu yok
+- `academic_term_types` (master veri) — `TermTypeId` ile tip referansı; sabit lookup, ayrı not değil, [[Müfredat]]'ta yaşar
+- [[Sınav Türü]] — sınav türleri bir döneme (ya da her ikisine) bağlıdır
 
 ## Geçtiği modüller
 
 - [[Sezon Yönetimi]] — kavramın sahibi; aktive/kapatma akışları burada
+- [[Nöbetler]] — [[Nöbet Çizelgesi]] ve [[Program İstisnası]] döneme bağlıdır; yük raporunun varsayılan tarih aralığı dönemden gelir
+- [[Ders Programı Yönetimi]] — [[Ders Programı]], [[Program Sürümü]] ve [[Öğretmen Müsaitliği]] döneme bağlıdır
+- [[Yoklama ve Devamsızlık]] — [[Yoklama Oturumu]] ve [[Devamsızlık Özeti]] döneme bağlıdır; eşik hesabı dönem toplamı üzerinden yapılır
 
 <!-- generated:end -->
 

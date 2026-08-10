@@ -2,7 +2,7 @@
 aliases: [AcademicSessions, SeasonManagement, academic-sessions]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-08-10 (db8336b)
+last-synced: 2026-08-10 (2270867)
 ---
 
 # Sezon Yönetimi
@@ -20,6 +20,7 @@ Modülün karakteristik özelliği, geçişin **iki aşamalı** olması: önce g
 - [[Sezon]] — modülün merkezi; yılın çatısı ve yaşam döngüsü
 - [[Dönem]] — sezonun içindeki T1/T2; not ve karne akışlarının zaman kutusu
 - [[Şube]] — şubeler; öğrenci atamalarının ve terfinin taşıyıcısı
+- [[Sınıf Seviyesi]] — terfi haritasının izlediği kademe sıralaması
 - [[Okul Tatili]] — sezon takvimindeki kapalı günler
 
 Ayrı notu olmayan iki yardımcı kayıt: **SeasonDraft** (sihirbazın sunucu tarafı taslağı, tenant başına en fazla bir tane, `season_drafts`) ve **ClassRoomStudent** (öğrenci-şube atamasının tarihsel kaydı, `class_room_students`).
@@ -32,13 +33,13 @@ Ayrı notu olmayan iki yardımcı kayıt: **SeasonDraft** (sihirbazın sunucu ta
 
 3. **Geri alma** — `Setup` sezon iptal edilir veya taslağa geri döndürülür: şubeler, sezona bağlı tatiller ve sezon soft-delete edilir, taslağın bağı temizlenir ve sihirbaz taslağı yeniden devralır. İki komut da aynı çekirdeği paylaşır ve tek transaction'da çalışır.
 
-4. **Sezon aktivasyonu ve rollover** — Yılın geri alınamaz anı. Sezon `Active` olur, önceki sezon arşivlenir, öğrenciler terfi eder, görevlendirmeler kopyalanır. Terfi haritası (BR-AS-015): her kaynak şube için bir üst kademe okulca sunuluyorsa öğrenciler aynı şube adıyla o kademeye çıkar; üst kademe yoksa (terminal kademe) mezun edilir; ayrıca giriş kademesi için gelecek yılın yeni öğrencilerine boş şubeler açılır. Aynı harita hem önizlemede hem gerçek geçişte kullanılır — önizlemede görünen, uygulanan haritanın aynısıdır.
+4. **Sezon aktivasyonu ve rollover** — Yılın geri alınamaz anı. Sezon `Active` olur, önceki sezon arşivlenir, öğrenciler terfi eder, görevlendirmeler kopyalanır (kopyalamanın nasıl yürüdüğü [[Görevlendirmeler]] notunda; iki nesil bunu farklı eksenden yapıyor). Terfi haritası (BR-AS-015): her kaynak şube için bir üst kademe okulca sunuluyorsa öğrenciler aynı şube adıyla o kademeye çıkar; üst kademe yoksa (terminal kademe) mezun edilir; ayrıca giriş kademesi için gelecek yılın yeni öğrencilerine boş şubeler açılır. Aynı harita hem önizlemede hem gerçek geçişte kullanılır — önizlemede görünen, uygulanan haritanın aynısıdır.
 
-5. **Yenileme dönemi** — `Setup` sezonda kayıt yenilemenin açıldığını işaretler. Statü değiştirmez, yalnızca zaman damgası düşer; idempotenttir.
+5. **Yenileme dönemi** — `Setup` sezonda kayıt yenilemenin açıldığını işaretler. Statü değiştirmez, yalnızca zaman damgası düşer; idempotenttir. Bu bayrak terfinin davranışını değiştirir: açıkken yalnız [[Öğrenci Kayıt Yönetimi]] tarafında yenileme taslağı olan öğrenci şubeye yerleşir, taslağı olmayan atlanır.
 
 6. **Dönem yürütme** — T1 aktive edilir, kapatılır; T2 aktive edilir, kapatılır. Kapanış karne üretimini tetikler (BR-AS-009) ve geri alınamaz.
 
-7. **Şube ve öğrenci yönetimi** — Şube kurma (okul ayarına göre onaylı veya doğrudan aktif), sınıf öğretmeni ve derslik atama, öğrenci atama, şubeler arası transfer, çıkarma ve arşivleme. Atamalar silinmez, sebep koduyla kapatılır.
+7. **Şube ve öğrenci yönetimi** — Şube kurma, rehber öğretmen ve derslik atama, öğrenci atama/transfer/çıkarma, arşivleme. Kod olarak bu modülün içindedir ama ürün olarak ayrı bir alandır ve uçtan uca [[Sınıflar ve Şubeler]] notunda anlatılır; burada yalnızca sezon geçişini ilgilendiren yanı vardır (şubelerin üretilmesi ve köken bağıyla terfi).
 
 8. **Takvim** — Sezona bağlı tatillerin eklenmesi ve resmî tatil listesinin aralık sorgusu.
 

@@ -1,9 +1,14 @@
 ---
-aliases: [AcademicSession, Eğitim-Öğretim Yılı, AcademicYearId (deprecated)]
-tags: [domain/academic]
+aliases:
+  - AcademicSession
+  - Eğitim-Öğretim Yılı
+  - AcademicYearId (deprecated)
+tags:
+  - domain/academic
 table: academic_sessions
 status: active
-last-synced: 2026-08-10 (db8336b)
+last-synced: 2026-08-10 (2270867)
+cssclasses:
 ---
 
 # Sezon
@@ -46,6 +51,9 @@ Sezon yaratılırken iki dönem (T1, T2) atomik olarak birlikte oluşturulur —
 ## Geçtiği modüller
 
 - [[Sezon Yönetimi]] — kavramın sahibi; yaşam döngüsü, sezon geçişi ve takvim burada yönetilir
+- [[Kullanıcılar]] — [[Rol Ataması]] ve [[Davet]] sezona bağlıdır; yetki sezon değişince yeniden kurulur
+- [[Kimlik Doğrulama]] — kullanıcının aktif sezon bağlamı ve sezonlar arası geçiş
+- [[Nöbetler]] — [[Nöbet Çizelgesi]] sezona bağlıdır, ama kimliği hâlâ eski `AcademicYearId` adıyla taşır
 
 Sezona `AcademicSessionId` ile bağlanan ama henüz notu olmayan modüller: Students, Academics, Teachers, Attendance, Timetable, Announcements, Schools.
 

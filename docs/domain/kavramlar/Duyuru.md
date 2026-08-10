@@ -62,7 +62,7 @@ Karakteristik özelliği kurumsal kayıt oluşudur: yazıldıktan sonra yok edil
 - [[Duyuru Şablonu]] — köken damgası; **yabancı anahtar yoktur**, şablon silinse bile duyuru etkilenmez ve bağ yetim bir kimlik olarak kalır
 - [[Şube]] — dolaylı; şube katmanındaki hedef anahtarı bir şubeyi işaret eder ve etiketi şube adından üretilir
 
-Kavram notu olmayan bağlar: `Person` (yayınlayan, alıcı, denetim izi aktörü), Documents modülünün dosya kaydı (ek dosya) ve Notifications modülü (yayın ve karar bildirimleri).
+Kavram notu olmayan bağ: `Person` (yayınlayan, alıcı, denetim izi aktörü). Ek dosya [[Saklı Dosya]]'da, yayın ve karar bildirimleri [[Bildirim]]'de yaşar.
 
 ## Geçtiği modüller
 

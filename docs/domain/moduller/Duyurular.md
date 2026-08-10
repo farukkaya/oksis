@@ -24,6 +24,7 @@ Modülün iki karakteristik özelliği var. Birincisi iki katmanlı yetki kurgus
 - [[Duyuru]] — modülün merkezi; yaşam döngüsü, imza ve invariant'lar
 - [[Duyuru Şablonu]] — kişisel hazır metin defteri; ayrı aggregate, silinebilir
 - [[Sezon]] — her duyuru okulun aktif sezonuna bağlanır; aktif sezon yoksa oluşturma reddedilir
+- [[Saklı Dosya]] — duyuru eki; dosyanın kendisi [[Dosya Yönetimi]]'nde saklanır, erişimi duyurunun kapsam kuralına devredilir
 
 Ayrı notu olmayan üç yardımcı kayıt: **hedef** (yayın anında dondurulan katman, anahtar, rol kovası ve insan okunur etiket), **alıcı** (yayın anında materyalize edilen tek satır, okundu damgasının taşıyıcısı) ve **denetim izi satırı** (değiştirilemez işlem geçmişi, güncelleme metodu yoktur). Üçü de kökün içinde yaşar, bağımsız yaşam döngüleri yoktur.
 
@@ -33,7 +34,7 @@ Ayrı notu olmayan üç yardımcı kayıt: **hedef** (yayın anında dondurulan 
 
 2. **Zamanlanmış yayın** — Gelecek tarihli duyuruda hedefler donar ama alıcılar **materyalize edilmez**; liste yayın anında sabitlenir, zamanlama anında değil, çünkü arada sınıf mevcudu değişebilir. Dakikalık bir sweep vadesi gelenleri yayınlar. Hedef yayın anında kimseye çözülmezse duyuru **yayınlanmaz**, beklemede kalır ve yayınlayana ayrı bir bildirim gider — sıfır alıcıyla "yayınlandı" demek gönderim raporunda kimsenin fark etmeyeceği bir yalan üretirdi. Job'ın kendi oturumu yoktur; duyurunun **yayınlayanının** yönetim yetkisi ayrıca çözülür ve hesabı bağlanamayan yayınlayan güvenli tarafa, kapsamı daraltılmış hâline düşürülür.
 
-3. **Eşikli moderasyon** — Okul ayarı eşikliyse öğretmenin velilere giden duyurusu onay kuyruğuna düşer; öğrencilere gidenler serbest yayınlanır. Karar rol kovasına bakar, hedef katmanına değil, ve yalnız **hayatta kalan** seçimlere uygulanır — elenmiş bir veli seçimi duyuruyu kuyruğa sokmaz. Onay duyuruyu yayınlar; red taslağa döndürür ve gerekçe yalnız denetim iziyle bildirimde yaşar.
+3. **Eşikli moderasyon** — [[Okul Ayarları]] eşikliyse öğretmenin velilere giden duyurusu onay kuyruğuna düşer; öğrencilere gidenler serbest yayınlanır. Karar rol kovasına bakar, hedef katmanına değil, ve yalnız **hayatta kalan** seçimlere uygulanır — elenmiş bir veli seçimi duyuruyu kuyruğa sokmaz. Onay duyuruyu yayınlar; red taslağa döndürür ve gerekçe yalnız denetim iziyle bildirimde yaşar.
 
 4. **Yayın sonrası düzeltme** — Yalnız yayındaki duyuruda, yalnız başlık ve gövde. Hedef **alınmaz** (INV-2). Sessiz seçeneği "Güncellendi" rozetini açmaz, ama rozet bir kez açıldıysa kapanmaz.
 

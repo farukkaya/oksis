@@ -1,0 +1,211 @@
+{
+  "main": {
+    "id": "715de6101247d185",
+    "type": "split",
+    "children": [
+      {
+        "id": "6f0f8c6355ca6ead",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "efe772d40b79e6e7",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "OKSİS - Bulgu Kayıt Defteri.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "OKSİS - Bulgu Kayıt Defteri"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "cb98f9c2a84868ca",
+    "type": "split",
+    "children": [
+      {
+        "id": "9f9c00593d1f87fa",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f0fead86f98841ac",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "byCreatedTime",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Dosya Gezgini"
+            }
+          },
+          {
+            "id": "9441c5cb5c452ef2",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Ara"
+            }
+          },
+          {
+            "id": "0edb80f2b989c049",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Yer İmleri"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "0a90806bc8c15e97",
+    "type": "split",
+    "children": [
+      {
+        "id": "187d30b3638dedc8",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "f3c6b11e5bad8ecb",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Bulgular.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Geri Bağlantılar"
+            }
+          },
+          {
+            "id": "0fe80406a2b08bb0",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Bulgular.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Giden bağlantılar"
+            }
+          },
+          {
+            "id": "524fbd7813b8b628",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Etiketler"
+            }
+          },
+          {
+            "id": "da3f8ab68ad87125",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "Tüm özellikler"
+            }
+          },
+          {
+            "id": "aa608ffe89e9981f",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Bulgular.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Anahat"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Hızlı geçişi aç": false,
+      "graph:Grafik görünümünü aç": false,
+      "canvas:Yeni tuval oluşturun": false,
+      "daily-notes:Bugünün Notunu Aç": false,
+      "templates:Şablon ekle": false,
+      "command-palette:Komut paletini aç": false,
+      "bases:Yeni taban oluştur": false
+    }
+  },
+  "active": "efe772d40b79e6e7",
+  "lastOpenFiles": [
+    "OKSİS - Bulgu Kayıt Defteri.md.tmp.46725.a698b45059d4",
+    "OKSİS - Yapısal Kararlar ve Eksikler.md",
+    "OKSİS - Bulgu Kayıt Defteri.md",
+    "Bulgular.md",
+    "Yapısal Kararlar-Eksikler.md",
+    "Başlıksız.canvas",
+    "2026-08-10.md",
+    "Başlıksız.base",
+    "Kararlar/K-01 - Bildirim Matrisi.md",
+    "OKSİS - Yapısal Kararlar ve Eksikler.md.tmp.5529.68db0964928f",
+    "Hedefler.md",
+    "Yetkiler.md",
+    "Kararlar/K-02 - OS Push Altyapısı.md",
+    "Kararlar",
+    "Orijinal listede.md",
+    "Başlıksız 1.base",
+    "Hoş geldiniz.md"
+  ]
+}

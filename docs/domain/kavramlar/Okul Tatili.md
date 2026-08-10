@@ -1,9 +1,9 @@
 ---
-aliases: [SchoolHoliday, Tatil, Yarıyıl Tatili]
+aliases: [Holiday, SchoolHoliday (deprecated), Tatil, Yarıyıl Tatili]
 tags: [domain/academic]
-table: school_holidays
+table: academic.school_holidays
 status: active
-last-synced: 2026-08-10 (db8336b)
+last-synced: 2026-08-10 (2270867)
 ---
 
 # Okul Tatili
@@ -14,7 +14,9 @@ last-synced: 2026-08-10 (db8336b)
 
 Bir sezonun takvimindeki eğitime kapalı gün veya aralık. Sisteme gömülü resmî tatil listesinden (`official_holidays` master verisi) ayrıdır: burada kameri takvime bağlı dini bayramlar ve okula özel kapanışlar tutulur — yani tenant'ın kendi takvimi.
 
-Tipler: resmî tatil, okul etkinliği, eğitime kapalı gün ve yarıyıl tatili (T1-T2 arası).
+Tipler: resmî tatil, okul etkinliği, eğitime kapalı gün, yarıyıl tatili (T1-T2 arası) ve ara tatil.
+
+⚠️ **Kod tarafında iki sınıf var, biri ölü.** Canlı olan `Schools` modülündeki `Holiday`'dir — `DbSet`, EF konfigürasyonu ve tüm handler'lar onu kullanır. `AcademicSessions` modülündeki `SchoolHoliday` sınıfı **hiçbir yere bağlı değildir**: konfigürasyonu yok, `DbSet`'i yok, hiçbir handler tipini kullanmıyor. İkisi de aynı tabloyu anlatıyor; sezon tatili uçlarının adı `SchoolHoliday` olsa bile gövdeleri `Holiday` üzerinden çalışır. Ölü sınıfa bakıp kural çıkarma.
 
 ## Yaşam döngüsü
 
@@ -25,18 +27,20 @@ Tatil kaydı oluşturulurken sezon ID'si istemciden alınmaz; sunucu aktif sezon
 ## Kurallar
 
 - Tatil aralığı, bağlı olduğu sezonun başlangıç-bitiş aralığı içinde olmalıdır. Bu kontrol cross-aggregate olduğu için domain'de değil Application katmanında yapılır.
-- Sezon ID'si sunucu tarafından çözülür, request gövdesinden okunmaz (BR-SS-013).
-- Ad en fazla 150, açıklama en fazla 500 karakter.
+- Sezon ID'si sunucu tarafından çözülür, request gövdesinden okunmaz (BR-SS-013). Sezon bağı **opsiyoneldir**: geçiş dönemi gereği eski kayıtlar sezonsuz kalabilir.
 - Tekrar eden (`IsRecurring`) tatil işareti taşınabilir.
+- Canlı sınıf uzunluk doğrulaması yapmaz; alan sınırları veritabanı ve istek doğrulayıcısı tarafında kalır.
 
 ## İlişkiler
 
-- [[Sezon]] — ID referansı; tatil bir sezonun takvimine aittir
-- `official_holidays` (master veri) — ayrı ve daha geniş kapsamlı resmî tatil listesi; bu kavramın kopyası değil, tamamlayıcısı
+- [[Sezon]] — opsiyonel ID referansı; tatil bir sezonun takvimine bağlanabilir
+- [[Okul Ayarları]] — takvim okul ayarları yüzeyinden de yönetilir
+- [[Resmî Tatil]] — sabit tarihli ulusal tatiller; bu kavramın kopyası değil **tamamlayıcısı**. Dini bayramlar kameri takvime bağlı olduğu için orada tutulamaz, buraya elle eklenir.
 
 ## Geçtiği modüller
 
-- [[Sezon Yönetimi]] — kavramın sahibi; sezon takvimi burada kurulur
+- [[Okul Yönetimi]] — canlı sınıfın sahibi; tatil takvimi burada yönetilir
+- [[Sezon Yönetimi]] — sezon takvimi görünümü ve sezon geri alındığında temizlik
 
 <!-- generated:end -->
 
