@@ -173,8 +173,14 @@ ekler.
   ikisinde 0 isabet, ölçüldü 2026-08-10) o kayıt **acil yayına çıkar** → spec §17 `C5-5`.
 - Şablon uçlarında backend acil kapısı **yoktur**; bugün etkisizdir çünkü acil
   yalnız duyuru oluştururken yayına dönüşür.
-- **Türkçe hata mesajını hiçbir test korumuyor** (yalnız hata kodu ölçülüyor)
-  → spec §17 `C5-6`.
+- **Türkçe hata mesajı 2026-08-10'a kadar hiçbir EKRANA ULAŞMIYORDU** (istemcinin 403 kolu
+  koşulsuz sabit cümle döndürüyordu); taşıma yolu artık açık — `mutation-error.ts` 403'te
+  **hata koduna** bakıp `Announcements.` önekli mesajları geçiriyor, jenerik yetki
+  kodlarında ("Error.Forbidden", "Forbidden", "TenantRequired") sabit cümlede kalıyor
+  çünkü onların metni İngilizcedir. **Bu yüzden `Result<T>.Forbidden()` KULLANILAMAZ:**
+  `Error.Forbidden`a düşmek cümleyi hem kaybeder hem istemcinin geçirme kolunu kapatır.
+  Backend tarafında mesajın kendisi hâlâ **korumasız** (testler yalnız hata kodunu
+  ölçüyor) → spec §17 `C5-6`.
 
 **Test referansı:** `CreateAnnouncementTests` (pozitif + negatif kol),
 `ResultExtensionsAnnouncementsTests`
