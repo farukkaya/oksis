@@ -27,11 +27,13 @@
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 6 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
+| 🔴 Kritik | 7 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
 | 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 8 | İşlev eksik ama alternatif yol var |
 | ⚪ Düşük | 5 | Kozmetik / temizlik |
-| **Toplam** | **23** | 15 fonksiyonel + 7 tasarım + 1 validasyon |
+| **Toplam** | **24** | 16 fonksiyonel + 7 tasarım + 1 validasyon |
+
+**Kapananlar:** `B-10` · `B-11` · `B-15` · `TB-22` · `TB-23` · `TB-25` → **kalan 18** (bu dosyada) + `TB` kuyruğu.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -87,6 +89,12 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 - **Katman:** BE · **Öncelik:** 🟡 Orta
 - **Kök neden adayı:** Create handler'ı `IsActive` alanını yok sayıp sabit `true` atıyor.
 - ✅ **Kök neden DOĞRULANDI** *(kod taraması, 2026-08-10 @ `2270867`)*: Oluşturma komutu `IsActive` parametresini **hiç almıyor**; domain fabrikası kaydı sabit `IsActive = true` ile kuruyor. Ayrı `Activate()` / `Deactivate()` davranışları var ama oluşturma yolu bunları çağırmıyor — güncellemenin çalışması bu yüzden. **Düzeltme:** komuta `IsActive` eklenip fabrikaya taşınmalı.
+- ➕ **İkinci ayak — istemci de bayrağı düşürüyordu** *(ekran testi turu, 2026-08-11)*: `oksis-ui` → `packages/api/src/duty/endpoints.ts` içindeki `createDutyLocation` gövdeye `isActive`'i **bilinçli olarak koymuyordu** (yorumu: *"backend yeni bölgeyi aktif kabul eder"*). Yani yalnız backend düzeltilseydi ekranda hiçbir şey değişmezdi — bulgu iki depoda birden yaşıyordu.
+- ✅ **KAPANDI — ekran testi turu** *(`oksis-api` @ `dd54194` + `oksis-ui` @ `4ac0c93`, 2026-08-11)*:
+  - **BE:** `DutyLocation.Create(..., bool isActive = true)` — bayrak fabrikaya taşındı; `CreateDutyLocationCommand` ve handler bunu geçiriyor. Varsayılan `true` olduğu için 13 mevcut çağıran (testler dahil) etkilenmedi.
+  - **FE:** `createDutyLocation` artık `isActive`'i gönderiyor; OpenAPI şeması yeniden üretildi.
+  - **Ekran kanıtı:** Nöbet & Vekâlet → Bölgeler & Politika → Bölge Ekle, "Bölge aktif" anahtarı **kapalı** ![[B-11-modal-pasif-anahtari.png]] → kayıt **pasif** olarak listeye düştü ![[B-11-sonra-pasif-bolge.png]]
+  - **DB kanıtı:** `SELECT name, is_active FROM academic.duty_locations WHERE name LIKE 'B-11%'` → `is_active=0`.
 
 ### B-02 · Nöbet/Vekalet ↔ Yoklama ilişkisi
 - **Belirti:** İki modül arasında ilişkisel sorun gözlendi.
@@ -137,6 +145,11 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 - **Çözüm yönü:** Depoda bu iş için **zaten yerleşik bir desen var** — önce `.Select(p => new { p.Id, p.Name }).ToListAsync()`, sonra bellekte `.FullName` ve sıralama. `GetAvailableRelievers`, `GetDutyRosterVersions`, `ListDutyExemptions`, `GetDutyRosterForEdit`, `ListScheduleExceptions`, `PublishedScheduleQueryHandler` hepsi bunu uyguluyor ve başlarında `FULLNAME PATTERN ALERT` yorumu taşıyor. `src/` altında `.Name.FullName` geçen **21 çağrı yerinden tek ihlal eden bu handler** — yani yama değil, desenin kendisi uygulanacak.
 - 🙃 **Neden gözden kaçtı:** `GetAvailableRelievers`'daki uyarı yorumu deseni tarif ederken *"Same pattern as GetAvailableTeachers"* diye referans veriyor — referans gösterilen dosyanın kendisi deseni uygulamıyor.
 - 🧪 **Testler neden yakalamadı:** `GetAvailableTeachersQueryHandlerTests` üç testle yeşil. `MockQueryable` LINQ-to-Objects üzerinde çalıştığı için `FullName`'i sorunsuz değerlendiriyor; bu sınıf hata **yalnız gerçek sağlayıcıda** doğuyor. Yapısal boyutu → `X-06`.
+- ✅ **KAPANDI — ekran testi turu** *(`oksis-api` @ `dd54194`, 2026-08-11)*: Handler depodaki `FULLNAME PATTERN`'e geçirildi — önce `.Select(p => new { p.Id, p.Name }).ToListAsync()`, sonra bellekte `.FullName` + `OrderBy`. Yama değil, zaten var olan desenin uygulanması.
+  - **RED kanıtı** *(düzeltmeden önce, çalışan API)*: `GET /api/v1/timetable/programs/310BB8B6…/available-teachers?day=1&period=1` → **HTTP 500**, gövde `{"code":"InternalError"}`, CorrelationId `3387c71c…`; sunucu logunda `InvalidOperationException: The LINQ expression … could not be translated`.
+  - **GREEN kanıtı** *(aynı uç, düzeltmeden sonra)*: **HTTP 200**, 8 öğretmen ada göre sıralı döndü.
+  - **Ekran kanıtı:** Ders Programı → 9-A → hücre menüsü → **Öğretmen Değiştir** alt menüsü artık doluyor: ![[B-15-sonra-ogretmen-listesi.png]] *(menünün kendisi: ![[B-15-hucre-menusu.png]])*
+  - ⬜ **Sınıf hâlâ açık:** Bu tek handler kapandı, ihlali doğuran boşluk kapanmadı → `X-06`.
 
 ### B-14 · Otomatik program oluşturucu dersleri yanlış eksende yerleştiriyor
 - **Belirti:** Dersler sağa doğru (gün ekseninde) yayılıyor; aşağı doğru (saat/ders ekseninde) yerleşmeli.
@@ -198,6 +211,21 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 ### B-03 · "Bağlı Profil" alanında GUID gösteriliyor
 - **Belirti:** Kullanıcılar ekranında bağlı profil alanı ham GUID basıyor.
 - **Katman:** BE (DTO'ya görünen ad alanı) + FE · **Öncelik:** 🟡 Orta
+
+---
+
+## 7b. Kimlik & Oturum 🔴
+
+### B-16 · Açık oturum varken başka okulun hesabıyla giriş 500 veriyor
+- **Belirti:** Tarayıcıda A okulunun oturumu açıkken B okulunun hesabıyla giriş denenince "Giriş yap" **hiçbir şey yapmıyor** — ekranda ne hata, ne uyarı. Arka planda `POST /api/v1/auth/account/login` → **500**.
+- **Katman:** BE (kimlik/tenant) · **Öncelik:** 🔴 Kritik
+- **Nasıl bulundu:** Ekran testi turunda (2026-08-11) `B-15`'i asıl veri bulunan okulda test etmek için okul değiştirilmek istendi; giriş sessizce patladı.
+- **Kök neden — doğrulandı** *(çalışan API'nin yığın izi + izole `curl` tekrarı)*: `SetForLoginFlow` gelen isteğin `school_id` claim'ine bakıp farklı tenant'a geçişi `SecurityException` ile reddediyor (`Infrastructure/Identity/TenantContext.cs:38-52`). Tarayıcı giriş isteğine de eski JWT'yi eklediği için claim doluyor. İstisna domain hatası olmadığından `ExceptionHandlingMiddleware` onu 500'e çeviriyor.
+- **%100 deterministik:** Aynı istek `Authorization` başlığı olmadan **200**, başlıkla **500**. Tek değişken başlık; veriye bağlı değil.
+- **Etki:** Ortak bilgisayarda okul değiştiren kullanıcı parolasını yanlış yazdığını sanıp tekrar deniyor → giriş koruması hesabı kilitleyebilir. Kullanıcı, kendi hatası olmayan bir şey yüzünden hesabını kilitletiyor.
+- 🚫 **Kısıt:** Tek uca `try/catch` koymak yama olur. Kural şu olmalı: *bir giriş isteği tanım gereği anonimdir, taşıdığı eski kimliği miras almaz.* → çözüm yönü ve iki adayın karşılaştırması engel dosyasında.
+- 📄 **Ayrıntılı anlatım, yeniden üretim adımları ve çözüm adayları:** [[ENG-01 - Farkli okula giris 500 veriyor]]
+- ➡️ **Ayrıca:** `SecurityException`'ın 500'e düşmesi başlı başına yanlış — `X-01`'in (BE mesaj hattı) sunucu tarafı ayağıyla aynı aile.
 
 ---
 
@@ -955,6 +983,9 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı. **Sıradaki boş ID: `TB-52`, `X-07`, `B-16`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`'yı aldı. **Sıradaki boş ID: `TB-52`, `X-07`, `B-17`, `ENG-02`.**
+
+**Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
+- [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`
 
 **Karara dönüşmesi gerekenler** *(bu dosyada değil, karar panosunda yaşamalı)*: `X-03` + `TB-48` (görevlendirme v1/v2 — kanoniklik cevaplandı, **onarım yönü kararı açık**), vekil uygunluğunun öğretmen müsaitlik kayıtlarına kasıtlı olarak bakmaması *(gerekçe koddan çıkmıyor)*, `B-14` netleştikten sonra çıkabilecek hedef değişikliği.
