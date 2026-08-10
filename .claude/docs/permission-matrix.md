@@ -199,9 +199,26 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 | `announcements.withdraw` | 🚫 | ✅ | ✅ | ✅ (kendi oluşturduğu) | 🚫 | 🚫 | 🚫 |
 | `announcements.approve` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
 | `announcements.moderate` | 🚫 | ✅ | 🚫 | 🚫 | 🚫 | 🚫 | 🚫 |
-| `announcements.template.manage` | 🚫 | ✅ | ✅ | 🚫 | 🚫 | 🚫 | 🚫 |
+| `announcements.template.manage` | 🚫 | 👁 | 👁 | 👁 | 🚫 | 🚫 | 🚫 |
 | `announcements.report.view` | 🚫 | ✅ | ✅ | ✅ | 🚫 | 🚫 | ✅ |
 
+> **`announcements.template.manage` — C5 düzeltmesi (2026-08-09, kullanıcı kararı K1).**
+> İzin **Teacher'a da verildi** (`RolePermissionSeedData.cs`, Teacher bloğu; seed
+> migration `20260809_announcement_templates_personal` üretimde de aynı satırı ekliyor)
+> ve satırdaki işaret ✅ değil **👁**'dir: şablon artık **kişiseldir**, okulun ortak
+> envanteri değil.
+>
+> **Sahiplik kapısı izinden AYRI bir katmandır.** İzin yalnız *yazma yüzeyini* açar;
+> hangi kayda dokunulabileceğini handler'lardaki `CreatedBy` süzgeci belirler
+> (`GetAnnouncementTemplatesQueryHandler` listeyi daraltır, `UpdateAnnouncementTemplate`
+> ve `DeleteAnnouncementTemplate` handler'ları `t.CreatedBy == currentUser.Id` koşulunu
+> taşır ve başkasının şablonunda `Error.NotFound` döner). Bu, `announcements.view` +
+> self-only alıcı eşleşmesindeki **iki katmanlı** kalıbın aynısıdır: izin yetkiyi,
+> sahiplik kapsamı söyler. Benzersiz indeks de aynı eksene indi —
+> `IX_announcement_templates_school_id_created_by_name` (unique). Bir yöneticinin
+> `announcements.template.manage` taşıması ona **başkasının şablonunu görme/düzenleme**
+> hakkı vermez.
+>
 > `announcements.delete` 2026-08-02'de kaldırıldı: duyuru kurumsal kayıttır ve silinmez
 > (INV-1). Yerine `announcements.withdraw` gelir — geri çekilen duyuru arşivde "geri çekildi"
 > olarak kalır. Ayrıca `announcements.read` / `announcements.manage` seed anahtarları bu
@@ -210,10 +227,11 @@ Backend `SchoolSettingsController` (20 yetkili endpoint) için endpoint kırıl�
 > `announcements.view-detail` de **hiç var olmadı** — jenerik CRUD şablonundan sızmış bir
 > artıktır. Detay görüntüleme `announcements.view` ile korunur; `PermissionSeedData.cs:57-64`
 > yalnız yukarıdaki 8 satırı seed'ler ve tablo onunla **birebir** hizalıdır (A3'te doğrulandı).
-> **Uyarı:** `modules/announcements/permissions.md` ve `modules/announcements/api-contracts.md`
-> hâlâ `announcements.view-detail` ve `announcements.delete` taşıyor. O dokümanlar `{{TBD}}`
-> şablonuyla üretilmiş olup henüz gerçeğe uydurulmadı (spec §15 — B fazı sonrasına bırakıldı).
-> **Çelişkide bu dosya kazanır.**
+> **Uyarı (C5'te daraltıldı, 2026-08-09).** `modules/announcements/permissions.md`
+> **artık gerçeğe uygundur** — 8 anahtarı, seed'lenmiş rol eşleştirmelerini ve şablon
+> sahiplik katmanını taşıyor; `view-detail`/`delete` artıkları oradan temizlendi.
+> `modules/announcements/api-contracts.md` hâlâ `{{TBD}}` şablonundan gelen artıkları
+> taşıyor. **Çelişkide bu dosya kazanır.**
 
 ### Messaging
 

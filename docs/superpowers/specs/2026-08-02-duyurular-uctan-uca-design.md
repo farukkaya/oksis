@@ -36,7 +36,7 @@ Görev: bu sözleşmeyi karşılayan backend'i yazmak ve iki uygulamayı mock'ta
 | K-3 | **Ek dosya dâhil** — Documents modülüne bağlanır | DYR-F-10 "Zorunlu" |
 | K-4 | `oksis/` dokümanları **tam** güncellenir — 9 spec dokümanı dâhil | Kullanıcı kararı |
 | K-5 | Yapım yaklaşımı: **dikey dilimler, her dilim TDD'li** | Riskin CRUD'da değil kurallarda olması |
-| K-6 | Şablon CRUD **A'ya dâhil** (3 yeni uç) | DYR-F-13; donmuş 17 uçta şablon salt okunur |
+| K-6 | Şablon CRUD **A'ya dâhil** (3 yeni uç) | DYR-F-13; donmuş 17 uçta şablon salt okunur.<br><br>**C5 düzeltmesi (2026-08-09):** DYR-F-13'ün *"yalnız yönetim oluşturur"* ifadesi **geçersizdir**. K1 ile şablon **kişiselleşti**: `announcements.template.manage` öğretmene de verildi (seed migration `20260809_announcement_templates_personal`), liste `CreatedBy` ile daraltıldı ve Update/Delete **sahiplik kapısı** aldı. Benzersiz indeks de okul genelinden sahibe indi: `IX_..._SchoolId_Name` → `IX_..._SchoolId_CreatedBy_Name` |
 | K-7 | Web veli/öğrenci okuma yüzü **kapsam dışı** | Tasarım çizilmemiş; ekran icat etmek handoff kurallarına aykırı |
 
 ### Teslim sırası
@@ -603,7 +603,7 @@ MSW handler'ları **silinmez** — senaryo/hata denemeleri ve mobil dev için ka
 | Veli/öğrenci detay derin bağlantısı (mobil) | ✅ **Yapıldı — C4 (2026-08-09); ama `oksis://` ile DEĞİL.** Bkz. §8.4 düzeltme notu: backend rolden bağımsız tek yol yazar, ayrım istemcide `resolveNotificationTarget` ile yapılır. Veli/öğrenci `announcements/read/[id]` okuyucu ekranına gider (gönderim raporu, denetim izi ve "Geri çek" yoktur); yönetim `announcements/[id]/index`e. Karşılığı olmayan bildirim adresleri `null`a çözülür ve satır tıklanamaz kalır — kullanıcı 404 ya da "Unmatched Route" görmez.<br><br>**C4 kapanışında yüzey seçimi ROLDEN değil BİLDİRİM TÜRÜNDEN'e geçti** (`ANNOUNCEMENT_NOTIFICATION_HAT` + `announcementDetailSurface`, core'da testli). Ölçüldü: sekiz duyuru türünün her biri tek bir şapkaya düşüyor — `Published`/`Amended` alıcı kümesini `AnnouncementRecipients`'tan okur (**okuyucu**), kalan beşi tek elemanlı `[PublisherId]`'ye gider (**yayınlayan**), `SubmittedForApproval` izin zincirinden gelir (**onaycı**, ayrı kol). Böylece **başkasının duyurusunu alan öğretmen** artık yönetim ekranına düşmüyor. `kind` parametresi zorunludur — unutulan çağrı yeri typecheck'te yakalanır; bilinmeyen tür `null`a çözülür. Backend'e dokunulmadı (karşılaştırma: `Enqueue` imzasına alan eklemek 24 çağrı yeri + Hangfire job imzası + 18 test dosyası olurdu) |
 | Gönderim raporunda kanal tablosunun gizlenmesi | ✅ **Yapıldı.** `showsChannelBreakdown(report)` kapısı her iki uçta: tek kanal varken tablo çizilmiyor, başlık "Gönderim" oluyor ve altına *"Bu sürümde duyuru yalnız uygulama içinde iletilir; kanal kırılımı yoktur."* yazılıyor (web `detail.tsx`, mobil `announcement-detail-screen.tsx` — ikisi de ölçüldü 2026-08-09) |
 | Şablon CRUD — **backend** | **A'ya taşındı** (K-6); A3'te dört uç da yazıldı |
-| Şablon CRUD — **arayüz** | **C'de yapılır.** B fazı (2026-08-04) API katmanını bağladı: `createAnnouncementTemplate` / `updateAnnouncementTemplate` / `deleteAnnouncementTemplate` + üç hook + üç MSW handler. Web `templates-tab.tsx` ve mobil `templates-screen.tsx` hâlâ **salt okunur listedir** — oluştur/düzenle/sil düğmesi yoktur. Tasarım handoff'u gelmeden ekran icat edilmedi (CLAUDE.md handoff kuralı) |
+| Şablon CRUD — **arayüz** | ✅ **Yapıldı — C5 (2026-08-09).** B fazı (2026-08-04) API katmanını bağlamış ama hiçbir ekran çağırmamıştı: `useCreateAnnouncementTemplate` / `useUpdateAnnouncementTemplate` / `useDeleteAnnouncementTemplate` üçü de **ölü hook**tu. C5'te üçünün de çağıranı var (ölçüldü 2026-08-10, `grep`): **ilk çağıran `apps/web/features/announcements/announcements-page.tsx`** (yönetim yüzü, Görev 10) — üç hook da orada. Ardından öğretmen yüzü `teacher-announcements-page.tsx` (Görev 12, üçü de) ve mobil `announcements/templates/new.tsx` + `templates/[id].tsx` + `templates.tsx` (Görev 14). `useCreateAnnouncementTemplate`'in ayrıca üç compose çağıranı daha var ("Şablon olarak kaydet": web iki sayfa, mobil `announcements/new.tsx` ve `announcements/[id]/index.tsx`).<br><br>Şablon **kişiselleşti** (K-6 düzeltmesi): liste sahibine daralır, düzenle/sil sahiplik kapısından geçer, öğretmen de şablon yönetir. Ekran icat edilmedi — tasarım handoff'u geldi ve C5 planı ona göre yazıldı |
 | **Web veli/öğrenci okuma yüzü** | **Kapsam dışı** (K-7) — tasarım çizilmemiş. Yeniden kullanılabilecek çekirdek (`filterInbox`, `partitionInboxByValidity`, `countUnreadByChild`) hazırdır; `handoff-web` ile teslim geldiğinde bağlanır |
 
 ---
@@ -704,7 +704,7 @@ kendi ürünüydü** — satır numarası, düzelttiği metnin ömründen kısa 
 
 | # | Konu | Ölçüm |
 |---|---|---|
-| **C4-21** | 🔶 **Web'de öğretmen duyuru DETAY yüzeyi yok — DYR-F-18'in kalan ihlali** | `TeacherAnnouncementsPage` yalnız iki durum tanır: "yeni duyuru formu" ve "Duyurularım tablosu". Detay çizen kol, alabileceği parametre, hatta tıklanabilir tablo satırı bile yok; detay bileşenlerinin (gönderim raporu, denetim izi, geri çekme) hiçbiri ithal edilmiyor. Sonuç: öğretmenin **yayınlayan** şapkalı bildirimleri web'de ara listeye iniyor. Etki ölçüldü: beş türün **dördü** (`Approved`, `Withdrawn`, `ScheduledExecuted`, `ScheduleFailed`; `Rejected` etkilenmiyor, adresi zaten liste). En ağırı `ScheduledExecuted` — bildirimin var oluş sebebi gönderim raporudur ve rapora web'den ulaşılamıyor. **Gerileme değil** (önce de aynıydı; C4 okuyucu kolunu ayırarak iyileştirdi), ama kapatmak **yeni bir ekran** = ürün kararı. Karar ne olursa olsun DYR-F-18'e karşılık ya da istisna yazılmalı. Obsidian karar defterinde `K-05` / `E-07` |
+| **C4-21** | ✅ **KAPANDI — C5 (2026-08-09).** Web'de öğretmen duyuru DETAY yüzeyi yok — DYR-F-18'in kalan ihlali | **Kapanış:** öğretmen web detayı `apps/web/features/announcements/teacher-detail.tsx` (`TeacherAnnouncementDetail`) ile açıldı ve `teacher-announcements-page.tsx` onu render ediyor. `entry` artık öğretmene de **taşınıyor**: `announcements-screen.tsx` `activeRole === "teacher"` kolunda `<TeacherAnnouncementsPage entry={entry} />` çağırıyor, yani `/announcements/{id}` derin bağlantısı ara listeye düşmüyor — DYR-F-18'in kalan ihlali **kapandı** (ölçüldü 2026-08-10). Eski gerekçe (*"`entry` taşınsaydı öğretmen yönetim konsoluna düşerdi"*) yeniden ölçülüp çürütüldü: `TeacherAnnouncementsPage` `AnnouncementsPage`i hiç render etmiyor, `entry`yi kendi `TeacherView` birliğine çeviriyor. Onay kuyruğu kolu orada bilinçli yok sayılıyor (`announcements.approve` Teacher'da yok). Red gerekçesi bloğu denetim izinden üretiliyor (`announcementRejection`, core).<br><br>**Tarihsel kayıt (C4'teki ölçüm):** `TeacherAnnouncementsPage` yalnız iki durum tanır: "yeni duyuru formu" ve "Duyurularım tablosu". Detay çizen kol, alabileceği parametre, hatta tıklanabilir tablo satırı bile yok; detay bileşenlerinin (gönderim raporu, denetim izi, geri çekme) hiçbiri ithal edilmiyor. Sonuç: öğretmenin **yayınlayan** şapkalı bildirimleri web'de ara listeye iniyor. Etki ölçüldü: beş türün **dördü** (`Approved`, `Withdrawn`, `ScheduledExecuted`, `ScheduleFailed`; `Rejected` etkilenmiyor, adresi zaten liste). En ağırı `ScheduledExecuted` — bildirimin var oluş sebebi gönderim raporudur ve rapora web'den ulaşılamıyor. **Gerileme değil** (önce de aynıydı; C4 okuyucu kolunu ayırarak iyileştirdi), ama kapatmak **yeni bir ekran** = ürün kararı. Karar ne olursa olsun DYR-F-18'e karşılık ya da istisna yazılmalı. Obsidian karar defterinde `K-05` / `E-07` |
 | **C4-22** | **Bildirim türü sözleşmesinin testi yok** | Backend `NotificationKind`te **sekiz** duyuru türü var (16–23); istemcinin `NOTIFICATION_KIND_CONFIG`i **yedi** taşıyordu ve `AnnouncementScheduleFailed` satırda jenerik "Bildirim" + zil olarak görünüyordu. C4 kapanışında elle kapatıldı, ama iki tarafın eşitliğini koruyan bir sözleşme testi yok — backend'e dokuzuncu tür eklendiğinde aynı sessiz düşüş tekrarlanır. Aynı risk `ANNOUNCEMENT_NOTIFICATION_HAT` tablosu için de geçerli |
 | **C4-23** | **`modules/announcements/` dokümanlarında 107 `{{TBD}}` duruyor** | §15 "~110 `{{TBD}}` bu belgeden beslenerek doldurulur" diyordu. Ölçüldü (2026-08-09): dokuz dosyada **107** `{{TBD}}` hâlâ yerinde. C3 ve C4 yalnız `api-contracts.md`ye ekleme yaptı. `permission-matrix.md` ve `notification-matrix.md` ✅ tamamlandı — kalan iş bu dokuz modül dokümanı |
 
@@ -789,3 +789,103 @@ notu).
 > Gözden geçirmede bir yan kusur daha çıktı ve düzeltildi: "Vazgeç" düğmesine konan
 > `disabled={pending}` hem etkisizdi (sheet arka plandan ve Android geri tuşundan zaten
 > kapanıyordu) hem de kardeş kalıptan sapıyordu — kaldırıldı, `WithdrawSheet` ile hizalandı.
+
+---
+
+### C5'te (2026-08-09/10) ölçülerek eklenen backlog
+
+Şablon yönetimi dilimi (kişisel şablon, "Şablon olarak kaydet", kullanım sayacı,
+öğretmen web detayı, mobil şablon CRUD) kapatılırken **ölçülerek** bulunan, C5 kapsamı
+dışında bırakılan işler. On altı görevin gözden geçirme triyajı + kullanıcı kararı
+görevi (12b). Kapanan maddeler bu tabloda YOKTUR.
+
+**Atıf kuralı C4'ten devam eder:** satır numarası değil sembol/dosya adı. Her satırın
+ölçümü ve ölçüm tarihi yazılıdır; hiçbiri varsayım değildir.
+
+| # | Madde | Ölçüm ve etki |
+|---|---|---|
+| **C5-1** | **Red gerekçesi telde bir DTO alanı DEĞİL — istemci onu denetim izindeki iki sabit dizeden okuyor** | `announcementRejection` (`packages/core/.../announcements/logic.ts`) izdeki `action === "duyuruyu reddetti"` satırını bulup `tag`in `"Gerekçe: "` önekini soyuyor. Alan gerçekten yok: `Announcement.cs`teki TEK gerekçe alanı `WithdrawReason`'dır ve `Reject()` hiçbir alana yazmaz. Önek TEK BAŞINA yetmez — `WithdrawAnnouncementCommandHandler` de aynı öneki kullanır, ayrım yalnız `action`dadır. Bugün sahipsiz değil (bir backend testi iki sabiti tek iddiada tutuyor: `AnnouncementApprovalTests`), ama backend metni değiştirirse **iki backend testi kırılır ve istemci SESSİZCE boşalır** — kullanıcı "Reddedildi" başlığını gerekçesiz görür. Bu bir kırılganlıktır; ileride `AnnouncementDto`'ya alan eklemek gündeme gelirse **ilk aday budur** |
+| **C5-2** | **Şablon `Description` 4000'e çıktı, duyuru `Body` hâlâ SINIRSIZ** | K5 kararıyla `AnnouncementTemplateConfiguration.Description` 500 → 4000 (migration `20260809_announcement_templates_personal`, `AlterColumn` ölçüldü). `AnnouncementConfiguration` `Body`'ye `HasMaxLength` **vermez**. Sonuç: 4000'i aşan bir duyurudan "Şablon olarak kaydet" ile şablon üretmek **400** döner. İstemci bunu `TEMPLATE_BODY_MAX` ile `maxLength`e çevirip kesiyor — yani akış **kayıpsız değildir**, uzun gövde sessizce kırpılır. Tavanı kaldırmak ya da kırpmayı kullanıcıya söylemek ayrı bir karardır |
+| **C5-3** | **Mobil şablon ekranının yetki kapısı YOK** | `apps/mobile/.../templates-screen.tsx` ve `template-form-screen.tsx`te `readOnly` benzeri bir kapı yok (grep `readOnly\|template.manage\|canManageTemplate` → mobil şablon yüzeylerinde **0**, ölçüldü 2026-08-10). İzin verisi telde var, okuyan istemci kodu yok. C4 ölçümü hâlâ geçerli. **Bugün sorun üretmiyor**, çünkü K1 ile `announcements.template.manage` öğretmene de verildi ve şablon ekranına erişen her rol o izne sahip; izin bir rolden geri alınırsa ekran sessizce 403 üretmeye başlar |
+| **C5-4** | 🔶 **Migration'ın `Down` kolu VERİ-BAĞIMLI olarak geri alınamaz — rollback runbook notu** | `20260809_announcement_templates_personal.Down` iki veri bağımlı adım taşıyor (dosya okundu 2026-08-10): **(1)** eski `IX_..._SchoolId_Name` **unique** indeksini yeniden kuruyor — C5'ten sonra **iki farklı sahip aynı şablon adını** kullandıysa `CREATE UNIQUE INDEX` duplicate key ile düşer; **(2)** `description`ı `nvarchar(4000)` → `nvarchar(500)` daraltıyor — 500 karakteri aşan tek bir şablon metni varsa truncate hatası verir. **İkisi de GÜRÜLTÜLÜ hatadır** (sessiz veri kaybı değil): rollback yarıda durur, veri bozulmaz. Kod değişikliği gerekmiyor; gereken şey **rollback runbook'unda** bu iki ön koşulun yazılı olması (geri alma öncesi çakışan ad ve 500'ü aşan metin sorgulanmalı) |
+| **C5-5** | 🔴 **Acil işareti yetki kapısının GERİYE DÖNÜK KOLU YOK** | Kullanıcı kararı (2026-08-10) `Urgent = true`'yu `announcements.approve` iznine bağladı; kapı `CreateAnnouncementCommandHandler`'da ve `AsDraft` dallanmasının ÖNÜNDEDİR, yani bugünden sonra yetkisiz çağıran acil kayıt **üretemez**. Ama **kapıdan ÖNCE** bir öğretmenin `Urgent = true` ile kaydettiği taslak/onay bekleyen duyuru varsa: `ApproveAnnouncementCommandHandler` ve `PublishScheduledAnnouncementsJob` `Urgent`'ı **hiç sorgulamıyor** (grep `Urgent` → her ikisinde **0 isabet**, ölçüldü 2026-08-10), dolayısıyla o kayıt **acil olarak yayına çıkar**. Backfill C5 kapsamı dışındaydı. Etki dev verisinde sıfıra yakındır ama prod'a çıkmadan önce ya bir backfill ya da yayın yolunda ikinci bir kapı gerekir |
+| **C5-6** | **Acil kapısının TÜRKÇE MESAJI korumasız DEĞİL, ERİŞİLEMEZDİ — taşıma yolu açıldı, backend koruması hâlâ açık** | **Düzeltme (2026-08-10).** Bu satırın ilk hâli sorunu eksik teşhis ediyordu: cümle yalnız testsiz değildi, **hiçbir ekrana ulaşmıyordu**. Ölçüm: `oksis-ui` `packages/api` `client/mutation-error.ts` `case 403` **koşulsuz** *"Bu işlem için yetkiniz yok."* döndürüyor, sunucunun `errors[0].message`'ını atıyordu; duyuru yüzeylerinin hiçbiri `err.message`'ı doğrudan taşımıyor. Yani *"Acil işareti yalnız okul yönetimi tarafından kullanılabilir."* **üründe hiçbir yerde görünmüyordu** — üstelik `ResultExtensions.MapStatusCode` docblock'u tam tersini (istemcinin çıplak 403 görmesini ENGELLEMEK için `Result<T>.Forbidden()` kullanılmadığını) iddia ediyordu. **Şimdi:** 403 kolu ikiye bölündü ve bölmeyi **hata kodu** yapıyor — kod `DOMAIN_FORBIDDEN_CODE_PREFIXES` (bugün yalnız `Announcements.`) ile başlıyorsa sunucunun Türkçe cümlesi geçer, jenerik kodlarda sabit cümle konur. Ayrımın **kodla** yapılması zorunluydu, statüyle değil: jenerik yol `AuthorizationBehavior`/`TenantContextBehavior` → `ForbiddenException` (kod `Forbidden`, mesaj *"Access denied."* / *"This operation requires SuperAdmin privileges."*), `Result.Forbidden()` → `Error.Forbidden` + *"Access denied."*, `TenantRequired` → *"This operation requires a tenant context."* — koşulsuz geçirmek bu **İngilizce** metinleri ekrana basardı. Sezgisel bir *"kodda nokta varsa modül kodudur"* kuralı da yanlış olurdu: `identity.account.suspended` noktalıdır ama mesaj alanında bir **çeviri anahtarı** taşır (`identity.errors.account-suspended`, `AccountErrors.cs`) ve ekrana ham anahtar sızardı — bu yüzden kural açık bir önek **listesidir**. **Dört** yeni testle çivili (`mutation-error.test.ts`, dosya **12 → 16** `it` bloğu — ölçüldü 2026-08-10, commit `f012999`; api 135 → 139 ile tutarlı); üç mutasyon ölçüldü: geçirme kolu kaldırılınca 1 test, jenerik kol geçirir yapılınca 3 test (biri C5 öncesinden), boş-mesaj koruması kaldırılınca 1 test düşüyor. **AÇIK KALAN:** cümlenin **backend tarafındaki** koruması yok — `ResultExtensionsAnnouncementsTests.Should_Map403_When_UrgentIsNotPermitted` hâlâ yalnız `StatusCode == 403` iddia ediyor, `CreateAnnouncementTests` negatif kolu `.WithMessage("*Announcements.Urgent.Forbidden*")` ile yalnız **kodu** eşliyor. İstemci testi cümleyi bir **fixture** olarak taşır, sunucunun onu ürettiğini doğrulamaz; backend'de metni boşaltan bir mutasyon hâlâ hiçbir testi düşürmez |
+| **C5-7** | 🔶 **Kaydedilmiş bir TASLAK bu sürümde ne DÜZENLENEBİLİYOR ne YAYINA ALINABİLİYOR** | Zincirin dördü de ölçüldü (2026-08-10): `Publish()` `Draft`ı kabul ediyor ama **iki çağıranı da kaydedilmiş taslağa erişemiyor** — `CreateAnnouncementCommandHandler` aynı istekte yarattığı yeni kökü yayınlar, `PublishScheduledAnnouncementsJob` `Status == AnnouncementStatus.Scheduled` süzgeciyle çeker. `Approve()` `PendingApproval` ister. Taslağı o iki statüye taşıyacak ikinci yol yok: `MarkScheduled`/`MarkPendingApproval`ın **TEK çağıranı** `CreateAnnouncementCommandHandler`'dır. `Amend()` `Published` ister. Yani taslak yazıldığı anda **çıkmaz sokaktır**. Bugünkü çıkış yolu: metni "Şablon olarak kaydet" ile saklayıp **yeni duyuru** göndermek.<br><br>**Yan bulgu:** iki depoda da bunun tersini vaat eden docblock var — `Announcement.Reject()` özeti *"Öğretmen düzeltip yeniden gönderebilir."* diyor, `announcementRejection` docblock'u aynı cümleyi tekrarlıyor. Ekrandaki karşılığı C5 Görev 13'te düzeltildi, **kaynaktaki iki cümle duruyor** |
+| **C5-8** | **TASLAKLAR okul yönetiminin envanterinde görünüyor** | `GetAnnouncementsQueryHandler`'da varsayılan bir statü kapısı **yok** (okundu 2026-08-10): temel sorgu yalnız `a.SchoolId == schoolId`; `scope` ve `statuses` süzgeçleri **isteğe bağlıdır**. Yani öğretmenin taslağı, hiçbir filtre verilmediğinde yönetimin envanter listesine düşer. Ekran eskiden *"listede yalnız siz görürsünüz"* diyordu; o cümle C5'te düzeltildi ama **sunucu davranışı olduğu gibi duruyor**. Taslağın kişisel mi kurumsal mı olduğu bir ürün kararıdır |
+| **C5-9** | **Şablon ad benzersizliği ÖRNEK COLLATION'ına bağlı** | Modelde hiçbir kolon collation'ı sabitlenmemiş: `grep -rn "HasCollation\|UseCollation" src/` → **0** (ölçüldü 2026-08-10). Dolayısıyla `IX_..._SchoolId_CreatedBy_Name` benzersizliği örnek varsayılanına düşer (dev'de case-insensitive + accent-sensitive). İstemcinin uyarısı `toLocaleLowerCase("tr")` ile kuruluyor ve bugün sunucuyla örtüşüyor — ama `Turkish_CI_AS` ile kurulmuş bir prod örneği bu aynayı **tersine çevirir** ve kullanıcı ya sahte uyarı ya da uyarısız 409 alır. `Name` kolonuna EF'te açık `HasCollation` vermek bağımlılığı tamamen kaldırırdı |
+| **C5-10** | **`npm run codegen` betiği URL'yi `localhost:5112`'ye SABİTLİYOR** | `packages/api/package.json`: `openapi-typescript http://localhost:5112/openapi/v1.json -o src/generated/schema.ts` (okundu 2026-08-10). Şema artık **donmuş bir sözleşmedir** (C5'te `templateId` eklendi). Betik bayat bir 5112 sürecine karşı koşulursa `templateId` **sessizce geri alınır** ve kullanım sayacı zinciri typecheck'i geçerek ölür. Port/URL parametreleştirilmeli ya da betik üretilen şemayı bir sürüm damgasına karşı doğrulamalı |
+| **C5-11** | **MSW ayrışmaları istemci doğrulamasını sınırlıyor** | Dördü de ölçüldü (2026-08-10): **(a)** `buildAuditTrail` (`packages/api-mocks/.../announcement-data.ts`) *"duyuruyu reddetti"* satırını **HİÇ üretmiyor** (grep `reddetti` → `packages/api-mocks/src` altında **0**), yani red gerekçesi bloğu (C5-1) mock'ta uçtan uca koşulamıyor. **(b)** `:reject` handler'ı gerekçeyi `withdrawReason`'a yazıyor — gerçek uç hiçbir alana yazmaz, gerekçe yalnız denetim izindedir. **(c)** Mock create handler'ı `body.asDraft ? "draft" : body.scheduledAt ? "scheduled" : "published"` diyor; **`pendingApproval` dalı yok** — eşikli modda öğretmenin duyurusu gerçek uçta onaya düşer ve kullanım sayacı ARTMAZ, mock'ta yayınlanır ve ARTAR. **(d)** `apps/web` MSW'sine `sessionHandlers` **bilinçli olarak** eklenmedi (`packages/api-mocks/src/index.ts` gerekçeyi yazıyor), bu yüzden **web mock modunda öğretmen yüzü açılamaz** — rol yöneticiye düşer. C5'in öğretmen yüzeyleri gerçek backend + DEV hızlı giriş ile doğrulandı |
+| **C5-12** | **Boş sunucu mesajı deliğinin KÖKÜ hâlâ açık** | C5 Görev 15 bunu **merkezi** yerde (`packages/api/src/client/mutation-error.ts`) kapattı ve beş yüzey tek satır değişmeden düzeldi. Ama kök `packages/api/src/client/errors.ts`tedir: `super(errors[0]?.message ?? "Beklenmeyen bir hata oluştu.")` — `??` yalnız `null`/`undefined`ı yakalar, **boş dizeyi geçirir**; `||` bu deliği global olarak kapatırdı. Ayrıca `mutationErrorDesc`i **atlayıp** `err.message`ı doğrudan ekrana taşıyan **dört yüzey** var (ölçüldü 2026-08-10, hepsi duyurular DIŞI): `apps/web/features/attendance/retro-modal.tsx`, `apps/web/features/schedule/autogen-drawer.tsx`, `apps/web/features/roll-call/roster.tsx`, `apps/mobile/.../attendance/components/roster-screen.tsx` |
+
+### C5 kapanışı — counseling migration'ı: ÇAKIŞMA DEĞİL, YENİDEN ÜRETİM (2026-08-10)
+
+> Bu bir kod maddesi değil, bir **sıra** maddesidir. **Düzeltme (2026-08-10):** bu notun
+> ilk hâli hem riski yanlış ölçüyordu hem de uyardığı hasarı bizzat üreten bir adım
+> öneriyordu (`dotnet ef migrations remove`). İkisi de aşağıda ölçülerek değiştirildi.
+
+**Durum (ölçüldü 2026-08-10, `oksis-api`).** `stash@{0}` ("counseling dersi kaldirma
+calismasi — C5 oncesi kenara alindi") C5'ten bağımsız bir migration taşıyor:
+`20260807213717_20260808_remove_counseling_subject` (`.cs` + `.Designer.cs`, stash'in
+**untracked** kolunda — `stash@{0}^3`). Migration'ın `Up`'ı yalnız **13 `DeleteData`**,
+`Down`'ı iki `InsertData` içeriyor; şema değil **seed** işidir.
+
+**ÇAKIŞMA YOK — sıradan bir `git stash pop` C5'i korur.** Bu notun ilk hâli stash'teki
+`OksisDbContextModelSnapshot.cs`'in "bütün dosyayı değiştirdiğini (16618 → 16497)"
+söylüyordu; o rakam `git show <stash>` çıktısının **birleşik-fark (combined diff)
+yapaylığıdır** — stash bir merge commit'idir (`git rev-list --parents`: üç ebeveyn) ve
+`git show` üçünü birden özetler. Gerçek yama `git diff stash@{0}^ stash@{0}` ile
+ölçülünce **121 silme / 0 ekleme, iki hunk** (3316 ve 4601; hepsi counseling `HasData`
+seed satırı). C5'in snapshot hunk'ları **4956 / 5246 / 5293 / 10699**'da — kesişme yok.
+Üç yollu birleştirme depoya yazmadan fiilen koşturuldu (`git merge-file -p`, çıkış kodu
+**0** = sıfır çakışma): sonuçta `template_id` **iki**,
+`ix_announcement_templates_school_id_created_by_name` **bir** kez geçiyor, counseling seed
+satırları da düşmüş. İki dalın ortak tek dosyası zaten snapshot'tır; stash'in diğer altı
+dosyasına C5 hiç dokunmuyor. Yani *"counseling işi C5'in şema değişikliğini snapshot'tan
+düşürür"* iddiası **desteklenmiyor**.
+
+**Asıl sorun başka: KİMLİK TERS ve DESIGNER BAYAT.**
+
+1. **Damga ters.** Counseling `20260807213717`, C5 `20260809194112`. Migration geçmişi
+   kronolojik olmaz; counseling migration'ı, kendisinden **sonra** yazılmış bir
+   migration'ın **öncesinde** duruyormuş gibi görünür.
+2. **`.Designer.cs` C5 ÖNCESİ modelden üretilmiş.** İçinde `template_id` **bir** kez
+   geçiyor (C5'li model: **iki**) ve `ix_announcement_templates_school_id_created_by_name`
+   **sıfır** kez (C5'li model: **bir**). Migration'ın kendi anlık görüntüsü yanlıştır;
+   dosya elle düzeltilse bile yanlış kalır.
+
+**`dotnet ef migrations remove` ÖNERİLMEZ — bu notun ilk hâlinin en tehlikeli satırıydı.**
+Komut **en büyük kimlikli** migration'ı seçer; iki migration bir aradayken bu
+**C5'inkidir** (`20260809194112` > `20260807213717`). O adım C5'in migration'ını siler ve
+snapshot'ı counseling'in bayat `.Designer.cs`'inden geri kurar — yani aşağıdaki
+`has-pending-model-changes` kırmızısına giden **gerçek** yol tam olarak budur.
+
+**Doğru sıra.**
+
+1. **Önce C5 birleşsin** (`feature/announcements-c5` → hedef dal).
+2. `git stash pop` — snapshot temiz birleşir, C5 öğeleri korunur (yukarıda ölçüldü).
+3. İki counseling migration dosyası (`20260807213717_….cs` ve `….Designer.cs`)
+   **elle silinsin**. `migrations remove`'a gerek yok: dosyalar hâlâ **izlenmiyor**
+   (stash'in untracked kolundan geliyorlar), silmek yeterlidir.
+4. `git checkout -- src/Oksis.Infrastructure/Persistence/Migrations/OksisDbContextModelSnapshot.cs`
+   ile snapshot C5'li hâline döndürülsün. **Gerekçe:** `migrations add` farkı bu dosyaya
+   karşı alır; pop sonrası snapshot counseling satırlarını zaten düşürmüş olur
+   (`Category = "Counseling"` → **0**, C5'li snapshot'ta **1**), yani bu adım atlanırsa
+   yeni migration **boş** çıkar.
+5. C5'li model üzerinde `dotnet ef migrations add <YYYYMMDD_name>` koşulsun. Böylece hem
+   damga C5'in ardına düşer hem de `.Designer.cs` **C5'li modelden** üretilir.
+
+**Kapanış kontrolü — ayırt edici olanı.** `dotnet ef migrations has-pending-model-changes`
+**yeşil** olmalı. Snapshot'ta `template_id` saymak **ayırt edici DEĞİLDİR**: hiçbir şey
+yapılmasa da C5'in snapshot'ında zaten iki kez geçer. Ayırt edici olan üç ölçüm:
+
+- yeni migration'ın **`.Designer.cs`**'inde `template_id` **iki**, indeks adı **bir** kez
+  (bayat Designer'da sırasıyla **bir** ve **sıfır**dı) — Designer'ın tazeliğini yalnız bu
+  gösterir;
+- yeni migration'ın damgası `20260809194112`'den **büyük**;
+- snapshot'ta `Category = "Counseling"` **sıfır** kez (C5 birleşir birleşmez **bir**dir) —
+  counseling işinin fiilen indiğini yalnız bu gösterir.
+
+**Belirti.** Bir şey ters giderse `dotnet ef migrations has-pending-model-changes`
+**kırmızıya** döner (kod `TemplateId`i ve indeksi tanımlarken snapshot onları içermez).
+Veri kaybı değil, **model/snapshot ayrışmasıdır**; fark edilmezse bir sonraki migration bu
+iki öğeyi "yeni" sanıp tekrar eklemeye kalkar ve prod script'i çakışır.
