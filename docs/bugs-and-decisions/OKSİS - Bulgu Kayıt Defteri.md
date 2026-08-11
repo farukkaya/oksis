@@ -33,9 +33,9 @@
 | ⚪ Düşük | 6 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-14` · `B-15` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-06`'nın dar ayağı ve `X-07` de kapandı.
+**Kapananlar:** `B-02` · `B-03` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-14` · `B-15` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı).
-**Kalan (bu dosyada, TB kuyruğu hariç):** 11.
+**Kalan (bu dosyada, TB kuyruğu hariç):** 10.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -336,6 +336,8 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - **Belirti:** Sorumlu Öğretmenler listesi uzayınca "Etkinliği Oluştur ve İşaretle" butonu görünmez oluyor.
 - **Katman:** FE · **Öncelik:** 🟡 Orta (işlem tamamlanamıyor)
 - **Çözüm yönü:** Modal gövdesi scroll'lansın, aksiyon çubuğu sabit (sticky footer) kalsın. Tek modal değil, bileşen seviyesinde → **X-02**.
+- ✅ **KAPANDI — `X-02` varsayılanının içinde** *(`oksis-ui` @ `6817806`, 2026-08-11)*. Bu modala özel bir satır yazılmadı; temel `.att-modal` kuralı düzeltildiği için `D-02` kendiliğinden kapandı. Ölçüm ve gerekçe `X-02`'de.
+- ℹ️ **Ekran testi notu:** Etkinlik sihirbazı adım 3'e canlı veriyle ulaşılamadı — bugünün tarihi (2026-08-11) yürürlükteki sezonun (15.09.2025 – 13.06.2026) **dışında** ve adım 1 bu yüzden ilerlemiyor. Doğrulama bu nedenle gövdeye 60 satır enjekte edilip **ölçülerek** yapıldı; ölçüm ekran görüntüsünden daha kesin (piksel değerleri yukarıda).
 
 ### D-06 · Breadcrumb tıklanabilir değil
 - **Belirti:** `Akademik › Ders Programı › 10-A` yolunda ara kırılımlar tıklanamıyor.
@@ -408,6 +410,22 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - **Görüldüğü yer:** `D-02` (Etkinlik Tanımlama modalı) — aynı desen diğer uzun modallarda da beklenir.
 - **Öncelik:** 🟡 Orta · **Katman:** FE
 - **Çözüm yönü:** Modal bileşeninde gövde scroll + sticky footer'ı **varsayılan** yap; tek tek modal düzeltme yerine bileşen seviyesinde çöz.
+- 🔎 **Ölçüm — desen zaten 3 kez kopyalanmış** *(2026-08-11)*: Ortak bir modal **bileşeni yok**; 39 ekran kendi markup'ını kuruyor, ortaklık **CSS sınıfında** (`.att-modal`). Temel kural "küçük onay diyalogları için" yazılmış ve **`max-height`/`overflow` taşımıyordu**. İçeriği uzayan her modal bunu tek tek yamalamış:
+  - `.att-modal.dvt-wiz` (Toplu Davet sihirbazı)
+  - `.att-modal.attm-retro` (Geriye dönük yoklama) — yorumu açıkça *"aynı `.dvt-wiz` kalıbı burada da uygulanır"* diyor
+  - `.att-modal.act-modal-wide` (Etkinlikler)
+  Yani varsayılan yanlış olduğu için üç kopya doğmuş; **`D-02` yamalanmayan dördüncüsü.**
+- ✅ **KAPANDI** *(`oksis-ui` @ `6817806`, 2026-08-11)*: Kural **varsayılan** yapıldı — `.att-modal` flex-column + `max-height: min(760px, calc(100vh - 64px))`, `.att-modal-body` kalan alanı yutup kendi içinde kayıyor, `.att-modal-head/-foot` küçülmüyor. Üç kopya kaldırıldı; geriye yalnız o modala özgü olanlar (genişlik, ayırıcı çizgi) kaldı.
+  - ⚠️ **Tuzak not:** `min-height: 0` şart. Flex öğesinin varsayılan `min-height: auto` değeri içerik yüksekliğini taban yapıyor ve `overflow` **hiç devreye girmiyor** — bu satır olmadan düzeltme sessizce çalışmaz.
+  - `act-modal-wide`'ın sabit `max-height: min(62vh, 560px)` değeri de kalktı; modal artık viewport'a göre esniyor, kısa ekranda gereksiz daralmıyor.
+- 📏 **Ölçülen kanıt** *(1280×900 viewport, 60 satırlık liste):*
+
+| | modal yüksekliği | aksiyon çubuğu | sonuç |
+|---|---|---|---|
+| **Önce** | 2968 px | ekranın **2068 px altında** | ❌ görünmüyor |
+| **Sonra** | 760 px | 830 ≤ 900 | ✅ görünür, gövde kendi içinde kayıyor |
+
+  Kısa içerikte davranış değişmiyor (470 px, gövde kaymıyor). Regresyon kontrolü: Etkinlik Tanımlama ve Yeni Şube modalları ekranda doğrulandı.
 
 ### X-03 · Görevlendirme iki nesil hâlinde yan yana yaşıyor
 - **Belirti:** Aynı iş alanı kodda **iki ayrı modelle** temsil ediliyor ve ikisi de canlı:
