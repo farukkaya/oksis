@@ -30,11 +30,12 @@
 | 🔴 Kritik | 7 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
 | 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 8 | İşlev eksik ama alternatif yol var |
-| ⚪ Düşük | 5 | Kozmetik / temizlik |
-| **Toplam** | **24** | 16 fonksiyonel + 7 tasarım + 1 validasyon |
+| ⚪ Düşük | 6 | Kozmetik / temizlik |
+| **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-03` · `B-08` · `B-10` · `B-11` · `B-15` · `D-03` · `TB-22` · `TB-23` · `TB-25` — `D-05` kodda kapandı, ekran doğrulaması bekliyor.
-**Kalan (bu dosyada, TB kuyruğu hariç):** 15.
+**Kapananlar:** `B-02` · `B-03` · `B-08` · `B-10` · `B-11` · `B-14` · `B-15` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-06`'nın dar ayağı da kapandı.
+**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı).
+**Kalan (bu dosyada, TB kuyruğu hariç):** 14.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -191,6 +192,47 @@ Kullanıcı gerçek bir okul programı iletti. Ölçülen desen:
 3. **Blok kavramı veri modelinde taşınıyor ama doldurulmuyor.** `PlannedPlacement` `IsBlock` ve `BlockGroupSeq` alanlarını taşıyor; üretici ikisini de sabit `false`/`0` yazıyor. `LessonDemandBuilder`'ın docblock'u bunu açıkça söylüyor: *"Blok üretimi bu dilimde KAPALI — BlockGroupSeq her zaman 0 (Debt-AG-8)."*
 - ➡️ **Sonuç:** Yapılacak iş sıfırdan bir hedef değişikliği değil, **`Debt-AG-8`'in kapatılması**: (a) talep üretimi haftalık saati bloklara bölsün, (b) solver bloğu **atomik** yerleştirsin (bloğun tüm saatleri aynı gün ardışık ve hepsi feasible olmalı), (c) ekranda varsayılan açılsın.
 
+#### ✅ Kod tarafı yapıldı *(`oksis-api` @ `<pending>`, 2026-08-11)*
+
+Üç ayak da kapatıldı:
+
+1. **`LessonDemandBuilder`** haftalık saati bloklara bölüyor (`SplitIntoBlocks`): 6→2+2+2, 5→2+2+1, 4→2+2, 3→2+1, 2→2, 1→1. Aynı bloğun saatleri ortak `BlockGroupSeq` taşıyor. **`BlockGroupSeq = 0` artık "blok değil" demek** — blok kapalıyken her saat 0 taşır, eski sözleşme ve mevcut testler bozulmadı.
+2. **`GreedySolver` bloğu atomik yerleştiriyor.** Talepler blok gruplarına toplanıyor; bir grup için aynı gün içinde `size` kadar **ardışık ve hepsi feasible** slot dizisi aranıyor (`BuildRun` + `CanPlaceRun`). Günlük aynı-ders sınırı artık **blok bütünü için toplu** kontrol ediliyor — tek tek bakılsa sınır aşılabilirdi.
+   - **Geri düşüş bilinçli:** blok bütün hâlinde sığmazsa saatler tek tek yerleştiriliyor. Kapsam bloktan önce gelir; aksi hâlde blok modu eksik saat üretir ve aday sıralaması (*önce eksik saat*) blok üreten adayı cezalandırırdı.
+3. **`IsBlock` / `BlockGroupSeq` gerçekten dolduruluyor** (eskiden sabit `false`/`0`). Izgara blokları birleşik çizebilir.
+4. **Ekran varsayılanı açıldı** — `oksis-ui` `AUTOGEN_DEFAULT_WEIGHTS.preferBlockPairing: false → true`. Backend'in `SolverWeights.Default`'u zaten `true` idi; **ekran ile backend ayrışmıştı**, kullanıcı özelliği hiç açık görmemiş olabilir.
+5. **`AutoGenerateScheduleJob`** ağırlıkları artık talep üretiminden **önce** çözüyor (blok kararı üretim anında gerekli).
+
+**Testler** — `BlockPlacementTests`, 10/10 yeşil. Hedef desen birebir ölçülüyor: `[Theory]` ile 6→2+2+2, 5→2+2+1, 4→2+2, 3→2+1; ayrıca kullanıcının cümlesinin karşılığı olan ayrı bir test (*"3 saat iki güne dağılmalı — her güne bir saat DEĞİL, ikili blok ardışık olmalı"*), blok işaretinin dolduğu, **eski davranışın kapalıyken birebir korunduğu** ve ızgara ikili bloğu barındıramadığında kapsamın düşmediği.
+
+#### ✅ EKRAN KANITI ALINDI — `B-14` KAPANDI *(2026-08-11)*
+
+Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Editörde Aç. Üretilen ızgara:
+
+| Ders | Haftalık saat | Üretilen yerleşim | Beklenen desen |
+|---|---|---|---|
+| Matematik | 6 | Pzt 5-6 · Sal 4-5 · Çar 5-6 | **2+2+2** ✅ |
+| Türk Dili (Türkçe) | 5 | Per 1-2 · Cum 1-2 · Çar 2 | **2+2+1** ✅ |
+| Fen Bilimleri | 4 | Pzt 1-2 · Sal 1-2 | **2+2** ✅ |
+| İngilizce | 4 | Per 3-4 · Cum 3-4 | **2+2** ✅ |
+| Sosyal Bilgiler | 3 | Per 5-6 · Cum 5 | **2+1** ✅ |
+| Beden Eğitimi · Din Kültürü · Müzik | 2 | Pzt 3-4 · Çar 3-4 · Sal 6-7 | **2** ✅ |
+
+**"Bu programın tüm dersleri yerleşti."** — 0 çakışma, 0 eksik saat, tercih uyumu %100.
+![[B-14-sonra-blok-yerlesim.png]]
+
+- 🔎 **Kalan tek sapma — tek saatlik dersler günün kuyruğuna düşmüyor.** Gerçek programda Kulüp/Koçluk/Rehberlik 7-8. saatteydi; üretilen ızgarada Görsel Sanatlar Çar **1**, Bilgisayar Sal **3**'e düştü. Bloklar erken saatleri kaptığı için tek saatliklerin sona düşmesi bir **yan etki** olarak umulmuştu — olmadı, çünkü tek saatlikler MRV sırasında erken geliyor. Bu ayrı bir puan boyutu (*"1 saatlik dersi günün sonuna it"*) gerektiriyor.
+- ➡️ **Yeni madde açıldı:** `D-08` — kapsamı dar, kozmetik/pedagojik; `B-14`'ün ana hedefi (blok) karşılandığı için bu madde `B-14`'ü açık tutmuyor.
+
+### D-08 · Tek saatlik dersler günün kuyruğuna itilmiyor
+- **Belirti:** Otomatik üretimde haftada **1 saat** olan dersler (Görsel Sanatlar, Bilgisayar) günün başına düşüyor — üretilen 9-A ızgarasında Çar 1. ve Sal 3. saatte.
+- **Beklenen:** Gerçek okul programında tek saatlik dersler (Kulüp, Koçluk, Rehberlik, Sağlık Bilgisi) günün **sonuna** toplanıyor — kullanıcının ilettiği 9B programında hepsi 7-8. saatte.
+- **Katman:** BE (puanlayıcı) · **Öncelik:** ⚪ Düşük
+- **Kaynak:** `B-14` blok yerleştirmesinin ekran testi, 2026-08-11.
+- **Kök neden adayı:** Bloklar erken saatleri kapınca tek saatliklerin sona düşeceği umulmuştu; olmadı çünkü tek saatlik talepler MRV sırasında (en az feasible slot) **erken** geliyor ve `MorningFirst` stratejisi onları 1. saate çekiyor.
+- **Çözüm yönü:** Puanlayıcıya *"blok olmayan tek saatlik dersi günün sonuna it"* boyutu, ya da talep sıralamasında tek saatlikleri bloklardan sonraya alma. Ayrı ekran yaması değil, tek noktada puan/sıra ayarı.
+- 🔗 `B-14`'ün artığı; ana hedef (blok) karşılandı, bu madde onu açık tutmuyor.
+
 ### D-07 · Öğretmen görünümü mobilde bozuk
 - **Belirti:** Ders Programı öğretmen görünümü mobil ekrana göre tasarlanmış ama responsive değil.
 - **Katman:** FE · **Öncelik:** 🟡 Orta
@@ -199,7 +241,7 @@ Kullanıcı gerçek bir okul programı iletti. Ölçülen desen:
 - **Belirti:** "Tüm sınıflar için oluştur" önizleme adımında ortalama vb. alanlar ham gösteriliyor; virgülden sonra **2 hane** olacak şekilde yuvarlanmalı.
 - **Katman:** FE · **Öncelik:** ⚪ Düşük
 - ✅ **Kod tarafı KAPANDI** *(`oksis-ui` @ `4ff222f`, 2026-08-11)*: `avgTeacherGap` ve `preferencePercent` doğrudan basılıyordu. Yuvarlama **her ekranda tek tek değil** `packages/core/src/format/tr-number.ts` içinde tek noktada: yeni `formatTrDecimal(value, maxFractionDigits = 2)` — en fazla 2 basamak, Türkçe ondalık ayırıcı (virgül), sondaki gereksiz sıfırlar atılır. Modülün "`toLocaleString` kullanma, Hermes'te ICU garanti değil" kuralına uyuyor, yani mobil de aynı yardımcıyı kullanabilir.
-- ⬜ **Ekranda doğrulanmadı:** kesirli metrik üretmek için gerçek bir otomatik program üretim koşusu gerekiyor; bu turda çalıştırılmadı. Bir sonraki turda otomatik üretim tetiklenip önizleme ekran görüntüsü alınmalı.
+- ✅ **EKRANDA DOĞRULANDI — KAPANDI** *(2026-08-11)*: `B-14`'ün ekran testi sırasında otomatik üretim çalıştırıldı ve önizleme adımı kesirli metrik üretti. Taslak C'de **"Ort. boş saat `0,22`"** — yuvarlanmış ve Türkçe ondalık ayırıcıyla. Düzeltmeden önce `0.2222222222222222` basılacaktı. ![[D-05-sonra-yuvarlama.png]]
 
 ---
 
@@ -1033,7 +1075,7 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`'yı aldı. **Sıradaki boş ID: `TB-52`, `X-07`, `B-17`, `ENG-02`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`'yı aldı. **Sıradaki boş ID: `TB-52`, `X-07`, `B-17`, `D-09`, `ENG-02`.**
 
 **Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
 - [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`
