@@ -33,9 +33,9 @@
 | ⚪ Düşük | 6 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-08` · `B-10` · `B-11` · `B-12` · `B-14` · `B-15` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-06`'nın dar ayağı ve `X-07` de kapandı.
+**Kapananlar:** `B-02` · `B-03` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-14` · `B-15` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-06`'nın dar ayağı ve `X-07` de kapandı.
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı).
-**Kalan (bu dosyada, TB kuyruğu hariç):** 13.
+**Kalan (bu dosyada, TB kuyruğu hariç):** 11.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -58,6 +58,8 @@ Bu modül şu an **yeni sezon açma akışını bloklıyor**. Diğer her şeyden
 - **Belirti:** BE'den dönen validasyon mesajı kullanıcıya düzgün yansımıyor; kullanıcı neden takıldığını ekrandan anlayamıyor.
 - **Katman:** FE · **Öncelik:** 🟠 Yüksek
 - **Not:** B-09 ile **aynı kök problem** — BE validasyon/hata mesajlarının notify katmanına taşınması. İkisi tek işte çözülmeli. -Proje Genelinde bu sorun var gibi genel bir çözüm bulunmalı yamalama kabul değil -
+- ✅ **KAPANDI — `X-01` yaygınlaştırmasının içinde** *(`oksis-ui` @ `a674b97`, 2026-08-11)*: Kök neden `academic-sessions/wizard.tsx`'te ölçüldü — sezon açma `catch { onToast("Sezon açılamadı.") }` ile yakalanıyordu; backend'in validasyon cümlesi buraya kadar geliyor ama sabit metinle **örtülüyordu**. Artık `mutationErrorDesc(err)` geçiyor.
+- 📌 **Kullanıcının şartı karşılandı:** *"yamalama kabul değil"* — düzeltme bu ekrana özel değil; 31 `onError` + 5 `catch` yeri birlikte bağlandı ve sapmayı yakalayan lint kuralı kuruldu.
 
 ### B-07 · Sezon devrinde görevlendirmeler aktarılmıyor
 - **Belirti:** Yeni sezon başlatılırken "Görevlendirmeler aktarılsın" seçilmesine rağmen aktarım gerçekleşmedi.
@@ -138,6 +140,8 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 - **Belirti:** Görevlendirmelerde branşsız öğretmen seçildiğinde backend anlamlı bir mesaj dönüyor ama kullanıcıya notify edilmiyor.
 - **Katman:** FE · **Öncelik:** 🟡 Orta
 - **Not:** B-04a ile aynı kök problem → bkz. **X-01 · BE mesaj hattı**. Tek tek yamalanmayacak.
+- ✅ **KAPANDI — ekran kanıtlı** *(`oksis-ui` @ `a674b97`, 2026-08-11)*: Kök neden `teacher-assignments/drawer.tsx` → `catch { onSaved("Görevlendirme kaydedilemedi.") }`. Backend **422** ile *"Branşı olmayan öğretmene görevlendirme yapılamaz."* döndürüyordu; sabit metin bunu örtüyordu.
+- **Ekran testi:** Görevlendirmeler → Almanca → İlk Öğretmeni Ata → branşsız öğretmen (Eren Şen) → Görevlendir. **Önce:** modal kapanıyor, sayaç değişmiyor, hiçbir açıklama yok. **Sonra:** ![[B-09-sonra-be-mesaji-gorunuyor.png]]
 
 ---
 
@@ -384,8 +388,20 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - **Somut örnek:** `features/duty/bolge-tab.tsx` → `onError: () => pushToast(L.toast.error, "warn")`. Backend *"Kapasite 1 ile 4 arasında olmalıdır."* dese bile kullanıcı sabit bir hata metni görüyor.
 
 - ➡️ **`B-04a` ve `B-09` için sonuç:** Teşhis düzeltildi. *"BE mesaj hattı yok"* **yanlış** — hat var. Doğrusu: **hat 31 yerde bilinçli olarak baypas ediliyor.** İki madde de bu yaygınlaştırmanın içinde kapanacak, ayrı ayrı değil.
-- ⬜ **Sıradaki dilim (`X-01`'in gövdesi):** 31 çağrı yerini eşleyiciye bağlamak. **Ama yalnız 31 dosyayı düzenlemek yetmez** — 32.'sini yazan yine `onError: () =>` yazar. Yaygınlaştırmayla birlikte sapmayı zorlaştıran bir kural gerekiyor (ortak mutasyon yardımcısı ya da lint kuralı); aksi hâlde bu bulgu ekran ekran geri doğar.
-- 📊 **Bugünkü durum:** sözleşme ✅ · eşleyici ✅ · validator dili ✅ · **yaygınlaştırma ❌ (0/31)**. `X-01` bu yüzden **açık kalıyor**.
+**5. ✅ YAYGINLAŞTIRMA YAPILDI** *(`oksis-ui` @ `a674b97`, 2026-08-11)*
+- **31 `onError: () =>`** çağrı yeri eşleyiciye bağlandı: `onError: (err) => …mutationErrorDesc(err)`.
+- 🔎 **Süpürme sırasında İKİNCİ bir biçim çıktı:** `catch { }` — hata **bağlanmadan** yakalanıyor, yani lint kuralının kapsamı dışında. **5 yer** bu şekildeydi ve ikisi tam da aradığımız ekranlardı:
+  - `teacher-assignments/drawer.tsx` → *"Görevlendirme kaydedilemedi."* = **`B-09`**
+  - `academic-sessions/wizard.tsx` → *"Sezon açılamadı."* = **`B-04a`**
+- **Hiç mesaj göstermeyen iki yer** için hata yüzeyi eklendi (bunlar en kötü hâliydi — kullanıcı reddi hiç görmüyordu):
+  - `schedule/publish-drawer.tsx`: yayın reddedilince yalnız forma dönülüyordu → uyarı bandı eklendi.
+  - `attendance/event-wizard.tsx`: yalnız gönderim durumu sıfırlanıyordu → ekranın kendi `stepError` yüzeyine yazılıyor.
+- `use-duty-editor` hook'unun `onError` imzası `(err: unknown) => void` olarak genişletildi — hook mutasyonun hatasını zaten alıyordu ama **tip onu düşürüyordu**.
+- 🛡️ **32.'sini engelleyen kural kuruldu:** `packages/eslint-config/base.js` → `no-restricted-syntax` ile sıfır parametreli `onError` arrow'u **hata**. Kural tam **31 ihlal** yakaladı (grep sayımıyla birebir), düzeltme sonrası **0**.
+- ⬜ **Kalan boşluk (dürüstlük notu):** Lint kuralı `catch { }` biçimini **yakalamıyor** — `CatchClause[param=null]` seçicisi meşru kullanımları da (ör. `JSON.parse` etrafındaki yutucu catch) kırmızıya düşürürdü. Bugün `features` altında 17 çıplak `catch` var, 5'i mesaj yüzeyine dokunuyordu ve düzeltildi; kalan 12'si mesaj basmıyor. **Bu biçim için otomatik koruma yok** — 6.'sı yazılırsa lint susar.
+
+- 📊 **Durum:** sözleşme ✅ · eşleyici ✅ · validator dili ✅ · yaygınlaştırma ✅ (31/31 + 5 catch) · `catch` koruması ⬜
+- ✅ **`B-04a` ve `B-09` KAPANDI.** `B-09` ekran kanıtı: branşsız öğretmene görevlendirme → backend **422** döner; eskiden hiçbir şey görünmüyordu, artık toast **"Branşı olmayan öğretmene görevlendirme yapılamaz."** gösteriyor ![[B-09-sonra-be-mesaji-gorunuyor.png]]
 
 ### X-02 · Uzun içerikte aksiyon butonlarının kaybolması
 - **Belirti:** Modal/panel içeriği uzayınca aksiyon butonu görünür alanın dışında kalıyor.
