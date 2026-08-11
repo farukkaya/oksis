@@ -135,6 +135,19 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 - **Katman:** BE + FE · **Öncelik:** 🔴 Kritik
 - **Neden kritik:** Zincirin en üstünde. Branşsız öğretmen → görevlendirme yapılamıyor (B-09) → ders programı üretilemiyor (B-14) → sezon devrinde görevlendirme aktarımı boş kalıyor (B-07). **Bu modüldeki ilk iş bu olmalı.**
 - 🔗 **İkinci ayak — `TB-20`** *(kod taraması, 2026-08-10)*: Ekran eksikliği sorunun yarısı. Toplu içe aktarma ve davet yolları da branşı katalog kimliğine **çözmüyor**; kod pilot için boş bırakılmasını kabul ediyor. Yalnız ekran eklenirse toplu eklenen öğretmenler yine branşsız doğar.
+- 🔍 **Ölçüm bulguyu BÜYÜTTÜ: eksik olan yalnız ekran değildi, yazma yolunun KENDİSİYDİ** *(2026-08-11)*. `TeacherProfile.SetBranch` repo genelinde **tek bir yerden** çağrılıyordu: dev seeder (`IdentityDevSeeder.cs:266`). Hiçbir komut, hiçbir uç onu yazmıyordu. Yani ekran eklemek yetmezdi — arkasında çağrılacak bir şey yoktu.
+- 🔍 **Ekran engeli gösteriyor, çözümü sunmuyordu:** öğretmen çekmecesi *"Branş eksik — bu öğretmene ders/sınıf görevlendirmesi yapılamaz"* uyarısını basıp görevlendirmeyi kilitliyordu. Kullanıcıya kaldıramayacağı bir engel gösteriliyordu. ![[B-05-once-brans-eksik-atama-alani.png]]
+- ✅ **KAPANDI** *(`oksis-api` @ `6159942` + `oksis-ui` @ `a30a69f`, 2026-08-11)*:
+  - **Yeni komut AÇILMADI** — var olan `UpdateProfileCommand` genişletildi. Öğretmenin diğer profil alanı (`TerminatedAt`) zaten oradaydı; ikinci bir yazma yüzeyi aynı kaydı iki kapıdan güncellenebilir yapardı. Uç de yeni değil: `PUT /users/persons/{id}/profiles/{type}`.
+  - Öğretmen kolundaki `when request.TerminatedAt.HasValue` koruması kaldırıldı — o koruma kolu **tek alanlı** tutuyordu; artık iki alan aynı istekte gelebiliyor.
+  - **İki kapı eklendi:** branş katalogda yoksa → *"Seçilen branş bulunamadı."*; pasifse → *"'X' branşı pasif durumda; öğretmene atanamaz."* Pasif kapısının emsali `B-11`: pasif kayda atama sessiz hatadır, kayıt oluşur ama listelerde görünmez. Gerekçe branşın **adıyla** döner ki kullanıcı hangisini aktifleştireceğini bilsin.
+  - **`null` = değiştirme, "sil" değil.** Branş temizleme bilinçli olarak yok: branşsız öğretmen görevlendirilemediği için sessiz temizleme var olan görevlendirmeleri sahipsiz bırakırdı.
+  - FE: çekmecede branş seçici + Ata/Değiştir. Seçenekler **yalnız aktif** branşlar; hata gerekçesi yine de basılıyor çünkü seçimle kaydetme arasında branş pasife alınabilir.
+- ✅ **Canlı uçta dört senaryo** *(`mudur.s2`)*: branşsız öğretmen → uydurma branş ID'si **400** *"Seçilen branş bulunamadı."* (branş `null` kaldı) → gerçek aktif branş **204** (branş `Matematik` oldu) → pasife alınmış branş **400** *"'Biyoloji' branşı pasif durumda; öğretmene atanamaz."* (branş `null` kaldı). Pasife alınan branş test sonrası geri aktif edildi.
+- ✅ **Ekran testi uçtan uca** *(Furkan Polat, branşsız)*: çekmecede seçici 15 aktif branş listeledi → "Kimya" seçilip **Ata**'ya basıldı → künye `Kimya` oldu, **"Branş eksik" uyarısı kayboldu**, buton `Değiştir`e döndü ve **arkadaki liste satırı da tazelendi**. Diğer öğretmenler hâlâ "Branş eksik" — değişiklik hedefe özel. ![[B-05-sonra-brans-atandi.png]]
+- ✅ **Zincirin bir alt halkası ölçülerek açıldı:** Görevlendirmeler sekmesindeki *"Branş atanmadan görevlendirme yapılamaz"* engeli kalktı, "Ders/Sınıf Görevlendir" etkin. Bulgunun *"zincirin en üstünde"* iddiası doğrulandı.
+- 🧪 5 birim testi (`UpdateProfileBranchTests`) + `Oksis.Application.UnitTests` **1562/1562 yeşil**; `oksis-ui` 521/521, typecheck ve lint temiz.
+- ⬜ **`TB-20` AÇIK KALIYOR ve bu bilinçli.** Bu iş *mevcut* öğretmenin branşını atama yolunu açtı. Toplu içe aktarma ve davet akışında branş adının katalog kimliğine çözülmesi **hâlâ yok** (`ProfileBuilder.cs`'teki TODO duruyor) — yani toplu eklenen öğretmenler yine branşsız doğar, ama artık **tek tek düzeltilebilirler**. `B-05`'in kapanması `TB-20`'yi kapatmaz.
 
 ### B-09 · Branşsız öğretmen seçilince BE mesajı bildirilmiyor
 - **Belirti:** Görevlendirmelerde branşsız öğretmen seçildiğinde backend anlamlı bir mesaj dönüyor ama kullanıcıya notify edilmiyor.
@@ -633,6 +646,7 @@ Haftalık nöbet sıklığı ve gün deseni (yayılı/ardışık) okul ayarı ol
 ### TB-20 · Öğretmen branşı davet ve içe aktarma akışında atanmıyor 🟠
 Toplu içe aktarma ve davet yolunda branş **adı** katalog kimliğine çözülmüyor; kod pilot için boş bırakılmasını kabul ediyor. Buna karşılık **branşsız öğretmene görevlendirme yapılamıyor** (sert engel).
 - 🔗 **`B-05` ile aynı zincir:** "Mevcut öğretmenin branşı hiçbir yerden belirlenemiyor" bulgusunun ikinci ayağı bu. Ekran eksikliği tek başına çözüm değil — **içe aktarma ve davet yolları da branşı çözmeli**, yoksa toplu eklenen her öğretmen görevlendirilemez doğar.
+- 📌 **`B-05` kapandı ama bu madde AÇIK** *(2026-08-11)*: artık *mevcut* bir öğretmene branş atanabiliyor (`UpdateProfileCommand.BranchId`). Ama `ProfileBuilder.cs`'teki TODO **duruyor** — davet/içe aktarma hâlâ branş **adını** katalog kimliğine çözmüyor. Yani toplu eklenen öğretmenler yine branşsız doğuyor; fark şu ki artık tek tek düzeltilebiliyorlar. Toplu ekleme yapan bir okulda bu, elle N tıklama demek.
 
 ### TB-21 · Öğretmen yükü sorgusu farklı izin ailesiyle korunuyor ⚪
 Görevlendirme sorguları kendi izin aileleriyle korunurken, öğretmen yük özeti `users.view` istiyor. Yetki matrisinde bilinçli bir istisna mı, kopyala-yapıştır kalıntısı mı belirsiz.
