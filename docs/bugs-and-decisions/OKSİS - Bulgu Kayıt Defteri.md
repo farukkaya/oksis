@@ -247,6 +247,18 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 ### D-07 · Öğretmen görünümü mobilde bozuk
 - **Belirti:** Ders Programı öğretmen görünümü mobil ekrana göre tasarlanmış ama responsive değil.
 - **Katman:** FE · **Öncelik:** 🟡 Orta
+- 🔍 **Ölçüldü — belirti doğru, ama düzeltilecek ekran YANLIŞ** *(ekran testi, `ogretmen.s2.01`, 2026-08-11)*: 390 px'te sayfa gerçekten yatay kayıyor (gövde **947 px** / görünen **487 px**, 33 öğe taşıyor). Ama taşan öğeler öğretmenin çizelgesi değil, **yöneticinin yönetim konsolu**: `Öğretmen Müsaitliği` · `Otomatik Oluştur` · `Yeni Program`.
+- 🚧 **ENGEL — `D-07` bir CSS düzeltmesiyle kapanamaz.** Öğretmen/öğrenci için ders programı ekranı **hiç yazılmamış**; ikisi de yöneticinin konsoluna düşüyor. Konsolu mobilde düzgün akıtmak, göstermemesi gereken bir ekranı daha güzel göstermek olurdu. Bulgu bir hata değil, üstü hatayla örtülmüş bir **eksik özellik**. Ayrıntılı anlatım, ölçüm tabloları ve iki çözüm seçeneği: [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]]
+- ➡️ **Bu ölçümden iki yeni bulgu doğdu:** `B-17` (yüzey ayrımının hiç olmaması) ve `X-08` (403'ün "ağ arızası" diye gösterilmesi).
+- ⏸️ **Kullanıcı kararı bekliyor:** Seçenek A (öğretmen/öğrenci çizelge ekranını yaz — sunucu ayağı hazır) veya Seçenek B (yüzey gelene dek menüden kaldır). Önerilen: **A**.
+
+### B-17 · Öğretmen ve öğrenci ders programının yönetim konsolunu görüyor
+- **Belirti:** `/schedule` üç rolde de aynı ekranı çiziyor — öğretmen ve öğrenci, okulun **bütün şubelerinin** programını "oluşturun, doğrulayın ve yayınlayın" diyen konsola düşüyor; `Yeni Program` birincil buton olarak duruyor. ![[B-17-ogrenci-yonetim-konsolu.png]]
+- **Katman:** FE · **Öncelik:** 🟠 Yüksek (rol yüzeyi ihlali)
+- ✅ **Veri sızıntısı YOK — ölçüldü:** sayfanın attığı beş yönetim isteğinin **beşi de 403**: `timetable/programs`, `school-settings/grade-levels`, `users/persons?profileType=Teacher`, `class-rooms` (×2). Sunucu kapısı sağlam; sorun tamamen yüzeyde — kullanıcıya sahip olmadığı bir yetenek duyuruluyor.
+- 🔍 **Kök neden üç satır:** (1) `/schedule` core nav'da admin **+ teacher + student** menüsünde; (2) `schedule-page.tsx` içinde `activeRole` **hiç okunmuyor**, tek dal yok; (3) öğretmen/öğrenci için yazılmış bir çizelge ekranı ne web'de ne mobilde var.
+- 📌 **Emsal koddadır:** duyurular modülü aynı işi doğru yapıyor — `AnnouncementsScreen` rolü okuyup öğretmeni kendi yüzeyine, veli/öğrenciyi ayrı duruma ayırıyor. Ders programında o ayrım hiç kurulmamış.
+- ⏸️ **`D-07` ile aynı karara bağlı** — bkz. [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]]. Menü budama veya ekran yazma **kapsam kararı** olduğu için kendi başıma değiştirilmedi.
 
 ### D-05 · Önizleme metriklerinde yuvarlama yok
 - **Belirti:** "Tüm sınıflar için oluştur" önizleme adımında ortalama vb. alanlar ham gösteriliyor; virgülden sonra **2 hane** olacak şekilde yuvarlanmalı.
@@ -517,6 +529,19 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - **Çözüm yönü:** Ders programı tarafında `Branch` → `ClassRoom` olarak yeniden adlandırılmalı (ya da tersi). Geçiş sırasında eski ad silinmeyip *deprecated* işaretlenmeli, yoksa iki isim yan yana daha da karıştırır.
 - ⬜ **Not:** Domain haritasında iki kavram notuna da karşılıklı uyarı yazıldı; ama bu dokümantasyonla kapanacak bir şey değil, isim düzeltmesi gerekiyor.
 
+### X-08 · Sorgu hata ekranları gerekçeyi sormuyor — 403 "ağ arızası" diye gösteriliyordu
+- **Belirti:** Öğretmen `/schedule`e girince beş uçtan da **403** alıyor, ekranda ise *"Sunucuya ulaşılamadı. Bağlantınızı kontrol edip yeniden deneyin."* yazıyordu. Kullanıcıya internetinin bozuk olduğu söyleniyor; kaç kez denerse denesin sonuç değişmiyor. *(Ekran testinde `B-17` ölçülürken çıktı, 2026-08-11.)*
+- **Katman:** FE · **Öncelik:** 🟠 Yüksek
+- 🔗 **`X-01`'in ÖRTMEDİĞİ ayak.** `X-01` mutasyonları kapattı (`onError` → `mutationErrorDesc(err)`) ve ESLint kuralı da yalnız `onError`'a bakıyor. **Sorgu** hata durumları o taramanın dışında kaldı ve kendi sabit cümlelerini yazmayı sürdürdü.
+- 🔍 **Asıl ironi ölçüldü:** merkezî eşleyici 403'ü **zaten doğru çeviriyordu** (`NO_PERMISSION_DESC` → "Bu işlem için yetkiniz yok."). Eksik olan mantık değil, **soru**: ekranlar ona hiç sormuyordu. Sebebi adıydı — `mutationErrorDesc` "bu mutasyonlar içindir" diye okunuyor, oysa fonksiyon **statüye** bakar, isteğin türüne değil.
+- ✅ **KAPANDI** *(`oksis-ui` @ `5bb5ef5`, 2026-08-11)*:
+  - Fonksiyon `apiErrorDesc` olarak yeniden adlandırıldı — adı artık ne yaptığını söylüyor. `mutationErrorDesc` **alias olarak duruyor**, yani 19+ çağrı yeri churn'lenmedi ve gerekçe eski adın üstünde yazılı kaldı.
+  - `ScheduleError` artık `error` alıyor ve gerekçeyi `apiErrorDesc(error)` ile basıyor; `schedule-labels.ts`teki sabit `errorBody` **silindi** (yerine neden silindiğini anlatan not kondu).
+  - Ağ hatası kolu kaybolmadı: aynı fonksiyon `ApiError` olmayan hatada zaten bağlantı tavsiyesi veriyor. Yani doğru cümle **her iki durumda da** tek yerden geliyor.
+- ✅ **Ekranda doğrulandı** — öğretmen oturumu, aynı sayfa: *"Programlar yüklenemedi. **Bu işlem için yetkiniz yok.**"* ![[X-08-sonra-yetki-mesaji.png]] · `packages/api` 140/140 yeşil, `apps/web` typecheck temiz.
+- ⬜ **Kalan iş — aynı desende 8 ekran daha:** `attendance/session-sheet.tsx`, `settings/parts.tsx`, `settings/notification-tab.tsx`, `academic-sessions-page.tsx`, `announcements/inventory-tab.tsx`, `permissions/parts.tsx`, `duty/parts.tsx`, `duty/duty-labels.ts`. Hepsi sabit "… yüklenemedi" cümlesi basıyor. İkisi (`settings/notification-tab`, `settings/parts`) *"ya da bu ayarı görme yetkiniz yok"* diye **elle hedge etmiş** — yani biri bu deliğe daha önce düşmüş ve cümleyi belirsizleştirerek yamamış. Kalıp artık hazır; bu ekranlar tek tek aynı kalıba çekilmeli.
+- ⬜ **Kural boşluğu:** ESLint kuralı sorgu hata yüzeylerini yakalamıyor. Sabit hata cümlelerini yasaklayan ikinci bir selektör düşünülmeli, yoksa aynı delik yeni ekranlarda geri açılır.
+
 ---
 
 ## 11. Kod Taraması Bulguları (Domain Map) 🔧
@@ -563,6 +588,10 @@ Hesapta `TwoFactorEnabled` alanı ve açma/kapama davranışları var, ama giri�
 - ➕ **Kapsam genişledi** *(2026-08-10)*: Aynı durumda **beş** klasör var — `Classes`, `Grades`, `Homework`, `Messaging`, `Dashboard`. Hepsi yalnız `.gitkeep` içeriyor; domain tarafında da karşılıkları yok (0 entity).
 - **Etkisi:** Klasör listesi "bu modüller var" izlenimi veriyor. `Classes` yanıltıcı çünkü işlev **başka yerde** yaşıyor; diğer dördü ise **hiç yazılmamış** — ikisi çok farklı durum ama klasöre bakınca ayırt edilemiyor.
 - **Çözüm yönü:** `Classes` silinsin (işlevi `AcademicSessions`'ta). Yazılmamış dördü ya silinsin ya da içine niyeti anlatan bir `README` konsun.
+- ✅ **KAPANDI — defterin yazdığı yol birebir uygulandı** *(`oksis-api` @ `9b1259c`, 2026-08-11)*. Önce ölçüldü: beş klasörün beşi de yalnız `.gitkeep` içeriyordu, kod tabanında **hiçbir referansı yoktu** (`Modules.Classes|Grades|Homework|Messaging|Dashboard` → 0 eşleşme) ve `Oksis.Domain/Modules/` altında karşılıkları da yoktu.
+  - `Classes` **silindi** — yanıltıcıydı, işlevi gerçekten var ama `AcademicSessions` altında yaşıyor.
+  - Kalan dördüne `README.md` kondu: "bu klasör boştur ve bilinçli olarak boştur, modül yazıldığında bu dosya silinir". Böylece **iki durum artık klasöre bakınca ayırt ediliyor** — bulgunun asıl şikâyeti buydu.
+  - `dotnet build` temiz (0 uyarı, 0 hata).
 
 ### TB-14 · Silinen şubenin geçmiş atamaları sahipsiz kalıyor 🟡
 Şube silindiğinde kayıt işaretlenerek kaldırılıyor ve (sezon, seviye, şube adı) slotu **serbest kalıyor** — aynı ad yeniden açılabiliyor. Ama o şubeye ait kapanmış öğrenci atamaları silinen şubeye asılı kalıyor. Aynı adla yeni şube açılırsa öğrenci geçmişinin hangi şubeye ait okunacağı belirsiz.
@@ -596,6 +625,9 @@ Görevlendirme sorguları kendi izin aileleriyle korunurken, öğretmen yük öz
 
 ### TB-27 · Ders programı durum enum'unda bayat faz notu ⚪
 `ScheduleProgramStatus` açıklamasında *"Faz 1'de yalnız Taslak/Revize egzersiz edilir; Yayında Faz 2'de devreye girer"* yazıyor. Oysa yayın uçları, yayın snapshot'ı ve tüketici ekranları (öğretmen/öğrenci/veli programı) çalışır durumda. Yorum yeni geleni yanlış yönlendiriyor.
+- ✅ **KAPANDI** *(`oksis-api` @ `9b1259c`, 2026-08-11)*. Notun bayat olduğu **ölçülerek** doğrulandı: `PublishProgram` komutu ve `POST /{id}/publish` ucu var, `ScheduleVersion` snapshot'ı yazılıyor, `GetPublishedSchedules` · `ListScheduleVersions` · `GetScheduleVersionDiff` sorguları ondan okuyor. Yorum düzeltildi ve **neden değiştiği** de yazıldı ki aynı cümle geri gelmesin.
+- ➕ **Aynı sınıftan ikinci bir bayat not bulundu ve o da düzeltildi:** `ScheduleVersion` docblock'u *"Tüketici ekranları Faz 2'de … beslenecek"* diyordu — gelecek zaman, oysa bugün besleniyor.
+- ⚠️ **Ama "tüketici ekranları çalışır durumda" cümlesi YALNIZ backend için doğru.** Öğretmen/öğrenci web yüzeyi **yok** — bkz. `B-17` ve [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]].
 
 ### TB-28 · Program istatistiklerinin tazeliği garanti değil 🟡
 Ders programı üzerinde üç denormalize sayı taşınıyor — çakışan yerleşim sayısı, yerleştirilmemiş saat, müsaitlik ihlali. Üçünü de domain hesaplamıyor; uygulama katmanı hesaplayıp yazıyor, program yalnız saklıyor. Hub listesi bu sayıları okuyor.
@@ -733,6 +765,7 @@ Notlandırmanın tüm yapılandırma yüzeyi hazır ama **arkasında hiçbir şe
 ### TB-47 · Haftalık saat override'ının kod açıklaması bayat ⚪
 `SchoolWeeklyHourOverride` açıklamasında *"bu spec'te yazma yolu YOK (S-6); yalnız resolver okur. Yönetim UI'ı tam Müfredat modülünde gelir"* yazıyor.
 Oysa yazma komutu (`SetSubjectWeeklyHours`) **ve** kendi izni (`curriculum-hours.override`) mevcut. Açıklama, kaydın salt-okunur olduğu izlenimi veriyor.
+- ✅ **KAPANDI** *(`oksis-api` @ `9b1259c`, 2026-08-11)*. Yazma yolu ölçülerek doğrulandı: `SetSubjectWeeklyHoursCommand` + `[RequirePermission("curriculum-hours.override")]` + `CurriculumHoursController` ucu. Docblock düzeltildi ve komutun **reconcile** davranışı da yazıldı (verilen saat master ile aynıysa override kaydı silinir) — eski not bunu hiç söylemiyordu.
 
 ---
 
@@ -1199,7 +1232,7 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16` ve `TB-52`'yi aldı. **Sıradaki boş ID: `TB-53`, `X-08`, `B-17`, `D-09`, `ENG-02`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı. **Sıradaki boş ID: `TB-53`, `X-09`, `B-18`, `D-09`, `ENG-03`.**
 
 **Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
 - [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`
