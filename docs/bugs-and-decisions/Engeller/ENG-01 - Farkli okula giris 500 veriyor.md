@@ -4,7 +4,8 @@
 > **Neyi engelledi:** `B-15`'in ekran testini asıl veri bulunan okulda (`s3`) yapmayı.
 > **Nerede yaşıyor:** `oksis-api` · `src/Oksis.Infrastructure/Identity/TenantContext.cs:38-52`
 > **Defterdeki maddesi:** `B-16` (bkz. [[OKSİS - Bulgu Kayıt Defteri]])
-> **Durum:** 🔴 Açık — düzeltilmedi, yalnız ölçüldü ve etrafından dolaşıldı.
+> **Durum:** ✅ **KAPANDI** — 2026-08-12, tavsiye edilen **(b)** yolu uygulandı (`oksis-api` @ `a79b391`).
+> Kapanış ayrıntısı ve ölçümler `B-16` maddesinde.
 
 ---
 
@@ -111,7 +112,7 @@ Pilotta gerçekten olacak üç sahne:
   bir şey yüzünden hesabını kilitletiyor.**
 - **Birden fazla okulda görevli kişi.** Aynı kişi iki kurumda çalışıyorsa okul
   değiştirmek için önce çıkış yapmayı bilmek zorunda; hiçbir ekran bunu söylemiyor.
-- **Süresi dolmamış eski token.** Token 60 dakika geçerli. Kullanıcı çıkış yapsa bile
+- **Süresi dolmamış eski token.** Token **15 dakika** geçerli *(bu satırda önce 60 dakika yazıyordu; 2026-08-12'de ölçülerek düzeltildi — token'ın ömrü hatanın görünürlüğünü doğrudan belirliyor, bkz. aşağıdaki kapanış notu)*. Kullanıcı çıkış yapsa bile
   istemci token'ı bir yerde tutuyorsa aynı duvara çarpılıyor.
 
 Üçünde de kullanıcının gördüğü şey aynı: **hiçbir şey.** Bu, `X-01`
@@ -157,3 +158,36 @@ sürükledim, sonra hücre menüsünden "Öğretmen Değiştir"i açtım. `B-15`
 
 Yani engel `B-15`'i test etmeyi **engellemedi**, yalnız yolu uzattı. Ama kendisi
 kapatılmamış bir bulgu olarak duruyor.
+
+---
+
+## ✅ Kapanış — 2026-08-12
+
+**(b) uygulandı:** `AnonymousEndpointIdentityMiddleware` — `[AllowAnonymous]` bir uç için
+`HttpContext.User` boş principal'a çekiliyor (`UseAuthentication`'dan sonra,
+`UseAuthorization`'dan önce). Koruma **gevşetilmedi**; kaldırılan şey onu boş yere
+tetikleyen miras kimlik.
+
+**Ölçüm bu dosyayı iki yerde düzeltti:**
+
+1. **Tek uç değil, altı akış.** `SetForLoginFlow`'u HTTP anonim akışlarından altı yer
+   çağırıyor ve **davet kabul** akışı birebir aynı tuzağı taşıyor: A okulunda oturumu
+   açık olan biri B okulunun davetini kabul ederse aynı 500 doğar. Bu dosya yalnız
+   giriş ucunu anlatıyordu.
+2. **Token ömrü 60 değil 15 dakika.** Yukarıdaki yeniden üretim adımları elde **bayat**
+   bir token varken **200** verir, çünkü süresi dolmuş token claim üretmez ve çatışma
+   doğmaz. İlk denememde tam olarak bu oldu. Bu, belirtinin neden "bazen oluyor bazen
+   olmuyor" göründüğünü de açıklıyor — hata yalnız **taze** bir oturum varken çıkar.
+   Yeniden üretmek isteyen, adım 1'deki token'ı **hemen** adım 2'de kullanmalı.
+
+**Ek olarak:** `SecurityException` artık 500 değil **403** + Türkçe cümle
+(*"Bu işlem açık olan oturumun okuluyla eşleşmiyor. Önce çıkış yapıp tekrar deneyin."*).
+Bu dosyanın son paragrafında istenen düzeltme buydu.
+
+**Kapsam neden `[AllowAnonymous]`:** elle yol listesi tutmak listenin bir gün uçlardan
+ayrışması demekti (`B-04`'te ölçülen desen). Depodaki dokuz anonim ucun tamamı tek tek
+ölçüldü, hiçbiri tenant claim'ine bağlı değil.
+
+**Doğrulama:** RED→GREEN canlı uçta (500 → 200, dönen token gerçekten hedef okulun);
+yanlış parola hâlâ 401; token yenileme / çıkış / korumalı uç regresyonsuz; 3 middleware
+testi + boş-yere-yeşil kontrolü; `Oksis.Api.UnitTests` 251/251.

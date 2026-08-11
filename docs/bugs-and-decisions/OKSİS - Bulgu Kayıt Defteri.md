@@ -21,7 +21,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-54` · `X-10` · `B-18` · `D-09` · `ENG-03`
+**Sıradaki boş ID:** `TB-55` · `X-11` · `B-18` · `D-09` · `ENG-03`
 
 ---
 
@@ -35,9 +35,9 @@
 | ⚪ Düşük | 6 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-13` · `B-14` · `B-15` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
-**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından, 2026-08-12).
-**Kalan (bu dosyada, TB kuyruğu hariç):** 7 — `B-04`, `B-10` ve `B-13` 2026-08-12'de kapandı.
+**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
+**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan), hepsi 2026-08-12.
+**Kalan (bu dosyada, TB kuyruğu hariç):** 5 — 2026-08-12 turunda `B-04`, `B-10`, `B-13`, `B-16` ve `B-17` kapandı.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -344,7 +344,20 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - 📌 **`D-07` ile İLGİSİ YOK.** Bu bulgu, `D-07`'yi yanlış okuyup öğretmen ROLÜYLE giriş yaptığım turda **kazara** ortaya çıktı. `D-07` yöneticinin editöründeki bir sekmeydi ve ayrıca kapandı; buradaki ise bağımsız ve kendi ölçümüyle ayakta duran bir yüzey ihlali.
 - ✅ **KULLANICI KARARI VERİLDİ — 2026-08-12: Seçenek B, menüden kaldırılacak.** Öğretmen/öğrenci ders programı ekranı bu turda **yazılmayacak**; `/schedule` yalnız yönetici menüsünde kalacak.
 - ⚠️ **Kararın bilinen bedeli (kayda geçsin):** Sunucu ayağı hazır olmasına rağmen öğretmen kendi haftalık programını, öğrenci kendi şubesinin programını **hiçbir yerden göremeyecek**. Bu bir ürün eksiği olarak sürüyor; menü budaması ihlali kapatıyor, ihtiyacı değil. Ekran ileride yazıldığında menü satırı geri açılacak.
-- ⬜ **Uygulama bekliyor** — bkz. [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]].
+- ✅ **KAPANDI** *(`oksis-ui` @ `c030022`, 2026-08-12)*: `/schedule` `teacherGroups` ve `studentGroups` nav setlerinden çıkarıldı; yönetici setinde duruyor. Kaldırılan satırın yerine **neden kaldırıldığı ve hangi koşulda geri geleceği** yazıldı — ileride "eksik" sanılıp geri eklenmesin.
+- 🔎 **ÖLÇÜM BENİ DÜZELTTİ — menüyü kaldırmak rotayı da kapattı, ayrıca sayfa kapısı GEREKMEDİ.** Önce `schedule-page.tsx`'e `activeRole !== "admin"` dalı eklemiştim. Ekranda ölçünce çizilenin benim bileşenim değil **var olan `RouteGuard`** olduğu görüldü: `canAccessRoute` **nav'ın kendisini** kaynak alıyor ve kendi yorumu bunu zaten söylüyor — *"menüde yok ama rota açık durumu tekrar oluşamaz"*. Eklediğim dal geri alındı; merkezî mekanizmanın üstüne ikinci bir kapı koymak tam da kaçındığımız desendi.
+- ✅ **Ekran kanıtı — üç rolde ölçüldü** *(2026-08-12)*:
+
+| Rol | Menüde `/schedule` | `/schedule` adresi elle yazılınca | Yönetim konsolu |
+|---|---|---|---|
+| Öğretmen | **yok** | *"Bu sayfaya erişemezsiniz"* | çizilmiyor |
+| Öğrenci | **yok** | *"Bu sayfaya erişemezsiniz"* | çizilmiyor |
+| Yönetici | var | konsol açılıyor (7 program satırı) | **regresyon yok** |
+
+  ![[B-17-sonra-ogretmen-konsol-yok.png]]
+- 📌 **Mobile dokunulmadı ve bu ölçülerek karar verildi:** `MOBILE_MORE_SCHOOL_BY_ROLE` içinde öğretmen/öğrenci için "Program"/"Programım" kutucukları var **ama `href` taşımıyorlar** — tip yorumunun dediği gibi *"yoksa satır 'yakında' ekranına düşer"*. Yani mobil zaten dürüst davranıyor, olmayan bir yeteneği duyurmuyor. `B-17` mobilde yok.
+- ⚠️ **Kararın bedeli sürüyor:** öğretmen kendi programını, öğrenci kendi şubesinin programını hâlâ hiçbir yerden göremiyor. Sunucu ayağı hazır; eksik olan yalnız ekran → [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]] açık kalıyor.
+- 🔎 **Yolda ÇIKAN YENİ BULGU:** ölçüm sırasında öğrencinin `/schedule` yüklemesinde **beş yönetim isteğinin yine atıldığı** (hepsi 403) görüldü — `RouteGuard` rol çözülene kadar geçirgen, o pencerede konsol kısa süreliğine mount oluyor. Yalnız bu ekranın değil **her korumalı rotanın** meselesi → `X-10`.
 
 ### D-05 · Önizleme metriklerinde yuvarlama yok
 - **Belirti:** "Tüm sınıflar için oluştur" önizleme adımında ortalama vb. alanlar ham gösteriliyor; virgülden sonra **2 hane** olacak şekilde yuvarlanmalı.
@@ -449,6 +462,24 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - 🚫 **Kısıt:** Tek uca `try/catch` koymak yama olur. Kural şu olmalı: *bir giriş isteği tanım gereği anonimdir, taşıdığı eski kimliği miras almaz.* → çözüm yönü ve iki adayın karşılaştırması engel dosyasında.
 - 📄 **Ayrıntılı anlatım, yeniden üretim adımları ve çözüm adayları:** [[ENG-01 - Farkli okula giris 500 veriyor]]
 - ➡️ **Ayrıca:** `SecurityException`'ın 500'e düşmesi başlı başına yanlış — `X-01`'in (BE mesaj hattı) sunucu tarafı ayağıyla aynı aile.
+- ✅ **KAPANDI — ENG-01'in tavsiye ettiği (b) yolu uygulandı** *(`oksis-api` @ `a79b391`, 2026-08-12)*.
+- 🔍 **Ölçüm bulguyu BÜYÜTTÜ — tek uç değil, altı akış:** `SetForLoginFlow`'u HTTP anonim akışlarından **altı** yer çağırıyor: giriş, token yenileme, parola unuttum, parola sıfırlama, çıkış ve **davet kabul**. Sonuncusu birebir aynı tuzağı taşıyor: A okulunda oturumu açık olan biri B okulunun davetini kabul ederse **aynı 500** doğar. Yani tek uca `try/catch` altı kez yanlış olurdu. *(Kalan ~25 çağıran arka plan işi ve seeder — orada `HttpContext` hiç yok, koruma zaten no-op.)*
+- 🚫 **(a) yolu neden reddedildi:** `SetForLoginFlow`'un korumasını gevşetmek. O metot parola **doğrulanmadan önce** çağrılıyor; koruma kalksaydı A okulunun geçerli token'ını taşıyan biri yalnızca *deneyerek* istek boyunca tenant bağlamını B okuluna çevirebilirdi. **Koruma yerinde duruyor; kaldırılan şey onu boş yere tetikleyen miras kimlik.**
+- ✅ **Uygulanan çözüm — `AnonymousEndpointIdentityMiddleware`:** `[AllowAnonymous]` bir uç için `HttpContext.User` boş principal'a çekiliyor. `UseAuthentication`'dan **sonra**, `UseAuthorization`'dan **önce**.
+- 📌 **Kapsam elle liste DEĞİL, `[AllowAnonymous]` metadata'sından türetiliyor** — `B-04`'te ölçülen "aynı bilgi iki yerde" deseni burada tekrarlanmasın diye. Kural okunabilir bir cümleye oturuyor: *bir uç kimlik gerektirmediğini beyan ettiyse, ona sessizce bağımlı da olamaz.* Depodaki **dokuz** anonim ucun tamamı tek tek ölçüldü, hiçbiri tenant claim'ine bağlı değil: davet uçları zaten `SetForLoginFlow` ile davetin okuluna sabitleniyor, rıza paketi tenant'sız bir `MasterEntity`, `school-settings/public` okulu `X-Tenant-Code` **başlığından** çözüyor, `health` veriye hiç dokunmuyor.
+- ✅ **İkinci ayak da kapandı:** `SecurityException` artık **403** + Türkçe cümle dönüyor (*"Bu işlem açık olan oturumun okuluyla eşleşmiyor. Önce çıkış yapıp tekrar deneyin."*). İstisnanın kendi metni sızdırılmıyor. Koruma bir daha tetiklenirse kullanıcı artık bir şey görecek.
+- 🔎 **Yolda çıkan ve bulguyu açıklayan ayrıntı:** ilk yeniden üretme denemem **200** verdi, yani hatayı üretemedim. Sebep: elimdeki token bayatlamıştı ve süresi dolmuş token claim üretmediği için çakışma da doğmuyor. **Access token ömrü 15 dakika** (ENG-01'de *60 dakika* yazıyordu — düzeltildi). Bu, belirtinin neden "bazen oluyor bazen olmuyor" göründüğünü de açıklıyor: hata yalnız **taze** bir oturum varken çıkıyor.
+- ✅ **Canlı uçta RED → GREEN:**
+
+| Ölçüm | Düzeltmeden ÖNCE | Düzeltmeden SONRA |
+|---|---|---|
+| `s1` token **taşıyarak** `s3`'e giriş | **500** `{"code":"InternalError"}` | **200**, dönen token gerçekten `s3`'ün (`school_id=bb4118c3…`) |
+| Token **olmadan** aynı istek | 200 | 200 |
+| **Yanlış parola**, token taşıyarak | — | **401** — kimlik doğrulama zayıflamadı |
+
+- ✅ **Regresyon (aynı turda ölçüldü):** korumalı uç **200** · token yenileme (anonim uç, eski token taşıyarak, çerezli gerçek web akışı) **200** ve yeni token doğru okulla üretildi · çıkış **204** · davet ön-izleme, `public` marka ucu ve rıza paketi **handler'a ulaştı** (404'ler geçersiz token / bilinmeyen tenant kodu / kayıt yokluğu kaynaklı, kimlikle ilgisiz).
+- 🧪 **3 middleware testi + boş-yere-yeşil kontrolü:** anonim uçta kimlik düşüyor, **korumalı uçta düşmüyor** (bu ikincisi olmadan düzeltme sessizce tüm yetkilendirmeyi boşaltabilirdi), kimliksiz anonim istek değişmiyor. Koşul devre dışı bırakıldığında **yalnız hedef test kırmızıya düştü**, iki sınır testi yeşil kaldı. `Oksis.Api.UnitTests` **251/251**, build 0 uyarı.
+- ⬜ **Kalan iz (bulgu değil, not):** yanlış parola yanıtının mesajı `identity.errors.invalid-credentials` — çevrilmemiş bir i18n anahtarı kullanıcıya kadar geliyor. `X-01` ailesinden; ayrı madde olarak `TB-54`'e yazıldı.
 
 ---
 
@@ -514,6 +545,13 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - 📌 **Emsal koddadır:** `TB-16` aynı tutarsızlığı nöbet bölgesi için yazıyor (*"derslik silinirken kullanımda kontrolü var, nöbet bölgesi doğrudan siliniyor"*). Burada kapı **var ama eksik** — üçüncü bir varyant.
 - 🚫 **Kısıt:** Kapıya tek tek `if` eklemek yama olur; sorulacak soru *"bu master kaydını hangi tablolar tüketiyor"* ve cevabın tek yerde durması gerekir.
 - ⬜ **Açık.**
+
+### TB-54 · Giriş hata mesajı çevrilmemiş i18n anahtarı olarak dönüyor ⚪
+- **Belirti:** Yanlış parolayla giriş denendiğinde sunucu **401** ile `message: "identity.errors.invalid-credentials"` dönüyor — cümle değil, **ham anahtar**.
+- **Nasıl bulundu:** `B-16` doğrulama turu, 2026-08-12 (yanlış parola regresyon ölçümünde).
+- **Katman:** BE · **Öncelik:** ⚪ Düşük
+- 🔗 **`X-01` ailesi:** merkezî istemci eşleyicisi 401'de zaten kendi Türkçe cümlesini koyuyor, bu yüzden kullanıcıya bugün ham anahtar **muhtemelen ulaşmıyor**. Ama sözleşme yanlış: `message` alanının insan-okunur olması gerekiyor ve mesajı olduğu gibi geçiren her çağıran (mobil, ileride bir rapor) anahtarı basar.
+- ⬜ **Doğrulanacak:** başka kaç uç `identity.errors.*` biçiminde ham anahtar dönüyor? Bu ölçümde yalnız giriş yolu görüldü.
 
 ---
 
@@ -641,6 +679,16 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - ➡️ **`X-01`'in kapanış iddiasını daraltıyor:** `X-01` *"31 çağrı yeri eşleyiciye bağlandı + 32.'sini engelleyen kural kuruldu"* diyerek kapanmıştı. Ölçüm gösteriyor ki tarama **`apps/web` ile sınırlıymış**; kural sonradan `apps/mobile`'ı da kapsayınca orada altı ihlal ortaya çıktı ve kırmızı bırakıldı. Yani kullanıcının *"mobilde de backend'in cümlesi gizleniyor"* durumu sürüyor.
 - 🚫 **Kısıt:** Altı yeri düzeltmek yama değil — uygulanacak çözüm zaten merkezî (`mutationErrorDesc`/`apiErrorDesc`), yalnız bir uygulamaya hiç uğramamış. Ama kuralın **neden kırmızıyken commit edilebildiği** ayrı bir soru: CI lint'i tüm workspace'leri koşuyor mu?
 - ⬜ **Açık.**
+
+### X-10 · Rota kapısı rol çözülene kadar geçirgen — yanlış rol ekranı kısa süre görüyor ve istekleri atıyor
+- **Belirti:** Öğrenci `/schedule` adresini açtığında yönetim konsolu **kısa süreliğine mount oluyor**; beş yönetim isteği gerçekten atılıyor (`class-rooms`, `class-rooms?sessionId`, `school-settings/grade-levels`, `users/persons?profileType=Teacher`, `timetable/programs`) ve **beşi de 403** dönüyor. Rol çözüldükten sonra ekran *"Bu sayfaya erişemezsiniz"*e dönüyor.
+- **Katman:** FE · **Öncelik:** 🟡 Orta
+- **Nasıl bulundu:** `B-17` kapanış ölçümü, 2026-08-12 — menü budaması doğrulanırken ağ sekmesinde görüldü. `B-17`'nin ürünü **değil**, ondan bağımsız ve önceden var.
+- 🔍 **Kök neden tek koşulda:** `apps/web/components/route-guard.tsx:24` → `if (activeRole && !canAccessRoute(activeRole, pathname))`. `activeRole` henüz **null** iken (oturum bağlamı sorgusu sürüyor) koşul kısa devre yapıyor ve sayfa **olduğu gibi** render ediliyor.
+- ⚠️ **Bu bir gözden kaçma DEĞİL, yazılı bir tercih:** dosyanın kendi yorumu diyor ki *"Rol henüz çözülmemişken sayfa olduğu gibi render edilir: burada engellemek her gezinmede boş ekran flaşı yaratır."* Yani biri bu ödünü tartmış ve bugünkü davranışı seçmiş. **Bu yüzden tek başıma değiştirmedim.**
+- 🔍 **Ama tartının bir tarafı eksik ölçülmüş:** ödün *"boş ekran flaşı"* ile karşılaştırılmış, oysa gerçekte olan **yanlış ekranın çizilmesi + beş reddedilen istek**. Ayrıca kaçınılmak istenen flaş için gereken sinyal **zaten mevcut**: `useActiveRole` `isLoading` alanını da döndürüyor. Yani "rol yok" ile "rol henüz gelmedi" ayırt edilebilir ve kapı yalnız ikincisinde bekletebilir — boş ekran yerine iskelet gösterilerek.
+- 📌 **Kapsamı tek ekran değil:** kural her korumalı rotada aynı; `/schedule` yalnız ölçüldüğü yer. Güvenlik sınırı değil (gerçek kapı .NET tarafında, beş istek de 403 aldı) ama `B-17`'nin ve `B-01`'in şikâyet ettiği şeyin ta kendisi: **kullanıcıya sahip olmadığı bir yetenek gösteriliyor.**
+- ⬜ **Açık — karar gerektiriyor:** yazılı bir tercih değiştirileceği için `RouteGuard`'ın yükleme penceresinde bekletilmesi onaylanmalı.
 
 ### X-05 · `Branch` identifier'ı iki ayrı kavramı gösteriyor
 - **Belirti:** Aynı isim iki farklı şeyi, iki farklı tabloyu işaret ediyor:
@@ -1373,7 +1421,7 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı, `B-04` kapanış turu `X-09`'u, `B-10` taraması `TB-53`'ü aldı. **Sıradaki boş ID: `TB-54`, `X-10`, `B-18`, `D-09`, `ENG-03`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı, `B-04` kapanış turu `X-09`'u, `B-10` taraması `TB-53`'ü, `B-16` turu `TB-54`'ü, `B-17` turu `X-10`'u aldı. **Sıradaki boş ID: `TB-55`, `X-11`, `B-18`, `D-09`, `ENG-03`.**
 
 **Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
 - [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`

@@ -3,7 +3,9 @@
 > **Ne zaman çıktı:** 2026-08-11, ekran testi turunun ikinci yarısı.
 > **Nerede yaşıyor:** `oksis-ui` · `apps/web/features/schedule/schedule-page.tsx` + `packages/core/src/nav/nav-config.ts`
 > **Defterdeki maddesi:** `B-17`
-> **Durum:** 🔴 Açık — düzeltilmedi. Düzeltmesi **kullanıcı kararı** istiyor (aşağıda iki seçenek).
+> **Durum:** 🟠 **Karar verildi (B), yüzey hâlâ yok.** 2026-08-12: kullanıcı **Seçenek B**'yi seçti;
+> `/schedule` öğretmen ve öğrenci menüsünden kaldırıldı (`oksis-ui` @ `c030022`) ve `B-17` kapandı.
+> **Bu engel kapanmadı:** öğretmenin/öğrencinin kendi programını görebileceği ekran hâlâ yazılmadı.
 
 ---
 
@@ -161,3 +163,27 @@ tura devam ettim.
 `X-08` (403'ün "ağ arızası" diye gösterilmesi) bu turun yan ürünüydü ve **kapandı** —
 o, yüzey kararından bağımsızdı: hangi seçenek seçilirse seçilsin, bir yetki reddinin
 kullanıcıya "internetini kontrol et" dememesi gerekiyordu.
+
+---
+
+## Karar ve bugünkü durum — 2026-08-12
+
+**Kullanıcı Seçenek B'yi seçti:** ekran bu turda yazılmayacak, menüden kaldırılacak.
+
+**Yapılan:** `/schedule` `teacherGroups` ve `studentGroups` nav setlerinden çıkarıldı.
+Rota da kendiliğinden kapandı — `RouteGuard` nav'ın kendisini kaynak alıyor
+(`canAccessRoute`), yani ayrıca bir sayfa kapısı yazmak gerekmedi. *(Önce yazılmıştı;
+ölçümde `RouteGuard`'ın işi zaten yaptığı görülünce geri alındı.)*
+
+**Ekranda doğrulandı:** öğretmen ve öğrencide menüde yok, adres elle yazılınca
+*"Bu sayfaya erişemezsiniz"*; yöneticide konsol regresyonsuz çalışıyor.
+
+**Kapanmayan taraf — bu dosyanın konusu:**
+Öğretmen kendi haftalık programını, öğrenci kendi şubesinin programını **hâlâ hiçbir
+yerden göremiyor**. Menü budaması yüzey ihlalini kapattı, **ihtiyacı değil**. Sunucu
+ayağı hazır (yayın snapshot'ı ve tüketici sorguları çalışıyor — bkz. `TB-27`); eksik
+olan yalnız ekran. Ekran yazıldığında nav satırı **kendi rotasıyla** geri gelir; bu
+yüzden kaldırılan satırın yerine gerekçesi koda yazıldı.
+
+**Mobil kapsam dışı:** oradaki "Program"/"Programım" kutucukları `href` taşımadığı için
+"yakında" ekranına düşüyor — yani mobil zaten dürüst davranıyor.
