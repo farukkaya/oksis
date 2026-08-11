@@ -262,6 +262,23 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - **Belirti:** Öğrenci ve Öğretmen duyuru detay ekranında "Gönderim Raporu" başlığı görünüyor.
 - **Katman:** FE (+ BE kontrolü) · **Öncelik:** 🟠 Yüksek
 - **Neden yüksek:** Bu yönetici bilgisi. **Sadece başlığı gizlemek yetmez** — BE'nin bu rollere gönderim raporu verisini DTO'da hiç göndermediği doğrulanmalı, yoksa network sekmesinden okunabilir kalır.
+- ✅ **BE AYAĞI DOĞRULANDI — sızıntı YOK** *(çalışan API'den uç ölçümü, 2026-08-11)*. Defterin şart koştuğu kontrol yapıldı ve tablo temiz çıktı:
+
+| Rol | `GET /announcements/{id}` | `GET /announcements/{id}/delivery-report` |
+|---|---|---|
+| `ogrenci.s1.001` | 200 | **403** |
+| `veli.s1.001` | 404 | **403** |
+| `ogretmen.s1.01` *(yayınlayan DEĞİL)* | 404 | **403** |
+| `mudur.s1` | 200 | 200 |
+
+  Kapı `AnnouncementLifecycleGuard.CanActOn` = `IsManager || PublisherId == caller`. Rapor **ayrı bir uçtur**, duyuru DTO'sunun içinde taşınmıyor — yani "network sekmesinden okunabilir kalır" riski gerçekleşmiyor. Ham çıktı: [[B-01-be-403-olcumu.txt]]
+- 🔍 **Gerçek kök neden BAŞKAYDI:** sızan veri değil **başlıktı**. Mobil duyuru detayı (`apps/mobile/.../announcement-detail-screen.tsx`) **dört rolün de tek yüzeyi** ve raporu yalnız `hasDeliveryReport`e (= "duyuru yayınlandı mı") bakarak çiziyordu. Öğrenci yayında bir duyuruyu açınca "GÖNDERİM RAPORU" başlığı + boş iskelet görüyor, ardından 403 dönüyor ve altı boş kalıyordu — **olmayan bir yönetim yeteneği duyuruluyordu**. Web'de sorun yok: `AnnouncementsScreen` veli/öğrenciyi zaten ayrı yüzeye ayırıyor.
+- ✅ **KAPANDI** *(`oksis-ui` @ `bf41f07`, 2026-08-11)*:
+  - Karar core'a alındı: `showsDeliveryReport(row, role)` = `hasDeliveryReport(row) && announcementRoleSurface(role) !== "inbox"`.
+  - **Elle rol listesi yazılmadı** — cevap zaten var olan rol→yüzey tablosundan türetiliyor. Yarın beşinci rol eklenirse güncellenecek ikinci bir liste yok; test bu bağı kilitliyor (`ROLE_KEYS` üzerinde dönüp tabloyla aynı fikirde olduğunu doğruluyor).
+  - Aynı kapı sorguyu da kesiyor: gelen kutusu rolünde istek **hiç atılmıyor** (boşuna 403 yok).
+  - 4 yeni test + `packages/core` 278/278 yeşil, `apps/web` ve `apps/mobile` typecheck temiz.
+- ⚠️ **Bilinçli kalıntı (sızıntı değil):** öğretmen derin bağlantıyla **başkasının** duyurusunu açarsa başlık çizilir ama uç 403 döner ve bölüm boş kalır. İstemci bunu önden bilemez — oturumda `personId` yok (`sessionSchema` yalnız `userId` = hesap kimliği taşır), yani sahiplik karşılaştırması istemcide **yapılamaz**. Sunucu kapısı sağlam; kalan şey yalnız boş bir bölüm. Kesin çözüm DTO'ya `canViewDeliveryReport` alanı eklemek olurdu → 12 eşleme çağrısını (4'ü komut, çağıran kimliği elde değil) dolaşırdı; oransız bulundu, `TB-52` olarak not edildi.
 
 ### B-06 · Duyurularda sezon filtresi yok
 - **Belirti:** Duyurular ekranında sezon filtresi bulunmuyor.
@@ -815,6 +832,12 @@ Oysa `AssignTeacherCommand` (uç: `PUT /timetable/programs/{id}/placements/{pid}
 - ➕ **İkinci bir yük-kaynaklı kırmızı ölçüldü** *(ekran testi turu, 2026-08-11)*: Tam takım koşusunda (3402 test) `ClamAvScannerIntegrationTests` → *"ClamAV sunucusuna ulaşılamadı (localhost:3310)"* ile düştü. Konteyner ayakta ve sağlıklıydı; makine o sırada **load ~40** altındaydı. **İzole koşuda 4/4 geçti.** Yani `TB-51` tekil bir Mapster meselesi değil, daha geniş bir desenin bir örneği: *tam takım koşusu makineyi doyurunca zaman aşımına dayanan entegrasyon testleri tekrarlanamayan kırmızılar üretiyor.* CI'da bu, gerçek regresyonla gürültüyü ayırt etmeyi zorlaştırır.
 - ⬜ **Eklenen doğrulama:** dış servise (ClamAV, MSSQL testcontainer) bağlanan testlerin zaman aşımı sınırları yük altında yeterli mi; yoksa takım koşu paralelliği sınırlanmalı mı?
 
+### TB-52 · İstemci "bu duyurunun raporunu görebilir miyim" sorusunu sunucuya soramıyor ⚪
+- **Nereden çıktı:** `B-01` kapanışı. Sunucu kapısı `IsManager || PublisherId == caller`; istemci ise oturumda **`personId` taşımadığı için** (`sessionSchema` yalnız `userId` = hesap kimliği) ikinci koşulu hesaplayamıyor.
+- **Bugünkü sonucu:** öğretmen derin bağlantıyla başkasının duyurusunu açarsa "GÖNDERİM RAPORU" bölümü çizilir, uç 403 döner, bölüm boş kalır. **Veri sızmaz** — yalnız boş bir bölüm görünür.
+- **Kesin çözüm:** `AnnouncementDto`'ya `canViewDeliveryReport` alanı; aynı guard metodundan hesaplanırsa drift edemez. `B-01`'de yapılmadı çünkü `AnnouncementMapper.ToDto` **12 çağrı yerinden** besleniyor ve bunların 4'ü çağıran kimliğinin elde olmadığı komut handler'ları — düzeltmenin boyutu, düzelttiği şeyle (boş bir başlık) oransız.
+- ➕ **Aynı ölçümde çıkan ikinci tutarsızlık:** aynı uç 403'ü **iki farklı hata koduyla** dönüyor — `ogrenci`/`veli` için `"Forbidden"`, `ogretmen` için `"Error.Forbidden"`. İki ayrı ret yolu (yetki pipeline'ı vs. handler kapısı) aynı sözleşme alanını farklı dolduruyor; istemci koda göre dallanmak isterse yanılır. Bkz. [[B-01-be-403-olcumu.txt]].
+
 ---
 
 ## Netleştirme Bekleyenler ❓
@@ -1158,7 +1181,7 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`'yı aldı. **Sıradaki boş ID: `TB-52`, `X-08`, `B-17`, `D-09`, `ENG-02`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16` ve `TB-52`'yi aldı. **Sıradaki boş ID: `TB-53`, `X-08`, `B-17`, `D-09`, `ENG-02`.**
 
 **Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
 - [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`
