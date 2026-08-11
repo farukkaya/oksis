@@ -33,9 +33,9 @@
 | ⚪ Düşük | 6 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-08` · `B-10` · `B-11` · `B-14` · `B-15` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-06`'nın dar ayağı da kapandı.
-**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı).
-**Kalan (bu dosyada, TB kuyruğu hariç):** 14.
+**Kapananlar:** `B-02` · `B-03` · `B-08` · `B-10` · `B-11` · `B-12` · `B-14` · `B-15` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-06`'nın dar ayağı ve `X-07` de kapandı.
+**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı).
+**Kalan (bu dosyada, TB kuyruğu hariç):** 13.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -84,7 +84,14 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 - **Katman:** BE (yetki) · **Öncelik:** 🟠 Yüksek
 - ❓ **Netleştirme gerekli:** "Sürekli işaretlendiğinde sorun yok ama sürekli eklendiğinde" ifadesi iki farklı okumaya açık — (a) *sürekli muafiyet tipi* eklenirken mi, (b) *arka arkaya defalarca* eklerken mi? Tekrar denenip hangi endpoint'in 401 döndüğü network sekmesinden alınmalı.
 - **Kontrol edilecek:** Muafiyet create endpoint'inde permission attribute'u eksik/yanlış olabilir; 401 (401 ≠ 403) olması token yenileme sorununa da işaret edebilir.
-- ✍️ **Cevap alanı:** [Netleştirme Bekleyenler → B-12](#b-12--muafiyet-eklemede-401-unauthorized)
+- ✅ **KÖK NEDEN BULUNDU ve KAPANDI** *(ekran testi turu, 2026-08-11 · `oksis-ui` @ `<pending>`)* — **token yenileme hipotezi doğru çıktı, yetki hipotezi elendi.**
+  - **Yetki ayağı elendi:** Uç ekrandan çağrıldı → **201 Created**. Ardından iki okuma da doğrudan denendi: 8 farklı öğretmene arka arkaya (okuma **b**) ve aynı öğretmene 4 kez üst üste — **12 POST'un hepsi 201**. `duties.manage` izni yerinde, endpoint sağlam.
+  - **Gerçek kök neden — istemcinin 401-retry hattı gövdeli isteklerde kırık:** `packages/api/src/client/auth-refresh.ts` içindeki `authMiddleware.onResponse`, 401 alınca token'ı yeniliyor ve isteği `request.clone()` ile bir kez daha deniyordu. Ama `Request.clone()` **yalnız gövde tüketilmeden önce** çalışır; istek çoktan gönderilmiştir.
+  - **Tarayıcıda ölçüldü** *(aynı sayfada, aynı motor)*: gövdeli istek → `clone()` **`Failed to execute 'clone' on 'Request': Request body is already used`**; gövdesiz (GET) istek → `clone()` **başarılı**.
+  - ➡️ **Belirtinin birebir açıklaması:** *"İşaretleme sorunsuz"* = GET'ler; token süresi dolsa bile sessizce yenilenip yeniden deneniyor. *"Ekleme aşamasında patlıyor"* = POST; retry `clone()`'da patlıyor ve kullanıcı 401'i görüyor. *"Sayfa yenilenince düzeliyor"* = yeniden yüklemede token taze.
+  - 🚫 **Bu tek ekranın bulgusu DEĞİL:** kırık olan ortak istemci hattı. **Token süresi dolduktan sonraki ilk yazma işlemi (POST/PUT/PATCH) uygulamanın her yerinde patlıyordu.** Çapraz kesen boyutu → `X-07`.
+  - **Düzeltme (merkezi):** Bozulmamış kopya artık **`onRequest`'te**, gövde tüketilmeden alınıyor ve `WeakMap` ile isteğe bağlanıyor; `onResponse` retry'da o kopyayı kullanıyor. Tek nokta, ekran yaması yok.
+- 📌 **`B-13` için sonuç:** Muafiyet kaydı **DB'ye yazılıyor** (12/12 201). Yani *"muafiyet hiç kaydedilmiyor, o yüzden dağıtım göremiyor"* zinciri **koptu** — `B-13`'ün açıklaması bu değil. Algoritma tarafı da daha önce temize çıkmıştı; geriye `TB-19` (geçici muafiyet) ve yeniden üretim kalıyor.
 
 ### B-11 · Bölge pasif olarak eklenemiyor
 - **Belirti:** Bölgeler & Politika sekmesinde bölge pasif durumda oluşturulamıyor; güncellemede sorun yok.
@@ -389,6 +396,15 @@ Tek bir ekranın bulgusu değil, **proje geneline yayılmış** yapısal sorunla
   - **Boş yere yeşil değil:** `B-15`'in hatası geçici olarak geri konuldu, test **dosya + satır vererek kırmızıya düştü** (`GetAvailableTeachersQueryHandler.cs:50`) ve doğru deseni hata mesajında gösterdi; sonra geri alındı ve tekrar yeşile döndü.
   - Yeni bir EF-`Ignore`'lu property eklenirse `IgnoredComputedAccessors` dizisine yazılması yeterli.
 - ⬜ **Geniş ayak ERTELENDİ (iptal değil):** her query handler için gerçek sağlayıcıya karşı "sorgu çevriliyor mu" entegrasyon testi. Ayrı bir dilim; bu test onun yerine geçmiyor — dar ayak *bu* hatayı, geniş ayak *tüm çeviri hatalarını* yakalar.
+
+### X-07 · Token süresi dolduktan sonraki ilk YAZMA işlemi her ekranda patlıyordu
+- **Belirti:** Access token'ın ömrü dolduktan sonra yapılan ilk `POST`/`PUT`/`PATCH` başarısız oluyor ve kullanıcıya **401** olarak yansıyor. Okumalar (GET) etkilenmiyor — sessizce yenilenip yeniden deneniyor.
+- **Görüldüğü yer:** `B-12` (muafiyet ekleme). Ama **kırık olan ortak istemci hattı**, dolayısıyla kaydet/oluştur/güncelle içeren **her ekran** aynı riski taşıyordu.
+- **Katman:** FE (`@workspace/api` istemci ara katmanı) · **Öncelik:** 🟠 Yüksek
+- **Kök neden — tarayıcıda ölçüldü:** `authMiddleware.onResponse` retry için `request.clone()` çağırıyordu. `Request.clone()` yalnız gövde tüketilmeden önce çalışır; 401 geldiğinde istek çoktan gönderilmiş ve gövdesi tüketilmiştir. Gövdesiz istekte (GET) klon çalışıyor, gövdeli istekte `TypeError: Request body is already used` fırlıyor.
+- 🧪 **Testler neden yakalamadı — `X-06` ile birebir aynı desen:** Yeniden deneme testi `client.GET(...)` kullanıyordu (gövdesiz → klon çalışır); tek `POST` testi ise login yolundaydı ve `UNAUTHENTICATED_PATHS` erken dönüşü yüzünden klon satırına **hiç ulaşmıyordu**. Yani retry hattının gövdeli hâli **hiçbir testte koşulmamıştı**.
+- ✅ **KAPANDI** *(`oksis-ui` @ `<pending>`, 2026-08-11)*: Bozulmamış kopya `onRequest`'te, gövde tüketilmeden alınıp `WeakMap` ile isteğe bağlanıyor; retry o kopyayı kullanıyor. Regresyon testi eklendi (*"gövdeli isteği yenile ve payload'ı koru"*) ve **boş yere yeşil olmadığı doğrulandı**: eski satır geri konulduğunda test `TypeError: unusable` ile kırmızıya düştü, diğer dört test yeşil kaldı.
+- 📌 **Ders:** İki bulgu (`X-06`, `X-07`) aynı kök yapıyı paylaşıyor — *test yeşil, gerçek çağrı kırık*. İkisinde de sebep, testin gerçek yolu değil kolay yolu koşması.
 
 ### X-05 · `Branch` identifier'ı iki ayrı kavramı gösteriyor
 - **Belirti:** Aynı isim iki farklı şeyi, iki farklı tabloyu işaret ediyor:
@@ -739,12 +755,12 @@ Oysa `AssignTeacherCommand` (uç: `PUT /timetable/programs/{id}/placements/{pid}
 Bu maddeler şu haliyle iş kalemine dönüşemiyor. **Sol sütun eksik olan bilgi, sağ sütun senin cevap alanın.**
 Cevabı yazdığında **Durum**'u `✅ Netleşti` yap ve aşağıdaki panoyu güncelle.
 
-**Netleşen: 2 / 4**
+**Netleşen: 3 / 4**
 
 | ID | Konu | Durum | Tarih |
 |:--|:--|:--|:--|
 | **B-02** | Nöbet/Vekalet ↔ Yoklama ilişkisi | ✅ Netleşti → **kapatıldı** (kavram karışıklığı) | 2026-08-11 |
-| **B-12** | Muafiyet eklemede 401 | ⬜ Bekliyor | — |
+| **B-12** | Muafiyet eklemede 401 | ✅ Netleşti → **kapandı** (kök neden `X-07`) | 2026-08-11 |
 | **B-06** | Bildirimlerde sezon filtresi | ⬜ Bekliyor *(ekrandan bakılarak cevaplanabilir, kullanıcıya sorulmasına gerek yok)* | — |
 | **B-14** | Otomatik program oluşturucunun hedefi | ✅ Netleşti → **blok yerleştirme**, hedef değişikliği | 2026-08-11 |
 
@@ -1075,7 +1091,7 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`'yı aldı. **Sıradaki boş ID: `TB-52`, `X-07`, `B-17`, `D-09`, `ENG-02`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`'yı aldı. **Sıradaki boş ID: `TB-52`, `X-08`, `B-17`, `D-09`, `ENG-02`.**
 
 **Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
 - [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`
