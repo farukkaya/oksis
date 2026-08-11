@@ -21,6 +21,8 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
+**Sıradaki boş ID:** `TB-54` · `X-10` · `B-18` · `D-09` · `ENG-03`
+
 ---
 
 ## Özet
@@ -33,9 +35,9 @@
 | ⚪ Düşük | 6 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-14` · `B-15` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
-**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı).
-**Kalan (bu dosyada, TB kuyruğu hariç):** 10.
+**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-14` · `B-15` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
+**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından, 2026-08-12).
+**Kalan (bu dosyada, TB kuyruğu hariç):** 8 — `B-04` ve `B-10` 2026-08-12'de kapandı.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -52,7 +54,35 @@ Bu modül şu an **yeni sezon açma akışını bloklıyor**. Diğer her şeyden
 - **Katman:** BE + FE · **Öncelik:** 🔴 Kritik
 - **Kök neden (BE):** `SaveSeasonDraftCommandValidator.CurrentStep` kuralı `InclusiveBetween(0, 5)` — özet adımı aralık dışında kalıyor.
 - ✅ **Backend düzeltmesi COMMIT EDİLDİ** — `oksis-api` @ `238f5e1` *"sezon sihirbazi adim araligi 0-6ya genisletildi"*. Doğrulandı (2026-08-12): `SaveSeasonDraftCommandValidator` bugün `InclusiveBetween(0, 6)` diyor. Buradaki eski *"henüz commit edilmedi"* notu **bayattı** ve düzeltildi.
-- ⬜ **Kalan iş (bulgu bu yüzden AÇIK):** adım sayısı hâlâ iki yerde ayrı yazılı — FE'de `TOTAL_WIZARD_STEPS = 6`, BE'de validator sabiti. Tek kaynağa bağlanmadıkça aynı ayrışma yeni bir adım eklendiğinde geri gelir. `B-04` yalnız bu yapıldığında kapanır.
+- 🔍 **ÖLÇÜM DEFTERİ DÜZELTTİ — iki değil ÜÇ yerde yazılıymış** *(2026-08-12)*: `packages/core/.../constants.ts` → `WIZARD_STEP_COUNT = 6`, `academic-sessions-page.tsx` → **ayrı bir literal** `TOTAL_WIZARD_STEPS = 6`, BE validator → `InclusiveBetween(0, 6)`. Yani `oksis-ui`'nin kendi içinde de bir kopya vardı; `wizard.tsx` core'u kullanıyordu, sayfa kullanmıyordu.
+- 🔄 **TEŞHİS DEĞİŞTİ — "iki repoyu tek sabite bağla" yapılabilir bir şey değil, üstelik yanlış hedef.** Ölçüm: `CurrentStep` sunucuda **saf geçiş verisi** — hiçbir handler ona dallanmıyor, yalnız saklanıp DTO ile geri veriliyor (*"kaldığın yer"* imleci). Dolayısıyla BE'deki tavan bir iş kuralı değil, **istemcinin UI şeklinin aynası**. Asimetri ölçüldü:
+
+| Tavan istemcinin adım sayısından… | Sonuç |
+|---|---|
+| **küçükse** | akış bloklanır — **B-04'ün ta kendisi** |
+| eşitse | her yeni adımda iki repo birlikte değişmek zorunda; unutulursa yukarıdaki satır |
+| **büyükse** | hiçbir şey olmaz (sunucu bu değere dallanmıyor) |
+
+  ➡️ Doğru tavan *"adım sayısına eşit"* değil, *"hiçbir sihirbaz şeklini bloklamayacak kadar geniş, çöp değeri eleyecek kadar dar"*. **Aynalamanın kendisi ayrışma üreticisiydi**; kaldırılan şey doğrulama değil, iki repo arasındaki gereksiz bağ.
+- ✅ **KAPANDI** *(`oksis-api` @ `9f38698` + `oksis-ui` @ `b19e47f`, 2026-08-12)*:
+  - **BE:** literal kalktı, sınır `SeasonDraft.MaxStep` (= 50) domain sabiti. Dosyanın kendi deseni zaten buydu — ad uzunlukları da `SeasonDraft.MinNameLength`'ten geliyordu; adım sınırının literal kalması bir tutarsızlıktı.
+  - **BE ikinci ayak — domain ile validator hemfikir değildi:** `UpdateProgress` yalnız negatifi kırpıyor, tavanı **hiç bilmiyordu**; tavan SADECE validator'da yaşıyordu. Komut dışından çağıran biri 999 yazabilirdi. Artık iki uç da domainde kırpılıyor.
+  - **FE:** sayı artık hiçbir yerde **yazılmıyor, sayılıyor** — adım listesi (`SEASON_WIZARD_STEPS`) core'a taşındı (emsali yanındaki `SEASON_COPY_ITEMS`), `WIZARD_STEP_COUNT = SEASON_WIZARD_STEPS.length`. Yeni adım eklemek tek bir diziye satır eklemek demek; sayının ayrışması artık **mümkün değil**, unutulabilir bir ikinci yer yok.
+- 🔎 **EKRAN TESTİ BEKLENMEYEN İKİNCİ AYAK ÇIKARDI ve düzeltmemin açığını gösterdi:** Uç ölçümü için taslağı `currentStep = 50` ile kaydettikten sonra sezon listesine bakınca kart **"Adım 50/6"** yazıyordu. Kırpmayı yalnız sihirbaz girişine koymuştum; oysa imleci **üç yüzey** okuyor (taslak kartı, vazgeç modalı, sihirbaz). Üçünü tek tek kırpmak tam da düzeltmeye çalıştığım deseni geri getirirdi. Kırpma **DTO'nun istemci tipine dönüştüğü tek sınıra** taşındı (`packages/api` → `toSeasonDraft`), ekran kodundan tamamen çıkarıldı.
+- ✅ **Canlı uçta beş ölçüm** *(`mudur.s1`, `PUT /api/v1/season-drafts/current`)*:
+
+| `currentStep` | HTTP | Mesaj | DB'de saklanan |
+|---|---|---|---|
+| 5 | 200 | — | 5 |
+| **6** | **200** | — | **6** |
+| 50 | 200 | — | 50 |
+| 51 | 400 | *"Adım 0-50 arasında olmalı."* | değişmedi |
+| −1 | 400 | *"Adım 0-50 arasında olmalı."* | değişmedi |
+
+- ✅ **EKRAN KANITI — bulgunun tam senaryosu:** Sezon Yönetimi → Taslağa Devam Et → kart artık **"Adım 6/6"** (50 değil) → sihirbaz 1→6 kesintisiz ilerledi → 6. adımda **"Sezonu Aç"** → `POST /api/v1/academic-sessions/open-from-draft` **201 Created**, ekranda *"Sezon açıldı · 2026-2027 sezonu oluşturuldu"*. Bulgunun şikâyet ettiği `"Adım 0-5 arasında olmalı."` hatası **hiç görünmedi**. ![[B-04-sonra-6-adimda-sezon-acildi.png]]
+- ♻️ **Ortam geri alındı:** ölçüm için `s1`'de açılan Setup sezon `cancel-setup` (204) ile iptal edildi, test taslağı silindi; okul tek Aktif sezonla ve taslaksız eski hâline döndü.
+- 🧪 **Testler ve boş-yere-yeşil kontrolü:** BE'de 6 vakalık kırpma teorisi + tavanın adım sayısına yapışmadığını kilitleyen test; FE'de core (imleç kırpma + sayının listeden türediği) ve `packages/api` sınır testleri. **İki tarafta da RED kanıtlandı:** BE'de eski kırpma satırı geri konunca yalnız aralık dışı iki vaka düştü (mevcut davranış korunuyor), FE'de eski `Number(...) || 1` geri konunca sınır testinin 2/4'ü düştü. BE 695 + 1562 yeşil, `packages` 144+103+288 yeşil, typecheck temiz.
+- ⬜ **Bir sonraki adım eklendiğinde ne olacak:** hiçbir şey. FE'de diziye satır eklenir, BE hiç değişmez. `B-04`'ü doğuran koşul artık kurulamıyor.
 
 ### B-04a · Validasyon uyarısı ekranda doğru gösterilmiyor
 - **Belirti:** BE'den dönen validasyon mesajı kullanıcıya düzgün yansımıyor; kullanıcı neden takıldığını ekrandan anlayamıyor.
@@ -300,7 +330,9 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - 🔍 **Kök neden üç satır:** (1) `/schedule` core nav'da admin **+ teacher + student** menüsünde; (2) `schedule-page.tsx` içinde `activeRole` **hiç okunmuyor**, tek dal yok; (3) öğretmen/öğrenci için yazılmış bir çizelge ekranı ne web'de ne mobilde var.
 - 📌 **Emsal koddadır:** duyurular modülü aynı işi doğru yapıyor — `AnnouncementsScreen` rolü okuyup öğretmeni kendi yüzeyine, veli/öğrenciyi ayrı duruma ayırıyor. Ders programında o ayrım hiç kurulmamış.
 - 📌 **`D-07` ile İLGİSİ YOK.** Bu bulgu, `D-07`'yi yanlış okuyup öğretmen ROLÜYLE giriş yaptığım turda **kazara** ortaya çıktı. `D-07` yöneticinin editöründeki bir sekmeydi ve ayrıca kapandı; buradaki ise bağımsız ve kendi ölçümüyle ayakta duran bir yüzey ihlali.
-- ⏸️ **Kullanıcı kararı bekliyor** — bkz. [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]]. Menü budama veya ekran yazma **kapsam kararı** olduğu için kendi başıma değiştirilmedi.
+- ✅ **KULLANICI KARARI VERİLDİ — 2026-08-12: Seçenek B, menüden kaldırılacak.** Öğretmen/öğrenci ders programı ekranı bu turda **yazılmayacak**; `/schedule` yalnız yönetici menüsünde kalacak.
+- ⚠️ **Kararın bilinen bedeli (kayda geçsin):** Sunucu ayağı hazır olmasına rağmen öğretmen kendi haftalık programını, öğrenci kendi şubesinin programını **hiçbir yerden göremeyecek**. Bu bir ürün eksiği olarak sürüyor; menü budaması ihlali kapatıyor, ihtiyacı değil. Ekran ileride yazıldığında menü satırı geri açılacak.
+- ⬜ **Uygulama bekliyor** — bkz. [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]].
 
 ### D-05 · Önizleme metriklerinde yuvarlama yok
 - **Belirti:** "Tüm sınıflar için oluştur" önizleme adımında ortalama vb. alanlar ham gösteriliyor; virgülden sonra **2 hane** olacak şekilde yuvarlanmalı.
@@ -347,7 +379,10 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - ✅ **Ekran testi:** `mudur.s2` (iki sezonlu) → seçici `Tüm sezonlar · 2026-2027 · 2025-2026` listeliyor, **aktif sezon seçili geliyor**; sezon değiştirilince istek gerçekten değişiyor (ağda ölçüldü: `?scope=school&sessionId=eb4228ed…` → `…sessionId=fe987de6…`). `mudur.s1` (tek sezonlu) → varsayılanla **17 satır**, "Tüm sezonlar" ile de **17 satır**: yeni varsayılan **hiçbir veriyi gizlemiyor**.
 - 🧪 2 yeni entegrasyon testi (`GetAnnouncementsTests` → **22/22**): süzgeç verilince yalnız o sezon dönüyor, verilmeyince daraltma yapılmıyor. `packages` 526/526, typecheck ve lint temiz.
 - ⚠️ **Bilinen küçük kalıntı (ölçüldü, kabul edildi):** aktif sezon sorgusu çözülene kadar ilk liste isteği **süzgeçsiz** gidiyor; sezon gelince ikinci istek süzgeçle atılıyor. Kullanıcı açısından kısa bir "önce hepsi, sonra daralt" akışı — liste `keepPreviousData` ile yerinde kalıyor, veri kaybı yok. Bastırmak `useAnnouncements`e `enabled` kapısı eklemeyi gerektirirdi; kazanandan fazlasını maliyet olarak yazardı. Kod yorumunda da bu hâliyle yazılı.
-- ⬜ **BİLDİRİMLER AYAĞI AÇIK KALIYOR** ve yukarıdaki soru hâlâ cevapsız. O iş bu commit'lerle **küçülmedi**: `Notification` varlığının hiç sezon alanı yok, orada önce şema değişikliği (veya kayıt tarihine göre kesme kararı) gerekiyor.
+- ✅ **KULLANICI KARARI VERİLDİ — 2026-08-12: yalnız aktif sezon.** Geçmiş sezon bildirimleri gösterilmeyecek.
+- 📌 **Kararın iş üzerindeki etkisi:** şema değişikliği **gerekmiyor**. `Notification`'a sezon kolonu eklemek, migration yazmak ve mevcut satırları geriye dönük doldurmak yerine, bildirim **kayıt tarihi** aktif sezonun tarih aralığına göre kesilecek. Bulgunun *"bildirimler tarafı çok daha derin"* teşhisi karar sayesinde geçersizleşti — iş duyurular ayağı kadar küçüldü.
+- ⚠️ **Kabul edilen bedel:** sezon aralığı dışında üretilmiş eski bildirimler listeden düşer (silinmez, yalnız görünmez). Tarih kesmesi sezon sınırında doğan bildirimlerde birkaç saatlik kenar durumu taşır; sezon alanı olmadığı için bundan daha keskin bir ayrım mümkün değil.
+- ⬜ **Uygulama bekliyor.**
 
 ### D-04 · Veli Portalı duyurular ekranında gereksiz header
 - **Belirti:** Header kaldırılacak.
@@ -450,7 +485,23 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 ### B-10 · "Rehberlik" branş listesinden kaldırılması
 - **Karar:** Rehberlik bir branş değil → master data'dan silindi.
 - ✅ **Migration COMMIT EDİLDİ** — `oksis-api` @ `9e96a4f` *"rehberlik dersi master katalogdan kaldirildi"*; dosya adı `20260810123433_20260810_remove_counseling_subject`. Buradaki eski *"çalışma ağacında hazır, henüz commit edilmedi"* notu (ve eski migration damgası) **bayattı**, düzeltildi (2026-08-12).
-- ⬜ **Kalan iş (bulgu bu yüzden AÇIK):** mevcut tenant verisinde Rehberlik'e bağlı öğretmen/görevlendirme kaydı kalmış olabilir — bağımlılık taraması **hâlâ yapılmadı**.
+- 🔍 **Terim düzeltmesi (ölçümle):** Rehberlik bir **branş** değil **ders** kaydıydı — `master.subjects`, `code = REH`, `category = Counseling`, id `26e189bc-…`. Migration onu ve 12 `subject_grade_levels` satırını sildi. Bulgunun başlığındaki *"branş listesi"* ifadesi yanıltıcı: `master.branches` kataloğunda **Rehberlik hiç yoktu** (bugün 16 branş var, hiçbiri Rehberlik değil). Yani branş listesinde silinecek bir şey zaten yoktu.
+- ✅ **BAĞIMLILIK TARAMASI YAPILDI — artık kayıt YOK** *(canlı `oksis_dev`, üç tenant, 2026-08-12)*. Silinen ders kimliğine işaret eden satır sayısı, `subject_id` taşıyan **yedi tablonun hepsinde 0**: `attendance_sessions` · `lesson_placements` · `school_weekly_hour_overrides` · `subject_teacher_assignments` · `teaching_assignments` · `curriculum_hour_templates` · `subject_grade_levels`.
+- ✅ **Örneğe değil SINIFA bakıldı:** yalnız Rehberlik değil, **herhangi** bir yetim referans arandı (var olmayan bir derse/branşa işaret eden satır) — yedi tablo + `identity.profiles.teacher_branch_id`, **hepsi 0**. `master.subjects` içinde `Counseling` kategorili ders de kalmamış. Seed tarafında da iz yok: `SubjectSeedData.cs` *"Rehberlik (REH) bir ders değildir — katalogdan çıkarıldı"* notunu taşıyor.
+- ✅ **KAPANDI** *(2026-08-12, kod değişikliği gerekmedi)*: migration zaten commit'liydi (`oksis-api` @ `9e96a4f`), taramada temizlenecek artık bulunmadı. Bulgu *"kalmış olabilir"* diyordu; ölçüm *"kalmamış"* dedi.
+- ⚠️ **AMA TEMİZLİK ŞANSTANDI, KORUMADAN DEĞİL** — tarama sırasında bir sınıf riski ölçüldü ve ayrı madde açıldı: `TB-53`. Bugün veri temiz olduğu için `B-10` kapanıyor; bir dahaki master-data silmesinde aynı şey kendiliğinden temiz olmayacak.
+
+### TB-53 · Ders silmenin kullanımda kapısı yedi tüketicinin yalnız birine bakıyor 🟠
+- **Nereden çıktı:** `B-10` bağımlılık taraması, 2026-08-12. Rehberlik temiz çıktı ama **neden temiz olduğu** ölçülünce koruma değil şans olduğu görüldü.
+- 🔍 **İki ayak ölçüldü:**
+  1. **Veritabanı ayağı — `master.subjects`'e FK veren TEK tablo var:** `master.subject_grade_levels`. Oysa `subject_id` taşıyan yedi tablo var; kalan altısı (`teaching_assignments`, `subject_teacher_assignments`, `lesson_placements`, `attendance_sessions`, `school_weekly_hour_overrides`, `curriculum_hour_templates`) **kısıtsız**. FK'lerin genel olarak yokluğu değil bu: `teaching_assignments`'ın `academic_sessions` ve `class_rooms`'a FK'si **var**, yalnız master kataloğuna yok. Yani master satırı gidince veritabanı hiçbir şey söylemez.
+  2. **Uygulama ayağı — `DeleteSubjectCommandHandler`'da kullanımda kapısı VAR ama dar:** yalnız **`Published`/`Revising`** durumundaki ders programı yerleşimlerine bakıyor. Görevlendirme (v1 **ve** v2), müfredat saat şablonu, okul saat override'ı, yoklama oturumu ve **`Taslak` durumdaki programlar** kapının dışında.
+- ➡️ **Sonuç:** Bir okulun aktif olarak görevlendirme yaptığı ders, ders programında yayınlanmamışsa **silinebiliyor** ve ona bağlı satırlar sessizce sahipsiz kalıyor.
+- 🔍 **Sessizliğin biçimi ölçüldü:** `db.Subjects.Remove()` `SoftDeleteInterceptor` tarafından **soft delete**'e çevriliyor; satır durur, global query filter onu eler. Yani FK kırılmaz, **okuma boş döner** — hata değil, boş sonuç. `TB-48`'in *"hepsi sessiz"* deseniyle birebir aynı aile.
+- ⚠️ **İki silme yolu farklı davranıyor:** migration'daki `DeleteData` doğrudan SQL `DELETE`'tir, interceptor'ı **atlar** — Rehberlik satırı gerçekten yok. Uygulamadan silinen ders ise sadece gizlenir. Aynı fiilin iki farklı kalıcılık davranışı var ve bu yazılı değil.
+- 📌 **Emsal koddadır:** `TB-16` aynı tutarsızlığı nöbet bölgesi için yazıyor (*"derslik silinirken kullanımda kontrolü var, nöbet bölgesi doğrudan siliniyor"*). Burada kapı **var ama eksik** — üçüncü bir varyant.
+- 🚫 **Kısıt:** Kapıya tek tek `if` eklemek yama olur; sorulacak soru *"bu master kaydını hangi tablolar tüketiyor"* ve cevabın tek yerde durması gerekir.
+- ⬜ **Açık.**
 
 ---
 
@@ -537,6 +588,7 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - ⬜ **Önce yapılacak:** Karar → v1 emekli mi, yoksa v2 yetkinlik katmanı olarak üstüne mi biniyor? Karar verilmeden altındaki hiçbir bulgu güvenle kapatılamaz. *(Karar maddesi olarak [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasına taşınmalı.)*
 - ✅ **"Hangisi kanonik" sorusu cevaplandı (2026-08-10, `TB-48`):** bugünkü kodda **kanonik olan v1'dir**. Ders programı, otomatik üretim, vekâlet, duyuru hedeflemesi ve sezon aktivasyonu — beşi de v1'i okuyor. **v2'nin aşağı akış tüketicisi yoktur**, yalnız kendi ekranını besleyen kapalı devredir. Buna rağmen v1'in kullanıcıya açık yazma ekranı `oksis-ui`'dan kaldırılmış durumda; yani kanonik nesil beslenmiyor. Ölçümün tamamı `TB-48`'de.
 - ⚠️ **Kapanmadı, ağırlaştı:** karar hâlâ verilmedi ve artık *"hangisi kanonik"* değil *"kesik hattı hangi yönde onaracağız"* sorusu. `TB-48`'deki üç yol.
+- ⏸️ **KULLANICI 2026-08-12'de BİLİNÇLİ OLARAK ERTELEDİ:** *"bu konuyu şimdilik atla"*. Karar verilmedi, madde açık kalıyor ve bu turda ele alınmayacak. Bekletmenin bugünkü bedeli `TB-48`'de yazılı: yeni bir okulda `teaching_assignments` boş doğuyor, ders programı / otomatik üretim / vekâlet / duyuru hedeflemesi **sessizce** boş sonuç veriyor.
 
 ### X-04 · Branş uyumu katalog kimliği yerine ad karşılaştırmasıyla hesaplanıyor
 - **Belirti:** Öğretmenin branş **adı** ile dersin **adı** normalize edilip (tr-TR, boşluklar atılarak) karşılaştırılıyor. Öğretmen profilinde branş katalog kimliği dururken kullanılmıyor.
@@ -568,6 +620,15 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - 🧪 **Testler neden yakalamadı — `X-06` ile birebir aynı desen:** Yeniden deneme testi `client.GET(...)` kullanıyordu (gövdesiz → klon çalışır); tek `POST` testi ise login yolundaydı ve `UNAUTHENTICATED_PATHS` erken dönüşü yüzünden klon satırına **hiç ulaşmıyordu**. Yani retry hattının gövdeli hâli **hiçbir testte koşulmamıştı**.
 - ✅ **KAPANDI** *(`oksis-ui` @ `<pending>`, 2026-08-11)*: Bozulmamış kopya `onRequest`'te, gövde tüketilmeden alınıp `WeakMap` ile isteğe bağlanıyor; retry o kopyayı kullanıyor. Regresyon testi eklendi (*"gövdeli isteği yenile ve payload'ı koru"*) ve **boş yere yeşil olmadığı doğrulandı**: eski satır geri konulduğunda test `TypeError: unusable` ile kırmızıya düştü, diğer dört test yeşil kaldı.
 - 📌 **Ders:** İki bulgu (`X-06`, `X-07`) aynı kök yapıyı paylaşıyor — *test yeşil, gerçek çağrı kırık*. İkisinde de sebep, testin gerçek yolu değil kolay yolu koşması.
+
+### X-09 · `X-01` yaygınlaştırması mobil uygulamayı atladı — lint kuralı `master`'da kırmızı
+- **Belirti:** `oksis-ui` kökünde `npm run lint` **başarısız**: `apps/mobile` altında `X-01` kuralının **6 ihlali** var. Yani depo bugün lint-kırmızı durumda ve bu fark edilmemiş.
+- **Katman:** FE (mobil) · **Öncelik:** 🟠 Yüksek
+- **Nasıl bulundu:** `B-04` doğrulaması sırasında (2026-08-12). Kendi değişikliğimden mi diye kontrol ettim — **`git stash` ile değişiklikler çıkarıldığında da altı ihlal duruyor**, yani `master`'da zaten var, benim ürünüm değil.
+- 🔍 **Ölçülen altı yer:** `app/activities/new.tsx:71` · `attendance/excuse-create-screen.tsx:165` · `attendance/history-detail.tsx:186` ve `:204` · `attendance/roster-screen.tsx:127` · `school-settings/school-contact-edit-screen.tsx:99`.
+- ➡️ **`X-01`'in kapanış iddiasını daraltıyor:** `X-01` *"31 çağrı yeri eşleyiciye bağlandı + 32.'sini engelleyen kural kuruldu"* diyerek kapanmıştı. Ölçüm gösteriyor ki tarama **`apps/web` ile sınırlıymış**; kural sonradan `apps/mobile`'ı da kapsayınca orada altı ihlal ortaya çıktı ve kırmızı bırakıldı. Yani kullanıcının *"mobilde de backend'in cümlesi gizleniyor"* durumu sürüyor.
+- 🚫 **Kısıt:** Altı yeri düzeltmek yama değil — uygulanacak çözüm zaten merkezî (`mutationErrorDesc`/`apiErrorDesc`), yalnız bir uygulamaya hiç uğramamış. Ama kuralın **neden kırmızıyken commit edilebildiği** ayrı bir soru: CI lint'i tüm workspace'leri koşuyor mu?
+- ⬜ **Açık.**
 
 ### X-05 · `Branch` identifier'ı iki ayrı kavramı gösteriyor
 - **Belirti:** Aynı isim iki farklı şeyi, iki farklı tabloyu işaret ediyor:
@@ -726,7 +787,9 @@ Yönetici devamsızlık uyarı eşiğini **iki farklı yerden** girebiliyor:
 
 İkincisi yazılıyor, 1-60 aralığında **doğrulanıyor**, DTO ile ekrana dönüyor — ama **hiçbir tüketicisi yok**. Devamsızlık eşik motoru yalnız akademik politikadaki alanları okuyor.
 - **Etkisi:** Yönetici bildirim ekranından eşiği ayarlayıp "uyarı kuruldu" sanıyor; hiçbir uyarı tetiklenmiyor. Kullanıcıya görünen sessiz bir yalan.
-- ⬜ **Karar:** Bildirim tarafındaki alanlar kaldırılsın mı, yoksa gerçek eşik oraya mı taşınsın? İkisinin bir arada kalması en kötü seçenek.
+- ✅ **KULLANICI KARARI VERİLDİ — 2026-08-12: Akademik Politika kazanıyor.** Bildirim yapılandırmasındaki `AbsenceWarningThreshold` / `AbsenceCriticalThreshold` alanları **kaldırılacak**; eşik motoru zaten yalnız akademik politikayı okuyor, yani ekran gerçeğe uydurulacak.
+- 📌 **Gerekçe:** eşiği taşımak, akademik politikadaki diğer iki alanla (`UnexcusedAbsenceLimit`, `TotalAbsenceLimit`) aynı kavramı iki ekrana bölerdi. Kaldırma hem daha az iş hem de *"kullanıcıya görünen sessiz yalan"*ı bitiren yol.
+- ⬜ **Uygulama bekliyor** (BE alan + validasyon + DTO, FE sekme alanları).
 
 ### TB-36 · İki zaman dilimi alanı, iki farklı format 🟡
 Aynı tenant için iki ayrı zaman dilimi alanı tutuluyor:
@@ -1285,7 +1348,7 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı. **Sıradaki boş ID: `TB-53`, `X-09`, `B-18`, `D-09`, `ENG-03`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı, `B-04` kapanış turu `X-09`'u, `B-10` taraması `TB-53`'ü aldı. **Sıradaki boş ID: `TB-54`, `X-10`, `B-18`, `D-09`, `ENG-03`.**
 
 **Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
 - [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`
