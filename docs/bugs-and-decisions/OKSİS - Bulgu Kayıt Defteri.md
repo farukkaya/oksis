@@ -348,6 +348,18 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 
 ### D-01 · Uzun okul adında logo sıkışıyor
 - **Katman:** FE · **Öncelik:** ⚪ Düşük
+- 🔍 **Ekranda BİREBİR üretildi** *(ekran testi, `mudur.s2`, 2026-08-11)*. Seed'deki "Atatürk Anadolu Lisesi" (22 karakter) sorunu göstermiyor — okul adı üçnoktayla kısalıyor ve marka sağlam. Gerçek uzunluklarla ölçünce ortaya çıktı:
+
+| Okul adı | `.logo` kutusu | içeriği | wordmark sağ kenarı | ayraç sol kenarı | sonuç |
+|---|---|---|---|---|---|
+| 22 karakter | 82 px | 82 px | 98 | 106 | temiz |
+| 55 karakter | **47 px** | 77 px | **93** | **71** | **wordmark ayracın içinde** |
+| 76 karakter | **38 px** | 77 px | **93** | **62** | daha beter |
+
+- 🔍 **Kök neden:** `.side-head` bir flex satırı; `.logo` ise `min-width: 0` + varsayılan `flex-shrink: 1` taşıyordu, yani **daralabiliyordu**. Ama daralması KISALTMAYA dönüşemez — `.wordmark` `white-space: nowrap` ve hiçbir atası `overflow`u kesmiyor. Sonuç: kutu küçülüyor, yazı olduğu yerde kalıyor ve **ayracın içinden geçip okul rozetinin altına giriyor**. Baskıyı emmesi gereken taraf zaten donanımlıydı (`.school-name`/`.school-sub` üçnokta) ama o da aynı anda daralıyordu; ikisi genişliği paylaşınca marka kaybediyordu. ![[D-01-once-logo-eziliyor.png]]
+- ✅ **KAPANDI** *(`oksis-ui` @ `5c41b95`, 2026-08-11)*: `.logo` → `flex: none` (marka kimliği sabit boyutludur, daralmaz), `.school-logo` → `flex: 1 1 auto; min-width: 0` (kalan alanı alır ve baskıyı ÜÇNOKTAYLA emer). İki satır CSS, ekrana özel yama yok.
+- ✅ **Doğrulandı:** 22 · 55 · **76** karakterlik adların üçünde de `.logo` **92 px'te sabit**, wordmark ayraca hiç girmiyor, okul adı kısalarak yer açıyor, başlıktan taşma yok. ![[D-01-sonra-logo-daralmiyor.png]]
+- ✅ **Daraltılmış kenar çubuğunda regresyon yok:** wordmark genişliği 0, okul bloğu ve ayraç `display:none`, logo 40 px, taşma yok.
 
 ### D-02 · Etkinlik Tanımlama modalında buton ekran dışında kalıyor
 - **Belirti:** Sorumlu Öğretmenler listesi uzayınca "Etkinliği Oluştur ve İşaretle" butonu görünmez oluyor.
@@ -363,6 +375,12 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 ### D-06 · Breadcrumb tıklanabilir değil
 - **Belirti:** `Akademik › Ders Programı › 10-A` yolunda ara kırılımlar tıklanamıyor.
 - **Katman:** FE · **Öncelik:** ⚪ Düşük (global davranış)
+- 🔍 **Doğrulandı ve İKİ ara kırılımın AYRI şeyler olduğu ölçüldü** *(ekran testi, 2026-08-11)*. Kırılımın üçü de `<span>`dı, ama ikisi aynı sebeple değil:
+  - **`Ders Programı`** — gerçek bir rotası VAR (`resolved.item.href` = `/schedule`). Bunun bağlanmaması düpedüz eksikti. **Bulgunun kendisi budur.**
+  - **`Akademik`** — rotası **YOK**. Core'daki `NavGroup` `{id, label, items}`tır, `href` alanı hiç bulunmuyor; "Akademik" bir sayfa değil, kenar çubuğu bölüm başlığı. Bağlanabilir yapmak için grubun ilk öğesini hedef **uydurmak** gerekirdi ve kullanıcı tıkladığı yazının söylemediği bir sayfaya düşerdi.
+- ✅ **KAPANDI** *(`oksis-ui` @ `5c41b95`, 2026-08-11)*: ara kırılım `pathname !== resolved.item.href` iken `<Link>` olarak çiziliyor — yani nav öğesinin **kendi** rotasındayken bağlantı yok (kendine giden bağlantı ölü tıklamadır), **alt rotadayken** var. Hedef uydurulmuyor, zaten çözülmüş olan gerçek rota kullanılıyor. Kategori kolu bilinçli olarak düz metin kaldı ve gerekçesi koda yazıldı ki ileride "eksik" sanılıp uydurma hedefle kapatılmasın.
+- ✅ **Ekranda kanıtlandı** — `/schedule` (kendi rotası): `<a>` sayısı **0**. `/schedule/4cd37519…` (alt rota): `Akademik›`**`Ders Programı`**`›10-A`, `<a class="crumb-link" href="/schedule">`, `cursor: pointer`; bağlantıya tıklandı ve adres `/schedule`e döndü. ![[D-06-sonra-kirilim-baglanti.png]]
+- 🎨 Görsel dil: bağlantı durağan hâlde düz metinle aynı görünür (breadcrumb satırı mavi bağlantılarla bölünmesin), tıklanabilirliğini imleç + hover alt çizgisiyle söyler; `:focus-visible` halkası klavye için eklendi.
 
 ---
 
