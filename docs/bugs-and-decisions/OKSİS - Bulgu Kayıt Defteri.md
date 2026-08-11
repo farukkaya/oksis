@@ -162,13 +162,34 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
   - Puanlayıcı da yayılmayı **ödüllendiriyor**: dersler tek güne yığılırsa denge puanı açıkça "en kötü" (0) veriliyor.
   - Aday seçimi **eksik saat**e, eşitlikte toplam puana bakıyor. Görsel/pedagojik eksen bir seçim ölçütü **değil**.
 - ➡️ **Sonuç:** Kod "haftaya yay" diye tasarlanmış ve bunu yapıyor. Beklenen davranış bunun tersiyse yapılacak şey hata düzeltmesi değil **hedef değişikliği** — strateji ağırlıkları ya da yeni bir puan boyutu.
+- 🔄 **ÖNCEKİ TEŞHİS EKSİKTİ — düzeltme (2026-08-11, gerçek program görseli geldikten sonra):** Yukarıdaki *"kod haftaya yay diye tasarlanmış ve bunu yapıyor"* okuması strateji/puanlayıcı için doğru ama **eksik**. Depoda **blok altyapısı zaten var** ve üç ayrı yerden birden devre dışı — aşağıda ölçüldü. Yani bu tam bir "hedef değişikliği" değil, **yarım kalmış bir özelliğin tamamlanması**.
 - ✅ **NETLEŞTİ — 2026-08-11.** Cevap sorulan iki seçeneğin de dışında çıktı; ikisi de yanlış çerçeveymiş:
   - **İstenen ne "haftaya yay" ne "tek güne yığ" — istenen BLOK yerleştirme.** Bir ders haftada birden çok saat alıyorsa saatler **aynı gün içinde ardışık ikili bloklar** hâlinde konmalı, bloklar da farklı günlere dağıtılmalı.
   - **Kullanıcının verdiği örnek:** *3 saat* → bir güne **ardışık 2**, başka bir güne **1**. *4 saat* → iki ayrı güne **2+2 ardışık**.
   - **Bugünkü davranış:** 3 saat → Pzt 1, Sal 1, Çar 1 (her gün tek saat, hiç blok yok). Gerçek okul programı böyle kurulmuyor.
 - ➡️ **Sonuç: bu bir hedef değişikliği, hata düzeltmesi değil.** Puanlayıcıya bugün **hiç olmayan** bir boyut ekleniyor: *aynı dersin aynı gün ardışık saatlerde olması ödüllendirilir.* Mevcut "haftaya yay" boyutu kaldırılmıyor, blok boyutuyla birlikte tartılıyor — çünkü bloklar da farklı günlere dağılmalı. İki hedef çelişmiyor, **iç içe**: gün ekseninde dağıt, gün içinde blokla.
-- ⬜ **Sıradaki iş:** (1) Kullanıcı gerçek bir ders programı görseli iletecek — hedef çıktı buradan birebir sabitlenecek (blok boyutu 2 mi 3 mü, hangi dersler bloklanmaz, tek saatlik dersler nereye). (2) Ondan sonra puanlayıcıya blok boyutu + strateji ağırlıkları. **Görsel gelmeden algoritmaya dokunulmayacak.**
 - 🔗 **Bağlantı:** `TB-49` (müfredat saat sağlayıcısı stub) bu işin girdisini etkiler — bir dersin haftalık saatinin ne olduğu bugün yalnız elle yazılan `WeeklyHours`'tan geliyor.
+
+#### Gerçek program görselinden çıkarılan hedef *(9B, aSc Ders Dağıtım, 2026-03-29)*
+
+Kullanıcı gerçek bir okul programı iletti. Ölçülen desen:
+
+| Ders | Haftalık saat | Yerleşim |
+|---|---|---|
+| Matematik | 6 | Pzt 3-4 · Sal 1-2 · Per 3-4 → **2+2+2, üç ayrı gün** |
+| Türk Dili Ed. | 5 | Pzt 5-6 · Sal 6-7 · Sal 3 → **2+2+1** |
+| Yabancı Dil | 4 | Pzt 7-8 · Çar 1-2 → **2+2, iki ayrı gün** |
+| Kulüp · Sağlık Bil. · Adabı Muaşeret · Koçluk · Rehberlik | 1 | hepsi günün **kuyruğunda** (7. / 8. saat) |
+
+- **Kural:** Haftalık saat ikili ardışık bloklara bölünür, bloklar farklı günlere dağıtılır. Tek kalan saat ayrı bir güne konur ve **ardışık bir bloğun arasına giremez** — bloğun önüne veya arkasına yerleşir. Tek saatlik dersler günün sonuna toplanır.
+- ⚠️ **Eksen NOT'u:** Görselde saatler yatay, günler dikey; OKSİS'te tersi. **Kullanıcı bunu değiştirmek istemiyor** — `B-14` ızgara ekseniyle ilgili değil, bu okuma kesin olarak elendi.
+
+#### Kod ölçümü: blok altyapısı VAR, üç yerden birden kapalı *(2026-08-11)*
+
+1. **Ekranda varsayılan kapalı.** `oksis-ui` → `packages/core/src/schedule/constants.ts:183` → `preferBlockPairing: false`. Yani kullanıcı bu özelliği hiç açık görmemiş olabilir. (`limitDailySameSubject: true` ve sınır **günde 2** — blokla çelişmiyor, tam tersine ikili bloğa izin verip üçlüyü engelliyor.)
+2. **Açık olsa bile blok atomik yerleştirilmiyor.** `LessonDemandBuilder` haftalık saati **tek tek saatlere** açıyor (`for i < WeeklyHours`). `GreedySolver` her saati bağımsız yerleştiriyor; `PreferBlockPairing` yalnız *"aynı dersin yanındaki slot önce denensin"* diyen **yumuşak bir sıralama**. Matematik'in 1. saati Pzt 1'e konduktan sonra, 2. saati sıraya gelene kadar araya başka dersler girip Pzt 2'yi kapatabiliyor — komşuluk kaçıyor. Gözlenen *"her güne bir saat"* tam olarak bu.
+3. **Blok kavramı veri modelinde taşınıyor ama doldurulmuyor.** `PlannedPlacement` `IsBlock` ve `BlockGroupSeq` alanlarını taşıyor; üretici ikisini de sabit `false`/`0` yazıyor. `LessonDemandBuilder`'ın docblock'u bunu açıkça söylüyor: *"Blok üretimi bu dilimde KAPALI — BlockGroupSeq her zaman 0 (Debt-AG-8)."*
+- ➡️ **Sonuç:** Yapılacak iş sıfırdan bir hedef değişikliği değil, **`Debt-AG-8`'in kapatılması**: (a) talep üretimi haftalık saati bloklara bölsün, (b) solver bloğu **atomik** yerleştirsin (bloğun tüm saatleri aynı gün ardışık ve hepsi feasible olmalı), (c) ekranda varsayılan açılsın.
 
 ### D-07 · Öğretmen görünümü mobilde bozuk
 - **Belirti:** Ders Programı öğretmen görünümü mobil ekrana göre tasarlanmış ama responsive değil.
