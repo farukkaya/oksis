@@ -337,7 +337,11 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - **Katman:** FE · **Öncelik:** 🟡 Orta (işlem tamamlanamıyor)
 - **Çözüm yönü:** Modal gövdesi scroll'lansın, aksiyon çubuğu sabit (sticky footer) kalsın. Tek modal değil, bileşen seviyesinde → **X-02**.
 - ✅ **KAPANDI — `X-02` varsayılanının içinde** *(`oksis-ui` @ `6817806`, 2026-08-11)*. Bu modala özel bir satır yazılmadı; temel `.att-modal` kuralı düzeltildiği için `D-02` kendiliğinden kapandı. Ölçüm ve gerekçe `X-02`'de.
-- ℹ️ **Ekran testi notu:** Etkinlik sihirbazı adım 3'e canlı veriyle ulaşılamadı — bugünün tarihi (2026-08-11) yürürlükteki sezonun (15.09.2025 – 13.06.2026) **dışında** ve adım 1 bu yüzden ilerlemiyor. Doğrulama bu nedenle gövdeye 60 satır enjekte edilip **ölçülerek** yapıldı; ölçüm ekran görüntüsünden daha kesin (piksel değerleri yukarıda).
+- ✅ **CANLI VERİYLE EKRAN TESTİ YAPILDI** *(2026-08-11)*: İlk denemede `s1` okulunda adım 1'i geçemedim — bugünün tarihi o okulun sezonunun dışında kalıyor ve sihirbaz ilerlemiyor. **Kullanıcı `mudur.s2`'nin sezon içinde olduğunu söyledi**; o hesapla girilince akış uçtan uca çalıştı.
+  - **Senaryo:** Etkinlikler → Etkinlik Tanımla → ad + 3 şube → adım 3 → **15 öğretmenin tamamı seçildi**.
+  - **Ölçüm:** gövde içeriği 1002 px, görünen alan 565 px → **gövde kendi içinde kayıyor**; modal 760 px'de sınırlı; aksiyon çubuğu 830 ≤ 900 → **görünür**.
+  - **Kanıt:** *"Etkinliği Oluştur ve İşaretle"* butonu — bulgunun kaybolduğunu söylediği buton — ekranda duruyor: ![[D-02-sonra-aksiyon-cubugu-gorunur.png]]
+- 📌 **Ortam notu:** Okulların sezon durumu farklı — `s2` sezon içinde, `s3` sezon başlamamış, `s1` sezon dışı. Tarihe bağlı akışların ekran testi `mudur.s2` ile yapılmalı.
 
 ### D-06 · Breadcrumb tıklanabilir değil
 - **Belirti:** `Akademik › Ders Programı › 10-A` yolunda ara kırılımlar tıklanamıyor.
