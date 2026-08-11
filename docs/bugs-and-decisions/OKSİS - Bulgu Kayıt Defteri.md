@@ -107,8 +107,9 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
   2. **Yoklama kime yazılır?** Fiilen alan kişiye. Vekillik yalnız görüntü amaçlı bir rozet; kaydın sahibi vekildir.
   3. **Nöbetçi öğretmen listede görünür mü?** **Hayır — nöbetin yoklama ile hiçbir bağı yok.** Oturum yalnız ders programı istisnasına bakıyor; nöbet çizelgesi hiç sorgulanmıyor.
 - ➕ **Ayrıca bulundu:** Ders programındaki **iptal** istisnası oturumu üretip doğrudan `İptal` durumunda doğuruyor — üzerine yoklama girilemiyor. Oturumu yalnız efektif öğretmeni görebiliyor; başkasına 403 değil **404** dönüyor (varlık sızdırmama, modülün genel deseni).
-- ➡️ **Sonuç:** Ortada bir "ilişkisel sorun" değil, muhtemelen bir **kavram karışıklığı** var: nöbet ile vekâlet farklı şeyler ve yoklamayı yalnız vekâlet etkiliyor. Gözlenen davranış buna rağmen yanlışsa somut senaryo gerekiyor — netleştirme alanı açık kalıyor.
-- ✍️ **Cevap alanı:** [Netleştirme Bekleyenler → B-02](#b-02--nöbetvekalet--yoklama-ilişkisi)
+- ➡️ **Sonuç:** Ortada bir "ilişkisel sorun" değil, muhtemelen bir **kavram karışıklığı** var: nöbet ile vekâlet farklı şeyler ve yoklamayı yalnız vekâlet etkiliyor.
+- ✅ **KAPANDI — 2026-08-11, kullanıcı onayıyla.** *"Kavram karışıklığıymış, kapat."* Nöbet ile vekâletin ayrı kavramlar olduğu beklenmiyordu; kod doğru çalışıyor, ortada bir hata yok. **Kod değişikliği yapılmadı.**
+- 📌 **Kalan iz:** Bu karışıklık bir kullanıcıda doğduysa başkasında da doğar. Ürün tarafında nöbet ve vekâletin farkını ekranda anlatan bir ipucu düşünülebilir — bulgu değil, ürün notu.
 
 ### V-01 · Nöbet çizelgesi sezon yaşam döngüsüne bağlanmalı
 - **Kural:** Çizelge yalnızca aktif sezon aralığında oluşturulabilmeli. Sezon bitiş tarihinde ve **yeni sezon açıldığında (taslak değil, açılmış sezon)** mevcut çizelge otomatik pasife alınmalı.
@@ -161,8 +162,13 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
   - Puanlayıcı da yayılmayı **ödüllendiriyor**: dersler tek güne yığılırsa denge puanı açıkça "en kötü" (0) veriliyor.
   - Aday seçimi **eksik saat**e, eşitlikte toplam puana bakıyor. Görsel/pedagojik eksen bir seçim ölçütü **değil**.
 - ➡️ **Sonuç:** Kod "haftaya yay" diye tasarlanmış ve bunu yapıyor. Beklenen davranış bunun tersiyse yapılacak şey hata düzeltmesi değil **hedef değişikliği** — strateji ağırlıkları ya da yeni bir puan boyutu.
-- ❓ **Netleştirme gerekli:** Beklenti *dağılımın kendisi* mi (bir dersin 6 saati aynı güne mi toplanmalı?) yoksa *ekranın doldurulma/çizilme sırası* mı? İkisi çok farklı iş. Somutlaşmadan algoritmaya dokunulmamalı — aksi halde pedagojik olarak istenen dağılım bozulur.
-- ✍️ **Cevap alanı:** [Netleştirme Bekleyenler → B-14](#b-14--otomatik-program-oluşturucunun-hedefi)
+- ✅ **NETLEŞTİ — 2026-08-11.** Cevap sorulan iki seçeneğin de dışında çıktı; ikisi de yanlış çerçeveymiş:
+  - **İstenen ne "haftaya yay" ne "tek güne yığ" — istenen BLOK yerleştirme.** Bir ders haftada birden çok saat alıyorsa saatler **aynı gün içinde ardışık ikili bloklar** hâlinde konmalı, bloklar da farklı günlere dağıtılmalı.
+  - **Kullanıcının verdiği örnek:** *3 saat* → bir güne **ardışık 2**, başka bir güne **1**. *4 saat* → iki ayrı güne **2+2 ardışık**.
+  - **Bugünkü davranış:** 3 saat → Pzt 1, Sal 1, Çar 1 (her gün tek saat, hiç blok yok). Gerçek okul programı böyle kurulmuyor.
+- ➡️ **Sonuç: bu bir hedef değişikliği, hata düzeltmesi değil.** Puanlayıcıya bugün **hiç olmayan** bir boyut ekleniyor: *aynı dersin aynı gün ardışık saatlerde olması ödüllendirilir.* Mevcut "haftaya yay" boyutu kaldırılmıyor, blok boyutuyla birlikte tartılıyor — çünkü bloklar da farklı günlere dağılmalı. İki hedef çelişmiyor, **iç içe**: gün ekseninde dağıt, gün içinde blokla.
+- ⬜ **Sıradaki iş:** (1) Kullanıcı gerçek bir ders programı görseli iletecek — hedef çıktı buradan birebir sabitlenecek (blok boyutu 2 mi 3 mü, hangi dersler bloklanmaz, tek saatlik dersler nereye). (2) Ondan sonra puanlayıcıya blok boyutu + strateji ağırlıkları. **Görsel gelmeden algoritmaya dokunulmayacak.**
+- 🔗 **Bağlantı:** `TB-49` (müfredat saat sağlayıcısı stub) bu işin girdisini etkiler — bir dersin haftalık saatinin ne olduğu bugün yalnız elle yazılan `WeeklyHours`'tan geliyor.
 
 ### D-07 · Öğretmen görünümü mobilde bozuk
 - **Belirti:** Ders Programı öğretmen görünümü mobil ekrana göre tasarlanmış ama responsive değil.
@@ -314,7 +320,12 @@ Tek bir ekranın bulgusu değil, **proje geneline yayılmış** yapısal sorunla
 - **Kök yapısal boşluk — iki ayak:**
   1. **Derleme/analiz ayağı:** Yok sayılan property'nin `IQueryable` ifadesi içinde kullanımını yakalayan bir kural yok. Seçenekler: `FullName`'i sorgudan erişilemez kılmak (ör. `PersonName` üzerinde değil, bir uzantı metodunda tutmak — `IQueryable` içinde çağrılırsa zaten çevrilemez ama hata **derleme/analiz** anında görünür olur), ya da bir Roslyn analyzer / mimari testi (`NetArchTest` benzeri) ile ihlali test zamanında kırmızıya düşürmek.
   2. **Test ayağı:** Query handler'ların birim testleri `MockQueryable` (LINQ-to-Objects) üzerinde koştuğu için **çeviri hatalarına yapısal olarak kör**. Aynı desen tüm modüllerdeki query handler testleri için geçerli — yani bu tek uca özgü değil, *sorgu çevirisi hiçbir birim testinde doğrulanmıyor*. Gerçek sağlayıcıya (Testcontainers MSSQL, `Oksis.Infrastructure.IntegrationTests`) karşı en az bir "sorgu derleniyor mu" testi olmayan her handler aynı riski taşıyor.
-- ⬜ **Önce yapılacak:** Hangi ayağın önce kurulacağına karar verilmeli. Analyzer dar ve kesin ama yalnız bu property sınıfını kapatır; entegrasyon testi kapsamı geniş ama her handler için ayrı emek ister. İkisi birbirinin yerine geçmiyor — analyzer *bu* hatayı, entegrasyon testi *tüm çeviri hatalarını* yakalar.
+- ✅ **KARAR VERİLDİ — 2026-08-11:** **Önce mimari test (dar ve kesin) kurulacak.** Gerekçe: bugün kanayan yara tam olarak bu property sınıfı; mimari test ucuz, hızlı ve ihlali test zamanında kırmızıya düşürüyor. Entegrasyon testi ayağı iptal değil, **ertelendi** — kapsamı geniş ama her handler için ayrı emek istiyor, ayrı bir dilim olarak ele alınacak.
+- ✅ **DAR AYAK KAPANDI** *(`oksis-api` @ `329ba30`, 2026-08-11)*: `tests/Oksis.Tests/Architecture/EfIgnoredPropertyQueryTests.cs`.
+  - **Nasıl ölçüyor:** kaynak deyim (statement) sınırlarında bölünür; bir deyimde hem sorgu kökü (`db.X`), hem sonlandırıcı (`ToListAsync` vb.), hem de yasak erişim (`.Name.FullName`) varsa ihlaldir. Doğru desende property sorgu materyalize edildikten **sonra** ayrı bir deyimde okunur — aynı deyimde buluşmazlar.
+  - **Boş yere yeşil değil:** `B-15`'in hatası geçici olarak geri konuldu, test **dosya + satır vererek kırmızıya düştü** (`GetAvailableTeachersQueryHandler.cs:50`) ve doğru deseni hata mesajında gösterdi; sonra geri alındı ve tekrar yeşile döndü.
+  - Yeni bir EF-`Ignore`'lu property eklenirse `IgnoredComputedAccessors` dizisine yazılması yeterli.
+- ⬜ **Geniş ayak ERTELENDİ (iptal değil):** her query handler için gerçek sağlayıcıya karşı "sorgu çevriliyor mu" entegrasyon testi. Ayrı bir dilim; bu test onun yerine geçmiyor — dar ayak *bu* hatayı, geniş ayak *tüm çeviri hatalarını* yakalar.
 
 ### X-05 · `Branch` identifier'ı iki ayrı kavramı gösteriyor
 - **Belirti:** Aynı isim iki farklı şeyi, iki farklı tabloyu işaret ediyor:
@@ -665,14 +676,14 @@ Oysa `AssignTeacherCommand` (uç: `PUT /timetable/programs/{id}/placements/{pid}
 Bu maddeler şu haliyle iş kalemine dönüşemiyor. **Sol sütun eksik olan bilgi, sağ sütun senin cevap alanın.**
 Cevabı yazdığında **Durum**'u `✅ Netleşti` yap ve aşağıdaki panoyu güncelle.
 
-**Netleşen: 0 / 4**
+**Netleşen: 2 / 4**
 
 | ID | Konu | Durum | Tarih |
 |:--|:--|:--|:--|
-| **B-02** | Nöbet/Vekalet ↔ Yoklama ilişkisi | ⬜ Bekliyor | — |
+| **B-02** | Nöbet/Vekalet ↔ Yoklama ilişkisi | ✅ Netleşti → **kapatıldı** (kavram karışıklığı) | 2026-08-11 |
 | **B-12** | Muafiyet eklemede 401 | ⬜ Bekliyor | — |
-| **B-06** | Bildirimlerde sezon filtresi | ⬜ Bekliyor | — |
-| **B-14** | Otomatik program oluşturucunun hedefi | ⬜ Bekliyor | — |
+| **B-06** | Bildirimlerde sezon filtresi | ⬜ Bekliyor *(ekrandan bakılarak cevaplanabilir, kullanıcıya sorulmasına gerek yok)* | — |
+| **B-14** | Otomatik program oluşturucunun hedefi | ✅ Netleşti → **blok yerleştirme**, hedef değişikliği | 2026-08-11 |
 
 ---
 
