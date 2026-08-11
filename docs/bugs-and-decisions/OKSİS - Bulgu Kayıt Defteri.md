@@ -51,8 +51,8 @@ Bu modül şu an **yeni sezon açma akışını bloklıyor**. Diğer her şeyden
 - **Belirti:** "Sezonu aç" butonu `"Adım 0-5 arasında olmalı."` hatası veriyor. Kullanıcı 6. (Özet) adımda sezonu açabilmeli.
 - **Katman:** BE + FE · **Öncelik:** 🔴 Kritik
 - **Kök neden (BE):** `SaveSeasonDraftCommandValidator.CurrentStep` kuralı `InclusiveBetween(0, 5)` — özet adımı aralık dışında kalıyor.
-- ✅ **Durum:** Backend tarafı çalışma ağacında düzeltildi (`0-6` aralığı), **henüz commit edilmedi**.
-- ⬜ **Kalan iş:** Adım sayısı tek yerden (enum/const) beslensin ki FE adım sayısı ile BE aralığı bir daha ayrışmasın.
+- ✅ **Backend düzeltmesi COMMIT EDİLDİ** — `oksis-api` @ `238f5e1` *"sezon sihirbazi adim araligi 0-6ya genisletildi"*. Doğrulandı (2026-08-12): `SaveSeasonDraftCommandValidator` bugün `InclusiveBetween(0, 6)` diyor. Buradaki eski *"henüz commit edilmedi"* notu **bayattı** ve düzeltildi.
+- ⬜ **Kalan iş (bulgu bu yüzden AÇIK):** adım sayısı hâlâ iki yerde ayrı yazılı — FE'de `TOTAL_WIZARD_STEPS = 6`, BE'de validator sabiti. Tek kaynağa bağlanmadıkça aynı ayrışma yeni bir adım eklendiğinde geri gelir. `B-04` yalnız bu yapıldığında kapanır.
 
 ### B-04a · Validasyon uyarısı ekranda doğru gösterilmiyor
 - **Belirti:** BE'den dönen validasyon mesajı kullanıcıya düzgün yansımıyor; kullanıcı neden takıldığını ekrandan anlayamıyor.
@@ -449,8 +449,8 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 
 ### B-10 · "Rehberlik" branş listesinden kaldırılması
 - **Karar:** Rehberlik bir branş değil → master data'dan silindi.
-- ✅ **Durum:** `20260807213717_20260808_remove_counseling_subject` migration'ı + seed güncellemeleri çalışma ağacında hazır, **henüz commit edilmedi**.
-- ⬜ **Kalan iş:** Mevcut tenant verisinde Rehberlik'e bağlı öğretmen/görevlendirme kaydı kalmış olabilir — migration öncesi bağımlılık taraması yapıldığı doğrulanmalı.
+- ✅ **Migration COMMIT EDİLDİ** — `oksis-api` @ `9e96a4f` *"rehberlik dersi master katalogdan kaldirildi"*; dosya adı `20260810123433_20260810_remove_counseling_subject`. Buradaki eski *"çalışma ağacında hazır, henüz commit edilmedi"* notu (ve eski migration damgası) **bayattı**, düzeltildi (2026-08-12).
+- ⬜ **Kalan iş (bulgu bu yüzden AÇIK):** mevcut tenant verisinde Rehberlik'e bağlı öğretmen/görevlendirme kaydı kalmış olabilir — bağımlılık taraması **hâlâ yapılmadı**.
 
 ---
 
