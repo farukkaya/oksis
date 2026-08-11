@@ -853,7 +853,7 @@ Tatil için iki ayrı domain sınıfı var ve **biri hiçbir yere bağlı değil
 - **Etkisi:** Ölü sınıfa bakıp kural çıkaran biri (uzunluk sınırı, sezon zorunluluğu) çalışmayan bir sözleşmeye güvenir. Domain haritasındaki `Okul Tatili` notu da bu ölü sınıfa bağlıydı — düzeltildi.
 - **Çözüm yönü:** Ölü sınıf ve istisna silinsin; enum tek noktada birleşsin.
 
-### TB-35 · Devamsızlık eşiği iki ayrı ekranda tanımlanıyor, biri hiçbir şey yapmıyor 🟠
+### TB-35 · Devamsızlık eşiği iki ayrı yerde tanımlanıyor, biri hiçbir şey yapmıyor ✅
 Yönetici devamsızlık uyarı eşiğini **iki farklı yerden** girebiliyor:
 - **Akademik politika** (okul ayarları) → `WarningAbsenceThreshold`, `UnexcusedAbsenceLimit`, `TotalAbsenceLimit`
 - **Bildirim yapılandırması** → `AbsenceWarningThreshold`, `AbsenceCriticalThreshold`
@@ -862,7 +862,15 @@ Yönetici devamsızlık uyarı eşiğini **iki farklı yerden** girebiliyor:
 - **Etkisi:** Yönetici bildirim ekranından eşiği ayarlayıp "uyarı kuruldu" sanıyor; hiçbir uyarı tetiklenmiyor. Kullanıcıya görünen sessiz bir yalan.
 - ✅ **KULLANICI KARARI VERİLDİ — 2026-08-12: Akademik Politika kazanıyor.** Bildirim yapılandırmasındaki `AbsenceWarningThreshold` / `AbsenceCriticalThreshold` alanları **kaldırılacak**; eşik motoru zaten yalnız akademik politikayı okuyor, yani ekran gerçeğe uydurulacak.
 - 📌 **Gerekçe:** eşiği taşımak, akademik politikadaki diğer iki alanla (`UnexcusedAbsenceLimit`, `TotalAbsenceLimit`) aynı kavramı iki ekrana bölerdi. Kaldırma hem daha az iş hem de *"kullanıcıya görünen sessiz yalan"*ı bitiren yol.
-- ⬜ **Uygulama bekliyor** (BE alan + validasyon + DTO, FE sekme alanları).
+- ✅ **KAPANDI** *(`oksis-api` @ `954c3f6` + `oksis-ui` @ `3465370`, 2026-08-12)*.
+- ✅ **"Tüketicisi yok" iddiası ÖLÇÜLEREK doğrulandı:** `NotificationConfig.AbsenceWarningThreshold` / `AbsenceCriticalThreshold`, kendi query/command/DTO'ları **dışında** repo genelinde hiç okunmuyordu. Karşı taraf ise capcanlı: akademik politikadaki `WarningAbsenceThreshold`'u eşik motoru (`AbsenceCalculator`), risk öğrenciler, dönem raporu ve öğrenci özeti okuyor.
+- 🔎 **AMA BULGUNUN ETKİ CÜMLESİ FAZLA GENİŞMİŞ — düzeltildi:** Bulgu *"Yönetici bildirim ekranından eşiği ayarlayıp 'uyarı kuruldu' sanıyor"* diyordu. Ölçüm: **web ve mobil arayüzde bu eşikler için giriş alanı HİÇ YOK.** Ekrandaki tek *"Uyarı eşiği"* Ayarlar → Politika sekmesinde ve akademik politikaya bağlı, yani **doğru olana**. İstemcide alanlar yalnız *"echo"* olarak taşınıyordu (sunucudan al, PUT'ta geri yolla). Yani ortada kullanıcıya görünen bir yalan değil, **ölü sözleşme + ölü doğrulama + ölü kolon** vardı. `TB-##` maddelerinin kod taramasından çıktığı ve *"kullanıcıya görünen bir belirtisi olmayabilir"* uyarısı burada birebir geçerliymiş.
+- ✅ **Kaldırılanlar:** domain alanları, `Create`/`Update` imzaları, iki DTO, komut alanları, 1-60 aralığı ve **BR-SS-003** doğrulamaları, EF property'leri, `ck_notification_critical_gte_warning` check constraint'i, istemci tipleri, `clampThreshold` yardımcısı ve mock verisi. Migration kolonları **ve kısıtı** düşürüyor.
+- 🔎 **Migration İLK SEFERDE EKSİKTİ ve bunu entegrasyon fixture'ı yakaladı:** kolonlar düşürülüp check constraint modelde bırakılınca `EnsureCreated` **`Invalid column name 'absence_critical_threshold'`** ile patladı (`SchoolSettingsTenantTests` 2 test kırmızı). Kısıt kaldırılıp migration yeniden üretildi; iki test yeşile döndü. Birim testleri bu sınıfa **kördü** — `X-06`/`X-07`'nin *"test yeşil, gerçek yol kırık"* deseninin tersi: burada gerçek sağlayıcıya karşı koşan test hatayı yakaladı.
+- ✅ **Canlı doğrulama:** migration dev veritabanına uygulandı → `absence_*` kolonları **yok**, check constraint **yok**, akademik politika eşikleri **korundu** (5/10). Uçlar: bildirim yapılandırması okuma **200** (sözleşmede eşik alanı yok), eşiksiz yazma **204** ve kayıt DB'ye düştü.
+- 📌 **Veri kaybı sıfır:** `school_notification_configs` tablosu üç okulda da **boştu** — alanların hiç yazılmadığının ayrı bir kanıtı.
+- 🧪 BE 695 + 1555 + 251 + **40/40** yeşil (sonuncusu düzeltmeden önce 2 kırmızıydı), build 0 uyarı; `packages` 144+103+288 yeşil, typecheck temiz, OpenAPI şeması yeniden üretildi.
+- 🔎 **Yolda çıkan ortam notu:** dev veritabanı **iki migration geride**ydi — `B-10`'un `remove_counseling_subject` migration'ı (önceki oturumda commit edilmiş) hiç uygulanmamıştı. `B-10`'un ölçümü yine de geçerli: Rehberlik zaten daha eski bir migration'la (`20260808_remove_counseling_subject`) silinmişti, yani aynı işi yapan **iki** migration var. Yenisi uygulandığında sıfır satır etkiledi.
 
 ### TB-36 · İki zaman dilimi alanı, iki farklı format 🟡
 Aynı tenant için iki ayrı zaman dilimi alanı tutuluyor:
