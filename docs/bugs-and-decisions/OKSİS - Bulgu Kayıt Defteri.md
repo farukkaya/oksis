@@ -35,9 +35,9 @@
 | ⚪ Düşük | 6 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-14` · `B-15` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
+**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-13` · `B-14` · `B-15` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından, 2026-08-12).
-**Kalan (bu dosyada, TB kuyruğu hariç):** 8 — `B-04` ve `B-10` 2026-08-12'de kapandı.
+**Kalan (bu dosyada, TB kuyruğu hariç):** 7 — `B-04`, `B-10` ve `B-13` 2026-08-12'de kapandı.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -128,6 +128,18 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 - 🔍 **İkinci hipotez ELENDİ** *(kod taraması, 2026-08-10 @ `2270867`)*: Algoritma muafiyeti **sorguluyor**. Sürekli muafiyetli öğretmen üç ayrı noktada dışlanıyor — dağıtım işi öğretmen havuzunu kurarken, çizelge taslağı kaydedilirken ve otomatik sonuç uygulanırken. Çizelge aggregate'i de muaf öğretmene atamayı reddediyor.
 - ➡️ **Kalan tek yol B-12:** Muafiyet kaydı DB'ye hiç yazılmıyorsa (401) hiçbir filtre onu göremez. **B-12 kapanmadan B-13'ün algoritma tarafında aranacak bir şey yok.**
 - ⚠️ **Ama dikkat:** Yukarıdaki filtrelerin hepsi **sürekli** muafiyet içindir. Geçici muafiyet için ayrı bir boşluk var — bkz. `TB-19`.
+- ✅ **KAPANDI — canlı A/B ölçümüyle, kod değişikliği GEREKMEDİ** *(2026-08-12, `mudur.s2` · Atatürk Anadolu Lisesi · dönem 2026-08-03 → 08-14)*. Kod okumak yetmezdi; dağıtım gerçekten koşturuldu.
+  - **Senaryo:** çizelgede **2 nöbeti olan** bir öğretmen (Tuğçe Avcı) seçildi, sürekli muafiyet tanımlandı (uç **201**, DB'de doğrulandı), `FromScratch` adil dağıtım koşturuldu. Sonra **muafiyet kaldırılıp aynı dağıtım tekrar** koşturuldu — tek değişken muafiyet.
+
+| Sürekli muafiyet | Öğretmen **nöbetçi** olarak | Öğretmen **vekil** olarak | Farklı nöbetçi sayısı |
+|---|---|---|---|
+| **VAR** | **0** | **0** | 13 |
+| **YOK** | **2** | **3** | 14 |
+
+  - ➡️ **Algoritma muafiyete uyuyor ve iki rolde birden uyuyor** — yalnız nöbetçi havuzundan değil, **vekil havuzundan da** çıkarıyor. Kod taramasının *"üç noktada dışlanıyor"* bulgusu canlıda doğrulandı.
+- 🔍 **Belirtinin gerçek açıklaması `B-12`/`X-07`:** Kullanıcı muafiyeti işaretlediğinde **POST 401 ile patlıyordu** (istemcinin 401-retry hattı gövdeli isteklerde kırıktı) ve **muafiyet hiç kaydedilmiyordu**. Dağıtım da kaydı olmayan bir muafiyeti göremeyeceği için öğretmene nöbet yazıyordu. `B-12`'nin kendi cümleleri bunu birebir anlatıyor: *"işaretleme sorunsuz"* (GET'ler) · *"ekleme aşamasında patlıyor"* (POST). **Yani `B-13` bağımsız bir hata değil, `X-07`'nin görünen yüzüydü** — `X-07` kapandığı için de artık üretilemiyor.
+- ♻️ **Ortam korundu:** öneri işleri yalnız üretildi, **`/apply` hiç çağrılmadı**; test muafiyetleri silindi. Çizelge 30 atamayla, o öğretmen 2 nöbetiyle ölçüm öncesi hâlinde.
+- ⚠️ **Kapanış YALNIZ sürekli muafiyet içindir.** Aynı ölçüm turunda geçici muafiyetin gerçekten kırık olduğu canlıda gösterildi → `TB-19`.
 
 ### B-12 · Muafiyet eklemede 401 Unauthorized
 - **Belirti:** Bölgeler & Politika sekmesinde muafiyet eklenirken 401 alınıyor. İşaretleme sorunsuz, ekleme aşamasında patlıyor.
@@ -723,11 +735,24 @@ Diğer modüller `AcademicSessionId`'ye taşındı; nöbet çizelgesi hâlâ `Ac
 ### TB-18 · Nöbet politikaları yazılabiliyor ama "etkisiz" işaretli 🟡
 Haftalık nöbet sıklığı ve gün deseni (yayılı/ardışık) okul ayarı olarak kaydedilebiliyor, ama kodda "şimdilik etkisiz, sonraki fazın dağıtım girdisi" notu duruyor. Yönetici ayarı değiştirdiğinde bir şeyin değiştiğini sanıyor. Ya bağlanmalı ya arayüzden gizlenmeli.
 
-### TB-19 · Geçici muafiyet hiçbir aşamada tam uygulanmıyor 🟡
+### TB-19 · Geçici muafiyet hiçbir aşamada tam uygulanmıyor 🟠
 - Çizelge taslağı kaydedilirken ve otomatik sonuç uygulanırken **yalnızca sürekli** muafiyet dikkate alınıyor; geçici muafiyet bilinçli olarak dışarıda bırakılmış ("tarihe bağlı, tüketim anında uygulanır").
 - Dağıtım işi ise geçici muafiyeti **yalnızca işin çalıştığı günün tarihine** göre değerlendiriyor — dönem aralığına değil. Kasımda muaf olan öğretmen, dağıtım ekimde çalıştırılırsa havuza giriyor.
 - Kodun yorumu "dönem-kapsayan geçici muafiyet" diyor ama uygulama tek güne bakıyor — **niyet ile kod ayrışmış.**
-- ⬜ **Doğrulanacak:** "Tüketim anında uygulanır" denen yerde gerçekten bir kontrol var mı? Bu taramada bulunamadı.
+- ✅ **CANLIDA DOĞRULANDI — kırık olduğu ölçüldü** *(2026-08-12, `B-13` ölçüm turunun içinde · `mudur.s2`, dönem 2026-08-03 → 08-14, koşturma günü **2026-08-12**)*. Aynı öğretmene iki farklı geçici muafiyet verilip dağıtım koşturuldu:
+
+| Geçici muafiyet penceresi | Koşturma gününü kapsıyor mu | Nöbetçi | Vekil |
+|---|---|---|---|
+| 2026-08-11 → 08-13 | **evet** | 0 | 0 |
+| **2026-08-13 → 08-14** *(dönem içinde)* | **hayır** | **2** | **3** |
+
+  ➡️ Dönem içinde muaf olduğu günler için öğretmene nöbet **ve** vekillik yazıldı. Bulgunun koddan okunan iddiası birebir çıktı.
+- 🔍 **Kök neden tek satır ve niyet koda yazılıyken kod onu yapmıyor** — `Infrastructure/BackgroundJobs/Jobs/AutoDistributeDutyJob.cs:96-101`. Yorum *"Muafiyet: Permanent + **dönem-kapsayan** Temporary (K-2c-7)"* diyor, hemen altındaki kod `e.CoversDay(today)` çağırıyor. Yani süzgeç dönem aralığına değil, **yöneticinin butona bastığı güne** bakıyor.
+- ✅ **AÇIK OLAN SORU CEVAPLANDI — "tüketim anında uygulanır" denen kontrol HİÇ YOK.** `CoversDay` repo genelinde **yalnız üç** yerden çağrılıyor (`AutoDistributeDutyJob`, `GetDutyHubSummaryQueryHandler`, `GetDutyRosterForEditQueryHandler`) ve **üçü de `today` geçiyor**. Vekil seçicisi (`GetAvailableRelievers` — tüketime en yakın nokta) yalnız **`Permanent`** süzüyor. `SaveDutyRosterDraftCommandHandler`'daki *"Temporary exemptions are date-bound and apply per-date at consumption — NOT here"* yorumu **gerçeği yansıtmıyor**: işaret ettiği tüketim noktası yazılmamış.
+- ➡️ **Bugünkü net durum:** geçici muafiyet, yalnız pencereye denk gelen bir günde ekran açılırsa/dağıtım koşarsa etki ediyor. Yönetici muafiyeti önceden girerse (normal kullanım) **hiçbir şey yapmıyor**.
+- 🚫 **NAİF DÜZELTME YANLIŞ OLUR — ölçülerek görüldü:** `today` yerine dönem aralığı örtüşmesi koymak, 5 aylık dönemde **2 gün** muaf olan öğretmeni **dönemin tamamından** çıkarır. Sebep yapısal: `duty_assignments` tarih değil **`day_of_week`** taşıyor, yani çizelge haftalık-tekrarlı; tarih penceresi haftalık tekrara birebir eşlenemiyor.
+- ⏸️ **KAPSAM KARARI GEREKİYOR (kendi başıma başlanmadı):** iki günlük muafiyet (a) öğretmeni dönem çizelgesinden tamamen çıkarsın mı, yoksa (b) çizelgede kalıp o tarihlerde yerine **vekil** mi geçsin? (b) doğru ürün davranışı gibi duruyor ama bugün karşılığı olan bir tüketim noktası yok — yani yeni iş demek. Karar verilene kadar madde açık.
+- 📌 **Önceliği yükseltildi 🟡 → 🟠:** artık *"koddan okundu"* değil, canlıda üretilmiş, kullanıcıya görünen yanlış çizelge.
 
 ### TB-20 · Öğretmen branşı davet ve içe aktarma akışında atanmıyor 🟠
 Toplu içe aktarma ve davet yolunda branş **adı** katalog kimliğine çözülmüyor; kod pilot için boş bırakılmasını kabul ediyor. Buna karşılık **branşsız öğretmene görevlendirme yapılamıyor** (sert engel).
