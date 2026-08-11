@@ -262,8 +262,10 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 ### B-06 · Duyurularda sezon filtresi yok
 - **Belirti:** Duyurular ekranında sezon filtresi bulunmuyor.
 - **Katman:** BE + FE · **Öncelik:** 🟡 Orta
-- ⬜ **Ayrıca kontrol et:** Bildirimler ekranında da sezon filtresi var mı? Yoksa aynı iş kapsamına alınmalı.
-- ✍️ **Cevap alanı:** [Netleştirme Bekleyenler → B-06](#b-06--bildirimler-ekranında-sezon-filtresi)
+- ✅ **"Bildirimlerde de var mı?" sorusu CEVAPLANDI** *(ekran testi, 2026-08-11)*: **Yok.** Bildirimler ekranında yalnız durum filtreleri (`Tümü` / `Onay bekliyor`) var, sezon seçici hiç yok.
+- ⚠️ **Ama iki ekran aynı işin parçası DEĞİL — bildirimler tarafı çok daha derin:** `Notification` varlığının **hiç sezon/dönem alanı yok** (`RecipientAccountId`, `Kind`, `Title`, `Body`, `DeepLink`, `IsRead`, `ReadAt` — hepsi bu). Yani duyurularda filtre eklemek bir sorgu+ekran işiyken, bildirimlerde önce **şema değişikliği** (sezon/dönem kolonu + geriye dönük veri) gerekiyor.
+- ➡️ **Kapsam ayrıldı:** Duyurular sezon filtresi kendi başına ilerleyebilir; bildirimler ayrı ve daha büyük bir iş. İkisini tek işe bağlamak duyurular tarafını gereksiz yere bloklar.
+- ❓ **Kalan tek soru kullanıcıya:** Geçmiş sezon bildirimleri hiç gösterilmeli mi, yoksa yalnız aktif sezon mu? Cevap "yalnız aktif sezon" ise şema değişikliği yerine **kayıt tarihine göre kesme** yetebilir ve iş küçülür.
 
 ### D-04 · Veli Portalı duyurular ekranında gereksiz header
 - **Belirti:** Header kaldırılacak.
@@ -356,7 +358,34 @@ Tek bir ekranın bulgusu değil, **proje geneline yayılmış** yapısal sorunla
 - **Öncelik:** 🟠 Yüksek · **Katman:** FE (+ BE hata sözleşmesi)
 - 🚫 **Kısıt:** *Proje genelinde geçerli tek bir çözüm kurulacak — ekran ekran yamalama kabul değil.*
 - **Çözüm yönü:** BE'de tek tip hata/validasyon yanıt sözleşmesi (`ProblemDetails` + alan bazlı hata listesi) → FE'de tek bir interceptor bu sözleşmeyi okuyup toast/inline hataya çevirsin. Ekranlar tek tek mesaj yakalamasın.
-- ⬜ **Önce yapılacak:** Mevcut hata yanıtlarının biçimi envanterlensin — BE zaten tek tip mi dönüyor, yoksa sözleşme de mi dağınık? Yamasız çözüm buna göre şekillenir.
+- ✅ **ENVANTER YAPILDI — "önce yapılacak" maddesi kapandı** *(ekran testi turu, 2026-08-11)*. Üç ayak ayrı ayrı ölçüldü ve tablo sanılandan iyi çıktı:
+
+**1. BE sözleşmesi — ZATEN TEK TİP** ✅
+Her yanıt `ApiResponse<T>` zarfı: `{ data, meta, errors: [{ code, message, field }], correlationId }`. Çalışan API'den ölçüldü; validasyon hatası **alan bazlı** geliyor (`field: "Capacity"`), HTTP 400. Yani *"sözleşme de mi dağınık?"* sorusunun cevabı **hayır** — `ProblemDetails`'e geçmeye gerek yok, sözleşme hazır.
+
+**2. FE merkezi eşleyici — ZATEN VAR** ✅
+`oksis-ui` → `packages/api/src/client/mutation-error.ts`. Ekran ekran yakalama yok; mutasyon reddini tek cümleye indiren ortak bir katman var ve statü-farkında yazılmış: 400/409/422'de sunucunun cümlesi **olduğu gibi** geçer, 401/404/5xx'te altyapı sabiti yerine Türkçe cümle konur, 403 ise hata koduna göre ikiye ayrılır. Ölçülerek yazılmış (2026-08-10).
+
+**3. GERÇEK BOŞLUK — validator mesajlarının üçte biri İngilizce** ❌
+Eşleyici 400'de mesajı olduğu gibi geçiriyor çünkü *"bu cümleyi validator kendi Türkçesiyle yazmıştır"* diye varsayıyor. **Varsayım tutmuyordu:** 122 validator'ın **41'inde hiç `.WithMessage()` yok** ve FluentValidation'ın İngilizce varsayılanı kullanıcıya kadar gidiyordu.
+- **Ölçülen örnek** *(nöbet bölgesi oluşturma, düzeltmeden önce)*: `'Name' must not be empty.` · `'Capacity' must be between 1 and 4. You entered 99.`
+- ✅ **KAPANDI — merkezi çözüm** *(`oksis-api` @ `<pending>`)*: 41 dosyaya tek tek `.WithMessage()` eklemek yama olurdu (42.'sini hiçbir şey engellemezdi). Bunun yerine `AddApplication` içinde **tek satır**: `ValidatorOptions.Global.LanguageManager.Culture = new CultureInfo("tr")`. Kuralın **kendisi** Türkçeleşiyor, yani bundan sonra yazılacak validator'lar da varsayılan olarak Türkçe konuşuyor. Kendi cümlesini yazanlar etkilenmiyor — `.WithMessage()` dil yöneticisini her zaman ezer.
+- **Aynı istek, düzeltmeden sonra:** `'Name' boş olmamalı.` · `'Capacity', 1 ve 4 arasında olmalı. 99 değerini girdiniz.`
+- **Testle kilitlendi:** `ValidationMessageLanguageTests` — (a) yerleşik kural mesajı İngilizce kalıntı içermemeli, (b) kendi cümlesini yazan validator (`SaveSeasonDraft` → *"Adım 0-6 arasında olmalı."*) etkilenmemeli. Tam takım 1557 Application testi yeşil, kültür değişikliği hiçbir testi kırmadı.
+
+- ⬜ **Kalan tek eksik — alan adları hâlâ İngilizce token:** Mesaj Türkçeleşti ama alan adı ham C# property adı olarak kalıyor (`'Capacity', 1 ve 4 arasında olmalı.`). İki yol var ve **karar gerekiyor**:
+  1. **BE'de global `DisplayNameResolver`** + Türkçe property-ad sözlüğü. Tek nokta, ama küratörlük isteyen bir çeviri tablosu; yanlış etiket nötr token'dan kötüdür.
+  2. **FE'de alan→etiket eşlemesi** *(önerilen)*: `field` zaten hata gövdesinde geliyor ve **formu render eden taraf etiketi zaten biliyor** ("Kapasite", "Bölge adı"). Doğru mimari bu — BE kod+alan gönderir, ekran kendi etiketini koyar. `X-01`'in "tek interceptor" hedefiyle de tutarlı.
+**4. ASIL İŞ — hat kurulu ama YAYGINLAŞTIRILMAMIŞ** ❌ *(ölçüldü 2026-08-11)*
+Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
+- `mutationErrorDesc` yalnız **3 özellik ekranında** çağrılıyor (`announcements` ×2, `settings/notification-tab`). Duyurular C-fazında yazılmış ve oraya bırakılmış.
+- Buna karşılık **31 çağrı yerinde `onError: () => …`** var — yani handler `err` parametresini **hiç almıyor**, sunucunun cümlesini okuma imkânı bile yok; yerine sabit bir metin basılıyor: *"İşlem başarısız oldu"*, *"Kaydetme sırasında bir hata oluştu"*, *"Müsaitlik kaydedilemedi."*
+- 30 özellik dosyası `onError` kullanıyor; kapsam dışı kalanlar `duty`, `sections`, `students`, `users`, `schedule`, `teachers`, `academic-sessions` — yani **B-04a ve B-09'un yaşadığı ekranların hepsi**.
+- **Somut örnek:** `features/duty/bolge-tab.tsx` → `onError: () => pushToast(L.toast.error, "warn")`. Backend *"Kapasite 1 ile 4 arasında olmalıdır."* dese bile kullanıcı sabit bir hata metni görüyor.
+
+- ➡️ **`B-04a` ve `B-09` için sonuç:** Teşhis düzeltildi. *"BE mesaj hattı yok"* **yanlış** — hat var. Doğrusu: **hat 31 yerde bilinçli olarak baypas ediliyor.** İki madde de bu yaygınlaştırmanın içinde kapanacak, ayrı ayrı değil.
+- ⬜ **Sıradaki dilim (`X-01`'in gövdesi):** 31 çağrı yerini eşleyiciye bağlamak. **Ama yalnız 31 dosyayı düzenlemek yetmez** — 32.'sini yazan yine `onError: () =>` yazar. Yaygınlaştırmayla birlikte sapmayı zorlaştıran bir kural gerekiyor (ortak mutasyon yardımcısı ya da lint kuralı); aksi hâlde bu bulgu ekran ekran geri doğar.
+- 📊 **Bugünkü durum:** sözleşme ✅ · eşleyici ✅ · validator dili ✅ · **yaygınlaştırma ❌ (0/31)**. `X-01` bu yüzden **açık kalıyor**.
 
 ### X-02 · Uzun içerikte aksiyon butonlarının kaybolması
 - **Belirti:** Modal/panel içeriği uzayınca aksiyon butonu görünür alanın dışında kalıyor.
@@ -761,7 +790,7 @@ Cevabı yazdığında **Durum**'u `✅ Netleşti` yap ve aşağıdaki panoyu gü
 |:--|:--|:--|:--|
 | **B-02** | Nöbet/Vekalet ↔ Yoklama ilişkisi | ✅ Netleşti → **kapatıldı** (kavram karışıklığı) | 2026-08-11 |
 | **B-12** | Muafiyet eklemede 401 | ✅ Netleşti → **kapandı** (kök neden `X-07`) | 2026-08-11 |
-| **B-06** | Bildirimlerde sezon filtresi | ⬜ Bekliyor *(ekrandan bakılarak cevaplanabilir, kullanıcıya sorulmasına gerek yok)* | — |
+| **B-06** | Bildirimlerde sezon filtresi | 🟡 Kısmen netleşti — *filtre yok* ölçüldü; **varsayılan davranış** sorusu açık | 2026-08-11 |
 | **B-14** | Otomatik program oluşturucunun hedefi | ✅ Netleşti → **blok yerleştirme**, hedef değişikliği | 2026-08-11 |
 
 ---
