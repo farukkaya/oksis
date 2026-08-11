@@ -66,6 +66,24 @@ Bu modül şu an **yeni sezon açma akışını bloklıyor**. Diğer her şeyden
 - **Katman:** BE · **Öncelik:** 🔴 Kritik
 - **Kontrol edilecek:** Seçim bayrağı komuta taşınıyor mu, rollover handler'ında görevlendirme dalı var mı, tenant/sezon filtresi kaynak kayıtları eliyor mu.
 - **Bağlantı:** B-05 (branşsız öğretmen) aktarımı sessizce düşürüyor olabilir.
+- ❌ **HİPOTEZ ELENDİ:** Bağlantı `B-05` DEĞİLMİŞ. Kopyalama öğretmenin branşına hiç bakmıyor (`CopyAssignmentsToNewSeasonCommandHandler`); atlama gerekçeleri yalnız ayrılmış öğretmen, hedef şube yokluğu, arşiv şube ve mükerrer kayıt. Branşsızlık *görevlendirme oluşturmayı* engelliyor, *kopyalamayı* değil.
+- 🔍 **Ölçüm:** Aktarım dalı **vardı** ve seed verisinde **çalışıyordu** (`s2`/`s3` 2026-2027 sezonlarında 8 şubenin 6'sı kaynak-bağlı, 60 görevlendirme kopyalanmış; kopyalanmayan 20 satır giriş kademesi şubelerine ait ve **atlanmaları doğru** — o şubeler bilinçli olarak kaynaksız üretiliyor). Yani kod "hiç kopyalamıyor" değildi. Sorun **üç ayrı yerde bilginin düşmesiydi:**
+
+| # | Nerede | Ne düşüyordu |
+|---|---|---|
+| 1 | `ActivateSeasonRolloverCommandHandler` | Sihirbazdaki **`CopyAssignments` tercihi hiç okunmuyordu**. Taslak yalnız SİLMEK için, üstelik kopyalamadan SONRA yükleniyordu. Kutu **ölüydü**: kapatsanız da kopyalıyordu. |
+| 2 | Aynı handler | Alt handler'ın ürettiği **gerekçeli atlama listesi atılıyordu** — yalnız `CopiedCount` alınıyordu. |
+| 3 | `packages/api` `activateSeasonRollover` | Dönüş `Promise<void>` ilan edilmişti; **özetin tamamı çöpe gidiyordu.** |
+
+- ➡️ **Belirtinin açıklaması:** kullanıcı kutuyu işaretliyor, devir çalışıyor, kopyalanacak satırlar (ör. yeni açılan kademe şubeleri) `no-target-class` ile atlanıyor ve ekranda **hiçbir şey yazmıyor**. "Aktarım gerçekleşmedi" algısı buradan doğuyor.
+- ✅ **KAPANDI** *(`oksis-api` @ `9a92c20` + `oksis-ui` @ `9ad6017`, 2026-08-11)*:
+  - Taslak **kopyalamadan önce** okunuyor; `CopyAssignments` tercihi artık uygulanıyor. Taslak yoksa kopyalanır — kaydı olmayan bir tercihi "hayır" saymak, kullanıcının hiç vermediği kararı onun adına vermek olurdu.
+  - Atlama gerekçeleri sonuca taşındı (`ActivateSeasonRolloverResult.AssignmentsSkipped`).
+  - İstemci sonucu döndürüyor; cümleyi **core kuruyor** (`seasonRolloverSummary`) ve devir sonunda toast olarak görünüyor.
+- ⚠️ **YOLDA BİR REGRESYON ÜRETİP YAKALADIM:** ilk düzeltmede rol atamalarının kopyalanmasını (`CopyRoleAssignmentsAsync`) da tercihe bağlamıştım. Yanlıştı — kutu *"öğretmen görevlendirmeleri kopyalansın mı"* diye sorar, **personelin yetkisiyle ilgili değildir**. Bağlı kalsaydı kutuyu kapatan müdür açtığı sezonda kendini kilitler ve tüm yönetim ekranları 403 dönerdi (kodun kendi notu bu riski zaten yazmış). Kapı ayrıldı ve **ayrı kaldığını kilitleyen bir test** yazıldı.
+- 🧪 3 yeni entegrasyon testi (`ActivateSeasonRolloverTests` → **9/9**) + 5 core testi; `packages` 526/526, typecheck ve lint temiz.
+- 📌 **Sıfır kopyalama artık İKİ farklı cümle:** atlama listesi doluysa gerekçeleri sayılarak yazılıyor (*"3 görevlendirme aktarılmadı (2 yeni sezonda karşılığı olan şube yok, 1 öğretmen ayrılmış)"*), liste de boşsa *"aktarılacak görevlendirme yoktu"*. Bilinmeyen gerekçe kodu **yutulmaz**, ham hâliyle geçer.
+- ⬜ **Canlı devir ekran testi YAPILMADI ve bu bilinçli:** gerçek bir sezon devri `s1`'deki aktif sezonu arşivler — dev verisinde geri alınması zor bir durum değişikliği. Ölçüm entegrasyon testleriyle (gerçek SQL Server) yapıldı. İstenirse `s1`'de uçtan uca devir koşulabilir.
 
 ---
 
