@@ -1,20 +1,46 @@
 # ENG-02 · Öğretmen ve öğrencinin ders programı yüzeyi **hiç yok**
 
 > **Ne zaman çıktı:** 2026-08-11, ekran testi turunun ikinci yarısı.
-> **Neyi engelledi:** `D-07`'yi ("Öğretmen görünümü mobilde bozuk") kapatmayı.
 > **Nerede yaşıyor:** `oksis-ui` · `apps/web/features/schedule/schedule-page.tsx` + `packages/core/src/nav/nav-config.ts`
-> **Defterdeki maddeleri:** `D-07` (asıl bulgu) ve `B-17` (bu ölçümde doğan yeni bulgu)
+> **Defterdeki maddesi:** `B-17`
 > **Durum:** 🔴 Açık — düzeltilmedi. Düzeltmesi **kullanıcı kararı** istiyor (aşağıda iki seçenek).
 
 ---
 
-## Neyi test etmeye gittim, ne buldum
+## ⚠️ ÖNCE BİR DÜZELTME — bu dosya baştan yanlış çerçeveyle yazıldı
 
-`D-07` defterde tek cümleydi: *"Ders Programı öğretmen görünümü mobil ekrana göre
-tasarlanmış ama responsive değil."* Bunu bir CSS bulgusu sanıyordum — dar ekranda
-tablo taşıyordur, bir `overflow-x` kuralıyla kapanır diye.
+Bu dosyanın ilk hâli *"`D-07`'yi kapatmayı engelliyor"* diyordu. **Yanlıştı.**
 
-Ölçmek için `ogretmen.s2.01@oksis.local` ile girdim ve `/schedule`e gittim. Ekranı
+`D-07` defterde *"Öğretmen görünümü mobilde bozuk — mobil ekrana göre tasarlanmış ama
+responsive değil"* diye yazılmıştı. Ben bunu **öğretmen ROLÜNÜN** ekranı sanıp
+`ogretmen.s2.01` ile giriş yapıp 390 px'te ölçtüm.
+
+Kullanıcının kastettiği tamamen başka bir şeydi (2026-08-11'de düzeltti):
+
+> Okul müdürü Ders Programı modülünde bir programı açtığında, tüm öğretmenleri kapsayan
+> hâli yerine **tek bir öğretmenin haftalık dağılımını** görmek için eklenmiş
+> **Öğretmen Görünümü** sekmesine tıklayınca ekran bozuk genişlikte açılıyor.
+>
+> Ayrıca: **bu ekranda responsive olma hedefi yok.** İleride bir de **Şube Görünümü** eklenecek.
+
+Yani `D-07` yöneticinin **editöründeki** bir sekme; mobil ve responsive konunun içinde
+hiç yok. Doğru ekranda ölçüldü, kök nedeni tek satırdı ve **kapandı**
+(`oksis-ui` @ `341ab18`) — ayrıntısı defterdeki `D-07` maddesinde.
+
+**Peki bu dosya neden duruyor?** Çünkü yanlış turda ölçtüğüm şey de **gerçek** bir bulgu
+çıktı ve kendi ayakları üzerinde duruyor: öğretmen ve öğrenci `/schedule`e girince
+yöneticinin yönetim konsolunu görüyor. O bulgu `B-17`'dir ve hâlâ açıktır. Aşağıdaki
+ölçümlerin tamamı ona aittir — `D-07` ile ilgisi yoktur.
+
+---
+
+## Nasıl bulundu (yanlış turun doğru ölçümü)
+
+Yukarıda anlatılan yanlış okuma yüzünden `ogretmen.s2.01@oksis.local` ile girip
+`/schedule`e gittim ve dar ekranda bir CSS taşması arıyordum. Aradığım şey orada
+değildi; başka bir şey vardı.
+
+Ekranı
 390 px genişliğe daralttım. Gerçekten de yatay kayıyordu: sayfa gövdesi **947 px**,
 görünen alan **487 px**, 33 ayrı öğe sağ kenarı aşıyordu.
 
@@ -94,14 +120,14 @@ gerekçesini dosyanın başına yazmış. Ders programında o ayrım hiç kurulm
 
 ---
 
-## `D-07` neden bir CSS düzeltmesiyle kapanmaz
+## Bu neden bir "yüzey" meselesi, bir hata değil
 
-Bulgu "responsive değil" diyor ve bu **doğru** — ama düzeltilecek şey yanlış ekran.
-Yönetim konsolunu mobilde düzgün akıtmak, öğretmene **göstermemesi gereken** bir
-ekranı daha güzel göstermek olurdu. Bulgunun altında yatan gerçek ihtiyaç şu:
-*öğretmen kendi haftalık ders çizelgesini görebilmeli.* O ekran yok.
+Öğretmenin ve öğrencinin menüsünde `/schedule` var, yani sistem onlara bu özelliği
+**vaat ediyor**. Ama arkasında onlara ait bir ekran yok; vaat, yöneticinin konsoluna
+çıkıyor ve orada da beş uçtan 403 alıyorlar.
 
-Yani `D-07` bir **hata** değil, üstü hatayla örtülmüş bir **eksik özellik**.
+Altta yatan gerçek ihtiyaç şu: *öğretmen kendi haftalık çizelgesini, öğrenci kendi
+sınıfının çizelgesini görebilmeli.* O ekran hiç yazılmamış.
 
 ---
 
@@ -112,7 +138,7 @@ Kendi haftalık çizelgesini gösteren salt-okunur bir ekran. Yayınlanmış sü
 beslenir. Sunucu tarafı **zaten hazır**: `GetPublishedSchedules` sorgusu ve
 `ScheduleVersion` snapshot'ı çalışıyor (bkz. `TB-27` kapanışı). Yani iş esas olarak
 FE ekranı + rol dallanması.
-- ➕ `D-07` ve `B-17` birlikte kapanır, kullanıcıya vaat edilen özellik gerçekten gelir.
+- ➕ `B-17` kapanır ve menüde vaat edilen özellik gerçekten gelir.
 - ➖ Yeni ekran demek: tasarım kararı (mobil önce mi, hangi hücre bilgisi), ~1 dilimlik iş.
 
 ### Seçenek B · Yüzey gelene kadar menüden kaldır (geçici, dürüst)
@@ -129,5 +155,9 @@ A'ya giden yolda atılmış bir adım değil — atılıp geri alınacak bir ad�
 ## Bu arada ne yaptım
 
 Hiçbir şeyi kendi kararımla değiştirmedim — ne menüyü budadım ne de ekran yazdım.
-İkisi de sizin kapsam kararınız. Ölçümü kayda geçirdim, `B-17` ve `X-08`'i açtım,
-`D-07`'yi buraya bağladım ve tura devam ettim.
+İkisi de sizin kapsam kararınız. Ölçümü kayda geçirdim, `B-17` ve `X-08`'i açtım ve
+tura devam ettim.
+
+`X-08` (403'ün "ağ arızası" diye gösterilmesi) bu turun yan ürünüydü ve **kapandı** —
+o, yüzey kararından bağımsızdı: hangi seçenek seçilirse seçilsin, bir yetki reddinin
+kullanıcıya "internetini kontrol et" dememesi gerekiyordu.

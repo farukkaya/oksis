@@ -244,13 +244,23 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - **Çözüm yönü:** Puanlayıcıya *"blok olmayan tek saatlik dersi günün sonuna it"* boyutu, ya da talep sıralamasında tek saatlikleri bloklardan sonraya alma. Ayrı ekran yaması değil, tek noktada puan/sıra ayarı.
 - 🔗 `B-14`'ün artığı; ana hedef (blok) karşılandı, bu madde onu açık tutmuyor.
 
-### D-07 · Öğretmen görünümü mobilde bozuk
-- **Belirti:** Ders Programı öğretmen görünümü mobil ekrana göre tasarlanmış ama responsive değil.
+### D-07 · Öğretmen Görünümü sekmesi bozuk genişlikte açılıyor ✅
+- **Belirti (2026-08-11'de kullanıcı tarafından DÜZELTİLDİ — bkz. aşağıdaki not):** Yönetici ders programı **editöründe**, bir programı tek bir öğretmenin haftalık dağılımı olarak görmek için eklenmiş **Öğretmen Görünümü** sekmesine tıklanınca çizelge bozuk genişlikte açılıyor.
 - **Katman:** FE · **Öncelik:** 🟡 Orta
-- 🔍 **Ölçüldü — belirti doğru, ama düzeltilecek ekran YANLIŞ** *(ekran testi, `ogretmen.s2.01`, 2026-08-11)*: 390 px'te sayfa gerçekten yatay kayıyor (gövde **947 px** / görünen **487 px**, 33 öğe taşıyor). Ama taşan öğeler öğretmenin çizelgesi değil, **yöneticinin yönetim konsolu**: `Öğretmen Müsaitliği` · `Otomatik Oluştur` · `Yeni Program`.
-- 🚧 **ENGEL — `D-07` bir CSS düzeltmesiyle kapanamaz.** Öğretmen/öğrenci için ders programı ekranı **hiç yazılmamış**; ikisi de yöneticinin konsoluna düşüyor. Konsolu mobilde düzgün akıtmak, göstermemesi gereken bir ekranı daha güzel göstermek olurdu. Bulgu bir hata değil, üstü hatayla örtülmüş bir **eksik özellik**. Ayrıntılı anlatım, ölçüm tabloları ve iki çözüm seçeneği: [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]]
-- ➡️ **Bu ölçümden iki yeni bulgu doğdu:** `B-17` (yüzey ayrımının hiç olmaması) ve `X-08` (403'ün "ağ arızası" diye gösterilmesi).
-- ⏸️ **Kullanıcı kararı bekliyor:** Seçenek A (öğretmen/öğrenci çizelge ekranını yaz — sunucu ayağı hazır) veya Seçenek B (yüzey gelene dek menüden kaldır). Önerilen: **A**.
+- 📌 **Kapsam notları (kullanıcı, 2026-08-11):** Bu ekranın **responsive olma hedefi yok**. İleride bir de **Şube Görünümü** eklenecek.
+- ⚠️ **BULGU BAŞTA YANLIŞ YAZILMIŞTI ve ben de yanlış okudum.** Eski başlık *"Öğretmen görünümü mobilde bozuk"*, açıklaması *"mobil ekrana göre tasarlanmış ama responsive değil"*di. Ben bunu **öğretmen ROLÜNÜN** ekranı sanıp `ogretmen.s2.01` ile girip 390 px'te ölçtüm ve alakasız bir yere vardım. Gerçek konu **yöneticinin editöründeki sekme**ymiş; mobil ve responsive işin içinde hiç yok. Yanlış okumanın ürünü olan `ENG-02` yeniden çerçevelendi (aşağıya bakınız).
+- 🔍 **Doğru ekranda kök neden ölçüldü ve tek satırdı** *(`mudur.s2`, 10-A editörü, 2026-08-11)*:
+
+| Görünüm | `.pr-ed-shell` sütunları | Izgara genişliği | Sağda kalan boşluk |
+|---|---|---|---|
+| Sınıf | `1492px` (tek sütun) | **1492 px** | 24 px |
+| **Öğretmen (ÖNCE)** | `300px  1176px` | **300 px** | **1216 px** |
+| Öğretmen (SONRA) | `1492px` (tek sütun) | **1492 px** | 24 px |
+
+- 🔍 **Mekanizma:** Kabuk iki sütunlu bir grid (`300px minmax(0,1fr)`) ve yan panel (`.pr-side`) DOM'da `.pr-ed-main`'den sonra yazılıp `order: -1` ile birinci sütuna çekiliyor. Öğretmen görünümünde panel **hiç çizilmiyor** — ama kabuğu tek sütuna indiren `side-collapsed` sınıfı `view === "sinif" && !sideOpen` koşuluna bağlıydı, yani öğretmen görünümünde **hiç uygulanmıyordu**. `order: -1` taşıyan öğe ortadan kalkınca `.pr-ed-main` birinci sütuna, yani **300 px'lik olana** düşüyor; `1fr` sütunu bomboş kalıyor. Gün başlıkları bile kesiliyordu: *"Pazart"*, *"Çarşa"*, *"Perşe"*. ![[D-07-once-ogretmen-gorunumu-300px.png]]
+- ✅ **KAPANDI** *(`oksis-ui` @ `341ab18`, 2026-08-11)*: iki koşul **tek türetilmiş boolean'a** bağlandı — `sidePanelVisible = view === "sinif" && sideOpen`. Panel onunla çiziliyor, kabuk onun **değiliyle** tek sütuna iniyor. İki karar artık ayrışamaz; asıl hata da zaten ayrışmalarıydı.
+- ✅ **Üç durumda doğrulandı:** (1) sınıf + panel açık → `300px | 1176px`, ızgara x=600'de panelin sağında; (2) **öğretmen görünümü, panel override'ı açıkken** → tek sütun, ızgara 1492 px, x=284 — bulgunun tam senaryosu; (3) sınıfa dönüş → yine iki sütun, durum korunuyor. Gün adları eksiksiz (`Pazartesi … Cuma`), hiçbir başlık kesilmiyor. ![[D-07-sonra-ogretmen-gorunumu-tam-genislik.png]]
+- 🔮 **Gelecek Şube Görünümü için:** yeni sekme de panelsiz olacaksa `sidePanelVisible` türetimine dâhil edilmesi yeter; ayrıca bir CSS kuralı gerekmez.
 
 ### B-17 · Öğretmen ve öğrenci ders programının yönetim konsolunu görüyor
 - **Belirti:** `/schedule` üç rolde de aynı ekranı çiziyor — öğretmen ve öğrenci, okulun **bütün şubelerinin** programını "oluşturun, doğrulayın ve yayınlayın" diyen konsola düşüyor; `Yeni Program` birincil buton olarak duruyor. ![[B-17-ogrenci-yonetim-konsolu.png]]
@@ -258,7 +268,8 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - ✅ **Veri sızıntısı YOK — ölçüldü:** sayfanın attığı beş yönetim isteğinin **beşi de 403**: `timetable/programs`, `school-settings/grade-levels`, `users/persons?profileType=Teacher`, `class-rooms` (×2). Sunucu kapısı sağlam; sorun tamamen yüzeyde — kullanıcıya sahip olmadığı bir yetenek duyuruluyor.
 - 🔍 **Kök neden üç satır:** (1) `/schedule` core nav'da admin **+ teacher + student** menüsünde; (2) `schedule-page.tsx` içinde `activeRole` **hiç okunmuyor**, tek dal yok; (3) öğretmen/öğrenci için yazılmış bir çizelge ekranı ne web'de ne mobilde var.
 - 📌 **Emsal koddadır:** duyurular modülü aynı işi doğru yapıyor — `AnnouncementsScreen` rolü okuyup öğretmeni kendi yüzeyine, veli/öğrenciyi ayrı duruma ayırıyor. Ders programında o ayrım hiç kurulmamış.
-- ⏸️ **`D-07` ile aynı karara bağlı** — bkz. [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]]. Menü budama veya ekran yazma **kapsam kararı** olduğu için kendi başıma değiştirilmedi.
+- 📌 **`D-07` ile İLGİSİ YOK.** Bu bulgu, `D-07`'yi yanlış okuyup öğretmen ROLÜYLE giriş yaptığım turda **kazara** ortaya çıktı. `D-07` yöneticinin editöründeki bir sekmeydi ve ayrıca kapandı; buradaki ise bağımsız ve kendi ölçümüyle ayakta duran bir yüzey ihlali.
+- ⏸️ **Kullanıcı kararı bekliyor** — bkz. [[ENG-02 - Ogretmen ve ogrenci ders programi yuzeyi hic yok]]. Menü budama veya ekran yazma **kapsam kararı** olduğu için kendi başıma değiştirilmedi.
 
 ### D-05 · Önizleme metriklerinde yuvarlama yok
 - **Belirti:** "Tüm sınıflar için oluştur" önizleme adımında ortalama vb. alanlar ham gösteriliyor; virgülden sonra **2 hane** olacak şekilde yuvarlanmalı.
