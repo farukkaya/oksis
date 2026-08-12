@@ -35,9 +35,10 @@
 | ⚪ Düşük | 6 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
+**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan), hepsi 2026-08-12.
-**Kalan (bu dosyada, TB kuyruğu hariç):** 4 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16` ve `B-17` kapandı (ayrıca `TB-35`).
+**Kalan (bu dosyada, TB kuyruğu hariç):** 3 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17` ve `D-08` kapandı (ayrıca `TB-35`).
+**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) — ayrıca çapraz kesenler `X-03`/`X-04`/`X-05`/`X-06 geniş ayak`/`X-09`/`X-10`.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -308,7 +309,7 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - 🔎 **Kalan tek sapma — tek saatlik dersler günün kuyruğuna düşmüyor.** Gerçek programda Kulüp/Koçluk/Rehberlik 7-8. saatteydi; üretilen ızgarada Görsel Sanatlar Çar **1**, Bilgisayar Sal **3**'e düştü. Bloklar erken saatleri kaptığı için tek saatliklerin sona düşmesi bir **yan etki** olarak umulmuştu — olmadı, çünkü tek saatlikler MRV sırasında erken geliyor. Bu ayrı bir puan boyutu (*"1 saatlik dersi günün sonuna it"*) gerektiriyor.
 - ➡️ **Yeni madde açıldı:** `D-08` — kapsamı dar, kozmetik/pedagojik; `B-14`'ün ana hedefi (blok) karşılandığı için bu madde `B-14`'ü açık tutmuyor.
 
-### D-08 · Tek saatlik dersler günün kuyruğuna itilmiyor
+### D-08 · Tek saatlik dersler günün kuyruğuna itilmiyor ✅
 - **Belirti:** Otomatik üretimde haftada **1 saat** olan dersler (Görsel Sanatlar, Bilgisayar) günün başına düşüyor — üretilen 9-A ızgarasında Çar 1. ve Sal 3. saatte.
 - **Beklenen:** Gerçek okul programında tek saatlik dersler (Kulüp, Koçluk, Rehberlik, Sağlık Bilgisi) günün **sonuna** toplanıyor — kullanıcının ilettiği 9B programında hepsi 7-8. saatte.
 - **Katman:** BE (puanlayıcı) · **Öncelik:** ⚪ Düşük
@@ -316,6 +317,27 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - **Kök neden adayı:** Bloklar erken saatleri kapınca tek saatliklerin sona düşeceği umulmuştu; olmadı çünkü tek saatlik talepler MRV sırasında (en az feasible slot) **erken** geliyor ve `MorningFirst` stratejisi onları 1. saate çekiyor.
 - **Çözüm yönü:** Puanlayıcıya *"blok olmayan tek saatlik dersi günün sonuna it"* boyutu, ya da talep sıralamasında tek saatlikleri bloklardan sonraya alma. Ayrı ekran yaması değil, tek noktada puan/sıra ayarı.
 - 🔗 `B-14`'ün artığı; ana hedef (blok) karşılandı, bu madde onu açık tutmuyor.
+- ✅ **KAPANDI** *(`oksis-api` @ `8154dc0`, 2026-08-12)*. Çözüm **slot sırası** tarafında yapıldı, puanlayıcıda değil: aday slotlar tek saatlik bir talep için ders saatine göre **tersten** sıralanıyor.
+- 📌 **Üç stratejiye ayrı ayrı yazılmadı.** `MorningFirst` / `GapMinimizing` / `BalanceFirst`'ün üçü de kendi `OrderBy`'ını kuruyor; kuralı üçüne de eklemek üç kopya demekti. Kural, slot sırasının **uygulandığı tek noktaya** kondu (`GreedySolver`, `PreferBlockPairing` ile aynı yer). `OrderByDescending` LINQ'te kararlı olduğu için stratejilerin **gün tercihi korunuyor** — yalnız "hangi ders saati" ekseni ters çevriliyor, çeşitlilik kaybolmuyor.
+- 📌 **"Tek saatlik ders" sözleşmeye alan eklenerek DEĞİL, talep listesinden türetiliyor:** talep listesi zaten haftalık saatin açılmış hâli, dolayısıyla (şube, ders) çifti listede bir kez geçiyorsa o dersin haftalık saati birdir.
+- ⚠️ **Ayrım şart ve teste bağlandı:** 5 saatlik bir dersin **artan** tek saati (2+2+1) burada kastedilen şey **değildir** — o, bloğunun yanında kalmalı. Ayrı bir test bu ayrımı kilitliyor; kural saat sayısına değil **talep sayısına** bakıyor.
+- 📌 **Yumuşak sıralama, kısıt değil:** geç slot feasible değilse döngü erken slotlara devam ediyor, yani **kapsam düşmüyor**. Tek günlük 2 saatlik ızgarada iki tek saatlik dersin ikisinin de yerleştiğini ölçen ayrı bir test var.
+- 📌 **Bayrağa bağlanmadı ve bu bilinçli:** kullanıcının ilettiği gerçek programda tek saatlikler istisnasız kuyrukta; ayrıca yeni bir ekran-varsayılanı eklemek `B-04`'te ölçülen *"aynı sayı iki repoda ayrı yazılı"* ayrışmasını bir kez daha üretirdi.
+- ✅ **CANLI ÜRETİMDE İSPAT** *(`mudur.s2` · 10-A · `POST /timetable/auto-generate`, önerilen aday, 2026-08-12)*. Okulun zil programında **6 ders saati var (1-6)**:
+
+| Ders (haftalık saat) | Üretilen yerleşim |
+|---|---|
+| 6 saat | Pzt 1-2 · Sal 1-2 · Çar 1-2 |
+| 5 saat | Pzt 5 · Çar 5-6 · Per 5-6 |
+| 4 saat | Pzt 3-4 · Sal 3-4 |
+| 4 saat | Per 3-4 · Cum 3-4 |
+| 3 saat | Sal 5 · Cum 5-6 |
+| 2 saat ×3 | Per 1-2 · Cum 1-2 · Çar 3-4 |
+| **1 saat** | **Pzt 6** |
+| **1 saat** | **Sal 6** |
+
+  ➡️ Tek saatlik iki dersin ikisi de **6. saate**, yani **günün son saatine** düştü. `B-14`'ün ekran testinde bunlar Çar **1**. ve Sal **3**. saatteydi. Bloklar da bozulmadı (2+2+2, 2+2+1, 2+2 desenleri duruyor), 30 saatin tamamı yerleşti.
+- 🧪 **4 yeni test + boş-yere-yeşil kontrolü:** tek saatlik son saate gidiyor · çok saatlik dersin artan saati kuyruğa **itilmiyor** · birden çok tek saatlik kuyruğu dolduruyor ve kapsam düşmüyor · kuyruk doluysa erken saate düşüyor. Kural devre dışı bırakıldığında **yalnız iki kuyruk testi** kırmızıya düştü, iki koruma testi yeşil kaldı. `Timetable` 188/188, BE 695 + 1563 + 251 yeşil, build 0 uyarı.
 
 ### D-07 · Öğretmen Görünümü sekmesi bozuk genişlikte açılıyor ✅
 - **Belirti (2026-08-11'de kullanıcı tarafından DÜZELTİLDİ — bkz. aşağıdaki not):** Yönetici ders programı **editöründe**, bir programı tek bir öğretmenin haftalık dağılımı olarak görmek için eklenmiş **Öğretmen Görünümü** sekmesine tıklanınca çizelge bozuk genişlikte açılıyor.
@@ -425,9 +447,20 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - 🔎 **Ölçüm sırasında çıkan ortam notu:** iki profili olan hesaplar (`ogretmen.s3.02` → Teacher + Parent) girişte **409** ile profil seçimi istiyor; uç ölçümünde `profileType` verilmeli. Hata değil, akışın kendisi.
 - ⬜ **Ekran ayağı bilinçli olarak yapılmadı:** bu kesme sunucu tarafında yaşıyor ve istemci bir şey göndermiyor, dolayısıyla ekranda **süzgeç eklenmedi** — duyurulardaki gibi bir "sezon seçici" burada olamaz, çünkü seçilebilecek ikinci bir sezon yok (karar *"yalnız aktif sezon"*).
 
-### D-04 · Veli Portalı duyurular ekranında gereksiz header
+### D-04 · Veli Portalı duyurular ekranında gereksiz header ❓
 - **Belirti:** Header kaldırılacak.
 - **Katman:** FE · **Öncelik:** ⚪ Düşük
+- 🔎 **ARANDI, BULUNAMADI — bugünkü kodda karşılığı olan bir ekran yok** *(2026-08-12)*. Veli için duyuru yüzeyi olabilecek her yer tek tek ölçüldü:
+
+| Nerede | Bugün ne var | Fazla header var mı |
+|---|---|---|
+| **Web**, veli rolü, `/announcements` | Duyuru listesi **hiç yok**: `announcements-screen.tsx` veli/öğrenciyi *"Duyurular şu an mobil uygulamada"* boş durumuna ayırıyor | **Hayır** — başlık yok |
+| Web rota sarmalayıcısı | `page.tsx` yalnız `<AnnouncementsScreen />` çiziyor, `PageHeader` yok | **Hayır** |
+| **Mobil** gelen kutusu | Ekran içi tek başlık: *"Duyurular"* + alt satır | **Hayır** — sekme gezgininde `headerShown: false`, yani bu **tek** başlık |
+
+- 🔎 Ayrıca `"Veli Portal"` metni **iki depoda da hiç geçmiyor** ve web'de veliye özel ayrı bir portal rotası yok (`app/(dashboard)/` altında `parents` var, o da yönetici ekranı).
+- ➡️ **İki olasılık:** (a) bulgu yazıldığından beri duyurular C-fazı çalışmasıyla düzelmiş olabilir, (b) kastedilen ekran başka bir şey. Ölçüm ikisini ayırt edemiyor.
+- ⏸️ **Kullanıcı netleştirmesi bekliyor — kendiliğinden bir değişiklik YAPILMADI.** Mobil gelen kutusundaki başlığı kaldırmak, ekranı **başlıksız** bırakırdı (gezginde ikinci bir başlık yok); yani "gereksiz" olan bir kopya değil, ekranın tek adı. Hangi ekranda görüldüğü söylendiğinde bir dakikalık iş.
 
 > 🔧 **Kod taramasından bu bölüme bağlananlar** *(2026-08-10)*: `TB-22` (acil işareti yalnız oluşturma anında sorgulanıyor), `TB-23` (onay gerektiren duyuru zamanlanınca kuyruğu atlıyor), `TB-24` (acil = e-posta kanalı seed'de yazılı, tüketicisi yok), `TB-25` (şablon acil kapısı yok), `TB-26` (onay kuyruğunda acil rozeti yok). Beşi de → [Kod Taraması Bulguları](#11-kod-taraması-bulguları-domain-map-).
 
