@@ -35,9 +35,9 @@
 | ⚪ Düşük | 6 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
+**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan), hepsi 2026-08-12.
-**Kalan (bu dosyada, TB kuyruğu hariç):** 5 — 2026-08-12 turunda `B-04`, `B-10`, `B-13`, `B-16` ve `B-17` kapandı.
+**Kalan (bu dosyada, TB kuyruğu hariç):** 4 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16` ve `B-17` kapandı (ayrıca `TB-35`).
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -391,7 +391,7 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
   - 4 yeni test + `packages/core` 278/278 yeşil, `apps/web` ve `apps/mobile` typecheck temiz.
 - ⚠️ **Bilinçli kalıntı (sızıntı değil):** öğretmen derin bağlantıyla **başkasının** duyurusunu açarsa başlık çizilir ama uç 403 döner ve bölüm boş kalır. İstemci bunu önden bilemez — oturumda `personId` yok (`sessionSchema` yalnız `userId` = hesap kimliği taşır), yani sahiplik karşılaştırması istemcide **yapılamaz**. Sunucu kapısı sağlam; kalan şey yalnız boş bir bölüm. Kesin çözüm DTO'ya `canViewDeliveryReport` alanı eklemek olurdu → 12 eşleme çağrısını (4'ü komut, çağıran kimliği elde değil) dolaşırdı; oransız bulundu, `TB-52` olarak not edildi.
 
-### B-06 · Duyurularda sezon filtresi yok
+### B-06 · Duyurularda sezon filtresi yok ✅
 - **Belirti:** Duyurular ekranında sezon filtresi bulunmuyor.
 - **Katman:** BE + FE · **Öncelik:** 🟡 Orta
 - ✅ **"Bildirimlerde de var mı?" sorusu CEVAPLANDI** *(ekran testi, 2026-08-11)*: **Yok.** Bildirimler ekranında yalnız durum filtreleri (`Tümü` / `Onay bekliyor`) var, sezon seçici hiç yok.
@@ -406,8 +406,24 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - ⚠️ **Bilinen küçük kalıntı (ölçüldü, kabul edildi):** aktif sezon sorgusu çözülene kadar ilk liste isteği **süzgeçsiz** gidiyor; sezon gelince ikinci istek süzgeçle atılıyor. Kullanıcı açısından kısa bir "önce hepsi, sonra daralt" akışı — liste `keepPreviousData` ile yerinde kalıyor, veri kaybı yok. Bastırmak `useAnnouncements`e `enabled` kapısı eklemeyi gerektirirdi; kazanandan fazlasını maliyet olarak yazardı. Kod yorumunda da bu hâliyle yazılı.
 - ✅ **KULLANICI KARARI VERİLDİ — 2026-08-12: yalnız aktif sezon.** Geçmiş sezon bildirimleri gösterilmeyecek.
 - 📌 **Kararın iş üzerindeki etkisi:** şema değişikliği **gerekmiyor**. `Notification`'a sezon kolonu eklemek, migration yazmak ve mevcut satırları geriye dönük doldurmak yerine, bildirim **kayıt tarihi** aktif sezonun tarih aralığına göre kesilecek. Bulgunun *"bildirimler tarafı çok daha derin"* teşhisi karar sayesinde geçersizleşti — iş duyurular ayağı kadar küçüldü.
-- ⚠️ **Kabul edilen bedel:** sezon aralığı dışında üretilmiş eski bildirimler listeden düşer (silinmez, yalnız görünmez). Tarih kesmesi sezon sınırında doğan bildirimlerde birkaç saatlik kenar durumu taşır; sezon alanı olmadığı için bundan daha keskin bir ayrım mümkün değil.
-- ⬜ **Uygulama bekliyor.**
+- ⚠️ **Kabul edilen bedel:** sezon aralığı dışında üretilmiş eski bildirimler listeden düşer (silinmez, yalnız görünmez).
+- ✅ **BİLDİRİMLER AYAĞI KAPANDI** *(`oksis-api` @ `ed1d8f2`, 2026-08-12)*. Kesme tek noktada yaşıyor: `Modules/Notifications/Common/NotificationSeasonScope.cs`.
+- 📌 **Kesme HEM listeye HEM okunmamış sayacına uygulanıyor** ve bu bilinçli: ikisi ayrışırsa rozet *"5 okunmamış"* derken liste 2 satır gösterir, kullanıcı **bulamadığı bir rozeti kovalar**. İki sorguyu ayrı ayrı süzmek yerine ortak yardımcı yazıldı; ayrışmayı yakalayan ayrı bir test var (*"Sayaç listeyle AYNI sezon kesmesini uygular"*).
+- 📌 **Yalnız ALT sınır uygulanıyor — bu ölçülerek karar verildi, ihtiyatla değil.** Dev verisinde `s1` okulunun **aktif** sezonunun bitiş tarihi **geçmişte** (2025-09-15 → 2026-06-13) ama bildirimlerin tamamı 2026-08 tarihli, yani sezon bittikten sonra üretilmiş. Üst sınır da uygulansaydı o okulun kullanıcıları **534 bildirimin tamamını** kaybederdi. Canlı uçta doğrulandı: `ogretmen.s1.01` **10/10** bildirimini görüyor.
+- 📌 **Aktif sezon yoksa daraltma yapılmaz.** Kurulum aşamasındaki ya da sezonlar arası bir okulda hiçbir şey göstermemek, kullanıcının gerçek bildirimlerini sessizce gizlemek olurdu.
+- 📌 **Sınır TARİHTİR, an değil:** sezon başlangıcı gün başına çekiliyor, aksi hâlde sezonun ilk günü sabah üretilen bildirim sessizce düşerdi. Ayrı bir test bunu kilitliyor.
+- ✅ **Canlı uçta kanıt** *(sınırın iki yanında da bildirimi olan gerçek bir hesap seçildi — `ogretmen.s3.02`, okul `s3`, aktif sezon **10 Ağu**'da başlıyor)*:
+
+| | Değer |
+|---|---|
+| DB'deki toplam | **18** (4'ü sezon öncesi, 14'ü sezon içi) |
+| Uçtan dönen liste toplamı | **14** |
+| Okunmamış rozeti | **14** — listeyle **aynı** |
+| Dönen en eski bildirim | `2026-08-10T12:12` — sezon başlangıcının içinde |
+
+- 🧪 **4 yeni test + boş-yere-yeşil kontrolü:** sezon öncesi gizleniyor · ilk gün kapsamda kalıyor · aktif sezon yoksa daraltma yok · sayaç listeyle aynı kesmeyi uyguluyor. Kesme devre dışı bırakıldığında **yalnız iki kesme testi** kırmızıya düştü, diğerleri ve mevcut testler yeşil kaldı. BE 695 + 1559 + 251 yeşil, build 0 uyarı.
+- 🔎 **Ölçüm sırasında çıkan ortam notu:** iki profili olan hesaplar (`ogretmen.s3.02` → Teacher + Parent) girişte **409** ile profil seçimi istiyor; uç ölçümünde `profileType` verilmeli. Hata değil, akışın kendisi.
+- ⬜ **Ekran ayağı bilinçli olarak yapılmadı:** bu kesme sunucu tarafında yaşıyor ve istemci bir şey göndermiyor, dolayısıyla ekranda **süzgeç eklenmedi** — duyurulardaki gibi bir "sezon seçici" burada olamaz, çünkü seçilebilecek ikinci bir sezon yok (karar *"yalnız aktif sezon"*).
 
 ### D-04 · Veli Portalı duyurular ekranında gereksiz header
 - **Belirti:** Header kaldırılacak.
@@ -1093,13 +1109,13 @@ Oysa `AssignTeacherCommand` (uç: `PUT /timetable/programs/{id}/placements/{pid}
 Bu maddeler şu haliyle iş kalemine dönüşemiyor. **Sol sütun eksik olan bilgi, sağ sütun senin cevap alanın.**
 Cevabı yazdığında **Durum**'u `✅ Netleşti` yap ve aşağıdaki panoyu güncelle.
 
-**Netleşen: 3 / 4**
+**Netleşen: 4 / 4**
 
 | ID | Konu | Durum | Tarih |
 |:--|:--|:--|:--|
 | **B-02** | Nöbet/Vekalet ↔ Yoklama ilişkisi | ✅ Netleşti → **kapatıldı** (kavram karışıklığı) | 2026-08-11 |
 | **B-12** | Muafiyet eklemede 401 | ✅ Netleşti → **kapandı** (kök neden `X-07`) | 2026-08-11 |
-| **B-06** | Bildirimlerde sezon filtresi | 🟡 Kısmen netleşti — *filtre yok* ölçüldü; **varsayılan davranış** sorusu açık | 2026-08-11 |
+| **B-06** | Bildirimlerde sezon filtresi | ✅ Netleşti → **yalnız aktif sezon**; iki ayak da kapandı | 2026-08-12 |
 | **B-14** | Otomatik program oluşturucunun hedefi | ✅ Netleşti → **blok yerleştirme**, hedef değişikliği | 2026-08-11 |
 
 ---
