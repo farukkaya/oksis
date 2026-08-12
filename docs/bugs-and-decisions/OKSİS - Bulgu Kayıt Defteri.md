@@ -38,7 +38,7 @@
 **Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan), hepsi 2026-08-12.
 **Kalan (bu dosyada, TB kuyruğu hariç):** 3 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17` ve `D-08` kapandı (ayrıca `TB-35`).
-**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) — ayrıca çapraz kesenler `X-03`/`X-04`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11`.
+**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -689,12 +689,33 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - ⚠️ **Kapanmadı, ağırlaştı:** karar hâlâ verilmedi ve artık *"hangisi kanonik"* değil *"kesik hattı hangi yönde onaracağız"* sorusu. `TB-48`'deki üç yol.
 - ⏸️ **KULLANICI 2026-08-12'de BİLİNÇLİ OLARAK ERTELEDİ:** *"bu konuyu şimdilik atla"*. Karar verilmedi, madde açık kalıyor ve bu turda ele alınmayacak. Bekletmenin bugünkü bedeli `TB-48`'de yazılı: yeni bir okulda `teaching_assignments` boş doğuyor, ders programı / otomatik üretim / vekâlet / duyuru hedeflemesi **sessizce** boş sonuç veriyor.
 
-### X-04 · Branş uyumu katalog kimliği yerine ad karşılaştırmasıyla hesaplanıyor
+### X-04 · Branş uyumu katalog kimliği yerine ad karşılaştırmasıyla hesaplanıyor ✅
 - **Belirti:** Öğretmenin branş **adı** ile dersin **adı** normalize edilip (tr-TR, boşluklar atılarak) karşılaştırılıyor. Öğretmen profilinde branş katalog kimliği dururken kullanılmıyor.
 - **Görüldüğü yerler:** Görevlendirme uyumu (branş-içi / yan branş / alan-dışı) **ve** vekâlet aday sıralaması (aynı / yakın / farklı) — **iki modül aynı mekanizmayı kullanıyor.**
 - **Katman:** BE · **Öncelik:** 🟡 Orta
 - **Etkisi:** Ad birebir tutmadığında uyum yanlış çıkar. "Matematik" branşlı öğretmen "İleri Matematik" dersine **alan-dışı** düşer ve gereksiz gerekçe ister. Branş veya ders adının yeniden adlandırılması sessizce tüm uyum sonuçlarını değiştirir.
 - 🚫 **Kısıt:** Tek tek ekran düzeltmesi değil — karşılaştırma mantığı tek noktada, kimlik üzerinden çözülmeli.
+- 🔎 **ÖLÇÜM BULGUYU BÜYÜTTÜ — "kimlik üzerinden çöz" bugünkü modelde YAPILAMIYORDU** *(2026-08-12)*: `Subject`'in **hiçbir branş bağı yoktu** (`master.subjects`'te `branch_id` kolonu bile yok). Öğretmen tarafında kimlik zaten duruyordu (`TeacherProfile.BranchId` + `SecondaryBranchIds`); kod onu **kullanımdan bir adım önce ada çeviriyordu**, çünkü ders tarafında karşılaştırılacak bir kimlik yoktu. Vekâlet tarafındaki kodun kendi yorumu bunu itiraf ediyordu: *"ad-tabanlı BranchFitResolver için adı çöz"*.
+- 🔎 **Bedeli ölçüldü ve sanılandan büyüktü:** dev kataloğundaki **21 dersin 9'u (%43)** hiçbir branşın adıyla birebir tutmuyor, yani **kalıcı olarak alan-dışı** düşüyordu — Bilgisayar · Din Kültürü · Fen Bilimleri · Fransızca · İleri Matematik · Matematik (TYT/AYT) · Sosyal Bilgiler · T.C. İnkılap Tarihi · Türkçe. Öğretmenini doğru atayan yönetici her seferinde gereksiz gerekçe yazıyordu.
+- 🔎 **"İki modül aynı mekanizmayı kullanıyor" da eksikti — aynı fikrin İKİ AYRI UYGULAMASI vardı:** görevlendirmede üç değerli `SubjectBranchMatch.Resolve` (8 çağrı yeri), vekâlette iki değerli `BranchMatching.IsMatch` (4 çağrı yeri). İkisi ayrı ayrı bakım istiyordu.
+- ✅ **KAPANDI** *(`oksis-api` @ `fba5a8e`, 2026-08-12)*:
+  - **Eksik ilişki kuruldu:** `SubjectBranch` (ders ↔ branş), **çoka-çok**. Tek FK yetmezdi: "Fen Bilimleri"ni Fizik+Kimya+Biyoloji, "Sosyal Bilgiler"i Tarih+Coğrafya okutabilir; tek FK ilk çakışmada keyfî seçim yapmaya zorlardı.
+  - **Eşleştirici kimliğe geçti**, ad normalizasyonu (tr-TR, boşluk atma) tamamen kalktı.
+  - **İki uygulama teke indi:** `BranchMatching.IsMatch` kullanımdan kalktı, `BranchFitResolver` ortak eşleştiriciyi çağırıyor. **Yan branş artık vekâlette de sayılıyor** — eski iki değerli kopya yalnız ana branşa bakıyordu.
+- 📌 **Fransızca bilinçli olarak EŞLENMEDİ:** katalogda Fransızca branşı yok (dil branşları: İngilizce, Almanca, Japonca). Uydurma bir eşleme, yanlış öğretmeni *"uyumlu"* göstererek bugünkü dürüst *"alan-dışı"* cevabından **daha kötü** olurdu. Doğru çözüm branş kataloğuna Fransızca eklemek — **karar gerektirir**, sessizce yapılmadı.
+- 📌 **Eşleme tablosu bir İÇERİK kararıdır** ve `SubjectBranchSeedData`'da gerekçeleriyle duruyor (23 satır, MEB alan karşılıklarına göre). Okulun tercihi farklıysa düzeltilecek yer orası.
+- ⚠️ **İKİ HATAYI ÖLÇÜM YAKALADI, TESTLER DEĞİL — ikisi de bu turun dersi:**
+  1. **FK önce yanlış tabloya verildi.** Depoda **iki branş tablosu** var: `master.branches` (16, MEB kataloğu) ve `school.branches` (45, tenant kopyası, `meb_branch_id` ile katalogla bağlı). Eşleme platform bilgisidir → kataloğa ait. İlk denemede tenant tablosuna bağlanmıştı ve **veritabanı migration'ı `547` ile reddetti**.
+  2. **Dört handler çeviriyi atlıyordu.** Öğretmen profili **tenant** branşını taşır, eşleme **katalog** branşına bağlıdır. `LoadTeacherBranchesAsync` çeviriyi yapıyordu ama kendi sorgusunu yazan dört handler ham tenant kimliğini geçiriyordu → canlı uçta **her şey alan-dışı** çıktı. **Birim testleri bu sınıfa yapısal olarak kördü**, çünkü eşleştiriciyi zaten çevrilmiş kimliklerle sınıyorlar — `X-06`/`X-07`'nin *"test yeşil, gerçek çağrı kırık"* deseninin bir kez daha tekrarı. Çeviri tek yardımcıya (`LoadCatalogBranchIdsAsync`) alındı.
+- ✅ **CANLI UÇTA KANIT** *(`mudur.s2`, aday öğretmen uyum dağılımı)*:
+
+| Ders | Ad karşılaştırmasıyla | Kimlikle |
+|---|---|---|
+| Matematik *(adı zaten tutuyordu)* | Matched | **Matched** |
+| **İleri Matematik** *(bulgunun kendi örneği)* | **OutOfField** | **Matched** |
+| Fransızca *(eşlemesi yok)* | OutOfField | **OutOfField** ✅ doğru |
+
+- 🧪 **9 yeni eşleştirici testi + vekâlet testleri kimliğe taşındı.** Kaldırılan test: *"ad normalizasyonu büyük/küçük harf duyarsız"* — kimlik karşılaştırmasında tr-TR İ/ı sorunu, boşluk ve büyük/küçük harf diye bir **hata sınıfı kalmadı**. BE 695 + 1572 + 251 yeşil, build 0 uyarı.
 
 ### X-06 · EF'te yok sayılan hesaplanan property'leri hiçbir otomatik koruma tutmuyor
 - **Belirti:** `PersonName.FullName` gibi EF-`Ignore` edilmiş hesaplanan property'lerin sorgu içinde kullanılmaması **yalnız yorum satırıyla** korunuyor (`FULLNAME PATTERN ALERT`). Kuralı çiğneyen kod derleniyor, testlerden geçiyor ve ilk gerçek çağrıda 500 veriyor.
