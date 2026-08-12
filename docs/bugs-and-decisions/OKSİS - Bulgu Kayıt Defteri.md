@@ -837,6 +837,33 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 | ⚪ Düşük | 10 |
 | **Toplam** | **41** (+ `X-03`, `X-04`, `X-05` çapraz kesen) |
 
+> ## 🔬 Bayat TB Taraması — 2026-08-12
+>
+> **Neden yapıldı:** Bu turda `B-04`, `B-10`, `TB-47` ve `TB-27` bayat çıkmıştı; kuyruğun ne kadarının
+> çoktan düzelmiş olduğu bilinmeden hangi TB'ye başlansa körlemesine olurdu. Açık **40 TB maddesinin
+> tamamı** bugünkü koda karşı tek tek yoklandı (iddiaların kendisi test edildi, başlıklar değil).
+>
+> **Sonuç — hipotezim çürüdü, kuyruk güvenilir:** 40 maddenin **38'i hâlâ geçerli**. Beklediğim
+> "bir sürü madde çoktan düzelmiştir" tablosu çıkmadı. Bu turda bayat çıkanlar (`B-04`, `B-10`)
+> aslında *düzeltilmiş ama deftere işlenmemiş* maddelerdi — sessizce düzelmiş TB'ler değil.
+>
+> | Sonuç | Adet | Maddeler |
+> |---|---|---|
+> | Hâlâ geçerli | **38** | aşağıdaki tüm açık TB'ler |
+> | **Yarı bayat** | **1** | `TB-10` — başlığı yanlış, sonucu doğru |
+> | Açık sorusu cevaplandı | **1** | `TB-28` |
+>
+> **En değerli bulgu — `TB-10` yarı bayat:** KVKK rıza kapısı artık **stub değil**, gerçek ve giriş
+> akışına bağlı. Ama bulgunun *sonucu* (*"rızası geri çekilenin oturumu kapanmıyor"*) **hâlâ doğru**,
+> çünkü kapı yalnız **girişte** soruluyor; `account/refresh` kapıyı hiç sormuyor ve rıza geri
+> çekilince refresh zinciri iptal edilmiyor. **Başlığa bakıp kapatsaydım gerçek bir KVKK açığını
+> gizlemiş olacaktım** — taramanın asıl kazancı bu.
+>
+> **Ölçüm notu:** Yoklamalar iddiaya özel yapıldı (ör. `TB-21` için modül taraması yetmedi, izni
+> kullanan gerçek sorgu `GetTeacherWorkloadQuery` bulunana kadar arandı; ilk bakışta "bayat" görünüyordu).
+> Bu turda ayrıca canlı olarak doğrulananlar: `TB-19` (geçici muafiyet, gerçekten kırık) ve
+> `TB-34` (ölü `SchoolHoliday` sınıfı, gerçekten duruyor).
+
 ### TB-07 · Eski `User` kavramının emekliliği yarım kaldı 🟠
 Kullanıcı oluşturma artık kişi + davet üretiyor, ama `users` ve `persons` uçları aynı veriyi iki farklı kabukla sunmaya devam ediyor. Hangisinin kanonik olduğu belirsiz. **Etkisi:** `B-03` (bağlı profilde GUID) gibi bulgular hangi uçta düzeltileceği belli olmadan kapatılamaz.
 
@@ -846,8 +873,21 @@ Kullanıcılar tarafında altı değerli (`Created/Sent/Opened/Accepted/Expired/
 ### TB-09 · `RelationshipAccessLevel` enum'u ölü görünüyor ⚪
 Veli yetki seviyesi (yalnız bilgi / karar / ödeme) enum'u tanımlı, ama veli-öğrenci ilişkisi bunun yerine beş ayrı bayrak kullanıyor. Enum hiçbir yerde okunmuyor.
 
-### TB-10 · KVKK rıza kapısı hâlâ boş iskelet 🟠
+### TB-10 · KVKK rıza kapısı — başlık BAYAT, sonuç HÂLÂ GEÇERLİ 🟠
 Giriş akışındaki rıza kontrolü "her zaman izin ver" döndüren bir stub. **Veri işleme rızası geri çekilen kullanıcının oturumu kapanmıyor.** Rıza kaydı, geri çekme ve kanıt zinciri tam çalışıyor — eksik olan yalnızca kapının bağlanması. Mevzuat açısından en riskli açık.
+
+- ❌ **BAŞLIK BAYAT** *(bayat TB taraması, 2026-08-12)*: *"boş iskelet stub"* **artık doğru değil.** `Infrastructure/Identity/ConsentGate.cs` gerçek bir implementasyon, DI'da kayıtlı (`AddScoped<IConsentGate, ConsentGate>`) ve `AccountLoginCommandHandler:164`'ten çağrılıyor. Üç ayrı ret üretiyor: `no-consent`, `consent-revoked`, `bundle-version-mismatch`. `NoopConsentGate` yalnız bir `<see cref>` kalıntısı olarak duruyor.
+- ✅ **AMA BULGUNUN SONUCU HÂLÂ GEÇERLİ — üstelik mekanizması bulgunun anlattığından farklı.** *"Rızası geri çekilen kullanıcının oturumu kapanmıyor"* cümlesi bugün de doğru; sebebi *"kapı bağlanmamış"* değil, **kapının yalnız GİRİŞTE sorulması**:
+
+| Akış | Rıza kapısını soruyor mu |
+|---|---|
+| `account/login` | **evet** |
+| `account/refresh` | **hayır** |
+| `RevokeConsentCommandHandler` | token/refresh **iptal etmiyor** |
+
+  ➡️ Rızası geri çekilen kullanıcı **giriş yapamaz** ama **var olan oturumunu token yenileyerek süresiz sürdürebilir** — hiç giriş ekranına düşmediği için kapıya da hiç uğramaz.
+- 🚫 **Bu yüzden madde KAPATILMADI.** Başlığı düzeltip kapatmak, kalan gerçek KVKK açığını gizlerdi.
+- ⬜ **Kalan iş net ve dar:** (a) `AccountRefreshTokenCommandHandler` rıza kapısını sorsun, (b) rıza geri çekilince refresh token zinciri iptal edilsin (`AccountLogout` deseninde zaten var). Bulgunun ilk hâlindeki *"kapıyı bağla"* işi ise **yapılmış**.
 
 ### TB-11 · Rıza sürümü iki farklı tipte tutuluyor 🟡
 Hesap üzerinde sayısal (`int`), rıza kaydında metin (`v2026.05.01` biçimi). İkisi aynı şeyi anlatıyorsa karşılaştırma yapılamaz; anlatmıyorsa adlandırma yanıltıcı. Yeni sürüm yayınlandığında yeniden onay istemek bu alana bağlı olacak.
@@ -917,7 +957,9 @@ Görevlendirme sorguları kendi izin aileleriyle korunurken, öğretmen yük öz
 
 ### TB-28 · Program istatistiklerinin tazeliği garanti değil 🟡
 Ders programı üzerinde üç denormalize sayı taşınıyor — çakışan yerleşim sayısı, yerleştirilmemiş saat, müsaitlik ihlali. Üçünü de domain hesaplamıyor; uygulama katmanı hesaplayıp yazıyor, program yalnız saklıyor. Hub listesi bu sayıları okuyor.
-- ⬜ **Doğrulanacak:** Her yerleşim/durum değişiminden sonra yeniden hesabın **gerçekten** tetiklendiği bu taramada izlenemedi. Tetiklenmeyen bir yol varsa hub listesi sessizce eski sayıyı gösterir — kullanıcı "çakışma yok" görüp yayınlar.
+- ✅ **AÇIK SORU CEVAPLANDI** *(bayat TB taraması, 2026-08-12)*: yeniden hesap **`IScheduleProgramStatsRecomputer`** ile yapılıyor ve ders programı komutlarının **19'undan 12'sine** enjekte edilmiş. Yerleşimi değiştiren yolların hepsi kapsamda: `PlaceLesson` · `MoveLesson` · `RemoveLesson` · `SetBlock` · `AssignTeacher` · `AssignRoom` · `ApplyAutoGenerateDraft` · `PublishProgram` · `RestoreScheduleVersion` · `CreateProgram` · `DeleteScheduleProgram` · `SaveTeacherAvailability`.
+- 🔎 **Kapsam dışı kalan 7 komut ve değerlendirmesi:** `CreateRoom` / `UpdateRoom` / `DeleteRoom` (derslik kataloğu — yerleşimi değiştirmez) ve `EnqueueAutoGenerate` (yalnız kuyruğa atar) **zararsız**. Geriye şu üçü kalıyor ve **doğrulanmadı**: `CreateScheduleException`, `RevokeScheduleException`, `SaveDraft`. İlk ikisi tarihe özel istisna yazar (sayaçları etkilemiyor olabilir), üçüncüsü taslak kaydeder. Bunlar bakılmadıkça bulgu tam kapanmaz.
+- 📌 **Bulgunun korkusu (hiç tetiklenmiyor) doğrulanmadı** — mekanizma kurulu ve yaygın; kalan risk üç dar komutta.
 - **Bağlantı:** `B-08` (öğrenci sayısı `-` görünüyor) da bir sayaç/projeksiyon sorunu; aynı desenin başka yüzü olabilir.
 
 ### TB-29 · Öğretmen kendi müsaitliğini giremiyor 🟡
