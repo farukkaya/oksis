@@ -759,7 +759,14 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - 🚫 **Kısıt:** Yeni koruma yazmak bu boşluğu kapatmaz, büyütür. Her yeni kural, koşturulmadıkça yalnızca *"korunuyoruz"* yanılgısını güçlendiriyor.
 - ⏸️ **KAPSAM KARARI GEREKİYOR (kendi başıma kurulmadı):** CI kurmak altyapı kararıdır — hangi sağlayıcı, hangi runner, hangi adımlar (build + lint + typecheck + unit; entegrasyon testleri Docker istiyor), PR zorunluluğu olacak mı. En küçük anlamlı adım bile (`push`'ta lint + typecheck + unit) ekip akışını değiştirir.
 - 💡 **Ara çözüm olarak önerilebilecek en ucuz şey:** her iki depoda tek bir `pre-push` git kancası — CI kadar güçlü değil ama bugünkü **sıfır**dan iyi ve kimseden onay istemez.
-- ⬜ **Açık.**
+- 🟡 **KISMEN KAPANDI — kullanıcı kararıyla pre-push kancası kuruldu** *(`oksis-ui` @ `3e4fb62` + `oksis-api` @ `03137e2`, 2026-08-12)*.
+  - `oksis-ui` → `npm run lint` + `npm run typecheck`
+  - `oksis-api` → `dotnet build` (0 uyarı) + Domain/Application/Api birim takımları
+  - Kancalar `.githooks/` altında, yani **versiyonlu**; klonlayan bir kez `git config core.hooksPath .githooks` diyor (`README.md` ve `CLAUDE.md`'ye yazıldı).
+- ✅ **Kancanın gerçekten durdurduğu KANITLANDI, kurup varsayılmadı:** `apps/mobile`'a kasıtlı bir `X-01` ihlali sokulup push denendi → kanca lint'te kırmızıya düştü ve **push reddedildi** (`failed to push some refs`). İhlal geri alındıktan sonra aynı push geçti (turbo cache ile 31 ms).
+- 📌 **Kapsam bilinçli olarak dar:** amaç *"`master` hiçbir zaman kırmızı olmasın"*, tam doğrulama değil. Yavaşlayan kanca ilk işten sonra `--no-verify` ile atlanmaya başlar ve hiç yokmuş gibi olur.
+- 📌 **Entegrasyon testleri kancada YOK ve bu ölçülmüş bir karar:** SQL Server/ClamAV konteyneri istiyorlar; Docker kapalıyken kanca yanlışlıkla kırmızıya düşerdi. Bu oturumda birebir yaşandı — makine yeniden başlayınca bütün konteynerler durmuştu.
+- ⬜ **AÇIK KALAN — asıl çözüm hâlâ CI:** kanca yerelde çalışır, `--no-verify` ile atlanabilir ve **kancayı kurmamış** bir geliştiriciyi hiç etkilemez. Sağlayıcı / adımlar / PR zorunluluğu kararı verilmedi.
 
 ### X-05 · `Branch` identifier'ı iki ayrı kavramı gösteriyor
 - **Belirti:** Aynı isim iki farklı şeyi, iki farklı tabloyu işaret ediyor:
