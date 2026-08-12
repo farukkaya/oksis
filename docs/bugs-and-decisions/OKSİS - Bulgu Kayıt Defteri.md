@@ -21,7 +21,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-55` · `X-11` · `B-18` · `D-09` · `ENG-03`
+**Sıradaki boş ID:** `TB-55` · `X-12` · `B-18` · `D-09` · `ENG-03`
 
 ---
 
@@ -38,7 +38,7 @@
 **Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan), hepsi 2026-08-12.
 **Kalan (bu dosyada, TB kuyruğu hariç):** 3 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17` ve `D-08` kapandı (ayrıca `TB-35`).
-**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) — ayrıca çapraz kesenler `X-03`/`X-04`/`X-05`/`X-06 geniş ayak`/`X-09`/`X-10`.
+**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) — ayrıca çapraz kesenler `X-03`/`X-04`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11`.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -720,14 +720,18 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - ✅ **KAPANDI** *(`oksis-ui` @ `<pending>`, 2026-08-11)*: Bozulmamış kopya `onRequest`'te, gövde tüketilmeden alınıp `WeakMap` ile isteğe bağlanıyor; retry o kopyayı kullanıyor. Regresyon testi eklendi (*"gövdeli isteği yenile ve payload'ı koru"*) ve **boş yere yeşil olmadığı doğrulandı**: eski satır geri konulduğunda test `TypeError: unusable` ile kırmızıya düştü, diğer dört test yeşil kaldı.
 - 📌 **Ders:** İki bulgu (`X-06`, `X-07`) aynı kök yapıyı paylaşıyor — *test yeşil, gerçek çağrı kırık*. İkisinde de sebep, testin gerçek yolu değil kolay yolu koşması.
 
-### X-09 · `X-01` yaygınlaştırması mobil uygulamayı atladı — lint kuralı `master`'da kırmızı
+### X-09 · `X-01` yaygınlaştırması mobil uygulamayı atladı — lint kuralı `master`'da kırmızı ✅
 - **Belirti:** `oksis-ui` kökünde `npm run lint` **başarısız**: `apps/mobile` altında `X-01` kuralının **6 ihlali** var. Yani depo bugün lint-kırmızı durumda ve bu fark edilmemiş.
 - **Katman:** FE (mobil) · **Öncelik:** 🟠 Yüksek
 - **Nasıl bulundu:** `B-04` doğrulaması sırasında (2026-08-12). Kendi değişikliğimden mi diye kontrol ettim — **`git stash` ile değişiklikler çıkarıldığında da altı ihlal duruyor**, yani `master`'da zaten var, benim ürünüm değil.
 - 🔍 **Ölçülen altı yer:** `app/activities/new.tsx:71` · `attendance/excuse-create-screen.tsx:165` · `attendance/history-detail.tsx:186` ve `:204` · `attendance/roster-screen.tsx:127` · `school-settings/school-contact-edit-screen.tsx:99`.
 - ➡️ **`X-01`'in kapanış iddiasını daraltıyor:** `X-01` *"31 çağrı yeri eşleyiciye bağlandı + 32.'sini engelleyen kural kuruldu"* diyerek kapanmıştı. Ölçüm gösteriyor ki tarama **`apps/web` ile sınırlıymış**; kural sonradan `apps/mobile`'ı da kapsayınca orada altı ihlal ortaya çıktı ve kırmızı bırakıldı. Yani kullanıcının *"mobilde de backend'in cümlesi gizleniyor"* durumu sürüyor.
 - 🚫 **Kısıt:** Altı yeri düzeltmek yama değil — uygulanacak çözüm zaten merkezî (`mutationErrorDesc`/`apiErrorDesc`), yalnız bir uygulamaya hiç uğramamış. Ama kuralın **neden kırmızıyken commit edilebildiği** ayrı bir soru: CI lint'i tüm workspace'leri koşuyor mu?
-- ⬜ **Açık.**
+- ✅ **KAPANDI** *(`oksis-ui` @ `5bd435a`, 2026-08-12)*. Depo genelinde **lint 6/6, typecheck 6/6** — `master` artık kırmızı değil.
+- 🔎 **Altı ihlal sadece lint gürültüsü değilmiş — beşi kullanıcıya YANLIŞ ŞEY söylüyordu:** sabit metinler *"bağlantınızı kontrol edip tekrar deneyin"* / *"bağlantı sorunu oluştu"* diyordu. Oysa ret **403** veya **422** da olabilir ve o durumda kullanıcı kaç kez denerse denesin sonuç değişmez. `X-08`'in web'de ölçtüğü *"403'ü ağ arızası diye göstermek"* hatasının mobildeki hâli. Cümleyi artık `mutationErrorDesc` **statüye bakarak** seçiyor; bağlam cümlesi (*"Mazeret gönderilemedi."*) korundu — web'deki `X-08` biçimi.
+- 🔎 **Altıncısı bambaşka bir biçimdi:** `school-contact-edit-screen` metin değil **bayrak** tutuyordu (`hasSaveFailed: boolean`) ve şerit sabit bir cümle basıyordu. Bayrak *"hata oldu mu"* sorusunu taşır, *"hata NE"* sorusunu taşıyamaz — `X-08`'de duyuru özet şeridinde ölçülen desenin **birebir aynısı** (`summaryFailed: boolean` → `summaryError: unknown`). Artık hatanın kendisi taşınıyor.
+- 📌 **Doğru olan güvence KORUNDU:** şeritteki *"Değişiklikleriniz korunuyor, tekrar deneyebilirsiniz"* cümlesi hatanın türünden bağımsız olarak doğru (form state'i ekranda duruyor) ve kullanıcının en çok merak ettiği şey o — silinmedi, gerekçenin yanına eklendi. Aynı ilke `X-08`'de de uygulanmıştı.
+- ✅ **AÇIK OLAN SORU CEVAPLANDI ve cevap rahatsız edici:** *"CI lint'i tüm workspace'leri koşuyor mu?"* → **Hiçbir CI lint koşmuyor.** `oksis-ui`'da `.github` **hiç yok**, husky yok, `core.hooksPath` ayarsız, örnek dışı git hook yok. `oksis-api`'de `.github/workflows` var ama ikisi de **ajan** iş akışı (`01-architect`, `04-reviewer`) — derleme/lint/test kapısı değil. Yani `X-01`'in *"32.'sini engelleyen kural kuruldu"* iddiası **yalnız kuralı yazan kişi `npm run lint` koşturursa** geçerli. Mobilin altı ihlali tam olarak böyle geçti. Sınıf boyutu → `X-11`.
 
 ### X-10 · Rota kapısı rol çözülene kadar geçirgen — yanlış rol ekranı kısa süre görüyor ve istekleri atıyor
 - **Belirti:** Öğrenci `/schedule` adresini açtığında yönetim konsolu **kısa süreliğine mount oluyor**; beş yönetim isteği gerçekten atılıyor (`class-rooms`, `class-rooms?sessionId`, `school-settings/grade-levels`, `users/persons?profileType=Teacher`, `timetable/programs`) ve **beşi de 403** dönüyor. Rol çözüldükten sonra ekran *"Bu sayfaya erişemezsiniz"*e dönüyor.
@@ -738,6 +742,24 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 - 🔍 **Ama tartının bir tarafı eksik ölçülmüş:** ödün *"boş ekran flaşı"* ile karşılaştırılmış, oysa gerçekte olan **yanlış ekranın çizilmesi + beş reddedilen istek**. Ayrıca kaçınılmak istenen flaş için gereken sinyal **zaten mevcut**: `useActiveRole` `isLoading` alanını da döndürüyor. Yani "rol yok" ile "rol henüz gelmedi" ayırt edilebilir ve kapı yalnız ikincisinde bekletebilir — boş ekran yerine iskelet gösterilerek.
 - 📌 **Kapsamı tek ekran değil:** kural her korumalı rotada aynı; `/schedule` yalnız ölçüldüğü yer. Güvenlik sınırı değil (gerçek kapı .NET tarafında, beş istek de 403 aldı) ama `B-17`'nin ve `B-01`'in şikâyet ettiği şeyin ta kendisi: **kullanıcıya sahip olmadığı bir yetenek gösteriliyor.**
 - ⬜ **Açık — karar gerektiriyor:** yazılı bir tercih değiştirileceği için `RouteGuard`'ın yükleme penceresinde bekletilmesi onaylanmalı.
+
+### X-11 · Kurulan hiçbir koruma otomatik koşmuyor — ne CI ne git kancası var
+- **Belirti:** Depolarda **derleme/lint/test kapısı yok**. Kırmızı bir `master` push edilebiliyor ve kimse duymuyor.
+- **Katman:** Altyapı · **Öncelik:** 🟠 Yüksek
+- **Nasıl bulundu:** `X-09` kapanışı, 2026-08-12 — *"kural neden kırmızıyken commit edilebildi"* sorusunun peşine düşülünce.
+- 🔍 **Ölçüm:**
+
+| Depo | CI | git kancası | Sonuç |
+|---|---|---|---|
+| `oksis-ui` | `.github` **hiç yok** | husky yok, `core.hooksPath` ayarsız, örnek dışı hook yok | **hiçbir kapı yok** |
+| `oksis-api` | `.github/workflows` var ama **ikisi de ajan** iş akışı (`01-architect`, `04-reviewer`) | aynı — yok | derleme/test kapısı **yok** |
+
+- ➡️ **Bu, tek tek kurulmuş korumaların hepsini etkiliyor.** Bugüne kadar yazılan koruma katmanları — `X-01`'in ESLint kuralı, `X-06`'nın mimari testi (`EfIgnoredPropertyQueryTests`), `X-07`'nin retry testi, `B-04`'ün türetme testleri, `B-06`'nın rozet-liste ayrışma testi — **yalnız biri elle koşturursa** koruma sağlıyor. Hepsi "bir dahakini engeller" gerekçesiyle yazıldı; oysa engelleyen mekanizma yok.
+- 📌 **Kanıt zaten yaşandı:** `X-01` *"32. ihlali engelleyen kural kuruldu"* diyerek kapanmıştı; kural mobilde **altı** ihlali gördü ve hiçbir şey olmadı. `TB-51`'deki tekrarlanamayan kırmızılar da aynı boşluğun başka yüzü — CI olmadığı için "gerçek regresyon mu gürültü mü" sorusu hiç sorulmuyor.
+- 🚫 **Kısıt:** Yeni koruma yazmak bu boşluğu kapatmaz, büyütür. Her yeni kural, koşturulmadıkça yalnızca *"korunuyoruz"* yanılgısını güçlendiriyor.
+- ⏸️ **KAPSAM KARARI GEREKİYOR (kendi başıma kurulmadı):** CI kurmak altyapı kararıdır — hangi sağlayıcı, hangi runner, hangi adımlar (build + lint + typecheck + unit; entegrasyon testleri Docker istiyor), PR zorunluluğu olacak mı. En küçük anlamlı adım bile (`push`'ta lint + typecheck + unit) ekip akışını değiştirir.
+- 💡 **Ara çözüm olarak önerilebilecek en ucuz şey:** her iki depoda tek bir `pre-push` git kancası — CI kadar güçlü değil ama bugünkü **sıfır**dan iyi ve kimseden onay istemez.
+- ⬜ **Açık.**
 
 ### X-05 · `Branch` identifier'ı iki ayrı kavramı gösteriyor
 - **Belirti:** Aynı isim iki farklı şeyi, iki farklı tabloyu işaret ediyor:
@@ -1478,7 +1500,7 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı, `B-04` kapanış turu `X-09`'u, `B-10` taraması `TB-53`'ü, `B-16` turu `TB-54`'ü, `B-17` turu `X-10`'u aldı. **Sıradaki boş ID: `TB-55`, `X-11`, `B-18`, `D-09`, `ENG-03`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı, `B-04` kapanış turu `X-09`'u, `B-10` taraması `TB-53`'ü, `B-16` turu `TB-54`'ü, `B-17` turu `X-10`'u, `X-09` kapanışı `X-11`'i aldı. **Sıradaki boş ID: `TB-55`, `X-12`, `B-18`, `D-09`, `ENG-03`.**
 
 **Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
 - [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`
