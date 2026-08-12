@@ -21,7 +21,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-55` · `X-12` · `B-18` · `D-09` · `ENG-03`
+**Sıradaki boş ID:** `TB-55` · `X-12` · `B-20` · `D-09` · `E-02` · `ENG-03`
 
 ---
 
@@ -30,15 +30,15 @@
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 7 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
-| 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 8 | İşlev eksik ama alternatif yol var |
-| ⚪ Düşük | 6 | Kozmetik / temizlik |
+| ⚪ Düşük | 7 | Kozmetik / temizlik |
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
-**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan) · `B-18` + `E-01` (rıza reddi yanlış ekrana düşüyor / rıza yenileme ekranı yok — `TB-10` turundan), hepsi 2026-08-12.
-**Kalan (bu dosyada, TB kuyruğu hariç):** 3 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17` ve `D-08` kapandı (ayrıca `TB-35`).
-**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) · `B-18` (rıza reddi yanlış ekran — web+mobil, merkezî çözülmeli) · `E-01` (rıza yenileme ekranı — **kapsam kararı bekliyor**) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
+**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `B-18` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
+**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan) · `B-18` + `E-01` (rıza reddi yanlış ekrana düşüyor / rıza yenileme ekranı yok — `TB-10` turundan) · `B-19` (askıya alma ekranındaki tek düğme ölü — `B-18` turundan), hepsi 2026-08-12.
+**Kalan (bu dosyada, TB kuyruğu hariç):** 3 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17`, `B-18` ve `D-08` kapandı (ayrıca `TB-35`, `TB-10`).
+**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) · `B-19` (ölü düğme — **karar bekliyor**) · `E-01` (rıza yenileme ekranı — **kapsam kararı bekliyor**) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -539,6 +539,26 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - 🚫 **Yamalama uyarısı:** iki ekranda aynı satır — düzeltme "web'de bir `if` daha" olmamalı. 403'ün gerekçesini koda göre ayıran ortak bir eşleme `packages/core` tarafında durmalı, iki uygulama da onu okumalı. `X-01` ailesiyle aynı desen.
 - ➡️ Düzeltilse bile kullanıcının çıkışı yok: [[#E-01 · Rıza yenileme ekranı yok — 403 çıkışsız 🟠]].
 
+#### ✅ KAPANDI — oksis-ui @ `2325383` + oksis-api @ `47c1f2b`, 2026-08-12
+
+**Canlı ekran ölçümü** (`ogretmen.s1.01`, kendi `DataProcessing` rızası geri çekilmiş, web 3000 → API 5112):
+
+| Senaryo | Sunucu | ÖNCE ekranda | SONRA ekranda |
+|---|---|---|---|
+| Rıza geri çekilmiş | 403 `identity.account.consent-required` | **"Hesap askıya alındı — Okul yönetimine yaz"** ![[B-18-once-riza-reddi-askiya-alindi-diyor.png]] | **"KVKK onayı gerekiyor"** ![[B-18-sonra-kvkk-onayi-gerekiyor.png]] |
+| Hesap gerçekten kapalı *(regresyon)* | 403 `identity.account.suspended` | "Hesap askıya alındı" | **"Hesap askıya alındı"** ![[B-18-regresyon-gercek-askiya-alma.png]] |
+| Rıza yerinde *(regresyon)* | 200 | panele giriyor | **panele giriyor** |
+
+- ✅ **Merkezî çözüm — karar ekranlardan çıktı:** `packages/api/src/client/login-error.ts` → `classifyLoginError(error)` tek karar noktası; iki giriş ekranı da yalnız sonucu görsele bağlıyor. Yeni bir 403 gerekçesi eklendiğinde değişecek **tek dosya** var. `apiErrorDesc`'in (`X-08`) yanına, aynı klasöre kondu.
+- 🔄 **Defterdeki "`packages/core`'da durmalı" cümlesi düzeltildi:** eşleme `ApiError` zarfını okur, `ApiError` ise `packages/api`'de yaşar ve `core` `api`'ye bağımlı değil (bağımlılık ters yönde: `api → core`). Emsal de orada. Doğru adres `packages/api`.
+- 🔍 **403'ü kodla ikiye bölmek neden güvenli (ölçüldü):** `AccountLoginCommandHandler` her iki 403'ü de **parola doğrulandıktan SONRA** döndürüyor. Bu noktaya gelen çağıran hesabın sahibi olduğunu zaten kanıtlamış; gerekçeyi ayırmak hesap sayımına yeni bilgi vermiyor. Kimlik/parola hatası TR-auth-004 gereği uniform 401 ve bu koldan hiç geçmiyor.
+- 🔍 **Backend özeti yanlıştı, ölçüm düzeltti:** `AccountErrors.ConsentRequired`'ın XML özeti *"hesap aktif değil ya da consent gate"* diyordu. `!account.IsActive` dalı **`Suspended`** döndürüyor — bu kod **yalnızca** rıza kapısından çıkıyor, yani 1:1 eşleme mümkün. Aynı özetteki *"kullanıcıya gösterilen mesaj aynıdır"* cümlesi de artık geçerli değil; ikisi de `47c1f2b` ile düzeltildi.
+- 🔎 **ÖLÇÜM İKİNCİ AYAK ÇIKARDI — aynı hata deseni, farklı vaka:** backend kapalıyken giriş ekranı **"Giriş bilgileri hatalı"** diyordu; kullanıcı doğru parolayı defalarca yazıp duruyor. İlk teşhisim *"ağ hatası kolu eksik"*ti; **ölçüm çürüttü** — web istekleri Next `rewrites` proxy'sinden geçtiği için ağ hatası tarayıcıya **500** olarak dönüyor, yani `ApiError`. Mobil doğrudan API host'una konuştuğu için aynı arıza orada `TypeError`. Tek kola indirgemek iki uygulamadan birinde yanlış cümleyi garanti ederdi; `server` ve `unreachable` ayrı tutuldu. Sonuç: **"Sunucu yanıt vermiyor — sorun sizin bilgilerinizde değil"** ![[B-18-sonra-sunucu-yanit-vermiyor.png]]
+- ⛔ **Bilinçli olarak yapılmayan:** rıza ekranına "yeniden onayla" düğmesi konmadı. Öyle bir akış hiçbir uygulamada yok ([[#E-01 · Rıza yenileme ekranı yok — 403 çıkışsız 🟠]], kapsam kararı bekliyor); olmayan bir düğme kullanıcıyı boş sayfaya götürürdü. Metin bugün gerçekten işleyen tek yolu söylüyor.
+- 🧪 **7 test + boş-yere-yeşil kontrolü:** rıza kodu ↔ askıya alma ayrımı, tanınmayan 403'ün askıya almaya düşmesi, kodun zarfın ilk maddesinde olmaması, 423/429, 5xx ayrımı, `ApiError` olmayan hata. Rıza kolu `suspended`e sabitlendiğinde **yalnız ilgili 2 test kırmızıya düştü**, diğerleri yeşil kaldı. `packages/api` **151/151**, üç paket typecheck + lint temiz, `dotnet build` 0 uyarı.
+- ⬜ **Mobil ayağı ekranla değil kodla kanıtlandı:** mobil artık aynı `classifyLoginError`'ı çağırıyor ve typecheck'ten geçiyor, ama Expo istemcisi bu turda çalıştırılmadı (makine yükü). Ekran kanıtı yalnız web için var.
+- ⬜ **Turdan çıkan bulgu:** askıya alma ekranındaki **"Okul yönetimine yaz" düğmesi hiçbir şey yapmıyor** (`onClick` yok) — [[#B-19 · Askıya alma ekranındaki tek eylem düğmesi ölü ⚪]].
+
 ### E-01 · Rıza yenileme ekranı yok — 403 çıkışsız 🟠
 - **Eksik olan:** Rızası geri çekilmiş ya da rıza paketi sürümü ilerlemiş kullanıcının **rızayı yeniden verebileceği bir ekran yok.** Ne web'de ne mobilde.
 - **Katman:** FE · **Öncelik:** 🟠 Yüksek (mevzuat) · **Tip:** Eksik özellik — kapsam kararı kullanıcınındır
@@ -547,6 +567,15 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - **Sonuç — tek yönlü kapı:** `TB-10` ile birlikte rıza düşünce oturum artık gerçekten kapanıyor. Bu **doğru** davranış, ama kullanıcı için çıkışsız bir odaya dönüşüyor: giriş 403, yenileme 403, rızayı yeniden verecek ekran yok. Kullanıcının kendisi hiçbir şey yapamıyor; yöneticinin elinde de yalnızca doğrudan API çağrısı var, düğme yok.
 - ⚠️ **Bugün sahada patlamıyor** çünkü rıza paketi sürümü hiç ilerletilmedi (`master.consent_bundles`: 1 satır, `v2026.05.01`) ve seed kullanıcılarının hepsi `Granted`. **İlk sürüm yükseltmesinde 381 rıza kaydının tamamı aynı anda kapıya takılır.**
 - ❓ **Karar gerekiyor:** rıza yenileme ekranı MVP kapsamında mı? Kapsam dışıysa, sürüm yükseltmesinin **operasyonel bir engel** olduğu yazılı hâle gelmeli.
+- 🔗 **`B-18` kapandı ama bu madde açık:** kullanıcı artık **doğru teşhisi** görüyor ("KVKK onayı gerekiyor"), çıkış yolu hâlâ yok. Teşhisin düzelmesi çıkışın yerine geçmez.
+
+### B-19 · Askıya alma ekranındaki tek eylem düğmesi ölü ⚪
+- **Belirti:** Giriş → askıya alınmış hesap ekranındaki birincil düğme **"Okul yönetimine yaz"** tıklanabilir görünüyor ama **hiçbir şey yapmıyor.**
+- **Katman:** FE (web) · **Öncelik:** ⚪ Düşük
+- **Nasıl bulundu:** `B-18` ekran ölçümünde, ÖNCE kanıtı alınırken (2026-08-12).
+- **Ölçülen kök neden:** `apps/web/features/auth/login-screen.tsx` → `SuspendedView`, `<button type="button" className="au-btn">` — `onClick` yok, `href` yok. Görsel tasarımdan (Claude Design auth) taşınırken eylemi bağlanmamış.
+- **Neden yalnız kozmetik değil:** ekranın söylediği tek eylem bu. Kullanıcı düğmeye basıyor, hiçbir şey olmuyor ve yönetime nasıl ulaşacağını hâlâ bilmiyor. Mobilde bu düğme **yok** (yalnız "Girişe dön"), yani ekranlar bu noktada da ayrışmış durumda.
+- ❓ **Karar gerekiyor:** düğme ne yapmalı — okul e-postasına `mailto:` mı, uygulama içi bir iletişim ekranı mı, yoksa kaldırılıp metne mi indirgenmeli? Okulun iletişim adresi bugün istemcinin elinde yok (giriş yapılmamış oturum), bu yüzden `mailto:` bile veri gerektiriyor.
 
 ---
 
