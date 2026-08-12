@@ -21,7 +21,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-55` · `X-12` · `B-20` · `D-09` · `E-02` · `ENG-03`
+**Sıradaki boş ID:** `TB-56` · `X-12` · `B-21` · `D-09` · `E-02` · `ENG-03`
 
 ---
 
@@ -30,17 +30,17 @@
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 7 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
-| 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 8 | İşlev eksik ama alternatif yol var |
 | ⚪ Düşük | 7 | Kozmetik / temizlik |
-| **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
+| **Toplam** | **26** | 17 fonksiyonel + 8 tasarım + 1 validasyon |
 
-**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `B-18` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
-**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan) · `B-18` + `E-01` (rıza reddi yanlış ekrana düşüyor / rıza yenileme ekranı yok — `TB-10` turundan) · `B-19` (askıya alma ekranındaki tek düğme ölü — `B-18` turundan), hepsi 2026-08-12.
-**Kalan (bu dosyada, TB kuyruğu hariç):** 3 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17`, `B-18` ve `D-08` kapandı (ayrıca `TB-35`, `TB-10`).
-**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) · `B-19` (ölü düğme — **karar bekliyor**) · `E-01` (rıza yenileme ekranı — **kapsam kararı bekliyor**) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
+**Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `B-18` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-20` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
+**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan) · `B-18` + `E-01` (rıza reddi yanlış ekrana düşüyor / rıza yenileme ekranı yok — `TB-10` turundan) · `B-19` (askıya alma ekranındaki tek düğme ölü — `B-18` turundan) · `B-20` + `TB-55` (içe aktarmada davet bayrağı ölü / iki ayrı içe aktarma yolu — `TB-20` turundan), hepsi 2026-08-12.
+**Kalan (bu dosyada, TB kuyruğu hariç):** 4 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17`, `B-18` ve `D-08` kapandı (ayrıca `TB-35`, `TB-10`, `TB-20`).
+**Açık kalanlar:** `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) · `B-19` (ölü düğme — **karar bekliyor**) · `B-20` (içe aktarmada davet üretilmiyor 🟠) · `E-01` (rıza yenileme ekranı — **kapsam kararı bekliyor**) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
 
-**Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
+**Katman dağılımı:** BE 10 · FE 9 · Her ikisi 5
 
 **Çapraz kesen 6 iş** (`X-01` … `X-06`) mevcut bulgulardan türetildi, sayıma dahil değil — bkz. [Çapraz Kesen İşler](#10-çapraz-kesen-i̇şler-).
 
@@ -209,6 +209,7 @@ En yoğun bulgu barındıran modül. B-12 ve B-13 muhtemelen **tek kök nedene**
 - ✅ **Zincirin bir alt halkası ölçülerek açıldı:** Görevlendirmeler sekmesindeki *"Branş atanmadan görevlendirme yapılamaz"* engeli kalktı, "Ders/Sınıf Görevlendir" etkin. Bulgunun *"zincirin en üstünde"* iddiası doğrulandı.
 - 🧪 5 birim testi (`UpdateProfileBranchTests`) + `Oksis.Application.UnitTests` **1562/1562 yeşil**; `oksis-ui` 521/521, typecheck ve lint temiz.
 - ⬜ **`TB-20` AÇIK KALIYOR ve bu bilinçli.** Bu iş *mevcut* öğretmenin branşını atama yolunu açtı. Toplu içe aktarma ve davet akışında branş adının katalog kimliğine çözülmesi **hâlâ yok** (`ProfileBuilder.cs`'teki TODO duruyor) — yani toplu eklenen öğretmenler yine branşsız doğar, ama artık **tek tek düzeltilebilirler**. `B-05`'in kapanması `TB-20`'yi kapatmaz.
+- ✅ **Zincirin ikinci ayağı da kapandı** *(2026-08-12)*: içe aktarma artık branş adını katalog kimliğine çözüyor, `ProfileBuilder`'daki TODO gitti — [[#TB-20 · Öğretmen branşı davet ve içe aktarma akışında atanmıyor 🟠]]. Öğretmen artık branşlı doğuyor; elle N tıklama kalktı.
 
 ### B-09 · Branşsız öğretmen seçilince BE mesajı bildirilmiyor
 - **Belirti:** Görevlendirmelerde branşsız öğretmen seçildiğinde backend anlamlı bir mesaj dönüyor ama kullanıcıya notify edilmiyor.
@@ -497,6 +498,15 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - **Ekran kanıtı:** öğrencilerde `Öğrenci · 202610029`, velilerde yalnız `Veli` — listede hiç GUID yok ![[B-03-sonra-bagli-profil.png]]
 - ➡️ **`TB-07` ile kavşak kapandı:** bulgunun "hangi uçta düzeltilecek" belirsizliği yoktu; `users` ucu zaten doğru veriyi veriyordu.
 
+### B-20 · İçe aktarmada "davet gönder" seçeneği hiçbir şey yapmıyor 🟠
+- **Belirti:** Toplu kişi içe aktarma onayı `sendInvitations` bayrağını kabul ediyor, iş "Tamamlandı" diyor — ama **hiç davet üretilmiyor.** İçe aktarılan kişiler `Draft` durumunda kalıyor, yani hiçbiri sisteme giremiyor.
+- **Katman:** BE · **Öncelik:** 🟠 Yüksek · **Tip:** Sessiz yalan (istek kabul ediliyor, karşılığı yok)
+- **Nasıl bulundu:** `TB-20` ölçümünde, `sendInvitations: true` ile 5 öğretmen içe aktarılırken (2026-08-12).
+- **Ölçüm:** İş `Completed`, `succeededRows: 5`; ardından `SELECT COUNT(*) FROM identity.invitations` (bu 5 kişi için) → **0**. Beş kişinin beşi de `lifecycle_state = 'Draft'`.
+- **Ölçülen kök neden:** `StartImportCommandHandler` bayrağı `ImportJob.SendInvitations` kolonuna yazıyor, `ImportJobConfiguration` onu `IsRequired()` yapıyor — ve **okuyan kimse yok.** `SendInvitations` repo genelinde 6 yerde geçiyor, hepsi yazma/taşıma; `ImportPersonsJob` alanı hiç sormuyor.
+- **Neden yalnız eksik özellik değil:** uç bayrağı **kabul ediyor** ve iş **başarılı** raporluyor. Kullanıcı "davetler gitti" sanıp bekler; kimse gelmediğinde arayacağı bir hata kaydı da yok.
+- 🔗 Diğer içe aktarma yolu (`POST /users/import`, `Ad/Soyad/Email/Rol`) davet **üretiyor** — aynı işin iki uygulaması var, bkz. [[#TB-55 · İki ayrı toplu içe aktarma yolu yan yana yaşıyor 🟡]].
+
 ---
 
 ## 7b. Kimlik & Oturum 🔴
@@ -648,6 +658,15 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - **Katman:** BE · **Öncelik:** ⚪ Düşük
 - 🔗 **`X-01` ailesi:** merkezî istemci eşleyicisi 401'de zaten kendi Türkçe cümlesini koyuyor, bu yüzden kullanıcıya bugün ham anahtar **muhtemelen ulaşmıyor**. Ama sözleşme yanlış: `message` alanının insan-okunur olması gerekiyor ve mesajı olduğu gibi geçiren her çağıran (mobil, ileride bir rapor) anahtarı basar.
 - ⬜ **Doğrulanacak:** başka kaç uç `identity.errors.*` biçiminde ham anahtar dönüyor? Bu ölçümde yalnız giriş yolu görüldü.
+
+### TB-55 · İki ayrı toplu içe aktarma yolu yan yana yaşıyor 🟡
+- **Bulgu:** Aynı iş — "dosyadan toplu kişi ekle" — için birbirinden habersiz **iki** uç var:
+  - `POST /api/v1/users/import` (Identity): başlıklar `Ad, Soyad, Email, Rol`; senkron; `Person` + minimal profil + **davet** üretir; sezon ve rıza paketi önkoşulu arar.
+  - `POST /api/v1/users/imports/preview` → `POST /api/v1/users/imports` (Users): profil tipine göre şablon (öğretmende `Brans`, öğrencide `OgrenciNo`…); önizleme + onay + Hangfire işi; **davet üretmez** (bkz. `B-20`), rol/sezon/rıza hiç sormaz.
+- **Katman:** BE · **Öncelik:** 🟡 Orta · **Nasıl bulundu:** `TB-20` ölçümü sırasında (2026-08-12).
+- **Neden borç:** İkisi de "içe aktarma" adını taşıyor ama farklı şey üretiyor. Bir okul öğretmen listesini hangisinden yüklerse yüklesin sonucu farklı: birinde branş yok ama davet var, diğerinde branş var ama davet yok. Hangisinin "doğru" yol olduğu koddan okunmuyor.
+- 🔗 `B-20`'nin (davet bayrağı ölü) ve `TB-20`'nin "davet yolunda branş sorulmuyor" ayağının ortak zemini bu ikilik. Üçü birlikte düşünülmeli: tek bir içe aktarma yolu, hem branşı çözen hem daveti üreten.
+- ⬜ **Karar gerekiyor:** hangisi kalacak? Birleştirme kapsam kararıdır; bugün ikisi de canlı.
 
 ---
 
@@ -1028,6 +1047,29 @@ Haftalık nöbet sıklığı ve gün deseni (yayılı/ardışık) okul ayarı ol
 Toplu içe aktarma ve davet yolunda branş **adı** katalog kimliğine çözülmüyor; kod pilot için boş bırakılmasını kabul ediyor. Buna karşılık **branşsız öğretmene görevlendirme yapılamıyor** (sert engel).
 - 🔗 **`B-05` ile aynı zincir:** "Mevcut öğretmenin branşı hiçbir yerden belirlenemiyor" bulgusunun ikinci ayağı bu. Ekran eksikliği tek başına çözüm değil — **içe aktarma ve davet yolları da branşı çözmeli**, yoksa toplu eklenen her öğretmen görevlendirilemez doğar.
 - 📌 **`B-05` kapandı ama bu madde AÇIK** *(2026-08-11)*: artık *mevcut* bir öğretmene branş atanabiliyor (`UpdateProfileCommand.BranchId`). Ama `ProfileBuilder.cs`'teki TODO **duruyor** — davet/içe aktarma hâlâ branş **adını** katalog kimliğine çözmüyor. Yani toplu eklenen öğretmenler yine branşsız doğuyor; fark şu ki artık tek tek düzeltilebiliyorlar. Toplu ekleme yapan bir okulda bu, elle N tıklama demek.
+
+#### ✅ KAPANDI — oksis-api @ `7667084`, 2026-08-12
+
+**Canlı uç ölçümü** (`mudur.s2`, s2 okulu · `POST /api/v1/users/imports/preview` → `POST /api/v1/users/imports` → SQL'de `identity.profiles.teacher_branch_id`). Ekran kanıtı yok, çünkü **içe aktarmanın arayüzü yok** — bkz. aşağıdaki not.
+
+| Dosyada `Brans` | ÖNCE önizleme | ÖNCE veritabanında | SONRA önizleme | SONRA veritabanında |
+|---|---|---|---|---|
+| `Kimya` (birebir) | geçerli | **`NULL` — branşsız** | geçerli | **`Kimya`** |
+| `kimya` (küçük harf) | geçerli | `NULL` | geçerli | **`Kimya`** |
+| `MATEMATİK` (Türkçe büyük) | geçerli | `NULL` | geçerli | **`Matematik`** |
+| `Kimyaa` (yazım hatası) | **geçerli** | `NULL` | **reddedildi** `branch-unknown` | *(satır hiç işlenmedi)* |
+| *(boş)* | geçerli | `NULL` | geçerli | `NULL` *(kabul)* |
+
+- 🎯 **Zincirin diğer ucu da ölçüldü:** içe aktarılan öğretmene görevlendirme denemesi ÖNCE **`409 teaching-assignments.errors.teacher-no-branch`**, SONRA **`201 Created`**. Bulgunun *"görevlendirilemez doğuyor"* iddiası varsayım değildi; sert engel canlıda görüldü ve kalktı.
+- ✅ **Merkezî çözüm — ad→kimlik çevirisi tek yerde:** `Application/Modules/Users/Common/BranchNameLookup.cs`. Dört yazma yolu da onu çağırıyor: içe aktarma önizlemesi, arka plan içe aktarma işi, `CreatePerson`, `AttachProfile`. Ekran/uç başına `if` eklenmedi.
+- 🔒 **Unutulması derleme hatası oldu:** `ProfileBuilder.Build` artık `Guid? teacherBranchId` parametresini **zorunlu** alıyor (varsayılanı yok). TB-20 tam olarak bu parametrenin yokluğuydu; varsayılan verilseydi yeni bir çağıran yine sessizce branşsız öğretmen üretirdi. Beş çağıranın hepsi "bu yolda branş var mı" sorusunu yanıtlamak zorunda kaldı.
+- 🔍 **Karşılaştırma neden SQL'de değil bellekte (ölçülerek seçildi):** `MATEMATİK` ↔ `Matematik` eşleşmesi yalnız **tr-TR** büyütme kuralıyla doğru; invariant kültür `Matematik` → `MATEMATIK` üretir ve eşleşme kaçar. SQL'e bırakılsaydı sonuç veritabanı collation'ına bağlı olurdu ve dört yol farklı davranabilirdi. Katalog okul başına birkaç yüz satır; iş başına **bir** kez okunuyor (satır başına sorgu 5.000 satırda 5.000 gidiş-dönüş demekti).
+- 🛑 **Yazım hatası artık onaydan ÖNCE yakalanıyor:** eskiden `Kimyaa` önizlemeden `validRows: 5, invalidRows: 0` diye geçiyor, hata ancak iş bittikten sonra branşsız öğretmen olarak görünüyordu. Onay düğmesine basılan yer önizleme; hata orada söylenmezse bedeli N kişiyi tek tek düzeltmek.
+- 🔀 **"Yok" ile "pasif" ayrı gerekçe** (`branch-unknown` / `branch-inactive`, tekil uçta ad taşıyan Türkçe cümle). `B-05`'te aynı ayrım yapılmıştı: kullanıcı hücreyi mi düzeltecek yoksa branşı mı aktifleştirecek, ancak böyle bilir.
+- 🧪 **17 test + boş-yere-yeşil kontrolü:** 12 birim (çözümleme + önizleme), 2 entegrasyon (gerçek SQL üzerinde kolonun kendisine bakıyor), 3 mevcut import testi korundu. tr-TR büyütme `ToUpperInvariant`'a çevrildiğinde **yalnız ilgili 1 test kırmızıya düştü**, 12'si yeşil kaldı. Application 1595/1595, entegrasyon import 4/4, `dotnet build` 0 uyarı.
+- ⬜ **Kalan ayak — "davet yolu" bilinçli olarak dokunulmadı, çünkü ortada çözülecek bir ad yok:** tekil davet (`CreateUserCommand`) ve `Ad/Soyad/Email/Rol` başlıklı toplu kullanıcı içe aktarma **branş sormuyor** — ne komutta ne şablonda böyle bir alan var. Web'deki "kullanıcı ekle" ekranı zaten yalnız *Okul Yöneticisi* davet ediyor. Alan/sütun eklemek yeni özellik = **kapsam kararı**; bugünkü davranış kodda gerekçesiyle yazılı (`PersonUserCreationService`).
+- ⬜ **Ekran ayağı yok (kanıt bu yüzden uç ölçümü):** `POST /users/imports` ailesinin **arayüzü hiç yok** — `apps/web` içinde şablon indirme / önizleme / onay çağrısı sıfır eşleşme. Yani bu düzeltme bugün yalnız API'yi kullananlara ulaşıyor.
+- ➕ **Turdan çıkan iki bulgu:** [[#B-20 · İçe aktarmada "davet gönder" seçeneği hiçbir şey yapmıyor 🟠]] · [[#TB-55 · İki ayrı toplu içe aktarma yolu yan yana yaşıyor 🟡]].
 
 ### TB-21 · Öğretmen yükü sorgusu farklı izin ailesiyle korunuyor ⚪
 Görevlendirme sorguları kendi izin aileleriyle korunurken, öğretmen yük özeti `users.view` istiyor. Yetki matrisinde bilinçli bir istisna mı, kopyala-yapıştır kalıntısı mı belirsiz.
@@ -1546,9 +1588,12 @@ B-04a + B-09  →  ortak iş: BE mesajlarının notify hattı
 X-03 (görevlendirme v1/v2 ikiliği)   ← ÖNCE KARAR
   └─> B-07 (sezon devrinde aktarım)  hangi kopyalama komutu çağrılıyor?
 
-B-05 (branş ekranı yok)
-  └─> TB-20 (davet/içe aktarma da branşı çözmüyor)   ← ikisi birlikte kapanmalı
-        └─> B-09, B-14, B-07
+B-05 (branş ekranı yok)                            ✅ kapandı 2026-08-11
+  └─> TB-20 (içe aktarma da branşı çözmüyor)       ✅ kapandı 2026-08-12
+        └─> B-09, B-14, B-07                        zincir açıldı
+
+B-20 (içe aktarmada davet üretilmiyor)
+  └─> TB-55 (iki ayrı içe aktarma yolu)   ← ÖNCE KARAR: hangisi kalacak?
 
 TB-19 (geçici muafiyet uygulanmıyor)   ← B-13'ten ayrı, bağımsız açık
 
