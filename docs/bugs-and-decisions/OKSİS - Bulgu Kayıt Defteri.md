@@ -36,9 +36,9 @@
 | **Toplam** | **25** | 16 fonksiyonel + 8 tasarım + 1 validasyon |
 
 **Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
-**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan), hepsi 2026-08-12.
+**Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan) · `B-18` + `E-01` (rıza reddi yanlış ekrana düşüyor / rıza yenileme ekranı yok — `TB-10` turundan), hepsi 2026-08-12.
 **Kalan (bu dosyada, TB kuyruğu hariç):** 3 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17` ve `D-08` kapandı (ayrıca `TB-35`).
-**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
+**Açık kalanlar:** `B-05`'in ikinci ayağı `TB-20` · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) · `B-18` (rıza reddi yanlış ekran — web+mobil, merkezî çözülmeli) · `E-01` (rıza yenileme ekranı — **kapsam kararı bekliyor**) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
 
 **Katman dağılımı:** BE 9 · FE 9 · Her ikisi 5
 
@@ -530,6 +530,24 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 - 🧪 **3 middleware testi + boş-yere-yeşil kontrolü:** anonim uçta kimlik düşüyor, **korumalı uçta düşmüyor** (bu ikincisi olmadan düzeltme sessizce tüm yetkilendirmeyi boşaltabilirdi), kimliksiz anonim istek değişmiyor. Koşul devre dışı bırakıldığında **yalnız hedef test kırmızıya düştü**, iki sınır testi yeşil kaldı. `Oksis.Api.UnitTests` **251/251**, build 0 uyarı.
 - ⬜ **Kalan iz (bulgu değil, not):** yanlış parola yanıtının mesajı `identity.errors.invalid-credentials` — çevrilmemiş bir i18n anahtarı kullanıcıya kadar geliyor. `X-01` ailesinden; ayrı madde olarak `TB-54`'e yazıldı.
 
+### B-18 · Rıza reddi kullanıcıya "hesabınız askıya alındı" diye gösteriliyor 🟠
+- **Belirti:** Rızası geri çekilmiş (ya da rıza paketi sürümü değişmiş) kullanıcı giriş yapmaya çalıştığında **"Hesap askıya alındı — Okul yönetimine yaz"** ekranını görüyor. Hesabı askıya alınmış değil; eksik olan rıza.
+- **Katman:** FE (web + mobil) · **Öncelik:** 🟠 Yüksek
+- **Nasıl bulundu:** `TB-10` düzeltmesinin ardından "peki kullanıcı bu 403'ü nasıl görüyor?" diye bakılırken (2026-08-12).
+- **Ölçülen kök neden:** giriş ekranı **hata kodunu hiç okumuyor**, yalnız HTTP statüsüne bakıyor — `apps/web/features/auth/login-screen.tsx:102` ve `apps/mobile/src/features/auth/components/login-screen.tsx:115`, ikisi de `if (error.status === 403) setView('suspended')`. Backend'in gönderdiği `identity.account.consent-required` kodu okunmadan atılıyor. Askıya alma (`identity.account.suspended`) ile rıza reddi **tek ekrana** düşüyor.
+- **Neden yalnız ekran metni sorunu değil:** verilen tavsiye de yanlış. Kullanıcı okul yönetimini arıyor, oysa yapması gereken rıza metnini yeniden onaylamak. Yönetimin bu durumda yapabileceği bir şey de yok.
+- 🚫 **Yamalama uyarısı:** iki ekranda aynı satır — düzeltme "web'de bir `if` daha" olmamalı. 403'ün gerekçesini koda göre ayıran ortak bir eşleme `packages/core` tarafında durmalı, iki uygulama da onu okumalı. `X-01` ailesiyle aynı desen.
+- ➡️ Düzeltilse bile kullanıcının çıkışı yok: [[#E-01 · Rıza yenileme ekranı yok — 403 çıkışsız 🟠]].
+
+### E-01 · Rıza yenileme ekranı yok — 403 çıkışsız 🟠
+- **Eksik olan:** Rızası geri çekilmiş ya da rıza paketi sürümü ilerlemiş kullanıcının **rızayı yeniden verebileceği bir ekran yok.** Ne web'de ne mobilde.
+- **Katman:** FE · **Öncelik:** 🟠 Yüksek (mevzuat) · **Tip:** Eksik özellik — kapsam kararı kullanıcınındır
+- **Nasıl bulundu:** `TB-10` kapanışının ardından yapılan çıkış yolu kontrolünde (2026-08-12).
+- **Ölçüm — eksik olan backend değil, arayüz:** `POST /api/v1/users/consents` (`GrantConsentCommandHandler`) **var ve çalışıyor**; `users.update` yetkisi ve açık bir oturum istiyor, yani bir yönetici başkası adına rızayı yeniden verebilir. Ama arayüz bu ucu **hiç çağırmıyor**: `packages/api` + `apps/web` + `apps/mobile` içinde `users/consents` POST çağrısı **sıfır** eşleşme. FE'deki tek rıza yüzeyleri davet kabul ekranı (ilk onay) ve `users/self/consents` (geri çekme).
+- **Sonuç — tek yönlü kapı:** `TB-10` ile birlikte rıza düşünce oturum artık gerçekten kapanıyor. Bu **doğru** davranış, ama kullanıcı için çıkışsız bir odaya dönüşüyor: giriş 403, yenileme 403, rızayı yeniden verecek ekran yok. Kullanıcının kendisi hiçbir şey yapamıyor; yöneticinin elinde de yalnızca doğrudan API çağrısı var, düğme yok.
+- ⚠️ **Bugün sahada patlamıyor** çünkü rıza paketi sürümü hiç ilerletilmedi (`master.consent_bundles`: 1 satır, `v2026.05.01`) ve seed kullanıcılarının hepsi `Granted`. **İlk sürüm yükseltmesinde 381 rıza kaydının tamamı aynı anda kapıya takılır.**
+- ❓ **Karar gerekiyor:** rıza yenileme ekranı MVP kapsamında mı? Kapsam dışıysa, sürüm yükseltmesinin **operasyonel bir engel** olduğu yazılı hâle gelmeli.
+
 ---
 
 ## 8. Genel Kabuk & Navigasyon ⚪
@@ -859,6 +877,10 @@ Merkezi eşleyici var, ama ekranların neredeyse tamamı onu **kullanmıyor**:
 > çekilince refresh zinciri iptal edilmiyor. **Başlığa bakıp kapatsaydım gerçek bir KVKK açığını
 > gizlemiş olacaktım** — taramanın asıl kazancı bu.
 >
+> ✅ **Devamı:** `TB-10` aynı gün canlıda RED→GREEN ölçümüyle **kapatıldı** (`oksis-api` @ `c2bd0bf`).
+> Taramanın öngördüğü iki iş de yapıldı; üstüne iki yeni bulgu (`B-18`, `E-01`) çıktı. Yani "yarı bayat"
+> teşhisi doğruydu: bayat olan başlıktı, açık gerçekti.
+>
 > **Ölçüm notu:** Yoklamalar iddiaya özel yapıldı (ör. `TB-21` için modül taraması yetmedi, izni
 > kullanan gerçek sorgu `GetTeacherWorkloadQuery` bulunana kadar arandı; ilk bakışta "bayat" görünüyordu).
 > Bu turda ayrıca canlı olarak doğrulananlar: `TB-19` (geçici muafiyet, gerçekten kırık) ve
@@ -888,6 +910,38 @@ Giriş akışındaki rıza kontrolü "her zaman izin ver" döndüren bir stub. *
   ➡️ Rızası geri çekilen kullanıcı **giriş yapamaz** ama **var olan oturumunu token yenileyerek süresiz sürdürebilir** — hiç giriş ekranına düşmediği için kapıya da hiç uğramaz.
 - 🚫 **Bu yüzden madde KAPATILMADI.** Başlığı düzeltip kapatmak, kalan gerçek KVKK açığını gizlerdi.
 - ⬜ **Kalan iş net ve dar:** (a) `AccountRefreshTokenCommandHandler` rıza kapısını sorsun, (b) rıza geri çekilince refresh token zinciri iptal edilsin (`AccountLogout` deseninde zaten var). Bulgunun ilk hâlindeki *"kapıyı bağla"* işi ise **yapılmış**.
+
+#### ✅ KAPANDI — `oksis-api` @ `c2bd0bf`, 2026-08-12
+
+**Önce canlıda ölçüldü** (`ogretmen.s2.01@oksis.local`, API 5112, taze derleme). Aynı üç adım düzeltmenin öncesinde ve sonrasında birebir koşturuldu:
+
+| Adım | ÖNCE | SONRA |
+|---|---|---|
+| `POST users/self/consents/{id}/revoke` | 204 | 204 |
+| Refresh zinciri (DB, `revoked_reason`) | dokunulmadı | **7 satır `consent_revoked`** |
+| `POST auth/account/refresh` *(aynı token)* | **200 + yepyeni access token** | **403 `identity.account.consent-required`** |
+| `POST auth/account/login` *(sıfırdan)* | 403 | 403 |
+| Rıza yerindeyken `refresh` *(regresyon)* | 200 | **200** |
+
+➡️ Bulgunun cümlesi ("rızası geri çekilen kullanıcının oturumu kapanmıyor") **ölçümle kanıtlandı ve ölçümle kapatıldı**: ön kapı kilitliyken yan kapı açıktı, kullanıcı token yenileyerek oturumu süresiz sürdürüyordu.
+
+**İki taraflı düzeltme — ikisi de gerekli, biri diğerinin yerine geçmez:**
+1. **Kapı her tazelenişte sorulur** — `AccountRefreshTokenCommandHandler` artık `IConsentGate`'i çağırıyor, login ile **aynı kararı ve aynı hata kodunu** üretiyor. Merkezî olan bu: rızanın nasıl düştüğü (yönetici çekti, kişi kendi çekti, paket sürümü değişti) fark etmez, hepsi tek yerden yakalanır. Kapı token üretiminden **önce** sorulur — sonra sorulsa reddedilen kullanıcının zinciri de döndürülüp elindeki token boşuna geçersizleşirdi.
+2. **Rıza düşünce oturum anında düşer** — `ConsentRevocationSessionApplier` (yeni, `Modules/Users/Common/`) refresh zincirini iptal eder. Aksi hâlde 1. madde ancak access token'ın ömrü dolunca (≤15 dk) devreye girerdi.
+
+**Neden ayrı bir sınıf, neden iki handler'a kopyalanmadı:** rızayı geri çeken **iki** yol var (yönetici `RevokeConsentCommandHandler`, kişinin kendisi `RevokeMyConsentCommandHandler`). Kopyalamak, üçüncü yol eklendiğinde sessizce açıkta kalacak bir yama olurdu.
+
+**Neden `ConsentRevokedEvent` için bir MediatR handler'ı DEĞİL** *(cazip görünen yol — domain event zaten var ve `IsDataProcessing` bayrağını tam bu amaçla taşıyor)*: event'ler `DomainEventInterceptor` içinde EF Core'un `SavedChangesAsync` post-save hook'undan dispatch ediliyor ve EF Core aynı `DbContext` üzerinde **reentrant** `SaveChangesAsync`'e izin vermiyor — bir notification handler'ı token iptalini **kalıcı hale getiremezdi**. Repo bu dersi daha önce almış: `AbsenceSummaryRecalculator` aynı gerekçeyle düz statik metot. Desen ondan alındı.
+
+**Yalnız `DataProcessing`:** `ConsentGate` yalnız bu türe bakıyor. Her rıza geri çekilişinde oturumu düşürmek, pazarlama iznini kapatan kullanıcıyı sebepsiz sistemden atardı — test bunu ayrıca koruyor.
+
+**Yan bulgu:** domain'de `LogoutReason.ConsentRevoked` ilk günden beri duruyordu ama **hiçbir çağıran onu geçirmiyordu** — tasarım niyeti vardı, bağlantısı yoktu. Artık geçiriliyor.
+
+**Testler:** 4 yeni test. *Boşuna yeşil değil* kontrolü yapıldı — düzeltme geçici olarak etkisizleştirilince (`if (false && …)` / `if (true || …)`) **tam olarak o 4 test kırmızıya döndü, diğer 13'ü etkilenmedi**. Paketler: Domain 695 ✅ · Application 1578 ✅ · Api 251 ✅ · `dotnet build` 0 uyarı.
+
+**Kapsanmayan artık (bilinçli):** hâlihazırda dağıtılmış *access* token ömrü dolana kadar (≤15 dk) geçerli kalır. `IAccessTokenBlacklist` yalnız `jti` bazlı; yönetici bir başkasının rızasını geri çekerken o kişinin `jti`'sini bilmez, dolayısıyla iki yolu **simetrik** kapatacak bir mekanizma bugün yok. Asıl açık — *sınırsız* oturum uzatma — kapandı.
+
+➡️ Bu turda **iki yeni bulgu** çıktı, ikisi de bölüm 7b'de: **B-18** (rıza reddi kullanıcıya "hesabınız askıya alındı" diye gösteriliyor) ve **E-01** (rıza yenileme ekranı yok — 403 çıkışsız).
 
 ### TB-11 · Rıza sürümü iki farklı tipte tutuluyor 🟡
 Hesap üzerinde sayısal (`int`), rıza kaydında metin (`v2026.05.01` biçimi). İkisi aynı şeyi anlatıyorsa karşılaştırma yapılamaz; anlatmıyorsa adlandırma yanıltıcı. Yeni sürüm yayınlandığında yeniden onay istemek bu alana bağlı olacak.
