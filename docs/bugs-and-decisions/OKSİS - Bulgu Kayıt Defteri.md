@@ -9,6 +9,7 @@
 > · bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-)
 > **İlgili:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Durum:** Test devam ediyor, yeni partiler bu dosyaya eklenecek.
+> **Düzeltme turu:** 2026-08-16 akşamı başladı — bkz. [13. Düzeltme Turu](#13-düzeltme-turu--ekran-testi-bulguları-2026-08-16-)
 
 > [!warning] Bu dosya **Multi-Column Markdown** eklentisi ister
 > Ayarlar → Community plugins → Browse → **"Multi-Column Markdown"** (ckRobinson) → Install → Enable.
@@ -24,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-57` · `X-14` · `B-33` · `D-15` · `V-04` · `E-16` · `ENG-03`
+**Sıradaki boş ID:** `TB-57` · `X-15` · `B-33` · `D-15` · `V-04` · `E-16` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -2111,3 +2112,59 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
 - Duyuru yayını: hedef kitle sayacı (101 kişi), onay iletişimi, denetim izi, sezon süzgeci.
 - Zil çizelgesi otomatik üretici ("üzerine yazılacak" uyarısıyla), gün atamaları.
 - Yetki reddi ekranı (web): rol adıyla Türkçe açıklama + çıkış yolu.
+
+---
+
+## 13. Düzeltme Turu — Ekran Testi Bulguları (2026-08-16) 🔧
+
+> **Kapsam:** §12'de kaydedilen maddelerin düzeltilmesi. Kullanıcı kararı: önce
+> veriyi bozanlar, sonra merkezî yüzeyler, sonra kilit açanlar.
+> **Yöntem:** Her düzeltmeden sonra **bulgunun ölçüldüğü şey yeniden ölçüldü**;
+> "kod değişti" tek başına kapanış sayılmadı. Her madde ayrı commit.
+
+### Kapatılanlar
+
+| Madde | Düzeltme | Yeniden ölçüm | Commit |
+|---|---|---|---|
+| `B-31` 🔴 | Dört yaşam-döngüsü işlemi de öğrenci modülünün uçlarına bağlandı (`:graduate` · `:freeze` · `:resume` · `:withdraw`) | Uçlar tek tek 204; freeze→resume `Active`'e dönüyor, withdraw `Withdrawn` bırakıyor | `oksis-ui` `ff2bdc9` |
+| `B-22` 🔴 | `UserListDto`'ya `RoleCodes` eklendi; istemci eşlemesi görünen ad yerine koda bağlandı | ROLLER sütunu dolu; "Rol: Öğretmen" süzgeci **15 kayıt** (bulgudaki gerçek sayı) | `oksis-api` `0292294` · `oksis-ui` `7c28650` |
+| `B-23` 🟠 | `todayIsoDate()` / `currentIsoMonth()` core'a eklendi; sabit tarih ve sabit ay kaldırıldı | KPI alt etiketi "Ağustos 2026" | `oksis-ui` `cdf164b` |
+| `B-21` 🔴 | Üç bölüm **sırayla** kaydediliyor; ayrıca `DbUpdateConcurrencyException` → **409** | Kurum Kimliği + Adres tek "Kaydet"te birlikte kalıcı; sunucu günlüğünde çakışma yok | `oksis-api` `0474a24` · `oksis-ui` `4ae2df1` |
+| `X-13` 🔴 | `MutationCache.onError` ile **sahipsiz** yazma hataları uygulama düzeyindeki toast yüzeyine düşüyor; sahiplenme `onError` ya da `meta.errorHandled` ile tanınıyor | Var olan e-postayla davet → önceden **hiçbir şey**; şimdi `role="alert"` toast | `oksis-ui` `8a71cf6` |
+
+**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]]
+
+### Düzeltme sırasında çıkan yeni bulgular
+
+#### `B-31` ikinci ayağı · "Pasife Al" butonu hiçbir zaman çalışamıyormuş 🔴 *(aynı commit'te kapatıldı)*
+- **Ölçüm:** `POST /users/persons/{aktif-öğrenci}/archive` → **400**
+  `USERS_LIFECYCLE_INVALID_TRANSITION` — *"'Archive' işlemi 'Active' durumundaki bir kişide geçersiz."*
+- Alan modeli net: `Archived`, kayıt yaşam döngüsünde ancak **mezun / ayrılmış / nakil**
+  bir kayıttan SONRA gelen saklama adımı. Aktif öğrencinin karşılığı `Withdrawn`.
+- İşlem `:withdraw`'a bağlandı, gerekçe zorunlu oldu (backend validator zaten istiyordu),
+  onay modali artık sonucu söylüyor ("Kayıt 'Ayrılmış' olur, şube koltuğu boşalır").
+- **Not:** Etiket "Pasife Al" olarak kaldı ama ürettiği durum "Ayrılmış". Adlandırma
+  kullanıcı onayı bekliyor.
+
+#### `X-14` · Sunucu hata mesajı olarak çeviri anahtarı gönderiyor (198 anahtar) 🟠
+- **Nasıl bulundu:** `X-13`'ün merkezî yüzeyi kurulur kurulmaz ilk ölçümde ekrana
+  **`identity.errors.email-exists`** çıktı. Hata artık görünüyordu ama okunmuyordu.
+- **Katman:** BE · **Öncelik:** 🟠 Yüksek
+- **Ölçüm:** `grep -rhoE '"[a-z]+\.(errors|error)\.[a-z0-9-]+"' src` → **198 ayrı anahtar**
+  (`attendance.errors.*`, `duties.errors.*`, `students.errors.*`, `timetable.errors.*`,
+  `users.errors.*`, `identity.errors.*` …). Sözleşme 400/409/422'de mesajın kullanıcıya
+  dönük **Türkçe cümle** olmasını söylüyor; bu modüller oraya anahtar yazıyor.
+- **Bu turda yapılan (yarım çözüm, bilinçli):** İstemci artık anahtar biçimini tanıyıp
+  ham basmıyor, gerekçesiz-red cümlesine düşüyor — *kod sızmıyor ama gerekçe de kayboluyor.*
+- **Kalan iş:** 198 anahtarın Türkçeleştirilmesi. Doğru yeri **sunucu**: ya handler'lar
+  cümle yazacak ya da API sınırında tek bir anahtar→cümle sözlüğü olacak.
+  Ekran ekran çözülemez.
+- **Emsal:** Dosya modülü bunu kendi içinde çözmüş (`files/mutation-error.ts`,
+  `fileAwareMutationErrorDesc`) — yani desen biliniyor, yaygınlaştırılmamış.
+- **İlgili:** `X-01` (Türkçe validasyon mesajları) · `TB-54` (giriş hata mesajı anahtarı).
+
+### Ölçüldü ama kapatılamadı
+- **`X-13`'ün 401 ayağı:** "oturum dolunca ekran bayat veri göstermeye devam ediyor"
+  yeniden üretilemedi. `auth-refresh.ts` yolu doğru görünüyor (refresh başarısızsa
+  `auth.clear()` + `onUnauthorized()` → `/login`). Bu ayak `B-27` ile birlikte
+  mobil oturum turunda tekrar ölçülecek.
