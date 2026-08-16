@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-57` · `X-15` · `B-33` · `D-15` · `V-04` · `E-16` · `ENG-03`
+**Sıradaki boş ID:** `TB-58` · `X-15` · `B-33` · `D-15` · `V-04` · `E-16` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -2131,8 +2131,10 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
 | `B-23` 🟠 | `todayIsoDate()` / `currentIsoMonth()` core'a eklendi; sabit tarih ve sabit ay kaldırıldı | KPI alt etiketi "Ağustos 2026" | `oksis-ui` `cdf164b` |
 | `B-21` 🔴 | Üç bölüm **sırayla** kaydediliyor; ayrıca `DbUpdateConcurrencyException` → **409** | Kurum Kimliği + Adres tek "Kaydet"te birlikte kalıcı; sunucu günlüğünde çakışma yok | `oksis-api` `0474a24` · `oksis-ui` `4ae2df1` |
 | `X-13` 🔴 | `MutationCache.onError` ile **sahipsiz** yazma hataları uygulama düzeyindeki toast yüzeyine düşüyor; sahiplenme `onError` ya da `meta.errorHandled` ile tanınıyor | Var olan e-postayla davet → önceden **hiçbir şey**; şimdi `role="alert"` toast | `oksis-ui` `8a71cf6` |
+| `E-11` 🔴 | `UserInvitedEvent` dinleyicisi + `InvitationEmailJob` + şifre sıfırlama işi gerçekten gönderiyor; eksik olan `/reset-password` ekranı yazıldı | Mailpit'te davet ve sıfırlama postaları; davet `Sent`+`sentAt`; bağlantı doğru önizlemeyi açıyor; şifre gerçekten değişti (eski 401 / yeni 200) | `oksis-api` `f40927a` · `oksis-ui` `2d06147` |
+| `B-24` 🔴 | Kanal listesi gerçekten gönderim yapan tek kanalla sınırlandı; başarı ekranı kaç veliye gittiğini/gidemediğini söylüyor | Seçicide SMS/WhatsApp `disabled` + "yakında"; velisiz kayıtta "Davetli" rozeti ve "gönderildi" satırı çıkmıyor | `oksis-ui` `18a9fac` |
 
-**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]]
+**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]] · ![[fix-e11-davet-baglantisi.png]] · ![[fix-b24-davet-kanali.png]]
 
 ### Düzeltme sırasında çıkan yeni bulgular
 
@@ -2162,6 +2164,22 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
 - **Emsal:** Dosya modülü bunu kendi içinde çözmüş (`files/mutation-error.ts`,
   `fileAwareMutationErrorDesc`) — yani desen biliniyor, yaygınlaştırılmamış.
 - **İlgili:** `X-01` (Türkçe validasyon mesajları) · `TB-54` (giriş hata mesajı anahtarı).
+
+#### `TB-57` · Entegrasyon test paketi `master`'da KIRMIZI (5 test) 🟠
+- **Nasıl bulundu:** `E-11` sonrası tam `dotnet test` koşuldu.
+- **Ölçüm:** `Oksis.Infrastructure.IntegrationTests` → **5 kırmızı**
+  (`SubjectTeacherAssignmentTests` × 4 + `GetAvailableSubstitutes` × 1).
+  Değişikliklerim `git stash`'lenip tekrar koşuldu — **aynı 4 test yine kırmızı**,
+  yani bu turdan ÖNCE de kırmızıydı.
+- **Örnek fark:** `ByCourse_returns_three_value_match` → beklenen `Matched`,
+  gelen **`OutOfField`**. Yani branş uyumu testin beklediğinden farklı çalışıyor —
+  `X-04` (branş uyumu ad yerine katalog kimliğine bağlandı, `fba5a8e`) turundan
+  kalmış olması kuvvetle muhtemel.
+- **Neden kimse görmedi:** `.githooks/pre-push` kapısı **build + birim testlerini**
+  koşuyor, entegrasyon testlerini koşmuyor (`X-11`'in bilinçli dar kapsamı).
+  Kural yazmak korumaz, koşturmak korur — ama koşulmayan test de korumaz.
+- **Karar gerektiren:** ya testler güncel davranışa göre düzeltilecek ya da
+  davranış hatalı; ikisi de `X-04`'ün kapsamını yeniden açar.
 
 ### Ölçüldü ama kapatılamadı
 - **`X-13`'ün 401 ayağı:** "oturum dolunca ekran bayat veri göstermeye devam ediyor"
