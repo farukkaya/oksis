@@ -18,7 +18,7 @@
 
 # 📋 Karar Panosu
 
-**Karara bağlanan: 6 / 13**
+**Karara bağlanan: 10 / 14**
 
 | ID | Konu | Durum | Tarih | Karar özeti |
 |:--|:--|:--|:--|:--|
@@ -29,10 +29,11 @@
 | **K-03** | Hata görünürlüğü / log stratejisi | ⬜ Bekliyor | — | — |
 | **K-04** | Anaokulu gizleme sınırı (BE mi FE mi) | ⬜ Bekliyor | — | — |
 | **K-05** | Web'de öğretmen duyuru detay yüzeyi | ⬜ Bekliyor | — | — |
-| **K-06** | Kadro davet/iletişim kanalı: e-posta mı, tek seferlik şifre mi? | ⬜ Bekliyor | — | — |
-| **K-07** | Sezon kapanış yüzeyi: kayıt yenileme akışı yazılacak mı? | ⬜ Bekliyor | — | — |
-| **K-08** | Dini bayramlar için tatil şeması değişikliği | ⬜ Bekliyor | — | — |
-| **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ⬜ Bekliyor | — | — |
+| **K-06** | Kadro davet/iletişim kanalı: e-posta mı, tek seferlik şifre mi? | ✅ Karara bağlandı | 2026-08-16 | SMTP bağlandı; SMS/WhatsApp seçilemez |
+| **K-07** | Sezon kapanış yüzeyi: kayıt yenileme akışı yazılacak mı? | ✅ Karara bağlandı | 2026-08-16 | Tam akış yazılacak |
+| **K-08** | Dini bayramlar için tatil şeması değişikliği | ⏸️ Ertelendi | 2026-08-16 | Ayrı iş olarak planlanacak |
+| **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ✅ Karara bağlandı | 2026-08-16 | "Örnek veri" rozeti |
+| **K-10** | Ders programının görevlendirme kaynağı (v1 mi v2 mi) | ✅ Karara bağlandı | 2026-08-16 | v2 + müfredattan türet, v1 emekli |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -518,15 +519,15 @@ Bu, yeni okulda kadro kurulmasını tümüyle engelliyor — turun tek bloklayı
 
 ### ✍️ Karar Alanı
 
-**Durum:**
-**Tarih:**
-**Karar veren:**
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-08-16
+**Karar veren:** Faruk Kaya
 
 **Karar**
->
+> **(a) SMTP bağlandı.** Davet ve şifre sıfırlama e-postaları gerçekten gönderiliyor; geçici şifre yolu da duruyor (kayıt sihirbazının başarı ekranı). SMS ve WhatsApp ekranda **seçilemez** durumda, "yakında" etiketiyle görünüyor.
 
 **Gerekçe**
->
+> Altyapı zaten hazırdı (`IEmailSender` + `SmtpEmailSender` + Mailpit); eksik olan yalnız bağlantıydı. Elden şifre yolu tek başına ölçeklenmiyor: geçici şifre ekranda BİR KEZ gösteriliyor ve kapatılınca kişi sisteme hiç giremiyordu. Gerçekten gönderim yapmayan kanalı seçtirmek `B-24`'ün ta kendisiydi; o yüzden gizlemek yerine **seçilemez** yapıldı — yol haritası görünür kalsın ama yanlış vaat üretmesin.
 
 --- end-multi-column
 
@@ -565,15 +566,15 @@ Bunun görünür sonucu ölçüldü: yenileme dönemi açılamadığı için dev
 
 ### ✍️ Karar Alanı
 
-**Durum:**
-**Tarih:**
-**Karar veren:**
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-08-16
+**Karar veren:** Faruk Kaya
 
 **Karar**
->
+> **Tam akış yazılacak.** Kayıt yenileme dönemi açma, veli niyet toplama, yenileme, dönem kapatma ve görevlendirme kopyalama uçlarının hepsine ekran yazılır.
 
 **Gerekçe**
->
+> `B-30`'un kök nedeni bu boşluk: yenileme dönemi açacak ekran olmadığı için devir HER ZAMAN legacy yolda çalışıyor, `StudentEnrollment` aynası hiç yazılmıyor ve öğrenciler devir sonrası `/students` ekranından kayboluyor (ölçüm: `/sections` 46 öğrenci, `/students` 0). Yalnız aynayı yazmak belirtiyi kapatır, akışı değil — sezon kapanışı kullanıcının bu turda açıkça istediği kapsamdı.
 
 --- end-multi-column
 
@@ -609,15 +610,15 @@ o günleri normal ders günü sayıyor.
 
 ### ✍️ Karar Alanı
 
-**Durum:**
-**Tarih:**
-**Karar veren:**
+**Durum:** ⏸️ Ertelendi
+**Tarih:** 2026-08-16
+**Karar veren:** Faruk Kaya
 
 **Karar**
->
+> **Bu turda ele alınmayacak.** `master.official_holidays` şeması değişmiyor.
 
 **Gerekçe**
->
+> Dini bayramlar hicri takvime bağlı olduğu için her yıl kayıyor ve 3,5–4,5 gün sürüyor; mevcut sabit ay/gün şeması bunu ifade edemiyor. Doğru çözüm yıl bazlı tarih aralığı + arife (yarım gün) desteği — ama devamsızlık/program/yoklama pencerelerine dokunduğu için ayrı bir iş olarak planlanacak. `E-13` açık kalıyor.
 
 --- end-multi-column
 
@@ -659,19 +660,80 @@ gönderilmiyor", SMS kotası kartı "Geçici veri" diyor.
 
 ### ✍️ Karar Alanı
 
-**Durum:**
-**Tarih:**
-**Karar veren:**
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-08-16
+**Karar veren:** Faruk Kaya
 
 **Karar**
->
+> **"Örnek veri" etiketi.** Gerçek veriye bağlanmamış widget'lar kaldırılmıyor; üzerlerinde açık bir "örnek veri" rozeti gösteriliyor.
 
 **Gerekçe**
->
+> Desen üründe zaten var ve doğru çalışıyor: SMS kotası kartı "Geçici veri", duyuru oluşturma ekranı "Push bildirim — yakında — bu sürümde gönderilmiyor" diyor. Kartları tümden gizlemek tasarım bütünlüğünü bozar ve ürünün ne yapacağını da gizler; sorun gösterilmeleri değil, **gerçek sanılmaları**. Rozet yanıltmayı bitirir, yol haritasını görünür bırakır.
 
 --- end-multi-column
 
 ---
+
+---
+
+## K-10 · Ders programının görevlendirme kaynağı
+
+--- start-multi-column: K-10
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ✅ Karara bağlandı · **Kaynak:** `B-26` (2026-08-16 uçtan uca test) · **Aynı düğüm:** `X-03`, `TB-48`
+
+Görevlendirme iki nesil hâlinde yaşıyor ve **ekranla üretim farklı nesli okuyor**:
+
+| | v1 `teaching_assignments` | v2 `subject_teacher_assignments` |
+|---|---|---|
+| Taşıdığı | Öğretmen × **Şube** × Ders + **haftalık saat** | Öğretmen × Ders (yetkinlik) |
+| Şube / saat | ✔ | **YOK** (entity dokümanı: *"Haftalık saat ve şube YOKTUR; downstream Şube Dağıtımı / Ders Programı katmanının işidir"*) |
+| Yazan ekran | **hiçbiri** | Görevlendirmeler |
+| Okuyan | Ders Programı üretimi (`TeachingAssignmentSource`, `GetAutoGenClassesQueryHandler`) | Görevlendirmeler ekranı |
+
+**Ölçüm (2026-08-16):**
+- Aktif satır sayısı — `s1`/`s2`/`s3`: v1 **140**, v2 15/3/0. **`s4` (arayüzden kurulan okul): v1 = 0.**
+- `grep`: v1'e yazan tek yol seed ve devir kopyası; `AssignSubjectClassCommand` ucu var ama
+  **hiçbir istemci çağırmıyor**.
+- Görünür sonuç: bir **lise** 10. sınıfına Türkçe / Fen Bilimleri / Sosyal Bilgiler yerleşti —
+  hiçbiri Görevlendirmeler ekranındaki kayıtlarda yok.
+
+Yani ders programı üretimi, **hiçbir ekranın yazmadığı** bir tablodan besleniyor. Dev okullarında
+çalışıyor görünmesinin tek sebebi seed verisi; arayüzden kurulan gerçek bir okulda üretim hiçbir
+sınıf listeleyemez.
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-08-16
+**Karar veren:** Faruk Kaya
+
+**Karar**
+> **v2 + müfredattan türet.** Üretici v2 yetkinliklerini okur; eksik iki bileşen türetilir:
+> **şube** = üretimin yapıldığı sınıfın kendisi, **haftalık saat** = o kademenin müfredatı
+> (`SubjectGradeLevel` / `SchoolWeeklyHourOverride`), **öğretmen** = o derse yetkin v2 kaydı.
+> v1 `teaching_assignments` emekliye ayrılır (okuma yolları kesilir).
+
+**Gerekçe**
+> Eksik olan "Şube Dağıtımı" katmanı zaten türetilebilir: müfredat saatleri ve şubeler sistemde
+> **var**. Ayrı bir ekran açmak, kullanıcıdan sistemin kendi bildiği bir şeyi ikinci kez istemek
+> olurdu. v1'i yaşatmak ise iki doğruluk kaynağını kalıcılaştırırdı — `X-03`/`TB-48`'in göç
+> kararı bu turda "temizlik" olmaktan çıkıp **yanlış program üretmeye** başladığı için
+> ertelenemezdi.
+>
+> Yan kazanç: ders↔kademe uygunluğu artık yapısal olarak garanti — müfredatta olmayan ders
+> o kademeye hiç aday olmuyor.
+
+--- end-multi-column
 
 # B. Verilmiş Kararlar ✅
 
