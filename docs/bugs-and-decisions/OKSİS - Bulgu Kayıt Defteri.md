@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-58` · `X-15` · `B-33` · `D-15` · `V-04` · `E-16` · `ENG-03`
+**Sıradaki boş ID:** `TB-58` · `X-15` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -2136,6 +2136,7 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
 | `B-25` 🟠 | Açılmış taslak artık "devam edilen taslak" sorgusundan dönmüyor (kayıt duruyor, tanım daraldı) | s4'te "Taslak Sezonlar **0**", "Hazır Sezon 1", tek "Aktifleştir" butonu | `oksis-api` `874a176` |
 | `E-14` 🟡 | Devirde kaynak şubenin rehber öğretmeni hedef şubeye taşınıyor; ayrılmış öğretmen taşınmıyor | s4'te gerçek devir: 9-A'nın rehberi 10-A'ya geçti; kaynağı olmayan şubeler boş kaldı | `oksis-api` `35a54f7` |
 | `B-29`+`E-15` 🟡 | Envanterin otoritesi katalog oldu; okulun satırı yalnız *override*. Plan sayacı da aynı kaynaktan | 6 modül Türkçe adlarıyla listeleniyor, "PLAN DURUMU **6 / 6**" | `oksis-api` `4a28bb6` · `oksis-ui` `f960ca0` |
+| `B-26` 🔴 | Üretim v2 yetkinlikleri + müfredattan türetiliyor; ders↔kademe uygunluğu **yapısal** (master ders bağlarıyla kesişim); öğretmen dağıtımı deterministik round-robin | s2, gerçek üretim, 10. kademe: Bilgisayar / Beden Eğitimi / İngilizce / Din Kültürü / Matematik — **hepsi lise dersi**. Türkçe, Fen Bilimleri, Sosyal Bilgiler artık yok. Şube listesi 6 → **8** | `oksis-api` `688efcb` |
 
 **Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]] · ![[fix-e11-davet-baglantisi.png]] · ![[fix-b24-davet-kanali.png]] · ![[fix-b25-taslak-tek-kart.png]] · ![[fix-b29-modul-envanteri.png]]
 
@@ -2206,6 +2207,21 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
   üretim hiçbir sınıf listeleyemez; dev okullarında çalışıyor görünmesinin tek sebebi seed.
 - **Karar:** v2 yetkinlikleri + müfredattan türetme (şube = üretilen sınıf, saat = kademe
   müfredatı), v1 emekli.
+
+#### `E-16` · Lise müfredat saat şablonu master veride yanlış 🟠
+- **Nasıl bulundu:** `B-26` yeniden yazımı sırasında; iki master tablo karşılaştırılınca.
+- **Ölçüm:**
+  - `master.curriculum_hour_templates` → `EducationLevel = High`, 9–12. sınıfların her biri
+    **10 ders / 30 saat**. Ama listedeki dersler **ortaokul dersleri**: *Türkçe, Sosyal
+    Bilgiler, Fen Bilimleri…*
+  - `master.subject_grade_levels` → aynı kademede **doğru lise dersleri**: *Fizik, Kimya,
+    Biyoloji, Felsefe, Tarih, Coğrafya…* (Türkçe/Fen Bilimleri **yok**).
+  - Kesişim: 9–12 için yalnız **5 ders / 15 saat** (5–8 için 9–10 ders / 27–30 saat — sağlıklı).
+- **Etkisi:** `B-26` düzeltmesi yanlış dersin yerleşmesini önlüyor ama lise şubelerine
+  haftada yalnız **15 saat** yerleşiyor; kalan saatler "eksik" görünüyor.
+- **Yapılması gereken:** `curriculum_hour_templates`'in `High` satırları gerçek lise
+  müfredatıyla (Türk Dili ve Edebiyatı, Fizik, Kimya, Biyoloji…) yeniden seed edilmeli.
+  Kod tarafında yapılacak bir şey yok — kesişim kuralı zaten koruyor.
 
 ### Ölçüldü ama kapatılamadı
 - **`X-13`'ün 401 ayağı:** "oturum dolunca ekran bayat veri göstermeye devam ediyor"
