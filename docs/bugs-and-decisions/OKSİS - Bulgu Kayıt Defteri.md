@@ -2137,8 +2137,9 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
 | `E-14` 🟡 | Devirde kaynak şubenin rehber öğretmeni hedef şubeye taşınıyor; ayrılmış öğretmen taşınmıyor | s4'te gerçek devir: 9-A'nın rehberi 10-A'ya geçti; kaynağı olmayan şubeler boş kaldı | `oksis-api` `35a54f7` |
 | `B-29`+`E-15` 🟡 | Envanterin otoritesi katalog oldu; okulun satırı yalnız *override*. Plan sayacı da aynı kaynaktan | 6 modül Türkçe adlarıyla listeleniyor, "PLAN DURUMU **6 / 6**" | `oksis-api` `4a28bb6` · `oksis-ui` `f960ca0` |
 | `B-26` 🔴 | Üretim v2 yetkinlikleri + müfredattan türetiliyor; ders↔kademe uygunluğu **yapısal** (master ders bağlarıyla kesişim); öğretmen dağıtımı deterministik round-robin | s2, gerçek üretim, 10. kademe: Bilgisayar / Beden Eğitimi / İngilizce / Din Kültürü / Matematik — **hepsi lise dersi**. Türkçe, Fen Bilimleri, Sosyal Bilgiler artık yok. Şube listesi 6 → **8** | `oksis-api` `688efcb` |
+| `E-12`+`B-30` 🔴 | Kayıt yenileme ekranı yazıldı (dönemi aç → niyet topla → kayıtları aç), dönem kapatma yüzeyi eklendi, `season.renewal.open` izni okul yöneticisine verildi | s4 uçtan uca: dönem açıldı → öğrenci "Yenileniyor" → 1 kayıt açıldı (DB: `Type=Renewal/Draft`) → devir → **`/students`'ta öğrenci GÖRÜNÜYOR** (Aktif, 10-A). Dönem kapatma: onay → `status=Closed` | `oksis-api` `1d34a54` · `oksis-ui` `5553346`·`af5d78e` |
 
-**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]] · ![[fix-e11-davet-baglantisi.png]] · ![[fix-b24-davet-kanali.png]] · ![[fix-b25-taslak-tek-kart.png]] · ![[fix-b29-modul-envanteri.png]]
+**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]] · ![[fix-e11-davet-baglantisi.png]] · ![[fix-b24-davet-kanali.png]] · ![[fix-b25-taslak-tek-kart.png]] · ![[fix-b29-modul-envanteri.png]] · ![[fix-b30-devir-sonrasi-ogrenci.png]]
 
 ### Düzeltme sırasında çıkan yeni bulgular
 
@@ -2222,6 +2223,16 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
 - **Yapılması gereken:** `curriculum_hour_templates`'in `High` satırları gerçek lise
   müfredatıyla (Türk Dili ve Edebiyatı, Fizik, Kimya, Biyoloji…) yeniden seed edilmeli.
   Kod tarafında yapılacak bir şey yok — kesişim kuralı zaten koruyor.
+
+#### `E-12` ikinci ayağı · `season.renewal.open` izni hiçbir role verilmemişti 🔴 *(aynı turda kapatıldı)*
+- **Nasıl bulundu:** Yenileme ekranı yazılıp ilk kez çağrıldığında müdür hesabı **403** aldı.
+- **Ölçüm:** İzin katalogda tanımlı (`PermissionSeedData`: *"Sezonun yenileme dönemini aç
+  (Faz 3B; **default-deny**)"*) ama `role_permissions` tablosunda **hiçbir rol** için satırı yok.
+  Karşılaştırma: `students.renew` izni `SCHOOL_ADMIN` + `SUPER_ADMIN`'de var.
+- **Neden görünmemişti:** Ucu çağıran hiçbir ekran yoktu (`E-12`); çağrılmayan bir ucun
+  yetkisiz olduğu da hiç ortaya çıkmıyordu. Eksik ekran, eksik izni gizliyordu.
+- **Düzeltme:** İzin `SCHOOL_ADMIN` + `SUPER_ADMIN`'e verildi, mevcut veritabanları için
+  migration yazıldı. Ölçüm: izin öncesi **403**, sonrası **204**.
 
 ### Ölçüldü ama kapatılamadı
 - **`X-13`'ün 401 ayağı:** "oturum dolunca ekran bayat veri göstermeye devam ediyor"
