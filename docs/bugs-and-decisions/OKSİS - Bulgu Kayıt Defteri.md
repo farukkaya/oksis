@@ -4,6 +4,9 @@
 > **Kaynak 2:** Kod taraması, domain-map partisi (2026-08-10) — `oksis-api` @ `2270867` · bkz. [11. Kod Taraması Bulguları](#11-kod-taraması-bulguları-domain-map-)
 > **Kaynak 3:** Kod taraması, duyurular/acil kavşağı partisi (2026-08-10) — `TB-22 … TB-26`, aynı bölümde
 > **Kaynak 4:** Çalışma zamanı hata kaydı (2026-08-10) — çalışan API'nin yığın izinden doğrulanan bulgular: `B-15`, `X-06`
+> **Kaynak 5:** **Uçtan uca ekran testi (2026-08-16)** — kurulumdan mezuniyete 8 faz,
+> web + Android cihaz, her iddia uç/DB ölçümüyle · `oksis-api` @ `7667084` · `oksis-ui` @ `2325383`
+> · bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-)
 > **İlgili:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Durum:** Test devam ediyor, yeni partiler bu dosyaya eklenecek.
 
@@ -21,7 +24,10 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-56` · `X-12` · `B-21` · `D-09` · `E-02` · `ENG-03`
+**Sıradaki boş ID:** `TB-57` · `X-14` · `B-33` · `D-15` · `V-04` · `E-16` · `ENG-03`
+*(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
+`X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
+`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
 
 ---
 
@@ -39,6 +45,24 @@
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan) · `B-18` + `E-01` (rıza reddi yanlış ekrana düşüyor / rıza yenileme ekranı yok — `TB-10` turundan) · `B-19` (askıya alma ekranındaki tek düğme ölü — `B-18` turundan) · `B-20` + `TB-55` (içe aktarmada davet bayrağı ölü / iki ayrı içe aktarma yolu — `TB-20` turundan), hepsi 2026-08-12.
 **Kalan (bu dosyada, TB kuyruğu hariç):** 4 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17`, `B-18` ve `D-08` kapandı (ayrıca `TB-35`, `TB-10`, `TB-20`).
 **Açık kalanlar:** `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) · `B-19` (ölü düğme — **karar bekliyor**) · `B-20` (içe aktarmada davet üretilmiyor 🟠) · `E-01` (rıza yenileme ekranı — **kapsam kararı bekliyor**) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
+
+---
+
+### 2026-08-16 · Uçtan uca ekran testi partisi (25 yeni madde)
+
+| Öncelik | Adet | Maddeler |
+|---|---|---|
+| 🔴 Kritik | 10 | `E-11` (hiç e-posta gitmiyor) · `E-12` (kapanış yüzeyleri yok) · `B-30` (devir sonrası öğrenci kayboluyor) · `B-31` (yarım mezuniyet) · `B-21` (sessiz veri kaybı) · `B-22` (rol sütunu/süzgeci ölü) · `B-24` (olmayan SMS "gönderildi") · `B-26` (iki görevlendirme kaynağı) · `B-27` (mobil oturum kalıcı değil) · `X-12` (uydurma veri) + `X-13` (sessiz hata) |
+| 🟠 Yüksek | 5 | `B-23` (sabit kayıt tarihi) · `B-25` (artık taslak + sessiz 409) · `B-28` (öğretmene yönetici ekranı, 403 yanlış anlatılıyor) · `B-32` (ölü buton + onaysız devir) · `E-13` (dini bayramlar şemada yok) |
+| 🟡 Orta | 3 | `B-29` + `E-15` (modül envanteri) · `E-14` (rehber öğretmen devri) |
+| ⚪ Düşük | 8 | `V-02` · `V-03` · `D-09` … `D-14` · `TB-56` |
+
+**Bu turda ✅ doğrulanan kapanışlar:** `B-16`/`ENG-01` · `B-13` · `B-04` akışı · `TB-35` · `X-04`
+· tenant izolasyonu · yetki matrisi · web→mobil duyuru zinciri.
+
+**En kısa yol haritası (zincire göre):** `E-11` tek başına kadro kurulumunu açar ·
+`E-12` → `B-30`'un kök nedeni, ikisi birlikte çözülmeli · `B-31` tek satırlık uç değişimi ·
+`X-12` + `X-13` ekran ekran değil tek kural olarak ele alınmalı.
 
 **Katman dağılımı:** BE 10 · FE 9 · Her ikisi 5
 
@@ -1698,9 +1722,391 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 
 *Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
-**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı, `B-04` kapanış turu `X-09`'u, `B-10` taraması `TB-53`'ü, `B-16` turu `TB-54`'ü, `B-17` turu `X-10`'u, `X-09` kapanışı `X-11`'i aldı. **Sıradaki boş ID: `TB-55`, `X-12`, `B-18`, `D-09`, `ENG-03`.**
+**Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı, `B-04` kapanış turu `X-09`'u, `B-10` taraması `TB-53`'ü, `B-16` turu `TB-54`'ü, `B-17` turu `X-10`'u, `X-09` kapanışı `X-11`'i aldı, **uçtan uca ekran testi turu (2026-08-16)** `B-21`…`B-32`,
+`D-09`…`D-14`, `V-02`·`V-03`, `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı.
+`E-##` sayacı da ortaktır: `E-01`…`E-10` Yapısal Kararlar dosyasında kullanılmıştı.
+**Sıradaki boş ID: `TB-57`, `X-14`, `B-33`, `D-15`, `V-04`, `E-16`, `ENG-03`.**
 
 **Engel dosyaları** (`Engeller/`): bir bulguyu kapatmaya çalışırken çıkan ve kendisi ayrı bir iş olan tıkanmalar buraya ayrı belge olarak yazılır; ana maddeden `[[wikilink]]` ile adreslenir.
 - [[ENG-01 - Farkli okula giris 500 veriyor]] → `B-16`
 
 **Karara dönüşmesi gerekenler** *(bu dosyada değil, karar panosunda yaşamalı)*: `X-03` + `TB-48` (görevlendirme v1/v2 — kanoniklik cevaplandı, **onarım yönü kararı açık**), vekil uygunluğunun öğretmen müsaitlik kayıtlarına kasıtlı olarak bakmaması *(gerekçe koddan çıkmıyor)*, `B-14` netleştikten sonra çıkabilecek hedef değişikliği.
+
+---
+
+## 12. Uçtan Uca Ekran Testi — Kurulumdan Mezuniyete (2026-08-16) 🔴
+
+> **Kaynak:** Uçtan uca ekran testi, 2026-08-16 · `oksis-api` @ `7667084` · `oksis-ui` @ `2325383`
+> **Kapsam:** 8 faz — sıfırdan okul kurulumu → kadro/davet → sezon açılışı → sezon içi operasyon →
+> mobil (4 rol, Android cihaz) → sezon kapanışı/devir/mezuniyet → çapraz kesen kontroller.
+> **Yöntem:** Web Playwright ile, mobil `adb` ile sürüldü; **her iddia ayrıca API ucundan ve/veya
+> doğrudan veritabanından ölçüldü.** "Ekranda öyle görünüyor" tek başına kanıt sayılmadı.
+> **Test okulu:** `s4` = **OKSİS Test Lisesi** — `DevDataSeeder`'a eklenen 4. dev okulu.
+> Kadro ve yürürlükteki sezon seed'lenir, **yapı (kademe/şube/zil/görevlendirme) seed'lenmez**
+> (`BareSchools`); böylece kurulum ekranları gerçekten boş bir okulda ölçülebildi.
+> **Not:** Bulunan hatalar bu turda **düzeltilmedi** (kullanıcı kararı) — yalnız ölçülüp kaydedildi.
+
+**Bu partide açılan ID'ler:** `B-21`…`B-31` · `D-09`…`D-14` · `V-02`·`V-03` · `X-12`·`X-13` ·
+`E-11`…`E-15` · `TB-56`
+
+### Turun tek cümlelik özeti
+Yaşam döngüsünün **iki ucu kırık**: okul kadrosunu kuramıyorsunuz (hiçbir e-posta gönderilmiyor),
+sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arada kalan akışların
+çoğu (sezon sihirbazı, ders programı üretimi, nöbet dağıtımı, duyuru yayını, yetki kapıları)
+**çalışıyor**.
+
+---
+
+### E-11 · Hiçbir e-posta gönderilmiyor — davet akışı uçtan uca ölü 🔴
+- **Belirti:** `/users` → "Kullanıcı Oluştur" modalı *"Yeni hesap için davet e-postası gönderilir"*
+  diyor; işlem başarılı görünüyor. Davet edilen kişi hiçbir zaman hesabına ulaşamıyor.
+- **Katman:** BE · **Öncelik:** 🔴 Kritik
+- **Ölçüm zinciri:**
+  1. `POST /api/v1/users` → **201**.
+  2. `GET /api/v1/users/invitations` → kayıt var, `"status":"Created"`, **`"sentAt": null`**.
+  3. Mailpit (`localhost:8025`, SMTP 1025 — `appsettings.Development.json`'da tanımlı, konteyner
+     ayakta) → **`total: 0`**. Tek bir e-posta yok.
+  4. `grep -rn UserInvitedEvent src tests` → olay `Invitation.cs:226`'da **yayınlanıyor**,
+     **hiçbir handler yok** (yalnız tanım + iki birim testi). Plain token hiçbir yere akmıyor.
+  5. Token DB'de yalnız SHA-256 hash olarak duruyor (`Invitation.TokenHash`) →
+     gönderilmemiş bir davetin linki **geri getirilemez**. Davet kalıcı olarak ulaşılamaz.
+- **İkinci ayak — şifre sıfırlama da göndermiyor:** `POST /auth/account/forgot-password` → 202,
+  ama `Infrastructure/Identity/PasswordResetEmailSender.cs` içindeki `PasswordResetEmailJob.SendAsync`
+  gövdesi yalnız `logger.LogInformation(...)` + **`_ = rawToken;`** — token bilerek çöpe atılıyor.
+- **Üçüncü ayak:** `IEmailSender` / `SmtpEmailSender` **hiçbir yerden çağrılmıyor**
+  (`grep -rn IEmailSender src tests` → yalnız arayüz, implementasyon, DI kaydı).
+  SMTP altyapısı hazır, hiçbir şeye bağlanmamış.
+- **Etkisi:** Yeni okulda kadro kurulamaz; şifresini unutan kimse geri dönemez.
+  Bu tur **Faz 2'yi (kadro/davet) bloklayan tek madde**.
+- **İlgili:** `B-24` (SMS ayağı) · `B-20` (içe aktarmada davet bayrağı ölü — aynı boşluğun
+  başka bir yüzü, 2026-08-12'de açılmıştı).
+
+### E-12 · Sezon kapanış yaşam döngüsünün 7 ucu hiçbir ekranda yok 🔴
+- **Belirti:** Müdür ekrandan kayıt yenileme dönemi açamıyor, veliden yenileme niyeti toplayamıyor,
+  dönemi elle kapatamıyor, görevlendirmeleri yeni sezona kopyalayamıyor.
+- **Katman:** FE · **Öncelik:** 🔴 Kritik (kullanıcının istediği "kapanış" akışının çoğu yok)
+- **Ölçüm:** `packages/api/src` içinde (üretilmiş `schema.ts` **hariç**) elle yazılmış istemci sayısı:
+
+| Uç | İstemci | Ekran |
+|---|---|---|
+| `academic-sessions/{id}/open-renewal-period` | **0** | yok |
+| `enrollments/renewal-candidates` | **0** | yok |
+| `enrollments:set-intent` | **0** | yok |
+| `enrollments:renew` | **0** | yok |
+| `academic-sessions/{id}/promote-students` | **0** | yok |
+| `academic-sessions/{id}/copy-assignments` | **0** | yok |
+| `academic-sessions/{sessionId}/terms/{termId}/close` | **0** | yok |
+| `academic-sessions/{id}/activate-rollover` | 1 | ✓ "Aktifleştir" |
+
+- **Sezon ekranı bunu şöyle açıklıyor:** *"Dönem Geçişi — takvime göre otomatik ilerler,
+  geçişte manuel işlem gerekmez."* Doğru değil: kayıt yenileme takvimle ilerleyen bir şey değil.
+- **Zincir:** `E-12` → `B-30`'un kök nedeni (yenileme dönemi açılamadığı için devir "legacy"
+  yolda çalışıyor ve `StudentEnrollment` yazılmıyor).
+
+### B-30 · Devir sonrası öğrenciler şubelerde var, "Öğrenciler" ekranında yok 🔴
+- **Belirti:** Sezon aktifleştirildikten hemen sonra `/sections` **46 öğrenci** gösteriyor,
+  `/students` **0 öğrenci** diyor. Aynı okul, aynı sezon, aynı an.
+- **Katman:** BE + FE · **Öncelik:** 🔴 Kritik
+- **Ölçüm (s1, 2025-2026 → 2026-2027):**
+  - `/sections`: "8 şube · **46 öğrenci**" (10.sınıf 16 · 11.sınıf 16 · 12.sınıf 14 · 9.sınıf 0)
+  - `/students` ve `GET /api/v1/students`: **`totalCount: 0`**
+  - DB: yeni sezonda `class_room_students` → **46 aktif**; `student_enrollments` → **0 satır**
+- **Kök neden:** `PromoteStudentsCommandHandler` özeti: *"Dönem KAPALI ise (`RenewalPeriodOpenedAt`
+  null) legacy davranış aynen korunur: tüm roster terfi eder, **StudentEnrollment'a dokunulmaz**"*.
+  Enrollment aynası yalnız **kayıt yenileme dönemi açıkken** yazılıyor; o dönemi açacak ekran yok
+  (`E-12`) → varsayılan yol **her zaman** legacy yol.
+- **İkinci ayak (aynı kök, devirden bağımsız):** `s4`'te 60 öğrenci profili + hesabı var
+  (`/users` onları "Öğrenci · 202640050" diye listeliyor) ama `student_enrollments` boş olduğu için
+  `/students` "0 Toplam" diyor ve şube "Öğrenci Ata" modalı "Dağıtım bekleyen öğrenci yok" diyor.
+  Kayıtsız öğrenci profili için ekranlarda ortak bir dil yok.
+- **Tip notu:** Asıl teknik borç `ClassRoomStudent` ↔ `StudentEnrollment` **çift doğruluk kaynağı**.
+
+### B-31 · "Mezun Et" ekranı yanlış uca bağlı — öğrenci yarı mezun kalıyor 🔴
+- **Belirti:** `/students` satır menüsü → "Mezun Et" → onaylandı; öğrenci listede **hâlâ "Aktif"**.
+- **Katman:** FE · **Öncelik:** 🔴 Kritik (mezuniyet resmî kayıt)
+- **Ölçüm (Jale Ay, 12-A, `b5388322…`):**
+  - `identity.persons.lifecycle_state` → **Graduated** ✓
+  - `academic.student_enrollments.status` → **Active**, `grade_level` 12, şube ataması duruyor ✗
+  - `GET /api/v1/students` → `"status":"Active"`, `"className":"12-A"` ✗
+  - Devir önizlemesi onu hâlâ **mezun adayı** sayıyor ✗
+- **Kök neden:** `packages/api/src/students/endpoints.ts:111` → `graduateStudent()`
+  **`POST /api/v1/users/persons/{id}/graduate`** çağırıyor (Users modülü, yalnız kişi yaşam döngüsü).
+  Öğrenci tarafının kendi komutu **`POST /api/v1/students/{id}:graduate`**
+  (`GraduateStudentCommand` · `StudentGraduatedEvent` · `GraduatedStudentReenrollmentException`)
+  **hiç çağrılmıyor**.
+- **Doğru uç ölçüldü (Nazlı Doğan, `a9f4b335…`):** `POST /students/{id}:graduate` → **204**;
+  sonrasında enrollment **Graduated**, kişi **Graduated**, `/students`'ta **"Graduated"**,
+  aktif öğrenci 60 → 59 ✓. **Sunucu tarafı çalışıyor; ekran yanlış komutu çağırıyor.**
+
+### B-21 · Ayarlar'da iki bölüm birden kaydedilince biri sessizce kayboluyor 🔴
+- **Belirti:** `/settings` → Genel Bilgiler'de hem Kurum Kimliği hem Adres değiştirilip
+  **Kaydet** → ekran başarılı gibi kapanıyor, alanlardan biri kaydedilmiyor.
+- **Katman:** FE · **Öncelik:** 🔴 Kritik (sessiz veri kaybı)
+- **Ölçüm (iki kez yeniden üretildi):**
+  - 1. deneme: `PUT /school-settings/basic-info` → **500**, `PUT /school-settings/address` → 204
+  - 2. deneme: `basic-info` → 204, `address` → **500** (yazdığım adres kayboldu)
+  - Sunucu: `DbUpdateConcurrencyException: expected to affect 1 row(s), but actually affected 0`
+    (`UpdateSchoolBasicInfoCommandHandler.cs:54`)
+- **Kök neden:** Tek "Kaydet" iki ayrı uca **paralel** PUT atıyor; iki komut da aynı
+  `school.school_settings` satırını yükleyip güncelliyor → `row_version` yarışı → kaybeden 500 alıyor.
+- **Uçlar sağlam:** Aynı gövdeler tek tek gönderilince s1/s2/s3/s4'te **hepsi 204**.
+  Sorun uçta değil, ekranın kaydetme stratejisinde.
+- **İkinci yarısı `X-13`:** 500 ekranda **hiç görünmüyor**.
+- **Kanıt:** ![[e2e-02-ayarlar-kaydet-500-sessiz.png]]
+
+### B-22 · Kullanıcılar ekranında "Roller" sütunu hep boş, rol süzgeci hiçbir şey bulmuyor 🔴
+- **Belirti:** `/users` (127 hesap) → ROLLER sütunu **her satırda "—"**; "Rol: Öğretmen"
+  süzgeci **"Sonuç bulunamadı"** diyor — oysa okulda 15 öğretmen var.
+- **Katman:** FE · **Öncelik:** 🔴 Kritik (rol bazlı kullanıcı yönetimi çalışmıyor)
+- **Ölçüm:** `GET /api/v1/users` → `"roleNames":["Öğrenci"]`, `["Öğretmen"]` — uç rolleri
+  **Türkçe ad** olarak dönüyor.
+- **Kök neden:** `packages/core/src/users/constants.ts:26` →
+  `BACKEND_ROLE_NAME_TO_KEY = { SchoolAdmin, Accountant, Secretary, Teacher, Parent, Student }`
+  yani **İngilizce PascalCase** anahtar bekliyor. `packages/api/src/users/endpoints.ts:39`
+  `mapRoles()` eşleşmeyenleri `.filter(Boolean)` ile **sessizce atıyor** → boş dizi.
+- **Aynı desen komşuda:** `mapStatus()` bilinmeyen durumu `?? "active"` ile **aktif** sayıyor.
+  Sözleşme uyuşmazlığı hata üretmiyor, veriyi yutuyor.
+- **Kanıt:** ![[e2e-04-kullanicilar-rol-suzgeci-bos.png]]
+
+### B-23 · Kayıt tarihi sabit `2026-07-11` olarak veritabanına yazılıyor 🟠
+- **Belirti:** Yeni öğrenci kaydında "Kayıt Tarihi" alanına dokunulmasa bile özet ve kayıt
+  **11 Tem 2026** diyor (test günü **16 Ağustos 2026**).
+- **Katman:** FE · **Öncelik:** 🟠 Yüksek (resmî veri bozulması)
+- **Ölçüm:** Kayıt sonrası `GET /api/v1/students` → `"enrollmentDate":"2026-07-11"` — kalıcı.
+- **Kök neden:** `features/students/enroll/enroll-wizard.tsx:28` → `enrollmentDate: "2026-07-11"`
+  (form başlangıç değeri sabit).
+
+### B-24 · Kayıt başarı ekranı "SMS ile davet gönderildi" diyor — SMS diye bir şey yok 🔴
+- **Belirti:** Öğrenci kaydı tamamlanınca ekran "Aktif · **Davetli**" rozeti ve
+  **"SMS ile davet gönderildi"** yazıyor. (Kanal seçilmemişti.)
+- **Katman:** FE + BE · **Öncelik:** 🔴 Kritik
+- **Ölçüm:** `ISmsSender` arayüzü var, **implementasyonu yok**, DI'a kayıtlı değil
+  (`grep -rn ISmsSender` → arayüz + iki yorum satırı). E-posta da gitmiyor (`E-11`).
+  WhatsApp için hiçbir kod yok — oysa sihirbaz üç kanalı da sunuyor.
+- **Etkisi:** Geçici şifre ekranda **bir kez** gösteriliyor; kapatılınca öğrenci/veli
+  sisteme hiç giremiyor, üstelik müdür haber gittiğini sanıyor.
+
+### B-25 · Sezon açıldıktan sonra taslak silinmiyor; ikinci açılış 409 alıyor ve ekran susuyor 🟠
+- **Belirti:** Sihirbaz tamamlanıp sezon açıldıktan sonra listede **aynı sezon iki kutuda**:
+  "Taslak Sezonlar → 2026-2027 TASLAK · Taslağa Devam Et" **ve**
+  "Hazır Sezon → 2026-2027 HAZIR · Aktifleştir".
+- **Katman:** BE + FE · **Öncelik:** 🟠 Yüksek
+- **Ölçüm:** `POST open-from-draft` → 201; sonrasında `GET /season-drafts/current` → taslak
+  **hâlâ duruyor** (`currentStep: 6`). "Taslağa Devam Et" → "Sezonu Aç" →
+  `POST open-from-draft` → **409 Conflict**, ekranda **hiçbir mesaj yok**
+  (`[role=status]`/`[role=alert]`/toast sayısı **0**).
+- **Sistematik:** `s4` ve `s1`'de ayrı ayrı tekrarlandı.
+- **Kanıt:** ![[e2e-05-sezon-409-sessiz.png]]
+
+### B-26 · İki görevlendirme kaynağı canlı — ders programı ekranda görünmeyen görevlendirmelerden üretiliyor 🔴
+- **Belirti:** Müdür Görevlendirmeler ekranında 15 kayıt görüyor; otomatik üretilen ders programı
+  bambaşka derslerden oluşuyor.
+- **Katman:** BE · **Öncelik:** 🔴 Kritik
+- **Ölçüm (aynı okul, aynı sezon, aynı an):**
+  - v2 → `GET /api/v1/assignments/summary` → `totalActive: **15**`, `outOfField: 4`, `unassigned: 0`
+  - v1 → `GET /api/v1/teaching-assignments/summary` → `totalAssignments: **60**`,
+    `mismatchedAssignments: **36**`, `missingClasses: 2`
+  - `/teacher-assignments` ekranı **v2**'yi okuyor; otomatik program **v1**'i okuyor:
+    `GetAutoGenClassesQueryHandler.cs:41` → `db.TeachingAssignments`
+- **Görünür sonucu:** Bir **lise** 10. sınıfına **Türkçe, Fen Bilimleri, Sosyal Bilgiler**
+  yerleşti — bunların hiçbiri Görevlendirmeler ekranındaki 15 kayıtta yok. Ders↔kademe
+  uygunluğu üretimde denetlenmiyor.
+- **Bağlantı:** `X-03` + `TB-48`'in (görevlendirme v1/v2) **ölçülmüş kullanıcı etkisi**.
+  Göç kararı artık "temizlik" değil, yanlış program üretiyor.
+
+### B-27 · Mobil oturum kalıcı değil — "Beni hatırla" işaretliyken bile her açılışta çıkış 🔴
+- **Belirti:** Telefonda giriş yapıldı, uygulama kapatılıp açıldı → **giriş ekranı**
+  (yalnız e-posta hatırlanmış). İki kez yeniden üretildi.
+- **Katman:** FE (mobil) · **Öncelik:** 🔴 Kritik
+- **Ölçüm:**
+  1. Sözleşme (`AuthController.cs:34-36`): *"Web (varsayılan): refresh token httpOnly `oksis_rt`
+     cookie'sinde · **Mobile (`X-Client-Type: mobile`)**: refresh token gövdede döner"*;
+     `AuthController.cs:88-92` → başlık yoksa cookie'ye yazılır ve gövdeden **temizlenir**.
+  2. `grep -rn "X-Client-Type" packages apps` → **hiçbir eşleşme yok**. Mobil istemci bu başlığı
+     **hiç göndermiyor**.
+  3. Ölçülen login yanıtı: `"refreshToken":""`.
+  4. `apps/mobile/src/lib/auth-bridge.ts` refresh token'ı SecureStore'a yazmaya hazır
+     (`KEY_REFRESH`) — **yazacak token gelmiyor**.
+- **İkinci sonucu:** 15 dakikalık access token dolunca yenileme yapılamıyor; mobil oturum
+  ortada ölüyor. (Web'de aynı süre dolduğunda uçlar 401 döndü, ekran hiçbir uyarı vermeden
+  bayat veri göstermeye devam etti — sayfa yenilenince cookie'den toparladı. Bkz. `X-13`.)
+
+### B-28 · Öğretmen "Canlı Yoklama" ekranını açabiliyor; 403 hatası "bağlantı kurulamadı" diye gösteriliyor 🟠
+- **Belirti (mobil):** Öğretmen oturumunda Canlı Yoklama →
+  *"Pano yüklenemedi · Canlı bağlantı kurulamadı. Lütfen tekrar deneyin."* + "Tekrar Dene".
+- **Katman:** FE (mobil) + yetki yüzeyi · **Öncelik:** 🟠 Yüksek
+- **Ölçüm (sunucu günlüğü, aynı saniye):** `GET /attendance/unrecorded` → **403** ·
+  `GET /attendance/board` → **403** · `Authorization denied attendance.manage …
+  ListUnrecordedSessionsQuery` → `ForbiddenException`.
+- **İki ayrı sorun:** (1) yönetici ekranı öğretmene açık; (2) **yetki hatası ağ hatası gibi**
+  sunuluyor ve asla başarılı olamayacak bir "Tekrar Dene" öneriliyor.
+- **Karşılaştırma:** Web aynı durumu doğru yapıyor — öğretmenle `/settings` açıldığında
+  *"Yetkiniz yok · Öğretmen rolü /settings sayfasını görüntüleyemez…"* + "Panele dön".
+  Yani doğru desen üründe zaten var. `X-09`'un kapsamadığı yol.
+
+### B-29 · Modüller ekranı hiçbir okulda çalışmıyor — modül envanteri hiç oluşturulmuyor 🟡
+- **Belirti:** `/settings` → Modüller → *"Modül bulunamadı — Bu okul için tanımlı OKSİS modülü yok"*,
+  "PLAN DURUMU 0 / 0 modül aktif". Mobilde de aynı.
+- **Katman:** BE + FE · **Öncelik:** 🟡 Orta
+- **Ölçüm:** `GET /school-settings` → `moduleConfigs: []` **dört okulda da**.
+  DB: `school.school_module_configs` = **0 satır**, `master.plan_modules` = **15 satır**.
+- **Kök neden:** Ekran yalnız mevcut config satırlarını listeliyor; okul açılırken plan
+  modüllerinden satır üretilmiyor. `UpdateModuleConfigCommandHandler` satır **oluşturabiliyor**
+  (`_db.ModuleConfigs.Add`) ama ekranda tetikleyecek yüzey yok.
+- **Yan etki:** Ekran "Nerede kullanılır: Kenar çubuğu menüsü, Roller ve İzinler matrisi" diyor;
+  oysa menü modül konfigüne bağlı değil — 0 aktif modülle bile tüm menü görünüyor.
+- **İlgili:** `E-15`.
+
+### X-12 · Yer tutucu veri gerçek veri gibi sunuluyor (web + mobil, 5 ayrı yüzey) 🔴
+- **Ne:** Ürünün birden çok ekranı tasarımdan gelen sabit değerleri **canlı veri gibi** gösteriyor;
+  hiçbirinde "örnek veri" işareti yok. Tek tek ekran yaması değil, **tek bir kural** gerekiyor:
+  *bağlanmamış widget ya görünmez ya da açıkça "örnek" etiketlidir.*
+- **Öncelik:** 🔴 Kritik (kullanıcı yanlış bilgiye göre karar veriyor)
+- **Ölçülen yüzeyler:**
+
+| Yüzey | Gösterdiği | Gerçek | Kaynak |
+|---|---|---|---|
+| Web gösterge paneli | "336 Öğrenci · 12 şube · Ortaokul + Lise", "41 Öğretmen", "66 gün" | Yeni açılan `s4`'te 0 şube, 60 kişi; aynı sayılar **her okulda aynı** | `features/dashboard/dashboard-static.ts` |
+| Mobil anasayfa (4 rol) | "Bugün **2 kritik**, 7 uyarı", "%92 yoklama", "34 devamsız", öğrenciye "78.4 ortalama", veliye olmayan iki çocuk | Test günü **Pazar**; s2'de bugün tek yoklama oturumu yok | `apps/mobile/src/features/home/fixtures/home-fixtures.ts` |
+| Kenar çubuğu | okul adı yoksa **"Atlas Koleji"**, ilçe yoksa **"Kadıköy"** | `school-settings` → `districtName: null` | `components/app-shell.tsx:124,137` |
+| Öğrenci kayıt sihirbazı | başlık **"2025-2026 · Atlas Koleji"** | Okul "OKSİS Test Lisesi"; sezon adı da sabit | `enroll-wizard.tsx:99` · `enroll-labels.ts:46` |
+| Öğrenciler KPI | "Bu Ay Yeni Kayıt · **Temmuz 2026**" | Bugün 16 Ağustos 2026 | `features/students/parts.tsx:26` |
+
+- **Aynı uygulamada çelişki (mobil, aynı oturum):**
+
+| Rol | Anasayfa (sabit) | Gerçek ekran |
+|---|---|---|
+| Öğretmen | "Yoklama bekliyor · 9-A · **Bugün 16:00**" | Yoklama sekmesi: **"Bugün dersiniz yok"** |
+| Öğrenci | "Dönem ortalaman **78.4**", "Devamsızlık **3 gün**" | Notlarım: **"Bu ekran henüz boş"** · Devamsızlığım: **0/10** |
+| Veli | Çocuklar: "Faruk · 11-A", "Zeynep · **6-B**" | Gerçek çocuk **"Tolga Özdemir"** (üstelik okul bir **lise**) |
+
+- **Doğru desen üründe zaten var:** Duyuru oluşturma ekranı *"Push bildirim — yakında —
+  bu sürümde gönderilmiyor"*, SMS kotası kartı *"Geçici veri"* diyor. Kural bu kartlardan
+  çıkarılıp panellere uygulanabilir.
+
+### X-13 · Yazma işlemi hata alıyor, ekran hiçbir şey söylemiyor 🔴
+- **Ne:** Sunucu isteği reddediyor, kullanıcı bunu **hiçbir biçimde** öğrenmiyor; işlem
+  başarılıymış gibi devam ediyor. `X-01` (Türkçe validasyon mesajları) ve `X-09` (mobilde
+  gerekçe gösterimi) bu ailenin daha dar ayaklarıydı; bu tur **üç yeni yol** ölçüldü:
+
+| Yer | Sunucu | Ekranda görünen |
+|---|---|---|
+| Ayarlar → Kaydet (`B-21`) | **500** `DbUpdateConcurrencyException` | hiçbir şey — kaydedildi sanılıyor, veri kayboluyor |
+| Sezon → "Sezonu Aç" ikinci kez (`B-25`) | **409** Conflict | hiçbir şey — buton çalışmıyor, sebep yok |
+| Mobil canlı yoklama (`B-28`) | **403** Forbidden | *"Canlı bağlantı kurulamadı, tekrar deneyin"* (yanlış sebep) |
+| Web oturum süresi dolunca (`B-27` yan ayak) | **401** × 5 uç | hiçbir şey — bayat veri gösterilmeye devam |
+
+- **Önerilen çözüm yönü:** ekran ekran yama değil; yazma mutasyonları için **ortak bir hata
+  yüzeyi** (toast/inline) + "sessiz başarısızlık" durumunu imkânsız kılan bir sözleşme.
+
+### E-13 · Resmî tatil kataloğu dini bayramları taşıyamıyor 🟠
+- **Belirti:** `/settings` → Tatil Takvimi, 2025-2026 sezonu için **"Resmî: 5 kayıt"**:
+  29 Ekim · 1 Ocak · 23 Nisan · 1 Mayıs · 19 Mayıs.
+- **Ölçüm:** `master.official_holidays` **tüm içeriği 7 satır** ve şema `month`, `day`, `is_annual`:
+  Yılbaşı · 23 Nisan · 1 Mayıs · 19 Mayıs · 15 Temmuz · 30 Ağustos · 29 Ekim.
+- **Eksik:** Ramazan ve Kurban Bayramı. 2026'da ikisi de sezon içine düşüyor
+  (Ramazan ~19–21 Mart, Kurban ~26–29 Mayıs) ve okullar tatil. Arife yarım günleri de yok.
+- **Neden yalnız veri eksiği değil:** Tablo sabit ay/gün tutuyor; dini bayramlar hicri takvime
+  bağlı olduğu için **her yıl kayıyor** ve 3,5–4,5 gün sürüyor. Mevcut şema bunu ifade edemez —
+  yıl bazlı tarih aralığı + arife (yarım gün) desteği gerekiyor.
+- **Etkisi:** Devamsızlık hesabı, ders programı, akademik takvim ve yoklama pencereleri
+  bayram günlerini normal ders günü sayıyor.
+
+### E-14 · Devirde sınıf rehber öğretmenleri taşınmıyor 🟡
+- **Ölçüm:** s1 devri sonrası `/sections` → 8 şubenin **tamamı "Rehbersiz"**.
+- Sihirbazın 5. adımındaki "Öğretmen görevlendirmelerini kopyala" seçeneği homeroom atamasını
+  kapsamıyor; `copy-assignments` ucunun da ekranı yok (`E-12`).
+
+### E-15 · Yeni okulda modül envanteri üretilmiyor 🟡
+- `master.plan_modules` (15 satır) okul açılışında `school_module_configs`'a hiç yansımıyor.
+  `SchoolCreatedEvent` 6 adımlık `OnboardingStatus` üretiyor ama modül config üretmiyor.
+- **İlgili:** `B-29` (ekran ayağı).
+
+### B-32 · Sezon aktifleştirmede ölü buton + onaysız yıkıcı işlem 🟠
+- **Ölçüm:** `/academic-sessions` sayfasında **iki** "Aktifleştir" butonu var. Birincisine
+  tıklamak **hiçbir ağ isteği üretmiyor**, hiçbir geri bildirim yok. İkincisi çalışıyor.
+- **Ayrıca:** Çalışan buton **onay istemeden** sezonu değiştirdi — 59 öğrenciyi taşıyan,
+  eski sezonu arşive alan, geri dönüşsüz bir işlem. (Duyuru yayınlama bile "101 kişiye
+  gönderilecek" onayı istiyor.)
+
+### V-02 · TC Kimlik No alanı "Geçerli" diyor ama yalnız mükerrerliğe bakıyor ⚪
+- Kayıt sihirbazı Adım 2'de **11111111111** girildiğinde altında yeşil
+  **"Geçerli — mükerrer kayıt yok"** çıkıyor. Bu numara TC algoritmasına göre **geçersiz**.
+  Ekran yalnız `students/check-national-id` ile mükerrerlik soruyor.
+
+### V-03 · Kayıt sihirbazı okulun açık olmayan kademelerini listeliyor ⚪
+- Adım 3 "Kademe / Seviye" listesi **Ana Sınıfı + 1–12. Sınıf** tamamını gösteriyor; oysa
+  `s4`'te yalnız **Lise (9–12)** açık. Lise için "2. Sınıf" seçilebiliyor; ekran ancak şube
+  adımında dolaylı engelliyor.
+- **Doğru uygulama aynı üründe var:** "Toplu Şube Aç" sihirbazı yalnız okulun açık kademelerini
+  listeliyor.
+
+### D-09 · Boş formlar açılır açılmaz kırmızı validasyon gösteriyor ⚪
+- `/settings` → Genel Bilgiler yeni okulda "Görünen ad zorunludur" ile açılıyor;
+  Derslikler → "Yeni Derslik" modalı açılır açılmaz "Derslik adı zorunludur", "Kod zorunludur".
+- Doğrusu: alan dokunulduktan (touched/blur) sonra ya da gönderim denemesinde göstermek.
+  Form bileşeni seviyesinde tek çözüm.
+
+### D-10 · "Hiç kayıt yok" ile "filtreyle eşleşme yok" ayrışmamış ⚪
+- Derslik envanteri bomboşken *"Derslik bulunamadı — **Arama veya filtre ölçütleriyle eşleşen
+  kayıt yok**"* diyor; oysa arama da filtre de uygulanmamıştı.
+- **Doğru örnek aynı üründe:** kayıt sihirbazı şube adımı *"Bu seviyede aktif sezonda tanımlı
+  şube yok. Şubeler, Sınıflar & Şubeler ekranından açılır."* diyor.
+
+### D-11 · Devir haritasında hedef sütunu şube harfini gösteriyor, hedef sınıfı değil ⚪
+- Sezon sihirbazı Adım 3: "KAYNAK ŞUBE **9-A** · MEVCUT 1 öğr. · **HEDEF: A** · İŞLEM Terfi".
+  Hedef "10-A" olmalı. (12. sınıflarda "Mezun" yazması doğru.)
+
+### D-12 · "Okulun tüm şubeleri" seçilince uygun olmayan şubeler sessizce atlanıyor ⚪
+- `/schedule` → Otomatik Oluştur → Kapsam **"Tümü"** → 6 taslak üretildi (10-A…12-B).
+  `GET /class-rooms?sessionId=…` → **8 aktif şube** (9-A, 9-B de var).
+- `autogen-drawer.tsx:59`: *"Yalnız görevlendirmesi hazır sınıflar listelenir"*. Tek sınıf /
+  kademe kapsamında boş liste için yönlendirme var; **"Tümü" kapsamında eleme sessiz**.
+
+### D-13 · Parametresiz açılan bazı mobil rotalar bomboş ekran veriyor ⚪
+- `/attendance/roster` ve `/attendance/event-count` derin bağlantıyla açıldığında ekranda
+  **tek bir metin bile yok** (uiautomator dökümü boş) — ne hata, ne yönlendirme.
+
+### D-14 · İl adları Başlık Biçimi, ilçe adları TAMAMEN BÜYÜK ⚪
+- `/settings` → İl "İstanbul"/"Ankara" · İlçe "KADIKÖY"/"ÇANKAYA"/"ADALAR".
+  Kaynak veri (`locations/districts`) büyük harf döndürüyor; okul adresi ekranlarda böyle çıkıyor.
+
+### TB-56 · `dev:device:android` betiği cihaz hem USB hem Wi-Fi bağlıyken çöküyor
+- `npm run dev:device:android` → `▸ Cihaz hazır: 205f65af0409` … sonra
+  **`adb: more than one device/emulator`** → exit 1.
+- Betik cihazı doğru tespit ediyor ama sonraki `adb reverse` çağrılarını **`-s <seri>` olmadan**
+  yapıyor. Kablosuz hata ayıklama açıkken tek cihazlı varsayım bozuluyor.
+- **Geçici çözüm:** `ANDROID_SERIAL=<seri> npm run dev:device:android` (bu turda böyle koşuldu).
+
+---
+
+### Bu turda ✅ doğrulanan kapanışlar (regresyon)
+- **`B-16` / `ENG-01` kapalı:** Açık `s4` oturumu varken hem uçtan (`Bearer` başlıklı login)
+  hem tarayıcıdan `mudur.s2` girişi başarılı; eski **500** yeniden üretilemedi.
+- **`B-13` yeniden üretilemedi:** s2'de tek muafiyet Rabia Acar (sürekli, "sağlık").
+  "Adil Otomatik Dağıt" → 30 atama üretildi; muaf öğretmen **nöbetçi 0, yancı 0**;
+  "Uygula" sonrası çizelgede de yok.
+- **`B-04` akışı çalışıyor:** 6 adımlı sezon sihirbazı `s4` ve `s1`'de uçtan uca tamamlandı.
+- **`TB-35` temiz:** Bildirim Ayarları'nda devamsızlık eşiği alanı yok; eşikler yalnız
+  Akademik Politikalar'da.
+- **`X-04` ekranda görünür:** Görevlendirmeler alan-dışı atamayı gerekçesiyle işaretliyor.
+- **Tenant izolasyonu sağlam:** `s4` müdürüyle `s1`'in öğrencisi / sezonu / şubesi → **3'ünde de 404**.
+- **Yetki matrisi tutarlı:** öğretmen `users`/`school-settings` → 403, `students` → 200;
+  öğrenci ve veli yönetim uçlarının hepsinde 403.
+- **Web → mobil uçtan uca:** Web'de yayınlanan duyuru mobilde öğrenci hesabında içeriği,
+  yayıncısı ve zaman damgasıyla doğru göründü.
+
+### Bu turda ölçülen ve doğru çalışan akışlar
+- Sezon sihirbazı: dönem tarihleri **+1 yıl** doğru kaydı, terfi haritası doğru
+  (9→10, 10→11, 11→12, 12→**Mezuniyet**), resmî tatiller taşındı, sezon **taslak** açıldı.
+- Devir aktifleştirmesi: yeni sezon Active+current, eski sezon **otomatik Archived**,
+  `class_room_students` → **Graduation 13 / Transfer 46**, yeni şubelerde `source_class_room_id`
+  doğru (10–12 dolu, 9 NULL), `promote-students` idempotent.
+- Ders programı otomatik üretimi: 6 şube için **0 çakışmalı** taslak, kalite ölçüleriyle
+  (tercih uyumu %95–100). Blok ders ve müsaitlik kısıtları uygulanıyor.
+- Nöbet: öneri → önizleme → uygula akışı, adalet dengesi (2–3), yancı eşleştirmesi.
+- Akademik politikalar: `INV-POL-1` (ağırlık toplamı 100) ve `INV-POL-2` (eşik sıralaması)
+  hem ekranda hem uçta, Türkçe ve invariant kodlu.
+- Duyuru yayını: hedef kitle sayacı (101 kişi), onay iletişimi, denetim izi, sezon süzgeci.
+- Zil çizelgesi otomatik üretici ("üzerine yazılacak" uyarısıyla), gün atamaları.
+- Yetki reddi ekranı (web): rol adıyla Türkçe açıklama + çıkış yolu.

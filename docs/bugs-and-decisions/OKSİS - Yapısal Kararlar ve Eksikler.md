@@ -2,6 +2,7 @@
 
 > **Kaynak:** İlk bakış testi, 1. parti (2026-08-08) — `Yapısal Kararlar-Eksikler.md`
 > **2. parti:** Duyurular C4 fazı uygulaması (2026-08-09) — `K-05`, `E-07`…`E-10`, `TB-02`…`TB-06`
+> **3. parti:** Uçtan uca ekran testi (2026-08-16) — `K-06`…`K-09`; bulguların tamamı [[OKSİS - Bulgu Kayıt Defteri]] §12'de
 > **İlgili:** [[OKSİS - Bulgu Kayıt Defteri]]
 > **Durum:** Test devam ediyor, yeni partiler bu dosyaya eklenecek.
 
@@ -17,7 +18,7 @@
 
 # 📋 Karar Panosu
 
-**Karara bağlanan: 6 / 9**
+**Karara bağlanan: 6 / 13**
 
 | ID | Konu | Durum | Tarih | Karar özeti |
 |:--|:--|:--|:--|:--|
@@ -28,6 +29,10 @@
 | **K-03** | Hata görünürlüğü / log stratejisi | ⬜ Bekliyor | — | — |
 | **K-04** | Anaokulu gizleme sınırı (BE mi FE mi) | ⬜ Bekliyor | — | — |
 | **K-05** | Web'de öğretmen duyuru detay yüzeyi | ⬜ Bekliyor | — | — |
+| **K-06** | Kadro davet/iletişim kanalı: e-posta mı, tek seferlik şifre mi? | ⬜ Bekliyor | — | — |
+| **K-07** | Sezon kapanış yüzeyi: kayıt yenileme akışı yazılacak mı? | ⬜ Bekliyor | — | — |
+| **K-08** | Dini bayramlar için tatil şeması değişikliği | ⬜ Bekliyor | — | — |
+| **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ⬜ Bekliyor | — | — |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -474,6 +479,195 @@ Kapatmak = yönetici detay ekranını öğretmen yetkisine göre budayıp **yeni
 
 **Doğan işler**
 - [ ]
+
+--- end-multi-column
+
+---
+
+---
+
+## K-06 · Kadro davet/iletişim kanalı
+
+--- start-multi-column: K-06
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor · **Kaynak:** `E-11` (2026-08-16 uçtan uca test)
+
+Ölçüm: sistemde **hiçbir e-posta gönderilmiyor**. `UserInvitedEvent`'in handler'ı yok,
+`IEmailSender` hiçbir yerden çağrılmıyor, şifre sıfırlama işi token'ı `_ = rawToken;` ile atıyor.
+Davet token'ı DB'de yalnız hash olarak durduğu için gönderilmemiş davet **geri getirilemez**.
+
+Bu, yeni okulda kadro kurulmasını tümüyle engelliyor — turun tek bloklayıcı maddesi.
+
+**Karar gereken:** MVP'de kadroya erişim nasıl verilecek?
+- (a) SMTP'yi bağla — davet + şifre sıfırlama e-postası (altyapı hazır, yalnız handler yok)
+- (b) E-postayı ertele; müdür ekranda **tek seferlik şifre** üretsin ve elden versin
+      (öğrenci kaydında bu yol zaten var: kayıt sonu ekranı geçici şifre gösteriyor)
+- (c) İkisi birden — e-posta varsayılan, şifre yedek
+
+**Bağlı maddeler:** `B-24` (olmayan SMS "gönderildi" diyor) · `B-20` (içe aktarmada davet bayrağı ölü)
+· `K-02` (push altyapısı — aynı teslim ölçülebilirliği sorunu)
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:**
+**Tarih:**
+**Karar veren:**
+
+**Karar**
+>
+
+**Gerekçe**
+>
+
+--- end-multi-column
+
+---
+
+## K-07 · Sezon kapanış yüzeyi: kayıt yenileme akışı
+
+--- start-multi-column: K-07
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor · **Kaynak:** `E-12` + `B-30` (2026-08-16)
+
+Sunucuda tam bir kapanış yaşam döngüsü var; **yedi ucun hiçbirinin ekranı yok**:
+`open-renewal-period`, `renewal-candidates`, `set-intent`, `renew`, `promote-students`,
+`copy-assignments`, `terms/{id}/close`.
+
+Bunun görünür sonucu ölçüldü: yenileme dönemi açılamadığı için devir "legacy" yolda çalışıyor,
+`StudentEnrollment` yazılmıyor ve **devirden sonra öğrenciler `/students` ekranında kayboluyor**
+(şube ekranı 46 öğrenci derken öğrenci listesi 0 diyor).
+
+**Karar gereken:**
+- (a) Kayıt yenileme akışının ekranları yazılsın (veli niyeti + müdür onayı + terfi)
+- (b) Yenileme kapsam dışı kalsın; devir **her zaman** enrollment de yazsın
+      (legacy yol tek yol hâline gelsin) — daha küçük iş, veli niyeti toplanmaz
+- (c) Şimdilik yalnız `promote-students` + `copy-assignments` için buton eklensin
+
+**Not:** (b) seçilirse `B-30` bir ekran işi değil, tek bir davranış değişikliğiyle kapanır.
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:**
+**Tarih:**
+**Karar veren:**
+
+**Karar**
+>
+
+**Gerekçe**
+>
+
+--- end-multi-column
+
+---
+
+## K-08 · Dini bayramlar için tatil şeması
+
+--- start-multi-column: K-08
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor · **Kaynak:** `E-13` (2026-08-16)
+
+`master.official_holidays` **7 satır** ve şeması sabit `month` + `day` + `is_annual`.
+Ramazan ve Kurban Bayramı yok; hicri takvime bağlı oldukları için **mevcut şemaya sığmıyorlar**
+(her yıl kayıyor, 3,5–4,5 gün sürüyor, arife yarım günü var).
+
+2026'da ikisi de sezon içine düşüyor. Devamsızlık hesabı, ders programı ve yoklama pencereleri
+o günleri normal ders günü sayıyor.
+
+**Karar gereken:**
+- (a) Şemayı yıl bazlı tarih aralığına çevir (`year`, `start_date`, `end_date`, `is_half_day`)
+      ve dini bayramları yıllık olarak seed'le
+- (b) Diyanet/MEB takviminden yıllık içe aktarma (kaynak + güncelleme sorumluluğu kararı ister)
+- (c) Okul kendi "Okul tatili" kaydı olarak elle girsin (bugünkü tek çıkış yolu)
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:**
+**Tarih:**
+**Karar veren:**
+
+**Karar**
+>
+
+**Gerekçe**
+>
+
+--- end-multi-column
+
+---
+
+## K-09 · Yer tutucu veri politikası
+
+--- start-multi-column: K-09
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor · **Kaynak:** `X-12` (2026-08-16)
+
+Beş ayrı yüzey sabit tasarım verisini canlı veri gibi gösteriyor: web gösterge paneli,
+**mobil anasayfa (dört rolde de)**, kenar çubuğu varsayılanları ("Atlas Koleji" · "Kadıköy"),
+öğrenci kayıt sihirbazı başlığı, öğrenciler KPI'ı.
+
+Mobil anasayfa bunu **kırmızı "Kritik" rozetiyle** yapıyor: Pazar günü "2 kritik, 7 uyarı,
+%92 yoklama, 34 devamsız" diyor; aynı uygulamanın yoklama ekranı "bugün dersiniz yok" diyor.
+
+İki karar bilinçliydi (panel 2026-08-02, mobil anasayfa 2026-08-01) — sorun kararın kendisi
+değil, ekranda **hiçbir işaret olmaması**.
+
+**Karar gereken:** Bağlanmamış widget ne yapsın?
+- (a) Görünmesin (boş durum + "yakında")
+- (b) Görünsün ama açıkça **"örnek veri"** etiketiyle
+- (c) Ucu olanlar bugün bağlansın (öğrenci/öğretmen sayısı, sezon geri sayımı bugün bağlanabilir —
+      `dashboard-static.ts` kendi silme rehberinde bunu yazıyor), kalanlar (a)/(b)
+
+**Ürün içinde doğru desen zaten var:** duyuru ekranı "Push bildirim — yakında — bu sürümde
+gönderilmiyor", SMS kotası kartı "Geçici veri" diyor.
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:**
+**Tarih:**
+**Karar veren:**
+
+**Karar**
+>
+
+**Gerekçe**
+>
 
 --- end-multi-column
 
