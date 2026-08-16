@@ -2133,8 +2133,11 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
 | `X-13` 🔴 | `MutationCache.onError` ile **sahipsiz** yazma hataları uygulama düzeyindeki toast yüzeyine düşüyor; sahiplenme `onError` ya da `meta.errorHandled` ile tanınıyor | Var olan e-postayla davet → önceden **hiçbir şey**; şimdi `role="alert"` toast | `oksis-ui` `8a71cf6` |
 | `E-11` 🔴 | `UserInvitedEvent` dinleyicisi + `InvitationEmailJob` + şifre sıfırlama işi gerçekten gönderiyor; eksik olan `/reset-password` ekranı yazıldı | Mailpit'te davet ve sıfırlama postaları; davet `Sent`+`sentAt`; bağlantı doğru önizlemeyi açıyor; şifre gerçekten değişti (eski 401 / yeni 200) | `oksis-api` `f40927a` · `oksis-ui` `2d06147` |
 | `B-24` 🔴 | Kanal listesi gerçekten gönderim yapan tek kanalla sınırlandı; başarı ekranı kaç veliye gittiğini/gidemediğini söylüyor | Seçicide SMS/WhatsApp `disabled` + "yakında"; velisiz kayıtta "Davetli" rozeti ve "gönderildi" satırı çıkmıyor | `oksis-ui` `18a9fac` |
+| `B-25` 🟠 | Açılmış taslak artık "devam edilen taslak" sorgusundan dönmüyor (kayıt duruyor, tanım daraldı) | s4'te "Taslak Sezonlar **0**", "Hazır Sezon 1", tek "Aktifleştir" butonu | `oksis-api` `874a176` |
+| `E-14` 🟡 | Devirde kaynak şubenin rehber öğretmeni hedef şubeye taşınıyor; ayrılmış öğretmen taşınmıyor | s4'te gerçek devir: 9-A'nın rehberi 10-A'ya geçti; kaynağı olmayan şubeler boş kaldı | `oksis-api` `35a54f7` |
+| `B-29`+`E-15` 🟡 | Envanterin otoritesi katalog oldu; okulun satırı yalnız *override*. Plan sayacı da aynı kaynaktan | 6 modül Türkçe adlarıyla listeleniyor, "PLAN DURUMU **6 / 6**" | `oksis-api` `4a28bb6` · `oksis-ui` `f960ca0` |
 
-**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]] · ![[fix-e11-davet-baglantisi.png]] · ![[fix-b24-davet-kanali.png]]
+**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]] · ![[fix-e11-davet-baglantisi.png]] · ![[fix-b24-davet-kanali.png]] · ![[fix-b25-taslak-tek-kart.png]] · ![[fix-b29-modul-envanteri.png]]
 
 ### Düzeltme sırasında çıkan yeni bulgular
 
@@ -2180,6 +2183,29 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
   Kural yazmak korumaz, koşturmak korur — ama koşulmayan test de korumaz.
 - **Karar gerektiren:** ya testler güncel davranışa göre düzeltilecek ya da
   davranış hatalı; ikisi de `X-04`'ün kapsamını yeniden açar.
+
+#### `B-32` · ⚠️ **Bulgu geri çekildi — ölçüm hatasıydı**
+- **İddia:** *"`/academic-sessions` sayfasında iki 'Aktifleştir' butonu var, birincisi hiçbir
+  ağ isteği üretmiyor"* + *"çalışan buton onay istemeden sezonu değiştirdi"*.
+- **Yeniden ölçüm (s4, ekranda):** Sayfada **tek** "Aktifleştir" butonu var. Butona basınca
+  sayı 1 → 2 oluyor: ikincisi **onay modalının** kendi onay butonu. Test turunda buton sayımı
+  modal AÇIKKEN yapılmış; ardından kartın butonuna (perde arkasında kaldığı için etkisiz)
+  tıklanmış.
+- **Onay modalı VAR ve ayrıntılı:** *"2026-2027 sezonu canlıya alınacak ve sistemin aktif
+  sezonu olacak… ŞU AN AKTİF 2025-2026 → Arşive alınır… verileri korunur, salt-okunur
+  erişime geçer."*
+- **Sonuç:** Düzeltme yapılmadı, yapılmasına gerek yok. Ders çıkarılan yer: **modal açıkken
+  sayfa genelinde eleman saymak** güvenilir değil.
+
+#### `B-26` · Karara bağlandı, yeniden yazım bekliyor 🔴
+- Düzeltmeye çalışırken bunun bir bağlantı hatası değil **mimari boşluk** olduğu ölçüldü;
+  ayrıntı ve karar: [[OKSİS - Yapısal Kararlar ve Eksikler]] `K-10`.
+- **Ek ölçüm (bulguyu keskinleştiren):** v1'e yazan tek yol seed ve devir kopyası;
+  `AssignSubjectClassCommand` ucu var ama **hiçbir istemci çağırmıyor**. Aktif satır —
+  `s1`/`s2`/`s3`: **140**, ama arayüzden kurulan **`s4`: 0**. Yani gerçek bir okulda otomatik
+  üretim hiçbir sınıf listeleyemez; dev okullarında çalışıyor görünmesinin tek sebebi seed.
+- **Karar:** v2 yetkinlikleri + müfredattan türetme (şube = üretilen sınıf, saat = kademe
+  müfredatı), v1 emekli.
 
 ### Ölçüldü ama kapatılamadı
 - **`X-13`'ün 401 ayağı:** "oturum dolunca ekran bayat veri göstermeye devam ediyor"
