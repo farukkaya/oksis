@@ -2138,8 +2138,32 @@ sezonu devrettikten sonra öğrenciler öğrenci ekranlarından kayboluyor. Arad
 | `B-29`+`E-15` 🟡 | Envanterin otoritesi katalog oldu; okulun satırı yalnız *override*. Plan sayacı da aynı kaynaktan | 6 modül Türkçe adlarıyla listeleniyor, "PLAN DURUMU **6 / 6**" | `oksis-api` `4a28bb6` · `oksis-ui` `f960ca0` |
 | `B-26` 🔴 | Üretim v2 yetkinlikleri + müfredattan türetiliyor; ders↔kademe uygunluğu **yapısal** (master ders bağlarıyla kesişim); öğretmen dağıtımı deterministik round-robin | s2, gerçek üretim, 10. kademe: Bilgisayar / Beden Eğitimi / İngilizce / Din Kültürü / Matematik — **hepsi lise dersi**. Türkçe, Fen Bilimleri, Sosyal Bilgiler artık yok. Şube listesi 6 → **8** | `oksis-api` `688efcb` |
 | `E-12`+`B-30` 🔴 | Kayıt yenileme ekranı yazıldı (dönemi aç → niyet topla → kayıtları aç), dönem kapatma yüzeyi eklendi, `season.renewal.open` izni okul yöneticisine verildi | s4 uçtan uca: dönem açıldı → öğrenci "Yenileniyor" → 1 kayıt açıldı (DB: `Type=Renewal/Draft`) → devir → **`/students`'ta öğrenci GÖRÜNÜYOR** (Aktif, 10-A). Dönem kapatma: onay → `status=Closed` | `oksis-api` `1d34a54` · `oksis-ui` `5553346`·`af5d78e` |
+| `B-27` 🔴 | `X-Client-Type: mobile` her isteğe ekleniyor (login, refresh, 401 sonrası yeniden deneme) | Uçta: başlıksız `refreshToken` **0** karakter, başlıkla **86**. Cihazda: force-stop → yeniden açıldı, **giriş ekranı gelmedi** | `oksis-ui` `2f96ec0` |
+| `B-28` 🟠 | Yetki reddi doğru gerekçeyle gösteriliyor (`QueryErrorState`), pano öğretmene kapalı (`ForbiddenState` + rol kapısı) | Cihazda derin bağlantı: *"Bu pano okul yönetimine ait. Öğretmen rolü görüntüleyemez"* + "Anasayfaya dön" | `oksis-ui` `10380f3` |
+| `D-13`+`TB-56` ⚪ | Parametresiz rotalar `MissingParamState` gösteriyor (4 rota); `adb` hedefi `ANDROID_SERIAL` ile sabitlendi | Cihazda: *"Ekran açılamadı · … · Geri dön"*. `adb`: serisiz "more than one device", serili exit 0 | `oksis-ui` `0208124` |
+| `V-02`+`V-03` ⚪ | TC algoritması (NVİ) core'a eklendi; kademe listesi okulun açık kademelerinden besleniyor | `11111111111` artık geçersiz; kademe seçici yalnız okulun kademelerini listeliyor | `oksis-ui` `eea8e36` |
+| `X-12` 🔴 | Okul kimliği bağlam ucunda (her role açık); sabit sezon/okul adı kaldırıldı; kalan yer tutuculara **"örnek veri"** rozeti (karar `K-09`) | Öğretmen kabuğunda kenar çubuğu "Atatürk AL" (önce "Atlas Koleji"); panelde 7 rozet; mobilde tek şerit | `oksis-api` `e115e0b` · `oksis-ui` `ad3eae1` |
+| `D-09`·`D-10`·`D-11`·`D-12`·`D-14` ⚪ | Dokunulmamış alanda hata yok; boş liste ↔ filtre ayrımı; hedef sütunu şube adı; kapsam özeti; yer adı biçimi | Alan boşaltıldı → **0 hata**, focusout → 1 hata. İlçeler "Adalar · Arnavutköy · Ataşehir" | `oksis-api` `6c53ffd` · `oksis-ui` `43d4b9f` |
 
-**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]] · ![[fix-e11-davet-baglantisi.png]] · ![[fix-b24-davet-kanali.png]] · ![[fix-b25-taslak-tek-kart.png]] · ![[fix-b29-modul-envanteri.png]] · ![[fix-b30-devir-sonrasi-ogrenci.png]]
+**Kanıt:** ![[fix-b22-rol-suzgeci.png]] · ![[fix-x13-merkezi-hata-yuzeyi.png]] · ![[fix-e11-davet-baglantisi.png]] · ![[fix-b24-davet-kanali.png]] · ![[fix-b25-taslak-tek-kart.png]] · ![[fix-b29-modul-envanteri.png]] · ![[fix-b30-devir-sonrasi-ogrenci.png]] · ![[fix-x12-ornek-veri-rozeti.png]]
+
+### Turun kapanışı
+
+**§12'nin 28 maddesinden 26'sı kapandı.** Kalanlar:
+
+| Madde | Neden açık |
+|---|---|
+| `E-13` 🟠 | Dini bayram tatil şeması — karar `K-08` ile **ertelendi** (ayrı iş olarak planlanacak) |
+| `X-14` 🟠 | Sunucunun çeviri anahtarı göndermesi — istemci artık sızdırmıyor ama **198 anahtarın Türkçeleştirilmesi** sunucu tarafında duruyor |
+
+**Bu turda açılan yeni bulgular:** `X-14` · `TB-57` · `E-16` — üçü de düzeltme
+sırasında ölçüldü, üçü de kod değil **veri/kapsam** işi.
+
+**Geri çekilen:** `B-32` (ölçüm hatası).
+
+**Test durumu (2026-08-16 kapanış):** birim testleri üç projede de yeşil
+(695 + 1602 + 40); istemci paketlerinde 172 + 298 + 103. Entegrasyon paketinde
+`TB-57`'nin 5 kırmızısı **bu turdan önce de** kırmızıydı ve açık duruyor.
 
 ### Düzeltme sırasında çıkan yeni bulgular
 
