@@ -48,14 +48,15 @@
 
 ---
 
-### 2026-08-16 · Uçtan uca ekran testi partisi (25 yeni madde)
+### 2026-08-16 · Uçtan uca ekran testi partisi (28 yeni madde)
 
 | Öncelik | Adet | Maddeler |
 |---|---|---|
-| 🔴 Kritik | 10 | `E-11` (hiç e-posta gitmiyor) · `E-12` (kapanış yüzeyleri yok) · `B-30` (devir sonrası öğrenci kayboluyor) · `B-31` (yarım mezuniyet) · `B-21` (sessiz veri kaybı) · `B-22` (rol sütunu/süzgeci ölü) · `B-24` (olmayan SMS "gönderildi") · `B-26` (iki görevlendirme kaynağı) · `B-27` (mobil oturum kalıcı değil) · `X-12` (uydurma veri) + `X-13` (sessiz hata) |
+| 🔴 Kritik | 11 | `E-11` (hiç e-posta gitmiyor) · `E-12` (kapanış yüzeyleri yok) · `B-30` (devir sonrası öğrenci kayboluyor) · `B-31` (yarım mezuniyet) · `B-21` (sessiz veri kaybı) · `B-22` (rol sütunu/süzgeci ölü) · `B-24` (olmayan SMS "gönderildi") · `B-26` (iki görevlendirme kaynağı) · `B-27` (mobil oturum kalıcı değil) · `X-12` (uydurma veri) · `X-13` (sessiz hata) |
 | 🟠 Yüksek | 5 | `B-23` (sabit kayıt tarihi) · `B-25` (artık taslak + sessiz 409) · `B-28` (öğretmene yönetici ekranı, 403 yanlış anlatılıyor) · `B-32` (ölü buton + onaysız devir) · `E-13` (dini bayramlar şemada yok) |
-| 🟡 Orta | 3 | `B-29` + `E-15` (modül envanteri) · `E-14` (rehber öğretmen devri) |
-| ⚪ Düşük | 8 | `V-02` · `V-03` · `D-09` … `D-14` · `TB-56` |
+| 🟡 Orta | 3 | `B-29` (modül ekranı ölü) · `E-15` (modül envanteri üretilmiyor) · `E-14` (rehber öğretmen devri) |
+| ⚪ Düşük | 9 | `V-02` · `V-03` · `D-09` … `D-14` · `TB-56` |
+| **Toplam** | **28** | 12 fonksiyonel + 6 tasarım + 5 eksik özellik + 2 çapraz kesen + 2 validasyon + 1 teknik borç |
 
 **Bu turda ✅ doğrulanan kapanışlar:** `B-16`/`ENG-01` · `B-13` · `B-04` akışı · `TB-35` · `X-04`
 · tenant izolasyonu · yetki matrisi · web→mobil duyuru zinciri.
