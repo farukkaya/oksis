@@ -2825,3 +2825,32 @@ tarafa uymuyordu; ölçülüp doğrulandı.
 **Ders:** `ENG-02` turunda ekranların birbirine bağlandığı yerler ölçülmemişti.
 Bir ekranı "çalışıyor" saymak için içindeki her çıkışın da bir yere varması
 gerekiyor — kısayol, ekranın parçasıdır.
+
+#### `TB-75` · Yayın damgası: sürüm değil ZAMAN, ve iki kopya tek yere indi ⚪
+
+Kullanıcı tercihi (2026-08-18): başlığın altındaki satır tasarımdaki gibi
+**yayın anını** yazacak — "Yayınlandı · 12 Ağustos, 14:30" — sürüm numarasını
+değil. Öğretmenin sorduğu soru "kaçıncı sürüm" değil "ne zaman yayınlandı".
+
+Uygularken ikinci bir kusur çıktı: web'de bu işi yapan **yerel bir `formatStamp`
+kopyası** vardı ve saati `new Date(iso).getHours()` ile **yerel saate
+çeviriyordu**. `packages/core/date/tr-date.ts` dosyasının açık kuralı ise
+"saat sunucu damgasıdır, çevrilmez". Yani aynı damga iki yüzde iki farklı saat
+gösterebiliyordu.
+
+Ortak `formatTrDayMonthTime` eklendi (uzun ay adı, **yıl yok** — dönem içinde
+kalan damgalar için); mobil ve web ikisi de onu kullanıyor, web'deki kopya
+silindi.
+
+**Boş yere yeşil değil:** testte `"2026-08-12T23:45:00Z"` → `"12 Ağustos,
+23:45"` bekleniyor. Eski `getHours()` yöntemi bu makinede (Europe/Istanbul)
+**"13 Ağustos, 02:45"** üretiyor — ölçüldü. Guard gerçekten ısırıyor.
+
+**Doğrulama:** mobil ve web, ikisi de "Yayınlandı · 17 Ağustos, 19:52".
+
+**Ayrıca ölçüldü, kapsam dışı:** web'de `/schedule` ÖĞRETMEN oturumuyla
+açıldığında dört **yönetici** sorgusu 403 dönüyor (`class-rooms`,
+`timetable/programs`, `school-settings/grade-levels`,
+`users/persons?profileType=Teacher`). Ekranı engellemiyor ve salt okunur yüz
+doğru çiziliyor, ama öğretmenin oturumundan hiç atılmaması gereken sorgular
+bunlar. `ENG-02`'nin parçası değil; ayrı tur konusu.
