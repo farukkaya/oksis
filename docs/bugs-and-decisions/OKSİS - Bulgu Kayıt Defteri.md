@@ -2732,3 +2732,96 @@ kaldırıldı — etiket kontrolün yanında kalır.
 **401** dönüyor (oturum geri yüklenmeden önceki yarış). Ekranı engellemiyor ve
 `ENG-02` ile ilgisi yok; ayrı bir tur konusu.
 
+
+---
+
+## 18. Cihaz Turu — Ders Programı Yüzeyi (2026-08-18)
+
+Uygulama kullanıcının **iPhone 15 Pro**'suna kuruldu ve ekranlar gerçek cihazda
+açıldı. Emülatörde/Expo web'de görünmeyen bir sınıf kusur ortaya çıktı: ekranın
+**uygulama kabuğuna nasıl oturduğu**. Üç bulgunun da kökü aynı — bir ekranın
+"alt ekran mı, sekme seviyesi mi" olduğunu YANLIŞ varsaymak.
+
+#### `TB-71` · "Ders Programım" uygulama kabuğunun dışında kalmıştı 🔴
+
+Kullanıcının bildirdiği kusur: *"Programım ekranında Header yok."*
+
+`/schedule` rotası `app/schedule/index.tsx` olarak **stack** altına yazılmıştı.
+Sonuç: ortak `AppHeader` (dönem · tarih · bildirim zili · profil) ve alt sekme
+çubuğu **hiç çizilmiyordu**. Tasarım (`Oksis Mobile Prototype`) bu ekranı açıkça
+sekme seviyesinde gösteriyor: AHHeader + ekran içi "Ders Programım" başlığı +
+`PortalTabBar active="more"`.
+
+İlk düzeltme denemem **yanlış yöndeydi**: ekranı alt ekran sanıp geri oklu
+`ScreenHeader` verdim ve ekran içi başlığı kaldırdım. Bu, üst barı geri getirmek
+yerine tasarımın başlık bloğunu da yok etti. Kullanıcı beklediği tasarımla benim
+ürettiğimi yan yana koyunca fark görüldü.
+
+Doğru düzeltme, uydurma değil **var olan mekanizma**: `MOBILE_TAB_HIDDEN_KEYS`.
+Ekran `app/(tabs)/schedule.tsx`e taşındı, `href: null` ile çubukta girdisiz
+kaydedildi, `activeKeyOverride`a `schedule: 'more'` eklendi. `excuse-list`,
+`announcements-inbox` ve `activities` zaten tam olarak böyle çalışıyordu.
+
+Haftalık görünüm (`/schedule/week`) **gerçekten** alt ekrandır; orada elle
+yazılmış başlık çubuğu `ScreenHeader`a bağlandı — eskisi `useSafeAreaInsets`
+uygulamadığı için çentikli cihazda durum çubuğunun altına giriyordu.
+
+**Ders:** "Ekran çalışıyor" ile "ekran uygulamaya ait" ayrı şeyler. Bir rotayı
+hangi dizine yazdığın, ekranın kabuğunu belirler; bu karar tasarımdan okunur,
+tahmin edilmez.
+
+#### `TB-72` · `/planned` çıkışsız ekrandı 🟠
+
+Genel "yakında" rotası header'sızdı. PUSH edilen bir ekranda geri düğmesi yoktu;
+kullanıcının tek çaresi kenardan kaydırma jestiydi. `ScreenHeader` eklendi.
+Blok başlığı artık ekran adını tekrar etmiyor, durumu söylüyor.
+
+#### `TB-73` · Anasayfa kısayolu var olan ekranı "yakında" diye gösteriyordu 🟠
+
+Öğretmen anasayfasındaki **"Günün programını gör"** düğmesi, `ENG-02` kapandıktan
+sonra bile `/planned?title=Ders Programı`ya gidiyordu — yani öğretmene, artık VAR
+OLAN bir yeteneği yokmuş gibi gösteriyordu. `home-screen.tsx`teki eşleme zaten
+"karşılığı olanlar ilgili ekrana gider" diyordu; ENG-02 ile güncellenmemişti.
+
+Bu, `eksik-ekran-eksik-yetkiyi-gizler` desenin kardeşi: **yanlış hedefe bağlı
+kısayol, var olan yeteneği gizler.** Bir modül kapanırken ona giden tüm
+kısayolların taranması gerekiyor.
+
+**Tasarımdan sapma (açık, karar bekliyor):** tasarım başlık altında
+"Yayınlandı · 12 Ağustos, 14:30" (yayın ZAMANI) yazıyor; kod "Yayınlandı ·
+Sürüm 1" (yayın SÜRÜMÜ) yazıyor. İkisi de doğru bilgi, farklı sorulara cevap.
+Değiştirilmedi.
+
+#### `TB-74` · "Yoklamaya git" çıkmaza gidiyordu 🔴
+
+Kullanıcı ders sayfasındaki **"Yoklamaya git"** düğmesine bastı; açılan ekran
+*"Ekran açılamadı — Bu ekran bir ders oturumu seçilerek açılır"* dedi.
+
+Kök neden **sözleşmede**: `PublishedLessonDto` yoklama oturumunun **durumunu**
+(`RollCallState`) döndürüyordu ama **kimliğini** döndürmüyordu. Sunucu
+`AttachRollCallAsync` içinde tam da o satırları okuyor —
+`AttendanceSessions.Where(placementId, date)` — ve `s.Id`'yi projeksiyonun
+dışında bırakıyordu. Mobil rota `/attendance/roster` `sessionId` ister;
+parametresiz push edilince `MissingParamState` çiziliyordu.
+
+İki ayrı soru, tek alanla cevaplanmaya çalışılmıştı:
+- "Yoklama alındı mı?" → `rollCall` (durum)
+- "Nereye gideceğim?" → kimlik — **yoktu**
+
+Düzeltme: `RollCallSessionId` sözleşmeye eklendi (sunucu · `packages/core` ·
+`packages/api` eşlemesi · OpenAPI yeniden üretildi). `onNavigate` artık kimliği
+taşıyor. Oturum henüz maddileşmemişse kısayol **gösterilmiyor** — açılacak bir
+yoklama ekranı gerçekten yoktur; düğmeyi gösterip çıkmaza sokmak yalandır.
+
+**Web'de aynı kusur YOK:** oradaki `/roll-call` kendi içinde ders seçtiren bir
+sayfadır, parametre beklemez. Mimariler farklı olduğu için tek düzeltme iki
+tarafa uymuyordu; ölçülüp doğrulandı.
+
+**Doğrulama:** vekâleten girilen Pazartesi dersi açıldı → düğme göründü →
+`/attendance/roster?sessionId=83db02ae…` açıldı ve başlık **"1-A · Matematik ·
+2. Ders · 09:30–10:10"** yazdı. Vekile DEVREDİLEN Salı dersinde ise düğme hiç
+çizilmedi (doğru).
+
+**Ders:** `ENG-02` turunda ekranların birbirine bağlandığı yerler ölçülmemişti.
+Bir ekranı "çalışıyor" saymak için içindeki her çıkışın da bir yere varması
+gerekiyor — kısayol, ekranın parçasıdır.
