@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-64` · `X-15` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-71` · `X-15` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -2601,4 +2601,134 @@ daha küçük çıktı.
 `TB-29` (öğretmen kendi müsaitliğini giremiyor) `ENG-02`'yi bekliyordu — öğretmenin
 mobil program yüzeyi artık var, müsaitlik girişi oraya oturabilir. **Bu turun
 kapsamında değil**, ama artık açılabilir.
+
+
+---
+
+## 17. ENG-02 Ekran Testi Turu (2026-08-17, gece)
+
+`ENG-02` kapandıktan sonra ekranın kendisi test edildi. Turun ayırt edici yanı:
+**kodda yazılıp ekranda hiç görülmemiş yollar** hedef alındı — dört geçici
+değişiklik türü, yoklama ipucu, kırılımlar, rol regresyonları.
+
+**Test verisi gerçek yoldan kuruldu:** aktif döneme (`2026-08-10…08-21`, bugünü
+kapsıyor) yeni bir program oluşturulup 6 ders yerleştirildi ve **uçtan** yayınlandı;
+sonra dört istisna **uçtan** yaratıldı. Doğrudan veritabanına yazmak yazma yolunu
+atlardı.
+
+### 17.1 Tutan yollar
+
+| Ne | Sonuç |
+|---|---|
+| İptal · vekâlet (giden) · derslik değişikliği · vekâlet (gelen) | Dördü de doğru rozet, doğru ton, doğru sınıf |
+| Derslik değişiminde "B-204 → A-101" (eski üstü çizili) | ✅ |
+| Çekmece cümlesi: *"Bu derse Zehra Özdemir yerine vekâleten siz gireceksiniz."* | ✅ tasarımın hiç göstermediği yol |
+| Duyurulma zamanı + gerekçe | ✅ |
+| "Bu hafta 4 ders değişti" şeridi | ✅ sayı doğru |
+| Yoklama ipucu ("Alınmadı") | ✅ uçtan geliyor |
+| Gün listesi: geçmiş ders soluk, "Bugünkü dersleriniz tamamlandı", "Yarına bak" | ✅ |
+| **Yönetici konsolu** | ✅ regresyon yok; yeni yayınlanan programı listeliyor |
+| Kırılımlar: `sro-sm` (gün sekmeleri, ızgara yok), `sro-md` (ızgara, derslik gizli) | ✅ |
+| **Yatay taşma** | ✅ **yok** — `B-17`'nin özgün belirtisi buydu (947px gövde / 487px görünüm) |
+| Veli | `RouteGuard` kesiyor: *"Veli rolü /schedule sayfasını görüntüleyemez"* |
+
+### 17.2 `TB-65` · Haftalık çizelge DÖNEMLERİ karıştırıyor 🟠
+
+**Ekranda görüldü.** Aktif dönemin haftasında (17-21 Ağustos) **arşivlenmiş
+dönemin** dersleri de listelendi. Dahası: Pazartesi 3. saatte **iki ders** aynı
+hücreye düştü — biri aktif dönemden ("Türkçe", iptal), biri arşivden ("Fen
+Bilimleri"). Izgara `lessonAt()` ile ilk eşleşeni aldığı için **birini sessizce
+yuttu**; gün listesi ise ikisini de gösterdi. Aynı veri, iki görünümde iki farklı
+sonuç.
+
+Kök neden benim Faz A'da yazdığım satır: dönem `snapshots[0].AcademicTermId`'den
+okunuyordu — *"hangi program önce sıralandıysa onun dönemi"*. Öğretmen sorgusu ise
+öğretmenin ders verdiği **bütün** programları (arşiv sezonlar dâhil) birleştiriyordu.
+Tek bir dönem sınırıyla süzülen bir çoklu-dönem kümesi.
+
+Şube ekseninde aynı sınıftan bir kusur: sürüm seçimi yalnız `Version` sırasına
+bakıyordu, yani bir şubenin **eski dönemdeki v3** programı, bu dönemdeki v1
+programını eziyordu.
+
+**Düzeltme yönü tersine çevirdi:** *hafta dönemi belirler, dönem de hangi
+programların geçerli olduğunu.* Dönem haftanın **başladığı** tarihe göre seçilir;
+snapshot'lar `AcademicTermId` ile veritabanı tarafında süzülür.
+
+> İlk düzeltmem de yanlıştı: bir hafta iki dönemi kestiğinde "en geç başlayanı"
+> seçiyordum ve **kendi guard testim kırmızıya düşürdü**. Doğrusu haftanın
+> pazartesisinin hangi dönemde olduğu.
+
+### 17.3 `TB-66` · Geçici değişiklik tarih kuralının mesajı kuralı anlatmıyor 🟡
+
+Geçmiş bir tarihe istisna yazmayı denerken:
+
+> Seçilen tarih **dönem aralığının** dışında.
+
+Ama kural dönemle ilgili değil: `ScheduleExceptionPlanner` (BR-TT-011)
+`date < today || date > today.AddDays(30)` diyor — bir **gelecek penceresi**.
+Reddedilen tarih (2 Mart) dönemin (10 Şubat – 13 Haziran) tam **içindeydi**.
+Kullanıcı mesajı okuyup dönem tarihlerine bakar, tarihin içeride olduğunu görür ve
+sebebi bulamaz. Mesaj kuralı söyleyecek biçimde düzeltildi.
+
+### 17.4 `TB-67` · Ders programı ekranının veli dalı ölü kod ⚪
+
+`schedule-screen.tsx`'te veli için bir durum ekranı yazılmıştı. Ölçüldü: **hiç
+çalışmıyor.** `/schedule` velinin nav setinde olmadığı için `RouteGuard` daha
+yukarıda kesiyor. Ulaşılamayan bir dal, canlı görünen ölü koddur — kaldırıldı,
+yerine neden ulaşılamadığı yazıldı.
+
+Aynı temizlikte: gün listesindeki teneffüs şeridi "Sıradaki" ayracıyla **aynı CSS
+sınıfını** paylaşıyordu (`.sro-next`). Bir teneffüs "sıradaki ders" değildir;
+kendi sınıfına ayrıldı.
+
+### 17.5 Bu turun dersi
+
+`ENG-02` kapanış turunda *"ekranda doğrulandı"* demiştim ve doğruydu — ama
+**doğruladığım şey yalnız gördüğüm veriydi.** İstisnası olmayan bir haftada
+istisna kodu, tek dönemli bir okulda dönem süzmesi test edilmiş olmuyor.
+`TB-65` ancak veriyi bilerek zorlaştırınca (iki dönem, aynı öğretmen, çakışan
+hücre) ortaya çıktı.
+
+**Ekran testi, veriyi de tasarlamayı gerektirir.** "Ekranı açtım, çalışıyor"
+cümlesi ancak ekranın çizebildiği her hâli üreten bir veri kümesiyle anlam taşır.
+
+
+### 17.6 Mobil ekranlar — Expo web ile ölçüldü
+
+Kapanış turunda *"mobil ekranları tarayıcıda göremedim"* demiştim. **Görülebiliyormuş:**
+API'nin dev CORS listesi `http://localhost:8081`'i (Expo web portu) zaten içeriyor.
+Hafızadaki "dev API CORS göndermiyor" notu güncel değilmiş.
+
+`expo start --web` ile öğretmen hesabıyla girildi; **bugün** ve **hafta** ekranlarının
+ikisi de gerçek veriyle çalıştı: dört istisna rozeti, teneffüs şeridi, yoklama ipuçları,
+"Bugünkü dersleriniz tamamlandı", gün çipleri, hafta gezinmesi.
+
+Üç kusur çıktı:
+
+#### `TB-68` · Ders satırında dokunulabilir öğe içinde dokunulabilir öğe 🟠
+
+`LessonRow` bir `Pressable`; içindeki yoklama ipucu da ayrı bir `Pressable`'dı.
+Web'de bu **geçersiz HTML** üretiyor (`<button>` içinde `<button>`, React hydration
+hatası); native'de ise hangi eylemin tetikleneceği öngörülemez.
+
+Kaynağı tasarım: `SchRollCallHint` kendi `onPress`'ini `e.stopPropagation()` ile
+koruyordu — bu bir **web idiomu**, React Native dokunma sisteminde öyle çalışmaz.
+Portlarken deyimi değil yapıyı almışım.
+
+Düzeltme: yoklama ipucu artık bir **etiket**. Satır başına tek dokunma hedefi; ders
+sayfasında "Yoklamaya git" düğmesi zaten var. Bir dokunuş fazla, ama davranış belirli.
+
+#### `TB-69` · Mobil hafta ekranında ham ISO tarih ⚪
+
+Gün başlıkları `· 2026-08-17` yazıyordu. Türkçeleştirildi (`· 17 Ağustos`); dönem
+sınırı notundaki tarihler de öyle.
+
+#### `TB-70` · Hafta etiketi iki yerde ⚪
+
+Üst barın alt satırı ve ok tuşlarının arası aynı hafta etiketini yazıyordu. Üstteki
+kaldırıldı — etiket kontrolün yanında kalır.
+
+**Ayrıca ölçüldü, kapsam dışı:** mobil açılışta `GET /api/v1/auth/me/context` bir kez
+**401** dönüyor (oturum geri yüklenmeden önceki yarış). Ekranı engellemiyor ve
+`ENG-02` ile ilgisi yok; ayrı bir tur konusu.
 
