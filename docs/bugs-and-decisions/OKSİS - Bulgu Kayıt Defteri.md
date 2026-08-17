@@ -2854,3 +2854,74 @@ açıldığında dört **yönetici** sorgusu 403 dönüyor (`class-rooms`,
 `users/persons?profileType=Teacher`). Ekranı engellemiyor ve salt okunur yüz
 doğru çiziliyor, ama öğretmenin oturumundan hiç atılmaması gereken sorgular
 bunlar. `ENG-02`'nin parçası değil; ayrı tur konusu.
+
+---
+
+## 19. Mobil Öğrenci Ölçümü ve Yayın Ekranının Sayıları (2026-08-18)
+
+`ENG-02`'nin son doğrulanmamış ayağını kapatmak için kullanıcı izniyle **2-A'ya
+güncel dönem programı yayınlandı** (uygulamanın kendi uçlarıyla: `POST programs`
+→ 30 × `POST placements` → `POST publish`; arşiv 2-A'nın ders/öğretmen çiftleri
+kopyalandı, 0 çakışma, 0 eksik saat).
+
+**Mobil öğrenci ekranda doğrulandı** (Onur Yıldırım · 2-A): AppHeader + sekme
+çubuğu, "Yayınlandı · 17 Ağustos, 22:45", "SIRADAKİ DERS · 08:40'da başlıyor ·
+Fen Bilimleri · Pınar Türk", "Bugün · Salı · 6 ders", öğretmen adları (öğrenci
+varyantı), teneffüs ve **Öğle Arası 11:50–12:40** doğru yerlerde, yoklama
+kısayolu yok, yönetim konsolu izi yok. `ENG-02`'nin yedi ayağının **yedisi de**
+artık ekranda görülmüş durumda.
+
+Bu ölçüm sırasında yayın ekranının kendisinde iki kusur çıktı.
+
+#### `TB-76` · Yayın ekranındaki bildirim seçimi süs 🔴
+
+`PublishProgramCommand` üç bayrak taşıyor — `NotifyInApp`, `NotifyPush`,
+`NotifyEmail`. Uç bunları kabul ediyor, komut kaydına yazılıyor, ve **hiçbir kod
+bunları okumuyor.** Bildirim fan-out'u `ScheduleProgramPublishedEvent` üzerinden
+**koşulsuz** yapılıyor.
+
+**Ölçüm:** program `{"notifyInApp":false,"notifyPush":false,"notifyEmail":false}`
+ile yayınlandı. Yine de **16 bildirim** oluştu — `notifications.notifications`
+tablosunda 8 **Student** + 8 **Parent**.
+
+Yani müdür "bildirim gönderme" dese bile gidiyor. Bu bir ekran süsü değil,
+kullanıcının verdiği kararın sessizce çöpe atılması.
+
+#### `TB-77` · Yayın önizlemesinin sayıları sabit 🔴
+
+`PublishReadiness.Evaluate` içinde:
+
+```csharp
+var affected = new PublishAffectedDto(
+    Teachers: program.ActivePlacements.Select(p => p.TeacherId).Distinct().Count(),
+    Students: 0,     // <- sabit
+    Parents: 0);     // <- sabit
+return new PublishReadinessResult(
+    ConflictCount: 0, // <- sabit
+    ...
+```
+
+Müdür "yayınlayayım mı" kararını bu üç sayıya bakarak veriyor.
+
+**Ölçüm:** önizleme `students: 0, parents: 0` dedi; yayın **16 kişiye** gitti.
+
+Dahası, web çekmecesindeki sayaç **tam ters** çalışıyor:
+```ts
+const notifCount = notifyInApp && affected
+  ? affected.teachers + affected.students + affected.parents : 0
+```
+Gerçek alıcı kümesi öğrenci + veli (öğretmen **değil**); sayaç ise yalnız
+öğretmeni sayıyor, öğrenci ve veliyi sıfır alıyor. "N kişiye bildirim
+gönderildi" cümlesi hem yanlış kişiyi sayıyor hem doğru kişileri saymıyor.
+
+**`conflictCount` için not — henüz ölçülmedi:** sabit `0`, ve çekmecedeki
+*"çakışma yayını engeller"* uyarısı bu sayıya bakıyor, yani o kapı hiç
+tetiklenemiyor. Ancak çakışma **yerleşim anında** engelleniyor olabilir
+(`POST placements` 409 dönüyor); öyleyse yayın anında sabit sıfır yapısal olarak
+doğru olabilir ve asıl kusur ölü uyarı metnidir. **Programlar arası** (aynı
+dönemde başka şubeye sonradan yerleşen aynı öğretmen) çakışmanın yakalanıp
+yakalanmadığı ölçülmedi — iddia edilmiyor, ayrı tur konusu.
+
+**Ders:** `ENG-02` tüketici yüzeyini kapattı ama onu besleyen **yayın** yüzeyi
+bu turlarda hiç ölçülmemişti. Bir ekranın doğru veriyi göstermesi, o veriyi
+üreten ekranın da doğru çalıştığı anlamına gelmiyor.

@@ -257,7 +257,7 @@ Bu, kapanış kararını geçersiz kılmaz; "yüzey yok" ihlali gerçekten bitmi
 | Öğrenci · web · **dolu program** | ✅ ekranda (18 Ağustos'ta ölçüldü) | s2 · 11-A · 10–14 Ağustos haftası |
 | Öğrenci · web · yayınlanmamış | ✅ ekranda | dürüst boş durum, `X-08` yalanı yok |
 | Öğrenci · mobil · kabuk + rol dalı | ✅ ekranda | sekme seti doğru, yönetim konsolu izi yok |
-| Öğrenci · mobil · **dolu program** | ⚠️ **görülmedi** | aşağıya bak |
+| Öğrenci · mobil · **dolu program** | ✅ **ekranda** (18 Ağustos, ölçüm turu 2) | Onur Yıldırım · s3 · 2-A |
 
 ### Neden bir ayak görülemedi — kod değil, veri
 
@@ -285,3 +285,26 @@ geçiyor.
 
 `11-A`'nın 60 yerleşiminin **hiçbirinde derslik yok**; ekrandaki "—" dürüst
 veridir, çizim kusuru değil.
+
+
+---
+
+## Son ayak da kapandı — 2026-08-18 (ikinci ölçüm)
+
+Kullanıcı izniyle `s3 · 2-A`'ya (8 öğrenci) **güncel dönem programı yayınlandı**
+— uygulamanın kendi uçlarıyla, elle SQL'le değil. Böylece yukarıdaki tablodaki
+tek eksik satır kapandı: **mobil öğrenci dolu programını ekranda gösterdi.**
+
+Görülenler: AppHeader + sekme çubuğu, "Yayınlandı · 17 Ağustos, 22:45",
+"SIRADAKİ DERS · 08:40'da başlıyor · Fen Bilimleri · Pınar Türk",
+"Bugün · Salı · 6 ders", öğretmen adları (öğrenci varyantı doğru), teneffüsler
+ve Öğle Arası doğru yerlerde, yoklama kısayolu yok, yönetim konsolu izi yok.
+
+**ENG-02'nin yedi ayağının yedisi de artık ekranda görülmüş durumda.**
+Varsayıma dayanan ayak kalmadı.
+
+**Ama bu ölçüm yeni bir kapı açtı:** yayın ekranının kendisi bu turlarda hiç
+ölçülmemişti ve iki kusur çıktı — `TB-76` (bildirim seçimi süs; "gönderme"
+denmesine rağmen 16 bildirim gitti) ve `TB-77` (önizlemedeki öğrenci/veli/çakışma
+sayıları sabit). İkisi de `ENG-02`'nin tüketici yüzeyinde değil, onu **besleyen**
+yönetici yüzeyinde. Engelin kapanışını değiştirmiyorlar; ayrı maddeler.
