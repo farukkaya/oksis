@@ -3,9 +3,13 @@
 > **Ne zaman çıktı:** 2026-08-11, ekran testi turunun ikinci yarısı.
 > **Nerede yaşıyor:** `oksis-ui` · `apps/web/features/schedule/schedule-page.tsx` + `packages/core/src/nav/nav-config.ts`
 > **Defterdeki maddesi:** `B-17`
-> **Durum:** 🟠 **Karar verildi (B), yüzey hâlâ yok.** 2026-08-12: kullanıcı **Seçenek B**'yi seçti;
-> `/schedule` öğretmen ve öğrenci menüsünden kaldırıldı (`oksis-ui` @ `c030022`) ve `B-17` kapandı.
-> **Bu engel kapanmadı:** öğretmenin/öğrencinin kendi programını görebileceği ekran hâlâ yazılmadı.
+> **Durum:** ✅ **KAPANDI — 2026-08-17.** Tasarım geldi, [[K-11 - ENG-02 Ders Programı Yüzeyi Tasarım Alımı]]
+> ile kararlar verildi, dört fazda yazıldı ve ekranda doğrulandı. Sonuçta **Seçenek A**
+> uygulandı: öğretmen ve öğrencinin kendi salt-okunur ders programı ekranı yazıldı ve
+> `/schedule` menü satırı geri geldi. Ayrıntı: ana defter *"16. ENG-02 KAPANDI"*.
+>
+> *(2026-08-12'de geçici olarak Seçenek B uygulanmıştı — menüden kaldırma. O adım yüzey
+> ihlalini kapatmış, ihtiyacı kapatmamıştı; şimdi geri alındı.)*
 
 ---
 
@@ -187,3 +191,37 @@ yüzden kaldırılan satırın yerine gerekçesi koda yazıldı.
 
 **Mobil kapsam dışı:** oradaki "Program"/"Programım" kutucukları `href` taşımadığı için
 "yakında" ekranına düşüyor — yani mobil zaten dürüst davranıyor.
+
+---
+
+## Kapanış — 2026-08-17
+
+**Seçenek A uygulandı.** Yukarıdaki "Önerim: A" tahmini iki noktada YANLIŞ çıktı ve
+ölçüm düzeltti:
+
+1. *"Sunucu tarafı zaten hazır … iş esas olarak FE ekranı"* — **yarısı doğruydu.**
+   Altı tüketici ucu (`teachers/me/weekly|today`, `students/me/...`,
+   `parents/children/{id}/...`) gerçekten yazılmıştı. Ama **hiçbir ekran onları
+   çağırmadığı için içlerindeki kusurlar da hiç görülmemişti**: haftalık görünüm
+   geçici değişiklikleri hiç göstermiyordu, öğretmen ekseninin başlığı rastgele bir
+   şubenin adıydı, vekilin adı hiç dönmüyordu, zil araları düşürülüyordu, ve
+   `X-05` yeniden adlandırması yayınlanmış snapshot'ları sessizce okunamaz yapmıştı
+   (`TB-58`…`TB-62`, `TB-64`).
+
+2. *"~1 dilimlik iş"* — sunucu sözleşmesi tek başına bir faz oldu.
+
+**Ne yapıldı:**
+- Faz A · sunucu sözleşmesi: tarih ekseni, overlay genelleştirmesi, eksen/hafta/istisna
+  alanları, beş kusur düzeltmesi, 16 test (10 birim + 6 entegrasyon).
+- Faz B · `packages/core` + `packages/api` tüketici katmanı (16 vitest).
+- Faz C · web ekranı: haftalık ızgara, gün listesi, çekmece, üç kırılım, yazdırma.
+- Faz D · mobil: bugün + hafta ekranı, ders sheet'i.
+- Faz E · nav satırları geri geldi (web menüsü + mobil "Daha fazla → Okul" `href`'i).
+
+**Ekranda doğrulandı** (s3, gerçek yayınlanmış program): öğretmen iki şubedeki dersini
+doğru hücrelerde görüyor; öğrenci yönetim konsolundan hiçbir iz görmüyor ve yayınlanmamış
+şubede *"Ders programı henüz yayınlanmadı"* okuyor — `X-08`'in "sunucuya ulaşılamadı"
+yalanı değil.
+
+**Bu dosyanın son notu — "Mobil kapsam dışı" artık geçerli değil:** o gün mobil dürüst
+davranıyordu çünkü ekran yoktu. Şimdi ekran var ve satırlar `href` taşıyor.

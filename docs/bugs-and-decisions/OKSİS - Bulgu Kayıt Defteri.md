@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-58` · `X-15` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-64` · `X-15` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -2402,3 +2402,203 @@ kusuru da saklar.** `TB-32`'de bunun aynası çıktı — *ekranın uyguladığ�
 bilmediği kuraldır*; ekran değişirse ya da ikinci bir istemci gelirse kural yoktur.
 Aynı biçim `TB-07`'de üçüncü kez göründü: **isim bir sözleşme taşımıyorsa, yanlış seçim
 hata değil sessiz eksilme üretir.**
+
+---
+
+## 15. ENG-02 Tasarım Alımı — ölçüm turu (2026-08-17)
+
+Tasarım geldi (`Oksis Layout v2`, claude.ai/design). `handoff-web` + `handoff-mobile`
+becerilerinin dört kapısından geçirildi. **Kapı 1 geçti** — kaynak isimden değil
+registry'den çözüldü (`web/skeleton.jsx :: Page()` satır 307 rol dallanması;
+`mobile/proto-app.jsx :: protoScreens()` dört ekran + widget). Manifest ile registry
+çelişmiyor. Altı ekranın altısı da `designed`, placeholder yok.
+
+**Kapı 4a beklenenden iyi çıktı ve beklenmedik kusurlar açtı.** ENG-02 dosyası
+*"sunucu ayağı hazır; eksik olan yalnız ekran"* diyordu. **Yarısı doğruydu:** altı
+tüketici ucu (`timetable/teachers/me/weekly|today`, `students/me/...`,
+`parents/children/{id}/...`) gerçekten yazılmış ve `generated/schema.ts`'te mevcut.
+Ama **hiçbir ekran onları çağırmadığı için içlerindeki kusurlar da hiç görülmemiş.**
+Aşağıdaki beş madde bu ölçümün ürünü.
+
+> Bu, `E-12` deseninin dördüncü tekrarı: **çağrılmayan uç, arkasındaki kusuru saklar.**
+> Bu kez saklanan şey izin değil, *okuma modelinin kendisiydi*.
+
+### `TB-58` · Öğretmen haftalık programının başlığı rastgele bir şubenin adı 🟠
+
+`BuildWeeklyFromSnapshotsAsync` dönüş DTO'sunun başlığını `first.ClassRoomId` ile
+dolduruyor. Şube ekseninde (`class-rooms/{id}/weekly`) bu doğru: tek snapshot var,
+başlık o şubedir. **Öğretmen ekseninde yanlış:** öğretmen dört şubeye giriyorsa
+`snapshots[0]` hangi program önce sıralandıysa odur ve başlıkta *"9-A"* yazar.
+Ders satırlarındaki `ClassRoomName` doğru; yanlış olan yalnız başlık — yani ekran
+başlığa güvenirse öğretmene ait olmayan bir şubenin adını gösterir.
+
+Aynı yerden `AcademicSessionId` / `AcademicTermId` de `first`'ten alınıyor.
+
+### `TB-59` · Haftalık görünüm geçici değişiklikleri hiç göstermiyor 🟠
+
+`ApplyTodayOverlayAsync` yalnız `BuildTodayAsync` içinden çağrılıyor.
+`PublishedWeeklyScheduleDto`'nun dersleri **hiçbir zaman** `IsCancelled` ya da
+`ExceptionType` taşımıyor. Yani yayınlanmış programda iptal / vekâlet / derslik
+değişikliği varsa, haftalık görünüm bunları **yokmuş gibi** çiziyor.
+
+Kök neden yapısal: haftalık DTO tarihsiz bir **kalıp** (Gün 1..5), `ScheduleException`
+ise **tarihe** bağlı (`Date`). Hangi takvim haftasına bakıldığı bilinmeden overlay
+uygulanamaz. Uç da parametresiz. İkisi birlikte çözülür.
+
+### `TB-60` · Vekâlet edilen ders "iptal" ile aynı bayrağa biniyor, vekilin adı hiç dönmüyor 🟠
+
+Öğretmenin kendi görünümünde `TeacherSubstitution` şöyle işleniyor:
+
+```
+IsCancelled = true, ExceptionType = "TeacherSubstitution"
+```
+
+İki ayrı sorun:
+1. **`IsCancelled` iki farklı olguyu taşıyor** — "bu ders yapılmayacak" ile "bu ders
+   yapılacak ama sen girmeyeceksin". İstemci `ExceptionType`'a bakarak ayırabilir,
+   ama bayrağın adı yalan söylüyor.
+2. **Vekilin adı hiç dönmüyor.** Öğretmen "dersim devredildi" bilgisini alıyor,
+   *kime* devredildiğini alamıyor. `ScheduleException.NewTeacherId` duruyor ama
+   yalnız şube/öğrenci görünümünde çözülüyor.
+
+Aynı ailede: `RoomChange`'de handler `RoomName`'i yerine yazıyor, **eski derslik adı
+kayboluyor** — oysa `OriginalRoomId` kayıtlı. Ve `CreatedAt` (değişikliğin ne zaman
+duyurulduğu) DTO'ya hiç çıkmıyor.
+
+### `TB-61` · Zil çizelgesinin ara slotları tüketici ucundan düşürülüyor 🟡
+
+`GetPeriodsAsync` `Where(b => b.SlotType == BellSlotType.Lesson)` ile daraltıyor.
+Teneffüs ve öğle arası satırları veritabanında duruyor ama tüketiciye hiç ulaşmıyor.
+Sonuç: haftalık ızgarada 4. ders ile 5. ders arasındaki 40 dakikalık boşluk görünmez,
+öğrenci programına baktığında öğle arasının nerede olduğunu bilemez.
+
+### `TB-62` · Öğretmen haftalık sorgusu okulun bütün program sürümlerini deserialize ediyor 🟡
+
+`BuildTeacherWeeklyAsync` `db.ScheduleVersions`'ın **tamamını** belleğe çekiyor, her
+satırın `SnapshotJson`'unu ayrıştırıyor, sonra `Placements.Any(p => p.TeacherId == …)`
+ile filtreliyor. 40 şube × ~10 sürüm = istek başına 400 JSON deserializasyonu.
+
+Ekran yazıldığında bu yol **sabah 08:30'da okulun bütün öğretmenleri tarafından aynı
+anda** çağrılacak. Şu an hiçbir ekran çağırmadığı için görünmüyor.
+
+### `TB-63` · Ders programı tasarımında arkası olmayan iki öğe — teknik borç 🟡
+
+Kullanıcı kararıyla (2026-08-17) ikisi de bu turda **çizilmiyor**, borç olarak kayda
+geçiyor:
+
+- **"Bu derse ödev var" rozeti** (mobil öğrenci ders satırı) · `homework: true` alanı.
+  Ödev modülü hiç yazılmamış — `Application/Modules/Homework/` altında yalnız
+  *"HENÜZ YAZILMADI, 0 entity"* diyen README var (`TB-13`).
+  🔓 **Kilidi açan:** ödev modülü başlatıldığında bu rozet hatırlanacak.
+- **"Takvime ekle" butonu** (web başlık aksiyonu) · ICS üretimi. Uç yok.
+  🔓 **Kilidi açan:** bağımsız — istendiği anda yazılabilir. "Yazdır / PDF" istemci
+  tarafında çalıştığı için acil değil.
+
+### 15.1 Tasarımın kaçırdığı bir sunucu yeteneği
+
+Ölçüm ters yönde de bir şey buldu: `ApplyTodayOverlayAsync` öğretmen görünümünde
+**gelen vekâleti** de işliyor — bugün başkasının yerine gireceğin ders programına
+ekleniyor (`BuildSubstitutionInLessonsAsync`). **Tasarım bunu hiç göstermiyor;**
+yalnız "senin dersine vekil giriyor" hâlini çiziyor.
+
+Ekran bu hâli çizmezse öğretmen **bugün gireceği bir dersi programında göremez** —
+ENG-02'nin kapattığı hatanın tam olarak aynı ailesi. Faz D'de ekranın bunu da
+göstermesi gerekiyor.
+
+### 15.2 İzin — bilinçli mi, unutulmuş mu?
+
+Ders programı izin ailesi: `timetable.manage` · `timetable.publish` ·
+`timetable.view-all` · `timetable.override` · `timetable.delete`.
+**`timetable.view-own` yok** ve altı `me` ucunun hiçbirinde `[RequirePermission]`
+bulunmuyor — yetki `accessToken.PersonId` ile kendi kaydına kilitlenmekten geliyor.
+
+Savunulabilir (kendi eksenine erişim izin gerektirmez), ama iki sonucu var:
+tasarımdaki *"Hesabınızın ders programı görüntüleme izni yok"* durumu **asla
+oluşamaz**, ve web nav satırı izinle değil **rolle** kapılanmak zorunda kalır.
+Kararın kendisi doğru; eksik olan yazılı olmaması. Faz A'da koda geçiriliyor.
+
+### 15.3 Kiracı izolasyonu — kontrol edildi, temiz
+
+`ScheduleVersion : TenantEntity` ve `ScheduleException : TenantEntity`. Öğretmen
+sorgusu `db.ScheduleVersions`'ı açık `Where(schoolId)` olmadan okuyor ama global
+sorgu filtresi devrede. **Sızıntı yok.** (Faz A'da mimari testle çivileniyor —
+`TB-62`'nin performans düzeltmesi sorguyu değiştireceği için filtre kazara
+düşürülebilir.)
+
+
+---
+
+## 16. `ENG-02` KAPANDI — öğretmen ve öğrencinin ders programı yüzeyi (2026-08-17)
+
+Tasarım geldi, `K-11` ile kararlar verildi, dört fazda yazıldı ve **ekranda
+doğrulandı.** `B-17` turunda (2026-08-12) menüden kaldırılan `/schedule` satırı
+geri geldi — aynı rota, role göre farklı yüz.
+
+### 16.1 Üç bulgu birlikte kapandı
+
+| Bulgu | Neydi | Şimdi |
+|---|---|---|
+| `B-17` | Öğretmen/öğrenci `/schedule`'a girince yöneticinin konsolunu görüyordu | `schedule-screen.tsx` rolü okuyor; ölçüldü, konsoldan hiçbir iz yok |
+| `X-08` | 403/404 "sunucuya ulaşılamadı" diye gösteriliyordu | 404 → *"Ders programı henüz yayınlanmadı"*; ölçüldü |
+| `ENG-02` | Kendi programını görebileceği ekran yoktu | Web'de ızgara + gün listesi, mobilde bugün + hafta |
+
+### 16.2 Ekranda ölçüldü (s3 · gerçek yayınlanmış program)
+
+- **Öğretmen** (`ogretmen.s3.01`, Murat Özdemir): iki AYRI şubedeki (1-A, 2-A)
+  beş ders doğru gün/saat hücrelerinde. Başlık **öğretmenin adı** — şube adı
+  değil (`TB-58`). Aralar 2., 4. ve 6. derslerden sonra (`TB-61`). Ders çekmecesi
+  açılıyor, yayın künyesi doğru.
+- **Öğrenci** (`ogrenci.s3.001`): şubesinin yayınlanmış programı yok →
+  *"Ders programı henüz yayınlanmadı — Okul yönetimi programı yayınladığında
+  burada görünecek."* Yönetim konsolundan iz yok.
+- **Dönem dışı hafta:** bugün (17 Ağustos) dönemin dışında; ekran bunu söylüyor
+  ve dönem aralığını veriyor.
+
+### 16.3 Tasarımda olup ölçümde düzeltilenler
+
+**Tasarımın kaçırdığı, ölçümün bulduğu:**
+- `TB-58`…`TB-62` — beş sunucu kusuru (defter 15).
+- `TB-64` — `X-05` yeniden adlandırması yayınlanmış snapshot'ları sessizce
+  okunamaz yapmıştı; şube adı `"—"` çıkıyordu.
+- **Dönem dışı hafta durumu** — tasarım hep dönem içinde olunduğunu varsayıyordu.
+  Yaz tatilinde ekran bomboş bir ızgara gösteriyordu; boş ızgara "programın yok"
+  diye okunur.
+- **Ödevler / Notlar kısayolları düşürüldü** — ders çekmecesindeki "Bu dersin
+  ödevleri" ve "Bu dersin notları" ölçüldü: `/homework` ve `/grades` hem webde
+  hem mobilde `PlannedScreen` ("Bu ekran henüz boş"). Kullanıcıyı oraya yollamak
+  `ENG-02`'nin kapattığı hatanın küçültülmüş hâli olurdu. Öğretmende yalnız
+  "Yoklamaya git" kaldı (gerçek); öğrencide hiç kısayol yok.
+
+**Tasarımdan bilinçle çıkarılanlar** (`K-11`): saat değişikliği istisnası (a),
+ödev rozeti + "Takvime ekle" (b → `TB-63` borcu).
+
+**Ölçümün değiştirdiği bir karar:** `K-11c`'de ders tonu paletini "markaya
+kapalı ölçek olarak ekle" diye onaylamıştık. Uygulama sırasında görüldü ki
+`packages/core/src/schedule/constants.ts`'te **12 tonluk `SUBJECT_PALETTE`
+zaten vardı** ve yöneticinin editörü onu `subjectColorIndex` ile kullanıyordu.
+Tasarımın 6-7 tonluk yeni paleti neredeyse aynı değerleri taşıyordu. **İkinci
+palet üretilmedi**; mevcut olan yeniden kullanıldı. Karar geçerli, uygulaması
+daha küçük çıktı.
+
+### 16.4 Yapılmayanlar — açıkça
+
+- **Mobil anasayfa widget'ları** (tasarımın `ScheduleWidgetShowcase`'i). Mobil
+  anasayfalar bugün `home-fixtures.ts` ile besleniyor; tek bir canlı widget'ı
+  sahte bir anasayfaya takmak tutarsız olurdu. Anasayfa canlı veriye
+  bağlandığında eklenir.
+- **Mobil hafta ızgarası.** Tasarım iki varyant çizmiş ama ızgarayı kendi
+  notunda *"yoğunluk denemesi … üretim önerisi dikey liste"* diye işaretlemişti.
+  Tasarımcının önerisi uygulandı.
+- **Koyu tema.** Mobil uygulamada koyu tema yok (`useColorScheme` hiç
+  kullanılmıyor); tasarımın koyu varyantı bir Tweaks anahtarıydı ve web tarafında
+  da aynı gerekçeyle portlanmamıştı.
+- **Veli ders programı ekranı.** Uç hazır (`parents/children/{id}/weekly`) ve
+  `packages/api` hook'u yazıldı, ama tasarımda veli ekranı yok. Web'de ve
+  mobilde veliye durum ekranı gösteriliyor.
+
+### 16.5 Zincir açıldı
+
+`TB-29` (öğretmen kendi müsaitliğini giremiyor) `ENG-02`'yi bekliyordu — öğretmenin
+mobil program yüzeyi artık var, müsaitlik girişi oraya oturabilir. **Bu turun
+kapsamında değil**, ama artık açılabilir.
+

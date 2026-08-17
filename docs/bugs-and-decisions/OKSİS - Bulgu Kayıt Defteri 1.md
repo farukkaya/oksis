@@ -2,8 +2,10 @@
 
 > **Ne bu dosya:** [[OKSİS - Bulgu Kayıt Defteri]]'ndeki **yalnızca açık** maddeler,
 > ne olduklarını anlatan açıklamalarıyla. Kapanmış maddeler burada hiç geçmiyor.
-> **Son güncelleme:** 2026-08-17 — açık bulgu turunda **38 madde kapatıldı**; ayrıntıları
-> ana defterin *"14. Açık Bulgu Turu"* bölümünde.
+> **Son güncelleme:** 2026-08-17 (akşam) — `ENG-02` **kapandı**: öğretmen ve öğrencinin
+> kendi ders programı ekranı yazıldı ve ekranda doğrulandı (ana defter *"16. ENG-02
+> KAPANDI"*). Aynı turda beş sunucu kusuru ölçülüp kapatıldı, biri (`TB-63`) borç
+> olarak açıldı. Öncesinde: açık bulgu turunda 38 madde kapatılmıştı (*"14. Açık Bulgu Turu"*).
 > **Kanonik kayıt:** ana defter. Burası okumak için, yazmak için değil.
 
 **ID şeması:** `B-##` fonksiyonel · `D-##` tasarım/UX · `V-##` validasyon ·
@@ -17,14 +19,15 @@
 | Öncelik | Adet | Ne demek |
 |---|---|---|
 | 🔴 Kritik | 1 | Akış bloklanıyor ya da iş kuralı ihlal ediliyor |
-| 🟠 Yüksek | 8 | İşlev yanlış çalışıyor; veri, yetki veya mevzuat güveni zedeleniyor |
-| 🟡 Orta | 7 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟠 Yüksek | 7 | İşlev yanlış çalışıyor; veri, yetki veya mevzuat güveni zedeleniyor |
+| 🟡 Orta | 8 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪ Düşük | 2 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | Arandı, bulunamadı — nerede görüldüğü söylenmeli |
 | **Toplam** | **19** | |
 
 **19 maddenin 14'ü koddan çok senden cevap bekliyor** — aşağıdaki ilk bölüm. Kalan 5'in
-üçü zaten senin kararınla park edildi, biri ölçülüp kapsamı çıkarıldı, biri ertelendi.
+biri park edildi (`TB-29`, artık açılabilir), biri ölçülüp kapsamı çıkarıldı, biri ertelendi,
+biri karar zincirine bağlı, biri yeni açılan borç (`TB-63`).
 
 ---
 
@@ -234,14 +237,21 @@ hamlede kapanır. ⬜ **Bu tercihi vermeden başlamak yanlış.**
 
 ---
 
-## 2. Senin kararınla park edilenler
+## 2. Park edilenler ve yeni borç
 
-### `ENG-02` · Öğretmen ve öğrencinin kendi ders programı yüzeyi hiç yok 🟠
-Ders programı üretiliyor, yayınlanıyor, sunucu ucu (`timetable/class-rooms/{classRoomId}/weekly`)
-çalışıyor — ama **öğretmen kendi haftalık programını, öğrenci kendi şubesininkini hiçbir
-ekranda göremiyor.** Yayınlanan program yalnız yöneticinin gördüğü bir çıktı olarak kalıyor.
+### `TB-63` · Ders programında arkası olmayan iki öğe — teknik borç 🟡
+`ENG-02` tasarımında çizilmiş ama **arkası olmayan** iki öğe, `K-11b` kararıyla
+çizilmedi ve borç olarak kaydedildi:
 
-🅿️ **Ayrı oturuma park edildi** (2026-08-17, tasarım üretimi sürüyor).
+- **"Bu derse ödev var" rozeti** (mobil öğrenci ders satırı). Ödev modülü hiç
+  yazılmamış — klasörde yalnız *"HENÜZ YAZILMADI, 0 entity"* diyen bir README var
+  (`TB-13`). 🔓 **Ödev modülü başlatıldığında hatırlanacak.**
+- **"Takvime ekle" (ICS)** butonu (web başlık aksiyonu). Uç yok.
+  🔓 Bağımsız; istendiği an yazılabilir. "Yazdır / PDF" aynı ihtiyacı bugün karşılıyor.
+
+Aynı ailede, ders çekmecesinden **düşürülen** iki kısayol: "Bu dersin ödevleri" ve
+"Bu dersin notları". Ölçüldü — `/homework` ve `/grades` hem webde hem mobilde
+`PlannedScreen` ("Bu ekran henüz boş"). Ekranlar yazıldığında kısayollar geri gelir.
 
 ### `TB-29` · Öğretmen kendi müsaitliğini giremiyor 🟡
 Öğretmen müsaitliği otomatik üretimin sert ve yumuşak girdisi, ama **tek yazma yüzeyi
@@ -252,7 +262,9 @@ elle işaretlemek zorunda. Pilotta yönetici yükünü ciddi artırır.
 saat varsa günün tamamı kapalı sayılıyor), ders programı ise **saat bazında** okuyor. İki
 modül aynı veriyi iki farklı çözünürlükte yorumluyor.
 
-🅿️ **`ENG-02` ile birlikte park edildi** — ikisi de aynı öğretmen yüzeyini gerektiriyor.
+🅿️ Park edilmişti çünkü `ENG-02` ile aynı öğretmen yüzeyini gerektiriyordu.
+🔓 **Bu engel 2026-08-17'de kapandı** — öğretmenin web ve mobil program yüzeyi artık var;
+müsaitlik girişi oraya oturabilir. Madde **açılabilir hâle geldi**, hâlâ açık.
 
 ### `X-03` · Görevlendirme iki nesil hâlinde yan yana yaşıyor 🟠
 `TB-48`'in aynı düğümü, çapraz kesen adıyla: ayrı tablo, ayrı izin ailesi
@@ -280,7 +292,9 @@ E-01  ◄── rıza sürüm yükseltmesinde patlar
 X-11  ──►  CI kapısı yok; kırmızı test hiç koşulmuyor
 TB-55 ──►  birleştirme kararı içe aktarma ikiliğini kapatır
 
-ENG-02 ──►  TB-29 (aynı öğretmen yüzeyi)
+ENG-02 ✅ ──►  TB-29 artık açılabilir (öğretmen yüzeyi kuruldu)
+
+TB-13 (ödev modülü) ──►  TB-63'ün ödev rozeti ayağı
 ```
 
 ---
