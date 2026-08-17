@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-71` · `X-15` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-78` · `X-15` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -45,7 +45,7 @@
 **Kapananlar:** `B-02` · `B-03` · `B-04` · `B-04a` · `B-08` · `B-09` · `B-10` · `B-11` · `B-06` · `B-12` · `B-13` · `B-14` · `B-15` · `B-16` · `B-17` · `B-18` · `D-02` · `D-03` · `D-05` · `D-07` · `D-08` · `TB-20` · `TB-22` · `TB-23` · `TB-25` — `X-01`, `X-02`, `X-07` ve `X-06`'nın dar ayağı da kapandı.
 **Yeni açılanlar:** `B-16` (kimlik/oturum 🔴) · `D-08` (`B-14`'ün artığı) · `X-07` (çapraz kesen — açıldığı gün kapandı) · `X-09` (mobilde `X-01` yaygınlaştırması atlanmış, lint `master`'da kırmızı — 2026-08-12) · `TB-53` (ders silmenin kullanımda kapısı dar — `B-10` taramasından) · `TB-54` (giriş hata mesajı çevrilmemiş i18n anahtarı — `B-16` turundan) · `X-10` (rota kapısı rol yüklenirken geçirgen — `B-17` turundan) · `B-18` + `E-01` (rıza reddi yanlış ekrana düşüyor / rıza yenileme ekranı yok — `TB-10` turundan) · `B-19` (askıya alma ekranındaki tek düğme ölü — `B-18` turundan) · `B-20` + `TB-55` (içe aktarmada davet bayrağı ölü / iki ayrı içe aktarma yolu — `TB-20` turundan), hepsi 2026-08-12.
 **Kalan (bu dosyada, TB kuyruğu hariç):** 4 — 2026-08-12 turunda `B-04`, `B-06`, `B-10`, `B-13`, `B-16`, `B-17`, `B-18` ve `D-08` kapandı (ayrıca `TB-35`, `TB-10`, `TB-20`).
-**Açık kalanlar:** `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) · `B-19` (ölü düğme — **karar bekliyor**) · `B-20` (içe aktarmada davet üretilmiyor 🟠) · `E-01` (rıza yenileme ekranı — **kapsam kararı bekliyor**) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
+**Açık kalanlar:** `TB-76` (yayın bildirimi seçimi süs 🔴 — **ürün kararı bekliyor**) · `TB-77` (yayın önizlemesi sabit sayı gösteriyor 🔴) · `V-01` (nöbet çizelgesi sezon yaşam döngüsü) · `D-04` (hedefi bulunamadı, netleştirme bekliyor) · `B-19` (ölü düğme — **karar bekliyor**) · `B-20` (içe aktarmada davet üretilmiyor 🟠) · `E-01` (rıza yenileme ekranı — **kapsam kararı bekliyor**) — ayrıca çapraz kesenler `X-03`/`X-05`/`X-06 geniş ayak`/`X-10`/`X-11 (CI ayağı)`.
 
 ---
 
@@ -58,6 +58,24 @@
 | 🟡 Orta | 3 | `B-29` (modül ekranı ölü) · `E-15` (modül envanteri üretilmiyor) · `E-14` (rehber öğretmen devri) |
 | ⚪ Düşük | 9 | `V-02` · `V-03` · `D-09` … `D-14` · `TB-56` |
 | **Toplam** | **28** | 12 fonksiyonel + 6 tasarım + 5 eksik özellik + 2 çapraz kesen + 2 validasyon + 1 teknik borç |
+
+---
+
+### 2026-08-17/18 · `ENG-02` ekran + cihaz turları partisi (13 yeni madde)
+
+`ENG-02` **kapandıktan sonra** aynı yüzeyde ölçülenler. Turun dersi tek cümlede:
+*ekranın var olması, ekranın doğru olduğu anlamına gelmiyor.*
+
+| Öncelik | Adet | Maddeler |
+|---|---|---|
+| 🔴 Kritik | 4 | `TB-65` (iki dönemin dersi aynı hücrede çakışıyor) · `TB-71` (mobil ekran uygulama kabuğunun dışında) · `TB-74` ("Yoklamaya git" çıkmaza gidiyor) · `TB-76` (bildirim seçimi süs — "gönderme" denince de gidiyor) |
+| 🟠 Yüksek | 3 | `TB-72` (`/planned` çıkışsız ekran) · `TB-73` (kısayol var olan ekranı "yakında" gösteriyor) · `TB-77` (yayın önizlemesinin sayıları sabit) |
+| ⚪ Düşük | 6 | `TB-66` · `TB-67` · `TB-68` (iç içe dokunma hedefi) · `TB-69` (ham ISO tarih) · `TB-70` (etiket iki yerde) · `TB-75` (yayın damgası + saat dilimi kopyası) |
+| **Toplam** | **13** | hepsi teknik borç; **11'i kapandı**, `TB-76` ve `TB-77` **karar bekliyor** |
+
+Bölümler: [17. Ekran Testi Turu](#17-eng-02-ekran-testi-turu-2026-08-17-gece) ·
+[18. Cihaz Turu](#18-cihaz-turu--ders-programı-yüzeyi-2026-08-18) ·
+[19. Mobil Öğrenci Ölçümü](#19-mobil-öğrenci-ölçümü-ve-yayın-ekranının-sayıları-2026-08-18)
 
 **Bu turda ✅ doğrulanan kapanışlar:** `B-16`/`ENG-01` · `B-13` · `B-04` akışı · `TB-35` · `X-04`
 · tenant izolasyonu · yetki matrisi · web→mobil duyuru zinciri.
