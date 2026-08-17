@@ -2263,3 +2263,142 @@ sırasında ölçüldü, üçü de kod değil **veri/kapsam** işi.
   yeniden üretilemedi. `auth-refresh.ts` yolu doğru görünüyor (refresh başarısızsa
   `auth.clear()` + `onUnauthorized()` → `/login`). Bu ayak `B-27` ile birlikte
   mobil oturum turunda tekrar ölçülecek.
+
+---
+
+## 14. Açık Bulgu Turu — 38 madde kapatıldı (2026-08-17) ✅
+
+> **Ne bu bölüm:** [[OKSİS - Bulgu Kayıt Defteri 1]] dosyasındaki 57 açık maddeden
+> **karar bekleyen 14'ü hariç** tamamının ele alındığı tur. Kapanan 38 madde buraya
+> işlendi ve açık listeden silindi. Turun kuralı: **ekran bazlı yama değil, sınıfın
+> kendisini kapatan merkezî çözüm**; ve her yeni test, düzeltme geri alınıp kırmızıya
+> düşürülerek kanıtlandı ("boş yere yeşil değil").
+
+**Sayı:** 57 açık → **19 açık** (14 karar bekleyen + 5 ölçülüp açık bırakılan/park edilen).
+
+### 14.1 Ölçüm teşhisi değiştirdi
+
+Turun en önemli çıktısı düzeltmeler değil, **yanlış teşhislerin düzeltilmesi** oldu.
+Kayda geçen altı vaka:
+
+| Madde | Deftere yazılan | Ölçümün söylediği |
+|---|---|---|
+| `TB-21` | "Öğretmen yükü sorgusu yanlış izin ailesiyle korunuyor, hizalanmalı" | **Teşhis tersmiş.** Hizalamak sessiz bir **yetki genişlemesi** olurdu. |
+| `TB-18` | "Nöbet politikaları tamamen etkisiz" | Yarısı etkisiz, yarısı çalışıyordu; yalnız **gün deseni** solver'a hiç girmiyordu. |
+| `TB-08` | "İki rakip `InvitationStatus` enum'u" | Rakip değil, **ad çakışması** — ayrı bağlamlarda iki farklı kavram. |
+| `TB-49` | "Müfredat–görevlendirme denetimi no-op" | `K-10` kararı sorunun **zeminini kaldırdı**; madde daraldı. |
+| `TB-14` | "Silinen şubenin geçmiş atamaları sahipsiz kalıyor" | Kayıtlıdan **daha kötü**. İlk ölçüm ise test fixture kusuruydu (`SoftDeleteInterceptor` kayıtlı değildi) — fixture düzeltilip yeniden ölçüldü. |
+| `TB-07` | "İki uç aynı veriyi iki kabukla veriyor" | Aynı veri değil, **farklı eksen**: hesap ekseni ⊂ kişi ekseni. |
+
+### 14.2 Sınıfı kapatan merkezî çözümler
+
+Tek tek yama yerine kurulan altı yapı — her biri kendi bulgu sınıfının **tekrarını**
+imkânsız kılıyor:
+
+- **`ErrorMessageCatalog`** (`X-14`, `TB-54`) · API sınırında tek anahtar→cümle sözlüğü;
+  223 anahtar. Anahtar makine-okunur kalır, kullanıcıya cümle gider. Kapsam testi yeni
+  anahtar eklendiğinde kırmızıya düşer.
+- **`SubjectUsageInspector`** (`TB-53`) · Ders silmenin "kullanımda" kapısı tek kayıt
+  noktasından okunur; mimari test, `SubjectId` taşıyan **her** kalıcı varlığı kapsamla
+  karşılaştırır ve istisnaları belgelenmeye zorlar.
+- **`BranchCatalogTranslationTests`** (`TB-57`, `X-04`) · Branş uyumu çözen her dosyanın
+  katalog kimliğine çevirmiş olmasını şart koşar.
+- **`ScheduleStatsFreshnessTests`** (`TB-28`) · Yerleşim değiştiren her handler'ın
+  sayaç tazeleyicisine dokunmasını şart koşar.
+- **`EfIgnoredPropertyQueryTests`** (`X-06` dar ayağı) · EF-`Ignore` property'nin sorguya
+  sızmasını yakalar; genişletilirken bulduğu tek yanlış pozitif (`<see cref>` içinde geçen
+  ad) testin kendi yorum-ayıklamasıyla kapatıldı.
+- **eslint `no-restricted-syntax` seçicisi** (`X-08`) · Ekranın reddin sebebini
+  uydurmasını (*"Sunucuya ulaşılamadı"*) derleme zamanında yasaklar.
+
+### 14.3 Bölüm bölüm kapananlar
+
+**Veri güveni (7):** `TB-37` kayıt aynası defterden türetiliyor · `TB-15` atama sebebi
+sezona göre · `TB-14` silinen kaydın geçmişi korunuyor · `TB-53` ders silme kapısı yedi
+tüketiciyi de biliyor · `TB-16` nöbet bölgesine kullanımda kapısı · `TB-41` kota sayacı
+atomik · `TB-40` yetim önizlemeler imha kapsamında.
+
+**Sessiz yalanlar (7):** `B-20` içe aktarmada davet bayrağı gerçekten davet üretiyor ·
+`TB-18` nöbet gün deseni solver'da · `TB-45`/`TB-24`/`TB-44` etkisiz bildirim ayarları
+"Hazırlanıyor" etiketli, ölü katalog kalktı · `TB-26` onay kuyruğunda acil rozeti ·
+`TB-30` etkinlik turundaki bayat öğretmen kopyası kaldırıldı.
+
+**Sunucu sözleşmesi (4):** `X-14` + `TB-54` hata mesajları API sınırında Türkçeleşiyor ·
+`TB-52` aynı ret iki farklı kodla dönmüyor, ekran "rapor yok" yerine "yetkin yok" diyor ·
+`X-08` artığı lint kuralıyla kapandı.
+
+**Adlandırma borcu (12):** `X-05` şube/branş ayrımı (aşağıda) · `TB-07` kişi/hesap ekseni
+(aşağıda) · `TB-08` ad çakışması netleşti · `TB-11` rıza sürümü tek tipte · `TB-34` ölü
+`SchoolHoliday` + çift enum kalktı · `TB-36` ikinci zaman dilimi alanı kalktı · `TB-17`
+`AcademicYearId → AcademicSessionId` geçişi tamamlandı · `TB-33` tek/çift "l" tuzağı ·
+`TB-39` sınıf seviyesi kimliğe bağlandı · `TB-09`/`TB-12` ölü alanlar kalktı · `TB-21`
+izin ailesi (ölçümle gerekçelendirilerek **olduğu gibi bırakıldı**).
+
+**Ders programı (5):** `TB-50` yerleşmiş saat derse göre sayılıyor · `TB-28` sayaç
+tazeliği mimari testle · `TB-49` `K-10` ile daraldı · `E-16` lise müfredat şablonu ·
+`V-01` nöbet çizelgesi sezona bağlandı.
+
+**Altyapı (3):** `TB-57` vekalet branş uyumu katalog kimliğine · `TB-51` süreç-geneli
+statik yapılandırma kilit altında · `TB-32` hatırlatma kuralı sunucuya taşındı.
+
+### 14.4 Üç madde ayrıca kayda değer
+
+#### `X-05` · `Branch` iki şeyi birden anlatıyordu 🟠 *(kapandı)*
+- **Kusur:** ders programı zincirinde `BranchId` **şube** ("9-A"), öğretmen/katalog
+  tarafında **branş** ("Matematik"). İkisi de `Guid`; yanlış join **derlenir, çalışır ve
+  yanlış sonuç döner**.
+- **Karışıklık teorik değildi:** `DutyLoadAggregator` ile `GetAvailableSubstitutesQueryHandler`
+  aynı modül altında iki anlamı yan yana kullanıyordu.
+- **Düzeltme:** ders programı zinciri `ClassRoomId`'ye taşındı (10 kolon/indeks, veri kaybı
+  yok); uç adı `timetable/class-rooms/{classRoomId}/weekly` oldu; istemci sözleşmesi
+  yeniden üretildi. **Artık `branch_id` kolonu yalnız `master.subject_branches`'ta.**
+- **Süpürme sırasında dört yerde branş yanlışlıkla şubeye çevrildi ve geri alındı** —
+  belirsizliğin ne kadar gerçek olduğunun kendi kanıtı.
+- **Yan bulgu:** `X-14`'ün kapsam kalıbı hata anahtarının son parçasını tek segment
+  sanıyordu; `school-settings.errors.bell.duplicate-order` gibi **dört parçalı 13 anahtar**
+  hem sözlüğe girmiyor hem de kapsam testini kırmıyordu — kullanıcı ham anahtarı görüyordu.
+  Kalıp iki tarafta birlikte genişletildi.
+
+#### `TB-07` · Kişi ekseni ile hesap ekseni 🟠 *(kapandı — kanonik karar)*
+- **Ölçüm bulguyu düzeltti:** iki uç aynı tabloları okur ama **ekseni farklıdır.**
+  `api/v1/users` = **hesap ekseni** (`Accounts ⋈ Persons` INNER JOIN; girişi olmayan kişi
+  **yok**). `api/v1/users/persons` = **kişi ekseni** (hesabı olsun olmasın herkes).
+- **Kusurun asıl biçimi:** ayrımı hiçbir şey söylemiyordu; üstelik belge ikisinin "köprü
+  döneminde paralel yaşadığını" söylüyordu — okuyan birinin geçici olduğunu sanıyor.
+  Yanlış ucu seçen ekran **hata almaz**, hesapsız kişiler sessizce düşer.
+- **Karar:** **ikisi de kanoniktir.** "Okulda kim var?" → persons. "Kim giriş yapabiliyor?"
+  → users. Karar iki controller'a yazıldı ve `PersonAndAccountAxisTests` ile çivilendi
+  (test boş yere yeşil değil: eksen geçici olarak değiştirilince kırmızı).
+
+#### `TB-32` · Kuralı tutan tek yer ekrandı ⚪ *(kapandı)*
+- **Kusur:** manuel "Hatırlat" eyleminde sunucu hiçbir şey kontrol etmiyordu. Kuralı bilen
+  tek katman (idare paneli butonu) onu **uygulamak zorunda olmayan** katmandı.
+- **Eski gerekçe yanlıştı:** belge *"zaten Completed bir oturumu hatırlatmak zararsız,
+  sadece anlamsızdır"* diyordu. Zararsız değil — bildirimin gövdesi *"Bu ders için henüz
+  yoklama girmediniz."* Yoklamayı **girmiş** öğretmene bu **yanlış bir suçlamadır**, push
+  olarak gider ve geri alınamaz.
+- **Düzeltme:** kural toplaşana taşındı (`ReminderOutcome`); kardeş yol
+  `MarkAutoReminderSent` bu iki guard'ı zaten taşıyordu. Eşzamanlı basış `RowVersion` ile
+  kapandı. Reddin **gerekçesi** ayrı ayrı söyleniyor ve ekranda gösteriliyor — eskiden iki
+  çağrı yerinde de `onError` yoktu.
+- **Eski testler guard'ın YOKLUĞUNU çiviliyordu**; yeni kurala göre yeniden yazıldı.
+
+### 14.5 Ölçüldü ama kapatılmadı — açık kalanlar
+
+- **`X-06` geniş ayağı** 🟠 · Ölçüm: **150 handler, 58'i kapsamlı, 92'si doğrulanmamış.**
+  Dar ayak mimari testle kapandı; geniş ayak bir tur işi değil, ayrı bir plan gerektiriyor.
+- **`E-16` artığı** · Lise saatleri seed'lendi ama **"Türk Dili ve Edebiyatı" katalogda
+  yok**; lise satırları `CurriculumVersions.HighSchoolProvisionalDecision` ("Doğrulanmadı —
+  MEB çizelgesi bekleniyor") ile damgalandı. Uydurulmuş saatin doğrulanmış görünmemesi için.
+- **`ENG-02` + `TB-29`** · Kullanıcı kararıyla **ayrı oturuma park** (tasarım üretimi
+  sürüyor); ikisi de aynı öğretmen yüzeyini gerektiriyor.
+- **`E-13`** · `K-08` ile ertelendi.
+- **`X-03`** · `TB-48`'in aynı düğümü; karar bekleyen listede.
+
+### 14.6 Bu turun kendi dersi
+
+`E-12`'nin bıraktığı desen bu turda tekrar tekrar doğrulandı: **çağrılmayan uç, arkasındaki
+kusuru da saklar.** `TB-32`'de bunun aynası çıktı — *ekranın uyguladığı kural, sunucunun
+bilmediği kuraldır*; ekran değişirse ya da ikinci bir istemci gelirse kural yoktur.
+Aynı biçim `TB-07`'de üçüncü kez göründü: **isim bir sözleşme taşımıyorsa, yanlış seçim
+hata değil sessiz eksilme üretir.**
