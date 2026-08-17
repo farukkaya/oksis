@@ -225,3 +225,63 @@ yalanı değil.
 
 **Bu dosyanın son notu — "Mobil kapsam dışı" artık geçerli değil:** o gün mobil dürüst
 davranıyordu çünkü ekran yoktu. Şimdi ekran var ve satırlar `href` taşıyor.
+
+---
+
+## Kapanış denetimi — 2026-08-18
+
+Kullanıcı "ENG-02 kapandı mı?" diye sordu. Hafızadan cevaplamak yerine her ayak
+tek tek ölçüldü. **Sonuç: ihtiyaç karşılandı, engel kapalı kalır** — ama
+kapanış notunun *"ekranda doğrulandı"* cümlesi olduğundan geniş yazılmıştı ve
+bir ayak eksikti.
+
+### Kapanıştan SONRA aynı yüzeyde çıkan dokuz bulgu
+
+`TB-65` · `TB-68` · `TB-69` · `TB-70` (ekran testi turu, 17 Ağustos akşamı) ve
+`TB-71` · `TB-72` · `TB-73` · `TB-74` · `TB-75` (cihaz turu, 18 Ağustos).
+Hepsi düzeltildi ve push edildi. Bunların ikisi ağırdı:
+- `TB-65` — haftalık görünüm iki dönemin derslerini aynı hücrede çakıştırıyordu.
+- `TB-71` — mobil ekran uygulama kabuğunun tümüyle dışındaydı (üst bar ve sekme
+  çubuğu yok).
+
+Yani engel kapandığında ekran **vardı** ama üzerinde dokuz kusur duruyordu.
+Bu, kapanış kararını geçersiz kılmaz; "yüzey yok" ihlali gerçekten bitmişti.
+
+### Ayak ayak doğrulama durumu
+
+| Ayak | Durum | Kanıt |
+|---|---|---|
+| Öğretmen · web · dolu program | ✅ ekranda | s3, 1-A, vekâlet rozetleri dahil |
+| Öğretmen · mobil · dolu program | ✅ **gerçek cihazda** | iPhone 15 Pro, 18 Ağustos |
+| Öğretmen · yoklama kısayolu | ✅ ekranda | `TB-74` sonrası doğru oturuma gidiyor |
+| Öğrenci · web · **dolu program** | ✅ ekranda (18 Ağustos'ta ölçüldü) | s2 · 11-A · 10–14 Ağustos haftası |
+| Öğrenci · web · yayınlanmamış | ✅ ekranda | dürüst boş durum, `X-08` yalanı yok |
+| Öğrenci · mobil · kabuk + rol dalı | ✅ ekranda | sekme seti doğru, yönetim konsolu izi yok |
+| Öğrenci · mobil · **dolu program** | ⚠️ **görülmedi** | aşağıya bak |
+
+### Neden bir ayak görülemedi — kod değil, veri
+
+Dört okulun tamamında **bugünü kapsayan tek yayınlanmış program** elle eklenen
+`s3 · 1-A` test programı ve o şubede **0 öğrenci** var. Diğer bütün yayınlar
+arşiv dönemlere ait. Yani bugün hiçbir öğrenci dolu program göremiyor.
+
+Web ayağı yine de ölçülebildi çünkü web `?hafta=` parametresini kabul ediyor:
+`ogrenci.s2.004` ile `/schedule?hafta=2026-08-10` açıldı ve **11-A'nın 5×6
+haftalık ızgarası** eksiksiz çizildi — başlık "11-A — haftalık ders programın",
+damga "Yayınlandı · 7 Ağustos, 22:29", öğretmen adları yerinde, "Dönem sonu"
+düğmesi doğru şekilde kapalı.
+
+Mobilde böyle bir kapı yok (hafta gezinmesi dönem sınırına bağlı state), bu
+yüzden mobil öğrencinin **dolu** görünümü ancak güncel döneme, öğrencisi olan
+bir şubeye program yayınlanınca görülebilir. Kullanıcı dev verisine
+dokunulmamasını istedi (18 Ağustos kararı), o yüzden bırakıldı.
+
+**Risk değerlendirmesi:** düşük. Mobil öğretmen aynı bileşenleri gerçek cihazda
+dolu veriyle çalıştırıyor; rol farkı yalnız `lessonLines()` (core'da testli) ve
+öğretmene özel yoklama kısayolu. Yine de **görülmedi, varsayıldı** — kayda
+geçiyor.
+
+### Yan ölçüm
+
+`11-A`'nın 60 yerleşiminin **hiçbirinde derslik yok**; ekrandaki "—" dürüst
+veridir, çizim kusuru değil.
