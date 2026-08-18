@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-78` · `X-15` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-78` · `X-16` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -2195,7 +2195,7 @@ sırasında ölçüldü, üçü de kod değil **veri/kapsam** işi.
 - **Not:** Etiket "Pasife Al" olarak kaldı ama ürettiği durum "Ayrılmış". Adlandırma
   kullanıcı onayı bekliyor.
 
-#### `X-14` · Sunucu hata mesajı olarak çeviri anahtarı gönderiyor (198 anahtar) 🟠
+#### `X-14` · Sunucu hata mesajı olarak çeviri anahtarı gönderiyor (198 anahtar) 🟠 *(kapandı — aşağıda)*
 - **Nasıl bulundu:** `X-13`'ün merkezî yüzeyi kurulur kurulmaz ilk ölçümde ekrana
   **`identity.errors.email-exists`** çıktı. Hata artık görünüyordu ama okunmuyordu.
 - **Katman:** BE · **Öncelik:** 🟠 Yüksek
@@ -2212,7 +2212,51 @@ sırasında ölçüldü, üçü de kod değil **veri/kapsam** işi.
   `fileAwareMutationErrorDesc`) — yani desen biliniyor, yaygınlaştırılmamış.
 - **İlgili:** `X-01` (Türkçe validasyon mesajları) · `TB-54` (giriş hata mesajı anahtarı).
 
-#### `TB-57` · Entegrasyon test paketi `master`'da KIRMIZI (5 test) 🟠
+##### ✅ KAPANDI — `oksis-api` @ `68023cc`, 2026-08-17
+
+**Kapanışta yapılan tam tarama sayıyı büyüttü: 198 değil 223 anahtar.** Çözüm turun kuralına
+uygun oldu — ekran ekran değil, **sözleşmenin kurulduğu yerde**: `src/Oksis.Api/Errors/ErrorMessageCatalog.cs`,
+API sınırında tek anahtar→cümle sözlüğü. `Humanize` yalnız iki noktadan çağrılır:
+`ExceptionHandlingMiddleware` (NotFound / Forbidden / Conflict / TenantRequired) ve
+`ResultExtensions` (`ToHttpResult`). Handler kendi cümlesini yazmışsa ona dokunulmaz.
+
+**Neden handler'lara cümle yazılmadı:** 223 çağrı yerine tek tek cümle yazmak hem çok büyük
+hem de kodu makine-okunur olmaktan çıkarırdı. Bulgunun kendi ifadesi de bunu söylüyordu:
+*"ya handler'lar cümle yazacak ya da API sınırında tek bir anahtar→cümle sözlüğü olacak;
+ekran ekran çözülemez."*
+
+**Sınıf kapatıldı:** `tests/Oksis.Api.UnitTests/Errors/ErrorMessageCatalogTests.cs` — `src`
+altındaki **her** anahtar biçimli dizgiyi tarar ve sözlükte karşılığı olmasını şart koşar
+(sözlüğün kendi dosyası taramadan hariç; yoksa test kendi kendini doğrulayan boş bir kontrol
+olurdu). İkinci test anahtar biçimindeki mesajın **asla ham dönmediğini** çivilliyor: sözlükte
+olmayan anahtar bile nötr cümleye düşer, kullanıcı hiçbir yolda `.errors.` görmez.
+
+**Kalıp bir kez sessizce delindi ve `X-05` turunda kapatıldı (`4b49aac`).** Hem `Humanize`
+hem kapsam testi anahtarın son parçasını **tek segment** sanıyordu; `school-settings.errors.bell.duplicate-order`
+gibi **dört parçalı 13 anahtar** hem sözlüğe girmiyor hem de testi kırmıyordu — yani garanti
+yeşil görünürken kullanıcı ham anahtarı görüyordu. Kalıp iki tarafta **birlikte** genişletildi
+(`^[a-z][a-z0-9-]*\.(errors|error|warnings)(\.[a-z0-9-]+)+$`) ve iki dosya da "ayrışırlarsa
+garanti biter" notunu taşıyor.
+
+**Yeniden ölçüm (2026-08-18):** `src` altında **238 tekil anahtar**, sözlükte **238 giriş** —
+kapsam tutuyor. `dotnet test tests/Oksis.Api.UnitTests` → **254/254 yeşil**.
+
+**İstemci ayağı yerinde duruyor (ikinci ağ):** §13'te yapılan yarım çözüm
+(`packages/api/src/client/mutation-error.ts` · `isTranslationKey` → `NO_REASON_DESC`)
+kaldırılmadı. Sunucu artık anahtar biçimli mesaj üretmediği için bu yol pratikte boşa çalışır,
+ama sözlüğün kapsamadığı bir yoldan anahtar sızarsa ekran yine ham basmaz.
+
+⚠️ **Damgalanması gereken yan etki — anahtar artık istemciye HİÇ ulaşmıyor.** Sözlüğün gerekçesi
+*"anahtar makine-okunur kalır, kullanıcıya cümle gider"* diyordu; ölçüm bunun **yalnız depo içinde**
+doğru olduğunu gösteriyor. `Result.Conflict("duties.errors.substitute-busy")` → `code` =
+`Error.Conflict` (jenerik), `message` = artık Türkçe cümle. Yani bu ailede **istemcinin
+dallanabileceği tanımlayıcı yanıtta yok**: X-14 öncesi istemci mesajın anahtar olduğunu görüp
+dallanabilirdi (`isTranslationKey` tam da bunu yapıyordu), sonrasında bu imkân kapandı.
+`USERS_*` gibi gerçek kodu olan modüller etkilenmiyor. Dallanma gerektiren bir ekran çıktığında
+doğru çözüm anahtarı **`code` alanına** taşımaktır — bugün böyle bir tüketici yok, bu yüzden
+madde açılmadı, not olarak duruyor.
+
+#### `TB-57` · Entegrasyon test paketi `master`'da KIRMIZI (5 test) 🟠 *(kapandı — aşağıda)*
 - **Nasıl bulundu:** `E-11` sonrası tam `dotnet test` koşuldu.
 - **Ölçüm:** `Oksis.Infrastructure.IntegrationTests` → **5 kırmızı**
   (`SubjectTeacherAssignmentTests` × 4 + `GetAvailableSubstitutes` × 1).
@@ -2227,6 +2271,53 @@ sırasında ölçüldü, üçü de kod değil **veri/kapsam** işi.
   Kural yazmak korumaz, koşturmak korur — ama koşulmayan test de korumaz.
 - **Karar gerektiren:** ya testler güncel davranışa göre düzeltilecek ya da
   davranış hatalı; ikisi de `X-04`'ün kapsamını yeniden açar.
+
+##### ✅ KAPANDI — `oksis-api` @ `4711321`, 2026-08-17
+
+**Kapanışta yapılan tam ölçüm bulguyu büyüttü: 5 değil 11 kırmızı** — ve ikisi ayrı sınıftı.
+
+**1) Gerçek üretim hatası (1 test).** `GetAvailableSubstitutesQueryHandler` öğretmenin
+**tenant** branş kimliğini (`school.branches` → `TeacherProfile.BranchId`) doğrudan **katalog**
+kimlikleriyle (`master.branches` → `SubjectBranch`) karşılaştırıyordu. İki küme hiçbir zaman
+kesişmez; sonuç sessizce daima "alan-dışı" olur. Yani **vekâlet aday sıralamasında branş uyumu
+profilden hiç hesaplanmıyordu** — `Same`/`Near` yalnız görevlendirme (ders kategorisi) üzerinden
+doğabiliyordu. `X-04` turunda çeviri altı görevlendirme handler'ına eklenmiş, aynı eşleştiriciyi
+kullanan vekâlet modülü dışarıda kalmıştı; **iki ay** böyle çalıştı. Düzeltme: handler artık
+`AssignmentProjections.LoadCatalogBranchIdsAsync` + `ToCatalogIds` ile çeviriyi yapıyor.
+
+**2) Bayat test fixture'ları (10 test).** Üretim değil, testin kendi kurulumu çürümüştü:
+- `SubjectTeacherAssignmentTests` (4) — fixture yalnız tenant branşını kuruyor, katalog zincirini
+  (`master.branches` + `subject_branches`) kurmuyordu. `X-04` ile ad karşılaştırması kalkınca
+  kurulum sessizce "her öğretmen alan-dışı"ya dönüştü. **Deftere yazılan 4 kırmızı budur.**
+- `AutoGenClassResolverTests` (3) + `AutoGenerateScheduleJobTests` (3) — v1 `teaching_assignments`
+  satırı seed ediyorlardı; `B-26`/`K-10` ile resolver v2 yetkinlik + müfredat kaynağına geçince
+  seed anlamsız kaldı ve testler boş sonuç aldı. **Bunlar `688efcb`'nin regresyonu** ve ilk
+  ölçümde hiç sayılmamışlardı — yani defterdeki "5 kırmızı" rakamı eksikti.
+
+**Sınıf kapatıldı:** `tests/Oksis.Tests/Architecture/BranchCatalogTranslationTests.cs` — uyum
+çözücüsü (`SubjectBranchMatch.Resolve`, `BranchFitResolver.Resolve`) çağıran her kaynak dosya,
+aynı dosyada çeviriyi de (`LoadCatalogBranchIdsAsync` / `LoadTeacherBranchesAsync` / `ToCatalogIds`)
+çağırmak zorundadır. Boş yere yeşil değil: çeviri geri alınınca test dosya adını vererek kırmızıya
+düştü, geri konunca yeşile döndü.
+
+**Ölçüm (kapanış anı):** entegrasyon paketi **891/891 yeşil** (önce 880/891); birim testleri
+Domain 695 · Application 1602 · Api 41 yeşil, build 0 uyarı.
+
+**Yeniden ölçüm (2026-08-18):** `dotnet test tests/Oksis.Infrastructure.IntegrationTests` →
+**907/907 yeşil, 0 kırmızı** (2 dk 52 sn). Kapanıştan sonra gelen `X-05` (şube→derslik göçü),
+`TB-32`, `TB-65`, `TB-74` commit'leri paketi kırmamış — ama bunu **kanca değil elle koşan biri**
+doğruladı; aşağıdaki açık ayak tam olarak bu.
+
+⬜ **Kök neden kapanmadı, belirti kapandı.** "Neden kimse görmedi" ayağı `X-11`'in CI ayağıdır ve
+**açık duruyor**: `.githooks/pre-push` bugün de entegrasyon testlerini koşmuyor (bilinçli dar
+kapsam — Docker kapalıyken kanca yanlışlıkla kırmızıya düşmesin diye). Mimari test yalnız *branş
+çevirisi* sınıfını koruyor; başka bir sınıftan gelecek entegrasyon regresyonu aynı yoldan yine
+görülmez.
+
+⚠️ **Mimari testin kendi sınırı:** koruma **dosya granülaritesinde** ve `_matchResolvers` listesi
+**elle** tutuluyor. Yeni bir çözücü eklenip listeye yazılmazsa test sessizce kör kalır —
+`TB-57`'yi doğuran desenin bir kat yukarıdaki hâli. Testin docblock'u bunu kabul ediyor:
+*"Yeni bir çözücü eklenirse buraya yazılır."*
 
 #### `B-32` · ⚠️ **Bulgu geri çekildi — ölçüm hatasıydı**
 - **İddia:** *"`/academic-sessions` sayfasında iki 'Aktifleştir' butonu var, birincisi hiçbir
@@ -2943,3 +3034,135 @@ yakalanmadığı ölçülmedi — iddia edilmiyor, ayrı tur konusu.
 **Ders:** `ENG-02` tüketici yüzeyini kapattı ama onu besleyen **yayın** yüzeyi
 bu turlarda hiç ölçülmemişti. Bir ekranın doğru veriyi göstermesi, o veriyi
 üreten ekranın da doğru çalıştığı anlamına gelmiyor.
+
+---
+
+## 20. `K-10` Uygulama Denetimi — görevlendirme tek kaynağa indi mi? (2026-08-18)
+
+**Soru:** `K-10` *"v2 + müfredattan türet, **v1 emekliye ayrılır (okuma yolları kesilir)**"*
+demişti. Karardan iki gün sonra kodda ne var?
+
+**Cevap: yarısı yapılmış.** Tüketici ayağı bitti — **üretici ayağı hiç başlamadı.**
+
+#### `X-15` · Görevlendirme hâlâ iki tabloda; v1 emekli değil, **canlı yazma yüzeyi var** 🔴 *(kapandı — aşağıda)*
+
+- **Yapılan (doğrulandı):** ders programı üretimi tek kaynağa indi.
+  `TeachingAssignmentSource`, `AutoGenClassResolver` ve `GetAutoGenClassesQueryHandler`
+  **yalnız** `academic.subject_teacher_assignments` (v2) + müfredat okuyor; üçünde de v1'e
+  tek referans kalmamış. Sınıfın kendi docblock'u kararı ve gerekçesini taşıyor.
+- **Yapılmayan:** v1 `academic.teaching_assignments`'ın **okuma yolları kesilmedi**;
+  üstüne **yazma yüzeyi de duruyor**.
+
+**Ölçüm — v1 bugün canlı (2026-08-18, `oksis-api` @ `b49d17f`, `oksis-ui` @ `5dadb16`):**
+
+| | v1 `teaching_assignments` | v2 `subject_teacher_assignments` |
+|---|---|---|
+| Yazan uç | `POST/DELETE api/v1/teachers/{id}/assignments` · `POST api/v1/teaching-assignments/copy-season` | `POST api/v1/assignments` … |
+| Yazan ekran | **web · Öğretmenler** (`teachers-page.tsx` → `TchAssignModal`: **şube + ders + haftalık saat**) | web · Görevlendirmeler |
+| Okuyan | 10 yer (aşağıda) | Görevlendirmeler ekranı + **ders programı üretimi** |
+| Aktif satır (dev DB) | ATA-AL **142** · CUM-IO **140** · DEV-OKUL **140** · TST-AL 0 | 16 · 3 · 0 · 0 |
+
+**`K-10`'un ölçümünde bir hata vardı ve karar onun üstüne kuruldu.** Karar metni
+*"`AssignSubjectClassCommand` ucu var ama **hiçbir istemci çağırmıyor**"* diyor. Bu doğru değil:
+`oksis-ui` @ `5462808` (**2026-07-12**, karardan **beş hafta önce**) Öğretmenler ekranına
+görevlendirme modalını eklemiş ve o gün bugündür `useAssignSubjectClass` → `POST v1` çağırıyor;
+çekmece de `GET`/`DELETE v1` çağırıyor. `s4`'te v1'in 0 olması "istemci yok"tan değil, **o testte
+o modalın kullanılmamış olmasından** kaynaklanıyor. Yani v1 ölü bir tablo değil, **kullanıcının
+elinin altındaki bir ekran.**
+
+**Bunun bugünkü anlamı — kullanıcı veri girer, hiçbir şey olmaz.** Öğretmenler ekranından
+"Matematik · 9-A · 4 saat" girildiğinde satır v1'e yazılır; ders programı üretimi v1'i artık
+**hiç okumaz**. Ekran başarı der, program değişmez. Bu, `B-26`'nın **tersi**: eskiden üretim
+kimsenin yazmadığı tablodan besleniyordu, şimdi kullanıcı hiçbir şeyin okumadığı tabloya yazıyor.
+Aynı aile: [[kural-ekranda-degil-sunucuda]] · `TB-32`.
+
+**v1'i bugün hâlâ okuyan yerler (10):**
+
+| Yer | Ne bozulur (v1 boş / bayat olan gerçek okulda) |
+|---|---|
+| `AudienceResolver.BuildTeacherPoolAsync` | Öğretmenin duyuru hedef havuzu **yalnız kendi şube/dersleri**dir ve v1'den kurulur → havuz **boş**, öğretmen kendi sınıfına duyuru yapamaz |
+| `AudienceResolver.ResolveCourseStudentsAsync` + `CreateAnnouncementCommandHandler` | "Ders" hedefi bir **v1 satır kimliğidir**; çözülemezse alıcı kümesi boş |
+| `GetTeacherWorkloadQueryHandler` | Öğretmen yükü = v1 haftalık saatlerin toplamı → **her öğretmen %0** |
+| `GetAvailableSubstitutesQueryHandler` | Adayın ders kategorileri v1'den → kategori üzerinden gelen uyum hiç doğmaz (`TB-57`'nin düzelttiği branş ayağı ayrı) |
+| `GetTeacherAssignmentsQueryHandler` | Öğretmen çekmecesindeki "Görevlendirmeler" listesi |
+| `GetAssignmentHistoryQueryHandler` | "Görev Geçmişi" |
+| Hub: `GetAssignmentSummary` · `ListAssignmentClasses` · `ListClassAssignments` | `api/v1/teaching-assignments/*` — **hiçbir istemci çağırmıyor** (ölçüldü); yani kusuru da görünmez |
+| `SubjectUsageInspector` | ✔ **Doğru olan tek yer:** ders silme kapısı v1 **ve** v2'yi birlikte soruyor (`TB-53`) |
+| `ActivateSeasonRolloverCommandHandler` · `SetupSeasonReverter` · `CopyAssignmentsToNewSeason` | Devir v1 satırlarını yeni sezona kopyalamayı sürdürüyor — **iki kaynağı her sezon yeniden üretiyor** |
+| `TimetableDevSeeder` | Seed hâlâ v1'e 140 satır yazıyor; `B-26`'yı gizleyen verinin ta kendisi |
+
+**Yan bulgu — iki olay da dinleyicisiz.** `TeachingAssignmentChangedEvent` (v1) ve
+`SubjectAssignmentChangedEvent` (v2) yayınlanıyor, **hiçbir handler dinlemiyor**. v1 entity'sinin
+docblock'u hâlâ *"Değişimde … yayınlanır → Ders Programı senkron kalır"* diyor; bu cümle `K-10`
+sonrası yalnız yanlış değil, **tersine yanıltıcı** — o olay artık hiçbir yere gitmiyor.
+
+**Kalan iş (karar değil, uygulama):** ya (a) `K-10` harfiyen uygulanır — v1 yazma yüzeyi
+kaldırılır, 9 okuma yolu v2 + müfredata taşınır, seed/devir v2'ye çevrilir, tablo göç ile emekli
+edilir; ya da (b) v1'in taşıdığı **şube + haftalık saat** ekseninin kalıcı bir işlevi olduğu kabul
+edilir ve `K-10` yeniden açılır. Bugünkü hâl ikisi de değil: **iki doğruluk kaynağı, biri sessizce
+tüketicisiz.**
+
+##### ✅ KAPANDI — `oksis-api` @ `67d16db..1798802` · `oksis-ui` @ `5dadb16..2273ceb`, 2026-08-18
+
+`K-10`'un ikinci ayağı on görevlik bir planla uygulandı. Görevlendirme artık **tek kaynakta**:
+"kim hangi dersi **verebilir**" → v2 `academic.subject_teacher_assignments`; "kim hangi şubede
+**kaç saat** veriyor" → **canlı ders programı**. v1 `academic.teaching_assignments` tablosu düştü.
+
+**Türetmenin tek noktası:** `TeacherCourseLoadProjection` — şube/ders/saat, canlı yerleşimlerden
+(`LessonPlacement.IsActive && IsReserving`) sayılır. Taslak program yük üretmez.
+
+**v1'i okuyan dokuz yol taşındı:** öğretmen yükü · çekmece ders listesi · görev geçmişi (v2'ye) ·
+öğretmen duyuru havuzu · "Ders" hedefi çözümü · vekâlet aday kategorileri (v2'ye) · sezon devri
+(v2 kopya komutuna) · `SetupSeasonReverter` guard'ı · dev seed. **Yazan yüzey kaldırıldı:**
+`POST/DELETE teachers/{id}/assignments`, `teaching-assignments/*` ailesinin tamamı,
+`academic-sessions/{id}/copy-assignments`, ve web Öğretmenler ekranındaki "Görevlendirme ekle"
+penceresi. Migration: `20260818_retire_v1_teaching_assignments` (tablo + `teaching-assignments.assign`
+ve `.copy-season` izinleri; `teaching-assignments.view` **kaldı**).
+
+**Geri gelmesini engelleyen guard:** `tests/Oksis.Tests/Architecture/SingleAssignmentSourceTests.cs` —
+`src` altında v1 adının geçmesini yasaklar, ihlali dosya:satır listesiyle söyler. Bu yüzden v2 okuyan
+`TeachingAssignmentSource` de `CompetencyAssignmentSource` olarak yeniden adlandırıldı (`X-05`'in dersi:
+isim sözleşme taşımıyorsa yanlış seçim sessiz hata üretir).
+
+**Ölçüm:** beş test paketi **3539/3539** yeşil, `dotnet build` 0 uyarı; istemci tarafında lint + typecheck
+6/6 ve 499 test yeşil. (Nihai bütün-dal incelemesi bir merge blocker + beş madde çıkardı; hepsi tek bir
+düzeltme dalgasında kapandı ve ayrıca doğrulandı.)
+
+**Uçtan uca elle doğrulama (s4 = OKSİS Test Lisesi, arayüzden kurulan okul — `B-26`'nın sahnesi):**
+sihirbaz **10 şube** listeledi (eskiden **0**) · üretim 9 yerleşim, 0 çakışma, 0 eksik saat ·
+çekmecede "9-A Matematik 6sa", "9-A Fizik 3sa" · yük **%20/%10** (ortalama %15, artık sıfır değil) ·
+öğretmenin duyuru havuzunda **"9-A Matematik"** ve "9-A velileri". Yani senaryonun her ayağı ekranda görüldü.
+
+**Kullanıcıya dönük üç davranış değişti — üçü de koda yazıldı:**
+- **Yük ortalaması tek kaynağa indi ve paydası kadro geneli oldu.** Ara bir aşamada payda "canlı programda
+  dersi olan öğretmenler"e daralmıştı; nihai inceleme bunun **ekranda karşılığı olmadığını** yakaladı — web
+  Öğretmenler şeridi ortalamayı hâlâ **istemcide, ikinci bir kaynaktan** hesaplıyordu ve K-10 öncesi ikisi
+  yalnız rastlantıyla eşitti (v1 boştu, herkes %0'dı). Yani planın kapattığı "aynı soruya iki kaynak" kusuru
+  kullanıcıya dönük yüzeyde canlı kalmıştı. Karar: **kanonik anlam kadro geneli, hesap tek yerde — sunucuda.**
+  Payda = tüm aktif öğretmenler; canlı yerleşimi olmayan ortalamaya **0 olarak girer**, dolayısıyla yayın
+  tamamlanmadan KPI **düşük** okur. Ekran artık sunucunun sayısını gösteriyor, kendi hesabını yapmıyor.
+- **Öğretmenin duyuru havuzu yayınlanmış programa bağlı.** Program yayınlanana kadar öğretmen kendi
+  sınıfına duyuru yazamaz. Zamanlanmış bir duyuru dönem sınırını aşarsa hedefi yeniden çözülür; yeni
+  dönemin programı yayında değilse **sessizce kaybolmaz** — job yayınlamayı reddeder, duyuru `Scheduled`
+  kalır, `AnnouncementScheduleFailedEvent` gider ve bir sonraki taramada yeniden aday olur.
+- **Vekâlet yetkinliği sezona bağlandı.** Devir sonrası geçen sezonun kapatılmış yetkinliği artık aday
+  sıralamasına girmiyor (v2 sözleşmesi sezonu sert sınır sayıyor, `GRV-K-04`).
+
+⚠️ **`X-11`'in yeni ve canlı kanıtı — bu turun en önemli yan bulgusu.** Migration'ın elle yazılmış izin
+süpürme bloğu **çalışmıyordu**: `identity` T-SQL'de ayrılmış sözcük, parantezsiz şema adı `Error 156`
+veriyordu. Beş test paketi de yeşildi ve **hiçbiri yakalamadı** — çünkü test fixture'ları migration
+koşmuyor. Kusuru yalnız uçtan uca elle doğrulama buldu. Eksik olan kapı bu kez entegrasyon testi değil,
+**migration'ın gerçekten uygulanabildiğini ölçen** bir adım.
+
+⬜ **Açık kalanlar (bu planın kapsamı dışı, bilerek):**
+- **Dev ortamında üretim hâlâ eksik saat bırakıyor** (`scope=All` → 70/90 saat, `missingHours: 20`).
+  Sebep `IdentityDevSeeder`'ın branş başına **tek** öğretmen açması; tek adaylı derste bütün şubeler aynı
+  kişiye yığılıyor. Plan kaynaklı değil, ayrı karar.
+- **`apps/web`'de bileşen testi altyapısı yok** (RTL/jsdom) — ekran ayağının otomatik kapısı yok, kapı
+  elle doğrulama.
+- **Müfredat saatleri hâlâ doğrulanmamış** (`E-16` artığı: lise satırları *"Doğrulanmadı — MEB çizelgesi
+  bekleniyor"* damgalı). Müdürün "bu şubede 6 saat olsun" diyebileceği yüzey `SchoolWeeklyHourOverride`
+  üzerinden ayrı bir iştir.
+- **`teaching-assignments.view` hiçbir role açıkça verilmiyor** (yalnız `AllPermissionIds()` üzerinden);
+  öğretmen kendi ders listesini okuyamaz. Önceden beri böyle, uç idare ekranı için.
+

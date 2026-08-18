@@ -33,7 +33,7 @@
 | **K-07** | Sezon kapanış yüzeyi: kayıt yenileme akışı yazılacak mı? | ✅ Karara bağlandı | 2026-08-16 | Tam akış yazılacak |
 | **K-08** | Dini bayramlar için tatil şeması değişikliği | ⏸️ Ertelendi | 2026-08-16 | Ayrı iş olarak planlanacak |
 | **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ✅ Karara bağlandı | 2026-08-16 | "Örnek veri" rozeti |
-| **K-10** | Ders programının görevlendirme kaynağı (v1 mi v2 mi) | ✅ Karara bağlandı | 2026-08-16 | v2 + müfredattan türet, v1 emekli |
+| **K-10** | Ders programının görevlendirme kaynağı (v1 mi v2 mi) | ✅ Karara bağlandı · **uygulandı** | 2026-08-16 · uygulama 2026-08-18 | v2 + müfredattan türet, v1 emekli — **v1 tablosu düştü**, bkz. `X-15` |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -732,6 +732,18 @@ sınıf listeleyemez.
 >
 > Yan kazanç: ders↔kademe uygunluğu artık yapısal olarak garanti — müfredatta olmayan ders
 > o kademeye hiç aday olmuyor.
+
+**✅ Uygulandı — 2026-08-18**
+> Kararın **ikinci ayağı** (v1'in emekliye ayrılması) 2026-08-18'de tamamlandı: v1'i okuyan dokuz yol
+> taşındı, yazma yüzeyi kaldırıldı, tablo `20260818_retire_v1_teaching_assignments` ile düştü.
+> `oksis-api` @ `67d16db..1798802`, `oksis-ui` @ `5dadb16..2273ceb`. Beş test paketi 3539/3539 yeşil;
+> arayüzden kurulan okulda (`s4`) sihirbaz 0 yerine **10 şube** listeliyor ve program üretiliyor.
+> Ayrıntı, ölçümler ve açık kalanlar: [[OKSİS - Bulgu Kayıt Defteri]] `X-15` kapanış damgası.
+>
+> **Kararın dayandığı ölçümde bir hata vardı** (bkz. `X-15`): karar metni *"`AssignSubjectClassCommand`
+> ucu var ama hiçbir istemci çağırmıyor"* diyordu; oysa web Öğretmenler ekranı 2026-07-12'den beri
+> çağırıyordu. Karar yine de doğruydu — ama v1 ölü bir tablo değil, kullanıcının elinin altındaki bir
+> ekrandı; bu yüzden emeklilik "temizlik" değil **davranış değişikliği** oldu.
 
 --- end-multi-column
 
