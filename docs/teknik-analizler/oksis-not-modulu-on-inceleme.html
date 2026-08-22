@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OKSİS — Not Modülü Ön İnceleme (18 Ağustos 2026)</title>
+<style>
+  :root{--ink:#141F45;--ink2:#4A5375;--ink3:#8A92AE;--bd:#DDE3F1;--bg:#F6F8FC;--card:#fff;--a:#26407F;--ok:#1B7F5A;--warn:#B7791F;--bad:#B23A3A;--soft:#E9EEF7;--t:#1B2B5E}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,sans-serif;color:var(--ink);background:var(--bg);line-height:1.55;font-size:15px}
+  header{background:radial-gradient(120% 120% at 15% 12%,#26407F,#1B2B5E 46%,#141F45);color:#fff;padding:40px 32px 32px}
+  header h1{margin:0 0 6px;font-size:26px;letter-spacing:-.3px}
+  header p{margin:0;opacity:.85;max-width:900px}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;margin-top:16px;font-size:13px;opacity:.9}
+  .meta span b{opacity:.7;font-weight:500;margin-right:4px}
+  main{max-width:1180px;margin:0 auto;padding:28px 24px 64px}
+  nav.toc{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:16px 20px;margin-bottom:26px;font-size:14px}
+  nav.toc a{color:var(--a);text-decoration:none;margin-right:16px;white-space:nowrap}
+  section{background:var(--card);border:1px solid var(--bd);border-radius:14px;padding:24px 26px;margin-bottom:22px}
+  h2{margin:0 0 6px;font-size:20px;letter-spacing:-.2px}
+  h2 small{display:block;font-size:13px;color:var(--ink3);font-weight:500;margin-top:2px}
+  h3{font-size:16px;margin:22px 0 8px;color:var(--t)}
+  p{margin:8px 0}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;margin:12px 0}
+  th,td{border:1px solid var(--bd);padding:8px 10px;vertical-align:top;text-align:left}
+  th{background:var(--soft);font-weight:600}
+  td.c,th.c{text-align:center}
+  .tag{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;line-height:1.5}
+  .ok{background:#E3F4EC;color:var(--ok)} .warn{background:#FBF0DA;color:var(--warn)} .bad{background:#F9E3E3;color:var(--bad)} .info{background:var(--soft);color:var(--a)} .grey{background:#EEF0F5;color:var(--ink2)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin-top:12px}
+  .card{border:1px solid var(--bd);border-radius:12px;padding:14px 16px;background:#fff}
+  .card h4{margin:0 0 6px;font-size:15px}
+  .card p{font-size:13.5px;color:var(--ink2);margin:4px 0}
+  .kpi{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0}
+  .kpi div{border:1px solid var(--bd);border-radius:12px;padding:12px 14px}
+  .kpi b{display:block;font-size:22px;letter-spacing:-.4px}
+  .kpi span{font-size:12.5px;color:var(--ink3)}
+  .callout{border-left:4px solid var(--a);background:var(--soft);padding:12px 16px;border-radius:0 10px 10px 0;margin:14px 0}
+  .callout.warn{border-color:var(--warn);background:#FBF5E8}
+  .callout.bad{border-color:var(--bad);background:#FBEDED}
+  .q{counter-reset:none;border:1px dashed var(--bd);border-radius:10px;padding:10px 14px;margin:8px 0;background:#FBFCFE}
+  .q b{color:var(--a)}
+  .q .opt{color:var(--ink2);font-size:13.5px}
+  code{background:var(--soft);padding:1px 6px;border-radius:5px;font-size:12.5px;color:var(--t)}
+  ul{margin:6px 0 6px 18px;padding:0} li{margin:3px 0}
+  .legend{font-size:12.5px;color:var(--ink3);margin-top:6px}
+  footer{max-width:1180px;margin:0 auto;padding:0 24px 40px;color:var(--ink3);font-size:12.5px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Not (Grades) Modülü — Ön İnceleme</h1>
+  <p>MVP'nin kalbi olan not modülüne başlamadan önce ihtiyacın rol bazlı anlamı, platform dağılımı ve mevcut sistemle temas noktalarının haritası. Bu belge <b>ihtiyaç analizi değildir</b>; ihtiyaç analizine girmeden önce aramızda netleşmesi gereken kararları yüzeye çıkarır.</p>
+  <div class="meta">
+    <span><b>Tarih</b>18 Ağustos 2026</span>
+    <span><b>Kaynak</b>oksis-api + oksis-ui (lokal repo taraması) + 31 Temmuz durum analizi</span>
+    <span><b>Sonraki adım</b>Netleşme görüşmesi → İhtiyaç analizi (yetki modeli ağırlıklı)</span>
+  </div>
+</header>
+
+<main>
+<nav class="toc">
+  <a href="#s0">0. Repo gerçeği</a>
+  <a href="#s1">1. Rol bazlı anlam</a>
+  <a href="#s2">2. Platform dağılımı</a>
+  <a href="#s3">3. Temas eden modül ve ekranlar</a>
+  <a href="#s4">4. Yetki modeli — ön düşünce</a>
+  <a href="#s5">5. Karar bekleyen sorular</a>
+  <a href="#s6">6. MVP kesim önerisi</a>
+</nav>
+
+<!-- ============ 0 ============ -->
+<section id="s0">
+  <h2>0. Repo gerçeği — modül sıfırdan başlamıyor, zemin hazır<small>Kod ne diyor? (18 Ağustos itibarıyla)</small></h2>
+  <p>31 Temmuz analizinde "Not modülü %0" demiştik. Bu hâlâ doğru — <code>Application/Modules/Grades</code> altında yalnız bir README var, domain'de sıfır entity, UI'da <code>/grades</code>, <code>/report-cards</code> ve mobil <code>grades.tsx</code> birer "Planlandı" kabuğu. Ama önemli olan şu: <b>not modülünün ihtiyaç duyacağı çevre yapıların büyük kısmı zaten yazılmış.</b> Bu, ihtiyaç analizinde "yeni icat etmeyeceğimiz" alanları netleştiriyor.</p>
+
+  <div class="kpi">
+    <div><b>0</b><span>Grades entity / handler / endpoint</span></div>
+    <div><b>3</b><span>İzin kodu seed'li: grades.read / write / publish</span></div>
+    <div><b>7</b><span>Master ExamType (VZ1-4, SZ, PER, PRJ)</span></div>
+    <div><b>3</b><span>Master GradeScale (100'lük, 5'lik, Harf)</span></div>
+    <div><b>2</b><span>Bildirim olay tipi hazır: GRADE_PUBLISHED, REPORT_CARD_PUBLISHED</span></div>
+    <div><b>1</b><span>Push kanalı: hâlâ yok (yalnız in-app)</span></div>
+  </div>
+
+  <table>
+    <tr><th style="width:26%">Hazır yapı</th><th>Nerede</th><th style="width:34%">Not modülü için anlamı</th></tr>
+    <tr><td><span class="tag ok">Var</span> Akademik politika</td><td><code>SchoolSettings.UpdateAcademicPolicy</code>: DefaultGradeScaleId, DefaultPassingScore (50), RoundingRule (Nearest), WrittenExamCount (1-3), PerformanceCount (1-3), WrittenWeight+PerformanceWeight=100, HonorThreshold / ThanksThreshold, AutoPublishReportCards. Web <code>settings → policy-tab</code> ve mobil <code>academic-policy-screen</code> bunu düzenliyor; ekranda "Not girişi &amp; karne hesaplama" için kullanıldığı yazıyor.</td><td>Hesaplama kuralları <b>zaten okulun eline verilmiş</b>. Not modülü bunları tüketici olarak okur, tekrar tanımlamaz. Ancak <code>ExamType.WeightPercent</code> (master) ile <code>SchoolSettings.WrittenWeight</code> arasında <b>iki ağırlık kaynağı</b> var — hangisi kazanır, netleşmeli.</td></tr>
+    <tr><td><span class="tag ok">Var</span> Kademe bazlı skala</td><td><code>SchoolGradeLevelScale</code> (BR-SS-011 fallback zinciri): ilkokul 5'lik, lise 100'lük gibi.</td><td>Not girişi validasyonu kademeye göre skala çözer; tek skala varsayımı yapmayacağız.</td></tr>
+    <tr><td><span class="tag ok">Var</span> Sınav türü kataloğu</td><td><code>ExamType</code> master (kod, ağırlık, TermOrder 0/1/2). Okul özelleştirmesi "Sprint 2+" notuyla bekliyor.</td><td>Not girişinin "sütunları" buradan gelir; okul-özel sınav türü (tenant override) MVP kararı.</td></tr>
+    <tr><td><span class="tag ok">Var</span> İzin iskeleti</td><td><code>PermissionSeedData</code>: grades.read/write/publish. Rol eşlemesi: SchoolAdmin ve Teacher üçüne, Parent ve Student yalnız read. <code>PermissionRequirement</code> + <code>ChildScopeRequirement</code> (ABAC, veli-çocuk CanViewInfo) + <code>ActiveSeasonWritePolicy</code> (geçmiş sezona yazma yasak).</td><td>RBAC katmanı hazır; <b>eksik olan kapsam (scope) katmanı</b>: öğretmen hangi şube×ders'e yazabilir? Bunu handler seviyesinde kuracağız (Duyuru ve Nöbet modüllerindeki "izin kapıyı açar, handler hangi kayda dokunulacağını belirler" kalıbı).</td></tr>
+    <tr><td><span class="tag ok">Var</span> Öğretmen ↔ ders ↔ şube bağı</td><td><code>TeachingAssignment</code> (Teacher × ClassRoom × Subject, haftalık saat, sezona bağlı, RevokedAt ile arşivlenir) ve <code>SubjectTeacherAssignment</code> (Teacher × Subject yetkinlik). <code>ClassRoom.HomeroomTeacherId</code> rehber/sınıf öğretmeni.</td><td>"Bu öğretmen bu şubede bu dersin notunu girebilir" kuralının <b>tek doğru kaynağı</b> TeachingAssignment. Not modülü kendi öğretmen atamasını tutmaz.</td></tr>
+    <tr><td><span class="tag ok">Var</span> Dönem yaşam döngüsü</td><td><code>AcademicTerm.Status</code> + <code>ClosedAt</code>, <code>season.term.close</code> izni, <code>AcademicTermClosedEvent</code>. Ayar: dönem kapanınca karne otomatik yayın (BR-AS-009).</td><td>Kilitleme (Locked) ve karne üretimi için tetikleyici zaten var; not modülü bu event'e abone olur.</td></tr>
+    <tr><td><span class="tag ok">Var</span> Bildirim çekirdeği</td><td><code>NotificationEventType</code> seed'inde GRADE_PUBLISHED ("Sınav notu girildi", portal+email) ve REPORT_CARD_PUBLISHED ("Karne yayınlandı") <code>delivered:false</code> ile bekliyor. <code>NotificationRecipientResolver</code> veli/öğretmen/idare hesaplarını çözüyor. Okul <code>NotificationConfig</code> (push/email/sms, sessiz saatler).</td><td>Yayınla → veliye bildirim zinciri <b>bir event handler</b> uzaklıkta. Fakat push kanalı hâlâ yazılmadı (Infrastructure/Notifications'ta yalnız InApp) — <b>"veli telefonuna düşer" kriteri hâlâ açık</b>.</td></tr>
+    <tr><td><span class="tag warn">Kısmi</span> UI kabukları</td><td>Web: <code>/grades</code>, <code>/report-cards</code> PlannedScreen. Mobil: <code>(tabs)/grades.tsx</code> PlannedScreen; doğrulanmış sekme setinde öğretmen <i>Notlar</i>, öğrenci <i>Notlarım</i>, veli <i>Notlar</i> sekmesi var. Öğrenci anasayfası (statik fixture) "son notlar + ders ortalamaları" gösteriyor; veli anasayfası bilinçli olarak <b>not/ortalama göstermiyor</b> (KVKK / kıyas yok kararı).</td><td>Navigasyon yerleri ayrılmış; ama <b>mobil not ekranlarının tasarımı yok</b> (manifest'te satırı olmayan modülün mobil tasarımı yoktur kuralı). Tasarım işi de plana girmeli.</td></tr>
+    <tr><td><span class="tag bad">Yok</span></td><td>Grade / Mark entity'leri, durum makinesi, toplu giriş, yayın akışı, ortalama/karne hesaplayıcı, karne PDF, not itiraz/düzeltme akışı, öğrenci detayında not sekmesi, dashboard'da not KPI'ı, rapor sekmeleri.</td><td>Modülün gerçek kapsamı bu; ihtiyaç analizinin konusu.</td></tr>
+  </table>
+
+  <div class="callout warn"><b>Öncelik notu.</b> 31 Temmuz'da "önce push kanalı (1 hafta), sonra not (3 hafta)" demiştik. Aradaki 2,5 haftada <b>Duyuru modülü</b> yazıldı (2-10 Ağustos SDD kayıtları), push kanalı hâlâ açık. Not modülüne başlarken bu sırayı yeniden konuşalım: notu yayınlayıp veliye ulaştıramamak, "not girildi" değerinin yarısını kilitler.</div>
+</section>
+
+<!-- ============ 1 ============ -->
+<section id="s1">
+  <h2>1. Bu modül kimin için ne ifade ediyor?<small>Dört rol, dört farklı "iş" — aynı veri, farklı anlam</small></h2>
+
+  <div class="grid">
+    <div class="card">
+      <h4>Öğretmen — "girmek zorunda olduğum iş"</h4>
+      <p><b>İş:</b> Sınav sonrası 30 öğrencinin notunu <b>hızlı ve hatasız</b> girmek; ortalama hesabını sisteme bırakmak; dönem sonunda "eksik not kaldı mı" korkusu yaşamamak.</p>
+      <p><b>Kritik anlar:</b> sınav kağıtları elinde, akşam evde toplu giriş · sözlü/performans notunu ders çıkışı koridorda tek tek girme · yanlış girilen notu düzeltme (yayınlandıktan sonra bile) · dönem kapanmadan önce "kırmızı hücreleri" görme.</p>
+      <p><b>Korku:</b> Yanlış notun veliye anında gitmesi. Bu yüzden <b>taslak → yayınla</b> ayrımı öğretmen için lüks değil, güven meselesi.</p>
+      <p><b>Başarı ölçütü:</b> bir şubenin bir sınav notunu 3 dakikanın altında girip yayınlamak; öğretmen "Excel'e girip sekretere göndereyim" demiyor.</p>
+    </div>
+    <div class="card">
+      <h4>Öğrenci — "durumumu görme"</h4>
+      <p><b>İş:</b> "Yazılıdan kaç aldım?", "ortalamam ne, geçer miyim?", "karnem nasıl olacak?" sorularına <b>kendi başına</b> cevap bulmak.</p>
+      <p><b>Kritik anlar:</b> not yayınlanınca ilk saatler (öğrenci bildirimi veliden önce mi görecek?) · dönem sonu tahmini · takdir/teşekkür sınırına yakınlık.</p>
+      <p><b>Tasarım ilkesi (zaten karar):</b> kıyas yok, sıralama yok, gamification yok; düşük not nötr sunulur, renk kodlaması yok (student-home yorumu).</p>
+      <p><b>Yaş kırılımı:</b> ilkokul öğrencisinin hesabı çoğu zaman yoktur; öğrenci portalı fiilen ortaokul-lise. Küçük yaşta veli tek tüketici.</p>
+    </div>
+    <div class="card">
+      <h4>Veli — "çocuğum iyi mi, sürpriz var mı?"</h4>
+      <p><b>İş:</b> Notu <b>zamanında</b> öğrenmek (okuldan önce değil, okulla aynı anda), gidişatı takip etmek, gerekirse öğretmenle konuşacak zemin bulmak.</p>
+      <p><b>Kritik anlar:</b> "Notunuz yayınlandı" push'u · karne günü · birden fazla çocuk arasında geçiş · boşanmış/ayrı ebeveyn — kim görebilir (CanViewInfo).</p>
+      <p><b>Ton:</b> Veli tarafında kırmızı alarm yok (parent-home kararı); ortalama gösterilmesi bile anasayfada bilinçli olarak kapatılmış. Not sekmesinde nasıl gösterileceği ayrıca kararlaştırılmalı — sınıf ortalaması ile kıyas KVKK ve pedagojik nedenle <b>varsayılan kapalı</b> olmalı.</p>
+      <p><b>Ödeyen müşteri:</b> Özel okulda not şeffaflığı velinin okuldan beklediği ilk 3 dijital hizmetten biri; pilot memnuniyeti buradan ölçülür.</p>
+    </div>
+    <div class="card">
+      <h4>Yönetim — "kontrol, uyum, itibar"</h4>
+      <p><b>İş:</b> Not girişinin <b>tamamlanma takibi</b> ("hangi öğretmen hangi şubede eksik?"), dönem kapanışı ve karne, MEB yönetmeliğine (yazılı sayısı, ağırlık, yuvarlama, takdir/teşekkür) uyum, itiraz ve düzeltmelerin izli olması, e-Okul'a aktarım için tutarlı veri.</p>
+      <p><b>Kritik anlar:</b> karne haftası (dashboard'daki "Karne Not Girişi Son Gün" statik takvim öğesi bunun sinyali) · veli itirazı · öğretmen ayrılığı/vekil öğretmen · geçmiş sezona müdahale ihtiyacı.</p>
+      <p><b>Korku:</b> Yayınlanmış notun sessizce değişmesi (denetim izi yoksa okul savunmasız), yanlış veliye giden not (yetki sızıntısı), notların "kimin girdiği belirsiz" olması.</p>
+      <p><b>Roller içinde roller:</b> müdür / müdür yardımcısı / rehber öğretmen (Counselor MVP'de yok) / sınıf rehber öğretmeni (HomeroomTeacher — kendi şubesinin <i>tüm</i> derslerini okuma ihtiyacı).</p>
+    </div>
+  </div>
+
+  <h3>Ortak payda</h3>
+  <p>Dört rolün de kesiştiği tek şey <b>"yayınlanma anı"</b>. Öğretmen için sorumluluk devri, öğrenci/veli için bilginin doğduğu an, yönetim için denetim noktası. Modülün omurgası bu yüzden CRUD değil, <b>Taslak → Yayınlandı → Kilitli</b> durum makinesi ve her geçişin kim/ne zaman/neden iziyle kaydıdır. Bu, 31 Temmuz analizindeki <code>business-rules.md</code> tanımıyla da örtüşüyor.</p>
+</section>
+
+<!-- ============ 2 ============ -->
+<section id="s2">
+  <h2>2. Platform dağılımı — web mi, mobil mi?<small>"Her şey her yerde" değil, kullanım eğrisine göre dağıtım</small></h2>
+
+  <p><b>Önerim net:</b> görevler kullanım eğrisine göre dağıtılsın; iki platformda birebir aynı görev seti taşımayalım. Mevcut mimari de bunu söylüyor: veli/öğrenci için web portali yok (plan gereği mobil), yönetim ise web panelinde yaşıyor. Tek gerçek ikilem <b>öğretmen</b>de.</p>
+
+  <table>
+    <tr><th>Görev</th><th class="c">Öğretmen<br>Web</th><th class="c">Öğretmen<br>Mobil</th><th class="c">Yönetim<br>Web</th><th class="c">Yönetim<br>Mobil</th><th class="c">Öğrenci<br>Mobil</th><th class="c">Veli<br>Mobil</th><th>Gerekçe</th></tr>
+    <tr><td>Toplu not girişi (şube × sınav ızgarası, klavye ile hızlı)</td><td class="c"><span class="tag ok">Birincil</span></td><td class="c"><span class="tag warn">Sınırlı</span></td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td>30 satırlık grid + Tab ile ilerleme web'de doğal; mobilde tek sütun liste "öğrenci → not" hızlı giriş olarak yeter. Excel/CSV import web'e ait.</td></tr>
+    <tr><td>Tekil / anlık not (sözlü, performans, ders çıkışı)</td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag ok">Birincil</span></td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td>Öğretmen sınıftan çıkarken telefonuyla girer; yoklama roster ekranı bu davranışı zaten kurdu.</td></tr>
+    <tr><td>Taslağı yayınla / geri al</td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag ok">Toplu</span></td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td>Yayın kararı iki yerde de olmalı; onay sheet'i mobilde, dialog web'de. Yönetim "tüm okulu yayınla" (karne) yalnız web.</td></tr>
+    <tr><td>Yayınlanmış notu düzeltme (gerekçeli)</td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag ok">Onay</span></td><td class="c"><span class="tag warn">Onay</span></td><td class="c">—</td><td class="c">—</td><td>Yoklamadaki <i>amendment request</i> kalıbının aynısı: öğretmen talep eder / pencere içinde direkt düzeltir, idare onaylar. Onay mobilde de yapılabilir (duyuru onay kuyruğu emsali var).</td></tr>
+    <tr><td>Eksik not takibi ("kırmızı hücreler")</td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag ok">Özet</span></td><td class="c"><span class="tag ok">Birincil</span></td><td class="c"><span class="tag ok">Özet</span></td><td class="c">—</td><td class="c">—</td><td>Öğretmen anasayfası "Bekleyen İşler" varyantı bu sayaç için biçilmiş kaftan; yönetim tamamlanma panosu web.</td></tr>
+    <tr><td>Dönem kapatma, kilitleme, karne üretimi/yayını</td><td class="c">—</td><td class="c">—</td><td class="c"><span class="tag ok">Yalnız</span></td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td>Geri dönüşü zor, toplu, yasal sonuçlu işlemler mobile taşınmaz.</td></tr>
+    <tr><td>Sınav türü / ağırlık / skala politikası</td><td class="c">—</td><td class="c">—</td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag ok">Var (mevcut)</span></td><td class="c">—</td><td class="c">—</td><td>Zaten Ayarlar → Politika sekmesinde iki platformda var; not modülü buna sınav türü özelleştirmesi ekleyebilir.</td></tr>
+    <tr><td>Notlarımı görme, ders ortalaması, dönem tahmini</td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td class="c"><span class="tag ok">Yalnız</span></td><td class="c"><span class="tag ok">Yalnız</span></td><td>Web portali yok; sekmeler ayrılmış. Bildirim → derin link bu ekrana iner.</td></tr>
+    <tr><td>Karne görüntüleme / PDF indirme</td><td class="c"><span class="tag warn">Rehber öğrt.</span></td><td class="c">—</td><td class="c"><span class="tag ok">Var</span></td><td class="c">—</td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag ok">Var</span></td><td>PDF üretimi backend job'ı; mobilde önizleme + paylaş.</td></tr>
+    <tr><td>Öğrenci detayı → Notlar sekmesi</td><td class="c"><span class="tag warn">Kendi dersi</span></td><td class="c">—</td><td class="c"><span class="tag ok">Var</span></td><td class="c">—</td><td class="c">—</td><td class="c">—</td><td>Mevcut <code>/students</code> detay çekmecesine sekme olarak eklenir.</td></tr>
+    <tr><td>Raporlar (şube/ders başarı, dağılım, öğretmen bazlı)</td><td class="c">—</td><td class="c">—</td><td class="c"><span class="tag ok">Var</span></td><td class="c"><span class="tag warn">Özet</span></td><td class="c">—</td><td class="c">—</td><td>Mevcut <code>/reports</code> hub'ına "Akademik" sekmesi.</td></tr>
+  </table>
+  <p class="legend">Birincil = kullanıcının doğal olarak yöneleceği yer · Var = tam işlev · Sınırlı/Özet = kasıtlı daraltılmış · Yalnız = diğer platformda karşılığı yok.</p>
+
+  <div class="callout"><b>Kritik saha sorusu (siz cevaplayacaksınız):</b> danıştığınız okullarda öğretmenlerin ne kadarı laptop/masaüstünde çalışıyor? Sahada "öğretmenler odasında 2 bilgisayar, herkes telefonda" tablosu yaygınsa mobil toplu giriş <i>Sınırlı</i> değil <i>Birincil</i> olmalı — bu tek karar mobil tasarım yükünü ikiye katlar. Öğrenci homework/quiz gibi Ödev modülü notları ileride buraya akacaksa mobil ağırlığı daha da artar.</div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section id="s3">
+  <h2>3. Temas eden modüller ve ekranlar<small>Not modülüne "değecek" her şey — bağımlılık yönüyle</small></h2>
+
+  <p>Yön okuması: <b>Girdi</b> = not modülü buradan okur · <b>Çıktı</b> = not modülü buraya yazar/olay üretir · <b>Ekran</b> = mevcut bir ekrana not verisi/parçası eklenir.</p>
+
+  <table>
+    <tr><th style="width:18%">Modül / Ekran</th><th class="c" style="width:8%">İlişki</th><th class="c" style="width:9%">Durum</th><th>Ne değişir / ne kullanılır</th><th style="width:22%">Dikkat</th></tr>
+
+    <tr><td><b>Academics</b> — Subject, ExamType, GradeScale, GradeLevel</td><td class="c"><span class="tag info">Girdi</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>Sınav türü sütunları, skala validasyonu, ders listesi. <code>ListGradeScales</code> sorgusu zaten var.</td><td>ExamType okul-özel değil (master). Tenant override gerekiyorsa Academics'e dokunulur.</td></tr>
+    <tr><td><b>School Settings → Politika</b> (web policy-tab, mobil academic-policy-screen)</td><td class="c"><span class="tag info">Girdi</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>Geçme notu, yuvarlama, yazılı/performans sayı ve ağırlıkları, takdir/teşekkür eşikleri, karne otomatik yayın.</td><td>Politika değişince <code>AcademicPolicyUpdatedEvent</code> var — <b>yayınlanmış notlar yeniden hesaplanır mı?</b> Karar gerek (öneri: dönem içinde değişiklik yalnız yayınlanmamış hesaplara uygulanır).</td></tr>
+    <tr><td><b>Academic Sessions</b> — Sezon, Dönem, SeasonDraft</td><td class="c"><span class="tag info">Girdi/Çıktı</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>Aktif sezon/dönem seçimi; <code>AcademicTermClosedEvent</code> → Kilitle + karne. <code>ActiveSeasonWritePolicy</code> geçmiş sezona yazımı engeller. Sezon geçişinde notlar arşivlenir.</td><td>Dönem "reopen" (yeniden açma) akışı bugün var mı? Yoksa kilit geri dönüşsüz olur; idare için "kilidi aç" yetkisi gerekebilir.</td></tr>
+    <tr><td><b>ClassRoom / ClassRoomStudent</b> (Sections)</td><td class="c"><span class="tag info">Girdi</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>Şube rosteri; nakil/ayrılan öğrencinin not satırı (StudentTransferred / Graduated event'leri).</td><td>Yıl içi nakil gelen öğrenci: önceki notlar nereden? (Yoklamadaki AbsenceCarryOver benzeri "GradeCarryOver" ihtiyacı — MVP dışı olabilir ama soru şimdi sorulmalı.)</td></tr>
+    <tr><td><b>Teaching Assignments</b> (Görevlendirme hub, TeachingAssignment)</td><td class="c"><span class="tag info">Girdi</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>Öğretmenin yazabileceği şube×ders kümesinin tek kaynağı; kaldırılan görevlendirme (RevokedAt) yazma yetkisini düşürür, okuma kalır.</td><td>Görevlendirme yıl içi el değiştirirse eski öğretmenin girdiği notlar kimin? (Sahiplik notta değil, denetim izinde kalır.)</td></tr>
+    <tr><td><b>Students</b> (/students, öğrenci detay çekmecesi)</td><td class="c"><span class="tag info">Ekran</span></td><td class="c"><span class="tag warn">Ekleme</span></td><td>Öğrenci detayına "Notlar" sekmesi (dönem bazlı, ders bazlı). Öğrenci listesine "ortalama" sütunu <b>eklenmesin</b> (kıyas riski, KVKK).</td><td>Öğretmen bu ekranda yalnız kendi dersini görmeli.</td></tr>
+    <tr><td><b>Parents / Relationships</b> — ParentStudentRelationship</td><td class="c"><span class="tag info">Girdi</span></td><td class="c"><span class="tag ok">Hazır</span></td><td><code>CanViewInfo</code> notu görme kapısı; <code>ChildScopeRequirement</code> ABAC. Bildirim alıcıları buradan.</td><td>"Notu görebilir ama bildirim almasın" gibi ince ayar var mı? Bugün yalnız CanViewInfo. Yeterli sayalım (MVP).</td></tr>
+    <tr><td><b>Notifications</b> — EventType, Dispatcher, RecipientResolver, NotificationConfig, SignalR hub</td><td class="c"><span class="tag info">Çıktı</span></td><td class="c"><span class="tag warn">Kanal eksik</span></td><td>GRADE_PUBLISHED / REPORT_CARD_PUBLISHED seed'li ama <code>delivered:false</code>. Not yayınlanınca veli+öğrenci; karne yayınlanınca veli. Sessiz saatler ve okul kanal tercihi uygulanmalı.</td><td>Push yok. Ayrıca gürültü tasarımı: 5 ders aynı akşam yayınlarsa 5 push mu, 1 özet mi? (Yoklamada "günlük özet" job'ı emsal.)</td></tr>
+    <tr><td><b>Attendance</b> — AbsenceSummary</td><td class="c"><span class="tag info">Girdi</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>Karnede devamsızlık gün sayısı; devamsızlıktan kalma (totalAbsenceLimit) karne sonucunu etkiler.</td><td>Karne aşamasında; not girişi aşamasında temas yok.</td></tr>
+    <tr><td><b>Dashboard</b> (web /, admin-home mobil)</td><td class="c"><span class="tag info">Ekran</span></td><td class="c"><span class="tag warn">Ekleme</span></td><td>"Not giriş tamamlanma %" kartı, "yayın bekleyen taslak" sayacı, karne takvimi. Bugün yalnız yoklama kartları var; statik takvimde "Karne Not Girişi Son Gün" var.</td><td>Gerçek agregasyon endpoint'i yok — not modülü ilk gerçek ikinci veri kaynağı olur.</td></tr>
+    <tr><td><b>Teacher Home</b> (mobil "Bekleyen İşler")</td><td class="c"><span class="tag info">Ekran</span></td><td class="c"><span class="tag warn">Ekleme</span></td><td>"Girilmemiş not: 3 şube" görevi + derin link. Şu an statik fixture.</td><td>Home'un canlıya bağlanması ayrı iş; not modülü bunu zorlar.</td></tr>
+    <tr><td><b>Student Home / Parent Home</b> (mobil)</td><td class="c"><span class="tag info">Ekran</span></td><td class="c"><span class="tag warn">Ekleme</span></td><td>Öğrenci: son notlar + ders ortalamaları (fixture'da var). Veli: bilinçli olarak yok; yalnız "yeni not yayınlandı" rozet/kart olabilir.</td><td>Veli anasayfasında not gösterme kararını korumayı öneririm; not sekmesi tek yüzey olsun.</td></tr>
+    <tr><td><b>Reports</b> (/reports hub, mobil reports-hub)</td><td class="c"><span class="tag info">Ekran</span></td><td class="c"><span class="tag warn">Ekleme</span></td><td>"Akademik" sekmesi: şube/ders başarı, sınav dağılımı, öğretmen bazlı tamamlanma. Mobil hub yorumunda "karne" zaten sayılıyor.</td><td>Sınıf sıralaması raporu yönetime açık, veli/öğrenciye kapalı.</td></tr>
+    <tr><td><b>Report Cards</b> (/report-cards)</td><td class="c"><span class="tag info">Çıktı</span></td><td class="c"><span class="tag bad">Yok</span></td><td>Karne = not modülünün dönem sonu ürünü; ayrı modül gibi rotası var ama domain'i nottan beslenir.</td><td>Karne PDF şablonu, okul logosu (public branding var), MEB formatı — ayrı iş paketi.</td></tr>
+    <tr><td><b>Documents / Files</b></td><td class="c"><span class="tag info">Çıktı</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>Karne PDF'inin saklanması, retention.</td><td>Toplu PDF üretimi Hangfire job'ı olur.</td></tr>
+    <tr><td><b>Imports</b> (şablon + önizleme + job)</td><td class="c"><span class="tag info">Girdi</span></td><td class="c"><span class="tag ok">Altyapı</span></td><td>Excel ile toplu not import (öğretmen alışkanlığı).</td><td>MVP'de olmalı mı? Grid iyi çalışırsa ertelenebilir.</td></tr>
+    <tr><td><b>Identity / Roles-Permissions</b> (/roles-permissions)</td><td class="c"><span class="tag info">Girdi</span></td><td class="c"><span class="tag warn">Genişleme</span></td><td>grades.read/write/publish var. Muhtemel eklemeler: <code>grades.manage</code> (idare override, kilit aç), <code>grades.report</code>. Ekran etiketleri (permissions-labels) güncellenir.</td><td>Aşağıda §4.</td></tr>
+    <tr><td><b>Announcements</b></td><td class="c"><span class="tag grey">Dolaylı</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>"Karneler yayınlandı" kurumsal duyurusu — otomatik değil, idare ister.</td><td>Bildirim ≠ duyuru ayrımı korunur.</td></tr>
+    <tr><td><b>Homework</b> (gelecek)</td><td class="c"><span class="tag grey">Gelecek</span></td><td class="c"><span class="tag bad">Yok</span></td><td>Ödev/performans puanının not modülüne akması.</td><td>Şimdi tasarımda "kaynak = manuel | homework" alanı bırakılabilir, akış sonra.</td></tr>
+    <tr><td><b>Timetable / Duties / Activities</b></td><td class="c"><span class="tag grey">Yok</span></td><td class="c">—</td><td>Doğrudan temas yok. (Sınav takvimi ileride Timetable'a değebilir — MVP dışı.)</td><td></td></tr>
+    <tr><td><b>Hangfire / SignalR / Serilog-audit</b></td><td class="c"><span class="tag info">Altyapı</span></td><td class="c"><span class="tag ok">Hazır</span></td><td>Zamanlanmış yayın, dönem kapanışı toplu işlem, karne PDF; canlı "giriş tamamlanma" panosu; her not değişikliği denetim izi.</td><td>Duyuru'daki AuditEntry kalıbı not için de uygun.</td></tr>
+  </table>
+</section>
+
+<!-- ============ 4 ============ -->
+<section id="s4">
+  <h2>4. Not girişi yetkisi — ön düşünce<small>İhtiyaç analizinde derinleşeceğimiz yer; burada yalnız çerçeve</small></h2>
+
+  <p>Yetki tek katman değil, <b>dört katmanın kesişimi</b> olmalı. Bir yazma isteği hepsinden geçmeli; biri bile "hayır" derse reddedilir (yoklama ve duyuruda oturan default-deny ilkesi):</p>
+
+  <table>
+    <tr><th style="width:16%">Katman</th><th>Soru</th><th>Mevcut kaynak</th><th style="width:30%">Öneri / karar</th></tr>
+    <tr><td><b>1. RBAC</b><br><span class="tag grey">rol → izin</span></td><td>Bu rolün not yazma yetkisi var mı?</td><td>grades.write (Teacher, SchoolAdmin), grades.publish, grades.read (herkes)</td><td>Ekle: <code>grades.manage</code> (kilit açma, yayın geri alma, başkası adına düzeltme — yalnız SchoolAdmin; attendance.manage kalıbı). Muhtemelen <code>grades.report</code>.</td></tr>
+    <tr><td><b>2. Kapsam (ABAC)</b><br><span class="tag grey">kim, neye</span></td><td>Bu öğretmen <b>bu şube × bu ders</b> için görevli mi? Bu veli bu çocuğu görebilir mi? Öğrenci kendi mi?</td><td>TeachingAssignment (aktif, sezon içi), ClassRoom.HomeroomTeacherId, ParentStudentRelationship.CanViewInfo + ChildScopeRequirement</td><td>Handler seviyesinde zorunlu filtre. Rehber öğretmen: kendi şubesinin tüm derslerini <b>okur</b>, yazmaz. İdare: okul geneli. Vekil/yedek öğretmen: geçici TeachingAssignment ile çözülür (nöbet "substitute" emsali) — not modülüne özel yetki icat etmeyelim.</td></tr>
+    <tr><td><b>3. Durum</b><br><span class="tag grey">kaydın hâli</span></td><td>Not Taslak mı, Yayınlanmış mı, Kilitli mi? Dönem açık mı? Sezon aktif mi?</td><td>ActiveSeasonWritePolicy, AcademicTerm.Status</td><td>Taslak: sahibi serbest. Yayınlanmış: gerekçeli düzeltme + izleme (bildirim veliye tekrar gider mi?). Kilitli: yalnız grades.manage + gerekçe + audit. Kapalı dönem/arşiv sezon: değişmez.</td></tr>
+    <tr><td><b>4. Zaman penceresi</b><br><span class="tag grey">ne zaman</span></td><td>Giriş dönemi açık mı? Yayından sonra düzeltme süresi geçti mi?</td><td>Yoklamada attendanceAmendmentWindowHours (1-72 saat) — SchoolSettings</td><td>Benzeri: <code>gradeAmendmentWindowHours</code> (öğretmen kendi başına düzeltebilir), pencere dışı → idare onayı (amendment request). "Not giriş son günü" politikası dönem bazında idare tanımlar; sonrası kilit ya da onaylı.</td></tr>
+  </table>
+
+  <h3>Yetki açısından zor vakalar (ihtiyaç analizinde tek tek karar)</h3>
+  <ul>
+    <li><b>Aynı derse iki öğretmen</b> (ortak ders, İngilizce native + Türk öğretmen): ikisi de yazabilir mi, sütun bazlı ayrım mı, biri girer biri onaylar mı?</li>
+    <li><b>Öğretmen ayrıldı, notlar taslakta kaldı:</b> idare taslağı görüp yayınlayabilmeli mi? (grades.manage kapsamı)</li>
+    <li><b>Rehber (sınıf) öğretmeni</b> kendi şubesindeki başka derslerin notunu görür mü? Karne öncesi kontrol için evet demek yaygın; KVKK'da meşru menfaat var.</li>
+    <li><b>Müdür yardımcısı vs müdür:</b> ikisi de SchoolAdmin; kilit açma yalnız birinde mi olmalı? Bugün rol ayrımı yok — MVP'de tek rol kabul, denetim iziyle telafi.</li>
+    <li><b>Öğrenci</b> notu veliden <b>önce</b> mi, aynı anda mı görsün? Kademe bazlı politika (lise: aynı anda; ilkokul: yalnız veli).</li>
+    <li><b>Ayrı yaşayan ebeveyn:</b> CanViewInfo=false ise bildirim de gitmemeli — resolver bunu bugün süzüyor mu, doğrulanmalı.</li>
+    <li><b>Geçmiş sezon</b> notuna erişim: öğrenci/veli mezun sonrası ne kadar süre görür? (GraduatedDataRetentionYears ile uyumlu.)</li>
+    <li><b>Toplu yayın</b> yetkisi: öğretmen yalnız kendi şube×dersini; idare "dönemin tüm notlarını" yayınlayabilir mi, yoksa yalnız karneyi mi?</li>
+  </ul>
+
+  <div class="callout"><b>Tasarım ilkesi önerisi:</b> izin kodları <i>yüzeyi</i> açar, hangi kayda dokunulacağını <i>handler</i> belirler, durum makinesi <i>ne zaman</i> dokunulacağını söyler. Üçü de test edilebilir, hiçbiri UI'a güvenmez. Duyuru modülünde <code>announcements.template.manage</code> + <code>CreatedBy</code> kapısıyla kurulan iki katmanlı kalıp burada üçüncü katmanla (durum) genişler.</div>
+</section>
+
+<!-- ============ 5 ============ -->
+<section id="s5">
+  <h2>5. Aramızda netleşmesi gereken sorular<small>Bunlar cevaplanmadan ihtiyaç analizi yazılırsa varsayım üstüne kurulur</small></h2>
+
+  <div class="q"><b>S1. Not modelinin tanesi ne?</b> Ders × öğrenci × sınav türü × dönem başına tek not mu (MEB klasik: VZ1, VZ2, SZ, PER, PRJ), yoksa öğretmenin serbestçe "değerlendirme" açtığı esnek model mi (quiz 1, quiz 2, proje…)? <span class="opt">Öneri: MVP'de MEB şablonu + okul-özel sınav türü ekleme; serbest değerlendirme V2.</span></div>
+  <div class="q"><b>S2. Ağırlık kaynağı hangisi?</b> <code>ExamType.WeightPercent</code> (master) mi, <code>SchoolSettings.WrittenWeight/PerformanceWeight</code> (okul) mi? İkisi bugün çelişebiliyor. <span class="opt">Öneri: okul politikası kazanır; ExamType yalnız "türü" tanımlar, ağırlık okul/kademe politikasından çözülür.</span></div>
+  <div class="q"><b>S3. Yayın birimi ne?</b> Tek not mu, "şube × ders × sınav" paketi mi, "dönemin tamamı" mı? <span class="opt">Öneri: paket. Öğretmen sınav bazında yayınlar; veli tek bildirim alır; tekil düzeltme yayınlanmış paket içinde izlenir.</span></div>
+  <div class="q"><b>S4. Öğretmen mobilde toplu not girer mi?</b> Saha gerçeğinize göre "Sınırlı" mı, "Birincil" mi? Bu karar mobil tasarım kapsamını belirliyor.</div>
+  <div class="q"><b>S5. Öğrenci notu ne zaman görür?</b> Veliyle aynı anda mı, kademeye bağlı mı, hiç mi (ilkokul)? <span class="opt">Öneri: okul politikası (SchoolSettings) — varsayılan "veliyle aynı anda, ilkokulda yalnız veli".</span></div>
+  <div class="q"><b>S6. Yayınlanmış notu düzeltme akışı ne?</b> Pencere içinde serbest + veliye "not güncellendi" bildirimi mi; her düzeltme idare onaylı mı? <span class="opt">Öneri: yoklama amendment kalıbı birebir — pencere içi serbest+izli, dışı onaylı.</span></div>
+  <div class="q"><b>S7. Karne bu paketin içinde mi?</b> "Not girilip yayınlanıyor, veli bildirim alıyor" pilot kriteri karne demiyor. Karne PDF + takdir/teşekkür + dönem kapanışı ayrı bir faz mı? <span class="opt">Öneri: Faz A = not giriş/yayın/bildirim; Faz B = dönem ortalaması + karne. Aynı domain, iki teslim.</span></div>
+  <div class="q"><b>S8. Push kanalı önce mi, paralel mi?</b> Not modülü bitince veliye push gitmiyorsa pilot kriteri yine açık kalır. <span class="opt">Öneri: push kanalı not modülüyle paralel, ayrı iş paketi; not modülü GRADE_PUBLISHED'ı üretir, kanal geldiğinde otomatik akar.</span></div>
+  <div class="q"><b>S9. Kıyas/ortalama görünürlüğü</b> — öğrenci ve veli sınıf ortalamasını görsün mü? <span class="opt">Öneri: varsayılan kapalı, okul politikasıyla açılabilir; sıralama hiçbir zaman.</span></div>
+  <div class="q"><b>S10. e-Okul / MEB aktarımı</b> pilot için gerekli mi (dışa aktarım formatı), yoksa manuel giriş devam mı? <span class="opt">Öneri: MVP'de Excel dışa aktarım; entegrasyon yok.</span></div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section id="s6">
+  <h2>6. MVP kesim önerisi (ön)<small>mvp-definition skill'inin "her must-have'i sorgula" kuralıyla</small></h2>
+  <div class="grid">
+    <div class="card"><h4><span class="tag ok">Must-have</span> Faz A</h4>
+      <p>Grade entity + Taslak/Yayınlandı/Kilitli durum makinesi + denetim izi</p>
+      <p>Öğretmen: şube×ders×sınav toplu giriş (web grid, mobil liste), tekil giriş, yayınla</p>
+      <p>Kapsam yetkisi (TeachingAssignment tabanlı) + grades.manage</p>
+      <p>Öğrenci/veli mobil not ekranı (ders bazlı, dönem bazlı) + bildirim üretimi (GRADE_PUBLISHED)</p>
+      <p>İdare: eksik giriş takibi (tamamlanma panosu), gerekçeli düzeltme onayı</p>
+      <p>Skala/politika tüketimi (mevcut ayarlardan)</p>
+    </div>
+    <div class="card"><h4><span class="tag warn">Should-have</span> Faz B</h4>
+      <p>Dönem ortalaması, geçme durumu, takdir/teşekkür hesabı</p>
+      <p>Dönem kapanışı → kilit → karne üretimi (PDF) + REPORT_CARD_PUBLISHED</p>
+      <p>Öğrenci detayı Notlar sekmesi, dashboard not KPI'ı, raporlar Akademik sekmesi</p>
+      <p>Excel import</p>
+    </div>
+    <div class="card"><h4><span class="tag grey">Sonra</span> V2</h4>
+      <p>Okul-özel serbest değerlendirme türleri, ödev puanlarının akışı</p>
+      <p>Nakil öğrenci not devri, sınav takvimi, e-Okul aktarımı</p>
+      <p>Veli itiraz akışı (mesajlaşma ile birlikte)</p>
+      <p>Sınıf ortalaması/kıyas görünürlüğü politikası</p>
+    </div>
+  </div>
+  <p style="margin-top:14px">Süre tahmini 31 Temmuz'daki ≈3 hafta öngörüsüyle uyumlu, ancak <b>mobil ekran tasarımlarının olmaması</b> (manifest'te not ekranı yok) ve push kanalının paralel gitmesi gerektiği hesaba katılırsa Faz A tek başına 3 hafta, Faz B +1,5-2 hafta gerçekçi.</p>
+</section>
+</main>
+
+<footer>Kaynaklar: oksis-api (Domain/Modules: Academics, Schools, AcademicSessions, Teachers, Users, Identity, Notifications; Persistence/Seed/MasterData; Api/Authorization; Application/Modules/Grades/README.md; docs/analysis/bildirim-teslim-ihtiyac-analizi.md) · oksis-ui (apps/web app routes &amp; features/settings, dashboard; apps/mobile (tabs), features/home, school-settings; .claude/skills/handoff-mobile/mobile-design-map.md; CLAUDE.md sözlüğü) · Proje dokümanı claude/durum-analizi-2026-07-31.md.</footer>
+</body>
+</html>
