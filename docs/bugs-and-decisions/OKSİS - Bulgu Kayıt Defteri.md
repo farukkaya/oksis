@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-80` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-81` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -3337,9 +3337,33 @@ kiplerinin ikisi de menüde dönem kutucuklarını zaten çiziyor, yani kaldırm
 kontrolsüz bırakmıyor. Öğretmen listesindeki dönem ADI alt özet şeridinde salt-okunur kaldı.
 
 **Doğrulama:** topbar'dan "2. Dönem" seçildi → düğme *2025–2026 · 2. Dönem* oldu, pano
-yeniden sorguladı. 675 test yeşil, `tsc`/`eslint` temiz. *(Commit edilmedi.)*
+yeniden sorguladı. 675 test yeşil, `tsc`/`eslint` temiz. *(oksis-ui `3ebaf87` içinde.)*
 
 **Ailesi:** [[besleyen-yuzey-olculmeden-kapanmaz]] · `X-15`, `B-26`, `TB-32` — *"bir soruya
 iki kaynaktan cevap"*.
 
-**Sıradaki boş ID:** `TB-80` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-81` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
+
+---
+
+## 23. Depo Hijyeni (2026-08-23)
+
+### `TB-80` · Obsidian panel durumu dört vault'ta izleniyordu 🟡 *(kapandı — 2026-08-23)*
+
+`oksis` deposu Obsidian'ı hiç açmadan bile **kirli** görünüyordu: `docs/*/.obsidian/workspace.json`
+dosyaları panel/sekme durumunu her açılışta yeniden yazar, makineye özeldir ve paylaşılacak
+bir bilgi taşımaz. Dördü (`bugs-and-decisions`, `documents`, `ihtiyac-analizleri`,
+`teknik-analizler`) izleniyordu.
+
+**Kök sebep yamalanabilir cinsten değildi:** `.gitignore` kuralı **vault başına** yazılmıştı
+(`docs/domain/.obsidian/workspace.json`) — yazıldığı gün tek vault vardı. Vault sayısı beşe
+çıkınca kural sessizce eksik kaldı. Dört satır daha eklemek aynı tuzağı altıncı vault için
+kurardı.
+
+**Çözüm:** kural desene bağlandı — `docs/*/.obsidian/workspace*.json` — ve izlenen dört dosya
+`git rm --cached` ile izlemden çıkarıldı (diskte duruyorlar). Yeni vault eklendiğinde
+hatırlanacak bir şey kalmıyor. Commit: `oksis` `f4c3c92`.
+
+**Ailesi:** [[yamalama-kabul-degil]] — *"aynı kusur birden çok yerdeyse merkezî çöz"*.
+
+**Sıradaki boş ID:** `TB-81` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
