@@ -40,8 +40,13 @@ generated-issues/academic-sessions
 .claude/generated-issues/roles-permissions
 .superpowers/sdd
 
-# --- Obsidian vault (docs/domain) ---
+# --- Obsidian vault'ları (docs/*) ---
 # Panel/sekme durumu her açılışta değişir ve makineye özeldir; graph ve görünüm
 # ayarları paylaşılır, bu yüzden .obsidian'ın tamamı değil yalnız bu ikisi dışarıda.
-docs/domain/.obsidian/workspace.json
-docs/domain/.obsidian/workspace-mobile.json
+#
+# 2026-08-23: kural tek vault'a (docs/domain) yazılmıştı; o sırada tek vault vardı.
+# Bugün beş vault var ve dördünün workspace.json'u izleniyordu — her Obsidian
+# açılışında kirli çalışma alanı üretiyorlardı. Kural vault başına değil, desene
+# bağlandı; yeni vault eklendiğinde tekrar unutulmasın.
+docs/*/.obsidian/workspace.json
+docs/*/.obsidian/workspace-mobile.json
