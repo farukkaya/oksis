@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-78` · `X-16` · `B-33` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-80` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -3166,3 +3166,180 @@ koşmuyor. Kusuru yalnız uçtan uca elle doğrulama buldu. Eksik olan kapı bu 
 - **`teaching-assignments.view` hiçbir role açıkça verilmiyor** (yalnız `AllPermissionIds()` üzerinden);
   öğretmen kendi ders listesini okuyamaz. Önceden beri böyle, uç idare ekranı için.
 
+
+---
+
+## 21. Not Modülü Öncesi Kod Taraması (2026-08-19) 🔧
+
+**Bağlam:** Not (Grades) modülünün teknik analizi 18 Ağustos'ta yazıldı, geliştirmeye
+başlamadan önce analizin `[D]` (doğrulanacak) maddeleri kodda ölçüldü.
+Kaynak: `oksis-api` @ `d45f298` · `oksis-ui` @ `57e9e5b`.
+
+**Ölçülen dört madde:**
+
+| Analiz maddesi | Sonuç |
+|---|---|
+| T-Q1 · `Mark` hangi kimliği referanslar? | ✔ Doğrulandı — **`PersonId`**. `ITeacherClassroomScope`, `ParentStudentRelationship.StudentPersonId` ve `NotificationRecipientResolver` üçü de `PersonId` konuşuyor. |
+| T-Q2 · `NotificationRecipientResolver` `CanViewInfo` süzüyor mu? | ❌ **Süzmüyor** — `TB-78` |
+| T-Q6 · Dönem "yeniden aç" akışı var mı? | ❌ **Yok.** `AcademicTerm`'de `Reopen`/`ReOpen` metodu bulunmuyor; kilit tek yönlü. Not modülünde `UnlockAssessment` bunu sütun bazında telafi eder, dönem seviyesinde telafi yok. |
+| Kapsam kapısının kaynağı `TeachingAssignment` mı? | ❌ **O tablo dün emekli edildi** — `X-16` |
+
+### `TB-78` · Bildirim yolu `CanViewInfo` kapısını atlıyor 🟠
+
+**Ölçüm.** `NotificationRecipientResolver.ResolveGuardianAccountsAsync` veli hesaplarını
+çözerken yalnız `SchoolId` + `RevokedAt == null` süzüyor (`NotificationRecipientResolver.cs:36`);
+`ParentStudentRelationship.CanViewInfo` **sorguya hiç girmiyor**.
+
+**Bu bilinçli.** Yoklamadaki üç bildirim handler'ı (`ExcuseDecided`,
+`AmendmentRequestDecided`, `AbsenceThresholdReached`) docblock'larında bunu açıkça yazıyor:
+*"RevokedAt==null, **CanViewInfo şartı YOK**"*. Yani okuma yüzeyi (`StudentAttendanceScopeGuard`,
+`ListExcuses`, `GetExcuseDetail`) `CanViewInfo` süzerken, bildirim yüzeyi süzmüyor —
+**aynı veri için iki farklı kapı.**
+
+**Neden bugün savunulabilir, yarın değil.** Yoklamada bildirim metni "çocuğunuz devamsız
+sayıldı" — bilgiyi görme yetkisi olmayan veliye de gitmesi tartışılır ama savunulabilir.
+Notta durum farklı: ön inceleme §4 *"Ayrı yaşayan ebeveyn: `CanViewInfo=false` ise bildirim de
+gitmemeli"* diyor. Aynı resolver'ı süzgeçsiz kullanan bir `GRADE_PUBLISHED` handler'ı,
+handler seviyesindeki kapsam kapısının (`IGradeScopeGuard`) **etrafından dolaşır**.
+
+**Karar gerektiriyor, bu yüzden çözümü burada değil karar panosunda:** resolver merkezî
+olarak mı süzsün (yoklamanın bugünkü davranışı değişir), yoksa çağıran mı seçsin
+(`includeInfoRestricted: bool`)? [[yamalama-kabul-degil]] merkezî çözümü işaret ediyor ama
+yoklamanın davranış değişikliği ayrı bir onay. → [[OKSİS - Yapısal Kararlar ve Eksikler]]
+
+**Ailesi:** [[eksik-ekran-eksik-yetkiyi-gizler]] — bildirim yüzeyi hiç çağrılmadığı için
+(`GRADE_PUBLISHED` bugün `delivered: false`) arkasındaki kapı kusuru da görünmüyordu.
+
+### `X-16` · Not modülü teknik analizi emekli edilmiş tabloya dayanıyor 🔴
+
+**Ölçüm.** Analiz §7.3 kapsam kapısının kaynağını şöyle tanımlıyor:
+
+> aktif `TeachingAssignment(TeacherId=me, ClassRoomId, SubjectId, AcademicSessionId, RevokedAt IS NULL)`
+
+`src/Oksis.Domain` altında **`TeachingAssignment` diye bir entity yok.** `X-15` kapatılırken
+(`b278415` *"K-10 v1 teaching_assignments emekli edildi"*, `d45f298` merge — **18 Ağustos**,
+analizin yazıldığı gün) tablo düşürüldü. Analiz o merge'den önceki repoyu taramış.
+
+**Bugünkü tek kaynak:** `TeacherCourseLoadProjection` —
+*"Hangi öğretmen hangi şubede hangi dersi kaç saat veriyor?" sorusunun **tek** cevabı"* —
+**canlı ders programının yerleşimlerinden** türetiliyor (`IsActive && IsReserving`), sezon
+değil **dönem** kapsamlı (`R-09`).
+
+**Not modülü için üç sonucu var:**
+
+1. `IGradeScopeGuard` yazma kapsamını `TeacherCourseLoadProjection.ForTeacherAsync(...)`
+   üzerinden kurmalı; analizde tarif edilen `RevokedAt` süzgeci artık anlamsız.
+2. **Yazma yetkisi yayınlanmış programa bağlanıyor.** Taslak program slot rezerve etmiyor
+   (`IsReserving == false`), dolayısıyla programını yayınlamamış bir okulda **hiçbir öğretmen
+   not giremez**. Analizde bu bağımlılık hiç yok. Ürün kararı gerektirir: kapsamın ikinci
+   kaynağı olarak yetkinlik (`subject_teacher_assignments`) kabul edilecek mi, yoksa
+   "program yayınlanmadan not girilmez" kuralı bilinçli mi?
+3. Defterin kimliği kalıcı bir satır değil, bileşik anahtar
+   (`TeacherCourseLoadProjection.CourseKey(classRoomId, subjectId)`). `GradeBook`'un
+   koordinatları (`classRoomId`, `subjectId`, `termId`) bu anahtarla birebir örtüşüyor —
+   uyumlu, ama biçim tek yerde yaşamalı ([[serilesmis-sekil-sozlesmedir]]).
+
+**Ailesi:** `X-15`, `B-26`, `TB-32` — hepsi *"bir soruya iki kaynaktan cevap"* ailesi.
+Analiz, kapatılmış bir kusurun kapatılmadan önceki hâline dayanmış.
+
+**Aksiyon:** teknik analiz §7.3 ve §2 bağımlılık tablosu geliştirmeden **önce** düzeltilmeli;
+`Teachers` satırı `TeachingAssignment` değil `TeacherCourseLoadProjection` demeli.
+
+---
+
+## 22. Notlar Modülü Portu — ekranlar arası bağlantı turu (2026-08-19 … 2026-08-22)
+
+**Kapsam:** Claude Design "Oksis Layout v2" Notlar (grade) modülünün `oksis-ui`'ye alınması ve
+alım sonrası ekranda ölçüm. Aşağıdaki `B-33`…`B-36` **19 Ağustos'ta ölçüldü ve aynı gün
+kapatıldı**; kod içindeki gerekçe blokları bu ID'lere atıf yapıyordu ama deftere hiç
+yazılmamıştı — dangling atıflar burada kapatılıyor. `B-37` **22 Ağustos'ta** ölçüldü.
+
+### `B-33` · İdare not panosuna hiçbir yerden girilemiyordu 🔴 *(kapandı)*
+
+Yöneticinin menüsündeki "Notlar & Karne" `/report-cards`e gidiyordu; orada bir *"yakında"*
+yer tutucu vardı. Gerçek pano `/grades`teydi ve yönetici nav'ında `/grades` **hiç yoktu** —
+yetki nav'dan türetildiği için (`canAccessRoute`) adresi elle yazmak da işe yaramıyordu,
+"yetkiniz yok" ekranı geliyordu. Ekran vardı, ona açılan tek kapı yoktu.
+
+**Kök sebep bendeydi:** portu yaparken rotayı ölçmeden varsaydım. Nav girdisi `/grades`e
+alındı, `/report-cards` sayfası silindi; dört rol de tek adresten giriyor.
+
+### `B-34` · Öğrenciye öğretmenin defter listesi açılıyordu 🔴 *(kapandı)*
+
+`GradePage` rol dağıtıcısının **varsayılan dalı** öğretmen ekranıydı. Öğrenci ve veli
+yüzü daha tasarlanmamışken bu iki rol, sınıfın tüm öğrencilerinin notlarını tutan
+öğretmen defterine düşüyordu. Rol dalları açık yazıldı; **varsayılan dal kaldırıldı ve bir
+daha eklenmeyecek** — rolü çözülmemiş oturum boş kabuk görür.
+
+### `B-35` · İdare panosunda "Aç" 404 veriyordu 🔴 *(kapandı)*
+
+Pano satırlarının `bookId`'si ile defter ucunun tanıdığı id'ler **iki ayrı sahte veri
+uzayından** geliyordu. Ölçüm ağ panelinden yapıldı: her "Aç" tıklaması 404 + yeniden deneme
+üretiyordu. Sahte veri tek kaynağa indirildi (`findGradeBook`, ortak `asmIds`).
+
+### `B-36` · "Son güncelleme" her satırda "0 dakika önce" 🟠 *(kapandı)*
+
+Sahte kayıtların zaman damgaları **gelecek tarihliydi**; göreli zaman biçimlendiricisi
+gelecek değerleri sıfıra kırpıyordu. Tohum damgaları "şimdi"ye göre kaydırıldı (`shiftToNow`).
+
+### `B-37` · Notlar'daki "Not ayarları" bağlantısı 404'e gidiyordu 🔴 *(kapandı — 2026-08-22)*
+
+**Ölçüm:** `/grades` (yönetici) → politika şeridinin sağındaki **"Not ayarları"** →
+`/settings/policy`. Öyle bir Next rotası **yok**; tıklayan kullanıcı 404 görüyordu.
+
+**Kök sebep — var olmayan bir rota haritası:** `packages/core/src/nav/nav-config.ts`
+içinde `SETTINGS_TABS` adlı bir tablo `/settings/policy`, `/settings/holidays` gibi yedi
+href tutuyordu. Bu href'lerin **hiçbirinin** karşılığı yoktu: Ayarlar tek sayfadır, sekmeler
+sayfa içi state'ti ve hiç adreslenemiyordu. Tablo yalnız breadcrumb çözümünde kullanılıyor,
+yani kimse oraya gitmediği sürece yalanı görünmüyordu. Notlar ekranı ona güvenince görüldü.
+
+**İkinci ayak — yetkisiz role verilen bağlantı:** `GradePolicyBar`ın kendi sözleşmesi
+*"yetkisiz rolde verilmez"* diyor, ama `GradePage` `onOpenSettings`i **her role** veriyordu.
+Öğretmen `/settings`e erişemez (footer nav'ı boş); tıklasa "yetkiniz yok" ekranına düşerdi.
+404 düzeltilseydi bu ikinci kusur ortaya çıkacaktı — biri diğerini saklıyordu
+([[eksik-ekran-eksik-yetkiyi-gizler]]).
+
+**Çözüm (merkezî, ekran bazlı değil — [[yamalama-kabul-degil]]):**
+1. Ayarlar sekmesi **adrese taşındı**: `/settings?tab=policy`. Sekme artık URL'den okunur
+   (`useSearchParams`), Devamsızlık kabuğundaki `?tab=` deseninin aynısı. Alt YOL değil
+   SORGU seçildi: rota tek kalınca `canAccessRoute` tek girdiyle doğru karar veriyor ve
+   breadcrumb tasarımdaki **"Sistem › Ayarlar › &lt;sekme&gt;"** biçimini koruyor.
+2. Sekme bayrağı (*"kaydedilmemiş değişiklik"*) sekme anahtarıyla saklanıp **türetiliyor**;
+   tarayıcı geri tuşuyla sekme değişince önceki sekmenin uyarısı bir kare bile taşınmıyor.
+3. Bağlantı **yetkiye bağlandı** — ikinci bir izin tablosu değil, rolün nav'ı
+   (`canAccessRoute(role, "/settings")`).
+4. `SETTINGS_TABS` **silindi**. Var olmayan rotaların haritasını tutmak kusuru üretti,
+   çözmedi; yerine neden silindiğini anlatan bir blok bırakıldı.
+
+**Doğrulama:** yönetici oturumunda `/grades` → "Not ayarları" → `/settings?tab=policy`,
+"Akademik Politikalar" sekmesi açık, breadcrumb *Sistem › Ayarlar › Akademik Politikalar*.
+Sekmeler arası geçiş adresi güncelliyor, tarayıcı geri tuşu doğru sekmeye dönüyor.
+675 test yeşil, `tsc` ve `eslint` temiz. *(Değişiklik henüz commit edilmedi.)*
+
+**Ailesi:** `TB-71` (kabuk dışında kalan ekran), `TB-73` (var olan ekranı "yakında" gösteren
+kısayol), `TB-74` ("Yoklamaya git" çıkmazı), `B-33` — hepsi **"ekran var, ona açılan kapı
+yok ya da yanlış yere açılıyor"** ailesi. Bu ailenin beşinci üyesi; ortak sebep, bir ekranın
+başka bir ekrana giden bağlantısının **hiç tıklanmadan** teslim edilmesi.
+
+### `TB-79` · Notlar ekranında dönem seçicisi iki kopya 🟠 *(kapandı — 2026-08-22)*
+
+Topbar'daki bağlam seçicisi ile `/grades` sayfa başlığındaki açılır liste **aynı bağlama**
+(`useSeasonContext`) yazıyordu — iki kontrol, tek değer. Görünürdeki bedeli de vardı:
+sayfa içi seçici dönemin `seasonLabel` alanından yılı yazdığı için **"2026–2027 · 1. Dönem"**,
+topbar ise akademik sezon ucundan okuduğu için **"2025–2026 · 1. Dönem"** diyordu; kullanıcı
+aynı ekranda iki farklı yıl görüyordu (aynı ayrışma seçici portlanırken `season-context-picker`
+docblock'una not düşülmüştü, ekran tarafı temizlenmemişti).
+
+**Çözüm:** sayfa içi seçiciler kaldırıldı — hem idare panosundan
+(`grade-admin-board-screen`) hem öğretmen defter listesinden (`grade-book-list-screen`).
+Bağlamı **tek kontrol yazar**: topbar seçicisi. Yönetici (`full`) ve öğretmen (`teacher`)
+kiplerinin ikisi de menüde dönem kutucuklarını zaten çiziyor, yani kaldırma hiçbir rolü
+kontrolsüz bırakmıyor. Öğretmen listesindeki dönem ADI alt özet şeridinde salt-okunur kaldı.
+
+**Doğrulama:** topbar'dan "2. Dönem" seçildi → düğme *2025–2026 · 2. Dönem* oldu, pano
+yeniden sorguladı. 675 test yeşil, `tsc`/`eslint` temiz. *(Commit edilmedi.)*
+
+**Ailesi:** [[besleyen-yuzey-olculmeden-kapanmaz]] · `X-15`, `B-26`, `TB-32` — *"bir soruya
+iki kaynaktan cevap"*.
+
+**Sıradaki boş ID:** `TB-80` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
