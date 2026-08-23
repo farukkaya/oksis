@@ -25,7 +25,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-81` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-82` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -3342,7 +3342,7 @@ yeniden sorguladı. 675 test yeşil, `tsc`/`eslint` temiz. *(oksis-ui `3ebaf87` 
 **Ailesi:** [[besleyen-yuzey-olculmeden-kapanmaz]] · `X-15`, `B-26`, `TB-32` — *"bir soruya
 iki kaynaktan cevap"*.
 
-**Sıradaki boş ID:** `TB-81` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-82` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
 
 ---
 
@@ -3366,4 +3366,30 @@ hatırlanacak bir şey kalmıyor. Commit: `oksis` `f4c3c92`.
 
 **Ailesi:** [[yamalama-kabul-degil]] — *"aynı kusur birden çok yerdeyse merkezî çöz"*.
 
-**Sıradaki boş ID:** `TB-81` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
+### `TB-81` · API, SQL Server açılmadan başlatılınca çöküyor 🟡 *(kapandı — 2026-08-23)*
+
+Belirti: API açılışta `pre-login handshake` hatasıyla düşüyor (`Hata 35`, `SocketException (22)`),
+yığın Hangfire'ın `SqlServerStorage.Initialize`'ında bitiyor ve süreç `terminated unexpectedly`
+diyor. Görüntü "Hangfire bozuk" izlenimi veriyor; değil.
+
+**Ölçüm:** kapsayıcı `09:27:44` UTC'de başladı, çökme `09:28:37`'de (53 sn sonra), `oksis_dev`
+kurtarması (`Recovery is complete`) `09:29:15`'te bitti — yani API, veritabanı **kurtarma
+altındayken** bağlanmayı denedi. Sunucu o aralıkta TCP'yi kabul ediyor ama oturum öncesi el
+sıkışmayı tamamlamıyor. Aynı komut kurtarma bittikten sonra sorunsuz açıldı
+(`Now listening on: http://localhost:5000`), yani kodda kusur yok — **yarış** var.
+
+**Neden kendini gizledi:** compose sağlık ölçütü `SELECT 1` idi; bu yalnız "sunucu soket kabul
+ediyor" der, `oksis_dev`in durumunu sormaz. `docker ps` "healthy" derken veritabanı hâlâ
+kurtarmadaydı, dolayısıyla "altyapı hazır" sinyali yanlıştı.
+
+**Çözüm:** ölçüt uygulamanın gerçekten kullandığı veritabanına bağlandı — `oksis_dev` kaydı
+varsa `ONLINE` olmalı; yoksa (ilk kurulum, migration öncesi) kontrol geçer. `start_period: 90s`
+eklendi (imaj bu makinede ~90 sn'de açılıyor). Üç dal da kapsayıcıda denendi: ONLINE → 0,
+veritabanı yok → 0, RAISERROR → 1. Commit: `oksis-api` `ec50126`.
+
+**Açık bırakılan:** API'nin kendisi hazır-bekleme yapmıyor; sağlıklı sinyal beklenmeden
+başlatılırsa yine düşer. Fail-fast bilinçli bir tercih, bu yüzden koda dokunulmadı.
+
+**Ailesi:** [[kural-ekranda-degil-sunucuda]] — *"yeşil gösterge ölçtüğü şey kadar doğrudur"*.
+
+**Sıradaki boş ID:** `TB-82` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
