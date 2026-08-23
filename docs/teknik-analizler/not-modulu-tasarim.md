@@ -124,10 +124,26 @@ null        → girilmemiş
 Wire tipi `GradeValueDto = number | string | null`. Depolamada `decimal? Value`
 + `MarkSpecialValue? Special` ayrı tutulur; ikisi aynı anda dolu olamaz.
 
-### 2.4 `MarkAmendment` — denetim kaydı
+### 2.4 `GradeAuditEntry` — denetim kaydı
 
-Append-only. `GET /books/{id}/audit` bunu okur. Gerekçe **aileyle paylaşılmaz**,
-okul kaydında durur (`CorrectGradeBody.reason` XML doc'u).
+Append-only. `GET /books/{id}/audit` bunu okur.
+
+> **Düzeltme:** ilk taslakta `MarkAmendment` deniyordu — **fazla dar**. `GRADE_AUDIT`
+> fixture'ı yalnız not düzeltmesi değil, defter üzerindeki TÜM olayları taşıyor:
+> sütun oluşturma ("Sözlü sütununu oluşturdu"), toplu giriş ("2. Yazılı sütununa
+> 24 not girdi"), yayınlama, yayından geri alma (gerekçeli), not düzeltme
+> (`valueFrom`/`valueTo` dolu) ve sistem olayları (`isSystem: true`,
+> "1. Dönem kapatıldı, defter kilitlendi", `isPlanned: true`).
+> Tek tablo, olay tipine göre `valueFrom`/`valueTo`/`reason` nullable.
+
+| Alan | Not |
+|---|---|
+| `GradeBookId`, `AssessmentId?`, `StudentPersonId?` | kapsam; sütun/hücre olayında dolar |
+| `ActorPersonId?`, `IsSystem` | sistem olayında aktör yok |
+| `Action` | görüntülenecek metin sunucuda kurulur (Türkçe) |
+| `Reason` | yönetici işlemlerinde zorunlu; **aileyle paylaşılmaz** |
+| `ValueFrom` / `ValueTo` | yalnız not düzeltmesinde |
+| `OccurredAt`, `Tone?`, `IsPlanned?` | sunum ipuçları |
 
 ### 2.5 `GradeSettings` — `SchoolSettings` genişlemesi
 
@@ -148,23 +164,35 @@ correctionWindowHours: int (mock 48)
 
 | # | Uç | Karşılık | İzin |
 |---|---|---|---|
-| 1 | `GET /grades/terms` | `ListGradeTerms` | read |
-| 2 | `GET /grades/books?termId=` | `ListMyGradeBooks` | read |
-| 3 | `GET /grades/books/{id}` | `GetGradeBook` | read |
-| 4 | `GET /grades/books/{id}/grid` | `GetGradeBookGrid` | read |
-| 5 | `GET /grades/assessments/{id}/entries` | `GetAssessmentEntries` | read |
-| 6 | `PUT /grades/assessments/{id}/entries/{studentNo}` | `SetMark` | write |
-| 7 | `POST …/entries/{studentNo}:correct` | `AmendMark` | write (pencere içi) |
-| 8 | `GET /grades/books/{id}/audit` | `GetGradeBookAudit` | manage |
-| 9 | `POST /grades/assessments/{id}:publish` | `PublishAssessment` | publish |
-| 10 | `POST /grades/assessments/{id}:unpublish` | `UnpublishAssessment` | manage |
-| 11 | `POST /grades/assessments/{id}:lock?unlock=` | `LockAssessment` / `UnlockAssessment` | manage |
-| 12 | `POST /grades/assessments/{id}:publish-for` | `RepublishAssessment` | manage |
-| 13 | `GET /grades/family?studentId=&termId=` | `GetFamilyGrades` | read (aile kapsamı) |
-| 14 | `GET /grades/students/{id}?termId=` | `GetStudentTermGrades` | read |
-| 15 | `GET /grades/summary?termId=` | `GetGradeEntrySummary` | report |
-| 16 | `GET /grades/tracking?termId=` | `GetGradeTrackingBoard` | report |
-| 17 | `GET/PUT /school-settings/grade-settings` | `GetGradeSettings` / `UpdateGradeSettings` | manage |
+| — | ~~`GET /grades/terms`~~ | **Grades'te YAZILMAZ** → `academic-sessions` (§7.6) | — |
+| 1 | `GET /grades/books?termId=` | `ListMyGradeBooks` | `grades.read` + kapsam |
+| 2 | `GET /grades/books/{id}` | `GetGradeBook` | `grades.read` + kapsam |
+| 3 | `GET /grades/books/{id}/grid` | `GetGradeBookGrid` | `grades.read` + kapsam |
+| 4 | `GET /grades/assessments/{id}/entries` | `GetAssessmentEntries` | `grades.read` + kapsam |
+| 5 | `PUT /grades/assessments/{id}/entries/{studentNo}` | `SetMark` | `grades.write` + kapsam |
+| 6 | `POST …/entries/{studentNo}:correct` | `AmendMark` | `grades.write` (pencere içi) / `grades.manage` (dışı) |
+| 7 | **`DELETE /grades/assessments/{id}/entries`** 🆕 | `ClearAssessmentMarks` | `grades.write` + kapsam |
+| 8 | **`PUT /grades/assessments/{id}/exam-date`** 🆕 | `SetAssessmentExamDate` | `grades.write` + kapsam |
+| 9 | **`GET /grades/books/{id}/export`** 🆕 | `ExportGradeBook` (xlsx) | `grades.read` + kapsam |
+| 10 | `POST /grades/assessments/{id}:publish` | `PublishAssessment` (öğretmen, kendi sütunu) | `grades.publish` + kapsam |
+| 11 | `POST /grades/assessments/{id}:publish-for` | `PublishAssessmentOnBehalf` (yönetici, öğretmen adına) | `grades.manage` |
+| 12 | `POST /grades/assessments/{id}:unpublish` | `UnpublishAssessment` | `grades.manage` |
+| 13 | `POST /grades/assessments/{id}:lock?unlock=` | `LockAssessment` / `UnlockAssessment` | `grades.manage` |
+| 14 | `GET /grades/books/{id}/audit` | `GetGradeBookAudit` | `grades.manage` |
+| 15 | `GET /grades/family?studentId=&termId=` | `GetFamilyGrades` | `grades.read` + aile kapsamı |
+| 16 | **`POST /grades/family:seen`** 🆕 | `MarkFamilyGradesSeen` | `grades.read` + aile kapsamı |
+| 17 | `GET /grades/students/{id}?termId=` | `GetStudentTermGrades` | `grades.read` + kapsam |
+| 18 | `GET /grades/summary?termId=` | `GetGradeEntrySummary` | `grades.report` |
+| 19 | `GET /grades/tracking?termId=` | `GetGradeTrackingBoard` | `grades.report` |
+| 20 | `GET/PUT /school-settings/grade-settings` | `GetGradeSettings` / `UpdateGradeSettings` | okuma `grades.read` · yazma `grades.manage` |
+
+Ayrıca `academic-sessions` modülüne: `GET /api/v1/academic-sessions/terms` (§7.6).
+
+> **`:publish` ile `:publish-for` farkı** (ilk taslakta yanlış eşlenmişti — "republish"
+> değil): `:publish` öğretmenin KENDİ sütununu yayınlaması, gövde `{silent}`,
+> yalnız `status=="draft"` iken. `:publish-for` yöneticinin SORUMLU ÖĞRETMEN ADINA
+> yayınlaması, gövde `{reason}` (≥15), menüde "Yönetici işlemleri" grubunda.
+> Kaynak: `grade-admin-dialogs.tsx:245` başlığı "…notlarını {öğretmen} adına yayınla".
 
 ### 3.1 Sözleşmenin pazarlığa kapalı kuralları
 
@@ -247,47 +275,96 @@ ve §7'de karara bağlanmalıdır.
 
 ---
 
-## 7. Karara bağlanacak maddeler
+## 7. Kararlar (23 Ağustos 2026 · tamamı kapatıldı)
 
-Mock bunları **çözmüyor**; kod yazmadan önce kapatılmalı.
+### 7.1 `newGradeCount` — ✅ kişi başına tek zaman damgası
+Yeni tablo: `FamilyGradeSeen(PersonId, StudentPersonId, AcademicTermId, LastSeenAt)`.
+Sayaç = `LastSeenAt`'ten SONRA yayınlanmış not sayısı. Ucuz (öğrenci×kişi×dönem),
+anne/baba/öğrenci ayrı takip edilir.
 
-### 7.1 `newGradeCount` — okundu bilgisi nerede tutulacak?
-`FamilyGradesDto.newGradeCount` "bu ailenin henüz görmediği yayınlanmış not
-sayısı". Mock sabit veriyor (ilk çocuğa 2, diğerlerine 0). Okundu-bilgisi
-**hiçbir tabloda yok**. Seçenekler: (a) `FamilyGradeRead` tablosu
-(personId × assessmentId × readAt), (b) aile başına tek `LastSeenAt` damgası,
-(c) sayaç şimdilik 0 döner, kısayol devre dışı kalır.
+İşaretleme **ayrı bir uçla**: `POST /grades/family:seen`. Okuma ucu (`GET /grades/family`)
+yan etki üretmez — GET'in state değiştirmesi engellenmiş olur.
 
-### 7.2 Nakil öğrencinin notu — iki yüzey çelişiyor
-Mock kendi içinde tutarsız:
-- `buildEntries` (sütun yüzü): nakil öğrencinin değeri **her hâlde `null`**.
-- `buildGrid` (ızgara yüzü): nakil öğrencinin notu **korunur** (dosya yorumu:
-  "notlar görünür kalır, girişi kapalıdır").
+Kart kapsamı **yalnız seçili çocuk** (bugünkü davranış korunur); sayaç zaten
+`/grades/family` yanıtından gelir ve o da seçili çocuğa aittir.
 
-Aynı veri iki uçta farklı görünüyor. Backend birini seçmeli — ızgaradaki
-davranışın (notu göster, girişi kapat) doğru olduğunu düşünüyorum; sütun yüzü
-ona hizalanmalı. Onay gerekiyor.
+### 7.2 Nakil giden öğrencinin notu — ✅ not korunur, giriş kapalı
+Izgara yüzünün bugünkü davranışı doğru kabul edildi. `buildEntries`'teki
+koşulsuz `null`'lama **kaldırılır**; sütun yüzü de notu döndürür, hücre
+salt-okunur olur. `enteredCount` nakil gideni saymaz (pay ve payda tutarlı kalır).
 
-### 7.3 `classAverage` politika kapalıyken
-`showClassAverage=false` iken sunucu `null` döner (sözleşme öyle diyor). Peki
-**idare** kendi ekranında sınıf ortalamasını görebilecek mi? Politika aileyi mi
-yoksa herkesi mi kapsıyor?
+**Kapsanan statüler:** `TransferredOut`, `Withdrawn`, `Graduated`.
+`Frozen` **hariç** — geçici hâl, öğrenci döndüğünde not girilebilmeli.
 
-### 7.4 İzin kodları ve seed
-`grades.*` kodları mock'ta yok. Permission matrisine eklenip
-`PermissionSeedData` + `RolePermissionSeedData`'ya işlenmesi gerekiyor —
-hangi rol hangi kodu alacak?
+### 7.3 `classAverage` — ✅ politika yalnız aileyi bağlar
+Ayarın kendi metni bunu söylüyor: *"Ailelere sınıf ortalaması göster — açıldığında
+veli ve öğrenci, kendi notunun yanında sınıf ortalamasını görür."*
 
-### 7.5 `:publish-for` gerçekte ne yapıyor?
-Mock'ta `:unpublish` sonrası tekrar yayına almak için kullanılıyor
-(`unpublished`'dan çıkar, `published`'a ekler) ve gerekçe ister. Ad "belirli bir
-kitleye yayınla" izlenimi veriyor ama davranış "yeniden yayınla". Uç adı
-korunacak mı, yoksa `:republish` mi olacak? (Ad değişirse frontend sözleşmesi
-de güncellenir.)
+- `GET /grades/family` → politika kapalıysa `classAverage: null`.
+- Öğretmen ızgarası → **her zaman** görür. Değer zaten istemcide hesaplanıyor
+  (`columnAverage`), sunucudan gelmiyor; satırın kendi etiketi "aileye gitmez".
+  `grade-grid-screen.tsx`'teki `policy.showClassAverage &&` koşulu kaldırıldı.
+- **Gizli kademe önceliklidir:** `visibility == "hidden"` ise o kademenin ailesi
+  notu da ortalamayı da görmez; `showClassAverage` orada hiç değerlendirilmez.
 
-### 7.6 `/grades/terms` kapsamı
-Mock üç dönem döndürüyor ve biri **geçen sezondan** (`t0`, `isClosed: true`).
-Yani uç aktif sezonla sınırlı değil. Kaç sezon geriye gidilecek?
+### 7.4 İzin kodları — ✅ iki yeni kod, yalnız SchoolAdmin
+Üçü **zaten seed'li** (`PermissionSeedData.cs:42-44`): `grades.read` / `.write` /
+`.publish` — Teacher'da üçü, Parent/Student'ta yalnız `read`.
+
+Eklenecek: **`grades.manage`** ve **`grades.report`**. Attendance/Duties kalıbının
+birebir kopyası: ikisi de `AllPermissionIds()` kataloğuna **girmez**, yalnız
+`SchoolAdmin`'e açık satırla verilir — platform hesabı (SuperAdmin) okul içi not
+kararı veremez.
+
+Gerekçesi: `grades.write` öğretmende var; yönetici işlemleri onunla kapılanırsa
+öğretmen kendi yayınını geri çekebilir. `grades.read` veli/öğrencide var;
+`/tracking` onunla kapılanırsa okul geneli pano aileye açılır.
+
+> **İzin ≠ kapsam.** `grades.write` "not girebilir mi", kapsam kapısı "hangi
+> deftere" sorusunu yanıtlar. İkincisi `TeachingAssignment` üzerinden handler'da
+> zorunludur; görevlendirmesi olmayan öğretmen izni taşısa bile yazamaz.
+
+### 7.5 `:publish-for` — ✅ ad doğru, eşleme düzeltildi
+"Yeniden yayınla" değil, **"öğretmen adına yayınla"**. Bkz. §3 tablosundaki not.
+Sözleşme değişmez.
+
+### 7.6 `/grades/terms` — ✅ uç Grades'te YAZILMAZ
+Bu uç not modülüne ait değil. `apps/web/lib/season-context.tsx` dönem listesini
+buradan okuyor; yani uygulama genelindeki dönem seçicisinin kaynağı.
+`GradeTermDto` de yeni bir varlık değil, `AcademicTerm`'ün sunum izdüşümü
+(`label` ← `AcademicTermType.Name`, `seasonLabel` ← `AcademicSession.Name`,
+`isEnabled` ← başladı mı, `isClosed` ← `closedAt != null`).
+
+Dönem verisinin sahibi `academic-sessions` modülüdür; Grades onu **tüketir**:
+
+```
+GET /api/v1/academic-sessions/terms   → GradeTermDto ile aynı şekil
+```
+
+Frontend: `useGradeTerms` bu uca bağlanır, `contract.ts`ten `/grades/terms` düşer.
+
+> **Tek açık parametre:** kaç sezon geriye? Varsayılan **aktif + bir önceki**
+> (mock'un fiilen yaptığı). Seçici düz liste çizdiği için (gruplama/arama yok)
+> daha geniş kapsam bileşenin yeniden tasarımını gerektirir.
+
+### 7.7 Karne ekranının dönemi — ✅ ÇÖZÜLDÜ
+`karne-tab.tsx` dönemini `useCurrentSession` + `resolvePlanningTerm` ile YEREL
+çözüyordu; kullanıcı topbar'dan dönem değiştirdiğinde ekran değişmiyordu —
+uygulamada iki ayrı dönem gerçeği vardı. `useSeasonContext()`e bağlandı.
+Aynı gerekçeyle karne başlığındaki sabit seçenekli sahte "Dönem" filtresi
+kaldırıldı (yalnız toast basıyordu).
+
+### 7.8 Sözleşmede karşılığı olmayan üç eylem — ✅ üçü de uç kazanıyor
+Izgara sütun menüsünde uç karşılığı olmayan işlemler vardı:
+
+| Eylem | Eski hâli | Karar |
+|---|---|---|
+| Sütunu temizle | 30 ayrı `PUT entries/{no}` — atomik değil, denetim izi 30 satır | `DELETE /assessments/{id}/entries` · tek transaction, tek denetim kaydı, yalnız `draft` (aksi 409) |
+| Sınav tarihi ayarla | yalnız toast — hiçbir yere yazmıyordu | `PUT /assessments/{id}/exam-date` |
+| Excel'e aktar | yalnız toast | `GET /books/{id}/export` (senkron xlsx, Dilim 4) |
+
+`examDate` sözleşmede okunabilir ve `isOverdue` hesabının girdisi; yazılamadığı
+sürece geciken-sütun rozeti seed veriden gelmeye devam ederdi.
 
 ---
 
@@ -295,12 +372,121 @@ Yani uç aktif sezonla sınırlı değil. Kaç sezon geriye gidilecek?
 
 | Dilim | İçerik | Çıktı |
 |---|---|---|
-| **0** | Öğrenciler devamsızlık 3 alanı + `IAbsenceDaysBatchReader` | Devamsızlık sütunu canlıda |
-| **1** | Domain + EF konfig + migration + `/terms`, `/books`, `/books/{id}`, `/books/{id}/grid` | Öğretmen defteri salt-okuma |
-| **2** | `entries` yazma, `:correct`, durum makinesi (4 uç), audit | Not girişi uçtan uca |
-| **3** | `/family`, `/students/{id}`, `/summary`, `/tracking` + öğrenci listesi ortalama alanları | Tüm okuma yüzleri + Ortalama sütunu |
-| **4** | `grade-settings`, izin seed, bildirimler | Politika + yetki tamam |
+| **0** ✅ | `IAbsenceDaysBatchReader` + öğrenci listesi devamsızlık 3 alanı · `GET /academic-sessions/terms` + `useGradeTerms` taşıması | Devamsızlık sütunu canlıda, dönem seçicisi gerçek uçta |
+| **1** ✅ | Domain (4 entity) + EF konfig + migration + `grades.manage/.report` seed · `/books`, `/books/{id}`, `/books/{id}/grid`, `/assessments/{id}/entries` | Öğretmen defteri salt-okuma |
+| **2** ✅ | `SetMark`, `AmendMark`, `ClearAssessmentMarks`, `SetAssessmentExamDate` + durum makinesi (`:publish`, `:publish-for`, `:unpublish`, `:lock`) + audit | Not girişi uçtan uca |
+| **3** ✅ | `/family` + `:seen` + `FamilyGradeSeen` tablosu · `/students/{id}` · `/summary` · `/tracking` · öğrenci listesi ortalama alanları | Tüm okuma yüzleri + Ortalama sütunu |
+| **4** ✅ | `grade-settings` · `/books/{id}/export` · bildirimler | Politika + dışa aktarma + bildirim |
 
-Her dilimin çıkış kriteri: ilgili MSW handler'ı devre dışı bırakılıp ekran
-gerçek uca bağlandığında **aynı** davranıyor olmalı. Dilim 4 bitince
+**Dilim 0 — tamamlandı (23 Ağustos 2026).**
+
+Backend (`oksis-api`):
+- `Attendance/Abstractions/IAbsenceDaysBatchReader.cs` + `Attendance/Common/AbsenceDaysBatchReader.cs`
+  — hesap gövdesi `GetRiskStudentsQueryHandler`'dan taşındı, o handler artık okuyucudan okuyor.
+- `StudentListItemDto` +5 opsiyonel alan; `ListStudentsQueryHandler` sayfa başına TEK toplu çağrı.
+- `AcademicSessions/DTOs/TermPickerItemDto.cs` + `Queries/ListTermsForPicker/`
+  + `GET /api/v1/academic-sessions/terms`.
+
+Frontend (`oksis-ui`): `contract.ts`'ten `/grades/terms` düştü, `getGradeTerms` ve MSW handler'ı
+`/academic-sessions/terms`'e bakıyor.
+
+Tasarımdan üç bilinçli sapma:
+1. Uygulama `Attendance/Internal/` yerine **`Attendance/Common/`**'da — repoda `Internal` klasörü
+   yok, sadece-okuyan yardımcılar `Common`'da yaşıyor (`AbsenceDayBreakdownResolver` komşusu).
+2. `AbsenceSummary` satırı olmayan öğrenci **0 gün** döner, sözlükten düşmez — satırın yokluğu
+   "veri yok" değil "hiç devamsızlık yapmamış" demek. `—` yalnız DÖNEM ÇÖZÜLEMEDİĞİNDE çıkar.
+3. Risk listesine `ThenBy(StudentPersonId)` sıralama kırıcısı eklendi: sonuç artık sözlükten
+   geldiği için eşit devamsızlıkta sıra tanımsız kalırdı; sayfalama deterministik yapıldı.
+
+**Kalan:** `:5112`'deki API yeni derlemeyle yeniden başlatılıp `packages/api` içinde
+`npm run codegen` çalıştırılınca `/academic-sessions/terms` gerçek şemadan gelir ve
+`contract.ts`'teki geçici augmentation düşer.
+
+**Dilim 1-4 — tamamlandı (23 Ağustos 2026).** Backend bir turda yazıldı; tek migration
+(`20260823_grades_core`) beş tabloyu, `SchoolSettings`'in beş kolonunu ve iki izin kodunu
+birlikte getirdi (tasarımın iki migration öngörüsü yerine — dilimler ardışık değil, aynı
+turda tamamlandığı için ikinci migration'a gerek kalmadı).
+
+**Açık kararlar bu turda kapatıldı:**
+
+| Karar | Verilen | Gerekçe |
+|---|---|---|
+| Denetim granülerliği | Yayın anında TEK özet satır ("n not girdi") | Hücre başına kayıt denetim ekranını doldururdu; var olan satırı sayaç artırarak güncellemek append-only ilkesini delerdi. Üçüncü yol ikisini de bozmuyor ve fixture'ın cümlesiyle örtüşüyor |
+| `ClearAssessmentMarks` silme | Soft-delete (`IsDeleted`) | Repo geneli hard-delete yasağı; denetim izi ayrı tabloda olduğu için satırı yok etmenin kazancı yok |
+| `isOverdue` eşiği | **3 gün** sabit, `SchoolSettings`'e kolon YOK | Mock'ta okunacak eşik yoktu (statik fixture). Tek kanıt gerekçe metniydi: "sınav tarihi 3 gün önceydi" → `isOverdue: true` |
+| Ortalama formülü | Ağırlıksız aritmetik; `G`/`M`/boş paydaya girmez | Fixture'lardan türetildi, üç satırın üçünü de veriyor. Mock ağırlıkları kullanmıyor; otorite mock |
+| Ortalama yuvarlama | Her uçta **bir ondalık** | Mock iki uçta iki biçim veriyordu (82.3 vs 88); sunucu tek biçim üretir, biçimleme görünümün işi |
+| Bildirim: `MarkAmended` / `Unpublished` | Üretilmez | Yalnız yayın bildirim üretir. Düzeltme aile yüzünde "güncellendi" rozetiyle zaten görünür; ikinci bir kanal gürültü olurdu |
+
+**Entegrasyon testinin yakaladığı hata (derleme ve typecheck yakalamıyordu):**
+`Mark` tablosunun CHECK kısıtı ilk hâlinde `([value] IS NULL) <> ([special] IS NULL)`
+yazılmıştı. **T-SQL'de boolean tipi yoktur**; iki yüklem `<>` ile karşılaştırılamaz ve
+bu bir SÖZDİZİMİ hatasıdır. Sonuç: `EnsureCreated` şemayı hiç kuramadı ve Grades'e
+dokunmayan testler dahil **14 testin 14'ü** düştü. Kural düz OR ile yeniden yazıldı
+(`[value] IS NULL OR [special] IS NULL`) — anlamı aynı: en az biri boş, yani ikisi
+birden dolu olamaz. Ders: kısıt SQL'i yalnız derlemeyle doğrulanamaz, şema kurulmalı.
+
+**Tasarımdan sapmalar:**
+
+1. **Tel kimlikleri BİLEŞİK.** Defter ve sütun tembel oluştuğu için satırları yokken de
+   adreslenebilmeleri gerekiyordu. Deterministik Guid (MD5) elendi — geri çevrilemez,
+   yani kimlikten koordinata dönülemezdi. Kimlik `{termId}.{classRoomId}.{subjectId}`
+   biçiminde kuruluyor; sözleşme zaten id'yi STRING tanımlıyor (`"gb-9a-mat-t1"`).
+2. **Kapsam kaynağı `LessonPlacement`** (B1 kararı) — `ITeachingSlotReader` ile Timetable
+   modülünden okunuyor. Vekâlet (`ScheduleException`) kapsama girmiyor.
+3. **Öğrenci statüsü `StudentEnrollment.Status`** (B2) — `ClassRoomStudent`'ta böyle bir
+   alan yok.
+4. **Sütun kataloğu master veriden**: dönemin sütunları `ExamType` tablosundan gelir
+   (`TermOrder` 0 veya dönem sırası). Fixture'ın beş sütunu tam olarak bu kümedir.
+
+**Doğrulama (23 Ağustos 2026):**
+
+| Küme | Sonuç |
+|---|---|
+| `oksis-api` tam çözüm derlemesi | 0 uyarı, 0 hata |
+| Domain birim testleri (durum makinesi + `MarkValue`) | **39/39** |
+| Application birim testleri (ortalama, gecikme, yüzde, bileşik anahtar) | **32/32** |
+| Entegrasyon testleri (öğrenci listesi, dönem seçicisi, risk listesi) | **14/14** |
+| `oksis-ui` typecheck (web + mobil + 4 paket) | **6/6** |
+| `oksis-ui` lint | **6/6** |
+| `oksis-ui` birim testleri | **675/675** |
+
+**Her dilimin çıkış kriteri:** ilgili MSW handler'ı devre dışı bırakılıp ekran
+gerçek uca bağlandığında **aynı** davranmalı. Dilim 4 bitince
 `packages/api/src/grade/contract.ts` silinir ve şekil codegen'den gelir.
+
+**Frontend'de bu turda kapanan borçlar** (backend beklemez):
+- `karne-tab.tsx` → topbar dönem bağlamı (§7.7) ✅
+- `grade-grid-screen.tsx` → öğretmen sınıf ortalaması satırının politika koşulu (§7.3) ✅
+
+---
+
+## 9. Kapanış (23 Ağustos 2026)
+
+Beş dilim tamamlandı, migration uygulandı, **codegen koşuldu ve `contract.ts` silindi**.
+Mock-first dönem kapandı: şekil artık yalnız `generated/schema.ts`ten geliyor.
+
+### Drift bekçisinin yakaladıkları
+
+Augmentation kaldırılınca typecheck **gerçek** uyuşmazlıkları gösterdi — bekçi tam da
+bunun için konmuştu:
+
+| # | Uyuşmazlık | Kim yanlıştı |
+|---|---|---|
+| 1 | `/grades/family` sunucuda `children[]` dönüyordu; sözleşme `child` (TEK) + `termId` + `columns` bekliyor | **Backend.** Aktif çocuk topbar bağlamından gelir; ikinci bir "aktif çocuk" gerçeği yaratılamaz. `FamilyGradesDto` düzeltildi |
+| 2 | `int32` alanlar telde `number \| string` | Depo geneli (.NET OpenAPI kalıbı; 389 int32'nin 379'u). `academic-sessions` ile aynı çözüm: `Number(...)` daraltması |
+| 3 | `isClosed`/`note`/`isLocked`/`tone`/`isPlanned` sunucuda zorunlu-nullable, domain tipinde opsiyonel | Eşleyici. `null` alan ATLANIR — "kapalı değil" ile "bilgi yok" ayrı hâller |
+| 4 | Mock fixture'ları bu alanları hiç taşımıyordu | **Mock.** CLAUDE.md "mocks are typed too" kuralı işledi; fixture'lar şemaya hizalandı |
+| 5 | `getGradeTracking` kısmi yanıtta çöküyordu | Eşleyici; KPI eksikse pano sıfırlanır, ekran beyaza düşmez |
+
+### Kalan tek iş
+
+**Uçtan uca tarayıcı doğrulaması** — her dilimin çıkış kriteri "MSW kapatılınca ekran
+AYNI davranır". Kod tarafında engel kalmadı; ekranların gerçek veriyle sürülmesi gerekiyor.
+
+**Tasarım kapsamı dışında bırakılan iki ekran eylemi** (idare panosu):
+okul geneli Excel dışa aktarma ve toplu öğretmen hatırlatması. İkisinin de ucu
+yok ve tasarımın 20 ucunda yer almıyorlar. Butonlar kaldırılmadı ama **yanıltıcı
+mesajları düzeltildi** — eskiden "gönderildi"/"hazırlanıyor" diyorlardı ve bu
+yalandı; hiçbir yere istek gitmiyordu.
+
