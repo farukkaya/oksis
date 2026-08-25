@@ -7,6 +7,10 @@
 > **Kaynak 5:** **Uçtan uca ekran testi (2026-08-16)** — kurulumdan mezuniyete 8 faz,
 > web + Android cihaz, her iddia uç/DB ölçümüyle · `oksis-api` @ `7667084` · `oksis-ui` @ `2325383`
 > · bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-)
+> **Kaynak 6:** **Not modülü uçtan uca testi (2026-08-25)** — web + iOS simülatörü,
+> ham gözlemler `Notlar Bulguları;.md`, her biri uç/DB/tarayıcı ölçümüyle köke indirildi
+> · `oksis-api` @ `82b0a88` · `oksis-ui` @ `ffdfd9f`
+> · bkz. [24. Not Modülü — Uçtan Uca Test](#24-not-modülü--uçtan-uca-test-2026-08-25)
 > **İlgili:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Durum:** Test devam ediyor, yeni partiler bu dosyaya eklenecek.
 > **Düzeltme turu:** 2026-08-16 akşamı başladı — bkz. [13. Düzeltme Turu](#13-düzeltme-turu--ekran-testi-bulguları-2026-08-16-)
@@ -25,7 +29,7 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 
-**Sıradaki boş ID:** `TB-82` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
+**Sıradaki boş ID:** `TB-82` · `X-18` · `B-42` · `D-17` · `V-04` · `E-18` · `ENG-03`
 *(2026-08-16 uçtan uca ekran testi partisi `B-21`…`B-32`, `D-09`…`D-14`, `V-02`·`V-03`,
 `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı — bkz. [12. Uçtan Uca Ekran Testi](#12-uçtan-uca-ekran-testi--kurulumdan-mezuniyete-2026-08-16-).
 `E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır; orada `E-01`…`E-10` kullanılmıştı.)*
@@ -3393,3 +3397,413 @@ başlatılırsa yine düşer. Fail-fast bilinçli bir tercih, bu yüzden koda do
 **Ailesi:** [[kural-ekranda-degil-sunucuda]] — *"yeşil gösterge ölçtüğü şey kadar doğrudur"*.
 
 **Sıradaki boş ID:** `TB-82` · `X-17` · `B-38` · `D-15` · `V-04` · `E-17` · `ENG-03`
+
+---
+
+## 24. Not Modülü — Uçtan Uca Test (2026-08-25)
+
+> **Kaynak:** Yerel uçtan uca test, `Notlar Bulguları;.md` (6 ham gözlem) ·
+> `oksis-api` @ `82b0a88` · `oksis-ui` @ `ffdfd9f` · zemin: Atatürk AL · 11-A · 1. Dönem
+> **Yöntem:** Her gözlem uç/DB/tarayıcı ölçümüyle köküne indirildi; kök bulunamayan
+> madde yok. Doğrulama biçimi her maddede ayrıca yazılı.
+
+### `B-38` · Öğretmen not politikasını **hiç** okuyamıyor 🔴 *(kapandı — 2026-08-25)*
+
+Belirti (ham gözlem 2, birinci ayak): müdür Not Düzeltme Penceresi'ni değiştiriyor,
+değer kaydoluyor, **öğretmen ekranına yansımıyor**.
+
+**Kök sebep — öğretmen yüzü yönetici ucundan besleniyor.** `useGradePolicy()` iki
+sorgunun projeksiyonudur: `useAcademicPolicy()` + `useGradeSettings()`
+(`packages/api/src/grade/queries.ts:179`). Bunlardan ilki
+`getAcademicPolicy()` üzerinden **`GET /api/v1/school-settings`** çağırır
+(`packages/api/src/academic-policy/endpoints.ts:44`) — bu uç okul yönetimine ait.
+
+Ölçüm (öğretmen `ogretmen.s2.02` tokenıyla):
+
+| Uç | Öğretmen | Müdür |
+|---|---|---|
+| `GET /school-settings` | **403 Forbidden** | 200 |
+| `GET /school-settings/grade-settings` | 200 · `correctionWindowHours: 9` | 200 · `9` |
+
+Yani düzeltme penceresinin **kendi** ucu öğretmene açık ve doğru değeri veriyor;
+projeksiyon onu 403 alan akademik yarı yüzünden çöpe atıyor:
+`academic.data` `undefined` kalınca `useGradePolicy()` de kalıcı olarak `undefined`
+döner. Öğretmen için politika **hiçbir zaman** gelmez — yanlış değer değil, **değer yok**.
+Müdürün ne yaptığından bağımsız.
+
+**Neden "yanlış değer" gibi göründü:** aynı projeksiyonda ikinci bir tuzak var —
+`settings.data ?? DEFAULT_GRADE_SETTINGS`. Not ayarları gecikirse ya da reddedilirse
+koda gömülü **48 saat** sessizce devreye giriyor (`packages/core/src/grade/constants.ts:122`).
+Sunucunun söylediği 9 ile ekranın söylediği 48 arasındaki fark hiçbir yerde belirtilmiyor.
+
+**Doğrulama:** iki uç curl ile ayrı ayrı çağrıldı; 403/200 ayrımı yukarıdaki tabloda.
+DB'de `school.school_settings.grade_correction_window_hours = 9` (Atatürk AL,
+`updated_at 2026-08-25 14:14`) — yazma tarafı sağlam, kusur **okuma** tarafında.
+
+**Ailesi:** [[kural-ekranda-degil-sunucuda]] · [[besleyen-yuzey-olculmeden-kapanmaz]] —
+*"okuma ekranı doğru diye onu besleyen uç doğru sayılmaz"*. `X-17`'nin birinci ayağı.
+
+**Çözüm — projeksiyon sunucuya taşındı.** İstemcide iki sorguyu birleştiren
+`useGradePolicy` kaldırıldı; yerine **tek okuma ucu** geldi:
+`GET /api/v1/grades/policy` (`GetGradePolicyQuery`, `grades.read`). Altı alanı
+(`scaleMax`, `passingGrade`, `writtenWeight`, `performanceWeight`,
+`correctionWindowHours`, `showClassAverage`) sunucu birleştirir. Alanların
+YÖNETİMİ yerinde kalır — skala/geçme notu/ağırlık `academic-policy`, görünürlük/
+pencere `grade-settings`; yeni uç SALT OKURDUR, yani "aynı alan iki yerden
+yönetilmez" kuralı korunur.
+
+İki yan kazanç: (1) `scaleMax` artık istemcinin sabiti değil, okulun gerçek
+skalasından (`SchoolSettings.DefaultGradeScaleId` → `GradeScale.MaxValue`)
+okunuyor; tanımsızsa MEB varsayılanına **sunucuda** düşülüyor. (2) Sessiz yedek
+kaldırıldı: politika okunamazsa `data` `undefined` kalır, 48 saat uydurulmaz.
+
+**Doğrulama:** dört rolde de uç ölçüldü (öğretmen/veli/öğrenci/müdür → `200`,
+`correctionWindowHours: 9`). Tarayıcıda öğretmen oturumu: politika şeridi
+*"düzeltme penceresi 9 saat"*, ağ kaydında tek istek `/api/v1/grades/policy` →
+`200`; `/school-settings` çağrısı YOK (eskiden 403 alan istek). Mobil aynı
+kancayı kullandığı için o ayak da bedelsiz düzeldi.
+
+**Ailesi:** `X-17`'nin "aşağı doğru" ayağı — kapandı.
+
+### `B-39` · Ayar formu geç gelen veriyle tazelenmiyor, varsayılana kilitleniyor 🔴 *(kapandı — 2026-08-25)*
+
+Belirti (ham gözlem 2, ikinci ayak): müdür çıkış-giriş yapınca Not Düzeltme Penceresi
+**eski değere dönüyor**.
+
+**Kök sebep — tek seferlik tohum.** `PolicyTab` iki sorguyu paralel açar ama formu
+**yalnız akademik politika** gelir gelmez kurar:
+
+```
+<PolitikaForm key={data.defaultPassingScore} gradeSettings={grade.data ?? DEFAULT_GRADE_SETTINGS} …/>
+```
+
+`useSettingsForm` başlangıç değerini `useState(initial)` ile **bir kez** alır ve prop
+değişimini dinleyen hiçbir `useEffect` yoktur (`apps/web/features/settings/parts.tsx`).
+Yeniden kurma anahtarı (`key`) ise `defaultPassingScore` — yani **akademik politikanın**
+alanı; not ayarları sonradan gelse bile bileşen yeniden kurulmaz.
+
+Sonuç: not ayarları sorgusu akademik politikadan **sonra** çözülürse form,
+`DEFAULT_GRADE_SETTINGS`e (48 saat + varsayılan görünürlük kümesi) kilitlenir ve
+gerçek veri geldiğinde **düzelmez**. Soğuk açılışta (çıkış-giriş) sıra bozulma ihtimali
+en yüksektir — kullanıcının tarifi bu yüzden "çıkış giriş yapınca eski değer".
+
+**Doğrulama (yeniden üretildi):** Playwright ile `**/grade-settings**` isteği 6 sn
+geciktirildi, sayfa soğuk yüklendi:
+
+| An | Alanın gösterdiği |
+|---|---|
+| 2,5 sn (istek yolda) | **48** |
+| 9,5 sn (istek 200 döndü, değer 9) | **48** — düzelmedi |
+
+Gecikme olmadan aynı sayfa 9 gösteriyor; yani hata **aralıklı**, ekran bazlı bir
+"bazen olmuyor" değil, yarışın kaybedildiği her yüklemede kesin.
+
+**İkincil zarar:** form 48'e kilitliyken müdür görünürlük ayarını değiştirip Kaydet'e
+basarsa, `updateGradeSettings.mutate(gradeValues)` **tüm nesneyi** gönderir —
+dokunmadığı 9 saatlik pencere sessizce 48 olur. Kaydet `gradeForm.dirty` ile korunuyor,
+yani sadece akademik politika kaydedildiğinde bu olmaz; ama not alanlarından **herhangi
+biri** kirlendiğinde bayat pencere de yazılır.
+
+**Ailesi:** `B-38` ile aynı varsayılan (`48`) iki farklı yoldan sızıyor — [[yamalama-kabul-degil]]:
+tek tek ekran düzeltmek yerine "sunucu veriyi verene kadar form kurulmaz" kuralı gerekiyor.
+
+**Çözüm — form veri gelmeden KURULMUYOR.** `PolicyTab` artık iki sorgunun da
+verisini bekler (`isPending || grade.isPending → iskelet`); not ayarları
+okunamazsa varsayılana düşmek yerine hata + "Tekrar dene" gösterilir. Yeniden
+kurma anahtarı da sunucu değerini içerir, yani başka bir sekmeden yapılan kayıt
+formu tazeler; değer aynı kaldığı sürece anahtar sabittir ve arka plan
+tazelemesi kullanıcının yazdığını silmez. `DEFAULT_GRADE_SETTINGS` bu ekrandan
+tamamen çıktı.
+
+**Doğrulama (aynı deney, tersi sonuç):** `**/grade-settings**` isteği 6 sn
+geciktirilip sayfa soğuk yüklendi — 2,5 sn'de form HİÇ çizilmedi (iskelet),
+veri gelince alan **9** gösterdi. Öncesinde aynı deney 2,5 sn'de de 9,5 sn'de de
+48 gösteriyordu.
+
+### `B-40` · Sütun menüsü, yöneticiye **yapamayacağı** yayını sunuyor 🔴 *(kapandı — 2026-08-25)*
+
+Belirti (ham gözlem 4): müdür bir sütunu öğretmen adına yayınlamak istiyor; gerekçe
+sorulmuyor ve onayda *"Kayıt bulunamadı; bu arada silinmiş ya da taşınmış olabilir."*
+hatası geliyor. Ham yanıt: `Error.NotFound`.
+
+**Kök sebep — kapı herkese açık, oda öğretmene ait.** Sütun menüsündeki düz **"Yayınla"**
+maddesi `{admin && …}` bloğunun **dışındadır** (`apps/web/features/grade/grade-grid-screen.tsx:156`);
+yalnız `locked || status !== "draft"` ile kapatılır. Yani taslak bir sütunda müdür de
+onu etkin görür ve tıklayınca **öğretmenin** yayın diyaloğunu açar (ekran görüntüsündeki
+başlık *"1. Yazılı notlarını yayınla"* — yönetici diyaloğu olsaydı *"… Levent Koç adına
+yayınla"* derdi).
+
+Sunucu tarafı ise bunu bilerek reddediyor. `PublishAssessmentCommandHandler` yayın kapısını
+**yazma kapsamına** bağlar ve docblock'unda açıkça yazar: *"Yönetici bunu `:publish-for`
+ile yapar, bu uçtan değil."* Kapsam başarısız olunca `Result.NotFound` döner.
+
+**Doğrulama (yan etkisiz):** Matematik öğretmeni `ogretmen.s2.02` ile **Türkçe** sütunu
+(`…8a61a296….f715d19a…`) `:publish` uçundan yayınlanmaya çalışıldı → `HTTP 404`,
+`Error.NotFound` — kullanıcının yapıştırdığı gövdeyle **birebir aynı**. Müdür de aynı
+kapsam kontrolünden geçemediği için aynı yanıtı alır. Yönetici yolunun kendisi
+(`GradePublishForDialog` → gerekçe → `:publish-for`) doğru bağlanmış durumda; kusur
+**yanlış maddenin sunulmasında**.
+
+**İkinci ayak — hata metni yanıltıyor.** Sunucu kapsam reddini kasıtlı olarak `NotFound`
+ile örtüyor (varlık sayımını engellemek makul bir tercih), ama istemci bunu
+*"bu arada silinmiş ya da taşınmış olabilir"* cümlesine çeviriyor. Kullanıcıya verinin
+kaybolduğu söyleniyor; gerçek *"bu uçtan siz yayınlayamazsınız"*. `B-38`'de olduğu gibi
+sunucunun sustuğu yeri istemci uyduruyor.
+
+**Ailesi:** `X-17`'nin ikinci ayağı. `TB-71`/`TB-73`/`TB-74`/`B-33` ailesinin **aynası**:
+o aile *"ekran var, kapı yok"* diyordu; bu madde *"kapı var, arkasında yetki yok"*.
+
+**Çözüm — yazma yüzeyini sunucu açıyor.** `GradeGridDto` artık `canWrite`
+taşıyor; değeri `IGradeBookScope.CanWriteAsync`in kendisidir. Ekran yazma
+maddelerini (**Yayınla · Sınav tarihi ayarla · Sütunu temizle** — üçü de sunucuda
+AYNI kapıdan geçer) ve hücre yazılabilirliğini bu bayraktan sürüyor; `admin`
+prop'undan TÜRETMİYOR. Kapı kapalıysa madde devre dışı değil, hiç çizilmiyor:
+devre dışı bir madde "bir gün olur" vaadidir, oysa yönetici için bu asla
+açılmaz — onun yolu "Başkası adına yayınla".
+
+Sütun DURUMU bilerek bozulmadı. Kolay çözüm olan "yönetici kipinde tüm sütunları
+locked say" denenmedi, çünkü yöneticinin KENDİ eylemleri sütun durumuna bağlı
+(`Yayını geri al` yayınlanmış, `Başkası adına yayınla` taslak ister) — o yol
+kusuru düzeltirken yönetici yüzünü sessizce kapatırdı.
+
+**Doğrulama:** uç düzeyinde `canWrite` öğretmende `true`, müdürde `false`.
+Tarayıcıda müdür menüsü: yazma maddeleri YOK, yalnız *Excel'e aktar* + yönetici
+bölümü. Öğretmen menüsü dört maddesiyle tam, hücreler yazılabilir (gerileme yok).
+Kapsam kapısının 404'ü yan etkisiz doğrulandı: Matematik öğretmeni Türkçe
+sütununu `:publish`ten yayınlamayı denedi → `HTTP 404 Error.NotFound`, kullanıcının
+yapıştırdığı gövdeyle birebir aynı.
+
+**Açık bırakılan:** reddin METNİ. Sunucu kapsam reddini `NotFound` ile örtüyor
+(varlık sayımını engelleyen bilinçli tercih) ve istemci bunu *"bu arada silinmiş
+ya da taşınmış olabilir"* diye çeviriyor. Menü kapandığı için bu yol artık
+arayüzden tetiklenmiyor, ama görevlendirmesi oturum ortasında değişen bir
+öğretmen hâlâ bu cümleyi görebilir. Düzeltmesi tek modüle yamalanacak bir iş
+değil — bkz. `X-17`.
+
+**Ailesi:** `X-17`'nin "yukarı doğru" ayağı. `TB-71`/`TB-73`/`TB-74`/`B-33`
+ailesinin aynası.
+
+### `B-41` · Excel'e aktarma isteği token taşımıyor → 401 🔴 *(kapandı — 2026-08-25)*
+
+Belirti (ham gözlem 5): "Excel'e aktar" → *"Bağlantınızı kontrol edip yeniden deneyin."*
+DevTools: `export` isteği **401**, başlatıcı `endpoints.ts:345`.
+
+**Kök sebep — paylaşılan istemci atlanmış.** `exportGradeBook`
+(`packages/api/src/grade/endpoints.ts:344`) `getClient()` yerine **ham `fetch`** kullanıyor:
+
+```
+await fetch(`/api/v1/grades/books/${…}/export`, { credentials: "include" })
+```
+
+`Authorization: Bearer …` başlığını ekleyen tek yer istemci ara katmanıdır
+(`packages/api/src/client/auth-refresh.ts:88`). Ham `fetch` oradan geçmediği için istek
+**kimliksiz** gider; API çerezle değil taşıyıcı token ile kimlik doğruladığından 401 kesin.
+`credentials: "include"` bu mimaride hiçbir şey taşımıyor.
+
+İkinci kayıp: aynı ara katman 401'de token yenileyip isteği **bir kez tekrarlar**
+(`auth-refresh.ts:120`). Dışa aktarma bu kurtarmadan da mahrum — süresi dolmuş token
+senaryosunda diğer tüm ekranlar kendini toparlarken bu düğme düşer.
+
+**Neden ağ hatası gibi göründü:** `if (!response.ok) throw new Error("Defter dışa
+aktarılamadı.")` — durum kodu yutuluyor, arayüz jenerik bağlantı metnine düşüyor.
+Kimlik hatası ağ hatası kılığında.
+
+**Not:** docblock ham `fetch` tercihini *"yanıt zarf DEĞİL, ham dosyadır"* diye
+gerekçelendiriyor. Gerekçe doğru ama sonuç yanlış: zarf açmamak için `unwrap`'ten
+kaçınmak yeterliydi, **istemciden** kaçmak gerekmiyordu.
+
+**Ailesi:** [[yamalama-kabul-degil]] — düğmeye token elle eklemek yaması değil, blob
+indiren istekler için ortak bir yol gerekiyor (aynı desen ileride karne/rapor
+indirmelerinde tekrar edecek).
+
+**Çözüm — istek paylaşılan istemciye alındı.** `exportGradeBook` artık
+`getClient().GET(..., { parseAs: "blob" })` kullanıyor; böylece Bearer başlığı,
+401'de tek-uçuşlu token yenileme, `baseUrl` ve enjekte edilebilir `fetch`
+(testlenebilirlik) hepsi birden geliyor. Zarf açma için `unwrapBlob`
+eklendi (`client/request.ts`): başarıda gövde dosyanın kendisi, hatada normal
+zarf → `unwrap` ile AYNI `ApiError`. Yani "Bağlantınızı kontrol edin" yerine
+gerçek ret cümlesi çıkıyor.
+
+Yardımcı bilerek `grade/` altına değil `client/` altına yazıldı: karne ve rapor
+indirmeleri aynı deseni tekrar isteyecek ([[yamalama-kabul-degil]]).
+
+**Ölçüm testte de yakalandı:** ham `fetch` göreli yol kullandığı için test
+ortamında `TypeError: Invalid URL` veriyordu — yani bu uç web dışında,
+**mobilde hiç çalışmıyordu**; kusur 401'den ibaret değilmiş.
+
+**Doğrulama:** 4 yeni test (yapılandırılmış fetch + baseUrl, `Authorization`
+başlığı, blob dönüşü, hata dalında `ApiError`). Tarayıcıda: istek
+`Bearer eyJhbGciO…` taşıyor, yanıt **200**, `11-A-Bilgisayar.xlsx` gerçekten indi.
+
+### `D-15` · Son satırın doğrulama uyarısı yapışkan alt satırın altında kalıyor 🟠 *(kapandı — 2026-08-25)*
+
+Belirti (ham gözlem 1): 0–100 dışı değer girilince uyarı çıkıyor, ama **en alttaki
+öğrencide** yarısı kesiliyor (ekran görüntüsünde Özge Kılıç'ınki okunuyor, Veli
+Doğan'ınki "Sınıf ortalaması" satırının altında kayboluyor).
+
+**Kök sebep — iki kural çarpışıyor:**
+
+| Kural | Yer |
+|---|---|
+| `.grg-cellerr { position: absolute; top: calc(100% + 2px); }` — **z-index yok** | `grade.css:285` |
+| `.grg-tbl tfoot td { position: sticky; bottom: 0; z-index: 5; background: … }` | `grade.css:290` |
+
+Uyarı hücrenin **altına** çiziliyor; son satırda o alan tam olarak yapışkan tfoot'un
+kapladığı yer. tfoot `z-index: 5` ve **opak zemin** taşıdığı için uyarıyı boyayarak
+örtüyor. Ayrıca `.grg-wrap { overflow: auto }` kaydırma kabı, taşan kısmı kırpıyor —
+yani iki farklı mekanizma aynı anda saklıyor.
+
+**Neden önemli:** kırpılan şey dekor değil, **kullanıcının yaptığı hatanın açıklaması**.
+Son satır her defterde vardır; sekiz öğrencinin sekizde biri bu kusuru her seferinde görür.
+
+**Ailesi:** `D-16` ile aynı kök — yapışkan/kaydırmalı ızgaranın içinde **taşan** parça
+çizmek. İkisi de "ızgara dışına taşan katman" kuralı gerektiriyor.
+
+**Çözüm — z-index + opak zemin.** Uyarı altlığın en yükseğinin (tfoot
+`c-stu`/`c-avg` = 7) üstüne çıkarıldı (`z-index: 8`) ve okunurluk için opak
+zemin + ince kırmızı çerçeve + gölge verildi; çıplak kırmızı metin altlığın
+kendi yazısının ("Sınıf ortalaması 22,7") üzerine binerdi. `pointer-events: none`
+eklendi ki geçici bir uyarı altlığa tıklamayı engellemesin.
+
+**Doğrulama:** son satıra `130` yazıldı; uyarı altlık satırıyla ÇAKIŞIYOR
+(`altlıkla çakışma: true`) ama artık üstte ve tam okunur — ekran görüntüsüyle
+görüldü, kaydırma kabının içinde kalıyor.
+
+### `D-16` · Sütun menüsü kaydırma kabı tarafından kırpılıyor 🟠 *(kapandı — 2026-08-25)*
+
+Belirti (ham gözlem 3): "⋮" menüsü açılıyor ama sol kenarı kesik
+(*"YÖNETİCİ İŞLEMLERİ"* → *"ÖNETİCİ İŞLEMLERİ"*) ve alt kısmı görünmüyor.
+
+**Kök sebep:** `.gr-menu` mutlak konumlu (`grade.css:169`) ve yapışkan `th` içindeki
+`.gr-menuwrap`'e göre yerleşiyor. Mutlak konumlu bir katman, `overflow` tanımlı **her**
+atası tarafından kırpılır:
+
+- `.grg-wrap { overflow: auto; max-height: calc(100vh - 340px) }` → **altını** kırpar
+- `.grg-card { overflow: hidden }` → yatay kaydırmada **solunu** kırpar
+
+Menü uzadıkça (yönetici kipinde 8 madde) kırpılma kaçınılmaz hâle geliyor; yönetici
+menüsü en uzun olan olduğu için kusuru en çok **yönetici** görüyor.
+
+**Çözüm yönü:** menüyü ızgaranın DOM'undan çıkarmak — portal + `position: fixed`
+(ya da native popover / CSS anchor positioning). `overflow`'u gevşetmek çözüm değil:
+ızgaranın kaydırması ve yapışkan başlıkları ona bağlı.
+
+**Ailesi:** `D-15` ile ortak kök.
+
+**Çözüm — menü ızgaranın DOM'undan çıkarıldı.** `packages/ui`'ye
+`AnchoredMenu` eklendi: portal + `position: fixed`, tetikleyicinin
+`getBoundingClientRect()`ine sağa hizalanır, aşağıda yer kalmazsa yukarı açılır,
+her hâlde `max-height` ile ekran dışına taşmaz. Dışarı tıklama, `Escape` ve
+kaydırma/yeniden boyutlandırmada konum tazeleme bileşenin içinde
+(`scroll` dinleyicisi `capture: true` — ızgaranın İÇ kaydırıcısı `window`'a
+baloncuk göndermez).
+
+`overflow` gevşetilmedi: ızgaranın kaydırması ve yapışkan başlık/altlık satırları
+ona bağlı. Bileşen `apps/web` içine değil `packages/ui`'ye yazıldı — aynı desen
+ızgara sütun menüsünde ve defter listesi satır menüsünde kullanılıyor, ikisi de
+buna geçirildi.
+
+**Doğrulama:** yönetici kipinde (en uzun menü) ölçüldü — `portalda: true`,
+`position: fixed`, `tam görünür: true`. Öğretmen kipinde de tam görünür.
+
+### `E-17` · Profil değiştirme: bütün altyapı var, **düğme yok** 🔴 *(kapandı — 2026-08-25)*
+
+Belirti (ham gözlem 6): çift profilli hesapta (öğretmen + veli) test senaryosu profil
+geçişinden söz ediyor, ekranda böyle bir yol bulunmuyor. Kullanıcı menüsünde
+*Profilim · Hesap Ayarları · Bildirim Tercihleri · Gizlilik & Güvenlik · Çıkış Yap* var,
+profil geçişi **yok**.
+
+**Ölçüm — zincir son adım hariç tamam:**
+
+| Katman | Durum |
+|---|---|
+| `POST /api/v1/auth/account/switch-profile` | var (üretilmiş şemada kayıtlı) |
+| `switchProfile()` istemci fonksiyonu | var — `packages/api/src/auth/endpoints.ts:86` |
+| `useSwitchProfile()` kancası | var — token setini kalıcılaştırıp önbelleği tazeliyor |
+| Kancayı çağıran ekran | **yok** — `apps/web` ve `apps/mobile/src` içinde sıfır çağrı |
+
+Yani eksik olan tek şey bir düğme. Giriş anında profil seçimi çalışıyor
+(`needsProfileSelection` → `Parent`/`Teacher`), ama oturum açıldıktan sonra öbür profile
+geçmenin yolu **çıkıp yeniden girmek**.
+
+**Bunun sakladığı ikinci soru:** profil geçişi hiç çağrılmadığı için, geçiş sonrası
+izin/bağlam tazelemesinin doğru çalışıp çalışmadığı da **hiç ölçülmemiş** durumda
+([[eksik-ekran-eksik-yetkiyi-gizler]]). Düğme eklendiğinde ilk iş bu olmalı.
+
+**Not:** aynı eksik **mobilde de** var — kanca orada da çağrılmıyor. Yani bu web'e özgü
+değil, ortak bir boşluk.
+
+**Çözüm — hem web hem mobil.** `useSwitchProfile` zaten hazırdı; eksik olan
+ekran eklendi:
+- **Web:** kullanıcı menüsüne "Profil değiştir" bölümü (`app-shell.tsx`).
+- **Mobil:** "Daha fazla" ekranına "Profil" bölümü; satırın rengi GEÇİLECEK
+  profilin portal rengi.
+
+İkisinde de bölüm yalnız `availableProfiles.length > 1` iken çizilir, aktif
+profil işaretli ve tıklanamaz, geçişten sonra köke dönülür (yeni profilin sekme/
+menü seti farklı; bulunulan rota o profilde açık olmayabilir). Profil listesi
+giriş yanıtından değil `auth/me/context`ten okunur — sayfa yenilendiğinde giriş
+yanıtı elde olmaz.
+
+**Doğrulama (web, uçtan uca):** çift profilli hesapta menüde *Veli* (aktif,
+kapalı) ve *Öğretmen* göründü; *Öğretmen*e basıldı → `switch-profile` **200**,
+üst bar rolü *Öğretmen* oldu ve kenar menüsü öğretmen setine döndü
+(`/roll-call`, `/grades`, `/teacher-assignments`). Yani maddede "hiç ölçülmemiş"
+denen **geçiş sonrası izin/bağlam tazelemesi de doğrulanmış oldu**.
+
+**Doğrulanmayan:** mobil ekran çalışma zamanında AÇILAMADI — simülatörü
+tıklamayla sürmek erişilebilirlik izni istiyor, bu oturumda yok. Değişiklik
+`tsc` + `eslint` temiz ve aynı kanca web'de uçtan doğrulandı; mobil yüzeyin
+kendisi gözle görülmedi.
+
+### `X-17` · İstemci, sunucunun role göre daralttığı ucu ayırt etmeden tüketiyor 🔴 *(yapısal yarısı kapandı — 2026-08-25; biçim kararı açık)*
+
+`B-38` ve `B-40` aynı kusurun iki yönü:
+
+- **Aşağı doğru:** öğretmen yüzü, yönetici ucundan (`/school-settings`) besleniyor →
+  403 alıyor, ekran sessizce koda gömülü varsayılana düşüyor.
+- **Yukarı doğru:** yönetici yüzü, öğretmen ucunu (`:publish`) çağırabiliyor →
+  404 alıyor, ekran bunu "kayıt silinmiş" diye anlatıyor.
+
+Ortak kök: **istemci, bir ucun hangi role ait olduğunu bilmiyor**; hem yanlış rolün
+ucunu çağırıyor hem de reddi kullanıcıya yanlış tercüme ediyor. Rol daraltması sunucuda
+doğru kurulmuş ([[kural-ekranda-degil-sunucuda]]), istemci tarafında karşılığı yok.
+
+**Karara bağlanması gereken:** her ucun hedef rolü sözleşmede işaretlensin mi
+(üretilmiş şemadan türetilebilir), yoksa yüzey başına elle mi ayrılsın? İkincisi
+aynı hatayı bir sonraki modülde tekrar üretir.
+
+**Çözüm — yetenek bayrağı kaynağın kendisinde.** İki ayak da kapandı ve ikisi de
+AYNI biçimi kullandı:
+
+| Yön | Eski | Yeni |
+|---|---|---|
+| Aşağı (`B-38`) | istemci yönetici ucunu çağırıyor, 403'te varsayılana düşüyor | modülün kendi rol-güvenli okuma ucu (`GET /grades/policy`) |
+| Yukarı (`B-40`) | istemci rolden "yazabilirim" çıkarımı yapıyor | sunucu zaten çektiği kaynakta `canWrite` söylüyor |
+
+Ortaya çıkan kural: **istemci bir yeteneği rolden TÜRETMEZ; sunucu onu, istemcinin
+zaten okuduğu kaynağın üstünde söyler.** Bu, maddede sorulan iki seçeneğin de
+alternatifidir — ne her ucun hedef rolünü sözleşmede işaretlemek (üretilmiş şema
+şişer, istemci yine kendi çıkarımını yapar) ne de yüzey başına elle ayırmak
+(aynı hata bir sonraki modülde tekrarlanır).
+
+**Açık kalan — reddin BİÇİMİ (karara gitmeli).** Kapsam reddi bugün `NotFound`
+ile örtülüyor ve istemci onu *"kayıt bulunamadı; silinmiş olabilir"* diye
+çeviriyor. Ölçüldü: bu kalıp not modülünde **beş** yazma handler'ında aynı
+(`SetMark`, `AmendMark`, `ClearAssessmentMarks`, `SetAssessmentExamDate`,
+`PublishAssessment`).
+
+Önerilen ayrım — *okuyabiliyor ama yazamıyor* → **403 + modül önekli Türkçe
+gerekçe**; *okuyamıyor bile* → **404** (varlık sızdırmama korunur). Deponun bunun
+için hazır bir mekanizması var: `mutation-error.ts`
+`DOMAIN_FORBIDDEN_CODE_PREFIXES` (bugün yalnız `"Announcements."`) sunucunun
+Türkçe cümlesini ekrana geçiriyor.
+
+**Neden bu turda YAPILMADI:** `ResultExtensions.MapStatusCode` modül başına
+elle yazılmış bir zincir; oraya yalnız `Grades.` dalı eklemek, maddenin kendi
+uyardığı "yüzey başına elle ayırma"nın ta kendisi olurdu. Karar tüm modüller
+için bir kez verilmeli. `B-40`'ın menü düzeltmesi bu yolu arayüzden zaten
+kapattığı için acil değil; görevlendirmesi oturum ortasında değişen öğretmen
+tek kalan tetikleyici.
+
+**Sıradaki boş ID:** `TB-82` · `X-18` · `B-42` · `D-17` · `V-04` · `E-18` · `ENG-03`
