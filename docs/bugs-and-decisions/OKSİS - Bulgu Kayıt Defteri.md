@@ -3807,3 +3807,313 @@ kapattığı için acil değil; görevlendirmesi oturum ortasında değişen ö�
 tek kalan tetikleyici.
 
 **Sıradaki boş ID:** `TB-82` · `X-18` · `B-42` · `D-17` · `V-04` · `E-18` · `ENG-03`
+
+---
+
+## 25. Ödev Modülü — Kod Taraması (2026-08-26)
+
+> **Kaynak:** Ödev modülü teknik analizi için yapılan kod taraması ·
+> `oksis-api` @ `6b7331a` · `oksis-ui` @ `9fe0d7a`
+> **Yöntem:** Sözleşme (`contract.ts`) ↔ mock handler ↔ ekran ↔ backend kodu
+> dört yönlü karşılaştırıldı. Ekran testi değil; bulguların hiçbiri gezinmeyle
+> görünmez — hepsi ancak işlem tamamlanınca ya da kod okununca ortaya çıkıyor.
+> Analiz: `oksis-api/docs/analysis/odev-modulu-teknik-analiz.md`
+
+### `B-42` · Öğrencinin ödev fotoğrafı yükleme akışı kırık 🔴 *(kapandı — 2026-08-27)*
+
+Ekran 5 (Ödev Detayı + Görsel Teslim) fotoğrafı iki adımda gönderiyor: önce
+`POST /api/v1/files`, sonra dönen `fileId`'yi ödeve bağlıyor. Birinci adım
+**hiçbir ortamda başarılı olamıyor**.
+
+`homework-self-detail-screen.tsx:184` kategoriyi `'homework'` diye gönderiyor.
+Böyle bir kategori iki tarafta da yok:
+
+| Taraf | Kayıt defteri | `'homework'` gönderilince |
+|---|---|---|
+| Backend | `FileCategoryPolicyRegistry` — 8 kategori; doğrusu **`AssignmentSubmission`** | `file.category.unknown` |
+| Mock | yalnız `AnnouncementAttachment` tanınıyor (`file-handlers.ts:154`) | **422 `FILES_CATEGORY_UNKNOWN`** |
+
+İronik olan: mock'un kendi yorumu sekiz kategoriyi **tek tek sayıyor** —
+`AssignmentSubmission` de listede. Bilgi oradaydı, ekran yanlış dizgiyi yazdı.
+
+**Neden gezinmeyle görünmedi:** Faz B doğrulaması Expo web hedefinde ekranları
+dolaşarak yapıldı; yükleme kartı, karolar ve "2/5 dosya" sayacı fixture'dan
+geldiği için doğru görünüyor. Hata ancak **dosya seçildikten sonra** doğuyor.
+
+**Düzeltme (2026-08-27) — önerildiği gibi yapıldı.** Dizgi artık
+`@workspace/core :: HOMEWORK_SUBMISSION_CATEGORY` = `"AssignmentSubmission"`;
+uzantı/MIME/boyut değerleri de aynı yerde ve **kayıt defterinden birebir
+kopyalandı** (pdf/docx/jpg/png, 20 MB) — mock ile istemcinin iki ayrı kopyaya
+bölünmesini engellemek için, `HOMEWORK_ATTACHMENT_*` ile aynı kalıp.
+
+Mock kategoriyi politika tablosuna aldı. Öğrenci teslimi ile öğretmen eki AYRI
+iki satırdır: sınırları bugün aynı olsa da sahibi ve saklama gerekçesi farklı
+(materyal ≠ kişisel veri), tek satıra indirmek ikisini eşitlemek olurdu.
+
+**Kilitleyen iki test** (`file-handlers.test.ts`): doğru kategori 200 ve
+`category` alanı `"AssignmentSubmission"` dönüyor; tahmin edilen `'homework'`
+adı 422 `FILES_CATEGORY_UNKNOWN` alıyor. İkincisi kasıtlı — hatanın tekrar
+etmesi test kırar.
+
+**Doğrulama gezinmeyle DEĞİL, gerçek yüklemeyle yapıldı** (bulgunun kendi
+dersi): web hedefinde öğrenci rolüyle "Fonksiyon grafikleri çalışması" açıldı,
+kaynak sayfasından bir PNG seçildi, kart "1/5 dosya"ya döndü. İki adımın ikisi
+de geçti.
+
+**Backend'de açılacak bir şey yok** — `AssignmentSubmission` kayıt defterinde
+zaten vardı. Bu, `HomeworkAttachment`ın tersidir (o kategori gerçekten yok ve
+açılması gerekiyor); ikisi karıştırılmamalı, bkz.
+`oksis-ui/docs/backend-needs-homework.md §3.4` ve `§3.4.1`.
+
+### `TB-82` · İki yönetici yazma ucunun mock karşılığı hiç yazılmamış 🔴
+
+`POST /homework/{id}:publish-for` (vekâleten yayın) ve
+`POST /homework/{id}/submissions/{sid}:remove` (idari kaldırma):
+
+| Katman | Durum |
+|---|---|
+| `contract.ts` | ✔ tanımlı (satır 673, 682) |
+| `endpoints.ts` / `queries.ts` | ✔ kancalı (`usePublishOnBehalf`, `useRemoveSubmissionByAdmin`) |
+| `homework-admin-screen.tsx` | ✔ diyalog + buton (254-255, 565, 609) |
+| `homework-handlers.ts` | ✘ **handler yok** |
+| `homework-handlers.test.ts` | ✘ **tek satır yok** (97 testin hiçbiri) |
+
+Butona basıldığında istek hiçbir mock'a düşmüyor, MSW passthrough ile gerçek
+API'ye (`:5112`) gidip 404 alıyor. Faz C **doğrulanmadan** tamamlandı; bu yüzden
+görülmedi.
+
+**İkinci ayak — belge yalan söylüyor:** `oksis-ui/docs/backend-needs-homework.md`
+§7 bu iki ucu *"Faz C ile sözleşmesi yazılan ve **mock'ta çalışan** uçlar"*
+listesine koyuyor. Backend bu belgeye güvenip yazılsaydı, kabul kriteri
+olmayan iki uç "testliymiş" sayılacaktı.
+
+**Neden önemli:** mock'un birincil kaynak olması kararı (`docs/backend-needs-homework.md` §1)
+tam olarak bu iki ucun *olmayan* davranışına dayanamaz. Backend yazımına
+girmeden mock tarafı tamamlanmalı.
+
+### `E-18` · Öğretmen ödev eki: sözleşme var, yazma dalı üç yerde birden yok 🟡
+
+`CreateHomeworkBody.attachments` ve `UpdateHomeworkBody.attachments` sözleşmede
+duruyor, `HomeworkAttachmentDto` tanımlı, fixture'larda ekli ödevler var ve
+**okuma tarafı çalışıyor** (detay ekranında "Öğretmen ekleri" kartı görünüyor).
+Yazma tarafı üç yerde birden eksik:
+
+- `apps/web/features/homework/homework-create-screen.tsx:127` → `attachments: []`
+- `apps/mobile/.../homework-create-screen.tsx:130` → `attachments: []`
+- Mock `POST`/`PUT` handler'ları gövdedeki `attachments`'ı **hiç okumuyor**,
+  kayda sabit `[]` yazıyor.
+
+Yani ek **yalnız seed'den doğabiliyor**. Öğretmen bugün ödeve çalışma kâğıdı ya
+da bağlantı ekleyemez. Backend yazılırken bu ucun yazma dalında mock **tarif
+değildir** — sıfırdan tasarlanacak.
+
+### `E-19` · `homework.write` izni seed'de yok 🟡
+
+`PermissionSeedData.cs:86-88` yalnız iki satır taşıyor: `homework.read`,
+`homework.manage`. "Öğretmen yazar / yönetici yönetir" ayrımı üçüncü izne
+dayanıyor ve o izin hiç açılmamış.
+
+Bugün etkisi yok (modül yazılmadı), ama **modülün ilk adımı budur**: kapsam
+kapılarının hepsi bu izin kodunun varlığını varsayıyor. `homework.manage` de
+`grades.manage` emsaliyle `AllPermissionIds()` kataloğuna **girmemeli**, yalnız
+`SchoolAdmin` satırıyla verilmeli — platform hesabı okul içi ödev kararı vermez.
+
+### `TB-83` · Ödev bildirim olay tipleri seed'den düşmüş 🟡
+
+`HOMEWORK_CREATED` ve `HOMEWORK_DUE` eski migration snapshot'larında duruyor
+(`20260624…Designer.cs:9208,9220`), ama **güncel `NotificationEventTypeSeedData`
+sekiz olay taşıyor ve hiçbiri ödev değil**. `NotificationEventGroup` enum'unda da
+ödev grubu yok (Attendance / Academic / Payment / Announcement).
+
+Sonuç: Okul Ayarları'ndaki olay × kanal matrisinde **ödev satırı hiç yok**;
+yönetici ödev bildirimlerini oradan açıp kapatamaz. Ödev politikası ekranının
+`missingNotificationMode` alanı ile bu matris arasındaki öncelik ilişkisi de
+tanımsız — hangisi hangisini ezer?
+
+Katalog dağıtım karşılığı olmayan olayları zaten `delivered: false` ile yer
+tutucu tutuyor (`TB-44`/`TB-24` kalıbı); ödev satırları da o kalıpla eklenebilirdi.
+Silinmiş olmaları bilinçli mi, taşıma sırasında mı düştü — **kaynağı bulunamadı.**
+
+### `TB-84` · Uç numaralandırması iki belgede çelişiyor 🟢
+
+`contract.ts:682` "Uç 23"ü **idari yükleme kaldırma** sayıyor;
+`backend-needs-homework.md` §7 aynı numarayı **audit kaydı listesi** sayıyor.
+Uç numaraları belgeler arasında kimlik gibi kullanıldığı için ("uç 14-19 Faz B'de
+yazıldı") bu çelişki doğrudan karışıklık üretiyor. Teknik analiz numarayı yalnız
+mock'un yorumundan aldı ve farkı not düştü.
+
+### `TB-85` · Tanımlanmamış `--on-accent` token'ı seçili çipleri okunmaz yapıyordu 🟠
+
+Ödev CSS'inde `--on-accent` diye bir token dört yerde kullanılıyor ama **hiçbir
+yerde tanımlı değil** (depo genelinde `grep`: yalnız bu dört kullanım).
+
+Tanımsız değişken `color` özelliğini *invalid at computed-value time* yapar ve
+özellik `inherit`e düşer. Sonuç:
+
+| Kural | Belirti |
+|---|---|
+| `.hw-chip.on` | Seçili şube/teslim çipi: lacivert zeminde **siyah metin** |
+| `.hw-chip.dashed.on` | "Takvimden seç" çipi seçiliyken aynı |
+| `.hw-pop-tab.on` | Öğrenci seçici sekmesi aynı |
+| `.hw-row[aria-checked="true"] .hw-check` | **Onay tiki hiç görünmüyor** (transparent'tan devralıyor) |
+
+Token, port sırasındaki "marka kapısı" geçişinde uydurulmuş; dosyanın kendi
+başlık yorumu o geçişin üç ham hex'i token'ladığını söylüyor ama dördüncü olarak
+**var olmayan** bir token ürettiğini yazmıyor. Doğru karşılık `--white`.
+
+**Düzeltildi** (2026-08-26, `oksis-ui`): dört kullanım `var(--white)` yapıldı ve
+başlık yorumuna düzeltme notu eklendi. Ekran bazında değil tek noktada — aynı
+token dört ayrı yüzeyi birden bozuyordu.
+
+**Ders:** tanımsız CSS değişkeni sessizdir. Ne derleyici ne lint yakalar; yalnız
+ekrana bakan görür ve "kontrast tercihi" sanabilir.
+
+### `TB-86` · Mock modunda tema ilk boyamada uygulanmıyordu 🟡
+
+Belirti (Next.js 16 konsol uyarısı): *"Encountered a script tag while rendering
+React component. Scripts inside React components are never executed when
+rendering on the client."* — `ThemeProvider → Providers → RootLayout`.
+
+**Kök sebep uyarının kendisi değil, `Providers`in kapı sırasıydı.**
+`app/providers.tsx` bütün ağacı MSW hazır olana kadar kesiyordu:
+
+```tsx
+if (!ready) return null          // mock AÇIKKEN ilk render'da true değil
+return <ThemeProvider>…</ThemeProvider>
+```
+
+Mock açıkken `ready` başlangıçta `false`, dolayısıyla `ThemeProvider` sunucuda
+**hiç** render edilmiyor, ilk kez istemcide doğuyordu. İki sonucu:
+
+1. `next-themes`in flash önleyici `<script>`i ilk HTML'e girmiyordu. İstemci
+   render'ında yaratılan script ASLA çalışmaz; Next 16 bunu uyarıyor.
+   **Ölçüldü:** mock açıkken SSR çıktısında `localStorage.getItem` geçmiyordu.
+2. **Asıl kusur:** `color-scheme: light` ilk boyamada yazılmıyordu. İşletim
+   sistemi koyu moddayken tarayıcı, ağaç mount olana kadar koyu kaydırma
+   çubuğu ve koyu form kontrolü çiziyordu — `forcedTheme="light"`in önlemek
+   için konduğu hâlin ta kendisi (bkz. `theme-provider.tsx` yorumu). Yani
+   uyarı, yarım kalmış bir düzeltmenin habercisiydi.
+
+Mock KAPALIYKEN sorun yok: `ready` baştan `true`, sağlayıcı sunucuda render
+ediliyor, script HTML'e giriyor.
+
+**Düzeltildi** (2026-08-26, `oksis-ui`): tema sağlayıcısı mock kapısının
+DIŞINA alındı; bekleme yalnız veri katmanını (`QueryClientProvider`) geciktiriyor.
+Doğrulama: SSR çıktısında script var, konsolda uyarı yok, `<html>` üzerinde
+`data-theme="light"` + `color-scheme: light`.
+
+**Not — açık kalan:** mock modunda `!ready` iken sayfa hâlâ boş dönüyor, yani
+her yüklemede kısa bir boş ekran var. Ayrı bir konu; bu maddede kapsanmadı.
+
+### `TB-87` · Mock modunda her sayfa yüklemesinde boş ekran 🟡 *(kapandı — 2026-08-26)*
+
+`TB-86`nın altında duran ikinci kusur. `Providers` bütün ağacı MSW hazır olana
+kadar kesiyordu:
+
+```tsx
+if (!ready) return null
+```
+
+Gerekçesi meşruydu: worker hazır olmadan giden istek gerçek proxy'ye düşer ve
+mock'un cevaplayacağı uç 404/401 döner. Ama bedeli, mock açık HER yüklemede
+uygulamanın hiç çizilmemesiydi — kabuk, kenar çubuğu, başlık, iskeletler dâhil.
+
+**Kapı yanlış katmandaydı.** Beklemesi gereken arayüz değil AĞDIR: ekranların
+hepsinin kendi yükleniyor iskeleti zaten var.
+
+**Düzeltme:** bekleme taşıma katmanına indirildi. `configureApi` mock modunda
+worker'ı bekleyen bir `fetch` sarmalayıcısı alıyor; ağaç anında render ediliyor.
+`NEXT_PUBLIC_API_MOCKING` derleme anında gömüldüğü için mock kapalıyken
+sarmalayıcı hiç üretilmiyor — üretimde tek fazladan `await` yok.
+
+Worker'ın başlatılması tekil bir söze bağlandı (`mockServiceWorkerReady`), yani
+kaç çağrı olursa olsun bir kez başlıyor. Senaryo barının kalıcı seçimi de o
+sözün içinde geri uygulandığı için "ilk istek doğru senaryoyu görür" garantisi
+korunuyor — eski render kapısının verdiği garantinin ta kendisi.
+
+**Doğrulama:** "Liste yükleniyor" senaryosu açıkken sayfa yeniden yüklendi;
+kenar çubuğu, başlık, araç çubuğu ve iskelet kartlar görünüyor, veri beklerken
+ekran boş değil. Mock kapalıyken davranış değişmedi.
+
+### `TB-88` · Öğrenci/veli ödev listesi ekranın ortasından başlıyordu 🟡 *(kapandı — 2026-08-27)*
+
+Öğrenci ve veli "Ödevlerim" ekranlarında ders çipi şeridinin altında yarım
+ekranlık boşluk kalıyor, kartlar ekranın ortasına iniyordu. Öğretmen ekranında
+sorun yoktu.
+
+**Kök neden ekranda değil, React Native'in kendi taban stilinde.** `ScrollView`
+yatay kipte de `flexGrow: 1` taşıyor:
+
+```js
+baseHorizontal: { flexGrow: 1, flexShrink: 1, flexDirection: 'row', ... }
+```
+
+Bu iki ekranda çip şeridi, `flex: 1` bir kabın içinde `SectionList` ile
+KARDEŞ. İkisi de büyüyebildiği için boştaki dikey alanı paylaşıyorlar: şerit
+kendi içeriğinin kat kat üstünde yer kaplıyor, liste aşağı itiliyor. Öğretmen
+ekranı bundan etkilenmedi çünkü orada yatay şerit dikey bir `ScrollView`un
+içeriğinde duruyor — orada paylaşılacak boş alan yok.
+
+Aynı stil hem `react-native` hem `react-native-web` tarafında olduğu için bu
+web hedefine özgü bir yanılsama DEĞİL; cihazda da aynı şekilde bozuktu.
+
+**Düzeltme merkezî.** İki ekranda birebir aynı `SubjectChip` kopyası ve iki ayrı
+`ScrollView` vardı; ikisi de silinip `self-parts.tsx` içinde tek bir
+`SubjectChipRow` bileşenine taşındı. `flexGrow: 0` orada, gerekçesiyle birlikte
+tek yerde duruyor — sonraki yüzey de aynı şeridi kullanacağı için hata tekrar
+edemez.
+
+**Ders:** kopyalanan bir düzen parçası, kopyalandığı yerdeki kabın davranışını
+taşımaz. Aynı şerit bir yerde masum, bir yerde ekranı ikiye bölüyor.
+
+**Doğrulama:** web hedefinde öğrenci rolüyle "Ödevlerim" açıldı; "BUGÜN SON"
+başlığı çip şeridinin hemen altında, dört bölüm de kaydırmasız görünüyor.
+
+### `TB-89` · Öğrenci ödev detayı tasarımın dört parçasını eksik portlamıştı 🟡 *(kapandı — 2026-08-27)*
+
+Ekran "çalışıyordu" ama tasarımla yan yana konunca dört ayrı kayıp çıktı.
+Üçü tek başına küçük; birlikte ekranın söylediği şeyi değiştiriyorlardı.
+
+**1. Son teslim satırı kısaydı.** "Son: yarın" yazıyordu, tasarımda
+"Son: yarın, 16 Eylül". Listede kısa yazım doğrudur — satır bir bağlam
+içindedir. Detay ise ödevin TEK kaydıdır ve öğrenci oraya "tam olarak hangi
+gün?" diye bakar. Core'a `homeworkDueLabelLong` eklendi; yakın günün adı
+DÜŞMÜYOR, çünkü "16 Eylül" tek başına yarın olduğunu söylemez.
+
+**2. "Güncellendi: dün" hiç portlanmamıştı — çünkü sözleşmede yoktu.**
+Ödev yayınlandıktan sonra düzenlendiyse öğrencinin bunu bilmesi gerekir:
+açıklama değişmiş olabilir ve öğrenci eski metne göre çalışıyor olabilir.
+Alanı taşıyan hiçbir uç yoktu. `updatedAtLabel: string | null` iki detay ucuna
+eklendi (öğrenci + aile), mock'a bağlandı, `backend-needs-homework.md §3.3.1`e
+yazıldı. Hazır metin, ham damga değil — "dün"ü cihazın saat diliminde
+hesaplamak ödevin takvimini cihaza devretmek olurdu.
+
+**3. Ek satırlarının ikonları yanlış anlam taşıyordu.** Dosyada ataç (`clip`),
+BAĞLANTIDA KAĞIT UÇAK (`send`) çiziliyordu. Kağıt uçak "gönder" demektir;
+satırın yaptığı iş göndermek değil, kullanıcıyı tarayıcıya çıkarmaktı.
+Sette ikisinin de karşılığı yoktu; `file` (web'in ortak setinden birebir
+geometri) ve `externalLink` eklendi. Alt satır da tasarımdaki gibi ne olacağını
+söylüyor: "PDF · 200 KB" / "Bağlantı · tarayıcıda açılır".
+
+**4. Ek satırları BASILAMIYORDU.** En büyüğü buydu ve görsel karşılaştırma
+olmasa görünmezdi: satırlar `View`di, dokunuşa cevap vermiyordu. Öğretmenin
+eklediği çalışma kağıdı ekranda duruyor ama açılamıyordu. Akış zaten depoda
+vardı (`openFileDownload`, duyuru ekleri onu kullanıyor) — kablolanmamıştı.
+
+**Düzeltme yine merkezî.** `AttachmentRow` iki detay ekranında birebir
+kopyaydı. İkisi de silinip `self-parts.tsx` içinde tek bir `AttachmentList`
+toplandı: açma akışı, meşgul hâli ve hata cümlesi de artık oradadır. Öğrenci
+ile veli aynı eke dokunduğunda aynı şeyi yaşasın diye — kopyalansaydı ikisi
+ayrı ayrı bozulabilirdi. Aynı hafta içinde ikinci kez aynı kalıp
+(bkz. `TB-88`): bu ekran ailesinde kopyala-yapıştır parçalar sistematik bir
+kusur kaynağı.
+
+**Ders:** "ekran açılıyor ve veri doğru" bir portun bittiği anlamına gelmiyor.
+Dördüncü madde ne bir hata günlüğü ne bir boş liste üretiyordu — yalnız
+tasarımla yan yana koyunca görüldü.
+
+**Doğrulama:** web hedefinde öğrenci rolüyle "Kelime çalışması Unit 3" açıldı;
+dört madde de tasarımdaki gibi. `dotnet` tarafı etkilenmedi; core testleri
+(853) geçiyor, iki uygulama tip kontrolünden temiz çıkıyor.
+
+**Sıradaki boş ID:** `TB-90` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
