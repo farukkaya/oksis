@@ -4239,7 +4239,7 @@ bu maddeye atıf yapıyor.
 `X-11` push kapısı bu dosyayı ölçmüyor — sır taraması eklenene kadar aynı hata
 sessizce tekrar edebilir.
 
-### `TB-92` · Mock katmanı "not ve ödev ucu yok" diyor, ikisi de aylardır var 🟡 *(açık — 2026-08-29)*
+### `TB-92` · Mock katmanı "not ve ödev ucu yok" diyor, ikisi de aylardır var 🟢 *(kapandı — 2026-08-29, `cb4fe95`)*
 
 Üç dosyada, beş ayrı yorumda aynı bayat iddia duruyor:
 
@@ -4270,4 +4270,72 @@ mock'un doğru cevap vermesi, ucun doğru cevap verdiğini göstermez.
 **Ders:** "henüz yok" yazan yorumun son kullanma tarihi vardır. Bir modül
 yazıldığında onu bekleyen yorumları aramak, modülün bitiş listesinin parçası.
 
-**Sıradaki boş ID:** `TB-93` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
+#### ✅ KAPANDI — 2026-08-29 · `oksis-ui@cb4fe95`
+
+Kapanış beklenenden çok daha büyük çıktı ve **bayat yorum en küçük parçasıydı.**
+
+`npm run codegen` (push işi dört yeni uç için gerekiyordu) çalıştırıldığında
+üretilen şema **2130 satır** büyüdü: ödev modülünün **24 ucu** ilk kez gerçek
+sözleşmeye girdi. Ve `packages/api/src/homework/contract.ts` bunların hepsini
+kendi elle yazdığı module augmentation ile zaten tanımlıyordu → **24 × TS2717.**
+
+**Bunu o dosyanın kendi başlığı öngörmüştü:** *"Bu BİLİNÇLİ bir drift
+bekçisidir: backend yayınlanıp `npm run codegen` çalıştığında gerçek şema bu
+bloğun yerini alır ve aradaki her fark typecheck'i KIRAR."* Bekçi görevini yaptı.
+
+**Yakaladığı gerçek fark üç alandaydı** — ve üçü de aynı cinsten:
+
+| Alan | İstemcide | Sunucuda |
+|:--|:--|:--|
+| `targetStudentIds` | opsiyonel (`?`) | `string[] \| null` **zorunlu** |
+| `description` · `attachments` | opsiyonel | nullable-**zorunlu** |
+| `exemptReason` | opsiyonel | nullable-**zorunlu** |
+
+Opsiyonel alan anahtarı **hiç göndermez**; nullable-zorunlu alan `null`
+gönderir. İkisi aynı şey değildir. Çalışma zamanında ASP.NET eksik anahtarı
+`null`a bağladığı için görünür bir hata çıkmıyordu — yani bu, **testin
+yakalayamayacağı, yalnız sözleşmenin gösterdiği** bir sapmaydı.
+
+**Düzeltme telin dibinde, tek yerde:** `wireAttachments` + üç `?? null`
+normalleştirmesi (`endpoints.ts`). Çağıranın ergonomik tipi opsiyonel kaldı;
+her çağrı noktasına `?? null` yazmak, bir gün birinin unutulması demekti.
+
+**Ayrıca düzeltilen bayat yorumlar:** `contract.ts` başlığı, ve
+`packages/core/src/notifications/logic.ts`'teki *"Not modülü — backend HENÜZ
+yazılmadı"* satırı.
+
+**Ders (revize):** bayat yorum tehlikeli değildi; tehlikeli olan onun
+gerekçelendirdiği **elle yazılmış sözleşmeydi.** Yorum eskidiğinde sözleşme de
+eskir, ama sessizce — çünkü iki taraf da kendi içinde tutarlıdır. Bu deponun
+kalıbı doğru: elle yazılan sözleşme, codegen geldiğinde **çakışacak** biçimde
+yazılmalı. Çakışmasaydı fark hiç görünmezdi.
+
+### `TB-93` · Push kayıt ucu enum'u telde sayı ilan ediyordu, çalışma zamanı string yazıyordu 🟢 *(kapandı — 2026-08-29, `84d44a1`)*
+
+`RegisterDeviceCommand` ham `DevicePlatform` enum'u taşıyordu. Üretilen OpenAPI
+belgesi alanı `DevicePlatform: number` ilan ediyor — oysa `Program.cs:49`'daki
+`JsonStringEnumConverter` çalışma zamanında **string** yazıyor.
+
+**Sözleşme ile davranış aynı fikirde değildi.** İstemci üretilen tipe inanırsa
+`2` gönderir (sihirli sayı, anlamı bir C# enum'unda yaşıyor); çalışma zamanına
+inanırsa `"android"` gönderir ama tipi zorlamak için `as` yazmak zorunda kalır.
+İkisi de yalan.
+
+**Neden bu modülün kendi kuralına da aykırıydı:** aynı modülde
+`NotificationDto.Kind` BİLEREK `string`tir — DTO'lar enum'u wire'da string
+taşır. Ham enum taşıyan tek yer bu komuttu.
+
+**Neden şimdi düzeltildi:** ucun **sıfır tüketicisi** vardı. İlk istemci
+yazılmadan önce bedava; sonrası kırıcı değişiklik olurdu.
+
+**Düzeltme:** komut `string Platform` taşır, çeviri tek yerde
+(`DevicePlatformWire`). Doğrulayıcı ve handler **aynı** çağrıyı kullanır —
+ayrı karar verselerdi istek doğrulamayı geçip handler'da patlardı, yani 400
+yerine 500. Sayısal değer bilerek reddedilir: `Enum.TryParse` `"99"`u sessizce
+`(DevicePlatform)99` yapar ve tanımsız bir platforma yazardı.
+
+**Ders:** üretilen istemci sözleşmesi, sunucunun DAVRANIŞINI değil BELGESİNİ
+yansıtır. İkisi ayrıştığında hatayı ne derleyici ne test görür — yalnız ilk
+istemciyi yazan kişi görür, ve o kişi çoğu zaman yalanı kabullenip devam eder.
+
+**Sıradaki boş ID:** `TB-94` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
