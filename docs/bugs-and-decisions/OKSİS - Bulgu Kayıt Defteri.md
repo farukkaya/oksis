@@ -4116,7 +4116,7 @@ tasarımla yan yana koyunca görüldü.
 dört madde de tasarımdaki gibi. `dotnet` tarafı etkilenmedi; core testleri
 (853) geçiyor, iki uygulama tip kontrolünden temiz çıkıyor.
 
-### `TB-90` · Android derlemesi yalnız elde kalmış `android/` klasörü sayesinde çalışıyordu 🔴 *(açık — 2026-08-28)*
+### `TB-90` · Android derlemesi yalnız elde kalmış `android/` klasörü sayesinde çalışıyordu 🟢 *(kapandı — 2026-08-28, `488b034`)*
 
 OS push işinin RNFirebase spike'ında ortaya çıktı, ama **push ile ilgisi yok.**
 `apps/mobile` ilk kez `expo prebuild --clean` ile yeniden üretildi ve derleme
@@ -4153,6 +4153,62 @@ karşılığı — ve `X-11` push kapısının ölçmediği bir yüzey.
 **Kapsam kararı (2026-08-28):** push işini bloklamıyor; backend'in tamamı bundan
 bağımsız. Ayrı iş olarak sıraya alındı, **mobil istemci işi başlamadan önce
 çözülmesi şart.**
+
+---
+
+#### ✅ KAPANDI — 2026-08-28 · `oksis-ui@488b034`
+
+**Kök neden: uygulama adındaki Türkçe `İ` harfi.**
+
+Ad `OKSİS` olduğunda `expo prebuild`, Android paketini `android.package` yerine
+**addan** türetiyor. `MainActivity.kt` ve `MainApplication.kt`
+`package com.oksisdev` diye doğuyor — ama `com/oksis/mobile/dev/` dizininde
+duruyorlar ve `namespace` `com.oksis.mobile.dev`.
+
+Sonuç iki katmanlı:
+
+1. `BuildConfig` **namespace** paketinde üretiliyor; farklı paketteki
+   MainActivity onu göremiyor → `Unresolved reference 'BuildConfig'`.
+2. Derleme geçseydi bile manifest `.MainActivity`, yani
+   `com.oksis.mobile.dev.MainActivity` arıyor; sınıf orada değil → **çalışma
+   zamanı çökmesi**. Yani bu yalnız bir derleme hatası değildi.
+
+**Ölçüm:** ad `Oksis Dev` yapılıp `prebuild --clean` çalıştırıldığında paket
+doğru üretiliyor (`com.oksis.mobile.dev`). Expo **57.0.4** ve **57.0.18**'de
+sonuç aynı.
+
+**Yanlış iz — sürüm yükseltmesi:** önce Expo 57.0.4 → 57.0.18 ve
+React Native 0.86.0 → 0.86.3 denendi. Hata sürdü; üstelik yükseltme
+workspace'te iç içe bir `@expo/cli` kopyası doğurup Metro'yu kırdı
+(`Cannot find module 'expo-router/_ctx-shared'`). Geri alındı. **Sürüm meselesi
+değildi.**
+
+**Yanlış iz — KGP sürümü:** `compileDebugKotlin`'in kaynak dizinleri
+yazdırıldığında yalnız `src/main/java/...` göründü, üretilen `buildConfig`
+dizini yoktu; bu bir Kotlin Gradle Plugin ↔ AGP uyumsuzluğu sanıldı ve KGP
+2.1.20 → 2.2.10 denendi (`expo-build-properties` ile). Çözmedi. Ölçüm
+yanıltıcıydı: `KotlinCompile.sources` **Kotlin** kaynaklarını verir, Java
+kaynak kökleri ayrıdır.
+
+**Neden aylarca görünmedi:** `android/` ve `ios/` gitignore'da (CNG modu). Elde
+kalmış, eski bir şablondan üretilmiş `android/` klasörü kullanılıyordu; ilk
+`expo prebuild --clean` çalıştırıldığında ortaya çıktı. Yeni bir checkout, yeni
+bir geliştirici ya da CI aynı duvara çarpardı.
+
+**Düzeltme:** `app.json` → `app.config.ts` (ortama duyarlı), ad ASCII
+(`Oksis` / `Oksis Dev`), ve gerekçe dosyanın başında kalıcı olarak yazılı.
+
+**Açık kalan:** görünen ad marka gereği `OKSİS` olmalı. Doğru yol
+`strings.xml`'deki `app_name` kaynağını bir config plugin ile ayarlamak;
+`app.config.ts`'teki `name` ASCII kalır. Ayrı iş.
+
+**Doğrulama:** Redmi Note 9'a kuruldu, FCM token alındı, önce Firebase
+Console'dan sonra **OKSİS backend'inden** (öğretmen ödev yayınladı → dört kapılı
+gönderim yolu → FCM) bildirim telefonda görüldü.
+
+**Ders:** CNG modunda `android/` tek kullanımlık bir çıktıdır. Yalnız
+yeniden-üretilmediği sürece çalışan bir derleme, çalışan bir derleme değildir —
+ve hata mesajı (`BuildConfig`) kök nedenden (uygulama adı) üç katman uzaktaydı.
 
 ### `TB-91` · SMTP parolası git geçmişinde düz metin duruyor 🔴 *(açık — 2026-08-28)*
 
