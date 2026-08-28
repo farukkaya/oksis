@@ -4116,4 +4116,71 @@ tasarımla yan yana koyunca görüldü.
 dört madde de tasarımdaki gibi. `dotnet` tarafı etkilenmedi; core testleri
 (853) geçiyor, iki uygulama tip kontrolünden temiz çıkıyor.
 
-**Sıradaki boş ID:** `TB-90` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
+### `TB-90` · Android derlemesi yalnız elde kalmış `android/` klasörü sayesinde çalışıyordu 🔴 *(açık — 2026-08-28)*
+
+OS push işinin RNFirebase spike'ında ortaya çıktı, ama **push ile ilgisi yok.**
+`apps/mobile` ilk kez `expo prebuild --clean` ile yeniden üretildi ve derleme
+düştü:
+
+```
+e: MainActivity.kt:39:11 Unresolved reference 'BuildConfig'.
+e: MainApplication.kt:33:28 Unresolved reference 'BuildConfig'.
+```
+
+**Sorun Firebase değil.** Altı ayrı yapılandırmada aynı hata alındı: RNFirebase
+kurulu/kurulu değil, `app.config.ts`/orijinal `app.json`, `expo-build-properties`
+var/yok, `buildFeatures { buildConfig true }` elle eklenmiş, ham `gradlew` yerine
+`expo run:android`. **RNFirebase tamamen kaldırılıp deponun commit durumuna
+dönüldüğünde de hata aynı.**
+
+`BuildConfig.java` **üretiliyor** ve doğru pakette duruyor
+(`app/build/generated/source/buildConfig/debug/com/oksis/mobile/BuildConfig.java`)
+— yani AGP özelliği açık. Kotlin derleyicisi üretilen dizini kaynak yolunda
+görmüyor. AGP / Kotlin Gradle Plugin / Gradle 9.3.1 üçlüsünde bir uyum sorunu.
+
+**Asıl mesele bulgunun kendisi değil, neden görünmediği.** Bu proje aynı gün
+Redmi'ye derlenip kurulmuştu (`com.oksis.mobile` telefonda duruyor). Fark şu: o
+derleme **daha önce üretilmiş** `android/` klasörünü kullandı. `android/` ve
+`ios/` gitignore'da olduğu için (CNG modu) kırıklık kimsenin gözüne
+görünmüyordu — çalışan derleme, elde kalmış tek bir üretilmiş klasöre bağlıydı.
+Yeni bir checkout, yeni bir geliştirici ya da CI aynı duvara çarpardı.
+
+**Ders:** CNG modunda `android/` tek kullanımlık bir çıktıdır. Yalnız
+yeniden-üretilmediği sürece çalışan bir derleme, çalışan bir derleme değildir.
+Bu, defterdeki "ekranda yeşil, zeminde kırık" kalıbının derleme zincirindeki
+karşılığı — ve `X-11` push kapısının ölçmediği bir yüzey.
+
+**Kapsam kararı (2026-08-28):** push işini bloklamıyor; backend'in tamamı bundan
+bağımsız. Ayrı iş olarak sıraya alındı, **mobil istemci işi başlamadan önce
+çözülmesi şart.**
+
+### `TB-91` · SMTP parolası git geçmişinde düz metin duruyor 🔴 *(açık — 2026-08-28)*
+
+`src/Oksis.Api/appsettings.json` içinde e-posta göndericisinin parolası **düz
+metin** olarak duruyor ve dosya git takibinde. Parola 2026-05-25 tarihli
+`471ea88` (*"Davet e-postaları SMTP üzerinden gönderiliyor"*) commit'inden beri
+geçmişte; dosyanın 8 commit'i var.
+
+**Neden şimdi açılıyor:** `K-02` bunu 2026-08-08'de yan bulgu olarak not etmişti
+ama kalem açılmamıştı. OS push işi ikinci bir sırrı (Firebase service account
+JSON) aynı yola sokacak; sır yönetimi bir kez doğru kurulmadan ikinci sırrı
+taşımak, aynı hatayı ikiye katlamak olur. Push spec'i (`oksis-api/docs/superpowers/specs/2026-08-28-os-push-bildirimi-design.md` §6.3)
+bu maddeye atıf yapıyor.
+
+**Yapılması gerekenler — sırayla:**
+
+1. **Parola döndürülmeli.** Geçmişten silmek YETMEZ: değer ifşa olmuş sayılır ve
+   depo klonu olan herkeste duruyor. E-posta sağlayıcısında yeni parola üretilip
+   eskisi iptal edilmeli. Bu ilk adım; gerisi ondan sonra anlamlı.
+2. Yeni değer ortam değişkenine taşınmalı, `appsettings.json`'da yalnız yer
+   tutucu kalmalı (`CHANGE_ME` kalıbı zaten `DefaultConnection`'da kullanılıyor).
+3. Aynı taramada `appsettings*.json`'daki diğer sır adayları gözden geçirilmeli.
+4. Geçmiş temizliği (`git filter-repo` vb.) **isteğe bağlı** ve ayrı bir karar:
+   depo geçmişini yeniden yazmak tüm klonları bozar. Döndürme yapıldıysa aciliyeti
+   kalmaz.
+
+**Ders:** yapılandırma dosyası "kod değil" diye sır denetiminin dışında kalıyor.
+`X-11` push kapısı bu dosyayı ölçmüyor — sır taraması eklenene kadar aynı hata
+sessizce tekrar edebilir.
+
+**Sıradaki boş ID:** `TB-92` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
