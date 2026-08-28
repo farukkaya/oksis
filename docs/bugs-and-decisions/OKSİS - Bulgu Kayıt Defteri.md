@@ -4239,4 +4239,35 @@ bu maddeye atıf yapıyor.
 `X-11` push kapısı bu dosyayı ölçmüyor — sır taraması eklenene kadar aynı hata
 sessizce tekrar edebilir.
 
-**Sıradaki boş ID:** `TB-92` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
+### `TB-92` · Mock katmanı "not ve ödev ucu yok" diyor, ikisi de aylardır var 🟡 *(açık — 2026-08-29)*
+
+Üç dosyada, beş ayrı yorumda aynı bayat iddia duruyor:
+
+- `oksis-ui/apps/mobile/src/lib/enable-mocking.ts:57,60` — *"Not modülünün .NET
+  ucu HENÜZ YOK (oksis-api Modules/Grades boş, TB-13)"* ve *"Ödev modülünün .NET
+  ucu da HENÜZ YOK (Modules/Homework yalnız README taşır)"*
+- `oksis-ui/apps/web/mocks/browser.ts:69,71` — aynı iki cümle
+- `oksis-ui/packages/api-mocks/src/index.ts:22,27` ve
+  `packages/api-mocks/src/grade/grade-handlers.ts:2` — aynı iddia
+
+**Ölçüm (2026-08-29):** `Modules/Grades` uygulama katmanında **64**, domain'de
+**12** dosya; `Modules/Homework` **91** ve **15**. `GradesController` ve
+`HomeworkController` ikisi de `src/Oksis.Api/Controllers/V1/` altında.
+`oksis-ui/packages/api/src/grade` ve `.../homework` gerçek istemcileri taşıyor
+(`grades/books/{bookId}/grid`, `grades/assessments/{id}/entries`, … ).
+
+**Zararı iddianın kendisi değil, çektiği sonuç.** Her yorum aynı cümleyle
+bitiyor: *"…ekranların TEK veri kaynağı bu handler'lardır."* Yeni gelen bunu
+okuyup not ve ödev ekranlarını mock'a bağlı sanır; gerçek uçla ekran arasındaki
+sözleşme farkını kimse ölçmez. `TB-76`/`TB-77`'nin kalıbı bu:
+**besleyen yüzey ölçülmeden kapanmaz.**
+
+**Yapılacak:** beş yorum düzeltilecek ve mock'un rolü doğru adlandırılacak —
+"ucun yokluğu" değil, "backend'siz geliştirme ve deterministik demo verisi".
+Aynı turda not/ödev ekranlarının gerçek uca karşı bir kez gezilmesi gerekir;
+mock'un doğru cevap vermesi, ucun doğru cevap verdiğini göstermez.
+
+**Ders:** "henüz yok" yazan yorumun son kullanma tarihi vardır. Bir modül
+yazıldığında onu bekleyen yorumları aramak, modülün bitiş listesinin parçası.
+
+**Sıradaki boş ID:** `TB-93` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
