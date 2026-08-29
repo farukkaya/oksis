@@ -4442,4 +4442,46 @@ gelebilir ve bu ayrım yalnız cihazda görünür. (b) Bir dinleyicinin **ne zam
 kurulduğu**, ne dinlediği kadar önemlidir: erken gelen olay, geç kurulan
 dinleyiciye görünmez ve hiçbir yerde iz bırakmaz.
 
-**Sıradaki boş ID:** `TB-95` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
+### `TB-95` · Bildirim kuyruğu hiçbir ortamda Hangfire'a bağlanmıyordu 🟢 *(kapandı — 2026-08-29, `b876945`)*
+
+Push işi bitince ölçüldü: `Infrastructure/DependencyInjection.cs` yorumu
+*"Production'da Api katmanı Hangfire register edip bu kaydı override eder"*
+diyordu. **Etmiyordu** — `src/Oksis.Api` içinde `IBackgroundJobClient` hiç
+geçmiyordu. Yani hiçbir ortamda, hiçbir yapılandırmayla dayanıklı kuyruk devrede
+değildi; `AddOksisHangfire` yalnız storage'ı ve cron süpürmelerini kuruyordu.
+
+**Sonucu üç katlıydı.** (a) 28 handler'ın tamamı bildirimlerini
+`InProcessBackgroundJobClient` ile, bellek içi `Task.Run` üzerinden dağıtıyordu —
+API yeniden başladığında kuyruktakiler iz bırakmadan kayboluyordu. (b) `K-02`'nin
+dayandığı yeniden deneme politikası (5 deneme, 1m/5m/15m/1h/6h) yazılıydı ama
+**geçerli değildi**; `Task.Run` başarısızlığı yutar. (c) Sessiz saat ertelemesi
+`Task.Delay` ile bellekte planlanıyordu — gece 22:00'de ertelenen bir push,
+sabaha kadar süreç ayakta kalmazsa hiç gitmiyordu. Push işindeki `Ruling-33`
+(ertelenen teslim `false` döner) doğrudan bunun sonucuydu.
+
+**Nasıl ölçüldü — kod okumakla yetinilmedi:** çalışan veritabanında
+`hangfire.Job` tablosunda `DispatchNotificationJob` sayısı **103.500+ iş içinde
+0**'dı; kayıtlı işlerin tamamı cron süpürmeleriydi. Yorumun yalan söylediğini
+tabloyu saymak kanıtladı.
+
+**Düzeltme:** `HangfireBackgroundJobClient` adaptörü Infrastructure'a yazıldı
+(Application katmanı Hangfire'a referans veremez — C0), kaydı **Api katmanında
+`AddOksisHangfire` içinde**, `AddHangfireServer()`'dan sonra ve var olan
+`Hangfire:Enabled` kapısının arkasında yapılıyor. Karar orada çünkü storage'ı da
+o fonksiyon kurar: soyutlamayı bağlayıp storage'ı kurmamak mümkün olmamalı.
+Kapı kapalıysa tip hiç kaydedilmez, in-process fallback yürürlükte kalır.
+
+**Sıraya bağımlı ve bu bilerek böyle:** `Program.cs`'te Infrastructure kaydı (39)
+Api kaydından (42) önce gelir, son kayıt kazanır. Ters çevrilirse bağlama sessizce
+geri düşer — bu yüzden `BackgroundJobClientRegistrationTests` sırayı ölçüyor.
+
+**Doğrulama (canlı):** öğretmen not yayınladı → `hangfire.Job` 103558 →
+`Succeeded`, 18 in-app satırı, push 1 saniye sonra telefona düştü.
+
+**Ders:** *bir yorumun anlattığı kablolama, o kablolamanın var olduğunun kanıtı
+değildir.* Yorum muhtemelen yazıldığı gün doğruydu; kayıt satırı hiç eklenmedi ve
+aradaki fark ne derleyiciye ne teste göründü — çünkü in-process fallback her iki
+hâlde de çalışan bir sistem üretiyordu. Yalnız "restart'tan sonra" ve "5 deneme"
+iddiaları yalandı, ikisi de üretimde ölçülür.
+
+**Sıradaki boş ID:** `TB-96` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
