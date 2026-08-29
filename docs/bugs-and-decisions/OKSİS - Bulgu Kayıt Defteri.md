@@ -4338,4 +4338,58 @@ yerine 500. Sayısal değer bilerek reddedilir: `Enum.TryParse` `"99"`u sessizce
 yansıtır. İkisi ayrıştığında hatayı ne derleyici ne test görür — yalnız ilk
 istemciyi yazan kişi görür, ve o kişi çoğu zaman yalanı kabullenip devam eder.
 
-**Sıradaki boş ID:** `TB-94` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
+### `TB-94` · Kapalı uygulamada bildirim dokunuşu hiçbir yere gitmiyordu 🟢 *(kapandı — 2026-08-29, `0a1a494`)*
+
+Push arka plandaki uygulamada çalışıyordu; **kapalıyken** dokunulunca uygulama
+açılıyor ama **ana ekranda kalıyordu**. Spec §1'in bitmişlik cümlesi tam olarak
+bu hâli tarif ediyor: *"uygulaması **kapalı** velinin telefonunda…"*
+
+**İki ayrı kusur üst üste binmişti ve ikisi de yalnız telefonda görünüyordu.**
+
+#### 1. Native — `MainActivity`'de `onNewIntent` yok
+
+Manifest'te `android:launchMode="singleTask"` (Expo'nun ürettiği hâl). Bu modda
+bildirime dokunulduğunda Android **yeni activity yaratmaz**, var olanı yeniden
+kullanır ve niyeti `onNewIntent` ile teslim eder. Activity onu `setIntent` ile
+saklamazsa `getIntent()` **hâlâ ilk açılış niyetini** döndürür — FCM verisi
+hiçbir zaman görünmez.
+
+**Nasıl bulundu:** geçici `console.log`'la iki RNFirebase yolu da ölçüldü.
+`getInitialNotification()` → `null`, `onNotificationOpenedApp` → hiç
+tetiklenmiyor. İkisi de activity niyetini okur; niyet bayat olduğu için ikisi de
+**haklı olarak** "bildirim yok" diyordu. Yani kusur JS'te değil native'deydi ve
+JS tarafına ne yapılsa çözülmezdi.
+
+**Düzeltme `android/`'ye ELLE yazılmadı.** O klasör CNG'de üretilen bir çıktıdır
+ve gitignore'dadır; elle düzenleme ilk `expo prebuild`ta sessizce kaybolurdu —
+`TB-90`'ın tam olarak öğrettiği ders. Config plugin yazıldı:
+`apps/mobile/plugins/with-main-activity-new-intent.js`.
+
+#### 2. Mimari — dinleyiciler çok geç kuruluyordu
+
+Dokunuş dinleyicileri sekme kabuğunda (`(tabs)/_layout`) kuruluyordu. Arka
+planda çalışıyordu çünkü kabuk zaten mount'tu. Kapalı uygulamada ise olay
+**React ağacı kurulmadan önce** gelir ve dinleyici henüz yokken düşer.
+
+**Ayrım şu:** *yakalamak* oturum GEREKTİRMEZ (yalnız payload'ı saklar),
+*gezinmek* gerektirir (rol çözülmeden hedef `null`a düşer). İkisi ayrıldı —
+yakalama uygulama kökünde en erken anda başlar (`pending-push.ts`), gezinme rol
+hazır olunca tamponu boşaltır.
+
+**Doğrulama (Redmi Note 9, uygulama süreç olarak öldürüldü):**
+
+```
+getInitialNotification sonuc: VAR
+deliver, handler var mi: false      ← tamponlandı
+alici baglandi, tamponda: VAR       ← rol çözülünce boşaltıldı
+ekran: Ebru Çetin · 10-B / "Soguk acilis 5" / Son: 11 Eylül
+in-app satırı: is_read=1
+```
+
+**Ders — iki katmanlı:** (a) `getInitialNotification`'ın `null` dönmesi
+"bildirim yok" demek değildir; activity niyetinin bayat olduğu anlamına da
+gelebilir ve bu ayrım yalnız cihazda görünür. (b) Bir dinleyicinin **ne zaman
+kurulduğu**, ne dinlediği kadar önemlidir: erken gelen olay, geç kurulan
+dinleyiciye görünmez ve hiçbir yerde iz bırakmaz.
+
+**Sıradaki boş ID:** `TB-95` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
