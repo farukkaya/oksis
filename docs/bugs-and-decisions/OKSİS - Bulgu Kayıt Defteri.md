@@ -4210,7 +4210,7 @@ gönderim yolu → FCM) bildirim telefonda görüldü.
 yeniden-üretilmediği sürece çalışan bir derleme, çalışan bir derleme değildir —
 ve hata mesajı (`BuildConfig`) kök nedenden (uygulama adı) üç katman uzaktaydı.
 
-### `TB-91` · SMTP parolası git geçmişinde düz metin duruyor 🔴 *(açık — 2026-08-28)*
+### `TB-91` · SMTP parolası git geçmişinde düz metin duruyor 🟢 *(kapandı — 2026-08-29)*
 
 `src/Oksis.Api/appsettings.json` içinde e-posta göndericisinin parolası **düz
 metin** olarak duruyor ve dosya git takibinde. Parola 2026-05-25 tarihli
@@ -4238,6 +4238,56 @@ bu maddeye atıf yapıyor.
 **Ders:** yapılandırma dosyası "kod değil" diye sır denetiminin dışında kalıyor.
 `X-11` push kapısı bu dosyayı ölçmüyor — sır taraması eklenene kadar aynı hata
 sessizce tekrar edebilir.
+
+---
+
+#### ✅ KAPANDI — 2026-08-29
+
+**1. Döndürüldü.** Hesabın parolası değiştirildi ve iki adımlı doğrulama açılıp
+bir uygulama parolası üretildi. Bu gerekliydi: `appsettings.json`'daki değer
+Microsoft'un uygulama parolası biçiminde (16 hane, rastgele küçük harf) DEĞİLDİ
+— insan eliyle seçilmiş bir parolaydı. Yani depoda duran şey "posta gönderme
+yetkisi" değil, **hesabın tamamına giriş**ti.
+
+**2. Yer tutucuya çevrildi.** `appsettings.json` ve `appsettings.Test.json`'da
+`CHANGE_ME` (`DefaultConnection`'ın kalıbı). Gerçek değer yalnız
+`Email__Smtp__Password` ortam değişkeninde — Firebase sırrıyla aynı kalıp.
+
+**3. Tarama yapıldı — tek gerçek sır oymuş.** Üç `appsettings*.json` dosyasındaki
+tüm sır adayları tarandı:
+
+| Aday | Gerçek durum |
+|:--|:--|
+| `NationalIdProtection:*KeyBase64` (prod) | `{{SECRET_…}}` **yer tutucu** ✅ |
+| `Jwt:PublicKeyPath` | `keys/public.pem` — yol, yanlış pozitif |
+| `Hangfire:Cron:RefreshTokenCleanup` | cron ifadesi, yanlış pozitif |
+| `ConnectionStrings:Redis` | `localhost:6379` |
+| `Email:Smtp:Password` | 🔴 tek gerçek sır — bu madde |
+| `Development`: S3/Jwt/DB | yerel konteyner değerleri, `DEV-` önekli |
+
+**4. Bekçi testi yazıldı** — `SmtpSecretBindingTests`. Bağ sessizce kırılabilir:
+`SectionName` değişirse ya da bir yapılandırma kaynağı ortam değişkeninin üstüne
+yazarsa uygulama `CHANGE_ME` ile kimlik doğrulamaya çalışır ve **tüm davet
+postaları sessizce ölür**. Test üç şeyi ölçer: ortamın yer tutucuyu ezdiğini,
+ortam yokken yer tutucunun görünür kaldığını (boşa düşmediğini) ve bölüm adının
+ortam değişkeni adıyla tutarlı olduğunu.
+
+**Kapanış turunda çıkan ikinci hata — kayda değer:** kullanıcı yeni uygulama
+parolasını doğrudan `appsettings.json`'a yapıştırdı, yani düz metin sırrı düz
+metin sırla değiştirdi. **Henüz commit'lenmemişti**; çalışma ağacında yakalandı
+ve geçmişe hiç girmedi. Ders: sır döndürmenin "yeni değeri nereye koyacağım"
+adımı, döndürmenin kendisi kadar açık söylenmeli — yoksa döndürme aynı deliğe
+yeni bir sır koymakla biter.
+
+**Açık kalan iki yan kalem:**
+- `appsettings.Test.json` **gerçek Outlook sunucusunu ve gerçek hesabı**
+  gösteriyor. `SmtpOptions.Enabled` yalnız Host + FromAddress'e bakar, parolaya
+  bakmaz — yani ortam değişkeni set edilmiş bir makinede testler GERÇEK posta
+  gönderebilir. `Development` gibi Mailpit'e (`localhost:1025`) çevrilmeli.
+- **Geçmiş temizliği yapılmadı** ve bilinçli: `git filter-repo` tüm klonları
+  bozar, döndürme yapıldığı için aciliyeti yok. Eski parola geçmişte duruyor ama
+  artık hiçbir kapıyı açmıyor.
+- `X-11` push kapısına sır taraması eklenmedi — bu turun işi değildi.
 
 ### `TB-92` · Mock katmanı "not ve ödev ucu yok" diyor, ikisi de aylardır var 🟢 *(kapandı — 2026-08-29, `cb4fe95`)*
 
