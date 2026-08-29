@@ -4484,4 +4484,79 @@ aradaki fark ne derleyiciye ne teste göründü — çünkü in-process fallback
 hâlde de çalışan bir sistem üretiyordu. Yalnız "restart'tan sonra" ve "5 deneme"
 iddiaları yalandı, ikisi de üretimde ölçülür.
 
-**Sıradaki boş ID:** `TB-96` · `X-18` · `B-43` · `D-17` · `V-04` · `E-20` · `ENG-03`
+---
+
+## 26. Kulüp Modülü — Kod Taraması (2026-08-29)
+
+> **Kaynak:** Kulüp teknik analizinin OS push + FE uyum revizyonu ·
+> `oksis-api` @ `1acf29a` · `oksis-ui` @ `1fec5aa`
+> **Yöntem:** Portlanan ekranlar ↔ `contract.ts` ↔ mock handler ↔ backend push
+> altyapısı dört yönlü karşılaştırıldı. Ekran testi değil. Backend modülü henüz
+> yok; bulguların hepsi FE'nin kendi içinde ya da FE ile analiz arasında.
+> Analiz: `oksis-api/docs/analysis/kulup-modulu-teknik-analiz.md` §18–§20.
+
+### `TB-96` · Kulüp bildirimi dokununca hiçbir yere gitmiyor — çözümleyicide `clubs` kolu yok 🔴
+
+`packages/core/src/notifications/logic.ts:436-485 · resolveNotificationTarget`
+yalnız `announcements`, `homework` ve dört sabit alan yolunu tanır. Web mock'u
+iki kulüp bildirimini `/clubs/1` derin bağlantısıyla zil listesine koymuş
+(`apps/web/mocks/notifications-data.ts:113-114`) ama `notification-href.ts:68-69`
+`null` alıp satırı tıklanamaz bırakıyor; mobilde `navigate-to-target.ts:83-122`
+aynı fonksiyona dayandığı için push dokunuşu da boşa gidecek. TB-94'ün kapattığı
+"kapalı uygulamada dokunuş" yolu kulüp için baştan açık kalıyor. Backend
+`PushDeepLinks.Club(id) = "/clubs/{id}"` üretecek (analiz §18.4, S-13);
+`/clubs/{id}` üç rolde üç ayrı ekrana açılıyor, kol bu dağıtımı yapmak zorunda.
+**FE işi**, analiz §19-D / F4.
+
+### `TB-97` · Öğrenci "Kulübe katıl" onaylı kulüpte mock'ta 409 alıyor 🔴
+
+`student-detail-screen.tsx:307-314` `joinable` durumunda her koşulda `:join`
+çağırıyor; `:apply` yalnız tip imzasında yaşıyor, hiçbir ekran göndermiyor.
+Mock `joinMode !== "open"` iken `:join`'e `409 wrong_mode` döndürüyor
+(`club-handlers.ts:309-322`). Sözleşmenin iki ucu ile ekranın tek ucu
+çelişiyor. Karar analizde: tek `:join` komutu moda göre `Active`/`Pending`
+üretir, `:apply` yazılmaz (§10 uç 27, §19-A). FE'de `:apply` ve mock 409 dalı
+silinir (F2).
+
+### `TB-98` · Veli kulüp geçmişinin toplamları istemcide hesaplanıyor 🟡
+
+`apps/mobile/src/app/clubs/parent/[studentId]/history.tsx:38-46` `attended`
+satırları sayıp `Σ durationMinutes / 60` alıyor; öğrenci ucu aynı bilgiyi
+sunucudan `summary` bloğuyla alıyor. Aynı dosyanın kardeşi `history-screen.tsx:13`
+"toplamlar sunucudan" kuralını yazıyor. İki yüz aynı sayıyı iki yerde
+hesaplarsa ayrışır (TB-76/TB-77 dersi). Backend veli ucuna `summary` ekler,
+FE hesabı siler (analiz §19-C, F3).
+
+### `TB-99` · Kulüp kategorisi telde Türkçe etiket, bilinmeyen değer sessizce "Diğer" 🟠
+
+`packages/core/src/club/types.ts` on kategoriyi `"Bilim"…"Diğer"` string
+sabiti olarak **tel değeri** yapıyor; `endpoints.ts:139-141` tanımadığı her
+değeri `"Diğer"`e düşürüyor. Backend İngilizce kod üretirse (S-11) her kulüp
+"Diğer" görünür ve hiçbir hata çıkmaz. Sessiz yanlışın klasik şekli. FE sabiti
+`{ code, label }` çiftine döner (analiz §19-F, F1) — Faz 1 ile aynı anda.
+
+### `TB-100` · Mobil roll-call rotası hiçbir yerden erişilemiyor 🟡
+
+`apps/mobile/src/app/clubs/activities/[activityId]/roll-call.tsx` yazılmış,
+ama danışman kartı öğretmeni yalnız `applications`'a götürüyor
+(`app/clubs/index.tsx:55-60`); mobilde öğretmenin etkinlik listesi ekranı yok.
+Rota ölü. Backend'i ilgilendirmez; analiz §19-K, F7.
+
+### `TB-101` · Kulüp mock'u olmayan bir `TeacherAdvisories` tablosuna dayanıyor 🟢
+
+`club-data.ts:352-355`: kulüp 6'nın `advisorId` `null` iken `/clubs/mine`'da
+listeleniyor ve yorum "ilişki backend'de `TeacherAdvisories` üzerinden ayrı
+tutulur" diyor. Böyle bir tablo yok ve açılmayacak (S-7 tek danışman);
+`Club.AdvisorTeacherPersonId` tek kaynak. Mock tutarsızlığı düzeltilir
+(analiz §19-M).
+
+### `E-20` · Kulüp push'unu yönetici açamaz — matriste push sütunu yok 🟡
+
+Backend matris satırı `SupportsPush` + `PushEnabled` döndürüyor
+(`NotificationMatrixDto.cs:35-79`, `efb42f2`), `RuleItem.PushEnabled` üç
+durumlu yazılıyor (`dba6997`); web `notification-tab.tsx:109-146` yalnız
+Portal / E-posta / SMS çiziyor. K-02'nin `S-8` kapsam-dışı maddesi. Kulüpte
+görünür sonucu: `CLUB_ACTIVITY_PUBLISHED` varsayılan kapalı (S-9) ve yönetici
+açmak istese düğmesi yok. Kulüpten bağımsız, ayar ekranı işi; analiz §20.
+
+**Sıradaki boş ID:** `TB-102` · `X-18` · `B-43` · `D-17` · `V-04` · `E-21` · `ENG-03`
