@@ -4,9 +4,10 @@
 > yasaklar) ve üç repo'ya birebir aynı kopyalanır.
 >
 > **Format kaynağı: 2026-07-21 kararı** — `<type>(<scope>): türkçe açıklama`.
-> `oksis/docs/documents/git-commit-rules.md` §2/§9/§10 hâlâ ESKİ formatı
-> (`YYYY-MM-DD feat: Özet.`) anlatır ve **geçersizdir**; o doküman güncellenene
-> kadar çatışma hâlinde **bu dosya** geçerlidir.
+> Kanonik doküman `oksis/docs/documents/git-commit-rules.md` 2026-08-30'da bu
+> formata çevrildi; iki dosya **eş tutulmalıdır** — biri değişirse diğeri de
+> değişir. Format bugün makine tarafından zorlanmıyor (`commit-msg` hook'u yok),
+> tek zorlayıcı bu komuttur.
 
 ## Bağlam
 
@@ -85,8 +86,10 @@ Mesajı diff'ten üret, ezberden değil.
   `clubs`, `homework`, `grades`, `notifications`, `attendance`, `auth`, `web`,
   `mobile`... Depo geneli / altyapı işlerinde `repo`. `oksis` deposunda
   dokümantasyon ekseni: `defter`, `bulgular`, `kararlar`, `analiz`.
-- **Açıklama**: **Türkçe**, spesifik, **küçük harfle başlar**, sonunda **nokta
-  YOKTUR**. "düzeltildi" / "eklendi" tek başına yetersiz — ne düzeltildiği yazılır.
+- **Açıklama**: **Türkçe**, spesifik, sonunda **nokta YOKTUR**. "düzeltildi" /
+  "eklendi" tek başına yetersiz — ne düzeltildiği yazılır. Cümle gibi büyük
+  harfle başlatılmaz; özel ad, kısaltma veya bulgu/karar kimliğiyle başlayabilir
+  (`TB-95`, `ENG-02`, `API`, `Faz 0`).
   Detay eklemek istersen ` — ` ile kısa bir açıklama kuyruğu ekleyebilirsin
   (yerleşik kalıp).
 - **Uzunluk**: başlık satırı hedef ≤ 72, sert sınır **90** karakter.
@@ -171,7 +174,7 @@ chore(repo): bugs-and-decisions altindaki gecici notlar silindi
 - ❌ İngilizce açıklama (Türkçe zorunlu).
 - ❌ Başlıkta tarih (`2026-05-24 feat: ...`) — eski format, terk edildi.
 - ❌ Sonunda nokta.
-- ❌ Büyük harfle başlayan açıklama.
+- ❌ Açıklamayı cümle gibi büyük harfle başlatmak (`TB-95` gibi kimlikler serbest).
 - ❌ Scope'suz başlık (`feat: ...`).
 - ❌ Virgüllü çoklu tip (`feat,test(clubs): ...`) — ayrı commit'lere böl.
 - ❌ Anlamsız açıklama (`fix(repo): duzeltildi`), `WIP`, `update stuff`.
