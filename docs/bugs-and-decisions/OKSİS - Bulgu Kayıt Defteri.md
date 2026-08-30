@@ -4508,6 +4508,14 @@ aynı fonksiyona dayandığı için push dokunuşu da boşa gidecek. TB-94'ün k
 `/clubs/{id}` üç rolde üç ayrı ekrana açılıyor, kol bu dağıtımı yapmak zorunda.
 **FE işi**, analiz §19-D / F4.
 
+**Ekranda doğrulandı — 2026-08-30 (uçtan uca test):** `s2`'de öğrenci
+(`ogrenci.s2.004`) kulüp başvurusu onaylandı, bildirim kutusunda
+"Kulüp başvurun onaylandı" satırı **göründü** (rozet 16→15) ama satıra dokunmak
+**hiçbir ekrana götürmedi** — yalnız okundu işaretledi. Sunucunun ürettiği derin
+bağlantı `/student/clubs/{clubId}`; `NOTIFICATION_AREA_BY_PATH` tablosunda ne bu
+yol ne `clubs` kolu var, çözümleyici `null` döndürüyor.
+
+
 ### `TB-97` · Öğrenci "Kulübe katıl" onaylı kulüpte mock'ta 409 alıyor 🔴
 
 `student-detail-screen.tsx:307-314` `joinable` durumunda her koşulda `:join`
@@ -4535,6 +4543,21 @@ değeri `"Diğer"`e düşürüyor. Backend İngilizce kod üretirse (S-11) her k
 "Diğer" görünür ve hiçbir hata çıkmaz. Sessiz yanlışın klasik şekli. FE sabiti
 `{ code, label }` çiftine döner (analiz §19-F, F1) — Faz 1 ile aynı anda.
 
+🔴 **Canlıda doğrulandı — 2026-08-30, ekran testi (`oksis-api@f7f1ee6`).** Yönetici
+"Kulüp oluştur" formunda kategoriyi listeden seçip kaydedince
+`POST /api/v1/clubs` **400** dönüyor: `{"code":"Validation","message":"Tanınmayan
+kulüp kategorisi.","field":"Category"}` — gövdede `"category":"Teknoloji"` gidiyor,
+sunucu `ClubWire.ParseCategory` ile yalnız `technology` gibi camelCase kodu tanıyor
+(`ClubWire.cs:76-89`, `ClubInputRules.CategoryMessage`). Yani bulgunun **yazma
+ayağı sessiz değil, gürültülü**: kulüp hiç açılamıyor. Aynı sapmanın iki ayağı
+daha var → liste süzgeci `?category=Teknoloji` de 400 üretir
+(`ListClubsQueryHandler.cs:46`, `ListClubDiscoveryQueryHandler.cs:48`), okuma
+ayağı ise TB-99'un tarif ettiği sessiz "Diğer" düşüşü (`endpoints.ts:139-141`).
+Kök neden tek: FE'nin `ClubCategory` tipi Türkçe etiketin kendisi ve hem tel
+değeri hem ikon anahtarı olarak kullanılıyor. **Backend'de düzeltilecek bir şey
+yok** (S-11/K-13 kararı: sunucu kod gönderir, etiketi ekran üretir); açık iş
+F1'dir ve artık Faz 1 merge edildiği için **bloke edici**.
+
 ### `TB-100` · Mobil roll-call rotası hiçbir yerden erişilemiyor 🟡
 
 `apps/mobile/src/app/clubs/activities/[activityId]/roll-call.tsx` yazılmış,
@@ -4559,4 +4582,225 @@ Portal / E-posta / SMS çiziyor. K-02'nin `S-8` kapsam-dışı maddesi. Kulüpte
 görünür sonucu: `CLUB_ACTIVITY_PUBLISHED` varsayılan kapalı (S-9) ve yönetici
 açmak istese düğmesi yok. Kulüpten bağımsız, ayar ekranı işi; analiz §20.
 
-**Sıradaki boş ID:** `TB-102` · `X-18` · `B-43` · `D-17` · `V-04` · `E-21` · `ENG-03`
+---
+
+## 27. Kulüp Modülü — Uçtan Uca Test Hazırlığı (2026-08-30)
+
+### `TB-102` · Kulüp duyuru okuyucusu DI'ye kaydedilmemiş — API hiç açılmıyordu 🔴 *(kapandı — 2026-08-30)*
+
+`feat/kulup-modulu` dalında `dotnet run --project src/Oksis.Api` startup'ta
+düşüyordu: `Unable to resolve service for type
+'...Clubs.Internal.ClubAnnouncementReader' while attempting to activate
+'ListClubAnnouncementsQueryHandler'`. Faz 4 (`ef3187f`) reader'ı yazmış,
+`Application/DependencyInjection.cs`'e **kaydetmemişti**. Sonuç kulüple sınırlı
+değil: DI grafiği bir bütün olarak doğrulandığı için **hiçbir uç** ayağa
+kalkmıyordu.
+
+Üç gün fark edilmemesinin nedeni ölçüm boşluğu: birim testleri handler'ı elle
+`new`'liyor, `AddApplication()` çağıran tek test (`ValidationMessageLanguageTests`)
+`BuildServiceProvider()`'ı **doğrulama seçenekleri olmadan** kuruyor, ve
+`ValidateOnBuild` yalnız `WebApplicationBuilder`'ın Development kurulumunda
+açılıyor. Yani grafiği ölçen tek şey **gerçek bir API startup'ı** ve devir notu
+"bu oturumda API çalıştırılmadı" diyordu.
+
+Düzeltme: `services.AddScoped<Modules.Clubs.Internal.ClubAnnouncementReader>();`
+(`DependencyInjection.cs`, `ClubHistoryReader`'ın hemen altına). Sonrasında API
+açıldı, `/health/ready` 200, kulüp zincirinin tamamı `s4`'te curl ile yeşil.
+
+**Kalıcı ders:** kayıt gerektiren her yeni `Internal` sınıf için tek ölçüm noktası
+gerçek startup'tır; "birim testleri yeşil" DI hakkında hiçbir şey söylemez.
+
+### `X-18` · Yatay çip şeridi üçüncü kez ekranı ikiye böldü — kulüp keşfi 🟠 *(ekran düzeltildi — 2026-08-30; merkezî bileşen AÇIK)*
+
+Öğrenci "Kulüpler" keşif ekranında kategori çipleri **ekran boyu dev ovallere**
+dönüşmüş, liste aşağı itilmişti (cihazda görüldü, 2026-08-30 uçtan uca test).
+Kök neden `TB-88`'in birebir aynısı: RN'in `ScrollView` taban stili yatay kipte
+de `flexGrow: 1` taşır; şerit `flex: 1` bir kabın içinde ikinci `ScrollView` ile
+KARDEŞ olduğunda boş dikey alanı onunla paylaşır. Çipin `minHeight: 32` demesi
+onu kurtarmıyor — kap gerildiğinde `alignItems` varsayılanı (`stretch`) çipi
+uzatıyor; yan etki olarak uzun etiket (`Teknoloji`) sıkışıp okunmaz oluyordu.
+
+**Bu üçüncü tekrar:** notlar dönem şeridi (2026-08-23, `grade-parts.tsx`,
+`flexGrow: 0` yorumuyla), ödev ders şeridi (`TB-88`, 2026-08-27, `SubjectChipRow`
+bileşenine taşınarak), şimdi kulüp kategori şeridi. Her seferinde yeni bir ekran
+aynı düzeni **kopyalayarak** doğuruyor ve kabın davranışını taşımıyor.
+
+**Bugün yapılan (yama):** `discovery-list-screen.tsx` şeridine
+`style={{ flexGrow: 0, flexShrink: 0 }}`, `contentContainerStyle`'a
+`alignItems: 'center'`, çipe sabit `height: 32`. Mobil web hedefinde öğrenci
+rolüyle doğrulandı: çipler normal yükseklikte, "Teknoloji" etiketi tam
+görünüyor, kategori süzgeci çalışıyor.
+
+**Açık kalan (merkezî çözüm):** mobilde `@/components` altında tek bir
+`ChipRow`/`FilterStrip` bileşeni yok; `grade-parts`, `self-parts` ve kulüp
+kendi kopyalarını taşıyor. Dördüncü ekran aynı hatayı yeniden açabilir.
+Karar gerekiyor: ortak bileşen çıkarılsın mı, çıkarılırsa üç çağrı yeri
+oraya taşınır.
+
+---
+
+## 28. Kulüp Modülü — Uçtan Uca Ekran Testi (2026-08-30)
+
+`docs/testing/kulup-modulu-test-rehberi.md` akışları `s1` (Dev Okul) üzerinde
+web + mobil web'de koşuldu: yönetici üç kulüp açtı, danışman başvuruları karara
+bağladı, öğrenci katıldı/etkinliğe kaydoldu, danışman roster işaretledi ve duyuru
+yayınladı, veli iki çocuğun kartını gördü. Uçların kendisi sağlam çıktı; bulguların
+tamamı **ekran ile sunucunun ayrıştığı** yerlerde.
+
+### `B-43` · Açık katılımda başvuru penceresi sessizce siliniyor 🔴
+
+Yeni kulüp formunda **Açık Katılım** seçilip başvuru penceresi doldurulduğunda
+(1–31 Ekim) kayıt sonrası `join_start_date`/`join_end_date` **NULL**. Alan ekranda
+duruyor, yazı kabul ediyor (`.off` yalnız soluklaştırıyor), kaydederken
+`toCreateBody` (`packages/api/src/club/endpoints.ts`) `joinMode !== "approval"` ise
+ikisini de `null`'a çeviriyor.
+
+Gerekçesi yanlış: koddaki yorum "sunucu da pencereyi yalnız approval'da uygular"
+diyor, oysa `Club.IsApplicationOpen` **moda hiç bakmıyor** — pencereyi açık
+kulüpte de uyguluyor. Yani "Ekim'de açılan açık kulüp" sunucuda ifade edilebilir,
+ekranda edilemez ve yönetici yazdığı tarihin kaybolduğunu görmez.
+
+### `E-21` · Kulübü yayına alan ekran yok — Taslak hapsi 🔴
+
+Web'de kulüp durumunu değiştiren tek yol "…" menüsü ve orada yalnız **Pasife al**
+ile **Arşivle** var (`ClubStatusDialog` hedef olarak yalnız `inactive`/`archived`
+tanıyor). Sonuçları:
+- Danışmansız açılan kulüp `Draft` doğuyor (K-12) ve **ekrandan asla yayına
+  alınamıyor**; düzenleme ekranından danışman atamak da durumu değiştirmiyor
+  (`UpdateClubCommandHandler` statüye hiç dokunmuyor).
+- Pasife alma diyaloğu "Bu işlem geri alınabilir" diyor ama geri alacak düğme yok.
+
+Sunucuda karşılığı var: uç 5 `{"status":"active"}` ve `Club.Activate()`. Eksik olan
+yalnız ekran. Test bu adımı uçtan geçerek sürdürdü.
+
+### `B-44` · Aktif kulübün danışmanı kaldırılabiliyor — D1'in arka kapısı 🟠
+
+`POST /clubs/{id}:changeStatus {"status":"active"}` danışmansız kulüpte **409**
+veriyor ("Danışman öğretmeni olmayan kulüp aktifleştirilemez"). Ama **düzenleme**
+ekranında aktif kulübün danışmanını "Kaldır" ile boşaltmak serbest: kulüp `Active`
+kalıyor, danışmansızlaşıyor. Yani sunucunun kendi kuralı düzenleme kapısından
+dolanılıyor ve doğan hâl (aktif + danışmansız) `:changeStatus` ile **onarılamıyor**
+(zaten `E-21` yüzünden aktifleştirme yolu da yok).
+
+Yönetici listesinde kırmızı "Danışman yok" uyarısı çıkıyor — anomali görünür, ama
+engellenmiyor. Devir notundaki 1. açık ürün kararı artık ekranda ölçüldü.
+
+### `B-45` · Penceresiz kulüpte "Başvuru dönemi: Kapalı" yazarken katılım açık 🟠
+
+Öğrenci kulüp detayında (mobil) `InfoRow … value={club.applicationPeriod ?? 'Kapalı'}`
+(`student-detail-screen.tsx:177`). Pencere tanımlanmamış kulüpte sunucu
+`applicationPeriod: null` + `applicationOpen: true` gönderiyor; ekran bunu
+**"Kapalı"** diye yazıyor ve hemen altında "Kulübe katıl" düğmesi açık duruyor.
+Doğrusu "süresiz açık". `D8`'in (notun girdisi = düğmenin girdisi) FE yüzü.
+
+### `B-46` · Ret gerekçesi hiç sorulmuyor, karara bağlanan başvurular ekranda yok 🟠
+
+İki ayrı kayıp, tek ekranda (`panel-page.tsx`):
+1. **Ret gerekçesi sorulmuyor** — `decideOne(a, "reject")` gövdesiz gidiyor,
+   `club_memberships.reject_reason` hep boş kalıyor. Sunucu gerekçeyi kabul ediyor
+   ve öğrenciye giden bildirimin gövdesine koyacak yeri var (D5).
+2. **Karar geçmişi görünmüyor** — ekran `useClubApplications(clubId, "pending")`
+   çağırıyor; uç 7 onaylanan/reddedilen satırları da döndürüyor
+   (`approved`/`rejected`) ama hiçbir yüzey onları göstermiyor. Danışman dün kimi
+   neden reddettiğini bir daha göremiyor.
+
+### `B-47` · Etkinliğin "kayıtlı" sayısı üç yerde iki farklı değer 🟡
+
+Aynı etkinlikte (1 gerçek kayıt, 2 kulüp üyesi):
+- Öğrenci detayı: **1/10** (`registeredCount`)
+- Danışman roster ekranı: **2 KAYITLI** ve doluluk çubuğu **2/10** (roster satır
+  sayısı — D15 gereği kayıt yaptırmamış üye de `registered` görünüyor)
+- İptal diyaloğu: "**1 kayıtlı katılımcıya** iptal bildirimi gider" — ama iptal
+  bildirimi **iki üyeye birden** gitti (ölçüldü).
+
+D15'in "üye kayıtlı görünür" kararı bilinçli; kusur o kararın **kontenjan çubuğunu
+ve sayaç kartını** beslemesi. Kontenjan 2 olsaydı danışman kulübü dolu sanırdı.
+
+### `B-48` · Aktivite geçmişi gelecekteki etkinliği sayıyor 🟡
+
+Ölçüt "etkinlik oldu mu" değil, "yoklama işaretlendi mi". Danışman yarınki
+etkinliğin roster'ını bugün işaretleyince (D11 buna izin veriyor) öğrencinin
+**Aktivite Geçmişi** ve velinin özet kartı o etkinliği hemen sayıyor: ölçümde
+`activityCount: 2`, `hourCount: 2` ve `items` içinde **31 Ağustos tarihli**
+(yani gelecekteki) etkinlik `attended: true` ile duruyor. Aynı etkinlik velinin
+ekranında hem "Yaklaşan Etkinlikler"de hem geçmiş toplamında.
+
+**İkinci yüzü — iptal edilen etkinlik de geçmişte kalıyor:** yayınlanmış etkinlik
+gerekçesiyle iptal edildikten sonra (`status=cancelled`) öğrencinin geçmiş
+listesinde hâlâ **"katıldı"** olarak duruyor ve saat toplamına giriyor. Ölçüt
+tek: katılım satırının işareti; etkinliğin **durumu ve tarihi hiç sorulmuyor**.
+
+### `B-49` · İptal gerekçesi kutusu uydurma bir cümleyle dolu geliyor 🟠
+
+`activity-dialogs.tsx:138` → `useState("Laboratuvar bakımı nedeniyle etkinlik iki
+hafta sonraya ertelendi.")`. Tasarım mock'undan kalmış sabit metin; öğretmen
+silmezse **öğrencilere bu yanlış gerekçe gider** (gerekçe bildirim gövdesine
+birebir giriyor — ölçüldü). Alan zaten zorunlu ve 15-500 karakter denetimli;
+varsayılanın boş olması gerekiyor.
+
+### `X-19` · Sezon ileri tarihte başlıyorsa bildirim kutusu tamamen boş 🔴
+
+`s1` ve `s4`'ün yürürlükteki sezonu **15 Eylül 2026**'da başlıyor (bugün 30
+Ağustos). `GetMyNotificationsQueryHandler` `WithinActiveSeason` ile
+`CreatedAt >= sezon başlangıcı` süzüyor (B-06 kesmesi) → bugün üretilen **her**
+bildirim kutuda görünmüyor, rozet `0` kalıyor. Ölçüm: öğrenciye ait 3 kulüp
+bildirimi (`kind` 28/29/31) veritabanında duruyor, uç `totalCount: 0` dönüyor.
+
+Kulübe özgü değil — not, ödev, duyuru dahil tüm modülleri etkiler. Sezonu
+"yürürlükte" ilan edip başlangıcını ileri tarihe koymak gerçek bir okul
+senaryosudur (Ağustos'ta yeni sezona geçiş). Kesmenin varsayımı "aktif sezon
+başladı"; varsayım tutmadığında ekran sessizce boşalıyor.
+
+### `TB-103` · `students/me` ve `parents/me` uçları çağıranın profil tipini doğrulamıyor 🟡
+
+`GET /students/me/clubs/discovery` ve `…/mine` **veli, öğretmen ve yönetici**
+hesaplarıyla da **200** dönüyor (kimlik Bearer'dan çözülüyor, ama "bu kişi öğrenci
+mi" sorulmuyor). `parents/me/children/clubs-summary` de yöneticide 200. Yazma
+uçları izinle kapalı (`clubs.join` yok → 403), yani bugün veri sızıntısı yok;
+kusur sözleşmede: rota tabanı kapsam bildirimi sayılıyor ama sunucu onu
+doğrulamıyor.
+
+### `D-17` · "Etkinlikler" sekmesi 0 derken listede taslak etkinlik duruyor 🟢
+
+Sekme rozeti `upcomingActivityCount`'tan besleniyor ve o **yalnız yayınlananı**
+sayıyor; liste ise taslakları da gösteriyor (yönetici/danışman görüşü). Sonuç:
+"Etkinlikler 0" sekmesinin içinde "Toplam 1 etkinlik" yazan bir tablo.
+
+### `D-18` · Öğrenci etkinlik detayında bitiş saati yok 🟢
+
+Kart "Saat 14:00" diyor; etkinlik 14:00–16:00. Öğrenci ne kadar süreceğini
+göremiyor, oysa `durationMinutes` sunucudan geliyor (geçmiş listesinde
+kullanılıyor).
+
+### `E-22` · Kulüp duyurusunu öğrenci de veli de HİÇ okuyamıyor 🔴
+
+Duyuru yazılıyor, bildirim üretiliyor, ama **içeriği görecek bir yüzey yok**:
+
+| Yol | Durum |
+| --- | --- |
+| Uç 18 `GET /clubs/{id}/announcements` | Üye öğrenciyle **404** — kapı danışman **veya** `clubs.manage` (`ClubReadGate`) |
+| FE ekranı | Duyuru listesi yalnız `panel-page.tsx`'te (danışman/yönetici); mobil öğrenci detayında yalnız **sayaç** var (`<Stat label="Duyuru" value={club.announcementCount} />`) |
+| Bildirim | Gövde duyurunun **başlığını** taşıyor, içeriğini değil; derin bağlantı `/student/clubs/{id}/announcements` — mobilde **böyle bir rota yok** ve çözümleyici de tanımıyor (`TB-96`) |
+
+Ölçüldü (2026-08-30): danışman "İlk toplantı salı günü / Salı 15:30'da Fen
+Laboratuvarı'nda buluşuyoruz…" duyurusunu yayınladı; öğrenci ekranında kulüp
+kartı **"1 DUYURU"** yazıyor, metnin kendisi hiçbir yerde görünmüyor.
+
+Kapatmak iki iş istiyor: (a) uç 18'in kapısına ÜYE öğrenciyi (ve velisini) eklemek
+ya da öğrenci yüzü için ayrı bir uç açmak, (b) mobil detayda duyuru listesi +
+`/clubs/[clubId]/announcements` rotası. İkisi de yapılmadan duyuru özelliği
+yazma-tarafı-tamam, okuma-tarafı-yok halinde.
+
+### Doğru çalışan yollar (kayda değer)
+
+Kontenjan kapısı (2 onay sonrası üçüncü başvuruda "Kontenjan dolu" + düğme kapalı),
+`?status`/`?category`/`search` süzgeçleri (danışman soyadıyla arama dahil), üyelik
+durum makinesi (`pending` → `active`/`rejected`), taslak etkinliğin öğrenciye
+görünmemesi, roster'ın tek `SaveChanges`'te yazılması ve "Son kayıt … yapıldı"
+damgası, gece işinin (`clubs.complete-finished-activities`) biten etkinliği
+Hangfire panelinden tetiklendiğinde `Completed`'a çekmesi, dört bildirim olayının da gerçekten üretilmesi (kind 28/29/30/31,
+gerekçe gövdeye giriyor), veli yüzünün salt-okunurluğu ve ikinci çocuğun boş
+durumu, kapsam kapıları (danışman olmayan öğretmen 404, öğretmenin kulüp açma
+denemesi 403, üye olmayan öğrencinin etkinlik kaydı 404, veliye başka çocuk 404).
+
+**Sıradaki boş ID:** `TB-104` · `X-20` · `B-50` · `D-19` · `V-04` · `E-23` · `ENG-03`
