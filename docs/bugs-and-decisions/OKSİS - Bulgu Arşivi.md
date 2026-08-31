@@ -4604,3 +4604,43 @@ olabilir. `D1` domain'de doğru görünüyordu; onu çürüten şey uygulama kat
 kapsam kapısıydı. Bir kısıtı savunmadan önce, gerekçesinin hâlâ ölçülebilir olup
 olmadığına bakmak gerekiyor — bu madde iki tur boyunca "bilinçli asimetri" diye
 korundu, oysa dayanağı en baştan yoktu.
+
+
+---
+
+## 31. `D-04` · Geri çekildi — ölçüldü, karşılığı bulunamadı (2026-08-31)
+
+Kapanış türlerinin üçüncüsü: **düzeltilmedi, kapsam dışı da değil — geri çekildi.**
+Bulgu 2026-08-12'de ölçüldü, bugünkü kodda karşılığı olan bir ekran bulunamadı ve
+2026-08-31 karar turunda (`K-12` §D) kullanıcı geri çekilmesine karar verdi.
+
+### Defterden taşınan blok
+
+### `D-04` · Veli Portalı duyurular ekranında gereksiz header ❓
+- **Belirti:** Header kaldırılacak.
+- **Katman:** FE · **Öncelik:** ⚪ Düşük
+- 🔎 **ARANDI, BULUNAMADI — bugünkü kodda karşılığı olan bir ekran yok** *(2026-08-12)*. Veli için duyuru yüzeyi olabilecek her yer tek tek ölçüldü:
+
+| Nerede | Bugün ne var | Fazla header var mı |
+|---|---|---|
+| **Web**, veli rolü, `/announcements` | Duyuru listesi **hiç yok**: `announcements-screen.tsx` veli/öğrenciyi *"Duyurular şu an mobil uygulamada"* boş durumuna ayırıyor | **Hayır** — başlık yok |
+| Web rota sarmalayıcısı | `page.tsx` yalnız `<AnnouncementsScreen />` çiziyor, `PageHeader` yok | **Hayır** |
+| **Mobil** gelen kutusu | Ekran içi tek başlık: *"Duyurular"* + alt satır | **Hayır** — sekme gezgininde `headerShown: false`, yani bu **tek** başlık |
+
+- 🔎 Ayrıca `"Veli Portal"` metni **iki depoda da hiç geçmiyor** ve web'de veliye özel ayrı bir portal rotası yok (`app/(dashboard)/` altında `parents` var, o da yönetici ekranı).
+- ➡️ **İki olasılık:** (a) bulgu yazıldığından beri duyurular C-fazı çalışmasıyla düzelmiş olabilir, (b) kastedilen ekran başka bir şey. Ölçüm ikisini ayırt edemiyor.
+- ⏸️ **Kullanıcı netleştirmesi bekliyor — kendiliğinden bir değişiklik YAPILMADI.** Mobil gelen kutusundaki başlığı kaldırmak, ekranı **başlıksız** bırakırdı (gezginde ikinci bir başlık yok); yani "gereksiz" olan bir kopya değil, ekranın tek adı. Hangi ekranda görüldüğü söylendiğinde bir dakikalık iş.
+
+### Kapanış notu
+
+✅ **GERİ ÇEKİLDİ — 2026-08-31** (`K-12` §D). Kendiliğinden hiçbir değişiklik
+yapılmadı ve bu bilinçli: mobil gelen kutusundaki "Duyurular" başlığını kaldırmak
+ekranı **başlıksız** bırakırdı — gezginde `headerShown: false` olduğu için ikinci bir
+başlık yok, yani "gereksiz" olan bir kopya değil ekranın tek adıydı.
+
+**Ders — bulgunun kendisi de bayatlayabilir.** Bu madde iki ölçüm turu boyunca
+"netleşmemiş" olarak taşındı. Ölçüm iki olasılığı ayırt edemiyordu: (a) duyurular
+C-fazı çalışmasıyla düzelmiş olabilir, (b) kastedilen ekran başka bir şeydi. Bir
+bulguyu **belirsiz** tutmanın maliyeti, onu yanlış kapatmanın maliyetinden düşük ama
+sıfır değil: her turda yeniden okundu, yeniden ölçüldü. Tekrar görülürse yeni ID ile
+açılır.

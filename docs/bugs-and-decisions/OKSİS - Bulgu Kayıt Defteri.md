@@ -35,33 +35,30 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 4 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
 | 🟠 Yüksek | 9 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 6 | Kozmetik, temizlik, adlandırma |
-| ❓ Netleşmemiş | 1 | Arandı, bulunamadı — nerede görüldüğü söylenmeli |
-| **Toplam** | **38** | |
+| ❓ Netleşmemiş | 0 | — |
+| **Toplam** | **36** | |
 
-**Modül dağılımı:** Kulüp 9 · Ödev 5 · Duyurular 5 · Çapraz kesen 4 · Notlar 3 ·
-Ders programı 2 · Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Nöbet 1 · Takvim 1
+**Modül dağılımı:** Kulüp 9 · Ödev 5 · Çapraz kesen 4 · Duyurular 4 · Notlar 3 ·
+Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Ders programı 1 · Takvim 1
 
-**Senin kararını bekleyenler** (kod değil, yön kararı): `TB-48`/`X-03` (v1 emekliliği) ·
-`E-01` (rıza ekranı MVP'de mi) · `TB-19` (geçici muafiyetin karşılığı) · `TB-43` (bildirim
-ayarları teslimata mı bağlansın) · `TB-46` (sınav ağırlığı nerede yaşayacak) · `TB-55` (iki
-içe aktarma yolu birleşsin mi) · `TB-31` (kesintide bildirim gitsin mi) · `TB-78`
-(`CanViewInfo` merkezî mi süzülsün) · `X-17` (kapsam reddinin biçimi: 403 mü 404 mü) ·
-`X-06` geniş ayağı (92 handler: tek tek test mi ortak koşum mu) · `X-11` (CI sağlayıcısı) ·
-`X-10` (yazılı bir tercih değişecek) · `X-18` (ortak `ChipRow` bileşeni) · `B-19` (ölü
-düğme ne yapmalı) · `B-24` artığı (etiket adı) · `D-04` (nerede görüldü)
+**Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **20 yön kararının tamamı**
+bağlandı — bu liste ilk kez boş. Kararların kanonik kaydı:
+[[K-12 - Defter Sıfırlama Karar Turu]]. Sıra ve fazlar: [[defter-sifirlama-is-sirasi]].
 
 **Zincirler — hangi madde hangisini bekliyor**
 
+Hepsi `K-12` ile karara bağlandı; kalan bağımlılık **uygulama sırasıdır**:
+
 ```
-TB-48 / X-03  ──►  kalan v1 tüketicileri (vekâlet · duyuru hedefi · sezon devri)
-TB-43 (kanal yok) ──►  K-02 push fazının ön koşulu ve E-20'nin (kulüp push) zemini
-E-01          ◄──  rıza paketi sürümü yükseltilirse 381 kayıt aynı anda kapıya takılır
-X-11          ──►  CI kapısı yok; kırmızı test hiç koşulmuyor
-TB-55         ──►  birleştirme kararı içe aktarma ikiliğini kapatır
-X-17          ──►  beş not yazma handler'ının ret biçimi buna bağlı
-X-18          ──►  dördüncü çip şeridi aynı hatayı yeniden açar
+X-17  ──►  beş not yazma handler'ı + her yeni modül (ÖNCE yazılmalı)
+X-06  ──►  ortak koşum kurulmadan yazılan her handler yeni borç ekler
+TB-48 ──►  B-07 · vekâlet · duyuru hedefi · sezon devri (v1 ekranı geri gelince)
+TB-43 ──►  E-20 aynı kalemin içinde kapanır
+TB-55 ──►  B-20 ve TB-20'nin branş ayağı birlikte kapanır
+TB-46 ──►  not modülü başlamadan ÖNCE (iki rakip ağırlık tanımı)
+X-16  ──►  not modülü analizinin §7.3'ü düzeltilmeden geliştirmeye başlanmaz
 ```
 
 ---
@@ -329,7 +326,10 @@ kapattığı için acil değil; görevlendirmesi oturum ortasında değişen ö�
 tek kalan tetikleyici.
 
 ### `TB-46` · Not ve sınav yapılandırması tüketicisiz, üstelik ağırlık iki yerde tanımlı 🟡
-Notlandırmanın tüm yapılandırma yüzeyi hazır ama **arkasında hiçbir şey yok** — not modülü boş klasör (`TB-13`).
+Notlandırmanın tüm yapılandırma yüzeyi hazır ama **arkasında hiçbir şey yok** — not
+modülünün hesap ayağı yazılmadı. *(2026-08-31 düzeltmesi: eskiden burada `TB-13`'e atıfla
+"boş klasör" yazıyordu; `Grades` domain'i bugün var — `Assessment`, `AssessmentStatus`,
+`MarkSpecialValue`, `GradeVisibility`. Eksik olan ağırlıkların TÜKETİCİSİ.)*
 - **Sınav ağırlığı iki ayrı yerde:** master sınav türünde tür başına yüzde (`ExamType.WeightPercent`), okul akademik politikasında ise yazılı/performans ağırlığı (`WrittenWeight` + `PerformanceWeight`, toplamı 100 olmak **zorunda** — doğrulayıcısı var).
 - **İkisinin de tüketicisi yok.** `WeightPercent` hiçbir yerde okunmuyor; okul ayarındaki ağırlıklar yalnız kendi CRUD'unda dönüyor.
 - Aynısı geçme notu, yuvarlama kuralı, yazılı/performans sayısı ve not ölçeği seçimi için de geçerli: seçiliyor, doğrulanıyor, saklanıyor — kullanılmıyor.
@@ -393,14 +393,9 @@ Buna ek olarak **sezon aktivasyonu** v1 kopyalayıcısını doğrudan çağırı
 
 ---
 
-## 5. Ders Programı 🟠
+## 5. Ders Programı 🟡
 
 `ENG-02` kapandıktan sonra aynı yüzeyde ölçülenlerin açık kalanları.
-
-### `TB-29` · Öğretmen kendi müsaitliğini giremiyor 🟡
-Öğretmen müsaitliği (hangi saatte ders veremez / vermeyi tercih etmez) otomatik üretimin sert ve yumuşak girdisi, ama **tek yazma yüzeyi yönetici**. Öğretmenin kendi tercihini girebileceği bir yol yok; yönetici her öğretmeninkini elle işaretlemek zorunda.
-- ❓ Bilinçli kısıt mı, yapılmamış ekran mı belirsiz. Pilotta yönetici yükünü ciddi artırır.
-- **Ayrıca:** Nöbet dağıtımı müsaitliği **gün seviyesine** indirgiyor (bir günde tek bir engelli saat varsa günün tamamı kapalı sayılıyor), ders programı ise saat bazında okuyor. İki modül aynı veriyi iki farklı çözünürlükte yorumluyor.
 
 ### `TB-63` · Ders programı tasarımında arkası olmayan iki öğe — teknik borç 🟡
 
@@ -408,9 +403,11 @@ Kullanıcı kararıyla (2026-08-17) ikisi de bu turda **çizilmiyor**, borç ola
 geçiyor:
 
 - **"Bu derse ödev var" rozeti** (mobil öğrenci ders satırı) · `homework: true` alanı.
-  Ödev modülü hiç yazılmamış — `Application/Modules/Homework/` altında yalnız
-  *"HENÜZ YAZILMADI, 0 entity"* diyen README var (`TB-13`).
-  🔓 **Kilidi açan:** ödev modülü başlatıldığında bu rozet hatırlanacak.
+  *(2026-08-31 düzeltmesi: burada "ödev modülü hiç yazılmamış, 0 entity" yazıyordu ve bu
+  bayattı — `Homework`, `HomeworkSubmission`, `HomeworkAttachment`, `HomeworkTracking`,
+  `HomeworkAuditEntry` domain'de duruyor, beş migration geçmiş.)* Eksik olan, ders programı
+  satırını besleyecek **sorgu**: bir dersin o gün ödevi var mı.
+  🔓 **Kilidi açan:** ödev ucunun ders programı satırına bağlanması.
 - **"Takvime ekle" butonu** (web başlık aksiyonu) · ICS üretimi. Uç yok.
   🔓 **Kilidi açan:** bağımsız — istendiği anda yazılabilir. "Yazdır / PDF" istemci
   tarafında çalıştığı için acil değil.
@@ -472,21 +469,6 @@ ilkesinin komut ayağı eksik. 2026-08-31 kod doğrulamasında bulundu
 ([[bulgu-kapanis-turu-teknik-analiz]] §0.2). `X-19` 2026-08-31'de kapandı ama bu ayak
 onunla birlikte kapatılMADI — okuma yüzeyi (liste + rozet) kesmeyi uyguluyor, yazma
 komutları hâlâ uygulamıyor.
-
-### `D-04` · Veli Portalı duyurular ekranında gereksiz header ❓
-- **Belirti:** Header kaldırılacak.
-- **Katman:** FE · **Öncelik:** ⚪ Düşük
-- 🔎 **ARANDI, BULUNAMADI — bugünkü kodda karşılığı olan bir ekran yok** *(2026-08-12)*. Veli için duyuru yüzeyi olabilecek her yer tek tek ölçüldü:
-
-| Nerede | Bugün ne var | Fazla header var mı |
-|---|---|---|
-| **Web**, veli rolü, `/announcements` | Duyuru listesi **hiç yok**: `announcements-screen.tsx` veli/öğrenciyi *"Duyurular şu an mobil uygulamada"* boş durumuna ayırıyor | **Hayır** — başlık yok |
-| Web rota sarmalayıcısı | `page.tsx` yalnız `<AnnouncementsScreen />` çiziyor, `PageHeader` yok | **Hayır** |
-| **Mobil** gelen kutusu | Ekran içi tek başlık: *"Duyurular"* + alt satır | **Hayır** — sekme gezgininde `headerShown: false`, yani bu **tek** başlık |
-
-- 🔎 Ayrıca `"Veli Portal"` metni **iki depoda da hiç geçmiyor** ve web'de veliye özel ayrı bir portal rotası yok (`app/(dashboard)/` altında `parents` var, o da yönetici ekranı).
-- ➡️ **İki olasılık:** (a) bulgu yazıldığından beri duyurular C-fazı çalışmasıyla düzelmiş olabilir, (b) kastedilen ekran başka bir şey. Ölçüm ikisini ayırt edemiyor.
-- ⏸️ **Kullanıcı netleştirmesi bekliyor — kendiliğinden bir değişiklik YAPILMADI.** Mobil gelen kutusundaki başlığı kaldırmak, ekranı **başlıksız** bırakırdı (gezginde ikinci bir başlık yok); yani "gereksiz" olan bir kopya değil, ekranın tek adı. Hangi ekranda görüldüğü söylendiğinde bir dakikalık iş.
 
 > 🔧 **Kod taramasından bu bölüme bağlananlar** *(2026-08-10)*: `TB-22` (acil işareti yalnız oluşturma anında sorgulanıyor), `TB-23` (onay gerektiren duyuru zamanlanınca kuyruğu atlıyor), `TB-24` (acil = e-posta kanalı seed'de yazılı, tüketicisi yok), `TB-25` (şablon acil kapısı yok), `TB-26` (onay kuyruğunda acil rozeti yok). Beşi de → [Kod Taraması Bulguları](#11-kod-taraması-bulguları-domain-map-).
 

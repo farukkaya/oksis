@@ -4,11 +4,19 @@
 > **Çıktı:** kapanış sırası, bağımlılıklar, her fazın neyi açtığı.
 > **Kardeş belge:** [[bulgu-kapanis-turu-teknik-analiz]] (bir önceki tur, 12 madde).
 
+> [!success] Faz 0 TAMAMLANDI — 2026-08-31
+> **20 yön kararının tamamı bağlandı:** [[K-12 - Defter Sıfırlama Karar Turu]].
+> Defterin "senin kararını bekleyenler" listesi ilk kez **boş**. `TB-29` kapsam dışı
+> yazılıp Yapısal Kararlar'a, `D-04` geri çekilip arşive taşındı — **defter 38 → 36**.
+> Aşağıdaki fazlar kararlara göre revize edildi; en büyük değişiklik `TB-43`'ün
+> Faz 5'ten Faz 3'e inmesi (§11).
+
 ---
 
 ## 0. Baş bulgu — darboğaz kod değil, karar
 
-38 maddenin **17'si** kod yazılmadan önce senin bir cümlelik yön kararını bekliyor.
+38 maddenin yarısı kod yazılmadan önce bir cümlelik yön kararı bekliyordu; kümeler
+sayıldığında **20 karar** çıktı (ilk yazımda 17 yazılmıştı — 4 + 5 + 8 + 3 = 20).
 Bunların bir kısmı bir dakikalık ("etiket ne olsun"), bir kısmı ise **altındaki tüm
 işin boyutunu belirliyor**: `X-06`'nın cevabı 92 handler'ı 3 güne mi haftalara mı
 çevireceğini, `TB-48`'inki ise pilotun ders programı hattının çalışıp çalışmayacağını
@@ -50,23 +58,27 @@ inanıp kod yazmak, turun en pahalı hatası olur.
 
 | Faz | Ne | Madde | Boyut | Ön koşul |
 |---|---|---|---|---|
-| **0** | Karar turu — kod yok | 17 kararlık pano | ½ gün (senin) | — |
+| **0** | Karar turu — kod yok ✅ | 20 karar | tamamlandı (`K-12`) | — |
 | **1** | Kulüp modülünü sıfırla | 8 | ~2 gün | yok |
 | **2** | Ödev ön koşulları | 6 | ~2 gün | yok |
-| **3** | Merkezî kurallar | 6 | ~3 gün | Faz 0.B |
-| **4** | Kapsam kararı sonrası | 11 | ~4 gün | Faz 0.C |
-| **5** | Ayrı projeler | 6 | ayrı takvim | Faz 0.A |
+| **3** | Merkezî kurallar (+`TB-43`/`E-20`) | 8 | ~5 gün | Faz 0.B |
+| **4** | Kapsam kararı sonrası | 9 | ~4 gün | Faz 0.C |
+| **5** | Ayrı projeler | 4 | ayrı takvim | Faz 0.A |
 | **6** | Başka modüle kilitli | 1 | — | ödev modülü |
 
-**Faz 1–4 biterse defter 38 → 7'ye iner** (~11 iş günü). Kalan 7'nin 6'sı kendi
-planını hak eden kalemler, 1'i başka modüle kilitli.
+**Faz 1–4 biterse defter 36 → 6'ya iner** (~13 iş günü; sayılar 2026-08-31 karar turuna
+göre revize edildi, ayrıntı §11). Kalan 6'nın 5'i kendi planını hak eden kalemler
+(`TB-48`, `X-03`, `X-06`, `E-13`, `B-07`), 1'i başka modüle kilitli (`TB-63`).
 
 ---
 
-## 2. Faz 0 — Karar turu
+## 2. Faz 0 — Karar turu ✅ TAMAMLANDI (2026-08-31)
 
-Kod yazılmıyor. Her karar için soru + seçenekler + tavsiyem. Dört kümeye ayrıldı
-çünkü ağırlıkları çok farklı.
+> Aşağıdaki bölüm **soruların hazırlandığı hâlidir** ve tarihsel kayıt olarak duruyor.
+> **Verilen kararlar ve gerekçeleri:** [[K-12 - Defter Sıfırlama Karar Turu]].
+> Üç yerde tavsiyem seçilmedi ve o üçünün sonucu §11'de yazılı: `TB-43` (kanal
+> altyapısı yazılacak), `TB-42` (çözümleyiciler yazılacak), `TB-29` (ikisi de
+> ertelendi), `X-16`(2) (program şartı kural oldu).
 
 ### 0.A — Yön kararları (altındaki işin boyutunu belirler)
 
@@ -284,3 +296,40 @@ Faz 6  Ödev modülüne kilitli (1)
 
 **Faz 1–4 sonunda defter 38 → 7.** Kalan 7: `TB-48`, `X-03`, `X-06`, `TB-43`, `E-20`,
 `E-13`, `TB-63` — altısı ayrı proje, biri kilitli.
+
+
+---
+
+## 11. Karar turunun faz planına etkisi (2026-08-31)
+
+Kararların tamamı [[K-12 - Defter Sıfırlama Karar Turu]]'nda. Fazları değiştirenler:
+
+| Değişiklik | Sebep |
+|---|---|
+| **`TB-43` + `E-20` · Faz 5 → Faz 3** | Karar sırasında kod doğrulandı: **push tamamlanmış ve matrisi gerçekten okuyor** (beş kapı), SMTP taşıyıcısı da hazır. Kalan iş `EmailNotificationChannel` + in-app'e Portal kapısı + ana anahtarın bağlanması + FE'ye push sütunu ≈ 2–3 gün. Defterdeki "kayıtlı tek kanal in-app" cümlesi bayattı. |
+| **`TB-42` büyüdü · S → M** | Bir kategori çıkarma değil, **dört erişim çözümleyicisi** yazma işi (`ClubDocument`, `ExamDocument`, `AssignmentSubmission`, `HomeworkAttachment`). Yalnız `VirtualBook` defterden çıkarılır — bağlanacak kayıt tipi yok. |
+| **`TB-29` ve `D-04` defterden düştü** | Biri kapsam dışı (Yapısal Kararlar), biri geri çekildi (arşiv). Faz 4 · 11 → 9 madde. |
+| **`X-16` iki ayağa ayrıldı** | (1) not analizinin §7.3'ü düzeltilir — S · (2) *"program yayınlanmadan not girilmez"* kuralı yazılır **ve ekranda görünür** — M. İkincisi kararın doğrudan sonucu: aksi hâlde öğretmen not giremediğinde sebebini göremez ve `X-17`'nin şikâyet ettiği yanlış teşhis kalıbı not modülünde yeniden doğar. |
+| **`X-11` (CI) Faz 1'e paralel** | Değişmedi, ama artık daha gerekli: Faz 1–4'te ~33 maddelik kod yazılacak. |
+| **`TB-19` L olarak kaldı** | "Vekil geçsin" kararı yeni bir tüketim noktası demek; bugün karşılığı yok. |
+
+**Faz 1–4 sonunda defter 36 → 6.** Kalan 6: `TB-48`, `X-03`, `X-06`, `E-13`, `TB-63`
+ve `TB-48`'in açtığı `B-07`. `TB-43`/`E-20` artık Faz 3'te kapanıyor.
+
+### Karar turunun kendi bulguları
+
+Karar hazırlığı sırasında yapılan kod doğrulaması **defterde üç bayat iddia** ortaya
+çıkardı — hiçbiri karar sorulmadan önce biliniyor değildi:
+
+1. **`TB-43` · "kayıtlı tek kanal in-app"** — push kanalı yazılmış, matrisin `PushEnabled`
+   sütununu beş kapıyla gerçekten okuyor. Kalem XL'den M'ye indi.
+2. **`TB-46` · "not modülü boş klasör (`TB-13`)"** — `Grades` domain'i var (`Assessment`,
+   `AssessmentStatus`, `MarkSpecialValue`, `GradeVisibility`).
+3. **`TB-63` · "ödev modülü hiç yazılmamış, 0 entity"** — `Homework`, `HomeworkSubmission`,
+   `HomeworkAttachment`, `HomeworkTracking`, `HomeworkAuditEntry` domain'de duruyor ve beş
+   migration geçmiş.
+
+**Ders:** bayat atıf yalnız yanlış bilgi değil, **yanlış boyutlandırma** üretiyor. Üçü de
+bir maddeyi olduğundan büyük ya da küçük gösteriyordu; biri (TB-43) doğrudan bir faz
+kararını değiştirdi. Defterin kendi kuralı — *her blok koddan doğrulamayla başlar* —
+karar turuna da uygulanmalıymış; bu turdan sonra uygulanıyor.

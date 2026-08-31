@@ -582,6 +582,13 @@ Bunun görünür sonucu ölçüldü: yenileme dönemi açılamadığı için dev
 
 ## K-08 · Dini bayramlar için tatil şeması
 
+> ✅ **CEVAPLANDI — 2026-08-31** ([[K-12 - Defter Sıfırlama Karar Turu]] §A5): şema
+> `month`/`day`'den **yıl bazlı tarih aralığı + arife (yarım gün) bayrağına** geçer;
+> 2026–2030 bayramları seed'de gelir, yönetici düzeltebilir. Hicri hesap kütüphanesi
+> elendi — Diyanet ilanıyla sapabiliyor ve yanlış hesap sessizce yanlış takvim üretir.
+> Uygulama kalemi: bulgu defterinde `E-13`.
+
+
 --- start-multi-column: K-08
 ```column-settings
 number of columns: 2
@@ -677,6 +684,14 @@ gönderilmiyor", SMS kotası kartı "Geçici veri" diyor.
 ---
 
 ## K-10 · Ders programının görevlendirme kaynağı
+
+> ✅ **CEVAPLANDI — 2026-08-31** ([[K-12 - Defter Sıfırlama Karar Turu]] §A1): **Yol 1
+> şimdi, Yol 2 hedef.** v1 (`teaching_assignments`) yazma ekranı geri gelir ve kanonik
+> kaynak olarak kalır; v2 (`subject_teacher_assignments`) üstte yetkinlik katmanı olur;
+> v1→v2 göçü ayrı proje olarak takvimlenir. Gerekçe: `AssignmentLine` sözleşmesi v2'den
+> üretilemiyor, yedi canlı tüketici v1'i okuyor ve pilot bekleyemez.
+> Uygulama kalemleri: `TB-48`, `X-03`, `B-07`.
+
 
 --- start-multi-column: K-10
 ```column-settings
@@ -886,6 +901,25 @@ Kademe kaldırılacak, altyapı korunacak. **Uygulama yeri** `K-04`'te netleşme
 ---
 
 # D. Teknik Borç 🔧
+
+### TB-29 · Öğretmen müsaitliği — ekran yok, çözünürlük ayrışık ⏸️ kapsam dışı
+
+> 📥 **Bulgu defterinden devralındı — 2026-08-31** ([[K-12 - Defter Sıfırlama Karar Turu]] §C7).
+> Kullanıcı iki ayağı da erteledi; madde defterden düştü ve buraya taşındı.
+
+- **(a) Ekran yok.** Öğretmen müsaitliği (hangi saatte ders veremez / vermeyi tercih etmez)
+  otomatik üretimin sert ve yumuşak girdisi, ama **tek yazma yüzeyi yönetici**. Öğretmenin
+  kendi tercihini girebileceği bir yol yok; yönetici her öğretmeninkini elle işaretliyor.
+- **(b) Çözünürlük ayrışması.** Nöbet dağıtımı müsaitliği **gün seviyesine** indirgiyor
+  (bir günde tek bir engelli saat varsa günün tamamı kapalı sayılıyor), ders programı ise
+  **saat bazında** okuyor. İki modül aynı veriyi iki farklı çözünürlükte yorumluyor.
+- ⏸️ **Karar (2026-08-31): ikisi de ertelendi.** (b) bir kapsam sorusu değil tutarsızlık
+  olduğu hâlde bilinçli olarak beklemeye alındı.
+- ⚠️ **Bekletmenin bilinen bedeli:** nöbet dağıtımı, bir günde tek engelli saati olan
+  öğretmeni **o günün tamamından** çıkarmaya devam eder; pilotta yönetici yükü elle
+  işaretlemeyle sürer.
+- 🔓 **Kilidi açan:** öğretmen self-servis yüzeyinin kapsama alınması ya da nöbet
+  dağıtımının saat bazına çekilmesi.
 
 ### TB-01 · Gözlemlenebilirlik altyapısı yok
 - **Tespit:** Serilog yalnızca Console sink. Dosya yok, DB yok, ELK yok. Canlıda hata izi kalmıyor.
