@@ -4971,3 +4971,223 @@ snapshot'lardaki adı arayıp bulamamış ve "düşmüş" sanmış.
 **Dört maddenin ikisi bayat çıktı** (`TB-83` tamamen, `E-18` üçte ikisi). Faz 0.5'in
 neden Faz 1'den önce gelmesi gerektiği bir kez daha görüldü: `E-18` planda "M" olarak
 boyutlanmıştı ve gerçekte tek ekranlık işti; `TB-83` ise hiç iş değildi.
+
+
+---
+
+## 35. Merkezî Kurallar Turu — 6 madde (2026-08-31) ✅
+
+Defter sıfırlama turunun Faz 3'ü. Bu bloğun ortak özelliği: **hepsi bir sınıfın
+işiydi**, tek ekranın değil ([[yamalama-kabul-degil]]). `K-12` §B'de karara
+bağlanmışlardı.
+
+### Defterden taşınan bloklar
+
+### `X-17` · İstemci, sunucunun role göre daralttığı ucu ayırt etmeden tüketiyor 🔴 *(yapısal yarısı kapandı — 2026-08-25; biçim kararı açık)*
+
+`B-38` ve `B-40` aynı kusurun iki yönü:
+
+- **Aşağı doğru:** öğretmen yüzü, yönetici ucundan (`/school-settings`) besleniyor →
+  403 alıyor, ekran sessizce koda gömülü varsayılana düşüyor.
+- **Yukarı doğru:** yönetici yüzü, öğretmen ucunu (`:publish`) çağırabiliyor →
+  404 alıyor, ekran bunu "kayıt silinmiş" diye anlatıyor.
+
+Ortak kök: **istemci, bir ucun hangi role ait olduğunu bilmiyor**; hem yanlış rolün
+ucunu çağırıyor hem de reddi kullanıcıya yanlış tercüme ediyor. Rol daraltması sunucuda
+doğru kurulmuş ([[kural-ekranda-degil-sunucuda]]), istemci tarafında karşılığı yok.
+
+**Karara bağlanması gereken:** her ucun hedef rolü sözleşmede işaretlensin mi
+(üretilmiş şemadan türetilebilir), yoksa yüzey başına elle mi ayrılsın? İkincisi
+aynı hatayı bir sonraki modülde tekrar üretir.
+
+**Çözüm — yetenek bayrağı kaynağın kendisinde.** İki ayak da kapandı ve ikisi de
+AYNI biçimi kullandı:
+
+| Yön | Eski | Yeni |
+|---|---|---|
+| Aşağı (`B-38`) | istemci yönetici ucunu çağırıyor, 403'te varsayılana düşüyor | modülün kendi rol-güvenli okuma ucu (`GET /grades/policy`) |
+| Yukarı (`B-40`) | istemci rolden "yazabilirim" çıkarımı yapıyor | sunucu zaten çektiği kaynakta `canWrite` söylüyor |
+
+Ortaya çıkan kural: **istemci bir yeteneği rolden TÜRETMEZ; sunucu onu, istemcinin
+zaten okuduğu kaynağın üstünde söyler.** Bu, maddede sorulan iki seçeneğin de
+alternatifidir — ne her ucun hedef rolünü sözleşmede işaretlemek (üretilmiş şema
+şişer, istemci yine kendi çıkarımını yapar) ne de yüzey başına elle ayırmak
+(aynı hata bir sonraki modülde tekrarlanır).
+
+**Açık kalan — reddin BİÇİMİ (karara gitmeli).** Kapsam reddi bugün `NotFound`
+ile örtülüyor ve istemci onu *"kayıt bulunamadı; silinmiş olabilir"* diye
+çeviriyor. Ölçüldü: bu kalıp not modülünde **beş** yazma handler'ında aynı
+(`SetMark`, `AmendMark`, `ClearAssessmentMarks`, `SetAssessmentExamDate`,
+`PublishAssessment`).
+
+Önerilen ayrım — *okuyabiliyor ama yazamıyor* → **403 + modül önekli Türkçe
+gerekçe**; *okuyamıyor bile* → **404** (varlık sızdırmama korunur). Deponun bunun
+için hazır bir mekanizması var: `mutation-error.ts`
+`DOMAIN_FORBIDDEN_CODE_PREFIXES` (bugün yalnız `"Announcements."`) sunucunun
+Türkçe cümlesini ekrana geçiriyor.
+
+**Neden bu turda YAPILMADI:** `ResultExtensions.MapStatusCode` modül başına
+elle yazılmış bir zincir; oraya yalnız `Grades.` dalı eklemek, maddenin kendi
+uyardığı "yüzey başına elle ayırma"nın ta kendisi olurdu. Karar tüm modüller
+için bir kez verilmeli. `B-40`'ın menü düzeltmesi bu yolu arayüzden zaten
+kapattığı için acil değil; görevlendirmesi oturum ortasında değişen öğretmen
+tek kalan tetikleyici.
+
+
+### `TB-78` · Bildirim yolu `CanViewInfo` kapısını atlıyor 🟠
+
+**Ölçüm.** `NotificationRecipientResolver.ResolveGuardianAccountsAsync` veli hesaplarını
+çözerken yalnız `SchoolId` + `RevokedAt == null` süzüyor (`NotificationRecipientResolver.cs:36`);
+`ParentStudentRelationship.CanViewInfo` **sorguya hiç girmiyor**.
+
+**Bu bilinçli.** Yoklamadaki üç bildirim handler'ı (`ExcuseDecided`,
+`AmendmentRequestDecided`, `AbsenceThresholdReached`) docblock'larında bunu açıkça yazıyor:
+*"RevokedAt==null, **CanViewInfo şartı YOK**"*. Yani okuma yüzeyi (`StudentAttendanceScopeGuard`,
+`ListExcuses`, `GetExcuseDetail`) `CanViewInfo` süzerken, bildirim yüzeyi süzmüyor —
+**aynı veri için iki farklı kapı.**
+
+**Neden bugün savunulabilir, yarın değil.** Yoklamada bildirim metni "çocuğunuz devamsız
+sayıldı" — bilgiyi görme yetkisi olmayan veliye de gitmesi tartışılır ama savunulabilir.
+Notta durum farklı: ön inceleme §4 *"Ayrı yaşayan ebeveyn: `CanViewInfo=false` ise bildirim de
+gitmemeli"* diyor. Aynı resolver'ı süzgeçsiz kullanan bir `GRADE_PUBLISHED` handler'ı,
+handler seviyesindeki kapsam kapısının (`IGradeScopeGuard`) **etrafından dolaşır**.
+
+**Karar gerektiriyor, bu yüzden çözümü burada değil karar panosunda:** resolver merkezî
+olarak mı süzsün (yoklamanın bugünkü davranışı değişir), yoksa çağıran mı seçsin
+(`includeInfoRestricted: bool`)? [[yamalama-kabul-degil]] merkezî çözümü işaret ediyor ama
+yoklamanın davranış değişikliği ayrı bir onay. → [[OKSİS - Yapısal Kararlar ve Eksikler]]
+
+**Ailesi:** [[eksik-ekran-eksik-yetkiyi-gizler]] — bildirim yüzeyi hiç çağrılmadığı için
+(`GRADE_PUBLISHED` bugün `delivered: false`) arkasındaki kapı kusuru da görünmüyordu.
+
+
+### `TB-104` · "Tümünü okundu işaretle" sezon kesmesini kullanmıyor 🟡
+
+`WithinActiveSeason` süzgecini yalnız iki tüketici kullanıyor (`GetMyNotifications`,
+`GetMyUnreadCount`); `MarkNotificationRead` / `MarkAllNotificationsRead` komutları
+kullanmıyor. Sonuç: listede ve rozette görünmeyen sezon-dışı (ya da `X-19` senaryosunda
+sezon-öncesi) bildirim, "tümünü okundu işaretle" ile **görünmeden** okundu sayılabilir.
+Bugün kullanıcıya görünen zararı yok (işaretlenen şey zaten gizli), ama okuma yüzeyi ile
+yazma yüzeyi aynı kesmeyi paylaşmıyor — B-06'nın "sayaç listeyle aynı kesmeyi kullanır"
+ilkesinin komut ayağı eksik. 2026-08-31 kod doğrulamasında bulundu
+([[bulgu-kapanis-turu-teknik-analiz]] §0.2). `X-19` 2026-08-31'de kapandı ama bu ayak
+onunla birlikte kapatılMADI — okuma yüzeyi (liste + rozet) kesmeyi uyguluyor, yazma
+komutları hâlâ uygulamıyor.
+
+
+### `TB-31` · Devamsızlık eşik bildiriminde fail-open 🟡
+Eşiğe gelen öğrenci için mükerrer bildirim iki katmanla önleniyor: hızlı bir önbellek kapısı ve arkasında kalıcı damga. Önbellek erişilemezse sistem **açık kalıyor** (fail-open) ve DB yedeğine düşüyor.
+- **Etkisi:** Kesinti anında aynı öğrenci için mükerrer eşik uyarısı gidebilir. Veli/öğrenciye giden bildirim olduğu için gürültü doğrudan hissedilir.
+- ⬜ **Karar gerekiyor:** Kesintide bildirim **gitsin mi gitmesin mi**? Kapalı kalma (fail-closed) uyarıyı geciktirir; açık kalma mükerrer üretir. Kod bugün ikincisini seçmiş ama gerekçesi yazılı değil.
+
+
+### `X-10` · Rota kapısı rol çözülene kadar geçirgen — yanlış rol ekranı kısa süre görülüyor 🟡
+- **Belirti:** Öğrenci `/schedule` adresini açtığında yönetim konsolu **kısa süreliğine mount oluyor**; beş yönetim isteği gerçekten atılıyor (`class-rooms`, `class-rooms?sessionId`, `school-settings/grade-levels`, `users/persons?profileType=Teacher`, `timetable/programs`) ve **beşi de 403** dönüyor. Rol çözüldükten sonra ekran *"Bu sayfaya erişemezsiniz"*e dönüyor.
+- **Katman:** FE · **Öncelik:** 🟡 Orta
+- **Nasıl bulundu:** `B-17` kapanış ölçümü, 2026-08-12 — menü budaması doğrulanırken ağ sekmesinde görüldü. `B-17`'nin ürünü **değil**, ondan bağımsız ve önceden var.
+- 🔍 **Kök neden tek koşulda:** `apps/web/components/route-guard.tsx:24` → `if (activeRole && !canAccessRoute(activeRole, pathname))`. `activeRole` henüz **null** iken (oturum bağlamı sorgusu sürüyor) koşul kısa devre yapıyor ve sayfa **olduğu gibi** render ediliyor.
+- ⚠️ **Bu bir gözden kaçma DEĞİL, yazılı bir tercih:** dosyanın kendi yorumu diyor ki *"Rol henüz çözülmemişken sayfa olduğu gibi render edilir: burada engellemek her gezinmede boş ekran flaşı yaratır."* Yani biri bu ödünü tartmış ve bugünkü davranışı seçmiş. **Bu yüzden tek başıma değiştirmedim.**
+- 🔍 **Ama tartının bir tarafı eksik ölçülmüş:** ödün *"boş ekran flaşı"* ile karşılaştırılmış, oysa gerçekte olan **yanlış ekranın çizilmesi + beş reddedilen istek**. Ayrıca kaçınılmak istenen flaş için gereken sinyal **zaten mevcut**: `useActiveRole` `isLoading` alanını da döndürüyor. Yani "rol yok" ile "rol henüz gelmedi" ayırt edilebilir ve kapı yalnız ikincisinde bekletebilir — boş ekran yerine iskelet gösterilerek.
+- 📌 **Kapsamı tek ekran değil:** kural her korumalı rotada aynı; `/schedule` yalnız ölçüldüğü yer. Güvenlik sınırı değil (gerçek kapı .NET tarafında, beş istek de 403 aldı) ama `B-17`'nin ve `B-01`'in şikâyet ettiği şeyin ta kendisi: **kullanıcıya sahip olmadığı bir yetenek gösteriliyor.**
+- ⬜ **Açık — karar gerektiriyor:** yazılı bir tercih değiştirileceği için `RouteGuard`'ın yükleme penceresinde bekletilmesi onaylanmalı.
+
+
+### `X-18` · Yatay çip şeridi üçüncü kez ekranı ikiye böldü — kulüp keşfi 🟠 *(ekran düzeltildi — 2026-08-30; merkezî bileşen AÇIK)*
+
+Öğrenci "Kulüpler" keşif ekranında kategori çipleri **ekran boyu dev ovallere**
+dönüşmüş, liste aşağı itilmişti (cihazda görüldü, 2026-08-30 uçtan uca test).
+Kök neden `TB-88`'in birebir aynısı: RN'in `ScrollView` taban stili yatay kipte
+de `flexGrow: 1` taşır; şerit `flex: 1` bir kabın içinde ikinci `ScrollView` ile
+KARDEŞ olduğunda boş dikey alanı onunla paylaşır. Çipin `minHeight: 32` demesi
+onu kurtarmıyor — kap gerildiğinde `alignItems` varsayılanı (`stretch`) çipi
+uzatıyor; yan etki olarak uzun etiket (`Teknoloji`) sıkışıp okunmaz oluyordu.
+
+**Bu üçüncü tekrar:** notlar dönem şeridi (2026-08-23, `grade-parts.tsx`,
+`flexGrow: 0` yorumuyla), ödev ders şeridi (`TB-88`, 2026-08-27, `SubjectChipRow`
+bileşenine taşınarak), şimdi kulüp kategori şeridi. Her seferinde yeni bir ekran
+aynı düzeni **kopyalayarak** doğuruyor ve kabın davranışını taşımıyor.
+
+**Bugün yapılan (yama):** `discovery-list-screen.tsx` şeridine
+`style={{ flexGrow: 0, flexShrink: 0 }}`, `contentContainerStyle`'a
+`alignItems: 'center'`, çipe sabit `height: 32`. Mobil web hedefinde öğrenci
+rolüyle doğrulandı: çipler normal yükseklikte, "Teknoloji" etiketi tam
+görünüyor, kategori süzgeci çalışıyor.
+
+**Açık kalan (merkezî çözüm):** mobilde `@/components` altında tek bir
+`ChipRow`/`FilterStrip` bileşeni yok; `grade-parts`, `self-parts` ve kulüp
+kendi kopyalarını taşıyor. Dördüncü ekran aynı hatayı yeniden açabilir.
+Karar gerekiyor: ortak bileşen çıkarılsın mı, çıkarılırsa üç çağrı yeri
+oraya taşınır.
+
+### Kapanış — ne yapıldı
+
+✅ **KAPANDI — 2026-08-31** · `oksis-api` @ `61c3d59` · `oksis-ui` @ `aaf0d93` + `d3ea9b7`.
+
+**`X-17` — kural fonksiyona DAL EKLEMEDEN yaşıyor artık.** `MapStatusCode` modül
+başına elle yazılan bir zincirdi ve maddenin kendi uyarısı buydu: *"yüzey başına elle
+ayırma aynı hatayı bir sonraki modülde tekrar üretir"*. Aile kuralı eklendi —
+`<Modül>.…Forbidden` biçimindeki **her** kod 403'tür, kural fonksiyonun başında ve tek
+yerde. Duyurular kovasındaki kopya kaldırıldı.
+İlk müşteri not modülünün beş yazma handler'ı: `Grades.Forbidden` + Türkçe gerekçe
+(okuyabiliyor ama yazamıyor) / `NotFound` (okuyamıyor bile). İstemci tarafında
+`DOMAIN_FORBIDDEN_CODE_PREFIXES` üç modülle genişletildi ve **allowlist bilerek
+korundu**: sunucunun statü kararı ile istemcinin *cümleyi geçirme* kararı aynı şey
+değil — ikincisi mesajın Türkçe olduğunun ölçülmüş olmasını ister (`identity.*` ailesi
+mesajında çeviri anahtarı taşır ve geçmemeli; aşırı düzeltme kontrolü testte).
+
+**`TB-78` — sekiz kopya bire indi.** Defter "resolver `CanViewInfo` süzmüyor" diyordu;
+ölçüldüğünde sorgunun kendisi **sekiz yerde** kopyalanmıştı (yedi yoklama handler'ı +
+`ResolveClassRoomConsumersAsync`). Süzgeci sekiz yere elle eklemek maddenin şikâyetinin
+tekrarı olurdu. `ResolveGuardianPersonIdsAsync` eklendi, **varsayılan güvenli tarafta**;
+yoklamanın dört handler'ı `includeInfoRestricted: true` geçiyor ve **davranışları
+birebir aynı** — değişen tek şey, istisnanın artık bir bayrakla görünür olması. Yeni
+modüller (özellikle `GRADE_PUBLISHED`) güvenli varsayılanı miras alıyor.
+
+**`TB-104` — okuma ile yazma aynı kesmeyi konuşuyor.** Her iki okundu-işaretleme
+komutu da `WithinActiveSeason` uyguluyor.
+
+**`X-10` — yazılı tercih ölçümle değişti.** `RouteGuard` artık `isLoading` penceresinde
+iskelet gösterip bekliyor. İskelet **satır içi stille** yazıldı: `.sk` sınıfı modül
+CSS'lerinde tanımlı (`homework.css`, `grade.css`…) ve bu bileşen HER rotayı sarıyor —
+sınıfa dayanmak, o stil sayfası yüklenmemiş rotalarda görünmez bir iskelet bırakırdı.
+
+**`X-18` — taşıma sırasında iki tekrar daha bulundu.** Ortak `ChipRow` çıkarıldı ve
+kabın davranışı (`flexGrow` · `flexShrink` · `alignItems`) tek yere alındı. Beşinci bir
+ölçüm yapıldı: mobilde **beş** yatay şerit var ve **üçünde koruma hiç yoktu**
+(`grade-parts`, `grade-entry-screen`, `grade-component-sheet-screen`). Yani dördüncü ve
+beşinci tekrar çoktan yazılmıştı; bugün patlamıyorlar çünkü şu an `flex: 1` bir kabın
+doğrudan çocuğu değiller. **Çipin görünümü bilerek dışarıda bırakıldı** — üç modülün
+çipi farklı görünür (portal rengi, rozet, durum ikonu); ortaklaştırılan şey kap.
+
+### `TB-31` — davranış DEĞİŞMEDİ, karar bir bayat önermeye dayanıyordu
+
+Karar turunda **fail-closed** seçilmişti. Uygulamadan önce ölçüldü ve maddenin
+önermesi çürüdü:
+
+- Önbellek bir **hızlandırma katmanıdır**; bastırmanın yetkili kaydı
+  `AbsenceSummary.LastThresholdNotifiedAt` + `LastThresholdNotifiedLevel` ikilisidir ve
+  **kalıcıdır**.
+- Redis tamamen kesintideyken de `ResolveDbFallbackLevel` **aynı 24 saatlik pencereyi**
+  ve aynı seviye karşılaştırmasını uygular. Yani *"kesintide veli aynı uyarıyı iki kez
+  alır"* senaryosu bugün **gerçekleşmiyor** — mükerrer pencere zaten kapalı.
+- Literal fail-closed **daha kötü olurdu**: Redis'in bir saniyelik kesintisinde ilk kez
+  eşiğe ulaşan öğrencinin uyarısı da düşerdi. Bastırılan şey mükerrer değil, gerçek bir
+  uyarı olurdu.
+
+Maddenin gerçekten açık olan tek ayağı zaten *"kod bugünkü davranışı seçmiş ama
+gerekçesi yazılı değil"*dı — gerekçe `AbsenceCalculator`'ın XML doc'una yazıldı.
+Geriye kalan tek pencere (kanal gönderimi ile DB izinin commit'i arası) bu maddenin
+değil dispatcher'ın bilinen `Debt-N6`'sıdır; çözümü Outbox.
+
+**Kararın uygulanmaması bilinçlidir ve kullanıcıya bildirilmiştir.**
+
+### Yan iş — X-06 deseni bir kez daha
+
+`TB-103`'ün profil sorgusu için **gerçek SQL testi** yazıldı. Sebep: öğrenci yüzünün on
+ucu o kapıdan geçiyor ama birim testlerinin hepsi `IClubScope`'u **ikame ediyor** —
+üretimdeki TPH `OfType<StudentProfile>()` sorgusu hiçbir testte koşmuyordu.
+
+### Doğrulama
+
+`oksis-api` 3913 birim + **1049 entegrasyon** (gerçek SQL Server) yeşil.
+`oksis-ui` 926 test + lint + typecheck + `next build` temiz.
