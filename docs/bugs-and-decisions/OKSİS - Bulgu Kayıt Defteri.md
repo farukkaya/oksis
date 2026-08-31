@@ -34,14 +34,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 1 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
-| 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 4 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 2 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 0 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **9** | |
+| **Toplam** | **5** | |
 
-**Modül dağılımı:** Görevlendirme 2 · Duyurular 2 · Kulüp 1 · Kullanıcılar 1 ·
-Ders programı 1 · Nöbet 1 · Takvim 1 · Çapraz kesen 1
+**Modül dağılımı:** Görevlendirme 2 · Kullanıcılar 1 · Nöbet 1 · Çapraz kesen 1
 
 **Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **21 yön kararının tamamı**
 bağlandı — bu liste ilk kez boş. Kararların kanonik kaydı:
@@ -60,24 +59,6 @@ TB-55 ──►  B-20 ve TB-20'nin branş ayağı birlikte kapanır
 TB-46 ──►  not modülü başlamadan ÖNCE (iki rakip ağırlık tanımı)
 X-16  ──►  not modülü analizinin §7.3'ü düzeltilmeden geliştirmeye başlanmaz
 ```
-
----
-
-## 1. Kulüp Modülü 🟡
-
-Aktif modül. Kod taraması (2026-08-29, `oksis-api` @ `1acf29a` · `oksis-ui` @ `1fec5aa`)
-ve uçtan uca ekran testi (2026-08-30, `s1` · web + mobil web) birlikte. Uçların kendisi
-sağlam çıktı; bulguların çoğu **ekran ile sunucunun ayrıştığı** yerlerde.
-Test rehberi: `oksis-api/docs/testing/kulup-modulu-test-rehberi.md`.
-
-### `E-20` · Kulüp push'unu yönetici açamaz — matriste push sütunu yok 🟡
-
-Backend matris satırı `SupportsPush` + `PushEnabled` döndürüyor
-(`NotificationMatrixDto.cs:35-79`, `efb42f2`), `RuleItem.PushEnabled` üç
-durumlu yazılıyor (`dba6997`); web `notification-tab.tsx:109-146` yalnız
-Portal / E-posta / SMS çiziyor. K-02'nin `S-8` kapsam-dışı maddesi. Kulüpte
-görünür sonucu: `CLUB_ACTIVITY_PUBLISHED` varsayılan kapalı (S-9) ve yönetici
-açmak istese düğmesi yok. Kulüpten bağımsız, ayar ekranı işi; analiz §20.
 
 ---
 
@@ -135,43 +116,6 @@ Buna ek olarak **sezon aktivasyonu** v1 kopyalayıcısını doğrudan çağırı
 
 ---
 
-## 5. Ders Programı 🟡
-
-`ENG-02` kapandıktan sonra aynı yüzeyde ölçülenlerin açık kalanları.
-
-### `TB-63` · Ders programı tasarımında arkası olmayan iki öğe — teknik borç 🟡
-
-Kullanıcı kararıyla (2026-08-17) ikisi de bu turda **çizilmiyor**, borç olarak kayda
-geçiyor:
-
-- **"Bu derse ödev var" rozeti** (mobil öğrenci ders satırı) · `homework: true` alanı.
-  *(2026-08-31 düzeltmesi: burada "ödev modülü hiç yazılmamış, 0 entity" yazıyordu ve bu
-  bayattı — `Homework`, `HomeworkSubmission`, `HomeworkAttachment`, `HomeworkTracking`,
-  `HomeworkAuditEntry` domain'de duruyor, beş migration geçmiş.)* Eksik olan, ders programı
-  satırını besleyecek **sorgu**: bir dersin o gün ödevi var mı.
-  🔓 **Kilidi açan:** ödev ucunun ders programı satırına bağlanması.
-- **"Takvime ekle" butonu** (web başlık aksiyonu) · ICS üretimi. Uç yok.
-  🔓 **Kilidi açan:** bağımsız — istendiği anda yazılabilir. "Yazdır / PDF" istemci
-  tarafında çalıştığı için acil değil.
-
----
-
-## 6. Duyurular & Bildirimler 🟠
-
-### `TB-43` · Bildirim ayarlarının teslimata hiçbir etkisi yok 🟠
-Okul Ayarları'ndaki "Bildirimler" sekmesi üç kanallı bir olay×kanal matrisi sunuyor. **Hiçbiri çalışmıyor.** Üç ayak da ölü:
-- **Kural matrisi** (`NotificationRuleConfig`) yalnız kendi ayar sorgusunda/komutunda okunup yazılıyor; dağıtım motoru ona **hiç bakmıyor**.
-- **Kanal anahtarları** (push/e-posta/SMS) ve **ana kapama anahtarı** da dağıtımda okunmuyor. Motor kayıtlı tüm kanallar × tüm alıcılar üzerinde koşulsuz döner.
-- **Kayıtlı tek kanal in-app.** E-posta, SMS ve push kanallarının uygulaması yok — matriste sunulan iki kanalın arkasında hiçbir şey yok.
-
-**Etkisi:** Yönetici bir olayın SMS'ini kapatıyor, e-postayı açıyor, hatta bildirimleri tümden kapatıyor — davranış değişmiyor. Ekran gerçeği yansıtmıyor.
-- **Aile:** `TB-35` ile aynı desen (ayar var, tüketici yok) ama daha geniş — orada bir alan ölüydü, burada ayar sekmesinin tamamı.
-- ⬜ **Karar:** Ayarlar teslimata bağlansın mı, yoksa ekran bugünkü gerçeğe (tek kanal) indirgensin mi? İkisinin arasında kalmak en kötüsü.
-
-> 🔧 **Kod taramasından bu bölüme bağlananlar** *(2026-08-10)*: `TB-22` (acil işareti yalnız oluşturma anında sorgulanıyor), `TB-23` (onay gerektiren duyuru zamanlanınca kuyruğu atlıyor), `TB-24` (acil = e-posta kanalı seed'de yazılı, tüketicisi yok), `TB-25` (şablon acil kapısı yok), `TB-26` (onay kuyruğunda acil rozeti yok). Beşi de → [Kod Taraması Bulguları](#11-kod-taraması-bulguları-domain-map-).
-
----
-
 ## 8. Nöbet & Vekalet 🟠
 
 ### `TB-19` · Geçici muafiyet hiçbir aşamada tam uygulanmıyor 🟠
@@ -205,23 +149,6 @@ Okul Ayarları'ndaki "Bildirimler" sekmesi üç kanallı bir olay×kanal matrisi
 - **Neden borç:** İkisi de "içe aktarma" adını taşıyor ama farklı şey üretiyor. Bir okul öğretmen listesini hangisinden yüklerse yüklesin sonucu farklı: birinde branş yok ama davet var, diğerinde branş var ama davet yok. Hangisinin "doğru" yol olduğu koddan okunmuyor.
 - 🔗 `B-20`'nin (davet bayrağı ölü) ve `TB-20`'nin "davet yolunda branş sorulmuyor" ayağının ortak zemini bu ikilik. Üçü birlikte düşünülmeli: tek bir içe aktarma yolu, hem branşı çözen hem daveti üreten.
 - ⬜ **Karar gerekiyor:** hangisi kalacak? Birleştirme kapsam kararıdır; bugün ikisi de canlı.
-
----
-
-## 11. Takvim & Master Data 🟠
-
-### `E-13` · Resmî tatil kataloğu dini bayramları taşıyamıyor 🟠
-- **Belirti:** `/settings` → Tatil Takvimi, 2025-2026 sezonu için **"Resmî: 5 kayıt"**:
-  29 Ekim · 1 Ocak · 23 Nisan · 1 Mayıs · 19 Mayıs.
-- **Ölçüm:** `master.official_holidays` **tüm içeriği 7 satır** ve şema `month`, `day`, `is_annual`:
-  Yılbaşı · 23 Nisan · 1 Mayıs · 19 Mayıs · 15 Temmuz · 30 Ağustos · 29 Ekim.
-- **Eksik:** Ramazan ve Kurban Bayramı. 2026'da ikisi de sezon içine düşüyor
-  (Ramazan ~19–21 Mart, Kurban ~26–29 Mayıs) ve okullar tatil. Arife yarım günleri de yok.
-- **Neden yalnız veri eksiği değil:** Tablo sabit ay/gün tutuyor; dini bayramlar hicri takvime
-  bağlı olduğu için **her yıl kayıyor** ve 3,5–4,5 gün sürüyor. Mevcut şema bunu ifade edemez —
-  yıl bazlı tarih aralığı + arife (yarım gün) desteği gerekiyor.
-- **Etkisi:** Devamsızlık hesabı, ders programı, akademik takvim ve yoklama pencereleri
-  bayram günlerini normal ders günü sayıyor.
 
 ---
 

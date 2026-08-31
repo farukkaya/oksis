@@ -5360,3 +5360,126 @@ bağlıdır** (`K-12` §C8) ve bu bilinçlidir; kuralın sonucu ekranda görünm
 kaçırmıştı, `E-01` engeli yanlış yerde arıyordu, `TB-38`'in "veri kaybı riski" yoktu).
 Bulgunun **belirtisi** doğru olsa bile **tarifi**, o alana gerçekten dokunulana kadar
 doğrulanmış sayılmıyor.
+
+
+---
+
+## 37. Bildirim Kanalı, Takvim ve Ders Programı — 4 madde (2026-08-31) ✅
+
+Defter sıfırlama turunun son kod bloğu. Bu blok **dört bölümü birden** defterden
+düşürdü: Kulüp, Ders Programı, Duyurular & Bildirimler, Takvim & Master Data.
+
+### Defterden taşınan bloklar
+
+### `E-20` · Kulüp push'unu yönetici açamaz — matriste push sütunu yok 🟡
+
+Backend matris satırı `SupportsPush` + `PushEnabled` döndürüyor
+(`NotificationMatrixDto.cs:35-79`, `efb42f2`), `RuleItem.PushEnabled` üç
+durumlu yazılıyor (`dba6997`); web `notification-tab.tsx:109-146` yalnız
+Portal / E-posta / SMS çiziyor. K-02'nin `S-8` kapsam-dışı maddesi. Kulüpte
+görünür sonucu: `CLUB_ACTIVITY_PUBLISHED` varsayılan kapalı (S-9) ve yönetici
+açmak istese düğmesi yok. Kulüpten bağımsız, ayar ekranı işi; analiz §20.
+
+
+### `TB-43` · Bildirim ayarlarının teslimata hiçbir etkisi yok 🟠
+Okul Ayarları'ndaki "Bildirimler" sekmesi üç kanallı bir olay×kanal matrisi sunuyor. **Hiçbiri çalışmıyor.** Üç ayak da ölü:
+- **Kural matrisi** (`NotificationRuleConfig`) yalnız kendi ayar sorgusunda/komutunda okunup yazılıyor; dağıtım motoru ona **hiç bakmıyor**.
+- **Kanal anahtarları** (push/e-posta/SMS) ve **ana kapama anahtarı** da dağıtımda okunmuyor. Motor kayıtlı tüm kanallar × tüm alıcılar üzerinde koşulsuz döner.
+- **Kayıtlı tek kanal in-app.** E-posta, SMS ve push kanallarının uygulaması yok — matriste sunulan iki kanalın arkasında hiçbir şey yok.
+
+**Etkisi:** Yönetici bir olayın SMS'ini kapatıyor, e-postayı açıyor, hatta bildirimleri tümden kapatıyor — davranış değişmiyor. Ekran gerçeği yansıtmıyor.
+- **Aile:** `TB-35` ile aynı desen (ayar var, tüketici yok) ama daha geniş — orada bir alan ölüydü, burada ayar sekmesinin tamamı.
+- ⬜ **Karar:** Ayarlar teslimata bağlansın mı, yoksa ekran bugünkü gerçeğe (tek kanal) indirgensin mi? İkisinin arasında kalmak en kötüsü.
+
+
+### `TB-63` · Ders programı tasarımında arkası olmayan iki öğe — teknik borç 🟡
+
+Kullanıcı kararıyla (2026-08-17) ikisi de bu turda **çizilmiyor**, borç olarak kayda
+geçiyor:
+
+- **"Bu derse ödev var" rozeti** (mobil öğrenci ders satırı) · `homework: true` alanı.
+  *(2026-08-31 düzeltmesi: burada "ödev modülü hiç yazılmamış, 0 entity" yazıyordu ve bu
+  bayattı — `Homework`, `HomeworkSubmission`, `HomeworkAttachment`, `HomeworkTracking`,
+  `HomeworkAuditEntry` domain'de duruyor, beş migration geçmiş.)* Eksik olan, ders programı
+  satırını besleyecek **sorgu**: bir dersin o gün ödevi var mı.
+  🔓 **Kilidi açan:** ödev ucunun ders programı satırına bağlanması.
+- **"Takvime ekle" butonu** (web başlık aksiyonu) · ICS üretimi. Uç yok.
+  🔓 **Kilidi açan:** bağımsız — istendiği anda yazılabilir. "Yazdır / PDF" istemci
+  tarafında çalıştığı için acil değil.
+
+
+### `E-13` · Resmî tatil kataloğu dini bayramları taşıyamıyor 🟠
+- **Belirti:** `/settings` → Tatil Takvimi, 2025-2026 sezonu için **"Resmî: 5 kayıt"**:
+  29 Ekim · 1 Ocak · 23 Nisan · 1 Mayıs · 19 Mayıs.
+- **Ölçüm:** `master.official_holidays` **tüm içeriği 7 satır** ve şema `month`, `day`, `is_annual`:
+  Yılbaşı · 23 Nisan · 1 Mayıs · 19 Mayıs · 15 Temmuz · 30 Ağustos · 29 Ekim.
+- **Eksik:** Ramazan ve Kurban Bayramı. 2026'da ikisi de sezon içine düşüyor
+  (Ramazan ~19–21 Mart, Kurban ~26–29 Mayıs) ve okullar tatil. Arife yarım günleri de yok.
+- **Neden yalnız veri eksiği değil:** Tablo sabit ay/gün tutuyor; dini bayramlar hicri takvime
+  bağlı olduğu için **her yıl kayıyor** ve 3,5–4,5 gün sürüyor. Mevcut şema bunu ifade edemez —
+  yıl bazlı tarih aralığı + arife (yarım gün) desteği gerekiyor.
+- **Etkisi:** Devamsızlık hesabı, ders programı, akademik takvim ve yoklama pencereleri
+  bayram günlerini normal ders günü sayıyor.
+
+### Kapanış — ne yapıldı
+
+✅ **KAPANDI — 2026-08-31** · `oksis-api` @ `7e3f891`(BE) · `001dd56` · `oksis-ui` @
+`7e3f891`(FE) · `a9050fe`.
+
+**`TB-43` — defterin cümlesi bayattı, gerçek eksik üç maddeydi.** Madde *"kayıtlı tek
+kanal in-app, ayarlar teslimata hiç bakmıyor"* diyordu; ölçüldüğünde **push kanalı
+matrisi beş kapıyla zaten okuyordu**. Kapanan üç şey:
+1. **`EmailNotificationChannel` yazıldı.** `SmtpEmailSender` depoda vardı ama tüketicisi
+   yalnız kimlik akışlarıydı — taşıyıcı hazır, fan-out'a bağlı değildi. Kapılar push'un
+   birebir karşılığı. **Sessiz saat kapısı YOK** ve bu bilinçli: e-posta telefonu titretmez.
+2. **In-app kanalının HİÇ kapısı yoktu** — matristeki "Portal" sütunu bu yüzden
+   yalancıydı. İki kapı bağlandı; `NotificationConfig.IsEnabled` (ana kapama anahtarı)
+   repoda **hiçbir yerde okunmuyordu**.
+3. Kanal sırası testi üçüncü kanalla güncellendi; kilitlenen kural aynı (in-app önce).
+
+**`E-20` — ekrandaki sütunlar ile çalışan sütun tersti.** Sunucu `SupportsPush` ve
+`PushEnabled`'ı Faz 0'dan beri döndürüyordu; FE eşlemesi almıyor, ekran çizmiyordu.
+Görünen üç sütunun (Portal/E-posta/SMS) hiçbirinin arkasında bir şey yokken, gerçekten
+çalışan tek kanal ekranda **yoktu**. Zincir tamamlandı (contract → api → core → mantık →
+ekran). `K-12` §A3 gereği SMS sütunu, "Günlük SMS Limiti" ve "SMS Kotası" kartı kalktı;
+**kolonlar sözleşmede kaldı** ([[serilesmis-sekil-sozlesmedir]]).
+
+**`TB-63` — iki ayak, iki farklı yanlış gerekçe.**
+*Rozet:* gerekçe *"ödev modülü hiç yazılmadı"* idi ve geçersizdi. Ölçüt **teslim
+tarihidir**, ödevin verildiği gün değil; taslak ödev sayılmaz; yalnız **şube ekseninde**
+dolu (öğretmen aynı dersi beş şubede veriyor olabilir ve rozet hangi şubeyi kastettiğini
+söyleyemezdi). Tek sorgu, ders sayısından bağımsız.
+*ICS:* gerekçe *"uç yok"* idi — **uç gerekmiyor.** Ekranın elinde zaten haftanın tam ders
+listesi var; sunucuya gitmek aynı veriyi ikinci kez üretmek ve o üretimin iki yerde
+ayrışması demekti (`TB-76`/`TB-77`/`TB-98` deseni). Kararlar testte yazılı: iptal edilen
+ders dosyaya girmez (takvim bir yapılacaklar listesidir), devredilen girmez ama vekâleten
+alınan girer, **RRULE yok** (program istisnalarla hafta hafta değişir; tekrar kuralı bir
+sonraki haftanın gerçeğini yalanlardı).
+
+**`E-13` — şema üç alanla genişledi.** `Year` · `EndMonth`/`EndDay` · `IsHalfDay`.
+Eski yorum *"dini bayramlar yılla değiştiği için bu tabloda tutulmaz; yönetici manuel
+ekler"* diyordu; o çözüm **380 okulun her birinin her yıl aynı ödevi doğru yapmasına**
+bağlıydı.
+⚠️ **2026–2030 tarihleri TASLAKTIR ve doğrulanmamıştır** (`K-12` §A5): kullanıcı Diyanet
+takvimiyle karşılaştırıp onaylayana kadar canlıya çıkmamalıdır.
+
+### Turun yan bulgusu — kuralın ÜÇÜNCÜ kopyası
+
+`E-13` uygulanırken entegrasyon testi iki gün sonra patladı ve sebebi şuydu: tatil
+genişletme kuralının **üçüncü bir kopyası** `HolidayCalendarReader`'daydı ve yalnız
+ay/gün biliyordu. Yıla çivili bayramları **her yılda** üretti; **2100'ün 18 Mart'ını
+2026 Ramazan arifesi sandı** ve o günün yoklama işini tatil diye atladı.
+
+Kopya kaldırıldı, `OfficialHolidayResolver` paylaşıldı. Bu, turun tekrar tekrar
+gördüğü desenin bir örneği daha: *aynı soruya iki kaynaktan cevap veren her yer er geç
+ayrışıyor* — ve ayrışma genellikle **yıllar sonraki bir tarihte**, hiç beklenmedik bir
+testte görünüyor.
+
+Ayrıca `StudentAttendanceViewsTests`'in seçtiği 17 Mayıs 2027, taslak Kurban Bayramı
+aralığına (16–19 Mayıs) düştü. Doğru düzeltme **bayram tarihini kaydırmak değil** testin
+gününü boş bir güne almaktı: test tatili değil "Absent varsa verdict=out" kuralını ölçüyor.
+
+### Doğrulama
+
+`oksis-api` 3924 birim + **1049 entegrasyon** (gerçek SQL Server) yeşil.
+`oksis-ui` 933 test + lint + typecheck + `next build` temiz.
