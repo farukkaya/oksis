@@ -769,6 +769,8 @@ sınıf listeleyemez.
 
 ## K-13 · Öğretmen haftalık kapasite alanı
 
+> 🎨 **Tasarım hazır (2026-09-01, Oksis Layout V2):** `web/teacher-capacity.jsx` — MEB preset (Sınıf 18+12 · Branş 15+15) VE serbest saat birlikte çizildi; kapasite sütunu, Özel/Vars. rozeti, aşım durumu. Karar (a) şıkkı tasarımda iki modlu görülebilir.
+
 --- start-multi-column: K-13
 ```column-settings
 number of columns: 2
@@ -815,6 +817,8 @@ Türkiye'de kapasite tek sayı da değil: maaş karşılığı 15 saat (branş) 
 ---
 
 ## K-14 · Üretim dağıtım kısıtı (pinleme)
+
+> 🎨 **Tasarım hazır (2026-09-01, Oksis Layout V2):** `web/schedule-distribution-constraints.jsx` — sabitle/hariç tut temel, bölüşüm `sdcBolusum` tweak'iyle varyant (a); ihlal davranışı Uyarı/Engel `sdcIhlal` tweak'iyle iki varyant (b). Karar bu iki anahtar açılıp bakılarak verilebilir. ⚠️ Tasarım gerekçeyi ZORUNLU yaptı (≥15 karakter) — brief opsiyonel demişti; karara bağlanmalı.
 
 --- start-multi-column: K-14
 ```column-settings
@@ -865,6 +869,8 @@ ilkesini bozmaz — bayatlamaz, yalnız ihlal edilir ve ihlal ölçülür.
 ---
 
 ## K-15 · Ders dışı yük görünürlüğü
+
+> 🎨 **Tasarım hazır (2026-09-01, Oksis Layout V2):** parçalı yük çubuğu (`TeacherLoadBar`) tablo+çekmecede; ders dışı mini liste; "Program yayınlanmadı" ayrı durum. (b) varsayımı UI'da açıkça damgalı: nöbet günü 2 saat · kulüp 2 saat.
 
 --- start-multi-column: K-15
 ```column-settings
