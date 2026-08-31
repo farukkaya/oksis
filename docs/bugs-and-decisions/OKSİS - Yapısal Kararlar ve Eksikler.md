@@ -18,7 +18,7 @@
 
 # 📋 Karar Panosu
 
-**Karara bağlanan: 10 / 17**
+**Karara bağlanan: 13 / 17**
 
 | ID | Konu | Durum | Tarih | Karar özeti |
 |:--|:--|:--|:--|:--|
@@ -34,9 +34,9 @@
 | **K-08** | Dini bayramlar için tatil şeması değişikliği | ⏸️ Ertelendi | 2026-08-16 | Ayrı iş olarak planlanacak |
 | **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ✅ Karara bağlandı | 2026-08-16 | "Örnek veri" rozeti |
 | **K-10** | Ders programının görevlendirme kaynağı (v1 mi v2 mi) | ✅ Karara bağlandı · **uygulandı** | 2026-08-16 · uygulama 2026-08-18 | v2 + müfredattan türet, v1 emekli — **v1 tablosu düştü**, bkz. `X-15` |
-| **K-13** | Öğretmen haftalık kapasite alanı | ⬜ Bekliyor | — | — |
-| **K-14** | Üretim dağıtım kısıtı (pinleme) | ⬜ Bekliyor | — | — |
-| **K-15** | Ders dışı yük görünürlüğü | ⬜ Bekliyor | — | — |
+| **K-13** | Öğretmen haftalık kapasite alanı | ✅ Karara bağlandı | 2026-09-01 | Preset + serbest · solver'da yumuşak kısıt · varsayılan 30 |
+| **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz |
+| **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ, bilgi amaçlı |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -802,15 +802,15 @@ Türkiye'de kapasite tek sayı da değil: maaş karşılığı 15 saat (branş) 
 
 ### ✍️ Karar Alanı
 
-**Durum:** ⬜ Bekliyor
-**Tarih:** —
-**Karar veren:** —
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-09-01
+**Karar veren:** Faruk Kaya
 
 **Karar**
-> —
+> **(1) Giriş iki modlu:** MEB preset (Sınıf 18 + ≤12 ek · Branş 15 + ≤15 ek) VE serbest saat — tasarımdaki modal aynen. **(2) Solver'a yumuşak kısıt:** puanlama kapasiteye göre dengeler, aşım mümkündür, yayın önizlemesinde uyarı çıkar. **(3) Varsayılan 30** — mevcut davranış birebir korunur; kaynak rozeti Varsayılan/Özel ayrımını gösterir.
 
 **Gerekçe**
-> —
+> Preset devlet pratiğine hızlı yol, serbest giriş özel okul sözleşmesini karşılar; ikisini birden taşımanın maliyet farkı yok. Sert kısıt tek-öğretmenli branşta üretimi eksik bırakırdı; yalnız-rapor ise KPI'yı düzeltip üretimi eski körlüğünde bırakırdı — yumuşak kısıt ikisinin dengesi. Branştan türetilen varsayılan, doğrulanmamış bandlarla KPI'ları bir gecede oynatırdı.
 
 --- end-multi-column
 
@@ -854,15 +854,16 @@ ilkesini bozmaz — bayatlamaz, yalnız ihlal edilir ve ihlal ölçülür.
 
 ### ✍️ Karar Alanı
 
-**Durum:** ⬜ Bekliyor
-**Tarih:** —
-**Karar veren:** —
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-09-01
+**Karar veren:** Faruk Kaya
 
 **Karar**
-> —
+> **(1) MVP = sabitle + hariç tut;** bölüşüm tasarımda varyant olarak bekler (`sdcBolusum`). **(2) İhlal = uyarı** — önizlemede ve kısıt ekranında görünür, yayını engellemez. **(3) Gerekçe yalnız alan-dışı seçimde zorunlu**, diğerlerinde opsiyonel (Görevlendirmeler emsali). **(4) Devirde kopyalanmaz** — her sezon temiz başlar.
 
 **Gerekçe**
-> —
+> Sabitle/hariç tut aday havuzunu daraltmaktan ibaret (solver'da ucuz); bölüşüm yerleşim modeline dokunur, ayrı kalem. Uyarıdan engele sıkılaştırmak kolay, tersi zordur. Her kısıtta zorunlu gerekçe kısa sürede 'asdf' üretir; denetim izinin hassas yeri alan-dışıdır. Kısıt şube+kadro kesişimine bağlıdır — kopyalanan kısıt bayat niyet taşır.
+> ⚠️ **Tasarım revizyonu doğdu:** modal bugün HER kısıtta ≥15 karakter istiyor → yalnız alan-dışında zorunlu olacak.
 
 --- end-multi-column
 
@@ -904,15 +905,16 @@ bir `NonTeachingLoad` görünümü; toplam yük yalnız **rapor düzleminde** bi
 
 ### ✍️ Karar Alanı
 
-**Durum:** ⬜ Bekliyor
-**Tarih:** —
-**Karar veren:** —
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-09-01
+**Karar veren:** Faruk Kaya
 
 **Karar**
-> —
+> **(1) Kaynaklar: nöbet + kulüp danışmanlığı** (verisi bugün var olan ikili; etüt/kurs doğduğunda aynı türetme noktasına eklenir). **(2) Katsayılar okul ayarında** — sunucu varsayılanı nöbet günü 2 · kulüp danışmanlığı 2 saat. **(3) Kapasite hesabına GİRMEZ** — yük yüzdesi ve aşım salt ders saatinden; ders dışı yük ayrı segment/satır olarak bilgi amaçlı gösterilir.
 
 **Gerekçe**
-> —
+> Katsayı kurum politikasıdır; hesap sunucuda, değer okul ayarında yaşar ([[kural-ekranda-degil-sunucuda]]). Kapasiteye dahil edilseydi tüm yük KPI'larının bugünkü anlamı bir günde değişirdi; yüzde 'derse ayrılan kapasite'yi anlatmayı sürdürür, ders dışı görünürlük ayrıca kazanılır.
+> ⚠️ **Tasarım revizyonu doğdu:** gösterge bugün toplamı (ders + ders dışı) kapasiteyle karşılaştırıyor — % ve Aşım salt ders saatine bağlanacak, ders dışı segment bilgi olarak kalacak.
 
 --- end-multi-column
 

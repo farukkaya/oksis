@@ -41,9 +41,8 @@ sayaçlar üçü arasında ortak.
 
 **Modül dağılımı:** Nöbet 1 · Çapraz kesen 1
 
-**Senin kararını bekleyenler:** `K-13` · `K-14` · `K-15` (görevlendirme modeli eklemeleri,
-2026-09-01 — [[OKSİS - Yapısal Kararlar ve Eksikler]]). Defter maddelerinin kendisi karar
-beklemiyor; önceki turun kaydı: [[K-12 - Defter Sıfırlama Karar Turu]].
+**Senin kararını bekleyenler: YOK.** `K-13`/`K-14`/`K-15` 2026-09-01'de bağlandı —
+kayıt: [[OKSİS - Yapısal Kararlar ve Eksikler]]. Önceki tur: [[K-12 - Defter Sıfırlama Karar Turu]].
 
 **Zincirler — hangi madde hangisini bekliyor**
 
