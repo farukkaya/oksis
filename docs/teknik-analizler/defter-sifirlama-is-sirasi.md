@@ -5,9 +5,10 @@
 > **Kardeş belge:** [[bulgu-kapanis-turu-teknik-analiz]] (bir önceki tur, 12 madde).
 
 > [!success] Faz 0 TAMAMLANDI — 2026-08-31
-> **20 yön kararının tamamı bağlandı:** [[K-12 - Defter Sıfırlama Karar Turu]].
-> Defterin "senin kararını bekleyenler" listesi ilk kez **boş**. `TB-29` kapsam dışı
-> yazılıp Yapısal Kararlar'a, `D-04` geri çekilip arşive taşındı — **defter 38 → 36**.
+> **21 yön kararının tamamı bağlandı:** [[K-12 - Defter Sıfırlama Karar Turu]].
+> Defterin "senin kararını bekleyenler" listesi ilk kez **boş**. `TB-29` ve `X-11` kapsam
+> dışı yazılıp Yapısal Kararlar'a, `D-04` (geri çekildi) ve `E-19` (bayat) arşive taşındı —
+> **defter 38 → 34**.
 > Aşağıdaki fazlar kararlara göre revize edildi; en büyük değişiklik `TB-43`'ün
 > Faz 5'ten Faz 3'e inmesi (§11).
 
@@ -58,17 +59,38 @@ inanıp kod yazmak, turun en pahalı hatası olur.
 
 | Faz | Ne | Madde | Boyut | Ön koşul |
 |---|---|---|---|---|
-| **0** | Karar turu — kod yok ✅ | 20 karar | tamamlandı (`K-12`) | — |
+| **0** | Karar turu — kod yok ✅ | 21 karar | tamamlandı (`K-12`) | — |
+| **0.5** | **Doğrulama süpürmesi** | 34 | ~½ gün | Faz 0 |
 | **1** | Kulüp modülünü sıfırla | 8 | ~2 gün | yok |
-| **2** | Ödev ön koşulları | 6 | ~2 gün | yok |
+| **2** | Ödev ön koşulları | 5 | ~2 gün | yok |
 | **3** | Merkezî kurallar (+`TB-43`/`E-20`) | 8 | ~5 gün | Faz 0.B |
 | **4** | Kapsam kararı sonrası | 9 | ~4 gün | Faz 0.C |
 | **5** | Ayrı projeler | 4 | ayrı takvim | Faz 0.A |
-| **6** | Başka modüle kilitli | 1 | — | ödev modülü |
+| ~~**6**~~ | ~~Başka modüle kilitli~~ | 0 | — | *kilit kalktı — `TB-63` Faz 2'ye alındı* |
 
-**Faz 1–4 biterse defter 36 → 6'ya iner** (~13 iş günü; sayılar 2026-08-31 karar turuna
-göre revize edildi, ayrıntı §11). Kalan 6'nın 5'i kendi planını hak eden kalemler
-(`TB-48`, `X-03`, `X-06`, `E-13`, `B-07`), 1'i başka modüle kilitli (`TB-63`).
+**Faz 1–4 biterse defter 34 → 4'e iner** (~13 iş günü; sayılar 2026-08-31 karar turuna
+göre revize edildi, ayrıntı §11). Kalan 4'ü ayrı proje: `TB-48`, `X-03`, `X-06`, `E-13`.
+*(`B-07` zaten arşivde — önceki sayımda sehven açık sayılmıştı. `TB-63`'ün kilidi kalktı:
+ödev modülü tam yazılmış, madde Faz 2'ye alındı. Faz 6 boş.)*
+
+---
+
+## 1.5 Faz 0.5 — Doğrulama süpürmesi (Faz 1'den ÖNCE)
+
+Karar turunda beş madde koda karşı doğrulandı ve **dördü bayat çıktı** (`K-12` §G).
+Bu oran tek tek düzeltmeyle kapanmaz: 34 maddenin her biri koda karşı işaretlenmeli —
+**geçerli / bayat / zaten kapanmış**.
+
+**Neden Faz 1'den önce:** bayat bulgu yalnız yanlış bilgi değil, **yanlış boyutlandırma**
+üretiyor. Bugüne kadar üç kez faz kararını etkiledi: `TB-43` ayrı projeye konmuştu (M
+çıktı), `E-19` bir fazın ilk adımı sayılmıştı (zaten yapılmıştı), `TB-63` başka modüle
+kilitli görünüyordu (kilit yoktu). Doğrulanmamış bir defterle yapılan planlama, planın
+kendisini çürütüyor.
+
+**Nasıl:** her madde için iddiayı üreten dosya/satır açılır ve tek cümlelik sonuç yazılır.
+Kod değişikliği YOK — yalnız işaretleme. Zaten kapanmış olanlar doğrudan arşive gider.
+
+**Beklenen çıktı:** defter birkaç madde daha düşer ve kalanların boyutları güvenilir olur.
 
 ---
 

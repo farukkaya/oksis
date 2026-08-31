@@ -3,7 +3,7 @@
 **Tarih:** 2026-08-31 · **Karar veren:** kullanıcı · **Kapsam:** [[OKSİS - Bulgu Kayıt Defteri]]'ndeki
 38 açık maddenin yön kararları · **Plan:** [[defter-sifirlama-is-sirasi]]
 
-> **Ne bu dosya:** defteri sıfırlamanın önündeki **20 yön kararı** tek oturumda sırayla
+> **Ne bu dosya:** defteri sıfırlamanın önündeki **21 yön kararı** tek oturumda sırayla
 > soruldu ve bağlandı. Her satır: soru → seçilen → gerekçe → neyi açtığı.
 > Bu dosya kararların **kanonik kaydıdır**; defterdeki "senin kararını bekleyenler"
 > listesi bu turla **tamamen boşaldı**.
@@ -14,14 +14,19 @@
 
 | Küme | Karar | Sonuç |
 |---|---|---|
-| 0.A Yön | 4 | 4 ✔ |
+| 0.A Yön | 6 | 6 ✔ |
 | 0.B Merkezî kural | 5 | 5 ✔ |
 | 0.C Kapsam | 8 | 8 ✔ |
 | 0.D Metin/geri çekme | 3 | 3 ✔ |
-| **Toplam** | **20** | **20 ✔** |
+| **Toplam** | **21** | **21 ✔** |
 
-**Anında defterden düşenler:** `TB-29` (kapsam dışı → bu dosyanın E bölümü), `D-04`
-(geri çekildi → arşiv). Defter **38 → 36**.
+> ⚠️ **İlk turda 20 soruldu, biri atlandı.** `X-11` (CI sağlayıcısı) defterin "kararını
+> bekleyenler" listesindeydi ama sorulmadı; liste yine de boşaltıldı. Hata 2026-08-31'de
+> aynı gün fark edildi ve `X-11` §A6 olarak karara bağlandı. Doğru sayı **21**.
+
+**Anında defterden düşenler:** `TB-29` (kapsam dışı → §C7), `X-11` (kapsam dışı → §A6),
+`D-04` (geri çekildi → arşiv §31), `E-19` (bayat, zaten yapılmış → arşiv §32).
+Defter **38 → 34**.
 
 **Faz planındaki en büyük değişiklik:** `TB-43` "XL kanal altyapısı" sanılıyordu; kod
 doğrulaması push'un **tamamlanmış** ve SMTP taşıyıcısının **hazır** olduğunu gösterdi.
@@ -103,6 +108,24 @@ yeni borç birikmez.
 var; yanlış hesap **sessizce** yanlış takvim üretir. Öngörülebilir + denetlenebilir + dış
 bağımlılıksız yol seçildi.
 📌 `K-08` bu kararla cevaplanmıştır.
+
+**Veri kaynağı kararı (aynı gün):** taslak tarihleri ben yazarım, **her satır
+"doğrulanmadı" işaretiyle** seed'e girer; kullanıcı Diyanet takvimiyle karşılaştırıp
+onaylar. 🚫 **Onaylanmadan canlıya çıkmaz** — devamsızlık hesabı ve yoklama pencereleri
+bu tarihlere bakacak, yaklaşık tarih yeterli değil.
+
+### A6 · `X-11` — CI kapısı → **Kanca yeterli, kapsam dışı**
+
+Sağlayıcı tabanlı CI (GitHub Actions vb.) kurulmayacak; bugünkü pre-push kancası kapı
+olarak yeterli sayıldı ve **bugünkü kapsamında kalacak**: build + birim testleri +
+lint/typecheck. **Entegrasyon testleri kancaya eklenmeyecek**, elle koşulacak.
+
+Madde [[OKSİS - Yapısal Kararlar ve Eksikler]]'e taşındı ve defterden düştü.
+
+⚠️ **Bilinen bedeli üç maddede yazılı:** kanca `--no-verify` ile atlanabilir ve kurmamış
+geliştiriciyi etkilemez · 1048 entegrasyon testi hiçbir otomatik kapıda koşmuyor (`TB-57`
+bu boşluktan geçti) · `X-06`'nın ortak koşumu yazıldığında onun ürettiği doğrulama da
+yalnız elle koşulacak.
 
 ---
 
@@ -246,10 +269,36 @@ aksi hâlde `X-17`'nin şikâyet ettiği "yanlış teşhis" kalıbı not modül�
 
 | Madde | Nereye | Sebep |
 |---|---|---|
-| `TB-29` 🟠 | [[OKSİS - Yapısal Kararlar ve Eksikler]] | Kapsam dışı (C7) |
-| `D-04` ❓ | [[OKSİS - Bulgu Arşivi]] | Geri çekildi (D) |
+| `TB-29` 🟡 | [[OKSİS - Yapısal Kararlar ve Eksikler]] | Kapsam dışı (§C7) |
+| `X-11` 🟠 | [[OKSİS - Yapısal Kararlar ve Eksikler]] | Kapsam dışı (§A6) |
+| `D-04` ❓ | [[OKSİS - Bulgu Arşivi]] §31 | Geri çekildi (§D) |
+| `E-19` 🟡 | [[OKSİS - Bulgu Arşivi]] §32 | Bayat — istek zaten karşılanmıştı (§G) |
 
-**Defter: 38 → 36.**
+**Defter: 38 → 34.**
+
+---
+
+## G. Turun bulduğu bayat maddeler
+
+Karar hazırlığında **beş madde koda karşı doğrulandı, dördü bayat çıktı.**
+
+| Madde | Defter ne diyordu | Gerçek | Sonuç |
+|---|---|---|---|
+| `TB-43` | "kayıtlı tek kanal in-app, ayarlar teslimata bakmıyor" | Push kanalı matrisi **beş kapıyla** okuyor | Kalem XL → M, Faz 5 → Faz 3 |
+| `TB-46` | "not modülü boş klasör (`TB-13`)" | `Grades` domain'i var | Atıf düzeltildi |
+| `TB-63` | "ödev modülü hiç yazılmamış, 0 entity" | Domain + Application + `HomeworkController` **tam** | Kilit kalktı, Faz 6 boşaldı |
+| `E-19` | "`homework.write` izni seed'de yok" | Var (`PermissionSeedData.cs:88`) + `manage` katalog dışı | **Kapandı**, arşiv §32 |
+| `TB-82` | "iki ucun mock handler'ı yok" | Doğru — `homework-handlers.ts`'te hâlâ yok | Geçerli |
+
+**Sonuç ve yeni kural.** Bayat bulgu yalnız yanlış bilgi değil, **yanlış boyutlandırma**
+üretiyor: `TB-43` bu yüzden ayrı projeye konmuştu, `E-19` bir fazın ilk adımı sayılmıştı,
+`TB-63` başka bir modüle kilitli görünüyordu. Defterin kendi kuralı — *her blok koddan
+doğrulamayla başlar* — bundan sonra **karar ve planlama turlarına da** uygulanır.
+
+🚧 **Bu yüzden Faz 1'den önce bir doğrulama süpürmesi gerekiyor** (bkz.
+[[defter-sifirlama-is-sirasi]] §2.5): 34 maddenin her biri koda karşı *geçerli / bayat /
+zaten kapanmış* diye işaretlenir. Bugünkü örnekleme oranı (4/5) bu adımın defteri
+kendiliğinden birkaç madde daha düşüreceğini gösteriyor.
 
 ---
 

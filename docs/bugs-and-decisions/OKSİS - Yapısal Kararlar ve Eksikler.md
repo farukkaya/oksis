@@ -902,6 +902,26 @@ Kademe kaldırılacak, altyapı korunacak. **Uygulama yeri** `K-04`'te netleşme
 
 # D. Teknik Borç 🔧
 
+### X-11 · CI kapısı — pre-push kancasıyla yetinildi ⏸️ kapsam dışı
+
+> 📥 **Bulgu defterinden devralındı — 2026-08-31** ([[K-12 - Defter Sıfırlama Karar Turu]] §A6).
+
+- **Bugünkü kapı:** pre-push git kancası — `oksis-ui` lint + typecheck, `oksis-api` build +
+  birim testleri. Gerçekten durdurduğu kanıtlandı (`oksis-ui` @ `3e4fb62`, `oksis-api` @
+  `03137e2`). Kurulum: `git config core.hooksPath .githooks`.
+- ✅ **Karar (2026-08-31): sağlayıcı tabanlı CI kurulmayacak.** Kanca yeterli sayıldı ve
+  **bugünkü kapsamında kalacak** (build + birim + lint/typecheck); entegrasyon testleri
+  kancaya EKLENMEYECEK, elle koşulacak.
+- ⚠️ **Bekletmenin bilinen bedeli, üç madde:**
+  1. Kanca `--no-verify` ile atlanabilir ve **kancayı kurmamış** bir geliştiriciyi hiç
+     etkilemez.
+  2. Entegrasyon testleri (bugün 1048 test, gerçek SQL Server) hiçbir otomatik kapıda
+     koşmuyor — `TB-57` tam da bu boşluktan geçti.
+  3. `X-06`'nın ortak koşumu yazıldığında onun ürettiği doğrulama da yalnız elle koşulacak;
+     yani 92 handler'ın çevirisi otomatik olarak korunmayacak.
+- 🔓 **Kilidi açan:** ikinci bir geliştiricinin projeye katılması ya da entegrasyon
+  koşusunun elle unutulduğu ilk gerçek olay.
+
 ### TB-29 · Öğretmen müsaitliği — ekran yok, çözünürlük ayrışık ⏸️ kapsam dışı
 
 > 📥 **Bulgu defterinden devralındı — 2026-08-31** ([[K-12 - Defter Sıfırlama Karar Turu]] §C7).

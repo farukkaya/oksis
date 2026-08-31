@@ -4644,3 +4644,46 @@ C-fazı çalışmasıyla düzelmiş olabilir, (b) kastedilen ekran başka bir ş
 bulguyu **belirsiz** tutmanın maliyeti, onu yanlış kapatmanın maliyetinden düşük ama
 sıfır değil: her turda yeniden okundu, yeniden ölçüldü. Tekrar görülürse yeni ID ile
 açılır.
+
+
+---
+
+## 32. `E-19` · Bayat bulgu — istek zaten karşılanmıştı (2026-08-31)
+
+`K-12` karar turunun doğrulama adımında bulundu: madde bir eksiği tarif ediyordu, o eksik
+**kapanmıştı** ve defter haberdar değildi.
+
+### Defterden taşınan blok
+
+### `E-19` · `homework.write` izni seed'de yok 🟡
+
+`PermissionSeedData.cs:86-88` yalnız iki satır taşıyor: `homework.read`,
+`homework.manage`. "Öğretmen yazar / yönetici yönetir" ayrımı üçüncü izne
+dayanıyor ve o izin hiç açılmamış.
+
+Bugün etkisi yok (modül yazılmadı), ama **modülün ilk adımı budur**: kapsam
+kapılarının hepsi bu izin kodunun varlığını varsayıyor. `homework.manage` de
+`grades.manage` emsaliyle `AllPermissionIds()` kataloğuna **girmemeli**, yalnız
+`SchoolAdmin` satırıyla verilmeli — platform hesabı okul içi ödev kararı vermez.
+
+### Ölçüm
+
+✅ **ZATEN YAPILMIŞ — 2026-08-31 doğrulaması.** Maddenin iki isteği de karşılanmış durumda:
+
+1. **`homework.write` seed'de VAR** — `PermissionSeedData.cs:88`
+   (`"HOMEWORK", "WRITE", "homework.write"`), yanında `homework.read` (87) ve
+   `homework.manage` (89).
+2. **`homework.manage` `AllPermissionIds()` kataloğunda DEĞİL** — `RolePermissionSeedData.cs:322`
+   katalogda yalnız `HomeworkRead`'i sayıyor; `HomeworkWrite` ve `HomeworkManage` satır 38–39'da
+   **yalnız `SchoolAdmin`** rolüne veriliyor. Maddenin `grades.manage` emsaliyle istediği tam
+   olarak buydu — platform hesabı okul içi ödev kararı vermiyor.
+
+Hiçbir kod değişikliği yapılmadı; yalnız defter gerçekle eşitlendi.
+
+### Ders — defter de bayatlıyor
+
+Bu, karar turunda bulunan **beşinci** bayat iddiaydı (`TB-43`, `TB-46`, `TB-63`, `E-19` bayat;
+`TB-82` hâlâ geçerli). Rastgele beş maddeden dördü. Bayat bir bulgu yalnız yanlış bilgi
+değil — **yanlış boyutlandırma** üretiyor: `TB-43` bu yüzden XL sanılıp ayrı projeye
+konmuştu, `E-19` ise bir fazın ilk adımı sayılmıştı. Defterin kendi kuralı (*her blok koddan
+doğrulamayla başlar*) bundan sonra **karar ve planlama turlarına da** uygulanıyor.

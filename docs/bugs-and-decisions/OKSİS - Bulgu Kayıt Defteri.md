@@ -34,16 +34,16 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 4 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
-| 🟠 Yüksek | 9 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟠 Yüksek | 8 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 16 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 6 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **36** | |
+| **Toplam** | **34** | |
 
-**Modül dağılımı:** Kulüp 9 · Ödev 5 · Çapraz kesen 4 · Duyurular 4 · Notlar 3 ·
-Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Ders programı 1 · Takvim 1
+**Modül dağılımı:** Kulüp 9 · Ödev 4 · Duyurular 4 · Çapraz kesen 3 · Notlar 3 ·
+Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Ders programı 1 · Nöbet 1 · Takvim 1
 
-**Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **20 yön kararının tamamı**
+**Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **21 yön kararının tamamı**
 bağlandı — bu liste ilk kez boş. Kararların kanonik kaydı:
 [[K-12 - Defter Sıfırlama Karar Turu]]. Sıra ve fazlar: [[defter-sifirlama-is-sirasi]].
 
@@ -198,17 +198,6 @@ Yazma tarafı üç yerde birden eksik:
 Yani ek **yalnız seed'den doğabiliyor**. Öğretmen bugün ödeve çalışma kâğıdı ya
 da bağlantı ekleyemez. Backend yazılırken bu ucun yazma dalında mock **tarif
 değildir** — sıfırdan tasarlanacak.
-
-### `E-19` · `homework.write` izni seed'de yok 🟡
-
-`PermissionSeedData.cs:86-88` yalnız iki satır taşıyor: `homework.read`,
-`homework.manage`. "Öğretmen yazar / yönetici yönetir" ayrımı üçüncü izne
-dayanıyor ve o izin hiç açılmamış.
-
-Bugün etkisi yok (modül yazılmadı), ama **modülün ilk adımı budur**: kapsam
-kapılarının hepsi bu izin kodunun varlığını varsayıyor. `homework.manage` de
-`grades.manage` emsaliyle `AllPermissionIds()` kataloğuna **girmemeli**, yalnız
-`SchoolAdmin` satırıyla verilmeli — platform hesabı okul içi ödev kararı vermez.
 
 ### `TB-83` · Ödev bildirim olay tipleri seed'den düşmüş 🟡
 
@@ -615,17 +604,6 @@ kapanır. ⬜ **Bu tercihi vermeden başlamak yanlış.**
 - 🔍 **Ama tartının bir tarafı eksik ölçülmüş:** ödün *"boş ekran flaşı"* ile karşılaştırılmış, oysa gerçekte olan **yanlış ekranın çizilmesi + beş reddedilen istek**. Ayrıca kaçınılmak istenen flaş için gereken sinyal **zaten mevcut**: `useActiveRole` `isLoading` alanını da döndürüyor. Yani "rol yok" ile "rol henüz gelmedi" ayırt edilebilir ve kapı yalnız ikincisinde bekletebilir — boş ekran yerine iskelet gösterilerek.
 - 📌 **Kapsamı tek ekran değil:** kural her korumalı rotada aynı; `/schedule` yalnız ölçüldüğü yer. Güvenlik sınırı değil (gerçek kapı .NET tarafında, beş istek de 403 aldı) ama `B-17`'nin ve `B-01`'in şikâyet ettiği şeyin ta kendisi: **kullanıcıya sahip olmadığı bir yetenek gösteriliyor.**
 - ⬜ **Açık — karar gerektiriyor:** yazılı bir tercih değiştirileceği için `RouteGuard`'ın yükleme penceresinde bekletilmesi onaylanmalı.
-
-### `X-11` · Hiçbir CI kapısı yok — asıl çözüm hâlâ verilmedi 🟠
-
-Depolarda derleme/lint/test kapısı yoktu; kırmızı bir `master` push edilebiliyordu. Ara çözüm
-olarak **pre-push git kancası** kuruldu (`oksis-ui` → lint + typecheck, `oksis-api` → build +
-birim testleri) ve gerçekten durdurduğu kanıtlandı (`oksis-ui` @ `3e4fb62` + `oksis-api` @
-`03137e2`, 2026-08-12; ölçüm arşivde). Kurulum: `git config core.hooksPath .githooks`.
-
-⬜ **Açık kalan:** kanca yerelde çalışır, `--no-verify` ile atlanabilir ve **kancayı kurmamış**
-bir geliştiriciyi hiç etkilemez. Sağlayıcı / adımlar / PR zorunluluğu kararı verilmedi.
-`TB-57` tam da bu boşluktan geçti: entegrasyon testleri kancada yok, kimse koşmuyor.
 
 ### `X-18` · Yatay çip şeridi üçüncü kez ekranı ikiye böldü — kulüp keşfi 🟠 *(ekran düzeltildi — 2026-08-30; merkezî bileşen AÇIK)*
 
