@@ -33,15 +33,15 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 4 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
+| 🔴 Kritik | 3 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
 | 🟠 Yüksek | 8 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 11 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 3 | Kozmetik, temizlik, adlandırma |
+| 🟡 Orta | 9 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 2 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **26** | |
+| **Toplam** | **22** | |
 
-**Modül dağılımı:** Ödev 4 · Duyurular 4 · Çapraz kesen 3 · Notlar 3 · Görevlendirme 2 ·
-Kimlik 2 · Kullanıcılar 2 · Belge 2 · Kulüp 1 · Ders programı 1 · Nöbet 1 · Takvim 1
+**Modül dağılımı:** Duyurular 4 · Çapraz kesen 3 · Notlar 3 · Görevlendirme 2 · Kimlik 2 ·
+Kullanıcılar 2 · Belge 2 · Kulüp 1 · Ders programı 1 · Nöbet 1 · Takvim 1
 
 **Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **21 yön kararının tamamı**
 bağlandı — bu liste ilk kez boş. Kararların kanonik kaydı:
@@ -78,79 +78,6 @@ durumlu yazılıyor (`dba6997`); web `notification-tab.tsx:109-146` yalnız
 Portal / E-posta / SMS çiziyor. K-02'nin `S-8` kapsam-dışı maddesi. Kulüpte
 görünür sonucu: `CLUB_ACTIVITY_PUBLISHED` varsayılan kapalı (S-9) ve yönetici
 açmak istese düğmesi yok. Kulüpten bağımsız, ayar ekranı işi; analiz §20.
-
----
-
-## 2. Ödev Modülü 🔴
-
-Kod taraması (2026-08-26). Backend ödev modülü var; aşağıdakiler FE'nin kendi içinde
-ya da FE ile sözleşme arasında.
-
-### `TB-82` · İki yönetici yazma ucunun mock karşılığı hiç yazılmamış 🔴
-
-`POST /homework/{id}:publish-for` (vekâleten yayın) ve
-`POST /homework/{id}/submissions/{sid}:remove` (idari kaldırma):
-
-| Katman | Durum |
-|---|---|
-| `contract.ts` | ✔ tanımlı (satır 673, 682) |
-| `endpoints.ts` / `queries.ts` | ✔ kancalı (`usePublishOnBehalf`, `useRemoveSubmissionByAdmin`) |
-| `homework-admin-screen.tsx` | ✔ diyalog + buton (254-255, 565, 609) |
-| `homework-handlers.ts` | ✘ **handler yok** |
-| `homework-handlers.test.ts` | ✘ **tek satır yok** (97 testin hiçbiri) |
-
-Butona basıldığında istek hiçbir mock'a düşmüyor, MSW passthrough ile gerçek
-API'ye (`:5112`) gidip 404 alıyor. Faz C **doğrulanmadan** tamamlandı; bu yüzden
-görülmedi.
-
-**İkinci ayak — belge yalan söylüyor:** `oksis-ui/docs/backend-needs-homework.md`
-§7 bu iki ucu *"Faz C ile sözleşmesi yazılan ve **mock'ta çalışan** uçlar"*
-listesine koyuyor. Backend bu belgeye güvenip yazılsaydı, kabul kriteri
-olmayan iki uç "testliymiş" sayılacaktı.
-
-**Neden önemli:** mock'un birincil kaynak olması kararı (`docs/backend-needs-homework.md` §1)
-tam olarak bu iki ucun *olmayan* davranışına dayanamaz. Backend yazımına
-girmeden mock tarafı tamamlanmalı.
-
-### `E-18` · Öğretmen ödev eki: sözleşme var, yazma dalı üç yerde birden yok 🟡
-
-`CreateHomeworkBody.attachments` ve `UpdateHomeworkBody.attachments` sözleşmede
-duruyor, `HomeworkAttachmentDto` tanımlı, fixture'larda ekli ödevler var ve
-**okuma tarafı çalışıyor** (detay ekranında "Öğretmen ekleri" kartı görünüyor).
-Yazma tarafı üç yerde birden eksik:
-
-- `apps/web/features/homework/homework-create-screen.tsx:127` → `attachments: []`
-- `apps/mobile/.../homework-create-screen.tsx:130` → `attachments: []`
-- Mock `POST`/`PUT` handler'ları gövdedeki `attachments`'ı **hiç okumuyor**,
-  kayda sabit `[]` yazıyor.
-
-Yani ek **yalnız seed'den doğabiliyor**. Öğretmen bugün ödeve çalışma kâğıdı ya
-da bağlantı ekleyemez. Backend yazılırken bu ucun yazma dalında mock **tarif
-değildir** — sıfırdan tasarlanacak.
-
-### `TB-83` · Ödev bildirim olay tipleri seed'den düşmüş 🟡
-
-`HOMEWORK_CREATED` ve `HOMEWORK_DUE` eski migration snapshot'larında duruyor
-(`20260624…Designer.cs:9208,9220`), ama **güncel `NotificationEventTypeSeedData`
-sekiz olay taşıyor ve hiçbiri ödev değil**. `NotificationEventGroup` enum'unda da
-ödev grubu yok (Attendance / Academic / Payment / Announcement).
-
-Sonuç: Okul Ayarları'ndaki olay × kanal matrisinde **ödev satırı hiç yok**;
-yönetici ödev bildirimlerini oradan açıp kapatamaz. Ödev politikası ekranının
-`missingNotificationMode` alanı ile bu matris arasındaki öncelik ilişkisi de
-tanımsız — hangisi hangisini ezer?
-
-Katalog dağıtım karşılığı olmayan olayları zaten `delivered: false` ile yer
-tutucu tutuyor (`TB-44`/`TB-24` kalıbı); ödev satırları da o kalıpla eklenebilirdi.
-Silinmiş olmaları bilinçli mi, taşıma sırasında mı düştü — **kaynağı bulunamadı.**
-
-### `TB-84` · Uç numaralandırması iki belgede çelişiyor 🟢
-
-`contract.ts:682` "Uç 23"ü **idari yükleme kaldırma** sayıyor;
-`backend-needs-homework.md` §7 aynı numarayı **audit kaydı listesi** sayıyor.
-Uç numaraları belgeler arasında kimlik gibi kullanıldığı için ("uç 14-19 Faz B'de
-yazıldı") bu çelişki doğrudan karışıklık üretiyor. Teknik analiz numarayı yalnız
-mock'un yorumundan aldı ve farkı not düştü.
 
 ---
 

@@ -4842,3 +4842,132 @@ temiz; mobil rota tipleri Expo ile yeniden üretildi.
 `TB-98` alanlar zaten vardı, `TB-101`'in asıl kırığı GUID göçünden kalan ölü kimlikler).
 Faz 0.5'in gerekçesi bir kez daha doğrulandı: bulgunun **belirtisi** doğru olsa bile
 **tarifi** bayatlayabiliyor ve bayat tarif yanlış çözüme götürüyor.
+
+
+---
+
+## 34. Ödev Modülü Sıfırlandı — 4 madde (2026-08-31) ✅
+
+Defter sıfırlama turunun Faz 2'si. **Ödev bölümü defterden tamamen düştü.**
+
+### Defterden taşınan bloklar
+
+### `TB-82` · İki yönetici yazma ucunun mock karşılığı hiç yazılmamış 🔴
+
+`POST /homework/{id}:publish-for` (vekâleten yayın) ve
+`POST /homework/{id}/submissions/{sid}:remove` (idari kaldırma):
+
+| Katman | Durum |
+|---|---|
+| `contract.ts` | ✔ tanımlı (satır 673, 682) |
+| `endpoints.ts` / `queries.ts` | ✔ kancalı (`usePublishOnBehalf`, `useRemoveSubmissionByAdmin`) |
+| `homework-admin-screen.tsx` | ✔ diyalog + buton (254-255, 565, 609) |
+| `homework-handlers.ts` | ✘ **handler yok** |
+| `homework-handlers.test.ts` | ✘ **tek satır yok** (97 testin hiçbiri) |
+
+Butona basıldığında istek hiçbir mock'a düşmüyor, MSW passthrough ile gerçek
+API'ye (`:5112`) gidip 404 alıyor. Faz C **doğrulanmadan** tamamlandı; bu yüzden
+görülmedi.
+
+**İkinci ayak — belge yalan söylüyor:** `oksis-ui/docs/backend-needs-homework.md`
+§7 bu iki ucu *"Faz C ile sözleşmesi yazılan ve **mock'ta çalışan** uçlar"*
+listesine koyuyor. Backend bu belgeye güvenip yazılsaydı, kabul kriteri
+olmayan iki uç "testliymiş" sayılacaktı.
+
+**Neden önemli:** mock'un birincil kaynak olması kararı (`docs/backend-needs-homework.md` §1)
+tam olarak bu iki ucun *olmayan* davranışına dayanamaz. Backend yazımına
+girmeden mock tarafı tamamlanmalı.
+
+
+### `E-18` · Öğretmen ödev eki: sözleşme var, yazma dalı üç yerde birden yok 🟡
+
+`CreateHomeworkBody.attachments` ve `UpdateHomeworkBody.attachments` sözleşmede
+duruyor, `HomeworkAttachmentDto` tanımlı, fixture'larda ekli ödevler var ve
+**okuma tarafı çalışıyor** (detay ekranında "Öğretmen ekleri" kartı görünüyor).
+Yazma tarafı üç yerde birden eksik:
+
+- `apps/web/features/homework/homework-create-screen.tsx:127` → `attachments: []`
+- `apps/mobile/.../homework-create-screen.tsx:130` → `attachments: []`
+- Mock `POST`/`PUT` handler'ları gövdedeki `attachments`'ı **hiç okumuyor**,
+  kayda sabit `[]` yazıyor.
+
+Yani ek **yalnız seed'den doğabiliyor**. Öğretmen bugün ödeve çalışma kâğıdı ya
+da bağlantı ekleyemez. Backend yazılırken bu ucun yazma dalında mock **tarif
+değildir** — sıfırdan tasarlanacak.
+
+
+### `TB-83` · Ödev bildirim olay tipleri seed'den düşmüş 🟡
+
+`HOMEWORK_CREATED` ve `HOMEWORK_DUE` eski migration snapshot'larında duruyor
+(`20260624…Designer.cs:9208,9220`), ama **güncel `NotificationEventTypeSeedData`
+sekiz olay taşıyor ve hiçbiri ödev değil**. `NotificationEventGroup` enum'unda da
+ödev grubu yok (Attendance / Academic / Payment / Announcement).
+
+Sonuç: Okul Ayarları'ndaki olay × kanal matrisinde **ödev satırı hiç yok**;
+yönetici ödev bildirimlerini oradan açıp kapatamaz. Ödev politikası ekranının
+`missingNotificationMode` alanı ile bu matris arasındaki öncelik ilişkisi de
+tanımsız — hangisi hangisini ezer?
+
+Katalog dağıtım karşılığı olmayan olayları zaten `delivered: false` ile yer
+tutucu tutuyor (`TB-44`/`TB-24` kalıbı); ödev satırları da o kalıpla eklenebilirdi.
+Silinmiş olmaları bilinçli mi, taşıma sırasında mı düştü — **kaynağı bulunamadı.**
+
+
+### `TB-84` · Uç numaralandırması iki belgede çelişiyor 🟢
+
+`contract.ts:682` "Uç 23"ü **idari yükleme kaldırma** sayıyor;
+`backend-needs-homework.md` §7 aynı numarayı **audit kaydı listesi** sayıyor.
+Uç numaraları belgeler arasında kimlik gibi kullanıldığı için ("uç 14-19 Faz B'de
+yazıldı") bu çelişki doğrudan karışıklık üretiyor. Teknik analiz numarayı yalnız
+mock'un yorumundan aldı ve farkı not düştü.
+
+### Kapanış — ne yapıldı
+
+✅ **KAPANDI — 2026-08-31** · `oksis-ui` @ `721d47d`. (Bu blokta backend
+değişikliği YOKTUR: dördü de FE/mock/belge tarafındaydı.)
+
+**`TB-82` — çağrılmayan uç, arkasındaki kusuru da sakladı.** `:publish-for` ve
+`submissions/{id}:remove` handler'ları yazıldı ve **altı testle** çivilendi
+(`homework-handlers.test.ts` → "TB-82 · idari uçlar"). Kapılar: ikisi de yalnız
+**idare** görünümünde çalışır (sahibin görünümünde 404 — `requireOwner`'ın tersi),
+gerekçe ≥ 15 karakter, vekâleten yayın `dueDate`'i zorunlu kılar ve geçmiş tarihi
+reddeder (BR-HW-02), hedef boşsa `empty_target`. İdari kaldırma **güncel takip
+satırını** döner — öğrencinin kendi silmesi 204 döner ve bu iki ucun farkı artık
+testte yazılı.
+**İkinci ayak da kapandı:** `oksis-ui/docs/backend-needs-homework.md` §7 bu iki ucu
+*"mock'ta çalışan"* listesinde gösteriyordu; düzeltme notu artık kabul kriterlerini
+tablo hâlinde taşıyor. Belgenin yalanı, boşluğun iki faz boyunca görünmemesinin
+sebebiydi.
+
+**`E-18` — defterin tarifi bayattı, iş küçüldü.** Madde "yazma dalı **üç yerde**
+birden yok" diyordu; ölçüldüğünde web ekranı (`AttachmentPicker` + `toAttachmentInputs`)
+ve mock `POST`/`PUT` handler'ları **çoktan yazılmıştı**. Kalan tek ayak mobildi ve
+`attachments: []` sabitiyle kapalıydı. Mobil oluşturma ekranına ekler bölümü eklendi:
+dosya (iki adımlı yükleme — `useUploadFile` → `HOMEWORK_ATTACHMENT_CATEGORY`, öğrenci
+teslim akışıyla aynı kalıp) ve bağlantı.
+
+**`TB-84` — numaranın sahibi koddur.** `endpoints.ts:513` 23'ü *idari kaldırma*
+sayıyordu, `backend-needs-homework.md` *audit kaydı listesi*. Kural yazıldı: **numarayı
+taşıyan uç, yazılmış olandır** — tarif edilen değil. Audit listesi 26'ya alındı
+(24-25 `homework-settings` GET/PUT).
+
+### `TB-83` — bayat, hiçbir kod değişmedi
+
+Madde *"`HOMEWORK_CREATED` ve `HOMEWORK_DUE` seed'den düşmüş, matriste ödev satırı
+hiç yok"* diyordu. Ölçüm:
+
+- `NotificationEventTypeSeedData` **üç** ödev olayı taşıyor: `HOMEWORK_PUBLISHED`,
+  `HOMEWORK_DUE`, `HOMEWORK_MISSING`.
+- `NotificationEventGroup.Homework = 5` var.
+- `NotificationKind`: `HomeworkPublished = 25`, `HomeworkDueReminder = 26`,
+  `HomeworkMissing = 27`.
+
+Maddenin aradığı `HOMEWORK_CREATED` adı **bilerek** yok: ödev oluşturmak taslak
+doğurur, taslak kimseye ulaşmaz; olay adı `HOMEWORK_PUBLISHED`'dir. Yani defter eski
+snapshot'lardaki adı arayıp bulamamış ve "düşmüş" sanmış.
+
+### Turun dersi
+
+**Dört maddenin ikisi bayat çıktı** (`TB-83` tamamen, `E-18` üçte ikisi). Faz 0.5'in
+neden Faz 1'den önce gelmesi gerektiği bir kez daha görüldü: `E-18` planda "M" olarak
+boyutlanmıştı ve gerçekte tek ekranlık işti; `TB-83` ise hiç iş değildi.
