@@ -41,9 +41,9 @@ sayaçlar üçü arasında ortak.
 
 **Modül dağılımı:** Nöbet 1 · Çapraz kesen 1
 
-**Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **21 yön kararının tamamı**
-bağlandı — bu liste ilk kez boş. Kararların kanonik kaydı:
-[[K-12 - Defter Sıfırlama Karar Turu]]. Sıra ve fazlar: [[defter-sifirlama-is-sirasi]].
+**Senin kararını bekleyenler:** `K-13` · `K-14` · `K-15` (görevlendirme modeli eklemeleri,
+2026-09-01 — [[OKSİS - Yapısal Kararlar ve Eksikler]]). Defter maddelerinin kendisi karar
+beklemiyor; önceki turun kaydı: [[K-12 - Defter Sıfırlama Karar Turu]].
 
 **Zincirler — hangi madde hangisini bekliyor**
 

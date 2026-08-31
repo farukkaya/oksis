@@ -18,7 +18,7 @@
 
 # 📋 Karar Panosu
 
-**Karara bağlanan: 10 / 14**
+**Karara bağlanan: 10 / 17**
 
 | ID | Konu | Durum | Tarih | Karar özeti |
 |:--|:--|:--|:--|:--|
@@ -34,6 +34,9 @@
 | **K-08** | Dini bayramlar için tatil şeması değişikliği | ⏸️ Ertelendi | 2026-08-16 | Ayrı iş olarak planlanacak |
 | **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ✅ Karara bağlandı | 2026-08-16 | "Örnek veri" rozeti |
 | **K-10** | Ders programının görevlendirme kaynağı (v1 mi v2 mi) | ✅ Karara bağlandı · **uygulandı** | 2026-08-16 · uygulama 2026-08-18 | v2 + müfredattan türet, v1 emekli — **v1 tablosu düştü**, bkz. `X-15` |
+| **K-13** | Öğretmen haftalık kapasite alanı | ⬜ Bekliyor | — | — |
+| **K-14** | Üretim dağıtım kısıtı (pinleme) | ⬜ Bekliyor | — | — |
+| **K-15** | Ders dışı yük görünürlüğü | ⬜ Bekliyor | — | — |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -763,6 +766,151 @@ sınıf listeleyemez.
 > ekrandı; bu yüzden emeklilik "temizlik" değil **davranış değişikliği** oldu.
 
 --- end-multi-column
+
+## K-13 · Öğretmen haftalık kapasite alanı
+
+--- start-multi-column: K-13
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor · **Kaynak:** [[gorevlendirme-is-ihtiyaci-analizi]] (2026-09-01)
+
+Ölçüm: kapasite bugün **profil alanı değil, tek sabit** —
+`TeacherWorkloadDefaults.WeeklyCapacity = 30`. Yük yüzdesi her öğretmen için /30
+hesaplanıyor; 18 saatlik bir sınıf öğretmeniyle 30 saatlik branş öğretmeni aynı
+paydaya bölünüyor, KPI ikisi için de yanlış anlam taşıyor.
+
+Türkiye'de kapasite tek sayı da değil: maaş karşılığı 15 saat (branş) / 18 (sınıf
+öğretmeni), zorunlu + ihtiyari ek dersle üst sınırlar; özel okulda sözleşmeye bağlı.
+
+**Karar gereken:**
+- (a) Modelleme — serbest tam sayı mı, MEB öğretmen tipi preset'i + okul bazlı geçersiz kılma mı?
+- (b) Kim, nereden düzenler — öğretmen profili çekmecesi mi, kadro toplu ekranı mı?
+- (c) Solver için anlamı — sert kısıt mı (kapasite aşımına yerleşim yapılamaz), yalnız rapor paydası mı?
+- (d) Mevcut okullar için varsayılan — 30 mu, branştan türetilen mi?
+
+**Bağlı:** `GetTeacherWorkload` KPI · üretim doluluk puanı · `K-15` (toplam yükün paydası)
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ⬜ Bekliyor
+**Tarih:** —
+**Karar veren:** —
+
+**Karar**
+> —
+
+**Gerekçe**
+> —
+
+--- end-multi-column
+
+---
+
+## K-14 · Üretim dağıtım kısıtı (pinleme)
+
+--- start-multi-column: K-14
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor · **Kaynak:** [[gorevlendirme-is-ihtiyaci-analizi]] (2026-09-01)
+
+`K-10` sonrası dağıtımı (kim hangi şubede kaç saat) solver seçiyor. Yöneticinin
+"9-A Matematik'i Ayşe alsın" niyetini kaydedecek dili yok — tek yolu taslağı elle
+düzeltmek, ve o niyet bir sonraki üretimde **kaybolur**. Oysa dağıtım okullarda
+pedagojik/politik bir karardır (kıdem, devamlılık, zümre dengesi); MEB pratiğinde
+"ders dağıtım çizelgesi" programdan önce onaylanır. Untis emsali: hücre bazında
+"sabit öğretmen ya da ? (makineye bırak)".
+
+Öneri ([[gorevlendirme-is-ihtiyaci-analizi]] §5c): dağıtım varsayılan türetilir,
+kısıt **opsiyonel** girilir; kısıt gerçekleşme kaydı olmadığı için tek-kaynak
+ilkesini bozmaz — bayatlamaz, yalnız ihlal edilir ve ihlal ölçülür.
+
+**Karar gereken:**
+- (a) Kısıt türleri — sabit öğretmen · hariç tut · saat bölüşümü (iki öğretmen paylaşır): hangileri MVP?
+- (b) İhlal politikası — yayın engeli mi, önizlemede uyarı mı?
+- (c) Kapsam — dönem mi sezon mu; devirde kopyalanır mı?
+- (d) Giriş yüzeyi — program hub mu, şube detayı mı, Görevlendirmeler ekranının genişlemesi mi?
+
+**Bağlı:** otomatik üretim (`program_autogen`) · yayın önizleme · v2 Görevlendirmeler ekranı
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ⬜ Bekliyor
+**Tarih:** —
+**Karar veren:** —
+
+**Karar**
+> —
+
+**Gerekçe**
+> —
+
+--- end-multi-column
+
+---
+
+## K-15 · Ders dışı yük görünürlüğü
+
+--- start-multi-column: K-15
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor · **Kaynak:** [[gorevlendirme-is-ihtiyaci-analizi]] (2026-09-01)
+
+Yük ekranı yalnız **yayınlanmış programdaki ders saatlerini** sayıyor. Nöbet,
+kulüp danışmanlığı, rehberlik gibi ders dışı yükler timetable'dan türetilemez ama
+öğretmenin gerçek yükünün parçasıdır — ve kaynak verileri sistemde **zaten var**
+(nöbet çizelgesi, kulüp danışmanlığı kayıtları). Bugün 24 saat derse giren ama
+3 gün nöbet tutan öğretmen, 24 saat derse girip hiç nöbet tutmayanla aynı görünüyor.
+
+Model önerisi: veri modelinde birleşTİRME yok — nöbet/kulüp kayıtlarından türetilen
+bir `NonTeachingLoad` görünümü; toplam yük yalnız **rapor düzleminde** birleşir.
+
+**Karar gereken:**
+- (a) Hangi kaynaklar sayılır — nöbet · kulüp danışmanlığı; ileride etüt/kurs?
+- (b) Saat karşılığı — bir nöbet günü kaç saat sayılır (MEB ek ders pratiği emsal)? Kulüp danışmanlığı sabit mi?
+- (c) Gösterim — öğretmen çekmecesinde ayrıştırılmış çubuk (ders + ders dışı) mı, ayrı sütun mu?
+- (d) Kapasiteye dahil mi — `K-13`'ün paydasına ders dışı saat girer mi?
+
+**Bağlı:** `K-13` · nöbet modülü · kulüp modülü · yük KPI
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ⬜ Bekliyor
+**Tarih:** —
+**Karar veren:** —
+
+**Karar**
+> —
+
+**Gerekçe**
+> —
+
+--- end-multi-column
+
+---
 
 # B. Verilmiş Kararlar ✅
 
