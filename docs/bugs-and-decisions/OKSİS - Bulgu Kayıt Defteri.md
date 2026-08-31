@@ -5,8 +5,9 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son yeniden düzenleme:** 2026-08-30 — 2026-08-08'den beri biriken **kapanmış maddeler
-> arşive taşındı**, defterde yalnız açık 50 madde kaldı.
+> **Son yeniden düzenleme:** 2026-08-31 — **bulgu kapanış turu** (A–D blokları) 12 maddeyi
+> kapattı ve arşive taşıdı ([[OKSİS - Bulgu Arşivi]] §29); defterde 39 açık madde kaldı.
+> Turun teknik analizi: [[bulgu-kapanis-turu-teknik-analiz]].
 
 **Sıralama mantığı:** modül bazlı gruplandı, modüller risk ağırlığına göre sıralandı
 (aktif çalışılan ve akış bloklayan modül en üstte).
@@ -32,15 +33,15 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 12 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
-| 🟠 Yüksek | 14 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🔴 Kritik | 4 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
+| 🟠 Yüksek | 10 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 6 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | Arandı, bulunamadı — nerede görüldüğü söylenmeli |
-| **Toplam** | **51** | |
+| **Toplam** | **39** | |
 
-**Modül dağılımı:** Kulüp 20 · Ödev 5 · Duyurular 5 · Çapraz kesen 4 · Ders programı 4 ·
-Notlar 3 · Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Nöbet 1 · Takvim 1
+**Modül dağılımı:** Kulüp 10 · Ödev 5 · Duyurular 5 · Çapraz kesen 4 · Notlar 3 ·
+Ders programı 2 · Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Nöbet 1 · Takvim 1
 
 **Senin kararını bekleyenler** (kod değil, yön kararı): `TB-48`/`X-03` (v1 emekliliği) ·
 `E-01` (rıza ekranı MVP'de mi) · `TB-19` (geçici muafiyetin karşılığı) · `TB-43` (bildirim
@@ -48,6 +49,7 @@ ayarları teslimata mı bağlansın) · `TB-46` (sınav ağırlığı nerede ya�
 içe aktarma yolu birleşsin mi) · `TB-31` (kesintide bildirim gitsin mi) · `TB-78`
 (`CanViewInfo` merkezî mi süzülsün) · `X-17` (kapsam reddinin biçimi: 403 mü 404 mü) ·
 `X-06` geniş ayağı (92 handler: tek tek test mi ortak koşum mu) · `X-11` (CI sağlayıcısı) ·
+`B-44` (aktif kulübün danışmanı kaldırılabilsin mi — domain'e yazılı bilinçli asimetri) ·
 `X-10` (yazılı bir tercih değişecek) · `X-18` (ortak `ChipRow` bileşeni) · `B-19` (ölü
 düğme ne yapmalı) · `B-24` artığı (etiket adı) · `D-04` (nerede görüldü)
 
@@ -61,8 +63,6 @@ X-11          ──►  CI kapısı yok; kırmızı test hiç koşulmuyor
 TB-55         ──►  birleştirme kararı içe aktarma ikiliğini kapatır
 X-17          ──►  beş not yazma handler'ının ret biçimi buna bağlı
 X-18          ──►  dördüncü çip şeridi aynı hatayı yeniden açar
-E-21 (yayın ekranı) ──►  kulübün Taslak hapsi; B-43/B-45 aynı düğümün komşuları
-E-22 (duyuru okuma yüzü) ──►  kulüp duyurusunun tek tüketicisi bugün yok
 ```
 
 ---
@@ -74,102 +74,6 @@ ve uçtan uca ekran testi (2026-08-30, `s1` · web + mobil web) birlikte. Uçlar
 sağlam çıktı; bulguların çoğu **ekran ile sunucunun ayrıştığı** yerlerde.
 Test rehberi: `oksis-api/docs/testing/kulup-modulu-test-rehberi.md`.
 
-### `B-43` · Açık katılımda başvuru penceresi sessizce siliniyor 🔴
-
-Yeni kulüp formunda **Açık Katılım** seçilip başvuru penceresi doldurulduğunda
-(1–31 Ekim) kayıt sonrası `join_start_date`/`join_end_date` **NULL**. Alan ekranda
-duruyor, yazı kabul ediyor (`.off` yalnız soluklaştırıyor), kaydederken
-`toCreateBody` (`packages/api/src/club/endpoints.ts`) `joinMode !== "approval"` ise
-ikisini de `null`'a çeviriyor.
-
-Gerekçesi yanlış: koddaki yorum "sunucu da pencereyi yalnız approval'da uygular"
-diyor, oysa `Club.IsApplicationOpen` **moda hiç bakmıyor** — pencereyi açık
-kulüpte de uyguluyor. Yani "Ekim'de açılan açık kulüp" sunucuda ifade edilebilir,
-ekranda edilemez ve yönetici yazdığı tarihin kaybolduğunu görmez.
-
-### `E-21` · Kulübü yayına alan ekran yok — Taslak hapsi 🔴
-
-Web'de kulüp durumunu değiştiren tek yol "…" menüsü ve orada yalnız **Pasife al**
-ile **Arşivle** var (`ClubStatusDialog` hedef olarak yalnız `inactive`/`archived`
-tanıyor). Sonuçları:
-- Danışmansız açılan kulüp `Draft` doğuyor (K-12) ve **ekrandan asla yayına
-  alınamıyor**; düzenleme ekranından danışman atamak da durumu değiştirmiyor
-  (`UpdateClubCommandHandler` statüye hiç dokunmuyor).
-- Pasife alma diyaloğu "Bu işlem geri alınabilir" diyor ama geri alacak düğme yok.
-
-Sunucuda karşılığı var: uç 5 `{"status":"active"}` ve `Club.Activate()`. Eksik olan
-yalnız ekran. Test bu adımı uçtan geçerek sürdürdü.
-
-### `E-22` · Kulüp duyurusunu öğrenci de veli de HİÇ okuyamıyor 🔴
-
-Duyuru yazılıyor, bildirim üretiliyor, ama **içeriği görecek bir yüzey yok**:
-
-| Yol | Durum |
-| --- | --- |
-| Uç 18 `GET /clubs/{id}/announcements` | Üye öğrenciyle **404** — kapı danışman **veya** `clubs.manage` (`ClubReadGate`) |
-| FE ekranı | Duyuru listesi yalnız `panel-page.tsx`'te (danışman/yönetici); mobil öğrenci detayında yalnız **sayaç** var (`<Stat label="Duyuru" value={club.announcementCount} />`) |
-| Bildirim | Gövde duyurunun **başlığını** taşıyor, içeriğini değil; derin bağlantı `/student/clubs/{id}/announcements` — mobilde **böyle bir rota yok** ve çözümleyici de tanımıyor (`TB-96`) |
-
-Ölçüldü (2026-08-30): danışman "İlk toplantı salı günü / Salı 15:30'da Fen
-Laboratuvarı'nda buluşuyoruz…" duyurusunu yayınladı; öğrenci ekranında kulüp
-kartı **"1 DUYURU"** yazıyor, metnin kendisi hiçbir yerde görünmüyor.
-
-Kapatmak iki iş istiyor: (a) uç 18'in kapısına ÜYE öğrenciyi (ve velisini) eklemek
-ya da öğrenci yüzü için ayrı bir uç açmak, (b) mobil detayda duyuru listesi +
-`/clubs/[clubId]/announcements` rotası. İkisi de yapılmadan duyuru özelliği
-yazma-tarafı-tamam, okuma-tarafı-yok halinde.
-
-### `X-19` · Sezon ileri tarihte başlıyorsa bildirim kutusu tamamen boş 🔴
-
-`s1` ve `s4`'ün yürürlükteki sezonu **15 Eylül 2026**'da başlıyor (bugün 30
-Ağustos). `GetMyNotificationsQueryHandler` `WithinActiveSeason` ile
-`CreatedAt >= sezon başlangıcı` süzüyor (B-06 kesmesi) → bugün üretilen **her**
-bildirim kutuda görünmüyor, rozet `0` kalıyor. Ölçüm: öğrenciye ait 3 kulüp
-bildirimi (`kind` 28/29/31) veritabanında duruyor, uç `totalCount: 0` dönüyor.
-
-Kulübe özgü değil — not, ödev, duyuru dahil tüm modülleri etkiler. Sezonu
-"yürürlükte" ilan edip başlangıcını ileri tarihe koymak gerçek bir okul
-senaryosudur (Ağustos'ta yeni sezona geçiş). Kesmenin varsayımı "aktif sezon
-başladı"; varsayım tutmadığında ekran sessizce boşalıyor.
-
-### `TB-96` · Kulüp bildirimi dokununca hiçbir yere gitmiyor — çözümleyicide `clubs` kolu yok 🔴
-
-`packages/core/src/notifications/logic.ts:436-485 · resolveNotificationTarget`
-yalnız `announcements`, `homework` ve dört sabit alan yolunu tanır. Web mock'u
-iki kulüp bildirimini `/clubs/1` derin bağlantısıyla zil listesine koymuş
-(`apps/web/mocks/notifications-data.ts:113-114`) ama `notification-href.ts:68-69`
-`null` alıp satırı tıklanamaz bırakıyor; mobilde `navigate-to-target.ts:83-122`
-aynı fonksiyona dayandığı için push dokunuşu da boşa gidecek. TB-94'ün kapattığı
-"kapalı uygulamada dokunuş" yolu kulüp için baştan açık kalıyor. Backend
-`PushDeepLinks.Club(id) = "/clubs/{id}"` üretecek (analiz §18.4, S-13);
-`/clubs/{id}` üç rolde üç ayrı ekrana açılıyor, kol bu dağıtımı yapmak zorunda.
-**FE işi**, analiz §19-D / F4.
-
-**Ekranda doğrulandı — 2026-08-30 (uçtan uca test):** `s2`'de öğrenci
-(`ogrenci.s2.004`) kulüp başvurusu onaylandı, bildirim kutusunda
-"Kulüp başvurun onaylandı" satırı **göründü** (rozet 16→15) ama satıra dokunmak
-**hiçbir ekrana götürmedi** — yalnız okundu işaretledi. Sunucunun ürettiği derin
-bağlantı `/student/clubs/{clubId}`; `NOTIFICATION_AREA_BY_PATH` tablosunda ne bu
-yol ne `clubs` kolu var, çözümleyici `null` döndürüyor.
-
-### `TB-97` · Öğrenci "Kulübe katıl" onaylı kulüpte mock'ta 409 alıyor 🔴 *(sözleşme yarısı kapandı — 2026-08-31 doğrulaması; mock yarısı açık)*
-
-`student-detail-screen.tsx:307-314` `joinable` durumunda her koşulda `:join`
-çağırıyor; `:apply` yalnız tip imzasında yaşıyor, hiçbir ekran göndermiyor.
-Mock `joinMode !== "open"` iken `:join`'e `409 wrong_mode` döndürüyor
-(`club-handlers.ts:309-322`). Sözleşmenin iki ucu ile ekranın tek ucu
-çelişiyor. Karar analizde: tek `:join` komutu moda göre `Active`/`Pending`
-üretir, `:apply` yazılmaz (§10 uç 27, §19-A). FE'de `:apply` ve mock 409 dalı
-silinir (F2).
-
-✅ **API yarısı YAPILMIŞ** *(2026-08-31 kod doğrulaması)*: `:apply` codegen geçişinde
-sözleşmeden düştü (`oksis-ui` @ `e951629`), tek uç `joinClub`
-(`packages/api/src/club/endpoints.ts:667-681`). **Kalan — mock ve ekran artıkları:**
-mock 409 `wrong_mode` dalı duruyor (`club-handlers.ts:309-321`; `club-data.ts:839-849`
-`joinMode !== "open"`da `undefined` dönüyor), ölü `:apply` handler'ı duruyor (`:294-308`),
-`student-detail-screen.tsx` imzasında `'apply'` artığı. Gerçek API'de akış çalışıyor;
-mock'lu ortamda hâlâ patlıyor. Çözüm: [[bulgu-kapanis-turu-teknik-analiz]] §7.
-
 ### `B-44` · Aktif kulübün danışmanı kaldırılabiliyor — D1'in arka kapısı 🟠
 
 `POST /clubs/{id}:changeStatus {"status":"active"}` danışmansız kulüpte **409**
@@ -177,73 +81,20 @@ veriyor ("Danışman öğretmeni olmayan kulüp aktifleştirilemez"). Ama **düz
 ekranında aktif kulübün danışmanını "Kaldır" ile boşaltmak serbest: kulüp `Active`
 kalıyor, danışmansızlaşıyor. Yani sunucunun kendi kuralı düzenleme kapısından
 dolanılıyor ve doğan hâl (aktif + danışmansız) `:changeStatus` ile **onarılamıyor**
-(zaten `E-21` yüzünden aktifleştirme yolu da yok).
+— danışman atanmadıkça `Activate()` 409 döner.
+
+⏸️ **2026-08-31 · kapanış turunda BİLEREK ele alınmadı, kullanıcı kararı bekliyor.**
+Önerilen çözüm dar: `UpdateClubCommandHandler` aktif kulüpte danışman boşaltmayı
+409'a bağlar (değiştirme serbest kalır, taslak/pasifte kaldırma serbest kalır). Ama
+bu, domain'e **bilinçli yazılmış** bir asimetriyi tersine çevirir — `Club.cs:200-212`
+XML doc'u *"danışmansız aktif kulüp hâli MÜMKÜNDÜR ve bu bilinçlidir"* diyor. Onay
+gelmeden dokunulmadı. Alternatif (kaldırınca kulüp `Inactive`'e düşsün) elendi:
+sessiz statü değişikliği, `TB-76`'nın şikâyet ettiği "kullanıcı adına karar verme"
+sınıfındandır. Ekrandan aktifleştirme yolu artık VAR (`E-21` kapandı), yani anomali
+onarılabiliyor — ama doğması hâlâ engellenmiyor.
 
 Yönetici listesinde kırmızı "Danışman yok" uyarısı çıkıyor — anomali görünür, ama
 engellenmiyor. Devir notundaki 1. açık ürün kararı artık ekranda ölçüldü.
-
-### `B-45` · Penceresiz kulüpte "Başvuru dönemi: Kapalı" yazarken katılım açık 🟠
-
-Öğrenci kulüp detayında (mobil) `InfoRow … value={club.applicationPeriod ?? 'Kapalı'}`
-(`student-detail-screen.tsx:177`). Pencere tanımlanmamış kulüpte sunucu
-`applicationPeriod: null` + `applicationOpen: true` gönderiyor; ekran bunu
-**"Kapalı"** diye yazıyor ve hemen altında "Kulübe katıl" düğmesi açık duruyor.
-Doğrusu "süresiz açık". `D8`'in (notun girdisi = düğmenin girdisi) FE yüzü.
-
-### `B-46` · Ret gerekçesi hiç sorulmuyor, karara bağlanan başvurular ekranda yok 🟠
-
-İki ayrı kayıp, tek ekranda (`panel-page.tsx`):
-1. **Ret gerekçesi sorulmuyor** — `decideOne(a, "reject")` gövdesiz gidiyor,
-   `club_memberships.reject_reason` hep boş kalıyor. Sunucu gerekçeyi kabul ediyor
-   ve öğrenciye giden bildirimin gövdesine koyacak yeri var (D5).
-2. **Karar geçmişi görünmüyor** — ekran `useClubApplications(clubId, "pending")`
-   çağırıyor; uç 7 onaylanan/reddedilen satırları da döndürüyor
-   (`approved`/`rejected`) ama hiçbir yüzey onları göstermiyor. Danışman dün kimi
-   neden reddettiğini bir daha göremiyor.
-3. **Gerekçe uçtan geri okunamıyor** *(2026-08-31 doğrulaması)* — BE yazma ayağı tam
-   (command `Reason` alanı, `reject_reason nvarchar(500)` kolonu, D5 gereği bildirim
-   gövdesine giriyor) ama `ClubApplicationDto` gerekçeyi **döndürmüyor**
-   (`ClubDtos.cs:174-181`); karar geçmişi ekranı yapılırken DTO'ya `RejectReason` +
-   `DecidedAt` alanları da eklenmeli. Çözüm: [[bulgu-kapanis-turu-teknik-analiz]] §10.
-
-### `B-49` · İptal gerekçesi kutusu uydurma bir cümleyle dolu geliyor 🟠
-
-`activity-dialogs.tsx:138` → `useState("Laboratuvar bakımı nedeniyle etkinlik iki
-hafta sonraya ertelendi.")`. Tasarım mock'undan kalmış sabit metin; öğretmen
-silmezse **öğrencilere bu yanlış gerekçe gider** (gerekçe bildirim gövdesine
-birebir giriyor — ölçüldü). Alan zaten zorunlu ve 15-500 karakter denetimli;
-varsayılanın boş olması gerekiyor.
-
-### `TB-99` · Kulüp kategorisi telde Türkçe etiket, bilinmeyen değer sessizce "Diğer" 🟠 *(yazma ayağı kapandı — 2026-08-31 doğrulaması; çip kalıntısı açık)*
-
-`packages/core/src/club/types.ts` on kategoriyi `"Bilim"…"Diğer"` string
-sabiti olarak **tel değeri** yapıyor; `endpoints.ts:139-141` tanımadığı her
-değeri `"Diğer"`e düşürüyor. Backend İngilizce kod üretirse (S-11) her kulüp
-"Diğer" görünür ve hiçbir hata çıkmaz. Sessiz yanlışın klasik şekli. FE sabiti
-`{ code, label }` çiftine döner (analiz §19-F, F1) — Faz 1 ile aynı anda.
-
-🔴 **Canlıda doğrulandı — 2026-08-30, ekran testi (`oksis-api@f7f1ee6`).** Yönetici
-"Kulüp oluştur" formunda kategoriyi listeden seçip kaydedince
-`POST /api/v1/clubs` **400** dönüyor: `{"code":"Validation","message":"Tanınmayan
-kulüp kategorisi.","field":"Category"}` — gövdede `"category":"Teknoloji"` gidiyor,
-sunucu `ClubWire.ParseCategory` ile yalnız `technology` gibi camelCase kodu tanıyor
-(`ClubWire.cs:76-89`, `ClubInputRules.CategoryMessage`). Yani bulgunun **yazma
-ayağı sessiz değil, gürültülü**: kulüp hiç açılamıyor. Aynı sapmanın iki ayağı
-daha var → liste süzgeci `?category=Teknoloji` de 400 üretir
-(`ListClubsQueryHandler.cs:46`, `ListClubDiscoveryQueryHandler.cs:48`), okuma
-ayağı ise TB-99'un tarif ettiği sessiz "Diğer" düşüşü (`endpoints.ts:139-141`).
-Kök neden tek: FE'nin `ClubCategory` tipi Türkçe etiketin kendisi ve hem tel
-değeri hem ikon anahtarı olarak kullanılıyor. **Backend'de düzeltilecek bir şey
-yok** (S-11/K-13 kararı: sunucu kod gönderir, etiketi ekran üretir); açık iş
-F1'dir ve artık Faz 1 merge edildiği için **bloke edici**.
-
-✅ **F1 YAPILMIŞ — bloke edicilik kalktı** *(2026-08-31 kod doğrulaması, `oksis-ui` @
-`42f29cb`)*: `ClubCategory` artık camelCase kod (`9d3723e` + merge `9d7cfdc`); etiket/ikon
-map'leri `packages/core/src/club/constants.ts:64-99`'da, `endpoints.ts` daraltması koda
-bakıyor, `constants.test.ts` sözleşmeyi kilitliyor. **Kalan tek görünür kusur:** web kulüp
-listesi süzgeç çipi ham kodu basıyor (`club-list-page.tsx:188` →
-"Kategori: socialResponsibility"); hemen üstündeki `:157` doğru kalıbı kullanıyor.
-Çözüm: [[bulgu-kapanis-turu-teknik-analiz]] §1.
 
 ### `B-47` · Etkinliğin "kayıtlı" sayısı üç yerde iki farklı değer 🟡
 
@@ -569,59 +420,6 @@ Buna ek olarak **sezon aktivasyonu** v1 kopyalayıcısını doğrudan çağırı
 
 `ENG-02` kapandıktan sonra aynı yüzeyde ölçülenlerin açık kalanları.
 
-### `TB-76` · Yayın ekranındaki bildirim seçimi süs 🔴
-
-`PublishProgramCommand` üç bayrak taşıyor — `NotifyInApp`, `NotifyPush`,
-`NotifyEmail`. Uç bunları kabul ediyor, komut kaydına yazılıyor, ve **hiçbir kod
-bunları okumuyor.** Bildirim fan-out'u `ScheduleProgramPublishedEvent` üzerinden
-**koşulsuz** yapılıyor.
-
-**Ölçüm:** program `{"notifyInApp":false,"notifyPush":false,"notifyEmail":false}`
-ile yayınlandı. Yine de **16 bildirim** oluştu — `notifications.notifications`
-tablosunda 8 **Student** + 8 **Parent**.
-
-Yani müdür "bildirim gönderme" dese bile gidiyor. Bu bir ekran süsü değil,
-kullanıcının verdiği kararın sessizce çöpe atılması.
-
-### `TB-77` · Yayın önizlemesinin sayıları sabit 🔴
-
-`PublishReadiness.Evaluate` içinde:
-
-```csharp
-var affected = new PublishAffectedDto(
-    Teachers: program.ActivePlacements.Select(p => p.TeacherId).Distinct().Count(),
-    Students: 0,     // <- sabit
-    Parents: 0);     // <- sabit
-return new PublishReadinessResult(
-    ConflictCount: 0, // <- sabit
-    ...
-```
-
-Müdür "yayınlayayım mı" kararını bu üç sayıya bakarak veriyor.
-
-**Ölçüm:** önizleme `students: 0, parents: 0` dedi; yayın **16 kişiye** gitti.
-
-Dahası, web çekmecesindeki sayaç **tam ters** çalışıyor:
-```ts
-const notifCount = notifyInApp && affected
-  ? affected.teachers + affected.students + affected.parents : 0
-```
-Gerçek alıcı kümesi öğrenci + veli (öğretmen **değil**); sayaç ise yalnız
-öğretmeni sayıyor, öğrenci ve veliyi sıfır alıyor. "N kişiye bildirim
-gönderildi" cümlesi hem yanlış kişiyi sayıyor hem doğru kişileri saymıyor.
-
-**`conflictCount` için not — henüz ölçülmedi:** sabit `0`, ve çekmecedeki
-*"çakışma yayını engeller"* uyarısı bu sayıya bakıyor, yani o kapı hiç
-tetiklenemiyor. Ancak çakışma **yerleşim anında** engelleniyor olabilir
-(`POST placements` 409 dönüyor); öyleyse yayın anında sabit sıfır yapısal olarak
-doğru olabilir ve asıl kusur ölü uyarı metnidir. **Programlar arası** (aynı
-dönemde başka şubeye sonradan yerleşen aynı öğretmen) çakışmanın yakalanıp
-yakalanmadığı ölçülmedi — iddia edilmiyor, ayrı tur konusu.
-
-**Ders:** `ENG-02` tüketici yüzeyini kapattı ama onu besleyen **yayın** yüzeyi
-bu turlarda hiç ölçülmemişti. Bir ekranın doğru veriyi göstermesi, o veriyi
-üreten ekranın da doğru çalıştığı anlamına gelmiyor.
-
 ### `TB-29` · Öğretmen kendi müsaitliğini giremiyor 🟡
 Öğretmen müsaitliği (hangi saatte ders veremez / vermeyi tercih etmez) otomatik üretimin sert ve yumuşak girdisi, ama **tek yazma yüzeyi yönetici**. Öğretmenin kendi tercihini girebileceği bir yol yok; yönetici her öğretmeninkini elle işaretlemek zorunda.
 - ❓ Bilinçli kısıt mı, yapılmamış ekran mı belirsiz. Pilotta yönetici yükünü ciddi artırır.
@@ -694,7 +492,9 @@ sezon-öncesi) bildirim, "tümünü okundu işaretle" ile **görünmeden** okund
 Bugün kullanıcıya görünen zararı yok (işaretlenen şey zaten gizli), ama okuma yüzeyi ile
 yazma yüzeyi aynı kesmeyi paylaşmıyor — B-06'nın "sayaç listeyle aynı kesmeyi kullanır"
 ilkesinin komut ayağı eksik. 2026-08-31 kod doğrulamasında bulundu
-([[bulgu-kapanis-turu-teknik-analiz]] §0.2); `X-19` kapatılırken birlikte ele alınabilir.
+([[bulgu-kapanis-turu-teknik-analiz]] §0.2). `X-19` 2026-08-31'de kapandı ama bu ayak
+onunla birlikte kapatılMADI — okuma yüzeyi (liste + rozet) kesmeyi uyguluyor, yazma
+komutları hâlâ uygulamıyor.
 
 ### `D-04` · Veli Portalı duyurular ekranında gereksiz header ❓
 - **Belirti:** Header kaldırılacak.

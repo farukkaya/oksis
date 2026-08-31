@@ -643,3 +643,35 @@ ayrışır) — iz, arşivde değil yeni maddede yaşar.
 Kritik sayısı 12 → 4'e iner (kalan kritikler:
 `TB-82`, `X-16`, `TB-48`, `X-17` — dördü de karar/ön koşul sınıfında). Özet tablosu, modül
 dağılımı ve zincir şeması (`E-21`, `E-22` satırları silinir) buna göre yeniden yazılır.
+
+---
+
+## 16. Tur sonucu (2026-08-31 akşamı)
+
+**Uygulandı: 12/13.** Dallar: `oksis-api` @ `fix/bulgu-kapanis-turu-b` (9 commit) ·
+`oksis-ui` @ `fix/bulgu-kapanis-turu-a` (12 commit). Kapanan maddelerin blokları
+defterden silinip [[OKSİS - Bulgu Arşivi]] §29'a taşındı; defter 51 → **39**, kritik
+12 → **4**.
+
+**Atlanan:** `B-44` (§9) — domain'e bilinçli yazılmış asimetriyi tersine çevirdiği
+için kullanıcı onayı bekliyor; defterde açık kaldı ve "karar bekleyenler" listesine
+eklendi.
+
+**Analizden sapmalar — uygulama sırasında ölçülen:**
+
+| Yer | Analiz ne diyordu | Ne çıktı |
+|---|---|---|
+| §6 `TB-96` | Sunucu `/student/clubs/{id}` üretiyor | **Üç** eski biçim: başvuru kararı, duyuru (`.../announcements`) ve iki etkinlik handler'ı (`.../activities/{activityId}`). Çözümleyici üçünü de tanıyacak şekilde genişletildi. |
+| §6 `TB-96` | `PushDeepLinks.Club` "varsa oradan" | Sabit zaten vardı; dört üretici ona bağlandı, yeni sabit açılmadı. |
+| §13 `TB-77` | "Öğrenci + veli sayılsın" | İlk sürüm **kişi** saydı; fan-out bildirimi **hesaba** yazıyor. `LinkedAccountId != null` süzgeci eklenerek iki küme birebir eşitlendi (`c6fdc70`). |
+| §13 test notu | Entegrasyon testi "eklenmeli" | Docker ayağa kaldırıldı; turun ürettiği üç sorgu yolu için gerçek SQL çeviri testi yazıldı (`007fc7c`) ve **1048 entegrasyon testinin tamamı** yeşil koştu. |
+| §8 `E-22` | `ClubStudentGate` üyelik şartı | Kapı üyeliksiz de açıyordu (yayındaki kulüp); **canlı üyelik zorunlu** kılındı, aksi hâlde her öğrenci her aktif kulübün duyurusunu okurdu. |
+
+**Doğrulama:** `oksis-api` 4955 test (974 domain · 422 API · 2450 application ·
+61 mimari · 1048 entegrasyon — gerçek SQL Server). `oksis-ui` 834 test + lint +
+typecheck + `next build`.
+
+**Açık bırakılan artıklar** (defterde yaşıyor): `TB-104` (yazma komutları sezon
+kesmesini kullanmıyor) · `TB-77`'nin `conflictCount` ayağı ve programlar arası
+çakışma ölçümü · `TB-96`'nın veli derin-inişi (F7 komşusu) · `TB-43`'ün matris
+sekmesi · §14'teki küçük yan işler.
