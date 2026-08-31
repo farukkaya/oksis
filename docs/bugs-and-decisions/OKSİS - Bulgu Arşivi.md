@@ -5483,3 +5483,46 @@ gününü boş bir güne almaktı: test tatili değil "Absent varsa verdict=out"
 
 `oksis-api` 3924 birim + **1049 entegrasyon** (gerçek SQL Server) yeşil.
 `oksis-ui` 933 test + lint + typecheck + `next build` temiz.
+
+
+---
+
+## 38. `TB-55` · İkinci içe aktarma yolu emekli edildi (2026-08-31) ✅
+
+Sıfırlama turunun son kod kalemi. **Kullanıcılar & İçe Aktarma bölümü defterden düştü.**
+
+### Defterden taşınan blok
+
+### `TB-55` · İki ayrı toplu içe aktarma yolu yan yana yaşıyor 🟡
+- **Bulgu:** Aynı iş — "dosyadan toplu kişi ekle" — için birbirinden habersiz **iki** uç var:
+  - `POST /api/v1/users/import` (Identity): başlıklar `Ad, Soyad, Email, Rol`; senkron; `Person` + minimal profil + **davet** üretir; sezon ve rıza paketi önkoşulu arar.
+  - `POST /api/v1/users/imports/preview` → `POST /api/v1/users/imports` (Users): profil tipine göre şablon (öğretmende `Brans`, öğrencide `OgrenciNo`…); önizleme + onay + Hangfire işi; **davet üretmez** (bkz. `B-20`), rol/sezon/rıza hiç sormaz.
+- **Katman:** BE · **Öncelik:** 🟡 Orta · **Nasıl bulundu:** `TB-20` ölçümü sırasında (2026-08-12).
+- **Neden borç:** İkisi de "içe aktarma" adını taşıyor ama farklı şey üretiyor. Bir okul öğretmen listesini hangisinden yüklerse yüklesin sonucu farklı: birinde branş yok ama davet var, diğerinde branş var ama davet yok. Hangisinin "doğru" yol olduğu koddan okunmuyor.
+- 🔗 `B-20`'nin (davet bayrağı ölü) ve `TB-20`'nin "davet yolunda branş sorulmuyor" ayağının ortak zemini bu ikilik. Üçü birlikte düşünülmeli: tek bir içe aktarma yolu, hem branşı çözen hem daveti üreten.
+- ⬜ **Karar gerekiyor:** hangisi kalacak? Birleştirme kapsam kararıdır; bugün ikisi de canlı.
+
+### Kapanış
+
+✅ **KAPANDI — 2026-08-31** · `oksis-api` @ `f56ae4a2`.
+
+**Karar (`K-12` §C4): Users yolu kalır, Identity yolu emekli olur.** Uygulama sırasında
+ölçüldü ve iş kararın öngördüğünden **küçük** çıktı: karar *"Users yolu daveti
+devralsın"* diyordu, ama `B-20` kapandığında (`ImportPersonsJob.TryInviteAsync` +
+`ResolveInvitationContextAsync`) o yol **zaten daveti üretiyordu**. Yani Users yolu
+eksiksizdi ve Identity ucu o günden beri yalnızca ikinci bir yoldu.
+
+Geriye tek iş kaldı: `POST /users/import` ile birlikte `ImportUsersCommand` /
+`Handler` / `Validator` / `ResultDto` ve ölü hata sabitleri (`ImportTooLarge`,
+`ImportInvalidFile`, `ImportHeaderMismatch`) kaldırıldı.
+
+**Kaldırmanın güvenli olduğu ÖLÇÜLDÜ:** `oksis-ui` içinde bu ucu çağıran hiçbir istemci
+kodu yoktu — geçtiği tek yer üretilmiş `schema.ts`'ti. Yani kaldırma hiçbir ekranı
+etkilemedi; iki yolun yan yana durması bir kullanıcı sorunu değil, bir **karar boşluğu**
+sorunuydu: *"bir okul öğretmen listesini hangisinden yüklerse yüklesin sonucu farklı"*.
+
+### Ders
+
+`B-20`'nin kapanması `TB-55`'in yarısını sessizce kapatmıştı ve defter bunu bilmiyordu.
+Bir maddenin kardeşi kapandığında o maddenin **tarifi** de yeniden okunmalı — bu turun
+en sık tekrarlayan dersi (`TB-43`, `TB-63`, `E-18`, `TB-83`, `E-19`, şimdi `TB-55`).

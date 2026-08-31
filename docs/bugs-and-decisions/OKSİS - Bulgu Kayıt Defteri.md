@@ -35,12 +35,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 1 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
 | 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 2 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 1 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 0 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **5** | |
+| **Toplam** | **4** | |
 
-**Modül dağılımı:** Görevlendirme 2 · Kullanıcılar 1 · Nöbet 1 · Çapraz kesen 1
+**Modül dağılımı:** Görevlendirme 2 · Nöbet 1 · Çapraz kesen 1
 
 **Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **21 yön kararının tamamı**
 bağlandı — bu liste ilk kez boş. Kararların kanonik kaydı:
@@ -118,37 +118,28 @@ Buna ek olarak **sezon aktivasyonu** v1 kopyalayıcısını doğrudan çağırı
 
 ## 8. Nöbet & Vekalet 🟠
 
-### `TB-19` · Geçici muafiyet hiçbir aşamada tam uygulanmıyor 🟠
-- Çizelge taslağı kaydedilirken ve otomatik sonuç uygulanırken **yalnızca sürekli** muafiyet dikkate alınıyor; geçici muafiyet bilinçli olarak dışarıda bırakılmış ("tarihe bağlı, tüketim anında uygulanır").
-- Dağıtım işi ise geçici muafiyeti **yalnızca işin çalıştığı günün tarihine** göre değerlendiriyor — dönem aralığına değil. Kasımda muaf olan öğretmen, dağıtım ekimde çalıştırılırsa havuza giriyor.
-- Kodun yorumu "dönem-kapsayan geçici muafiyet" diyor ama uygulama tek güne bakıyor — **niyet ile kod ayrışmış.**
-- ✅ **CANLIDA DOĞRULANDI — kırık olduğu ölçüldü** *(2026-08-12, `B-13` ölçüm turunun içinde · `mudur.s2`, dönem 2026-08-03 → 08-14, koşturma günü **2026-08-12**)*. Aynı öğretmene iki farklı geçici muafiyet verilip dağıtım koşturuldu:
+### `TB-19` · Geçici muafiyetin TÜKETİM noktası yok 🟡 *(dağıtım ayağı kapandı — 2026-08-31)*
 
-| Geçici muafiyet penceresi | Koşturma gününü kapsıyor mu | Nöbetçi | Vekil |
-|---|---|---|---|
-| 2026-08-11 → 08-13 | **evet** | 0 | 0 |
-| **2026-08-13 → 08-14** *(dönem içinde)* | **hayır** | **2** | **3** |
+✅ **Kapanan yarı (2026-08-31, `oksis-api` @ `8ed7024`).** Dağıtım işi muafiyeti
+`CoversDay(today)` — **yöneticinin butona bastığı gün** — ile süzüyordu; koddaki yorum
+ise baştan beri *"dönem-kapsayan Temporary"* diyordu. Canlıda ölçülen tablo (2026-08-12)
+tam olarak bu ayrışmaydı: 3–14 Ağustos dönemi 12 Ağustos'ta koşturulunca 11–13 Ağustos
+muafiyetli öğretmen havuzdan düştü, 13–14 Ağustos muafiyetli düşmedi.
+`DutyExemption.CoversPeriod` eklendi: haftalık-tekrarlı çizelgeden çıkarma ölçütü
+**dönemin tamamını** kapsayan muafiyettir. Naif "kesişiyor mu" düzeltmesi testle birlikte
+elendi — beş aylık dönemde iki gün muaf olanı 20 haftalık nöbetten muaf tutardı
+(`duty_assignments` tarih değil `day_of_week` taşır). İki nöbet okuma ucunun "bugün"ü de
+UTC'den **okulun gününe** çevrildi.
 
-  ➡️ Dönem içinde muaf olduğu günler için öğretmene nöbet **ve** vekillik yazıldı. Bulgunun koddan okunan iddiası birebir çıktı.
-- 🔍 **Kök neden tek satır ve niyet koda yazılıyken kod onu yapmıyor** — `Infrastructure/BackgroundJobs/Jobs/AutoDistributeDutyJob.cs:96-101`. Yorum *"Muafiyet: Permanent + **dönem-kapsayan** Temporary (K-2c-7)"* diyor, hemen altındaki kod `e.CoversDay(today)` çağırıyor. Yani süzgeç dönem aralığına değil, **yöneticinin butona bastığı güne** bakıyor.
-- ✅ **AÇIK OLAN SORU CEVAPLANDI — "tüketim anında uygulanır" denen kontrol HİÇ YOK.** `CoversDay` repo genelinde **yalnız üç** yerden çağrılıyor (`AutoDistributeDutyJob`, `GetDutyHubSummaryQueryHandler`, `GetDutyRosterForEditQueryHandler`) ve **üçü de `today` geçiyor**. Vekil seçicisi (`GetAvailableRelievers` — tüketime en yakın nokta) yalnız **`Permanent`** süzüyor. `SaveDutyRosterDraftCommandHandler`'daki *"Temporary exemptions are date-bound and apply per-date at consumption — NOT here"* yorumu **gerçeği yansıtmıyor**: işaret ettiği tüketim noktası yazılmamış.
-- ➡️ **Bugünkü net durum:** geçici muafiyet, yalnız pencereye denk gelen bir günde ekran açılırsa/dağıtım koşarsa etki ediyor. Yönetici muafiyeti önceden girerse (normal kullanım) **hiçbir şey yapmıyor**.
-- 🚫 **NAİF DÜZELTME YANLIŞ OLUR — ölçülerek görüldü:** `today` yerine dönem aralığı örtüşmesi koymak, 5 aylık dönemde **2 gün** muaf olan öğretmeni **dönemin tamamından** çıkarır. Sebep yapısal: `duty_assignments` tarih değil **`day_of_week`** taşıyor, yani çizelge haftalık-tekrarlı; tarih penceresi haftalık tekrara birebir eşlenemiyor.
-- ⏸️ **KAPSAM KARARI GEREKİYOR (kendi başıma başlanmadı):** iki günlük muafiyet (a) öğretmeni dönem çizelgesinden tamamen çıkarsın mı, yoksa (b) çizelgede kalıp o tarihlerde yerine **vekil** mi geçsin? (b) doğru ürün davranışı gibi duruyor ama bugün karşılığı olan bir tüketim noktası yok — yani yeni iş demek. Karar verilene kadar madde açık.
-- 📌 **Önceliği yükseltildi 🟡 → 🟠:** artık *"koddan okundu"* değil, canlıda üretilmiş, kullanıcıya görünen yanlış çizelge.
+⬜ **Açık kalan yarı — bir YÜZEY gerekiyor, bir düzeltme değil.** `K-12` §C2 kararı
+*"öğretmen çizelgede kalsın, o tarihlerde yerine vekil geçsin"* diyor. Bunun için
+**"3 Kasım'da hangi bölgede kim nöbetçi?"** diye soran bir tüketim noktası şart ve bugün
+yok: çizelge `day_of_week` taşıyor, `GetMyDuties` tarihsiz dönüyor. Model hazır
+(`DutyAssignment.RelieverId` var), eksik olan tarih eksenli sorgu ve onu gösteren ekran.
 
----
-
-## 9. Kullanıcılar & İçe Aktarma 🟡
-
-### `TB-55` · İki ayrı toplu içe aktarma yolu yan yana yaşıyor 🟡
-- **Bulgu:** Aynı iş — "dosyadan toplu kişi ekle" — için birbirinden habersiz **iki** uç var:
-  - `POST /api/v1/users/import` (Identity): başlıklar `Ad, Soyad, Email, Rol`; senkron; `Person` + minimal profil + **davet** üretir; sezon ve rıza paketi önkoşulu arar.
-  - `POST /api/v1/users/imports/preview` → `POST /api/v1/users/imports` (Users): profil tipine göre şablon (öğretmende `Brans`, öğrencide `OgrenciNo`…); önizleme + onay + Hangfire işi; **davet üretmez** (bkz. `B-20`), rol/sezon/rıza hiç sormaz.
-- **Katman:** BE · **Öncelik:** 🟡 Orta · **Nasıl bulundu:** `TB-20` ölçümü sırasında (2026-08-12).
-- **Neden borç:** İkisi de "içe aktarma" adını taşıyor ama farklı şey üretiyor. Bir okul öğretmen listesini hangisinden yüklerse yüklesin sonucu farklı: birinde branş yok ama davet var, diğerinde branş var ama davet yok. Hangisinin "doğru" yol olduğu koddan okunmuyor.
-- 🔗 `B-20`'nin (davet bayrağı ölü) ve `TB-20`'nin "davet yolunda branş sorulmuyor" ayağının ortak zemini bu ikilik. Üçü birlikte düşünülmeli: tek bir içe aktarma yolu, hem branşı çözen hem daveti üreten.
-- ⬜ **Karar gerekiyor:** hangisi kalacak? Birleştirme kapsam kararıdır; bugün ikisi de canlı.
+🚫 **Uç yazılıp ekran yazılmadı ve bu bilinçli:** bu tur aynı deseni üç kez ölçtü
+(`E-22`, `TB-100`, `TB-82`) — *çağrılmayan uç, arkasındaki kusuru da saklar*. Yüzey
+kararı verildiğinde ikisi birlikte yazılmalı.
 
 ---
 
