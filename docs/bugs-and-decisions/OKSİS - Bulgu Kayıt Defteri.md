@@ -19,7 +19,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-50` · `D-19` · `V-04` · `X-20` · `TB-104` · `E-23` · `ENG-03`
+**Sıradaki boş ID:** `B-50` · `D-19` · `V-04` · `X-20` · `TB-105` · `E-23` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -34,12 +34,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 12 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
 | 🟠 Yüksek | 14 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 6 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | Arandı, bulunamadı — nerede görüldüğü söylenmeli |
-| **Toplam** | **50** | |
+| **Toplam** | **51** | |
 
-**Modül dağılımı:** Kulüp 20 · Ödev 5 · Çapraz kesen 4 · Ders programı 4 · Duyurular 4 ·
+**Modül dağılımı:** Kulüp 20 · Ödev 5 · Duyurular 5 · Çapraz kesen 4 · Ders programı 4 ·
 Notlar 3 · Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Nöbet 1 · Takvim 1
 
 **Senin kararını bekleyenler** (kod değil, yön kararı): `TB-48`/`X-03` (v1 emekliliği) ·
@@ -152,7 +152,7 @@ aynı fonksiyona dayandığı için push dokunuşu da boşa gidecek. TB-94'ün k
 bağlantı `/student/clubs/{clubId}`; `NOTIFICATION_AREA_BY_PATH` tablosunda ne bu
 yol ne `clubs` kolu var, çözümleyici `null` döndürüyor.
 
-### `TB-97` · Öğrenci "Kulübe katıl" onaylı kulüpte mock'ta 409 alıyor 🔴
+### `TB-97` · Öğrenci "Kulübe katıl" onaylı kulüpte mock'ta 409 alıyor 🔴 *(sözleşme yarısı kapandı — 2026-08-31 doğrulaması; mock yarısı açık)*
 
 `student-detail-screen.tsx:307-314` `joinable` durumunda her koşulda `:join`
 çağırıyor; `:apply` yalnız tip imzasında yaşıyor, hiçbir ekran göndermiyor.
@@ -161,6 +161,14 @@ Mock `joinMode !== "open"` iken `:join`'e `409 wrong_mode` döndürüyor
 çelişiyor. Karar analizde: tek `:join` komutu moda göre `Active`/`Pending`
 üretir, `:apply` yazılmaz (§10 uç 27, §19-A). FE'de `:apply` ve mock 409 dalı
 silinir (F2).
+
+✅ **API yarısı YAPILMIŞ** *(2026-08-31 kod doğrulaması)*: `:apply` codegen geçişinde
+sözleşmeden düştü (`oksis-ui` @ `e951629`), tek uç `joinClub`
+(`packages/api/src/club/endpoints.ts:667-681`). **Kalan — mock ve ekran artıkları:**
+mock 409 `wrong_mode` dalı duruyor (`club-handlers.ts:309-321`; `club-data.ts:839-849`
+`joinMode !== "open"`da `undefined` dönüyor), ölü `:apply` handler'ı duruyor (`:294-308`),
+`student-detail-screen.tsx` imzasında `'apply'` artığı. Gerçek API'de akış çalışıyor;
+mock'lu ortamda hâlâ patlıyor. Çözüm: [[bulgu-kapanis-turu-teknik-analiz]] §7.
 
 ### `B-44` · Aktif kulübün danışmanı kaldırılabiliyor — D1'in arka kapısı 🟠
 
@@ -192,6 +200,11 @@ Doğrusu "süresiz açık". `D8`'in (notun girdisi = düğmenin girdisi) FE yüz
    çağırıyor; uç 7 onaylanan/reddedilen satırları da döndürüyor
    (`approved`/`rejected`) ama hiçbir yüzey onları göstermiyor. Danışman dün kimi
    neden reddettiğini bir daha göremiyor.
+3. **Gerekçe uçtan geri okunamıyor** *(2026-08-31 doğrulaması)* — BE yazma ayağı tam
+   (command `Reason` alanı, `reject_reason nvarchar(500)` kolonu, D5 gereği bildirim
+   gövdesine giriyor) ama `ClubApplicationDto` gerekçeyi **döndürmüyor**
+   (`ClubDtos.cs:174-181`); karar geçmişi ekranı yapılırken DTO'ya `RejectReason` +
+   `DecidedAt` alanları da eklenmeli. Çözüm: [[bulgu-kapanis-turu-teknik-analiz]] §10.
 
 ### `B-49` · İptal gerekçesi kutusu uydurma bir cümleyle dolu geliyor 🟠
 
@@ -201,7 +214,7 @@ silmezse **öğrencilere bu yanlış gerekçe gider** (gerekçe bildirim gövdes
 birebir giriyor — ölçüldü). Alan zaten zorunlu ve 15-500 karakter denetimli;
 varsayılanın boş olması gerekiyor.
 
-### `TB-99` · Kulüp kategorisi telde Türkçe etiket, bilinmeyen değer sessizce "Diğer" 🟠
+### `TB-99` · Kulüp kategorisi telde Türkçe etiket, bilinmeyen değer sessizce "Diğer" 🟠 *(yazma ayağı kapandı — 2026-08-31 doğrulaması; çip kalıntısı açık)*
 
 `packages/core/src/club/types.ts` on kategoriyi `"Bilim"…"Diğer"` string
 sabiti olarak **tel değeri** yapıyor; `endpoints.ts:139-141` tanımadığı her
@@ -223,6 +236,14 @@ Kök neden tek: FE'nin `ClubCategory` tipi Türkçe etiketin kendisi ve hem tel
 değeri hem ikon anahtarı olarak kullanılıyor. **Backend'de düzeltilecek bir şey
 yok** (S-11/K-13 kararı: sunucu kod gönderir, etiketi ekran üretir); açık iş
 F1'dir ve artık Faz 1 merge edildiği için **bloke edici**.
+
+✅ **F1 YAPILMIŞ — bloke edicilik kalktı** *(2026-08-31 kod doğrulaması, `oksis-ui` @
+`42f29cb`)*: `ClubCategory` artık camelCase kod (`9d3723e` + merge `9d7cfdc`); etiket/ikon
+map'leri `packages/core/src/club/constants.ts:64-99`'da, `endpoints.ts` daraltması koda
+bakıyor, `constants.test.ts` sözleşmeyi kilitliyor. **Kalan tek görünür kusur:** web kulüp
+listesi süzgeç çipi ham kodu basıyor (`club-list-page.tsx:188` →
+"Kategori: socialResponsibility"); hemen üstündeki `:157` doğru kalıbı kullanıyor.
+Çözüm: [[bulgu-kapanis-turu-teknik-analiz]] §1.
 
 ### `B-47` · Etkinliğin "kayıtlı" sayısı üç yerde iki farklı değer 🟡
 
@@ -663,6 +684,17 @@ yoklamanın davranış değişikliği ayrı bir onay. → [[OKSİS - Yapısal Ka
 Eşiğe gelen öğrenci için mükerrer bildirim iki katmanla önleniyor: hızlı bir önbellek kapısı ve arkasında kalıcı damga. Önbellek erişilemezse sistem **açık kalıyor** (fail-open) ve DB yedeğine düşüyor.
 - **Etkisi:** Kesinti anında aynı öğrenci için mükerrer eşik uyarısı gidebilir. Veli/öğrenciye giden bildirim olduğu için gürültü doğrudan hissedilir.
 - ⬜ **Karar gerekiyor:** Kesintide bildirim **gitsin mi gitmesin mi**? Kapalı kalma (fail-closed) uyarıyı geciktirir; açık kalma mükerrer üretir. Kod bugün ikincisini seçmiş ama gerekçesi yazılı değil.
+
+### `TB-104` · "Tümünü okundu işaretle" sezon kesmesini kullanmıyor 🟡
+
+`WithinActiveSeason` süzgecini yalnız iki tüketici kullanıyor (`GetMyNotifications`,
+`GetMyUnreadCount`); `MarkNotificationRead` / `MarkAllNotificationsRead` komutları
+kullanmıyor. Sonuç: listede ve rozette görünmeyen sezon-dışı (ya da `X-19` senaryosunda
+sezon-öncesi) bildirim, "tümünü okundu işaretle" ile **görünmeden** okundu sayılabilir.
+Bugün kullanıcıya görünen zararı yok (işaretlenen şey zaten gizli), ama okuma yüzeyi ile
+yazma yüzeyi aynı kesmeyi paylaşmıyor — B-06'nın "sayaç listeyle aynı kesmeyi kullanır"
+ilkesinin komut ayağı eksik. 2026-08-31 kod doğrulamasında bulundu
+([[bulgu-kapanis-turu-teknik-analiz]] §0.2); `X-19` kapatılırken birlikte ele alınabilir.
 
 ### `D-04` · Veli Portalı duyurular ekranında gereksiz header ❓
 - **Belirti:** Header kaldırılacak.
