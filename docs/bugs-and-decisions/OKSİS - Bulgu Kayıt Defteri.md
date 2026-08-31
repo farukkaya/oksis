@@ -33,15 +33,15 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 2 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
-| 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 6 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 2 | Kozmetik, temizlik, adlandırma |
+| 🔴 Kritik | 1 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
+| 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 4 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 0 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **16** | |
+| **Toplam** | **9** | |
 
-**Modül dağılımı:** Görevlendirme 2 · Notlar 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 ·
-Duyurular 2 · Kulüp 1 · Ders programı 1 · Nöbet 1 · Takvim 1 · Çapraz kesen 1
+**Modül dağılımı:** Görevlendirme 2 · Duyurular 2 · Kulüp 1 · Kullanıcılar 1 ·
+Ders programı 1 · Nöbet 1 · Takvim 1 · Çapraz kesen 1
 
 **Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **21 yön kararının tamamı**
 bağlandı — bu liste ilk kez boş. Kararların kanonik kaydı:
@@ -78,59 +78,6 @@ durumlu yazılıyor (`dba6997`); web `notification-tab.tsx:109-146` yalnız
 Portal / E-posta / SMS çiziyor. K-02'nin `S-8` kapsam-dışı maddesi. Kulüpte
 görünür sonucu: `CLUB_ACTIVITY_PUBLISHED` varsayılan kapalı (S-9) ve yönetici
 açmak istese düğmesi yok. Kulüpten bağımsız, ayar ekranı işi; analiz §20.
-
----
-
-## 3. Notlar & Değerlendirme 🔴
-
-Not modülü öncesi kod taraması (2026-08-19) ile uçtan uca testin (2026-08-25) artıkları.
-
-### `X-16` · Not modülü teknik analizi emekli edilmiş tabloya dayanıyor 🔴
-
-**Ölçüm.** Analiz §7.3 kapsam kapısının kaynağını şöyle tanımlıyor:
-
-> aktif `TeachingAssignment(TeacherId=me, ClassRoomId, SubjectId, AcademicSessionId, RevokedAt IS NULL)`
-
-`src/Oksis.Domain` altında **`TeachingAssignment` diye bir entity yok.** `X-15` kapatılırken
-(`b278415` *"K-10 v1 teaching_assignments emekli edildi"*, `d45f298` merge — **18 Ağustos**,
-analizin yazıldığı gün) tablo düşürüldü. Analiz o merge'den önceki repoyu taramış.
-
-**Bugünkü tek kaynak:** `TeacherCourseLoadProjection` —
-*"Hangi öğretmen hangi şubede hangi dersi kaç saat veriyor?" sorusunun **tek** cevabı"* —
-**canlı ders programının yerleşimlerinden** türetiliyor (`IsActive && IsReserving`), sezon
-değil **dönem** kapsamlı (`R-09`).
-
-**Not modülü için üç sonucu var:**
-
-1. `IGradeScopeGuard` yazma kapsamını `TeacherCourseLoadProjection.ForTeacherAsync(...)`
-   üzerinden kurmalı; analizde tarif edilen `RevokedAt` süzgeci artık anlamsız.
-2. **Yazma yetkisi yayınlanmış programa bağlanıyor.** Taslak program slot rezerve etmiyor
-   (`IsReserving == false`), dolayısıyla programını yayınlamamış bir okulda **hiçbir öğretmen
-   not giremez**. Analizde bu bağımlılık hiç yok. Ürün kararı gerektirir: kapsamın ikinci
-   kaynağı olarak yetkinlik (`subject_teacher_assignments`) kabul edilecek mi, yoksa
-   "program yayınlanmadan not girilmez" kuralı bilinçli mi?
-3. Defterin kimliği kalıcı bir satır değil, bileşik anahtar
-   (`TeacherCourseLoadProjection.CourseKey(classRoomId, subjectId)`). `GradeBook`'un
-   koordinatları (`classRoomId`, `subjectId`, `termId`) bu anahtarla birebir örtüşüyor —
-   uyumlu, ama biçim tek yerde yaşamalı ([[serilesmis-sekil-sozlesmedir]]).
-
-**Ailesi:** `X-15`, `B-26`, `TB-32` — hepsi *"bir soruya iki kaynaktan cevap"* ailesi.
-Analiz, kapatılmış bir kusurun kapatılmadan önceki hâline dayanmış.
-
-**Aksiyon:** teknik analiz §7.3 ve §2 bağımlılık tablosu geliştirmeden **önce** düzeltilmeli;
-`Teachers` satırı `TeachingAssignment` değil `TeacherCourseLoadProjection` demeli.
-
-### `TB-46` · Not ve sınav yapılandırması tüketicisiz, üstelik ağırlık iki yerde tanımlı 🟡
-Notlandırmanın tüm yapılandırma yüzeyi hazır ama **arkasında hiçbir şey yok** — not
-modülünün hesap ayağı yazılmadı. *(2026-08-31 düzeltmesi: eskiden burada `TB-13`'e atıfla
-"boş klasör" yazıyordu; `Grades` domain'i bugün var — `Assessment`, `AssessmentStatus`,
-`MarkSpecialValue`, `GradeVisibility`. Eksik olan ağırlıkların TÜKETİCİSİ.)*
-- **Sınav ağırlığı iki ayrı yerde:** master sınav türünde tür başına yüzde (`ExamType.WeightPercent`), okul akademik politikasında ise yazılı/performans ağırlığı (`WrittenWeight` + `PerformanceWeight`, toplamı 100 olmak **zorunda** — doğrulayıcısı var).
-- **İkisinin de tüketicisi yok.** `WeightPercent` hiçbir yerde okunmuyor; okul ayarındaki ağırlıklar yalnız kendi CRUD'unda dönüyor.
-- Aynısı geçme notu, yuvarlama kuralı, yazılı/performans sayısı ve not ölçeği seçimi için de geçerli: seçiliyor, doğrulanıyor, saklanıyor — kullanılmıyor.
-- **Etkisi (bugün):** Yönetici akademik politikayı dolduruyor ve hiçbir şey olmuyor. `TB-35`/`TB-43` ile aynı aile.
-- **Etkisi (yarın):** Not modülü geldiğinde **iki rakip ağırlık tanımı** hazır bekliyor olacak ve hangisinin yetkili olduğuna dair yazılı bir karar yok.
-- ⬜ **Karar (not modülünden ÖNCE):** Ağırlık master sınav türünde mi, okul politikasında mı yaşayacak? İkisi birden kalırsa ilk not hesabında çakışır.
 
 ---
 
@@ -225,28 +172,6 @@ Okul Ayarları'ndaki "Bildirimler" sekmesi üç kanallı bir olay×kanal matrisi
 
 ---
 
-## 7. Kimlik & Rıza 🟠
-
-### `E-01` · Rıza yenileme ekranı yok — 403 çıkışsız 🟠
-- **Eksik olan:** Rızası geri çekilmiş ya da rıza paketi sürümü ilerlemiş kullanıcının **rızayı yeniden verebileceği bir ekran yok.** Ne web'de ne mobilde.
-- **Katman:** FE · **Öncelik:** 🟠 Yüksek (mevzuat) · **Tip:** Eksik özellik — kapsam kararı kullanıcınındır
-- **Nasıl bulundu:** `TB-10` kapanışının ardından yapılan çıkış yolu kontrolünde (2026-08-12).
-- **Ölçüm — eksik olan backend değil, arayüz:** `POST /api/v1/users/consents` (`GrantConsentCommandHandler`) **var ve çalışıyor**; `users.update` yetkisi ve açık bir oturum istiyor, yani bir yönetici başkası adına rızayı yeniden verebilir. Ama arayüz bu ucu **hiç çağırmıyor**: `packages/api` + `apps/web` + `apps/mobile` içinde `users/consents` POST çağrısı **sıfır** eşleşme. FE'deki tek rıza yüzeyleri davet kabul ekranı (ilk onay) ve `users/self/consents` (geri çekme).
-- **Sonuç — tek yönlü kapı:** `TB-10` ile birlikte rıza düşünce oturum artık gerçekten kapanıyor. Bu **doğru** davranış, ama kullanıcı için çıkışsız bir odaya dönüşüyor: giriş 403, yenileme 403, rızayı yeniden verecek ekran yok. Kullanıcının kendisi hiçbir şey yapamıyor; yöneticinin elinde de yalnızca doğrudan API çağrısı var, düğme yok.
-- ⚠️ **Bugün sahada patlamıyor** çünkü rıza paketi sürümü hiç ilerletilmedi (`master.consent_bundles`: 1 satır, `v2026.05.01`) ve seed kullanıcılarının hepsi `Granted`. **İlk sürüm yükseltmesinde 381 rıza kaydının tamamı aynı anda kapıya takılır.**
-- ❓ **Karar gerekiyor:** rıza yenileme ekranı MVP kapsamında mı? Kapsam dışıysa, sürüm yükseltmesinin **operasyonel bir engel** olduğu yazılı hâle gelmeli.
-- 🔗 **`B-18` kapandı ama bu madde açık:** kullanıcı artık **doğru teşhisi** görüyor ("KVKK onayı gerekiyor"), çıkış yolu hâlâ yok. Teşhisin düzelmesi çıkışın yerine geçmez.
-
-### `B-19` · Askıya alma ekranındaki tek eylem düğmesi ölü ⚪
-- **Belirti:** Giriş → askıya alınmış hesap ekranındaki birincil düğme **"Okul yönetimine yaz"** tıklanabilir görünüyor ama **hiçbir şey yapmıyor.**
-- **Katman:** FE (web) · **Öncelik:** ⚪ Düşük
-- **Nasıl bulundu:** `B-18` ekran ölçümünde, ÖNCE kanıtı alınırken (2026-08-12).
-- **Ölçülen kök neden:** `apps/web/features/auth/login-screen.tsx` → `SuspendedView`, `<button type="button" className="au-btn">` — `onClick` yok, `href` yok. Görsel tasarımdan (Claude Design auth) taşınırken eylemi bağlanmamış.
-- **Neden yalnız kozmetik değil:** ekranın söylediği tek eylem bu. Kullanıcı düğmeye basıyor, hiçbir şey olmuyor ve yönetime nasıl ulaşacağını hâlâ bilmiyor. Mobilde bu düğme **yok** (yalnız "Girişe dön"), yani ekranlar bu noktada da ayrışmış durumda.
-- ❓ **Karar gerekiyor:** düğme ne yapmalı — okul e-postasına `mailto:` mı, uygulama içi bir iletişim ekranı mı, yoksa kaldırılıp metne mi indirgenmeli? Okulun iletişim adresi bugün istemcinin elinde yok (giriş yapılmamış oturum), bu yüzden `mailto:` bile veri gerektiriyor.
-
----
-
 ## 8. Nöbet & Vekalet 🟠
 
 ### `TB-19` · Geçici muafiyet hiçbir aşamada tam uygulanmıyor 🟠
@@ -280,37 +205,6 @@ Okul Ayarları'ndaki "Bildirimler" sekmesi üç kanallı bir olay×kanal matrisi
 - **Neden borç:** İkisi de "içe aktarma" adını taşıyor ama farklı şey üretiyor. Bir okul öğretmen listesini hangisinden yüklerse yüklesin sonucu farklı: birinde branş yok ama davet var, diğerinde branş var ama davet yok. Hangisinin "doğru" yol olduğu koddan okunmuyor.
 - 🔗 `B-20`'nin (davet bayrağı ölü) ve `TB-20`'nin "davet yolunda branş sorulmuyor" ayağının ortak zemini bu ikilik. Üçü birlikte düşünülmeli: tek bir içe aktarma yolu, hem branşı çözen hem daveti üreten.
 - ⬜ **Karar gerekiyor:** hangisi kalacak? Birleştirme kapsam kararıdır; bugün ikisi de canlı.
-
-### `B-24` artığı · "Pasife Al" etiketi ile ürettiği durum uyuşmuyor ⚪
-
-Öğrenci listesindeki **"Pasife Al"** eylemi artık `:withdraw` ucuna bağlı ve kaydı **"Ayrılmış"**
-durumuna geçiriyor (domain modeli buna zorluyor: `Archived`, aktif bir öğrenciden değil ancak
-mezun/ayrılmış/nakil bir kayıttan sonra gelen saklama adımı). Onay modali sonucu doğru söylüyor
-ama **buton etiketi eski adında kaldı.**
-
-⬜ **Karar:** etiket "Ayrılmış Say" / "Kaydı Kapat" gibi bir şeye mi dönsün?
-
----
-
-## 10. Belge & Depolama 🟡
-
-### `TB-38` · İki belge akışı, iki farklı depolama yaklaşımı 🟡
-- **Mazeret belgesi** → dosya yönetimi modülündeki saklı dosyaya **referans** veriyor; kod açıkça "yeni depolama icat etme" diyor.
-- **Öğrenci belgesi** → dosya adresini **serbest metin** olarak kendi kaydında tutuyor.
-
-Aynı ürün içinde iki evrak akışı, iki farklı yaklaşım. Öğrenci belgesi tarafı dosya yönetimi modülünün sağladıklarından (virüs taraması, kota, yetim dosya temizliği, erişim denetimi) yararlanamıyor.
-- ⬜ **Karar:** Öğrenci belgesi de saklı dosya referansına taşınsın mı?
-- ➕ **Ayrışmanın bir sebebi bulundu** *(dosya yönetimi taraması, 2026-08-10)*: Dosya kategorisi defterinde **öğrenci belgesi diye bir kategori hiç yok**. Yani taşıma kararı tek başına yetmez; önce bir kategori açılması ve o kategorinin **saklama süresine karar verilmesi** gerekir (KVKK kararı — mazeret belgesininki bile "teyit bekleyen taslak" diye işaretli).
-
-### `TB-42` · Dört dosya kategorisinin bağlanabileceği kayıt tipi yok 🟡
-İki ayrı kayıt defteri var ve **örtüşmüyorlar**:
-- **Kategori defteri** (kodda sabit): ödev teslimi, sınav belgesi, sanal kitap, okul logosu, kulüp belgesi, duyuru eki, mazeret belgesi, önizleme.
-- **Erişim çözümleyici defteri** (DI kayıtları): yalnız **okul**, **mazeret**, **duyuru**.
-
-Yani ödev teslimi, sınav belgesi, sanal kitap ve kulüp belgesi kategorileri tanımlı ve kategori politikası ucundan okunabiliyor — ama o dosyalar hiçbir kayda **bağlanamıyor**; deneme sessizce reddediliyor (404).
-- Kod bunu "henüz tüketicisi gelmemiş" diye açıklıyor, yani bilinçli bir bekleme.
-- **Risk:** Kategori politikası ucu bu kategorileri gerçekmiş gibi gösteriyor. Arayüz bu listeden beslenirse kullanıcıya çalışmayan seçenek sunulur.
-- ⬜ **Karar:** Tüketicisi olmayan kategoriler defterden çıkarılsın mı, yoksa "hazırlanıyor" diye işaretlensin mi?
 
 ---
 

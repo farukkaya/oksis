@@ -251,7 +251,7 @@ Dört ayrı mekanizma, karıştırılmaz:
 
 1. **Kimlik** — JWT.
 2. **RBAC izin kodu** — `grades.read` / `.write` / `.publish` / `.manage` / `.report`.
-3. **Kapsam kapısı** — "bu öğretmen bu deftere yazabilir mi": `TeachingAssignment`
+3. **Kapsam kapısı** — "bu öğretmen bu deftere yazabilir mi": `TeacherCourseLoadProjection` *(X-16: eskiden `TeachingAssignment` yazıyordu, o tablo emekli edildi)*
    üzerinden. RBAC'in üstünde, handler seviyesinde zorunlu. Görevlendirmesi
    olmayan öğretmen `grades.write` taşısa bile yazamaz.
 4. **Aile kapsamı** — `/grades/family` yalnız `ParentStudentRelationship` ile
@@ -321,7 +321,7 @@ Gerekçesi: `grades.write` öğretmende var; yönetici işlemleri onunla kapıla
 `/tracking` onunla kapılanırsa okul geneli pano aileye açılır.
 
 > **İzin ≠ kapsam.** `grades.write` "not girebilir mi", kapsam kapısı "hangi
-> deftere" sorusunu yanıtlar. İkincisi `TeachingAssignment` üzerinden handler'da
+> deftere" sorusunu yanıtlar. İkincisi `TeacherCourseLoadProjection` üzerinden handler'da
 > zorunludur; görevlendirmesi olmayan öğretmen izni taşısa bile yazamaz.
 
 ### 7.5 `:publish-for` — ✅ ad doğru, eşleme düzeltildi

@@ -82,7 +82,7 @@ Ayrıca **mevcut modüllere dokunuşlar**:
 Grades ──okur──> Academics (Subject, ExamType, GradeScale, GradeLevel)
        ──okur──> Schools (SchoolSettings, SchoolGradeLevelScale, EducationLevelPolicy)
        ──okur──> AcademicSessions (AcademicTerm, ClassRoom, ClassRoomStudent)
-       ──okur──> Teachers (TeachingAssignment)
+       ──okur──> Timetable (TeacherCourseLoadProjection — X-16 düzeltmesi)
        ──okur──> Users (Person, ParentStudentRelationship)
        ──yazar─> Notifications (event üzerinden, doğrudan değil)
        <──dinler─ AcademicSessions.AcademicTermClosedEvent
@@ -392,11 +392,35 @@ EnsureCanReadStudentAsync(studentPersonId, ct)
 GetWritableBookFilterAsync(ct)     // liste sorguları için IQueryable predicate
 ```
 
+> [!warning] X-16 · Bu bölüm 2026-08-31'de DÜZELTİLDİ — analiz emekli bir tabloya dayanıyordu
+> Kapsam kaynağı burada `TeachingAssignment` yazıyordu. **`src/Oksis.Domain` altında öyle
+> bir entity YOK:** `X-15` kapatılırken (`b278415` — *"K-10 v1 teaching_assignments emekli
+> edildi"*, **18 Ağustos**, yani bu analizin yazıldığı gün) tablo düşürüldü. Analiz o
+> merge'den önceki repoyu taramıştı.
+>
+> **Bugünkü tek kaynak `TeacherCourseLoadProjection`'dır** — *"hangi öğretmen hangi şubede
+> hangi dersi kaç saat veriyor?"* sorusunun tek cevabı — ve **canlı ders programının
+> yerleşimlerinden** türer (`IsActive && IsReserving`), sezon değil **dönem** kapsamlıdır.
+> Analizde tarif edilen `RevokedAt` süzgeci artık anlamsızdır.
+>
+> **Bağlayıcı ürün kararı (`K-12` §C8):** yazma yetkisi **yayınlanmış programa bağlıdır**.
+> Taslak program slot rezerve etmez (`IsReserving == false`), dolayısıyla programını
+> yayınlamamış bir okulda **hiçbir öğretmen not giremez** ve bu **bilinçli bir kuraldır**.
+> İkinci bir kapsam kaynağı (`subject_teacher_assignments` yetkinliği) kabul EDİLMEDİ.
+> ⚠️ Kuralın sonucu **ekranda görünmek zorundadır**: öğretmen "not giremiyorum" dediğinde
+> sebebini okuyabilmelidir, yoksa `X-17`'nin şikâyet ettiği yanlış teşhis kalıbı not
+> modülünde yeniden doğar.
+>
+> **Defterin kimliği** kalıcı bir satır değil, bileşik anahtardır
+> (`TeacherCourseLoadProjection.CourseKey(classRoomId, subjectId)`); `GradeBook`'un
+> koordinatlarıyla (`classRoomId`, `subjectId`, `termId`) birebir örtüşür ama biçim **tek
+> yerde** yaşamalıdır ([[serilesmis-sekil-sozlesmedir]]).
+
 Uygulama kuralları:
 
 | Aktör | Yazma | Okuma |
 |---|---|---|
-| Öğretmen | aktif `TeachingAssignment(TeacherId=me, ClassRoomId, SubjectId, AcademicSessionId, RevokedAt IS NULL)` | aynı defterler + geçmiş dönemlerdeki aynı görevlendirmeler |
+| Öğretmen | `TeacherCourseLoadProjection.ForTeacherAsync(...)` — **canlı ders programının yerleşimlerinden** türer (`IsActive && IsReserving`), **dönem** kapsamlı (`R-09`) | aynı defterler + geçmiş dönemlerdeki aynı dersler |
 | Rehber öğretmen | yalnız kendi verdiği dersler | `ClassRoom.HomeroomTeacherId = me` → şubenin tüm derslerinin **yalnız `Published`/`Locked`** notları |
 | Okul yöneticisi | `grades.manage` gerektiren uçlarda okul geneli | okul geneli, taslaklar dahil |
 | Veli | — | `ParentStudentRelationship` aktif **ve** `CanViewInfo = true` |
