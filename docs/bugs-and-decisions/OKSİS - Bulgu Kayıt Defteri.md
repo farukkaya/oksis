@@ -35,13 +35,13 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 4 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
 | 🟠 Yüksek | 8 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 16 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 6 | Kozmetik, temizlik, adlandırma |
+| 🟡 Orta | 11 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 3 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **34** | |
+| **Toplam** | **26** | |
 
-**Modül dağılımı:** Kulüp 9 · Ödev 4 · Duyurular 4 · Çapraz kesen 3 · Notlar 3 ·
-Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Ders programı 1 · Nöbet 1 · Takvim 1
+**Modül dağılımı:** Ödev 4 · Duyurular 4 · Çapraz kesen 3 · Notlar 3 · Görevlendirme 2 ·
+Kimlik 2 · Kullanıcılar 2 · Belge 2 · Kulüp 1 · Ders programı 1 · Nöbet 1 · Takvim 1
 
 **Senin kararını bekleyenler: YOK.** 2026-08-31 karar turunda **21 yön kararının tamamı**
 bağlandı — bu liste ilk kez boş. Kararların kanonik kaydı:
@@ -70,48 +70,6 @@ ve uçtan uca ekran testi (2026-08-30, `s1` · web + mobil web) birlikte. Uçlar
 sağlam çıktı; bulguların çoğu **ekran ile sunucunun ayrıştığı** yerlerde.
 Test rehberi: `oksis-api/docs/testing/kulup-modulu-test-rehberi.md`.
 
-### `B-47` · Etkinliğin "kayıtlı" sayısı üç yerde iki farklı değer 🟡
-
-Aynı etkinlikte (1 gerçek kayıt, 2 kulüp üyesi):
-- Öğrenci detayı: **1/10** (`registeredCount`)
-- Danışman roster ekranı: **2 KAYITLI** ve doluluk çubuğu **2/10** (roster satır
-  sayısı — D15 gereği kayıt yaptırmamış üye de `registered` görünüyor)
-- İptal diyaloğu: "**1 kayıtlı katılımcıya** iptal bildirimi gider" — ama iptal
-  bildirimi **iki üyeye birden** gitti (ölçüldü).
-
-D15'in "üye kayıtlı görünür" kararı bilinçli; kusur o kararın **kontenjan çubuğunu
-ve sayaç kartını** beslemesi. Kontenjan 2 olsaydı danışman kulübü dolu sanırdı.
-
-### `B-48` · Aktivite geçmişi gelecekteki etkinliği sayıyor 🟡
-
-Ölçüt "etkinlik oldu mu" değil, "yoklama işaretlendi mi". Danışman yarınki
-etkinliğin roster'ını bugün işaretleyince (D11 buna izin veriyor) öğrencinin
-**Aktivite Geçmişi** ve velinin özet kartı o etkinliği hemen sayıyor: ölçümde
-`activityCount: 2`, `hourCount: 2` ve `items` içinde **31 Ağustos tarihli**
-(yani gelecekteki) etkinlik `attended: true` ile duruyor. Aynı etkinlik velinin
-ekranında hem "Yaklaşan Etkinlikler"de hem geçmiş toplamında.
-
-**İkinci yüzü — iptal edilen etkinlik de geçmişte kalıyor:** yayınlanmış etkinlik
-gerekçesiyle iptal edildikten sonra (`status=cancelled`) öğrencinin geçmiş
-listesinde hâlâ **"katıldı"** olarak duruyor ve saat toplamına giriyor. Ölçüt
-tek: katılım satırının işareti; etkinliğin **durumu ve tarihi hiç sorulmuyor**.
-
-### `TB-98` · Veli kulüp geçmişinin toplamları istemcide hesaplanıyor 🟡
-
-`apps/mobile/src/app/clubs/parent/[studentId]/history.tsx:38-46` `attended`
-satırları sayıp `Σ durationMinutes / 60` alıyor; öğrenci ucu aynı bilgiyi
-sunucudan `summary` bloğuyla alıyor. Aynı dosyanın kardeşi `history-screen.tsx:13`
-"toplamlar sunucudan" kuralını yazıyor. İki yüz aynı sayıyı iki yerde
-hesaplarsa ayrışır (TB-76/TB-77 dersi). Backend veli ucuna `summary` ekler,
-FE hesabı siler (analiz §19-C, F3).
-
-### `TB-100` · Mobil roll-call rotası hiçbir yerden erişilemiyor 🟡
-
-`apps/mobile/src/app/clubs/activities/[activityId]/roll-call.tsx` yazılmış,
-ama danışman kartı öğretmeni yalnız `applications`'a götürüyor
-(`app/clubs/index.tsx:55-60`); mobilde öğretmenin etkinlik listesi ekranı yok.
-Rota ölü. Backend'i ilgilendirmez; analiz §19-K, F7.
-
 ### `E-20` · Kulüp push'unu yönetici açamaz — matriste push sütunu yok 🟡
 
 Backend matris satırı `SupportsPush` + `PushEnabled` döndürüyor
@@ -120,35 +78,6 @@ durumlu yazılıyor (`dba6997`); web `notification-tab.tsx:109-146` yalnız
 Portal / E-posta / SMS çiziyor. K-02'nin `S-8` kapsam-dışı maddesi. Kulüpte
 görünür sonucu: `CLUB_ACTIVITY_PUBLISHED` varsayılan kapalı (S-9) ve yönetici
 açmak istese düğmesi yok. Kulüpten bağımsız, ayar ekranı işi; analiz §20.
-
-### `TB-103` · `students/me` ve `parents/me` uçları çağıranın profil tipini doğrulamıyor 🟡
-
-`GET /students/me/clubs/discovery` ve `…/mine` **veli, öğretmen ve yönetici**
-hesaplarıyla da **200** dönüyor (kimlik Bearer'dan çözülüyor, ama "bu kişi öğrenci
-mi" sorulmuyor). `parents/me/children/clubs-summary` de yöneticide 200. Yazma
-uçları izinle kapalı (`clubs.join` yok → 403), yani bugün veri sızıntısı yok;
-kusur sözleşmede: rota tabanı kapsam bildirimi sayılıyor ama sunucu onu
-doğrulamıyor.
-
-### `TB-101` · Kulüp mock'u olmayan bir `TeacherAdvisories` tablosuna dayanıyor 🟢
-
-`club-data.ts:352-355`: kulüp 6'nın `advisorId` `null` iken `/clubs/mine`'da
-listeleniyor ve yorum "ilişki backend'de `TeacherAdvisories` üzerinden ayrı
-tutulur" diyor. Böyle bir tablo yok ve açılmayacak (S-7 tek danışman);
-`Club.AdvisorTeacherPersonId` tek kaynak. Mock tutarsızlığı düzeltilir
-(analiz §19-M).
-
-### `D-17` · "Etkinlikler" sekmesi 0 derken listede taslak etkinlik duruyor 🟢
-
-Sekme rozeti `upcomingActivityCount`'tan besleniyor ve o **yalnız yayınlananı**
-sayıyor; liste ise taslakları da gösteriyor (yönetici/danışman görüşü). Sonuç:
-"Etkinlikler 0" sekmesinin içinde "Toplam 1 etkinlik" yazan bir tablo.
-
-### `D-18` · Öğrenci etkinlik detayında bitiş saati yok 🟢
-
-Kart "Saat 14:00" diyor; etkinlik 14:00–16:00. Öğrenci ne kadar süreceğini
-göremiyor, oysa `durationMinutes` sunucudan geliyor (geçmiş listesinde
-kullanılıyor).
 
 ---
 

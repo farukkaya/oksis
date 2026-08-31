@@ -4687,3 +4687,158 @@ Bu, karar turunda bulunan **beşinci** bayat iddiaydı (`TB-43`, `TB-46`, `TB-63
 değil — **yanlış boyutlandırma** üretiyor: `TB-43` bu yüzden XL sanılıp ayrı projeye
 konmuştu, `E-19` ise bir fazın ilk adımı sayılmıştı. Defterin kendi kuralı (*her blok koddan
 doğrulamayla başlar*) bundan sonra **karar ve planlama turlarına da** uygulanıyor.
+
+
+---
+
+## 33. Kulüp Modülü Sıfırlandı — 8 madde (2026-08-31) ✅
+
+Defter sıfırlama turunun Faz 1'i. `K-12` karar turundan sonra kararsız kalan tek
+modül buydu; sekiz maddenin tamamı aynı gün kapandı ve **Kulüp bölümü defterden
+düştü** (geriye yalnız `E-20` kaldı ve o da bildirim ayarları işidir, `TB-43`'e bağlı).
+
+### Defterden taşınan bloklar
+
+### `B-47` · Etkinliğin "kayıtlı" sayısı üç yerde iki farklı değer 🟡
+
+Aynı etkinlikte (1 gerçek kayıt, 2 kulüp üyesi):
+- Öğrenci detayı: **1/10** (`registeredCount`)
+- Danışman roster ekranı: **2 KAYITLI** ve doluluk çubuğu **2/10** (roster satır
+  sayısı — D15 gereği kayıt yaptırmamış üye de `registered` görünüyor)
+- İptal diyaloğu: "**1 kayıtlı katılımcıya** iptal bildirimi gider" — ama iptal
+  bildirimi **iki üyeye birden** gitti (ölçüldü).
+
+D15'in "üye kayıtlı görünür" kararı bilinçli; kusur o kararın **kontenjan çubuğunu
+ve sayaç kartını** beslemesi. Kontenjan 2 olsaydı danışman kulübü dolu sanırdı.
+
+
+### `B-48` · Aktivite geçmişi gelecekteki etkinliği sayıyor 🟡
+
+Ölçüt "etkinlik oldu mu" değil, "yoklama işaretlendi mi". Danışman yarınki
+etkinliğin roster'ını bugün işaretleyince (D11 buna izin veriyor) öğrencinin
+**Aktivite Geçmişi** ve velinin özet kartı o etkinliği hemen sayıyor: ölçümde
+`activityCount: 2`, `hourCount: 2` ve `items` içinde **31 Ağustos tarihli**
+(yani gelecekteki) etkinlik `attended: true` ile duruyor. Aynı etkinlik velinin
+ekranında hem "Yaklaşan Etkinlikler"de hem geçmiş toplamında.
+
+**İkinci yüzü — iptal edilen etkinlik de geçmişte kalıyor:** yayınlanmış etkinlik
+gerekçesiyle iptal edildikten sonra (`status=cancelled`) öğrencinin geçmiş
+listesinde hâlâ **"katıldı"** olarak duruyor ve saat toplamına giriyor. Ölçüt
+tek: katılım satırının işareti; etkinliğin **durumu ve tarihi hiç sorulmuyor**.
+
+
+### `TB-98` · Veli kulüp geçmişinin toplamları istemcide hesaplanıyor 🟡
+
+`apps/mobile/src/app/clubs/parent/[studentId]/history.tsx:38-46` `attended`
+satırları sayıp `Σ durationMinutes / 60` alıyor; öğrenci ucu aynı bilgiyi
+sunucudan `summary` bloğuyla alıyor. Aynı dosyanın kardeşi `history-screen.tsx:13`
+"toplamlar sunucudan" kuralını yazıyor. İki yüz aynı sayıyı iki yerde
+hesaplarsa ayrışır (TB-76/TB-77 dersi). Backend veli ucuna `summary` ekler,
+FE hesabı siler (analiz §19-C, F3).
+
+
+### `TB-100` · Mobil roll-call rotası hiçbir yerden erişilemiyor 🟡
+
+`apps/mobile/src/app/clubs/activities/[activityId]/roll-call.tsx` yazılmış,
+ama danışman kartı öğretmeni yalnız `applications`'a götürüyor
+(`app/clubs/index.tsx:55-60`); mobilde öğretmenin etkinlik listesi ekranı yok.
+Rota ölü. Backend'i ilgilendirmez; analiz §19-K, F7.
+
+
+### `TB-103` · `students/me` ve `parents/me` uçları çağıranın profil tipini doğrulamıyor 🟡
+
+`GET /students/me/clubs/discovery` ve `…/mine` **veli, öğretmen ve yönetici**
+hesaplarıyla da **200** dönüyor (kimlik Bearer'dan çözülüyor, ama "bu kişi öğrenci
+mi" sorulmuyor). `parents/me/children/clubs-summary` de yöneticide 200. Yazma
+uçları izinle kapalı (`clubs.join` yok → 403), yani bugün veri sızıntısı yok;
+kusur sözleşmede: rota tabanı kapsam bildirimi sayılıyor ama sunucu onu
+doğrulamıyor.
+
+
+### `TB-101` · Kulüp mock'u olmayan bir `TeacherAdvisories` tablosuna dayanıyor 🟢
+
+`club-data.ts:352-355`: kulüp 6'nın `advisorId` `null` iken `/clubs/mine`'da
+listeleniyor ve yorum "ilişki backend'de `TeacherAdvisories` üzerinden ayrı
+tutulur" diyor. Böyle bir tablo yok ve açılmayacak (S-7 tek danışman);
+`Club.AdvisorTeacherPersonId` tek kaynak. Mock tutarsızlığı düzeltilir
+(analiz §19-M).
+
+
+### `D-17` · "Etkinlikler" sekmesi 0 derken listede taslak etkinlik duruyor 🟢
+
+Sekme rozeti `upcomingActivityCount`'tan besleniyor ve o **yalnız yayınlananı**
+sayıyor; liste ise taslakları da gösteriyor (yönetici/danışman görüşü). Sonuç:
+"Etkinlikler 0" sekmesinin içinde "Toplam 1 etkinlik" yazan bir tablo.
+
+
+### `D-18` · Öğrenci etkinlik detayında bitiş saati yok 🟢
+
+Kart "Saat 14:00" diyor; etkinlik 14:00–16:00. Öğrenci ne kadar süreceğini
+göremiyor, oysa `durationMinutes` sunucudan geliyor (geçmiş listesinde
+kullanılıyor).
+
+### Kapanış — ne yapıldı
+
+✅ **KAPANDI — 2026-08-31** · `oksis-api` @ `d720a38` + `67882f0` · `oksis-ui` @ aynı gün.
+
+**`B-48` — "geçmiş" üç koşula bağlandı ve ölçüt ÜÇ okuyucuda birden hizalandı.**
+Eskiden yalnız katılım satırının işaretine bakılıyordu; danışman yarınki etkinliğin
+yoklamasını bugün işaretleyince (D11 buna izin veriyor) etkinlik geçmişe *hemen*
+düşüyordu ve iptal edilen etkinlik de "katıldı" olarak duruyordu. Yeni ölçüt:
+`Present` + iptal değil + `StartsAt <= okulun şu anı`.
+**Turun asıl bulgusu bu maddenin içinde çıktı:** `ClubParentChildDto.ActivityCount`
+alanını uç 31/32 ile uç 33 **iki farklı tanımla** dolduruyordu (biri `Registered|Present`
+ve gelecek dâhil, diğeri `Present` ve items'tan) — veli iki ekranda iki sayı görüyordu.
+`ActivityCountByStudentAsync` artık `Registered` saymıyor; kayıt yaptırıp yoklamada
+işaretlenmemiş öğrenci o etkinliğe katılmış sayılamaz (§10 uç 24 hükmü).
+
+**`TB-103` — rota tabanının vaadi koda bağlandı.** `IClubScope.GetCallerStudentPersonIdAsync`
+eklendi (aktif öğrenci profili şartı) ve on öğrenci ucu ona bağlandı. Veri sızıntısı
+zaten yoktu (yazma uçları `clubs.join` ile kapalı); kapanan şey sözleşme kusuruydu.
+
+**`D-17` — sayaç sabit sıfırmış.** Kök neden defterin yazdığından farklı çıktı: rozet
+"yalnız yayınlananı sayıyor" değildi, `upcomingActivityCount`/`pastActivityCount`
+Faz 3'te **sabit `0`** olarak unutulmuştu. Sayaç gerçek sorguya bağlandı ve kesme
+noktası `ListClubActivities` ile aynı yapıldı — liste durum süzgeci uygulamadığı için
+sayaç da uygulamıyor; ikisi aynı kümeyi konuşuyor.
+
+**`D-18` — alan sunucuda vardı, hiçbir tele çıkmıyordu.** `ClubActivity.EndsAt` üç
+DTO'ya birden eklendi (yönetim · öğrenci · veli): yalnız öğrenci detayını düzeltmek,
+danışman listesinde aynı boşluğu bırakırdı. Hiçbir mevcut alan yeniden adlandırılmadı
+([[serilesmis-sekil-sozlesmedir]]).
+
+**`B-47` — önizleme ile fan-out eşitlendi** (`TB-77`'nin dersi). İptal bildirimi
+**kaydını geri çekmiş** öğrenciye de gidiyordu; süzgeç `Cancelled` dışındaki satırlara
+indirildi ve bu tam olarak `ParticipantCount`'un saydığı kümedir — diyaloğun söylediği
+sayı artık fiilen bildirim alan sayıdır. Roster ekranının "Kayıtlı" sayacı ve doluluk
+çubuğu da ızgara satır sayısı yerine o sayacı okuyor (D15 gereği ızgara, kayıt
+yaptırmamış üyeyi de gösteriyor — bilinçli).
+
+**`TB-98` — kopya hesap silindi.** Sunucu `child.activityCount`/`hourCount`'u zaten
+döndürüyordu; ekran onları `items` üzerinden yeniden hesaplıyordu. Defterin önerdiği
+"backend veli ucuna `summary` ekler" adımı **gereksizdi** — alanlar vardı.
+
+**`TB-100` — ölü rota canlandı.** `AdvisorActivityListScreen` + `/clubs/[clubId]/activities`
+yazıldı; danışman kartı artık oraya götürüyor ve yoklama ekranının mobildeki tek girişi
+açıldı.
+
+**`TB-101` — danışmanlık tek kaynağa indi.** Elle yazılmış liste iki yanlış taşıyordu:
+`advisorId: null` olan **taslak** kulüp danışmanın listesinde görünüyordu (domainde
+imkânsız — `AssignAdvisor` taslağı `Active`'e çeker, yani taslak kulübün danışmanı
+olamaz ve "Yönetici henüz yayına almadı" notu ulaşılamaz bir hâli tarif ediyordu) ve
+kimlikler F5'te GUID'e çevrilirken liste **eski kısa kimliklerde kalmıştı**, yani
+mock'ta danışman listesi sessizce **boş** dönüyordu. İkincisi defterde kayıtlı
+değildi — bu turun yan bulgusu.
+
+### Doğrulama
+
+`oksis-api` 3913 birim testi yeşil (974 domain + 2456 application + 422 API + 61 mimari),
+`dotnet format` temiz. `oksis-ui` 918 test + `turbo lint` + `typecheck` + `next build`
+temiz; mobil rota tipleri Expo ile yeniden üretildi.
+
+### Turun dersi
+
+**Sekiz maddenin üçünde kök neden defterde yazandan farklı çıktı** (`D-17` sabit sıfır,
+`TB-98` alanlar zaten vardı, `TB-101`'in asıl kırığı GUID göçünden kalan ölü kimlikler).
+Faz 0.5'in gerekçesi bir kez daha doğrulandı: bulgunun **belirtisi** doğru olsa bile
+**tarifi** bayatlayabiliyor ve bayat tarif yanlış çözüme götürüyor.
