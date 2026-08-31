@@ -451,6 +451,15 @@ kırmızı "Danışman yok" uyarısı yalnız taslak/pasifte görülebilir hâle
 **Kapanış.** `B-44` arşive; `Club.cs` XML doc'undaki asimetri gerekçesi de güncellenir
 (niyet ile kod yeniden eşitlenir).
 
+> 🔄 **KARAR TERS YÖNDE ÇIKTI — 2026-08-31.** Kullanıcı bu bölümdeki çözümü
+> **reddetti**: engellenecek olan danışmanın kaldırılması değilmiş, danışmansızlığın
+> öğrenciye kapı olarak dönmesiymiş. Yeni kural: *danışmansız aktif kulüp başvuru
+> ALIR;* onayı ya idare verir (`clubs.manage`) ya da sonradan atanan danışman
+> bekleyenleri devralır. Yukarıdaki kök neden analizi doğru, **önerilen çözüm
+> uygulanmadı** — yapılan işin tamamı arşiv §30'da. Bu bölüm tarihsel kayıt olarak
+> duruyor: bir kısıtın gerekçesi (*"onaylayacak kimse yok"*) başka bir katmanda
+> (kapsam kapısı: danışman **ya da** `clubs.manage`) çürütülebiliyormuş.
+
 ---
 
 ## 10. `B-46` · Ret gerekçesi sorulmuyor, karar geçmişi görünmüyor

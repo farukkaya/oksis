@@ -4504,3 +4504,103 @@ küme artık `ResolveClassRoomConsumersAsync` ile birebir.
 engeller" uyarı metni kaldırıldı ki ekran yalan söylemesin. **Programlar arası**
 çakışma (aynı dönemde başka şubeye sonradan yerleşen aynı öğretmen) hâlâ ölçülmedi —
 ayrı tur konusu.
+
+
+---
+
+## 30. `B-44` · Ürün kararı — danışmansız kulüp başvuru alır (2026-08-31) ✅
+
+Kapanış turunda (§29) bilerek bırakılan **tek** madde. Turda önerilen çözüm dardı
+(*"aktif kulüpte danışman boşaltmayı 409'a bağla"*) ve domain'e bilinçli yazılmış bir
+asimetriyi tersine çevirdiği için kullanıcı onayına bırakılmıştı. **Karar ters yönde
+çıktı:** engellenecek olan danışmanın kaldırılması değil, danışmansızlığın öğrenciye
+kapı olarak dönmesiydi.
+
+### Defterden taşınan blok
+
+### `B-44` · Aktif kulübün danışmanı kaldırılabiliyor — D1'in arka kapısı 🟠
+
+`POST /clubs/{id}:changeStatus {"status":"active"}` danışmansız kulüpte **409**
+veriyor ("Danışman öğretmeni olmayan kulüp aktifleştirilemez"). Ama **düzenleme**
+ekranında aktif kulübün danışmanını "Kaldır" ile boşaltmak serbest: kulüp `Active`
+kalıyor, danışmansızlaşıyor. Yani sunucunun kendi kuralı düzenleme kapısından
+dolanılıyor ve doğan hâl (aktif + danışmansız) `:changeStatus` ile **onarılamıyor**
+— danışman atanmadıkça `Activate()` 409 döner.
+
+⏸️ **2026-08-31 · kapanış turunda BİLEREK ele alınmadı, kullanıcı kararı bekliyor.**
+Önerilen çözüm dar: `UpdateClubCommandHandler` aktif kulüpte danışman boşaltmayı
+409'a bağlar (değiştirme serbest kalır, taslak/pasifte kaldırma serbest kalır). Ama
+bu, domain'e **bilinçli yazılmış** bir asimetriyi tersine çevirir — `Club.cs:200-212`
+XML doc'u *"danışmansız aktif kulüp hâli MÜMKÜNDÜR ve bu bilinçlidir"* diyor. Onay
+gelmeden dokunulmadı. Alternatif (kaldırınca kulüp `Inactive`'e düşsün) elendi:
+sessiz statü değişikliği, `TB-76`'nın şikâyet ettiği "kullanıcı adına karar verme"
+sınıfındandır. Ekrandan aktifleştirme yolu artık VAR (`E-21` kapandı), yani anomali
+onarılabiliyor — ama doğması hâlâ engellenmiyor.
+
+Yönetici listesinde kırmızı "Danışman yok" uyarısı çıkıyor — anomali görünür, ama
+engellenmiyor. Devir notundaki 1. açık ürün kararı artık ekranda ölçüldü.
+
+### Karar (2026-08-31 · kullanıcı)
+
+> *"Danışmanı olmayan kulübe başvuru engellenmesin. Onay için iki ihtimal olsun:
+> yönetici rolü onaylasın; öğrenci başvurusu sonrasında danışman olarak atanan
+> öğretmenin üzerine assign edilsin başvurular."*
+
+**Kararı ölçen bulgu — eski gerekçe yanlıştı.** `D1`'in dayanağı *"başvuruyu
+onaylayacak kimse yok"*tu. Onay ucunun kendi kapsam kapısı (`ClubWriteGate` →
+`ClubViewResolver`) **danışman YA DA `clubs.manage`** istiyor; yani danışmansız
+kulüpte onaylayacak biri her zaman vardı — idare. Kapı, idarenin elindeki yetkiyi
+kendi kendine iptal ediyordu. Açık (`Open`) mod için verilen ikinci gerekçe
+(*"üyelik kimsenin göremediği bir listeye düşer"*) da aynı sebeple yanlıştı: üye
+uçları da `clubs.manage` kapsamlı.
+
+### Ne yapıldı
+
+✅ **KAPANDI — 2026-08-31** · BE (`oksis-api` @ `fix/kulup-danismansiz-basvuru`) +
+FE metin düzeltmesi (`oksis-ui` aynı dal adı).
+
+**Kural tek kapıda yaşıyordu, tek kapıdan kaldırıldı:**
+`Club.CanAcceptApplications()` artık yalnız `Status == Active`. Ondan beslenen üç
+tüketici — `:join` kapısı (uç 27), beş durumlu `membership` türetmesi
+(`ClubStudentStateResolver`) ve kart notu (`ClubLabels.ApplicationNote`) — kendiliğinden
+aynı cümleyi söylemeye başladı; hiçbirine ayrı dokunulmadı. `D8` invaryantı (notun
+girdisi ile düğmenin girdisi AYNI) bu yüzden korundu.
+`DecideClubApplicationCommandHandler`'daki elle yazılmış ikinci kapı kaldırıldı;
+`JoinClubCommandHandler.ClosedReason`'daki *"danışman öğretmeni atanmadığı için"*
+cümlesi artık erişilemez olduğu için silindi.
+
+**Kararın ikinci yarısı KOD GEREKTİRMEDİ ve bu doğrulandı.** *"Başvurular atanan
+danışmanın üzerine assign edilsin"* zaten yapısal olarak öyleydi: başvuru satırında
+"atanan kişi" diye bir kolon yoktur, görünürlük `ClubViewResolver`'ın
+`Club.AdvisorTeacherPersonId` karşılaştırmasından türer. Danışman atandığı an kulübün
+tüm bekleyen başvuruları onun listesindedir. İddia varsayılmadı, **testle çivilendi**
+(`Applications_follow_the_newly_assigned_advisor`): gerçek çözümleyiciyle, atanmadan
+önce 404 → `AssignAdvisor` → aynı iki satır listede.
+
+**Bildirim EKLENMEDİ ve bu bilinçlidir.** Modülde başvuru bildirimi hiç yok —
+danışmanlı kulüpte de yok; danışman bekleyenleri `pendingCount` kartından öğreniyor
+(çekme, itme değil). Yalnız bu vaka için itme eklemek modülün kendi kuralını bozardı.
+Ayrı iş olarak açılabilir.
+
+**`Club.Activate()` DEĞİŞMEDİ.** Taslak kulüp hâlâ danışman atanmadan yayına çıkamaz.
+İki kural aynı şeyi söylemiyor: *"sorumlusunu göstermeden yayına alma"* ayrı,
+*"sorumlusu boşalınca kulübün hayatı dursun"* ayrı. Reddedilen yalnız ikincisi.
+
+**Testler.** 6 test yeni kurala çevrildi (biri gerçek MSSQL'de: danışmansız kulüpte
+hem onay hem ret çalışıyor ve `member_count` artıyor), 3 test eklendi. Aşırı düzeltme
+kontrolleri bilerek bırakıldı: taslak/pasif kulüpte başvuru hâlâ kapalı, kontenjan ve
+pencere kapıları yerinde. `oksis-api` 4957 test yeşil (1048'i gerçek SQL Server),
+`oksis-ui` 918 test + lint + typecheck + build temiz.
+
+**Yanında düzeltilen gerçek kusur.** Kulüp formundaki yardım metni koşulsuzdu ve
+düzenleme modunda **yalan söylüyordu**: yayındaki bir kulübü düzenlerken de *"kulüp
+Taslak olarak açılır"* diyordu, oysa danışmanı kaldırmak kulübü `Draft`'a çekmez.
+Metin moda bağlandı ve yeni sonucu söylüyor.
+
+### Turun dersi
+
+Bir kuralın **gerekçesi**, kuralın yaşadığı katmandan başka bir katmanda yanlışlanmış
+olabilir. `D1` domain'de doğru görünüyordu; onu çürüten şey uygulama katmanındaki
+kapsam kapısıydı. Bir kısıtı savunmadan önce, gerekçesinin hâlâ ölçülebilir olup
+olmadığına bakmak gerekiyor — bu madde iki tur boyunca "bilinçli asimetri" diye
+korundu, oysa dayanağı en baştan yoktu.

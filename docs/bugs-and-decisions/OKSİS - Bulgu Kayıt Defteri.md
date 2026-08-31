@@ -34,13 +34,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 4 | Akışı bloklıyor veya iş kuralı ihlali üretiyor |
-| 🟠 Yüksek | 10 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 9 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 6 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | Arandı, bulunamadı — nerede görüldüğü söylenmeli |
-| **Toplam** | **39** | |
+| **Toplam** | **38** | |
 
-**Modül dağılımı:** Kulüp 10 · Ödev 5 · Duyurular 5 · Çapraz kesen 4 · Notlar 3 ·
+**Modül dağılımı:** Kulüp 9 · Ödev 5 · Duyurular 5 · Çapraz kesen 4 · Notlar 3 ·
 Ders programı 2 · Görevlendirme 2 · Kimlik 2 · Kullanıcılar 2 · Belge 2 · Nöbet 1 · Takvim 1
 
 **Senin kararını bekleyenler** (kod değil, yön kararı): `TB-48`/`X-03` (v1 emekliliği) ·
@@ -49,7 +49,6 @@ ayarları teslimata mı bağlansın) · `TB-46` (sınav ağırlığı nerede ya�
 içe aktarma yolu birleşsin mi) · `TB-31` (kesintide bildirim gitsin mi) · `TB-78`
 (`CanViewInfo` merkezî mi süzülsün) · `X-17` (kapsam reddinin biçimi: 403 mü 404 mü) ·
 `X-06` geniş ayağı (92 handler: tek tek test mi ortak koşum mu) · `X-11` (CI sağlayıcısı) ·
-`B-44` (aktif kulübün danışmanı kaldırılabilsin mi — domain'e yazılı bilinçli asimetri) ·
 `X-10` (yazılı bir tercih değişecek) · `X-18` (ortak `ChipRow` bileşeni) · `B-19` (ölü
 düğme ne yapmalı) · `B-24` artığı (etiket adı) · `D-04` (nerede görüldü)
 
@@ -67,34 +66,12 @@ X-18          ──►  dördüncü çip şeridi aynı hatayı yeniden açar
 
 ---
 
-## 1. Kulüp Modülü 🔴
+## 1. Kulüp Modülü 🟡
 
 Aktif modül. Kod taraması (2026-08-29, `oksis-api` @ `1acf29a` · `oksis-ui` @ `1fec5aa`)
 ve uçtan uca ekran testi (2026-08-30, `s1` · web + mobil web) birlikte. Uçların kendisi
 sağlam çıktı; bulguların çoğu **ekran ile sunucunun ayrıştığı** yerlerde.
 Test rehberi: `oksis-api/docs/testing/kulup-modulu-test-rehberi.md`.
-
-### `B-44` · Aktif kulübün danışmanı kaldırılabiliyor — D1'in arka kapısı 🟠
-
-`POST /clubs/{id}:changeStatus {"status":"active"}` danışmansız kulüpte **409**
-veriyor ("Danışman öğretmeni olmayan kulüp aktifleştirilemez"). Ama **düzenleme**
-ekranında aktif kulübün danışmanını "Kaldır" ile boşaltmak serbest: kulüp `Active`
-kalıyor, danışmansızlaşıyor. Yani sunucunun kendi kuralı düzenleme kapısından
-dolanılıyor ve doğan hâl (aktif + danışmansız) `:changeStatus` ile **onarılamıyor**
-— danışman atanmadıkça `Activate()` 409 döner.
-
-⏸️ **2026-08-31 · kapanış turunda BİLEREK ele alınmadı, kullanıcı kararı bekliyor.**
-Önerilen çözüm dar: `UpdateClubCommandHandler` aktif kulüpte danışman boşaltmayı
-409'a bağlar (değiştirme serbest kalır, taslak/pasifte kaldırma serbest kalır). Ama
-bu, domain'e **bilinçli yazılmış** bir asimetriyi tersine çevirir — `Club.cs:200-212`
-XML doc'u *"danışmansız aktif kulüp hâli MÜMKÜNDÜR ve bu bilinçlidir"* diyor. Onay
-gelmeden dokunulmadı. Alternatif (kaldırınca kulüp `Inactive`'e düşsün) elendi:
-sessiz statü değişikliği, `TB-76`'nın şikâyet ettiği "kullanıcı adına karar verme"
-sınıfındandır. Ekrandan aktifleştirme yolu artık VAR (`E-21` kapandı), yani anomali
-onarılabiliyor — ama doğması hâlâ engellenmiyor.
-
-Yönetici listesinde kırmızı "Danışman yok" uyarısı çıkıyor — anomali görünür, ama
-engellenmiyor. Devir notundaki 1. açık ürün kararı artık ekranda ölçüldü.
 
 ### `B-47` · Etkinliğin "kayıtlı" sayısı üç yerde iki farklı değer 🟡
 
