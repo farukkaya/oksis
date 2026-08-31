@@ -51,6 +51,18 @@ bekleyemez.
 aktarılmıyor) açıklanır ve kapanır — aktarım kodu v1'i kopyalıyordu, v1'de veri yoktu.
 📌 [[OKSİS - Yapısal Kararlar ve Eksikler]] · `K-10` bu kararla cevaplanmıştır.
 
+> ⚠️ **DÜZELTME (2026-09-01): bu karar HÜKÜMSÜZ — bayat tarif üstüne alındı.**
+> `TB-48`'in ölçümü 2026-08-10 tarihliydi; karar turu maddeyi "ayrı proje" diye
+> sınıfladığı için yeniden ölçmedi. Oysa düğüm **2026-08-18'de `X-15` ile kapanmıştı**:
+> `teaching_assignments` tablosu DROP edildi, dokuz okuma yolu v2 + müfredat + canlı
+> programa taşındı (`TeacherCourseLoadProjection`), geri dönüşü `SingleAssignmentSourceTests`
+> engelliyor. Yani "Yol 1" var olmayan bir tabloya ekran açmayı seçiyordu ve kullanıcının
+> kendi 2026-08-16 `K-10` kararıyla (v1 emekli, v2 + müfredattan türet) çelişiyordu.
+> **Fiilen gerçekleşen Yol 2'dir ve bitmiştir.** `K-10` bu turda değil 2026-08-16'da
+> cevaplanmış, 2026-08-18'de uygulanmıştı. Uygulama kalemi kalmadı; `TB-48`/`X-03`
+> arşiv §39 ile kapandı. Ders: karar turuna giren her madde, sınıfı ne olursa olsun,
+> karardan önce koddan doğrulanır.
+
 ### A2 · `TB-43` — Bildirim ayarları → **Kanal altyapısı yazılsın** (kapsam: e-posta)
 
 **Karar sırasında yapılan kod doğrulaması defteri düzeltti.** `TB-43`'ün *"kayıtlı tek

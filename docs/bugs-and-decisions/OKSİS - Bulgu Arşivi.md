@@ -5526,3 +5526,55 @@ sorunuydu: *"bir okul öğretmen listesini hangisinden yüklerse yüklesin sonuc
 `B-20`'nin kapanması `TB-55`'in yarısını sessizce kapatmıştı ve defter bunu bilmiyordu.
 Bir maddenin kardeşi kapandığında o maddenin **tarifi** de yeniden okunmalı — bu turun
 en sık tekrarlayan dersi (`TB-43`, `TB-63`, `E-18`, `TB-83`, `E-19`, şimdi `TB-55`).
+
+---
+
+## 39. `TB-48` + `X-03` · Görevlendirme düğümü ZATEN kapalıydı (2026-09-01) ✅
+
+**Kapanış türü: tarif bayattı — iş 2026-08-18'de `X-15` ile yapılmıştı.** Bugün tek
+satır kod yazılmadı; kapanan şey defterin kendisiydi.
+
+### `TB-48` · "Görevlendirme v1'in tek yazma yüzeyi kapalı, yedi tüketicisi hâlâ ona bağlı" 🔴
+
+Maddenin ölçümü **2026-08-10** tarihliydi ve o gün doğruydu. Sekiz gün sonra `X-15`
+kapanışı (`K-10`'un uygulaması, `oksis-api` @ `67d16db..1798802` · `oksis-ui`
+@ `5dadb16..2273ceb`) tarif edilen dünyayı tamamen bitirdi:
+
+- `academic.teaching_assignments` tablosu **DROP edildi**
+  (migration `20260818_retire_v1_teaching_assignments`; `teaching-assignments.assign`
+  ve `.copy-season` izinleri de düştü, `.view` kaldı).
+- Maddedeki "yedi canlı tüketici"nin **dokuzu birden** v2 + müfredat + canlı programa
+  taşındı; şube/saat türetmesinin tek noktası `TeacherCourseLoadProjection`.
+- Sezon devri `CopyAssignmentsFromPreviousSeasonCommand`'a (v2) geçti — `B-07`'nin
+  açıklaması da böylece `TB-48`'e değil `X-07`'ye çıkmıştı (arşiv, 2026-08-12).
+- Geri dönüşü **bekçi testi** engelliyor: `SingleAssignmentSourceTests` `src` altında
+  v1 adının geçmesini yasaklıyor.
+
+**Bugünkü doğrulama (2026-09-01):** `grep -rln TeachingAssignment src/ | grep -v
+Migrations` → **0 dosya**. `api/v1/teachers/{id}/assignments` rotası duruyor ama artık
+v2 okuyan `TeacherCoursesController` (sözleşme korunmuş). `s4` uçtan uca ölçümü `X-15`
+kapanışında yazılı: sihirbaz 10 şube, üretim 9 yerleşim, duyuru havuzu dolu.
+
+### `X-03` · "Görevlendirme iki nesil hâlinde yan yana yaşıyor" 🟠
+
+İki nesil yok artık; **tek kaynak** var: "kim hangi dersi verebilir" → v2
+`subject_teacher_assignments`, "kim hangi şubede kaç saat veriyor" → canlı ders
+programı, "haftada kaç saat olmalı" → müfredat. Maddenin sorduğu *"hangisi kanonik"*
+sorusu `K-10`'un 2026-08-16 kararıyla cevaplanmış, 08-18'de koda inmişti.
+
+### ⚠️ Düzeltme: `K-12 §A1` hükümsüz
+
+2026-08-31 karar turu bu iki maddeyi **ayrı proje** diye sınıfladığı için yeniden
+ölçmedi ve bayat tarifin üstüne karar aldırdı: *"Yol 1 — v1 ekranı geri gelsin."*
+O karar **var olmayan bir tabloya ekran açmayı** seçiyor ve kullanıcının kendi
+2026-08-16 `K-10` kararıyla (v1 emekli) çelişiyor. `K-12 §A1`'e ve
+[[OKSİS - Yapısal Kararlar ve Eksikler]] `K-10` girdisine düzeltme notu düşüldü.
+Depo gerçeği tek dosyada biliyordu (Yapısal Kararlar özet tablosu: *"uygulandı
+2026-08-18, bkz. X-15"*) ama defter ve karar turu ona bakmadı.
+
+### Ders
+
+§38'in dersinin en ağır hâli: kardeş kapanışı yalnız bir maddenin *yarısını* sessizce
+kapatmakla kalmıyor, yeniden ölçülmeyen tarif **yanlış kullanıcı kararı** üretebiliyor.
+"Ayrı proje" sınıfı yeniden ölçümden muafiyet değildir — karar turuna giren HER madde,
+sınıfı ne olursa olsun, karardan önce koddan doğrulanır.

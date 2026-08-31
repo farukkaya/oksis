@@ -12,6 +12,12 @@
 > Aşağıdaki fazlar kararlara göre revize edildi; en büyük değişiklik `TB-43`'ün
 > Faz 5'ten Faz 3'e inmesi (§11).
 
+> [!warning] DÜZELTME — 2026-09-01 · `TB-48`/`X-03` bu plandan düştü
+> Bu belgedeki her `TB-48`/`X-03` satırı **bayat tarif** üstüne kurulu: düğüm
+> 2026-08-18'de `X-15` ile kapanmıştı (v1 tablosu DROP, dokuz okuma yolu v2 +
+> müfredat + canlı programa taşındı). `K-12 §A1` kararı bu yüzden **hükümsüz**;
+> "ayrı proje" listesi bir kalem eksildi. Kayıt: [[OKSİS - Bulgu Arşivi]] §39.
+
 ---
 
 ## 0. Baş bulgu — darboğaz kod değil, karar

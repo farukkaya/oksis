@@ -685,12 +685,14 @@ gönderilmiyor", SMS kotası kartı "Geçici veri" diyor.
 
 ## K-10 · Ders programının görevlendirme kaynağı
 
-> ✅ **CEVAPLANDI — 2026-08-31** ([[K-12 - Defter Sıfırlama Karar Turu]] §A1): **Yol 1
-> şimdi, Yol 2 hedef.** v1 (`teaching_assignments`) yazma ekranı geri gelir ve kanonik
-> kaynak olarak kalır; v2 (`subject_teacher_assignments`) üstte yetkinlik katmanı olur;
-> v1→v2 göçü ayrı proje olarak takvimlenir. Gerekçe: `AssignmentLine` sözleşmesi v2'den
-> üretilemiyor, yedi canlı tüketici v1'i okuyor ve pilot bekleyemez.
-> Uygulama kalemleri: `TB-48`, `X-03`, `B-07`.
+> ✅ **CEVAPLANDI — 2026-08-16 · UYGULANDI — 2026-08-18 (`X-15`):** v2 + müfredattan
+> türet, v1 emekli. `teaching_assignments` tablosu düştü, dokuz okuma yolu taşındı,
+> geri dönüşü `SingleAssignmentSourceTests` engelliyor. Bu dosyanın özet tablosu bunu
+> baştan beri doğru söylüyordu.
+>
+> ⚠️ *2026-08-31'de buraya `K-12 §A1`'i işaret eden ikinci bir "CEVAPLANDI" bandı
+> yazılmıştı; o band bayat `TB-48` tarifine dayanıyordu ve karar hükümsüz —
+> düzeltme kaydı: [[K-12 - Defter Sıfırlama Karar Turu]] §A1 + [[OKSİS - Bulgu Arşivi]] §39.*
 
 
 --- start-multi-column: K-10
