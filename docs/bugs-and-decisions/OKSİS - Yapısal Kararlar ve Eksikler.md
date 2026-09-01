@@ -35,7 +35,7 @@
 | **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ✅ Karara bağlandı | 2026-08-16 | "Örnek veri" rozeti |
 | **K-10** | Ders programının görevlendirme kaynağı (v1 mi v2 mi) | ✅ Karara bağlandı · **uygulandı** | 2026-08-16 · uygulama 2026-08-18 | v2 + müfredattan türet, v1 emekli — **v1 tablosu düştü**, bkz. `X-15` |
 | **K-13** | Öğretmen haftalık kapasite alanı | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Preset + serbest · solver'da yumuşak kısıt · varsayılan 30 — BE `c6c4086` + web `oksis-ui` @ `3cc904e` |
-| **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz |
+| **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz — BE `0cd40654` + web `oksis-ui` @ `3b14a36` |
 | **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ — BE `225f7623` + web `oksis-ui` @ `3cc904e` |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
@@ -821,6 +821,10 @@ Türkiye'de kapasite tek sayı da değil: maaş karşılığı 15 saat (branş) 
 ## K-14 · Üretim dağıtım kısıtı (pinleme)
 
 > 🎨 **Tasarım hazır (2026-09-01, Oksis Layout V2):** `web/schedule-distribution-constraints.jsx` — sabitle/hariç tut temel, bölüşüm `sdcBolusum` tweak'iyle varyant (a); ihlal davranışı Uyarı/Engel `sdcIhlal` tweak'iyle iki varyant (b). Karar bu iki anahtar açılıp bakılarak verilebilir. ⚠️ Tasarım gerekçeyi ZORUNLU yaptı (≥15 karakter) — brief opsiyonel demişti; karara bağlanmalı.
+
+> ⚙️ **Backend uygulandı (2026-09-01, `oksis-api` @ `0cd40654`):** `DistributionConstraint` (sezon kapsamlı, pin/exclude, hedef hücre değişmez, soft-delete'i dışlayan filtreli benzersiz indeksler) · CRUD uçları `timetable/distribution-constraints` · alan-dışı seçimde ≥15 karakter gerekçe sunucuda zorunlu · üretimde pin kısa devre, exclude yumuşak (tek yetkin dışlanırsa geri düşer) · yayın önizlemesi `constraint-violation` uyarısı (yayını kilitlemez, K-14/2) · durum (bekliyor/sağlandı/ihlal) canlı yerleşimden türetilir.
+> 🖥️ **Web portu tamam (2026-09-01, `oksis-ui` @ `3b14a36`):** `/schedule/constraints` ekranı (liste + modal + ihlal bandı) · program merkezinde giriş kartı · MSW mock'ları.
+> 🧪 **Üretim e2e ölçüldü (2026-09-01, s2/12-A canlı sunucu):** pin → Matematik 4/4 pinli öğretmene; exclude (tek yetkin) → fallback aynı öğretmene + önizlemede ihlal uyarısı; kapasite 1'e çekilince Kimya diğer yetkine kaydı; `capacity-overrun` + `constraint-violation` + `missing-hours` aynı önizlemede, yalnız eksik saat `canPublish`i düşürüyor.
 
 --- start-multi-column: K-14
 ```column-settings
