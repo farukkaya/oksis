@@ -34,7 +34,7 @@
 | **K-08** | Dini bayramlar için tatil şeması değişikliği | ⏸️ Ertelendi | 2026-08-16 | Ayrı iş olarak planlanacak |
 | **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ✅ Karara bağlandı | 2026-08-16 | "Örnek veri" rozeti |
 | **K-10** | Ders programının görevlendirme kaynağı (v1 mi v2 mi) | ✅ Karara bağlandı · **uygulandı** | 2026-08-16 · uygulama 2026-08-18 | v2 + müfredattan türet, v1 emekli — **v1 tablosu düştü**, bkz. `X-15` |
-| **K-13** | Öğretmen haftalık kapasite alanı | ✅ Karara bağlandı | 2026-09-01 | Preset + serbest · solver'da yumuşak kısıt · varsayılan 30 |
+| **K-13** | Öğretmen haftalık kapasite alanı | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Preset + serbest · solver'da yumuşak kısıt · varsayılan 30 — BE: `oksis-api` @ `c6c4086` |
 | **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz |
 | **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ, bilgi amaçlı |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
@@ -769,6 +769,7 @@ sınıf listeleyemez.
 
 ## K-13 · Öğretmen haftalık kapasite alanı
 
+> ⚙️ **Backend uygulandı (2026-09-01, `oksis-api` @ `c6c4086`):** `TeacherProfile.WeeklyCapacityHours` + migration (dev DB'ye uygulandı) · `UpdateProfileCommand` (null=değiştirme · 0=varsayılana dön · 1–40=özel) · yük yüzdesi/ortalama kişisel kapasiteyle · üretim dağıtımı kapasite-ağırlıklı (eşit kapasitede round-robin ile birebir aynı) · önizlemede `capacity-overrun` uyarısı. FE bağlanması ayrı iş.
 > 🎨 **Tasarım hazır (2026-09-01, Oksis Layout V2):** `web/teacher-capacity.jsx` — MEB preset (Sınıf 18+12 · Branş 15+15) VE serbest saat birlikte çizildi; kapasite sütunu, Özel/Vars. rozeti, aşım durumu. Karar (a) şıkkı tasarımda iki modlu görülebilir.
 
 --- start-multi-column: K-13
