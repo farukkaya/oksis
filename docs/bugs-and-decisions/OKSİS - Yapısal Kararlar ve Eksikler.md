@@ -863,7 +863,7 @@ ilkesini bozmaz — bayatlamaz, yalnız ihlal edilir ve ihlal ölçülür.
 
 **Gerekçe**
 > Sabitle/hariç tut aday havuzunu daraltmaktan ibaret (solver'da ucuz); bölüşüm yerleşim modeline dokunur, ayrı kalem. Uyarıdan engele sıkılaştırmak kolay, tersi zordur. Her kısıtta zorunlu gerekçe kısa sürede 'asdf' üretir; denetim izinin hassas yeri alan-dışıdır. Kısıt şube+kadro kesişimine bağlıdır — kopyalanan kısıt bayat niyet taşır.
-> ⚠️ **Tasarım revizyonu doğdu:** modal bugün HER kısıtta ≥15 karakter istiyor → yalnız alan-dışında zorunlu olacak.
+> ✅ **Tasarım revizyonu işlendi (2026-09-01):** gerekçe modal'da yalnız alan-dışı seçimde zorunlu; boş gerekçe tabloda "Gerekçe girilmedi" olarak görünür.
 
 --- end-multi-column
 
@@ -914,7 +914,7 @@ bir `NonTeachingLoad` görünümü; toplam yük yalnız **rapor düzleminde** bi
 
 **Gerekçe**
 > Katsayı kurum politikasıdır; hesap sunucuda, değer okul ayarında yaşar ([[kural-ekranda-degil-sunucuda]]). Kapasiteye dahil edilseydi tüm yük KPI'larının bugünkü anlamı bir günde değişirdi; yüzde 'derse ayrılan kapasite'yi anlatmayı sürdürür, ders dışı görünürlük ayrıca kazanılır.
-> ⚠️ **Tasarım revizyonu doğdu:** gösterge bugün toplamı (ders + ders dışı) kapasiteyle karşılaştırıyor — % ve Aşım salt ders saatine bağlanacak, ders dışı segment bilgi olarak kalacak.
+> ✅ **Tasarım revizyonu işlendi (2026-09-01):** % ve Aşım tüm yüzeylerde (gösterge, tablo hücresi, KPI ortalaması) salt ders saatine bağlandı; ders dışı segment bilgi olarak duruyor.
 
 --- end-multi-column
 
