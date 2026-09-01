@@ -34,9 +34,9 @@
 | **K-08** | Dini bayramlar için tatil şeması değişikliği | ⏸️ Ertelendi | 2026-08-16 | Ayrı iş olarak planlanacak |
 | **K-09** | Yer tutucu veri politikası (panel/mobil anasayfa) | ✅ Karara bağlandı | 2026-08-16 | "Örnek veri" rozeti |
 | **K-10** | Ders programının görevlendirme kaynağı (v1 mi v2 mi) | ✅ Karara bağlandı · **uygulandı** | 2026-08-16 · uygulama 2026-08-18 | v2 + müfredattan türet, v1 emekli — **v1 tablosu düştü**, bkz. `X-15` |
-| **K-13** | Öğretmen haftalık kapasite alanı | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Preset + serbest · solver'da yumuşak kısıt · varsayılan 30 — BE: `oksis-api` @ `c6c4086` |
+| **K-13** | Öğretmen haftalık kapasite alanı | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Preset + serbest · solver'da yumuşak kısıt · varsayılan 30 — BE `c6c4086` + web `oksis-ui` @ `3cc904e` |
 | **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz |
-| **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ, bilgi amaçlı |
+| **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ — BE `225f7623` + web `oksis-ui` @ `3cc904e` |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -769,7 +769,8 @@ sınıf listeleyemez.
 
 ## K-13 · Öğretmen haftalık kapasite alanı
 
-> ⚙️ **Backend uygulandı (2026-09-01, `oksis-api` @ `c6c4086`):** `TeacherProfile.WeeklyCapacityHours` + migration (dev DB'ye uygulandı) · `UpdateProfileCommand` (null=değiştirme · 0=varsayılana dön · 1–40=özel) · yük yüzdesi/ortalama kişisel kapasiteyle · üretim dağıtımı kapasite-ağırlıklı (eşit kapasitede round-robin ile birebir aynı) · önizlemede `capacity-overrun` uyarısı. FE bağlanması ayrı iş.
+> ⚙️ **Backend uygulandı (2026-09-01, `oksis-api` @ `c6c4086`):** `TeacherProfile.WeeklyCapacityHours` + migration (dev DB'ye uygulandı) · `UpdateProfileCommand` (null=değiştirme · 0=varsayılana dön · 1–40=özel) · yük yüzdesi/ortalama kişisel kapasiteyle · üretim dağıtımı kapasite-ağırlıklı (eşit kapasitede round-robin ile birebir aynı) · önizlemede `capacity-overrun` uyarısı.
+> 🖥️ **Web portu tamam (2026-09-01, `oksis-ui` @ `3cc904e`)** — K-15 notundaki ekran turuyla birlikte doğrulandı.
 > 🎨 **Tasarım hazır (2026-09-01, Oksis Layout V2):** `web/teacher-capacity.jsx` — MEB preset (Sınıf 18+12 · Branş 15+15) VE serbest saat birlikte çizildi; kapasite sütunu, Özel/Vars. rozeti, aşım durumu. Karar (a) şıkkı tasarımda iki modlu görülebilir.
 
 --- start-multi-column: K-13
@@ -872,6 +873,8 @@ ilkesini bozmaz — bayatlamaz, yalnız ihlal edilir ve ihlal ölçülür.
 
 ## K-15 · Ders dışı yük görünürlüğü
 
+> ⚙️ **Backend uygulandı (2026-09-01):** `SchoolSettings.DutyDayNonTeachingHours`/`ClubAdvisorNonTeachingHours` (vars. 2/2, migration dev DB'de) · `GET/PUT school-settings/non-teaching-load` · türetme tek noktada `TeacherNonTeachingLoadProjection` (canlı nöbet çizelgesi günleri + aktif kulüp danışmanlıkları) · workload satırlarına `dutyHours`/`clubAdvisorHours` eklendi, yalnız ders dışı yükü olan öğretmen de listelenir; yüzde/aşım salt ders saatinden (K-15/3).
+> 🖥️ **Web portu tamam (2026-09-01, `oksis-ui` @ `3cc904e`):** parçalı yük hücresi + kapasite sütunu/modali + çekmece kartı + Ayarlar politika kartı; ekran turu canlı API'yle (s2) doğrulandı — kapasite yaz/sıfırla ve katsayı kaydı uçtan uca ölçüldü.
 > 🎨 **Tasarım hazır (2026-09-01, Oksis Layout V2):** parçalı yük çubuğu (`TeacherLoadBar`) tablo+çekmecede; ders dışı mini liste; "Program yayınlanmadı" ayrı durum. (b) varsayımı UI'da açıkça damgalı: nöbet günü 2 saat · kulüp 2 saat.
 
 --- start-multi-column: K-15
