@@ -3,7 +3,7 @@ aliases: [ModuleConfig, PlanModule, Modül Ayarı, Plan Kısıtı]
 tags: [domain/platform]
 table: school.school_module_configs
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Modül Yapılandırması
@@ -47,7 +47,7 @@ Dört sınıf vardır ve davranışları farklıdır:
 
 - [[Okul Yönetimi]] — kavramın sahibi
 
-Kapının arkasındaki modüllerin tamamı bu ayardan etkilenir.
+**Sunucu tarafında bu ayarı okuyan başka modül yoktur** (2026-09-03 ölçümü, bkz. `X-20`): kapatılmış ya da plan dışı modülün uçları API'den aynen çalışır; kapı yalnız arayüzdedir. [[Notlar]] özelinde seed anahtarı `marks`, rota ve izin ailesi `grades`; [[Ödevler]] için seed'de anahtar **hiç yoktur** — okul ödev modülünü ayarlardan kapatamaz bile.
 
 <!-- generated:end -->
 
@@ -57,5 +57,5 @@ Kapının arkasındaki modüllerin tamamı bu ayardan etkilenir.
 
 ## Açık Sorular
 
-- Modül kapatıldığında ilgili uçların gerçekten reddedildiği bu taramada doğrulanamadı. Kapatma yalnız arayüzü mü gizliyor, yoksa sunucu tarafında da bir kapı var mı?
+- ~~Modül kapatıldığında ilgili uçların gerçekten reddedildiği doğrulanamadı.~~ 2026-09-03'te ölçüldü: sunucuda kapı **yok**; bulgu defterinde `X-20`.
 - Plan düşürüldüğünde (premium → ücretsiz) o modüldeki mevcut veriye ne oluyor? Salt-okunur mu kalıyor, erişilemez mi oluyor?

@@ -3,7 +3,7 @@ aliases: [StudentEnrollment, Kayıt, Kayıt Yenileme]
 tags: [domain/people]
 table: academic.student_enrollments
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Öğrenci Kaydı
@@ -67,6 +67,8 @@ Taslak, terfi sırasında bir şubeye yerleştirilerek aktifleşir. **Yenileme d
 - [[Sınıflar ve Şubeler]] — terfi ve şube yerleşimi
 - [[Sezon Yönetimi]] — sezon geçişinde yenileme dönemi ve terfi
 - [[Yoklama ve Devamsızlık]] — risk ve dönem raporları kayıt üzerinden süzülür
+- [[Notlar]] — defterin öğrenci listesi ve yazılabilirlik kayıt durumundan gelir: aktif ve dondurulmuş yazılabilir, şubeden ayrılanın notu görünür ama kilitli ve sayaçlara girmez
+- [[Ödevler]] — yayın anındaki mevcut hedefi belirler; sonradan katılan öğrencinin satırı okurken sentezlenir, ayrılanın satırı ızgarada kalır
 
 <!-- generated:end -->
 

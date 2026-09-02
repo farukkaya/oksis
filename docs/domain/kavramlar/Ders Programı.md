@@ -3,7 +3,7 @@ aliases: [ScheduleProgram, Haftalık Ders Programı, Şube Programı]
 tags: [domain/academic]
 table: academic.schedule_programs
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Ders Programı
@@ -61,6 +61,8 @@ Program üzerinde üç sayı taşınır: başka şubelerin canlı programlarıyl
 
 - [[Ders Programı Yönetimi]] — kavramın sahibi
 - [[Nöbetler]] — vekâlet, yayınlanmış programın üstüne katman yazar
+- [[Notlar]] — not defteri kapsamının **tek kaynağı**: "bu öğretmen bu şubede bu dersi okutuyor mu" sorusu programdaki yerleşimden cevaplanır; görevlendirme kullanılmaz, vekâlet kapsama girmez
+- [[Ödevler]] — ödev **oluşturma** kapsamı aynı yerden; var olan ödevde soru kapsam değil sahipliktir, program değişse de öğretmen kendi ödevini kapatır
 
 <!-- generated:end -->
 

@@ -3,7 +3,7 @@ aliases: [FileCategoryPolicy, FileCategories, Dosya Politikası]
 tags: [domain/platform]
 table: "-"
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Dosya Kategorisi
@@ -24,7 +24,9 @@ Beş şey: hangi uzantılar ve içerik tipleri kabul edilir, azami boyut nedir, 
 
 ## Bugünkü kategoriler
 
-Ödev teslimi, sınav belgesi, sanal kitap, okul logosu, kulüp belgesi, duyuru eki, mazeret belgesi ve önizleme.
+Ödev teslimi, ödev eki, sınav belgesi, sanal kitap, okul logosu, kulüp belgesi, duyuru eki, mazeret belgesi ve önizleme.
+
+Ödev teslimi ile ödev eki **bilinçli olarak iki ayrı kategoridir:** öğrencinin teslimi ile öğretmenin çalışma kâğıdının saklama ve tarama politikaları farklıdır; tek kategori olsaydı öğrenci, öğretmenin ekini kendi teslimi diye bağlayabilirdi.
 
 Sınırlar kategoriye göre ciddi biçimde değişir — sanal kitap yarım gigabayta kadar çıkar ve parçalı yüklemeye izin verir, okul logosu iki megabaytla sınırlıdır. Yalnız sanal kitap imzalı bağlantı zorunlu tutar.
 
@@ -48,6 +50,7 @@ Bu alan KVKK tarafının doğrudan karşılığıdır; mazeret belgesinin süres
 ## Geçtiği modüller
 
 - [[Dosya Yönetimi]] — kavramın sahibi; kural uygulama ve imha
+- [[Ödevler]] — teslim ve ek kategorileri; yükleme kapısı kategoriyi doğrular
 
 <!-- generated:end -->
 
@@ -57,7 +60,7 @@ Bu alan KVKK tarafının doğrudan karşılığıdır; mazeret belgesinin süres
 
 ## Açık Sorular
 
-- **Dört kategorinin bağlanabileceği kayıt tipi yok:** ödev teslimi, sınav belgesi, sanal kitap ve kulüp belgesi tanımlı, ama [[Dosya Bağı]] yalnız okul, mazeret ve duyuruyu tanıyor. Bu kategorilere dosya yüklense de bir kayda bağlanamaz. İki defter ayrışmış.
+- **Üç kategorinin bağlanabileceği kayıt tipi yok:** sınav belgesi, sanal kitap ve kulüp belgesi tanımlı ama [[Dosya Bağı]] onları tanımıyor; yüklense de bir kayda bağlanamaz. Ödev teslimi ve ödev eki 2026-08-27'de bağlandı ([[Ödevler]]).
 - **Öğrenci belgesi kategorisi hiç tanımlı değil** — o taraf kendi ham dosya adresini tutuyor (bkz. [[Öğrenci Belgesi]]).
 - Mazeret belgesinin saklama süresi kodda "KVKK teyidi bekleyen taslak" diye işaretli. Teyit alındı mı?
 - Kategori defteri kodda sabit. Okulun kendi kategorisini tanımlaması gerekirse ne olacak?

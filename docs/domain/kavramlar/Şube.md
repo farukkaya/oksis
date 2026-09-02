@@ -3,7 +3,7 @@ aliases: [ClassRoom, Branch (Timetable), BranchId (Timetable), Sınıf Şubesi]
 tags: [domain/academic]
 table: class_rooms
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Şube
@@ -62,6 +62,8 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 - [[Yoklama ve Devamsızlık]] — [[Yoklama Oturumu]] şube bazında üretilir
 - [[Öğrenci Kayıt Yönetimi]] — terfi sırasında yenileme taslakları şube koltuğuna yerleşir
 - [[Kullanıcılar]] — öğrenci [[Profil]]'i güncel şube bağını taşır; öğretmenin erişim kapsamı kendi şubeleriyle sınırlıdır
+- [[Notlar]] — [[Not Defteri]] koordinatının bir ekseni; "bu şubeye kim not girer" sorusu ders programından çözülür
+- [[Ödevler]] — [[Ödev]] şube başına ayrı kayıttır; rehber öğretmen kendi şubesinin ödevlerini salt liste olarak görür; yoğunluk panosu şube × gün sayar
 
 Şubeyi kullanan ama henüz notu olmayan modüller: Students, Teachers, Attendance, Schools, Timetable, Duties, Announcements.
 

@@ -3,7 +3,7 @@ aliases: [Person, Kullanıcı]
 tags: [domain/people]
 table: identity.persons
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Kişi
@@ -66,8 +66,10 @@ Kaynak-seviyesi erişim rol adına değil, çözülmüş izne ve gerçek ilişki
 - [[Kullanıcılar]] — kavramın sahibi; kayıt, profil, yaşam döngüsü, içe/dışa aktarma
 - [[Kimlik Doğrulama]] — login sırasında hesabın arkasındaki kişiyi ve bağlamını çözer
 - [[Öğrenci Kayıt Yönetimi]] — öğrenci kaydı akışı kişi, profil, numara, veli bağı ve hesabı tek işlemde üretir
+- [[Notlar]] — öğretmen, öğrenci, veli ve yönetici kişi kimliğiyle çözülür; oturum kişiye bağlanamıyorsa yazma yolu yoktur
+- [[Ödevler]] — sahip öğretmen, öğrenci, veli kişi kimliğidir; "ayrılmış öğretmen" bir kolon değil, çalışan kişiler kümesinin tümleyenidir
 
-Kişiye `PersonId` ile bağlanan ama henüz notu olmayan modüller: Teachers, Grades, Homework, Messaging.
+Kişiye `PersonId` ile bağlanan ama henüz notu olmayan modüller: Teachers, Messaging.
 
 <!-- generated:end -->
 

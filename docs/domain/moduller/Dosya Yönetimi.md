@@ -2,7 +2,7 @@
 aliases: [Documents, api/v1/files, Dosyalar]
 tags: [domain/platform, module]
 status: completed
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Dosya Yönetimi
@@ -60,5 +60,5 @@ Taşıyıcı ilke: **nesne deposu yalnızca byte deposudur; gerçeğin kaynağı
 
 - Önizleme dosyaları hiçbir imha işinin kapsamına girmiyor; üst dosya gidince sahipsiz kalıyorlar.
 - Kota sayacı atomik değil; eşzamanlı yüklemelerde sınır sessizce aşılabilir.
-- Kategori defterinde tanımlı dört kategorinin (ödev, sınav, sanal kitap, kulüp) bağlanabileceği bir kayıt tipi henüz yok.
+- Kategori defterinde tanımlı üç kategorinin (sınav, sanal kitap, kulüp) bağlanabileceği bir kayıt tipi henüz yok. Ödev eki ve teslimi 2026-08-27'de bağlandı ([[Ödevler]]).
 - Öğrenci belgesi bu modülü hiç kullanmıyor, kendi ham dosya adresini tutuyor.

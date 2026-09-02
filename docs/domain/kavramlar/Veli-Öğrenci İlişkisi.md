@@ -3,7 +3,7 @@ aliases: [ParentStudentRelationship, Veli Bağı]
 tags: [domain/people]
 table: identity.parent_student_relationships
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Veli-Öğrenci İlişkisi
@@ -46,8 +46,10 @@ Beş ayrı bayrak taşınır: bilgi görebilir, karar verebilir, ödeme sorumlus
 - [[Kimlik Doğrulama]] — velinin çocuklar arasında bağlam değiştirmesi bu ilişkiye dayanır
 
 - [[Bildirimler]] — veliye giden bildirimlerin alıcı çözümlemesi bu ilişkiyi izler
+- [[Notlar]] — aile not yüzünün kapsam kapısı: çocuk kimliği sunucuda bu ilişkiyle doğrulanır, iptal edilmiş bağ kapsam dışı; "yeni not" damgası veli başına ayrı tutulur
+- [[Ödevler]] — velinin salt okunur ödev yüzü ve üç bildirimin veli ayağı; kapsam sorgusu Notlar'dan bilinçli olarak kopyalandı, ortak servise çıkarılmadı (iki modül bağımsız evrilsin)
 
-Veli bağını okuyan ama henüz notu olmayan modüller: Grades, Messaging.
+Veli bağını okuyan ama henüz notu olmayan modüller: Messaging.
 
 <!-- generated:end -->
 

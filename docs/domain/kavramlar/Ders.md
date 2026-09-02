@@ -3,7 +3,7 @@ aliases: [Subject, Müfredat Dersi]
 tags: [domain/academic]
 table: master.subjects
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Ders
@@ -44,6 +44,8 @@ Derse bağlanan ama henüz notu olmayan kayıtlar: ders-kademe eşlemesi, haftal
 - [[Görevlendirmeler]] — görevlendirmenin ders ekseni ve kapsama görünümü
 - [[Ders Programı Yönetimi]] — yerleşimin ders ayağı; laboratuvar gerektiren derste derslik tipi kuralı
 - [[Yoklama ve Devamsızlık]] — oturum hangi dersin yoklaması olduğunu dondurarak taşır
+- [[Notlar]] — [[Not Defteri]] koordinatının ders ekseni; aile yüzündeki ders listesi programdan gelen dersler ile defteri olan derslerin birleşimidir
+- [[Ödevler]] — [[Ödev]] koordinatının ders ekseni; form bağlamı öğretmenin ilk dersini taşır
 
 <!-- generated:end -->
 

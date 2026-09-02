@@ -2,7 +2,7 @@
 aliases: [Academics, api/v1/academics, api/v1/curriculum-hours, Akademik Katalog]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Müfredat
@@ -35,7 +35,7 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 3. **Haftalık ders saati** — MEB çizelgesi master şablon olarak durur ve sürüm etiketi taşır. Okul, sezonu için bir dersin saatini değiştirebilir. Çözüm katmanlıdır: **override varsa o, yoksa şablon.** Bir kademenin toplam hedef saati ve ders bazlı saatler ayrı uçlardan sorgulanır.
 
-4. **Notlandırma yapılandırması** — Not ölçekleri ve sınav türleri listelenir. Okul varsayılan ölçeğini seçer, kademe bazında override verebilir. **Bu yapılandırmayı tüketen bir not modülü henüz yok.**
+4. **Notlandırma yapılandırması** — Not ölçekleri ve sınav türleri listelenir. Okul varsayılan ölçeğini seçer, kademe bazında override verebilir. Tüketicisi [[Notlar]] modülüdür: sınav türleri defterin sütun kataloğunu, varsayılan ölçek not girişinin üst sınırını verir. Sınav türündeki ağırlık kolonu 2026-08-31'de kaldırıldı ([[0001-sinav-agirligi-okul-politikasinda]]).
 
 5. **Resmî tatil listesi** — Sabit tarihli ulusal tatiller okunur; sezon takvimi bu listeyle birleştirilir.
 
@@ -45,7 +45,7 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 ## Kapsam dışı
 
-- **Not girişi ve hesaplama.** Bu modül ölçeği ve sınav türünü tanımlar; notu tutan bir modül henüz yazılmamış.
+- **Not girişi ve hesaplama.** Bu modül ölçeği ve sınav türünü tanımlar; notu [[Notlar]] tutar.
 - **Okula özel ders tanımı.** Ders kataloğu platform genelidir; okul kendi seçmeli dersini ekleyemez.
 - **Müfredat sürümü seçimi.** Aktif MEB çizelge sürümü kodda sabittir; sürüm seçimi ileriye bırakılmış.
 - **Görevlendirme akışları.** Öğretmen × ders yetkinliği bu modülün varlığıdır ama akışları [[Görevlendirmeler]]'de anlatılır.
@@ -58,7 +58,7 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 ## Açık Sorular
 
-- **Notlandırma yapılandırmasının hiçbir tüketicisi yok** ve sınav ağırlığı iki ayrı yerde tanımlı (sınav türünde ve okul akademik politikasında). Not modülü geldiğinde hangisi yetkili olacak?
+- ~~Notlandırma yapılandırmasının hiçbir tüketicisi yok ve sınav ağırlığı iki yerde tanımlı.~~ Kapandı: [[Notlar]] tüketiyor, ağırlık okul politikasında ([[0001-sinav-agirligi-okul-politikasinda]]). Açık kalan: kademe bazlı ölçek override'ını hâlâ kimse okumuyor (bkz. [[Not Ölçeği]]).
 - Müfredat hedef saati ile görevlendirmedeki haftalık saat birbirini doğrulamıyor.
 - Okul override'ının kod açıklaması "yazma yolu yok" diyor ama yazma komutu ve izni var.
 - Ders kataloğu platform geneli; okulun kendi seçmeli dersini eklemesi gerekirse ne olacak?

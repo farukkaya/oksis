@@ -3,7 +3,7 @@ aliases: [StoredFile, Dosya, Yüklenen Dosya]
 tags: [domain/platform]
 table: files.stored_files
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Saklı Dosya
@@ -54,6 +54,7 @@ Bir dosyanın küçük önizlemesi **ayrı bir saklı dosya kaydı** olarak üre
 - [[Yoklama ve Devamsızlık]] — mazeret belgesi
 - [[Okul Yönetimi]] — okul logosu
 - [[Duyurular]] — duyuru eki
+- [[Ödevler]] — öğretmen eki ve öğrenci teslimi; ödev modülü dosya depolamaz, yalnız kimliğini bağlar
 
 <!-- generated:end -->
 

@@ -3,7 +3,7 @@ aliases: [AcademicTerm, Yarıyıl, T1/T2]
 tags: [domain/academic]
 table: academic_terms
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Dönem
@@ -24,7 +24,7 @@ Dönemin *tipi* ayrı bir master veridir (`academic_term_types`) ve `TermTypeId`
 - **Active** — dönem yürürlükte.
 - **Closed** — kapatılmış; geri açılamaz. Kapanış zamanı `ClosedAt` ile saklanır.
 
-Dönem kapanışı bir domain event yayar ve karne üretimini tetikler (BR-AS-009) — yani "dönemi kapat" yalnızca bir statü değişimi değil, aşağı akışta iş başlatan bir olaydır.
+Dönem kapanışı bir domain event yayar ve karne üretimini tetikler (BR-AS-009) — yani "dönemi kapat" yalnızca bir statü değişimi değil, aşağı akışta iş başlatan bir olaydır. Bugün bu olayın doğrulanmış bir tüketicisi [[Notlar]]'dadır: o dönemin **yayınlanmış** [[Değerlendirme]] sütunları sistemce kilitlenir, taslaklara dokunulmaz, defter başına tek planlı denetim kaydı yazılır.
 
 ## Kurallar
 
@@ -40,6 +40,7 @@ Dönem kapanışı bir domain event yayar ve karne üretimini tetikler (BR-AS-00
 - [[Sezon]] — sahip (owner); dönem sezonsuz var olamaz, sezonla birlikte yaratılır
 - `academic_term_types` (master veri) — `TermTypeId` ile tip referansı; sabit lookup, ayrı not değil, [[Müfredat]]'ta yaşar
 - [[Sınav Türü]] — sınav türleri bir döneme (ya da her ikisine) bağlıdır
+- [[Not Defteri]] — defter dönem × şube × ders koordinatıdır; kapanış sütunları kilitler
 
 ## Geçtiği modüller
 
@@ -47,6 +48,8 @@ Dönem kapanışı bir domain event yayar ve karne üretimini tetikler (BR-AS-00
 - [[Nöbetler]] — [[Nöbet Çizelgesi]] ve [[Program İstisnası]] döneme bağlıdır; yük raporunun varsayılan tarih aralığı dönemden gelir
 - [[Ders Programı Yönetimi]] — [[Ders Programı]], [[Program Sürümü]] ve [[Öğretmen Müsaitliği]] döneme bağlıdır
 - [[Yoklama ve Devamsızlık]] — [[Yoklama Oturumu]] ve [[Devamsızlık Özeti]] döneme bağlıdır; eşik hesabı dönem toplamı üzerinden yapılır
+- [[Notlar]] — [[Not Defteri]] döneme bağlıdır; sütun kataloğu dönemin sırasına göre süzülür; kapanış yayınlanmış sütunları kilitler; genel ortalama sezon başından yürürlükteki döneme kadar hesaplanır
+- [[Ödevler]] — [[Ödev]] döneme bağlıdır; form bağlamı ve hedef seçici her zaman güncel döneme düşer, dönem parametresi almaz
 
 <!-- generated:end -->
 

@@ -3,7 +3,7 @@ aliases: [SchoolSettings, Kurum Bilgileri, Akademik Politika]
 tags: [domain/platform]
 table: school.school_settings
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-03 (b72c819)
 ---
 
 # Okul Ayarları
@@ -33,6 +33,10 @@ Okul oluşturulduğunda varsayılan değerlerle otomatik açılır ve hiç silin
 **Akademik politika** — varsayılan [[Not Ölçeği]] ve geçme notu, yuvarlama kuralı, yazılı/performans sayısı ve ağırlıkları, teşekkür/takdir eşikleri, devamsızlık sınırları. *(Ölçek ve sınav türü kataloğu [[Müfredat]]'ta; buradaki alanlar seçim ve okul politikasıdır.)*
 
 **Modül politikaları** — nöbet yancılığı, haftalık nöbet sıklığı ve gün deseni; duyuru moderasyon kipi; yoklama düzeltme penceresi (saat), geç kalma birikimi ve yarım gün eşiği.
+
+**Not politikası** — kademe bazlı **öğrenci görünürlüğü** (ilkokul, ortaokul, lise için ayrı; "gizli" ya da "veliyle aynı anda"; ilkokulda varsayılan gizli — veli her hâlde görür, ayar yalnız öğrenci yüzünü kapatır), aileye **sınıf ortalaması** gösterilsin mi (varsayılan hayır), **not düzeltme penceresi** (saat; varsayılan 48 — pencere kapandıktan sonra düzeltme yalnız yönetime açılır). Bu üç alan not modülünün yönetme izniyle okul ayarları altından güncellenir; akademik politikadaki ölçek, geçme notu ve ağırlıklarla birlikte [[Notlar]]'ın politika ucundan okuma izniyle herkese verilir.
+
+**Ödev politikası** — **son teslim hatırlatma saati** (0–72; sıfır "hatırlatma yok" demektir, "teslim anında hatırlat" değil; varsayılan 24), **eksik ödev bildirim kipi** (kapalı / günlük özet / anlık; varsayılan günlük özet; sayıları 1'den başlar ki "hiç kaydedilmedi" ile "bilerek kapatıldı" ayrılsın) ve **günlük yoğunluk eşiği** (varsayılan 3; idare panosunda bir şubenin bir gündeki ödev sayısı eşiği aşınca vurgulanır). Ekranda beş kontrol vardır, kolon üçtür: "hatırlatma açık" ve "veli bildirimi açık" anahtarları bu alanlardan türer, kalıcılaştırılmaz. Ödev modülünün yönetme izniyle okul ayarları altından güncellenir.
 
 ## Okulun sunduğu kademeler
 
@@ -68,11 +72,13 @@ Ayrıca kademe bazında **not ölçeği override'ı** verilebilir: okul ilkokulu
 - [[Duyurular]] — moderasyon kipi buradan gelir
 - [[Şube]] — şube kurulumunda onay isteyip istememe ayarı buradan okunur
 - [[Öğrenci Numarası]] — ön ek, hane sayısı ve ön ek değişikliği onayı burada tutulur
+- [[Değerlendirme]] / [[Not]] — düzeltme penceresi, öğrenci görünürlüğü, sınıf ortalaması ve ölçek üst sınırı buradan gelir
+- [[Ödev Takibi]] — hatırlatma saati ve eksik ödev bildirim kipi buradan gelir; [[Ödev]] yoğunluk eşiğini panoda kullanır
 
 ## Geçtiği modüller
 
 - [[Okul Yönetimi]] — kavramın sahibi
-- [[Yoklama ve Devamsızlık]], [[Nöbetler]], [[Duyurular]], [[Sınıflar ve Şubeler]] — politika tüketicileri
+- [[Yoklama ve Devamsızlık]], [[Nöbetler]], [[Duyurular]], [[Sınıflar ve Şubeler]], [[Notlar]], [[Ödevler]] — politika tüketicileri
 
 <!-- generated:end -->
 
@@ -84,4 +90,4 @@ Ayrıca kademe bazında **not ölçeği override'ı** verilebilir: okul ilkokulu
 
 - Zaman dilimi burada **Windows** biçiminde (`Turkey Standard Time`), [[Okul]] kaydında **IANA** biçiminde tutuluyor. İki alan, iki format — hangisi yetkili?
 - Devamsızlık eşiği hem burada hem [[Bildirim Yapılandırması]]'nda var. Motor buradakini okuyor; oradaki alanların tüketicisi yok.
-- Not ölçeği ve sınav ağırlıkları tanımlı ama not modülü henüz haritalanmadı; bu alanların gerçekten okunduğu doğrulanamadı.
+- ~~Not ölçeği ve sınav ağırlıkları tanımlı ama not modülü henüz haritalanmadı.~~ Haritalandı: varsayılan ölçek okunuyor (üst sınır), kademe override'ı okunmuyor; yazılı/performans ağırlıkları politika ucunda dönüyor ama hiçbir hesaba girmiyor; yazılı/performans **sayısı** ve yuvarlama kuralı da tüketicisiz. Bkz. [[Notlar]].
