@@ -212,6 +212,26 @@ değil) engelleyici saymak doğru görünüyor — kapatan bunu gerekçesiyle ko
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-114` · KPI kartlarının değişim/eğilim verisi hiçbir uçta yok ⚪
+
+Claude Design'ın KPI kart kataloğu (`Oksis KPI Kartlari.dc.html`) her karoda üç alan
+tanımlıyor: bir önceki döneme göre **değişim rozeti** ("+12 · bu ay", "%1,4 · geçen aya
+göre"), yedi noktalı **eğilim çizgisi** (sparkline) ve **oran çubuğu**. Sunucuda üçünün
+de karşılığı yok: `StudentStatsDto` yalnız `total`/`active`/`newThisMonth`,
+`TeacherStatsDto` `total`/`active`, `UserStatsDto` beş anlık sayaç döndürüyor —
+hiçbiri önceki dönemi ya da zaman serisini taşımıyor.
+
+Port sırasında (2026-09-04, `oksis-ui`) kartlar bu üç alan **çizilmeden** teslim edildi:
+uydurma delta göstermek `K-09`'un yasakladığı yer tutucu veriyi geri getirirdi. Bileşen
+(`apps/web/components/shared/kpi-card.tsx`) `delta` prop'unu ve `kpi.css` `.dl` bloğunu
+taşıyor ama hiçbir ekran doldurmuyor — uç açıldığında tek yerden bağlanır.
+
+⬜ Kapatma yolu: sayaç uçlarına önceki dönem karşılaştırması eklenmesi (delta için tek
+bir `previous` alanı yeter; sparkline ayrı bir zaman serisi ucu ister). Oran çubuğu için
+payda gerekiyor — "hedef" kavramı finans dışında tanımlı değil.
+
+---
+
 ### `X-20` · Modül yapılandırması sunucuda hiçbir ucu kapılamıyor 🟠
 
 [[Modül Yapılandırması]] notunun açık sorusu ("kapatma yalnız arayüzü mü gizliyor?")

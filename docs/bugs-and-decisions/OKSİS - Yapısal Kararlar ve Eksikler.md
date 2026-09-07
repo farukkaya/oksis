@@ -680,6 +680,16 @@ gönderilmiyor", SMS kotası kartı "Geçici veri" diyor.
 **Gerekçe**
 > Desen üründe zaten var ve doğru çalışıyor: SMS kotası kartı "Geçici veri", duyuru oluşturma ekranı "Push bildirim — yakında — bu sürümde gönderilmiyor" diyor. Kartları tümden gizlemek tasarım bütünlüğünü bozar ve ürünün ne yapacağını da gizler; sorun gösterilmeleri değil, **gerçek sanılmaları**. Rozet yanıltmayı bitirir, yol haritasını görünür bırakır.
 
+**Sonradan · 2026-09-04 · panel KPI şeridi (c) ile kapandı**
+> Kararın (c) seçeneği gösterge panelinin üç KPI karosu için uygulandı: öğrenci ve öğretmen
+> sayaçları `student-stats`/`teacher-stats` uçlarına, geri sayım `deriveSeasonPhase()`'e
+> bağlandı — sayaç uçları meğer hazırdı ve hiç çağrılmıyordu. Karolar gerçek veri
+> gösterdiği için **"örnek veri" rozetleri oradan kalktı**; rozet kararın kendisi
+> değişmediği için panelin kalan dört widget'ında (Son Etkinlikler · Bekleyen İşlemler ·
+> Yaklaşan Takvim · Bugünkü Nöbet) **duruyor** — onlar hâlâ sabit veri. Alt metinler de
+> uydurmaz oldu: "12 şube · Ortaokul + Lise" gibi veri karşılığı olmayan cümleler aynı
+> DTO'dan okunan gerçek kırılımla değişti (`oksis-ui`, `summary-kpis.tsx`).
+
 --- end-multi-column
 
 ---
