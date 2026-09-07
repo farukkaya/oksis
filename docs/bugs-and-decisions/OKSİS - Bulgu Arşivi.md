@@ -5578,3 +5578,69 @@ Depo gerçeği tek dosyada biliyordu (Yapısal Kararlar özet tablosu: *"uygulan
 kapatmakla kalmıyor, yeniden ölçülmeyen tarif **yanlış kullanıcı kararı** üretebiliyor.
 "Ayrı proje" sınıfı yeniden ölçümden muafiyet değildir — karar turuna giren HER madde,
 sınıfı ne olursa olsun, karardan önce koddan doğrulanır.
+
+---
+
+## 40. `B-50` · API, SQL hazır olmadan açılırsa hiç kalkmıyordu (2026-09-07) ✅
+
+**Kapanış türü: aynı turda ölçüldü, düzeltildi ve gerçek koşuda doğrulandı.** Madde
+defterde iz bırakmadı; açık kaldığı süre bir oturumdu.
+
+### `B-50` · Hangfire recurring kaydı açılış yarışını kaybediyor 🟠
+
+**Gözlem (çalışma zamanı, dev):** `docker compose` konteynerleri taze kalkmışken
+`dotnet run --project src/Oksis.Api` çağrılırsa API **hiç ayağa kalkmıyordu**:
+
+```
+[FTL] OKSİS API terminated unexpectedly
+SqlException: ... oturum açma öncesi el sıkışma ... (provider: TCP, error: 35)
+  ---> SocketException (22): Invalid argument
+  at HangfireSetup.UseOksisRecurringJobs (HangfireSetup.cs:152)
+  at Program.<Main>$ (Program.cs:288)
+```
+
+Kök neden kod hatası değil **sıra**: `UseOksisRecurringJobs` içindeki her `AddOrUpdate`
+SQL Server'a dokunuyor (storage init + distributed lock). `oksis-mssql` konteyneri
+healthy olmadan bu satıra gelinirse istisna `Program.cs`'in dış `try/catch`'ine kadar
+çıkıyor ve süreç ölüyor. Sağlıklı SQL ile aynı komut sorunsuz çalıştığı için hata
+"bazen" görünüyordu.
+
+**Düzeltme (`oksis-api`, çalışma ağacı):** kayıt tablosu `RegisterRecurringJobs`'a
+ayrıldı, `UseOksisRecurringJobsAsync` onu geçici depo hatalarında yeniden deniyor.
+İki sınır bilinçli bırakıldı:
+
+- **Geçici olmayan hata ilk turda fırlar** (yanlış cron, eksik DI kaydı beklemekle
+  düzelmez; bütçe boyunca tekrarlamak açılışı boşuna geciktirirdi).
+- **Bütçe tükenince de fırlar.** Sweep'leri kaydedilmemiş bir API ayakta *görünür* ama
+  duyuru yayını, yoklama materialize'ı ve retention süpürgeleri hiç çalışmaz — bu
+  sessiz bozukluk açılışın patlamasından kötüdür.
+
+Geçicilik testi istisna zincirini gezer: üretimdeki vaka sarmaldı (dış `SqlException`,
+iç `SocketException 22`), yalnız en dıştaki tipe bakan bir kontrol retry'ı hiç
+tetiklemezdi.
+
+### Bütçe ölçülerek seçildi — ilk deneme yetmedi
+
+İlk varsayılan **10 tur × 3 sn** idi. Gerçek koşuda (SQL durdurulup API başlatıldı,
+ilk retry görülünce `docker start oksis-mssql`) bütçe **42 saniyede tükendi** ve API
+yine düştü: konteynerin healthy olması 60-90 sn sürüyor. Varsayılan **20 tur × 5 sn**
+yapıldı; ikinci koşuda 3 tur denendi, 4. turda kayıtlar tamamlandı, `/health` 200.
+
+Bütçe `Hangfire:StartupRetry:MaxAttempts` / `:DelaySeconds` ile ayarlanır
+(`appsettings.json`'da açıkça yazılı).
+
+### Kanıt
+
+| Ölçüm | Sonuç |
+|---|---|
+| Birim testler (`HangfireRecurringJobStartupRetryTests`, 4 test) | retry / sarmal hata / bütçe tükenmesi / geçici olmayan hata |
+| `Oksis.Api.UnitTests` tümü | 426/426 yeşil |
+| Gerçek koşu #1 (bütçe 10×3) | 9 tur, 42 sn, `terminated unexpectedly` → bütçe büyütüldü |
+| Gerçek koşu #2 (bütçe 20×5) | 3 tur, düşme yok, `/health` → 200 |
+
+### Ders
+
+Birim test yeşil olması bütçenin **doğru** olduğunu göstermiyordu — yalnız mekanizmanın
+çalıştığını gösteriyordu. Zaman penceresi içeren her düzeltmede pencerenin kendisi
+gerçek koşuda ölçülmeli; ilk tahmin (27 sn) gerçek cold start'ın (60-90 sn) yarısıydı.
+Krş. [[OKSİS - Bulgu Arşivi]] §38/§39 dersi: ölçülmeyen tarif yanlış karar üretir.
