@@ -447,7 +447,7 @@ git commit -m "feat(core): sınav takvimi tipleri, sabitleri ve rozet/gruplama m
 - Create: `src/Oksis.Domain/Modules/Exams/Entities/ExamWindow.cs`
 - Create: `src/Oksis.Domain/Modules/Exams/Enums/ExamWindowStatus.cs`
 - Create: `src/Oksis.Domain/Modules/Exams/Enums/ExamMode.cs`
-- Create: `src/Oksis.Domain/Modules/Exams/Exceptions/ExamsDomainException.cs`
+- Create: `src/Oksis.Domain/Modules/Exams/Exceptions/ExamsDomainException.cs` (soyut taban + `InvalidExamDataException` + `InvalidExamWindowStateException`)
 - Create: `src/Oksis.Domain/Modules/Exams/Events/ExamWindowPublishedEvent.cs`
 - Create: `src/Oksis.Domain/Modules/Exams/Events/ExamSchedulePublishedEvent.cs`
 - Test: `tests/Oksis.Domain.UnitTests/Modules/Exams/ExamWindowTests.cs`
@@ -493,9 +493,10 @@ public sealed class ExamWindowTests
         var w = NewDraft();
         w.PublishWindow(Guid.NewGuid(), DateTimeOffset.UtcNow);
         w.PublishSchedule(Guid.NewGuid(), DateTimeOffset.UtcNow, reason: null);
-        w.Lock("Dönem kapandı", Guid.NewGuid(), DateTimeOffset.UtcNow);
+        w.Lock("Dönem kapandı, sınavlar tamamlandı", Guid.NewGuid(), DateTimeOffset.UtcNow);
         var act = () => w.Revise("gerekçe yeterince uzun", Guid.NewGuid(), DateTimeOffset.UtcNow);
-        act.Should().Throw<ExamsDomainException>();
+        act.Should().Throw<InvalidExamWindowStateException>(
+            "kilitli pencere revize edilemez; gerekçe uzunluğu hatası bu testi maskelememeli");
     }
 
     [Fact]
@@ -524,8 +525,19 @@ public enum ExamWindowStatus { Draft = 1, WindowPublished = 2, SchedulePublished
 // ExamMode.cs
 public enum ExamMode { LessonHour = 1, Session = 2 }
 
-// ExamsDomainException.cs
-public sealed class ExamsDomainException(string message) : Exception(message);
+// ExamsDomainException.cs — DÜZ Exception DEĞİL.
+// Gerekçe: ExceptionHandlingMiddleware yalnız DomainException'ı 422 {code, message}'a
+// çevirir; düz Exception 500 InternalError döndürürdü. Grades/Timetable kalıbı.
+public abstract class ExamsDomainException(string code, string message)
+    : DomainException(code, message);
+
+/// <summary>Girdi geçersiz: tarih sırası bozuk, gerekçe kısa, ders saati pozitif değil.</summary>
+public sealed class InvalidExamDataException(string message)
+    : ExamsDomainException("validation", message);
+
+/// <summary>Durum makinesi geçişi geçersiz.</summary>
+public sealed class InvalidExamWindowStateException(string message)
+    : ExamsDomainException("invalid_state", message);
 ```
 
 - [ ] **Adım 4: `ExamWindow`'u yaz**
@@ -573,9 +585,9 @@ public sealed class ExamWindow : TenantEntity
         DateOnly startDate, DateOnly endDate, ExamMode mode, DateOnly draftDueDate)
     {
         if (endDate < startDate)
-            throw new ExamsDomainException("Sınav penceresinin bitişi başlangıcından önce olamaz.");
+            throw new InvalidExamDataException("Sınav penceresinin bitişi başlangıcından önce olamaz.");
         if (draftDueDate > startDate)
-            throw new ExamsDomainException("Taslak tamamlanma tarihi pencerenin başlangıcından sonra olamaz.");
+            throw new InvalidExamDataException("Taslak tamamlanma tarihi pencerenin başlangıcından sonra olamaz.");
 
         return new ExamWindow
         {
@@ -596,9 +608,9 @@ public sealed class ExamWindow : TenantEntity
     public void OpenReview(DateOnly opensAt, DateOnly closesAt)
     {
         if (Mode != ExamMode.Session)
-            throw new ExamsDomainException("Görüş penceresi yalnız oturum modunda açılır.");
+            throw new InvalidExamWindowStateException("Görüş penceresi yalnız oturum modunda açılır.");
         if (closesAt < opensAt)
-            throw new ExamsDomainException("Görüş penceresinin kapanışı açılışından önce olamaz.");
+            throw new InvalidExamDataException("Görüş penceresinin kapanışı açılışından önce olamaz.");
         ReviewOpensAt = opensAt;
         ReviewClosesAt = closesAt;
     }
@@ -606,7 +618,7 @@ public sealed class ExamWindow : TenantEntity
     public void PublishWindow(Guid byPersonId, DateTimeOffset at)
     {
         if (Status != ExamWindowStatus.Draft)
-            throw new ExamsDomainException("Pencere yalnız taslak durumundayken yayınlanır.");
+            throw new InvalidExamWindowStateException("Pencere yalnız taslak durumundayken yayınlanır.");
         Status = ExamWindowStatus.WindowPublished;
         WindowPublishedAt = at;
         WindowPublishedByPersonId = byPersonId;
@@ -620,9 +632,9 @@ public sealed class ExamWindow : TenantEntity
     public void PublishSchedule(Guid byPersonId, DateTimeOffset at, string? reason)
     {
         if (Status != ExamWindowStatus.WindowPublished)
-            throw new ExamsDomainException("Takvim, pencere yayınlanmadan yayınlanamaz.");
+            throw new InvalidExamWindowStateException("Takvim, pencere yayınlanmadan yayınlanamaz.");
         if (reason is not null && reason.Trim().Length < MinReasonLength)
-            throw new ExamsDomainException($"Gerekçe en az {MinReasonLength} karakter olmalıdır.");
+            throw new InvalidExamDataException($"Gerekçe en az {MinReasonLength} karakter olmalıdır.");
 
         Status = ExamWindowStatus.SchedulePublished;
         SchedulePublishedAt = at;
@@ -635,7 +647,7 @@ public sealed class ExamWindow : TenantEntity
     public void Revise(string reason, Guid byPersonId, DateTimeOffset at)
     {
         if (Status != ExamWindowStatus.SchedulePublished)
-            throw new ExamsDomainException("Yalnız takvimi yayında olan pencere revize edilir.");
+            throw new InvalidExamWindowStateException("Yalnız takvimi yayında olan pencere revize edilir.");
         RequireReason(reason);
         Version++;
         SchedulePublishedAt = at;
@@ -645,7 +657,7 @@ public sealed class ExamWindow : TenantEntity
     public void Lock(string reason, Guid byPersonId, DateTimeOffset at)
     {
         if (Status == ExamWindowStatus.Locked)
-            throw new ExamsDomainException("Pencere zaten kilitli.");
+            throw new InvalidExamWindowStateException("Pencere zaten kilitli.");
         RequireReason(reason);
         Status = ExamWindowStatus.Locked;
         LockedAt = at;
@@ -656,7 +668,7 @@ public sealed class ExamWindow : TenantEntity
     private static void RequireReason(string reason)
     {
         if (string.IsNullOrWhiteSpace(reason) || reason.Trim().Length < MinReasonLength)
-            throw new ExamsDomainException($"Gerekçe en az {MinReasonLength} karakter olmalıdır.");
+            throw new InvalidExamDataException($"Gerekçe en az {MinReasonLength} karakter olmalıdır.");
     }
 }
 ```
@@ -881,7 +893,7 @@ public sealed class ScheduledExam : TenantEntity
     {
         RequirePeriod(period);
         if (hostTeacherId == OwnerTeacherId)
-            throw new ExamsDomainException("Kendi saatiniz için saat isteği gönderilmez.");
+            throw new InvalidExamDataException("Kendi saatiniz için saat isteği gönderilmez.");
 
         Date = date;
         Period = period;
@@ -907,7 +919,7 @@ public sealed class ScheduledExam : TenantEntity
     public void MarkMoved()
     {
         if (PlacementState != ExamPlacementState.Placed)
-            throw new ExamsDomainException("Yalnız yerleşmiş sınav taşınmış olarak işaretlenir.");
+            throw new InvalidExamWindowStateException("Yalnız yerleşmiş sınav taşınmış olarak işaretlenir.");
         PlacementState = ExamPlacementState.Moved;
     }
 
@@ -937,13 +949,13 @@ public sealed class ScheduledExam : TenantEntity
     private void RequirePendingRequest()
     {
         if (HourRequestStatus != HourRequestStatus.Pending)
-            throw new ExamsDomainException("Bekleyen bir saat isteği yok.");
+            throw new InvalidExamWindowStateException("Bekleyen bir saat isteği yok.");
     }
 
     private static void RequirePeriod(int period)
     {
         if (period <= 0)
-            throw new ExamsDomainException("Ders saati 1'den küçük olamaz.");
+            throw new InvalidExamDataException("Ders saati 1'den küçük olamaz.");
     }
 }
 ```
@@ -989,7 +1001,7 @@ public sealed class HourRequest : TenantEntity
     public void Answer(bool accepted, string? note, DateTimeOffset at)
     {
         if (Status != HourRequestStatus.Pending)
-            throw new ExamsDomainException("Bu istek zaten cevaplanmış.");
+            throw new InvalidExamDataException("Bu istek zaten cevaplanmış.");
         Status = accepted ? HourRequestStatus.Accepted : HourRequestStatus.Declined;
         AnsweredAt = at;
         ResponseNote = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
@@ -998,7 +1010,7 @@ public sealed class HourRequest : TenantEntity
     public void Expire(DateTimeOffset at)
     {
         if (Status != HourRequestStatus.Pending)
-            throw new ExamsDomainException("Yalnız bekleyen istek düşer.");
+            throw new InvalidExamDataException("Yalnız bekleyen istek düşer.");
         Status = HourRequestStatus.Expired;
         AnsweredAt = at;
     }
