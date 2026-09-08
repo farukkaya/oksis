@@ -5804,3 +5804,82 @@ ve ikinci kaynak varken üçüncüsünün sessizce doğduğu fark edilmez. `club
 2026-08-29'da görüp not düşmüştü; o not merkezî düzeltmeye dönüşmediği için on gün sonra
 `exam.css` yanlış aileyi miras aldı ve `theme.css`'teki üçüncü aile hiç sayılmadı bile.
 **Bir dosyanın başındaki "şunu düzelt" yorumu, düzeltmenin kendisi değil borcun faizidir.**
+
+---
+
+## 43. `TB-119` · Beklenen sınav satırının tanımı tek yere indi (2026-09-08) ✅
+
+**Kapanış türü: merkezî düzeltme — iki "toplam" tanımı yerine ortak okuyucu.**
+Kapanış `oksis-api` @ `3b5b852` (`feature/exam-schedule`), Sınav Takvimi Faz 1 · Görev 2.3.
+
+### `TB-119` · Sınav sayaçları yalnız yazılmış satırları sayıyor, yayın kapısı boş takvimi geçiriyor 🟠
+
+Planlı sınav satırı **tembel doğar**: öğretmen ilk kez yerleştirene kadar veritabanında
+yoktur (bilinçli karar, `ScheduledExamKey` bileşik kimliği bunun için var).
+`GetMyExamPlacements` beklenen satırları görevlendirmeden türetiyordu — doğru; ama
+`ExamWindowCountReader` ve `ExamPlacementCounter` doğrudan `ScheduledExams` tablosunu
+sayıyordu. Sonuç: hiç kimsenin yerleştirme yapmadığı bir pencere `totalCount = 0`
+gösteriyor, `EX-S05` üretmiyor ve **takvim yayın kapısından geçiyordu**.
+
+### Kırmızı koşum — kusur önce ölçüldü
+
+Entegrasyon testi (gerçek MSSQL) ÖNCE yazıldı ve pano sorgusu bilerek eski sayım
+tanımıyla kuruldu. Üç vaka da kırmızı çıktı ve çıktı tam olarak bulgunun tarifiydi:
+
+| Vaka | Beklenen | Ölçülen |
+|---|---|---|
+| Hiç yerleştirme yapılmamış pencere (`assignments: 4, scheduledExams: 0`) | `totalCount = 4` | **0** |
+| Üçü yerleşmiş, biri hiç dokunulmamış pencere | `totalCount = 4` | **3** |
+| Öğretmen bazlı eksik listesi | en az bir `unplacedCount > 0` | **hepsi 0** |
+
+Üçüncü satır kusurun sosyal yüzü: hiç dokunulmamış çiftin sorumlusu listede
+görünmediği için yönetici kime hatırlatacağını da bilemiyordu.
+
+### Düzeltme — tanım tek yerde
+
+`src/Oksis.Application/Modules/Exams/Internal/ExamExpectationReader.cs` doğdu:
+bir pencere için **beklenen** şube × ders çiftlerini dönem × görevlendirmeden
+(canlı programın `IsActive && IsReserving` yerleşimleri) türetir ve yazılmış
+`ScheduledExam` satırlarıyla **birleştirir** (union — görevlendirme sonradan kalksa
+bile yazılmış satır düşmez). Üç tüketici ona bağlandı:
+
+| Tüketici | Ne değişti |
+|---|---|
+| `GetMyExamPlacementsQueryHandler` | Kendi `ITeachingSlotReader` türetmesini bıraktı, okuyucuya geçti |
+| `ExamWindowCountReader` (+ `ListExamWindows`, iki yayın komutu, `CreateExamWindow`) | `ScheduledExams` sayımı yerine beklenen küme; `Count()` tek formül oldu |
+| `ExamPlacementCounter.CountUnplacedAsync` | `PlacementState == Unplaced` satır sayımı yerine "saati seçilmemiş beklenen çift" |
+| `ExamRuleInspector.CheckPublishAsync` | Dokunulmadı — `EX-S05` sayacı üzerinden kendiliğinden düzeldi (kural söyler, satır okumaz ayrımı korundu) |
+
+Yanında iki komşu düzeltme: `ExamWindowCounts.Placed` artık `PlacementState != Unplaced`
+demek (yalnız `Placed` saymak **taşınmış** sınavı yerleşmemiş gösteriyordu, oysa gün
+sınırı denetimi onu zaten sayıyordu); ve `CreateExamWindow` yeni pencereyi `0/0` değil
+`0/beklenen` ile döndürüyor — aksi hâlde kart kurulduğu an yanlış yüzde gösteriyor,
+liste ucu bir sonraki okumada başka sayı veriyordu.
+
+### Üstüne gelen yüzey — yönetici panosu
+
+`GET /api/v1/exams/windows/{id}/board` → `ExamBoardDto(kpi, exams, violations, heatmap,
+teachers)`. Pano kendi sayımını **yapmıyor**: aynı okuyucudan besleniyor, ihlal listesini
+de yayın ön koşuluyla aynı metottan (`CheckPublishAsync`) alıyor. Üçüncü bir "toplam"
+tanımının doğmaması tam olarak bu bulgunun dersi.
+
+### Kanıt
+
+| Ölçüm | Sonuç |
+|---|---|
+| `./scripts/test-changed.sh --integration --filter ExamBoard` | 3/3 yeşil (gerçek MSSQL, ~71 sn uçtan uca) |
+| `./scripts/test-changed.sh` | 3947 birim testi (1013+2508+426) + 6 mimari bekçi yeşil |
+| `dotnet format` | Temiz (ilgisiz iki dosya `TB-117` gereği geri alındı) |
+
+Kırmızı→yeşil geçişi aynı test dosyasıyla ölçüldü; testin **iddiaları** değişmedi,
+yalnız iki taklit kurulumuna daha önce hiç okunmayan `SchedulePrograms` DbSet'i eklendi
+(`PublishExamScheduleTests`, `CreateExamWindowCommandHandlerTests`) — sayaç artık o
+tabloyu da okuduğu için.
+
+### Ders
+
+**Tembel satır, iki tanımlı bir toplam demektir — birini yazan, ötekini de yazmak
+zorundadır.** Satırı geç yaratmak doğru karardı; hatalı olan, "kaç satır bekleniyor"
+sorusunun cevabını bir yerde görevlendirmeden, başka yerde tablodan üretmekti. İki
+tanım yan yana durduğu sürece hangisinin kapıyı beklediği rastlantıdır — ve burada
+kapıyı bekleyen, **hiçbir şey olmadığında sıfır dönen** tanımdı.

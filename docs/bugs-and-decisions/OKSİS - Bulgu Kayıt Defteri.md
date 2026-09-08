@@ -34,13 +34,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 0 | — |
-| 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 8 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 4 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **15** | |
+| **Toplam** | **14** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 5
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 4
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -228,33 +228,6 @@ diye işaretliyor — kaynağın bulunamaması o talimatı da askıya alır.
 yorumu düzeltilir; dosya gerçekten silinmişse ekranın kaynağı `grade-parts.jsx`'e mi
 taşındığı doğrulanır. R6 (ölü dosya yasak) silmeyi meşru kılar, ama kod hâlâ eski adı
 gösteriyorsa kayıt bayattır.
-
----
-### `TB-119` · Sınav sayaçları yalnız yazılmış satırları sayıyor, yayın kapısı boş takvimi geçiriyor 🟠
-
-Planlı sınav satırı **tembel doğar**: öğretmen ilk kez yerleştirene kadar veritabanında yoktur
-(bilinçli karar, `ScheduledExamKey` bileşik kimliği bunun için var). `GetMyExamPlacements`
-beklenen satırları `ITeachingSlotReader`'dan türetip yazılmışlarla birleştiriyor — doğru.
-
-Ama sayaçlar bunu yapmıyor: `ExamWindowCountReader` ve `ExamPlacementCounter` doğrudan
-`ScheduledExams` tablosunu sayıyor. Sonuç üç yerde birden yanlış:
-
-- Pencere kartındaki `totalCount` / `placedCount` eksik gösteriyor.
-- `EX-S05` (yerleşmemiş şube × ders) **hiç dokunulmamış** çiftleri görmüyor.
-- Dolayısıyla **hiç kimsenin yerleştirme yapmadığı bir pencere**, ön koşul denetiminden
-  "yerleşmemiş sınav yok" diye geçiyor ve takvim yayınlanabiliyor.
-
-**Ölçüm (2026-09-08):** Görev 2.2 uygulayıcısı raporunda işaretledi; `ExamWindowCountReader.cs:34`
-ve `ExamPlacementCounter` sorguları okundu, `GetMyExamPlacementsQueryHandler.cs:28,64` ile
-karşılaştırıldı. İki farklı "toplam" tanımı yan yana yaşıyor.
-
-**Neden yüksek:** yayın kapısı bu modülün en sert kuralı ve şu hâliyle en boş takvimi geçiriyor.
-Ekranda görünen yüzde de yanlış — yönetici "48/48 yerleşti" görüp yayınlarken aslında hiç
-yerleştirilmemiş dersler olabilir.
-
-⬜ Kapatma yolu: beklenen satır kümesi **tek bir yerden** türetilir (ortak okuyucu) ve üç tüketici
-de onu kullanır: `GetMyExamPlacements`, sayaçlar, `CheckPublishAsync`. Görev 2.3'ün pano
-projeksiyonu zaten aynı kümeye ihtiyaç duyuyor; düzeltme orada yapılır.
 
 ---
 ### `TB-117` · Depoda biriken biçim borcu her görevde commit'e sızıyor ⚪
