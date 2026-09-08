@@ -1204,7 +1204,7 @@ dotnet ef migrations add 20260909_exams_faz1 \
   --project src/Oksis.Infrastructure --startup-project src/Oksis.Api
 ```
 
-Üretilen dosyayı **oku**: üç `CreateTable` ve beş index olmalı; `InsertData` OLMAMALI (bu görevde seed yok).
+Üretilen dosyayı **oku**: üç `CreateTable` ve **sekiz** index olmalı (iki filtreli benzersiz + altı yardımcı, üç yapılandırmada listelenenlerin toplamı); `InsertData` OLMAMALI (bu görevde seed yok). `scheduled_exams.date` ve `period` **nullable** üretilmelidir.
 
 - [ ] **Adım 6: Derle ve testleri koştur**
 

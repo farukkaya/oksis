@@ -20,7 +20,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-117` · `E-23` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-118` · `E-23` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -36,11 +36,11 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 9 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 3 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 4 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **14** | |
+| **Toplam** | **15** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Ders programı 1 · Çapraz kesen 3
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Ders programı 1 · Çapraz kesen 4
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -251,6 +251,23 @@ diye işaretliyor — kaynağın bulunamaması o talimatı da askıya alır.
 yorumu düzeltilir; dosya gerçekten silinmişse ekranın kaynağı `grade-parts.jsx`'e mi
 taşındığı doğrulanır. R6 (ölü dosya yasak) silmeyi meşru kılar, ama kod hâlâ eski adı
 gösteriyorsa kayıt bayattır.
+
+---
+### `TB-117` · Depoda biriken biçim borcu her görevde commit'e sızıyor ⚪
+
+`dotnet format` (pre-commit zorunlu) sınav takvimi görevlerinde **dokunulmamış** dosyalarda da
+değişiklik üretiyor: `SchoolSettingsController.cs` using sırası ve
+`20260907_grade_entry_reminders.cs` dosya kapsamlı namespace (IDE0161). Ayrıca `dotnet format
+--verify-no-changes` depo genelinde `tests/Oksis.Tests/**` altındaki eski dosyalar yüzünden
+IDE1006 ile kırmızı; bu 2026-09-07'de de görülmüş ve o turda da kapsam dışı bırakılmıştı.
+
+Sonuç: her görevde uygulayıcı ya ilgisiz dosyaları commit'ine katıyor ya da elle geri alıyor
+(2026-09-08, Görev 1.3'te geri alındı). İkisi de yanlış: birincisi commit'i bulandırır,
+ikincisi borcu bir sonraki tura devreder.
+
+⬜ Kapatma yolu: tek seferlik `dotnet format` turu, kendi commit'inde, kod değişikliği
+içermeden. `tests/Oksis.Tests` IDE1006 ihlalleri ya düzeltilir ya da `.editorconfig`'te
+gerekçesiyle susturulur — sessizce kırmızı bırakmak kapıyı işlevsiz kılıyor.
 
 ---
 ### `X-20` · Modül yapılandırması sunucuda hiçbir ucu kapılamıyor 🟠
