@@ -2694,6 +2694,65 @@ git commit -am "feat(web): şube sınav takvimi yazdırma görünümü"
 
 ---
 
+### Görev 2.7: Sınav taşıma yetkisi yöneticiye açılır
+
+**Files:**
+- Modify: `src/Oksis.Application/Modules/Exams/Commands/MoveExam/{MoveExamCommand,MoveExamCommandHandler}.cs`
+- Modify: `src/Oksis.Application/Modules/Exams/Internal/ExamPlacementLoader.cs` (yalnız gerekiyorsa)
+- Test: `tests/Oksis.Application.UnitTests/Modules/Exams/MoveExamCommandHandlerTests.cs`
+
+**Neden sonradan açıldı (Görev 2.5c ölçümü):** `POST /exams/{examId}:move` bugün
+`[RequirePermission("exams.place")]` taşıyor **ve** sahiplik kapısından geçiyor
+(`exam.OwnerTeacherId == çağıran`). `exams.place` seed'de yalnız öğretmen rolünde. Sonuç:
+**panodaki "Taşı" düğmesi saf bir yöneticide her zaman 403 döner.** Oysa spec §4.6 yayın sonrası
+değişikliği yöneticinin işi sayıyor ve pano onun ekranı.
+
+**Karar:** taşıma **iki role de** açılır, ama farklı kapılardan:
+- `exams.place` + **sahip** → öğretmen kendi sınavını taşır (bugünkü davranış korunur).
+- `exams.manage` → yönetici **herhangi bir** sınavı taşır; sahiplik kapısı uygulanmaz.
+Gerekçe zorunluluğu (takvim yayındaysa) ve kural denetimi **her iki yolda da aynı** kalır.
+
+- [ ] **Adım 1: Testi yaz** — üç vaka:
+
+```csharp
+[Fact]
+public async Task Should_Allow_When_AdminMovesAnotherTeachersExam()
+{
+    var result = await NewHandler(caller: Admin, permissions: ["exams.manage"]).Handle(
+        new MoveExamCommand(ExamId, NewDate, NewPeriod, "Salon çakışması nedeniyle öne alındı"), default);
+    result.IsSuccess.Should().BeTrue();
+}
+
+[Fact]
+public async Task Should_Forbid_When_TeacherMovesAnotherTeachersExam()
+{
+    var result = await NewHandler(caller: OtherTeacher, permissions: ["exams.place"]).Handle(
+        new MoveExamCommand(ExamId, NewDate, NewPeriod, null), default);
+    result.IsSuccess.Should().BeFalse();
+}
+
+[Fact]
+public async Task Should_StillRequireReason_When_AdminMovesPublishedExam()
+{
+    var result = await NewHandler(caller: Admin, permissions: ["exams.manage"],
+        windowStatus: ExamWindowStatus.SchedulePublished).Handle(
+        new MoveExamCommand(ExamId, NewDate, NewPeriod, Reason: null), default);
+    result.IsSuccess.Should().BeFalse();
+}
+```
+
+- [ ] **Adım 2: Kırmızıyı gör.**
+- [ ] **Adım 3:** `[RequirePermission]` özniteliğinin **VEYA** semantiği taşıyıp taşımadığını koddan
+  doğrula (`RequirePermissionAttribute` ve onu okuyan pipeline davranışı). VE ise iki izni birden
+  yazmak yanlış olur; o durumda öznitelik `exams.place` kalır ve **handler** `exams.manage` sahibini
+  ayrıca kabul eder (`ICurrentUser` üzerinden izin sorgusu — emsali koddan bul).
+- [ ] **Adım 4:** Yeşili gör, `./scripts/test-changed.sh`, `dotnet format`, commit:
+  `fix(exams): sınav taşıma yöneticiye açıldı, sahiplik kapısı öğretmene özel kaldı`
+
+> Bu görev bitince `oksis-ui` panosundaki "Taşı" düğmesi gerçekten çalışır; bugün çizili ama 403 veriyor.
+
+---
+
 # Dilim 3 · Bağlar
 
 ### Görev 3.1: Not modülü tarih beslemesi
