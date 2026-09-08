@@ -20,7 +20,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-116` · `E-23` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-117` · `E-23` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -36,11 +36,11 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 9 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 2 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 3 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **13** | |
+| **Toplam** | **14** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Ders programı 1 · Çapraz kesen 2
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Ders programı 1 · Çapraz kesen 3
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -232,6 +232,27 @@ payda gerekiyor — "hedef" kavramı finans dışında tanımlı değil.
 
 ---
 
+### `TB-116` · Sınav takvimi ekranının tasarım kaynağı projede yok ⚪
+
+`apps/mobile/src/features/grade/components/grade-exam-schedule-screen.tsx` ve
+`packages/core/src/grade/types.ts` (`ExamScheduleItem`) kaynak olarak
+`mobile/grade-exam-schedule.jsx :: GradeExamScheduleScreen` dosyasını gösteriyor.
+2026-09-08'de tasarım projesi (`Oksis Layout v2`) dosya listesi tarandı: o yolda
+dosya **yok** — `mobile/` altında grade dosyaları `grade-book-list`,
+`grade-component-sheet`, `grade-entry`, `grade-family`, `grade-feedback`,
+`grade-parts` ile sınırlı. Ekran teslim edildi ve çalışıyor; kaybolan şey
+**izlenebilirlik**: kaynak dosya silinmiş ya da yeniden adlandırılmışsa, o ekranın
+tasarımını güncellemek isteyen bir sonraki tur neye bakacağını bilemez.
+
+Sınav Takvimi modülü brief'i (2026-09-08) bu ekranı "yeniden tasarlama, genişlet"
+diye işaretliyor — kaynağın bulunamaması o talimatı da askıya alır.
+
+⬜ Kapatma yolu: tasarım projesinde dosyanın yeni adı bulunur ve koddaki üç kaynak
+yorumu düzeltilir; dosya gerçekten silinmişse ekranın kaynağı `grade-parts.jsx`'e mi
+taşındığı doğrulanır. R6 (ölü dosya yasak) silmeyi meşru kılar, ama kod hâlâ eski adı
+gösteriyorsa kayıt bayattır.
+
+---
 ### `X-20` · Modül yapılandırması sunucuda hiçbir ucu kapılamıyor 🟠
 
 [[Modül Yapılandırması]] notunun açık sorusu ("kapatma yalnız arayüzü mü gizliyor?")
