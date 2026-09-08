@@ -2498,6 +2498,27 @@ git commit -am "feat(exams): takvim yayını, ön koşul denetimi ve gerekçe ka
 **Interfaces:**
 - Produces: `GET /api/v1/exams/windows/{id}/board` → `ExamBoardDto(kpi, exams, violations, heatmap, teachers)`.
 
+**ÖNCE `TB-119` kapanır — bu görevin ilk sorumluluğu.** Beklenen sınav satırları bugün iki
+farklı yerden tanımlanıyor: `GetMyExamPlacements` görevlendirmeden türetiyor, sayaçlar ise
+yazılmış satırları sayıyor. Pano da aynı kümeye ihtiyaç duyduğu için ortak okuyucu burada
+doğar: `Internal/ExamExpectationReader.cs` → pencere için **beklenen** şube × ders çiftlerini
+(dönem × görevlendirme) döndürür, yazılmış satırlarla birleştirir. Üç tüketici ona bağlanır:
+`GetMyExamPlacementsQueryHandler`, `ExamWindowCountReader` + `ExamPlacementCounter`,
+`ExamRuleInspector.CheckPublishAsync`. Entegrasyon testine ayrıca şu vaka eklenir:
+
+```csharp
+[Fact]
+public async Task Should_CountUntouchedPairsAsUnplaced_When_BoardIsRead()
+{
+    // Hiç yerleştirme yapılmamış pencere: satır YOK ama beklenen çift VAR.
+    await SeedAsync(assignments: 4, scheduledExams: 0);
+    var board = await Send(new GetExamBoardQuery(WindowId));
+    board.kpi.totalCount.Should().Be(4);
+    board.kpi.placedCount.Should().Be(0);
+    board.violations.Should().Contain(v => v.Code == "EX-S05");
+}
+```
+
 **Neden entegrasyon testi:** pano üç eksende gruplama yapar (şube × gün ısı haritası, öğretmen bazlı eksik listesi, ihlal listesi) ve bunlar EF Core'un çeviremediği ifadelerle kolayca bellek-içi değerlendirmeye kayar. Bellekte yeşil olup gerçek SQL'de patlayan sorgu bu depoda daha önce yaşandı.
 
 - [ ] **Adım 1: Entegrasyon testini yaz**
