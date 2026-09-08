@@ -19,18 +19,21 @@
 Her görevin gereksinimleri bunları **örtük olarak** içerir.
 
 1. **Tenant izolasyonu kırmızı çizgi.** Her yeni entity `IHasTenant` + `TenantEntity` tabanı; global query filter ve `TenantSaveChangesInterceptor` devrede. `IgnoreQueryFilters()` gerekçesiz YASAK.
-2. **Kural sunucuda.** Ekranın uyguladığı ama sunucunun bilmediği kural yok sayılır. Her EX-H/EX-S kodunun sunucu tarafında testi vardır; ekran yalnız sunucunun döndürdüğü ihlali çizer, kendi kuralını üretmez.
-3. **AutoMapper YASAK** (Mapster) · **Repository wrapper YASAK** (`IApplicationDbContext`) · **Lazy loading YASAK** (explicit `Include`/projection) · **Domain'de EF/DataAnnotations YASAK** (fluent config) · **Controller'da DbContext YASAK** (`ISender`) · `async void`, `.Result`, `.Wait()` YASAK.
-4. **Zaman = zil ızgarası.** Sınavın zamanı `(DateOnly Date, int Period)` çiftidir. Serbest `TimeOnly` aralığı YOK. Saat metni zil çizelgesinden (`ayarlar_zil` kaynağı) türetilir, sınav kaydında saklanmaz.
-5. **Ders programı yazılmaz.** `ScheduleException` üretilmez, `LessonPlacement` değiştirilmez. Sınav yalnız okur ve etiket projeksiyonu döndürür.
-6. **Wire şekli korunur (R11).** Alan adları İngilizce ve tasarım mock'uyla aynı; id görünümlü string **string** kalır. Tasarımın mock alan adları bu planın Task 1'inde sözleşmeye çevrildi; sonraki hiçbir görev alan adını yeniden adlandırmaz.
-7. **Durum matrisi eksiksiz (R8).** Her ekran `loading / empty / error` + kendi özel hâllerini **gerçek query state'ine** bağlar, yerel bayrağa değil.
-8. **Ham hex component'te yok.** Web: `packages/ui/src/styles/exam.css` içinde scoped CSS değişkeni. Mobil: `apps/mobile/src/theme/tokens.ts`. Ekran dosyasında hex yasak. **Yeni renk/ikon/font üretilmez**; ders tonu mevcut `SUBJECT_PALETTE` + `subjectColorIndex` ile gelir, ikinci palet açılmaz.
-9. **Koyu tema teslim edilmez** (2026-08-19 kullanıcı kararı).
-10. **Türkçe arayüz metni, İngilizce identifier.** Yorumlar Türkçe ve tanım noktasında. Sözlük: sınav penceresi = `examWindow`, planlı sınav = `scheduledExam`, saat isteği = `hourRequest`. Arayüzde **"sınav"**, asla "yazılı".
-11. **Test koşumu:** `oksis-api` günlük döngüde `./scripts/test-changed.sh` (entegrasyon yalnız `--integration`), `dotnet test` yalnız bilinçli. `oksis-ui` bitiş öncesi `npm run typecheck && npm run lint`.
-12. **Commit:** `<type>(<scope>): türkçe açıklama` — sonda nokta yok, ≤90 karakter. Scope `oksis-api`'de `exams`, `oksis-ui`'de {`core`,`api`,`mobile`,`web`,`ui`}. İmza iki satır (`Co-Authored-By` + `Claude-Session`).
-13. **Faz 2 (kelebek/oturum) kapsam dışı.** `ExamSession`, `RoomAllocation`, `Seat`, `Invigilation` bu planda **yazılmaz**. `ExamWindow.Mode` alanı iki değeri de taşır ama `session` modunda pencere yalnız oluşturulup yayınlanamaz; ilgili uçlar `NotImplemented` değil, **kural hatası** döndürür ("Oturum modu henüz kullanılamıyor").
+2. **İhlal ve hata metinleri sunucuda ve Türkçe üretilir.** Tarih/sayı biçimlemesi
+   `CultureInfo.GetCultureInfo("tr-TR")` ile yapılır (emsal: `GradeBookProjector`,
+   `ClubLabels`); süreç kültürüne güvenmek sunucuda İngilizce ay adı üretir.
+3. **Kural sunucuda.** Ekranın uyguladığı ama sunucunun bilmediği kural yok sayılır. Her EX-H/EX-S kodunun sunucu tarafında testi vardır; ekran yalnız sunucunun döndürdüğü ihlali çizer, kendi kuralını üretmez.
+4. **AutoMapper YASAK** (Mapster) · **Repository wrapper YASAK** (`IApplicationDbContext`) · **Lazy loading YASAK** (explicit `Include`/projection) · **Domain'de EF/DataAnnotations YASAK** (fluent config) · **Controller'da DbContext YASAK** (`ISender`) · `async void`, `.Result`, `.Wait()` YASAK.
+5. **Zaman = zil ızgarası.** Sınavın zamanı `(DateOnly Date, int Period)` çiftidir. Serbest `TimeOnly` aralığı YOK. Saat metni zil çizelgesinden (`ayarlar_zil` kaynağı) türetilir, sınav kaydında saklanmaz.
+6. **Ders programı yazılmaz.** `ScheduleException` üretilmez, `LessonPlacement` değiştirilmez. Sınav yalnız okur ve etiket projeksiyonu döndürür.
+7. **Wire şekli korunur (R11).** Alan adları İngilizce ve tasarım mock'uyla aynı; id görünümlü string **string** kalır. Tasarımın mock alan adları bu planın Task 1'inde sözleşmeye çevrildi; sonraki hiçbir görev alan adını yeniden adlandırmaz.
+8. **Durum matrisi eksiksiz (R8).** Her ekran `loading / empty / error` + kendi özel hâllerini **gerçek query state'ine** bağlar, yerel bayrağa değil.
+9. **Ham hex component'te yok.** Web: `packages/ui/src/styles/exam.css` içinde scoped CSS değişkeni. Mobil: `apps/mobile/src/theme/tokens.ts`. Ekran dosyasında hex yasak. **Yeni renk/ikon/font üretilmez**; ders tonu mevcut `SUBJECT_PALETTE` + `subjectColorIndex` ile gelir, ikinci palet açılmaz.
+10. **Koyu tema teslim edilmez** (2026-08-19 kullanıcı kararı).
+11. **Türkçe arayüz metni, İngilizce identifier.** Yorumlar Türkçe ve tanım noktasında. Sözlük: sınav penceresi = `examWindow`, planlı sınav = `scheduledExam`, saat isteği = `hourRequest`. Arayüzde **"sınav"**, asla "yazılı".
+12. **Test koşumu:** `oksis-api` günlük döngüde `./scripts/test-changed.sh` (entegrasyon yalnız `--integration`), `dotnet test` yalnız bilinçli. `oksis-ui` bitiş öncesi `npm run typecheck && npm run lint`.
+13. **Commit:** `<type>(<scope>): türkçe açıklama` — sonda nokta yok, ≤90 karakter. Scope `oksis-api`'de `exams`, `oksis-ui`'de {`core`,`api`,`mobile`,`web`,`ui`}. İmza iki satır (`Co-Authored-By` + `Claude-Session`).
+14. **Faz 2 (kelebek/oturum) kapsam dışı.** `ExamSession`, `RoomAllocation`, `Seat`, `Invigilation` bu planda **yazılmaz**. `ExamWindow.Mode` alanı iki değeri de taşır ama `session` modunda pencere yalnız oluşturulup yayınlanamaz; ilgili uçlar `NotImplemented` değil, **kural hatası** döndürür ("Oturum modu henüz kullanılamıyor").
 
 ---
 
@@ -1854,21 +1857,24 @@ Farkı: hedef şubede o saatteki ders **başka öğretmenindir**. Akış — hed
 ```csharp
 public sealed class ExamPlacementCounter(IApplicationDbContext db) : IExamPlacementCounter
 {
+    // excludeExamId NULLABLE'dır (Görev 1.4 arayüzü): henüz kaydedilmemiş bir sınav için
+    // sayım yapılırken dışlanacak satır yoktur.
     public async Task<int> CountExamsAsync(
-        Guid windowId, Guid classRoomId, DateOnly date, Guid excludeExamId, CancellationToken ct)
+        Guid windowId, Guid classRoomId, DateOnly date, Guid? excludeExamId, CancellationToken ct)
         => await db.ScheduledExams.AsNoTracking().CountAsync(
             e => e.ExamWindowId == windowId && e.ClassRoomId == classRoomId
-              && e.Date == date && e.Id != excludeExamId
+              && e.Date == date
+              && (excludeExamId == null || e.Id != excludeExamId)
               && e.PlacementState != ExamPlacementState.Unplaced, ct);
 
     public async Task<bool> HasExamOnAdjacentDayAsync(
-        Guid windowId, Guid classRoomId, DateOnly date, Guid excludeExamId, CancellationToken ct)
+        Guid windowId, Guid classRoomId, DateOnly date, Guid? excludeExamId, CancellationToken ct)
     {
         var previous = date.AddDays(-1);
         var next = date.AddDays(1);
         return await db.ScheduledExams.AsNoTracking().AnyAsync(
             e => e.ExamWindowId == windowId && e.ClassRoomId == classRoomId
-              && e.Id != excludeExamId
+              && (excludeExamId == null || e.Id != excludeExamId)
               && (e.Date == previous || e.Date == next)
               && e.PlacementState != ExamPlacementState.Unplaced, ct);
     }
