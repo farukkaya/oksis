@@ -35,12 +35,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 9 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 8 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 4 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **15** | |
+| **Toplam** | **14** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Ders programı 1 · Çapraz kesen 4
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 4
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -181,29 +181,6 @@ ileri alındıysa sıfırla" da mümkün.
 tamamlama, idari kaldırma); sözleşmede `/homework/{id}/audit` bildirilmediği için hiçbir
 ekranda görünmüyor. Not modülünün denetim ucu emsal (`grades.manage`). Çağrılmayan uç
 arkasındaki kusuru da saklar — ucu yazmadan satırların şekli doğrulanamaz.
-
----
-
-## 11. Ders Programı 🟡
-
-### `TB-115` · Dağıtım kısıtı ders silme kapısının dışında 🟡
-
-`DistributionConstraint` (K-14, `oksis-api` @ `0cd40654`, 2026-09-01) `SubjectId` taşıyor
-ama `SubjectUsageInspector.FindBlockingUsagesAsync` onu bilmiyor. Silme soft-delete olduğu
-için FK kırılmaz: dersi silinen kısıt görünmez olur, yayın önizlemesindeki
-`constraint-violation` uyarısı sessizce kaybolur.
-
-**Ölçüm (2026-09-07):** `Oksis.Tests` →
-`SubjectUsageCoverageTests.Every_entity_carrying_a_subject_id_is_handled_by_the_delete_guard`
-master'da **kırmızı**; mesaj tam olarak bu tipi listeliyor. Bekçi işini yaptı; kapı altı
-gündür açık çünkü `Oksis.Tests` ne pre-push kancasında ne de günlük döngüde koşuyor
-(Testcontainers/Docker ister). Aynı gün eklenen `scripts/test-changed.sh --integration`
-Infrastructure/Application değişince bu projeyi de seçer.
-
-⬜ Kapatma yolu: `SubjectUsageInspector`'a `DistributionConstraint` kontrolü. Test mesajı
-iki seçenek sunuyor (engelleyici kullanım **ya da** gerekçeyle `_catalogDefinitionTypes`);
-kısıt bir yerleşim *niyeti* olduğu için (pin/exclude kullanıcı kararıdır, katalog tanımı
-değil) engelleyici saymak doğru görünüyor — kapatan bunu gerekçesiyle koda yazar.
 
 ---
 

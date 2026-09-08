@@ -5644,3 +5644,65 @@ Birim test yeşil olması bütçenin **doğru** olduğunu göstermiyordu — yal
 çalıştığını gösteriyordu. Zaman penceresi içeren her düzeltmede pencerenin kendisi
 gerçek koşuda ölçülmeli; ilk tahmin (27 sn) gerçek cold start'ın (60-90 sn) yarısıydı.
 Krş. [[OKSİS - Bulgu Arşivi]] §38/§39 dersi: ölçülmeyen tarif yanlış karar üretir.
+
+---
+
+## 41. `TB-115` · Ders silme kapısı iki tüketicisini birden kazandı (2026-09-08) ✅
+
+**Kapanış türü: bekçi testi kırmızıydı, iki eksik dal tek turda kapatıldı.** Kapanış
+`oksis-api` @ `b324a949` (`feature/exam-schedule`), Sınav Takvimi Faz 1 · Görev 1.9.
+
+### `TB-115` · Dağıtım kısıtı ders silme kapısının dışında 🟡
+
+`DistributionConstraint` (K-14, `oksis-api` @ `0cd40654`, 2026-09-01) `SubjectId` taşıyor
+ama `SubjectUsageInspector.FindBlockingUsagesAsync` onu bilmiyor. Silme soft-delete olduğu
+için FK kırılmaz: dersi silinen kısıt görünmez olur, yayın önizlemesindeki
+`constraint-violation` uyarısı sessizce kaybolur.
+
+**Ölçüm (2026-09-07):** `Oksis.Tests` →
+`SubjectUsageCoverageTests.Every_entity_carrying_a_subject_id_is_handled_by_the_delete_guard`
+master'da **kırmızı**; mesaj tam olarak bu tipi listeliyor. Bekçi işini yaptı; kapı altı
+gündür açık çünkü `Oksis.Tests` ne pre-push kancasında ne de günlük döngüde koşuyor
+(Testcontainers/Docker ister). Aynı gün eklenen `scripts/test-changed.sh --integration`
+Infrastructure/Application değişince bu projeyi de seçer.
+
+### Kapatırken ikinci bir eksik çıktı — ve tek turda kapatıldı
+
+Sınav Takvimi Görev 1.2'de `ScheduledExam` de `SubjectId` taşımaya başladı. Kapanış
+öncesi ölçümde bekçi testi **iki** tip listeliyordu:
+
+```
+Kapı dışında kalan tipler:
+  - DistributionConstraint
+  - ScheduledExam
+```
+
+Tek kapıyı iki ayrı turda yamamak yerine ikisi birlikte kapandı ([[yamalama-kabul-degil]]).
+
+### Engel mi, geçmiş mi — iki dalın gerekçesi ayrı
+
+| Tip | Karar | Gerekçe |
+|---|---|---|
+| `ScheduledExam` | Yalnız **kilitli olmayan** pencerenin sınavı engeller | Kilitli pencerenin sınavı olmuş bitmiş iştir; haziranda ders silmeyi eylülde yapılmış sınav yüzünden engellemek `GradeEntryReminder`'ın geçmiş sayılmasıyla aynı gerekçeyle yanlış olurdu |
+| `DistributionConstraint` | **Hepsi** engeller | Kısıt bir yerleşim *niyetidir* (pin/exclude), katalog tanımı değil. Aktiflik/durum süzgeci yok çünkü entity'de böyle bir alan **K-14 gereği bilinçli olarak yok** — kalıcı durum kolonu ikinci bir doğruluk kaynağı doğururdu. Kısıt sezon kapsamlıdır, yaşamı satırın kendi varlığıdır |
+
+`ScheduledExam`'in `ExamWindow`'a navigation'ı yok; dal alt sorgu ile bağlanır
+(`db.ExamWindows.Where(w => w.Status != Locked).Select(w => w.Id)`).
+
+Kullanıcıya çıkan cümleler mevcut biçime uydu (isim öbeği, sayı yok):
+`Bu ders kullanımda (planlanmış sınav, ders programı dağıtım kısıtı); …`
+
+### Kanıt
+
+| Ölçüm | Önce | Sonra |
+|---|---|---|
+| `SubjectUsageCoverageTests` (mimari bekçi) | **kırmızı**, iki tip listeleniyor | 1/1 yeşil |
+| `SubjectCommandHandlerTests` | 18/18 | 21/21 (üç yeni dal testi) |
+| Yeni testler impl'siz koşuldu (sahte-yeşil kontrolü) | 2 test **kırmızı** | — |
+| `./scripts/test-changed.sh` | — | Domain 1013 · Application 2486 · Api 426, hepsi yeşil |
+
+### Ders
+
+Bekçi testi işini yaptı ama **kimse bakmadığı için** altı gün kırmızı kaldı: günlük
+döngü (`test-changed.sh`) `Oksis.Tests`'i Docker gerektirdiği için seçmiyordu. Kırmızı
+bir bekçi, koşulmadığı sürece yeşil bir kapıdan ayırt edilemez.
