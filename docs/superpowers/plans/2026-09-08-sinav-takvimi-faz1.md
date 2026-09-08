@@ -2262,14 +2262,14 @@ Görev 1.7'de yazılan ekran bugün hiç açılamıyor.
 
 Tint zeminleri de markadan: `#E7F6EC` / `#FCEFDD` / `#FBE7E7`.
 
-- [ ] **Adım 1: Etki alanını ölç** — `grep -rn "var(--success)\|var(--warning)\|var(--danger)" packages apps | wc -l` ve hangi ekranların etkilendiğini listele. Raporla.
-- [ ] **Adım 2: Üç değişkeni değiştir**, `clubs.css`'teki `.club-page` kapsam ezmesini ve onu açıklayan yorumu sil (yorumun yerine "kanon shell.css'te, marka değerleri" notu bırak).
-- [ ] **Adım 3: Portal renkleri karışmasın** — `#0e7a5a`, `#b05a0a` gibi değerler portal kimliği
+- [x] **Adım 1: Etki alanını ölç** — `grep -rn "var(--success)\|var(--warning)\|var(--danger)" packages apps | wc -l` ve hangi ekranların etkilendiğini listele. Raporla.
+- [x] **Adım 2: Üç değişkeni değiştir**, `clubs.css`'teki `.club-page` kapsam ezmesini ve onu açıklayan yorumu sil (yorumun yerine "kanon shell.css'te, marka değerleri" notu bırak).
+- [x] **Adım 3: Portal renkleri karışmasın** — `#0e7a5a`, `#b05a0a` gibi değerler portal kimliği
   olarak kullanılan yerlerde KALIR. Yalnız durum değişkenleri değişir. Değişiklikten sonra
   `grep` ile portal kullanımlarının bozulmadığını doğrula.
-- [ ] **Adım 4: `npm run typecheck && npm run lint`** + commit
+- [x] **Adım 4: `npm run typecheck && npm run lint`** + commit
   `fix(ui): durum renkleri marka değerlerine çekildi, kulüp kapsam ezmesi kaldırıldı`
-- [ ] **Adım 5:** `oksis` deposunda `TB-118`'i Bulgu Arşivi'ne taşı (kanıt: değişen dosya
+- [x] **Adım 5:** `oksis` deposunda `TB-118`'i Bulgu Arşivi'ne taşı (kanıt: değişen dosya
   listesi ve etkilenen ekran sayısı), defterden çıkar, özet sayaçlarını güncelle.
 
 > **Görsel regresyon uyarısı:** değişiklik her ekranı etkiler. Commit sonrası kullanıcıya

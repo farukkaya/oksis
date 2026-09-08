@@ -34,13 +34,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 0 | — |
-| 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 8 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 4 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **15** | |
+| **Toplam** | **14** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 5
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 4
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -228,31 +228,6 @@ diye işaretliyor — kaynağın bulunamaması o talimatı da askıya alır.
 yorumu düzeltilir; dosya gerçekten silinmişse ekranın kaynağı `grade-parts.jsx`'e mi
 taşındığı doğrulanır. R6 (ölü dosya yasak) silmeyi meşru kılar, ama kod hâlâ eski adı
 gösteriyorsa kayıt bayattır.
-
----
-### `TB-118` · Durum renkleri portal renkleriyle karışmış, üç ayrı aile yan yana yaşıyor 🟠
-
-`packages/ui/src/styles/shell.css` durum renklerini portal renklerinden alıyor:
-`--success: #0e7a5a` (Öğretmen teal), `--warning: #b05a0a` (Veli bronz), `--danger: #c41c1c`.
-Marka profili (`brand.oksis.net` v1.0, `handoff-web/oksis-brand-tokens.md` §Status colors)
-bunu **açıkça yasaklıyor**: durum renkleri portaldan bağımsızdır ve kanon değerler
-`#16A34A / #D97706 / #DC2626`'dır — kasten portal kimlikleriyle çakışmayacak şekilde seçilmiş.
-
-`clubs.css` bunu fark etmiş ve `.club-page` kapsamında doğru değerlerle **eziyor**
-(dosyada "shell.css sapmasını düzelt" yorumu var). Yani bugün iki aile yan yana yaşıyor:
-kulüp ekranları markaya uyuyor, geri kalan her ekran uymuyor. 2026-09-08'de sınav takvimi
-`exam.css` yazılırken üçüncü bir palet açmamak için **shell değerleri miras alındı** —
-yani sapma bir ekran daha yayıldı.
-
-**Neden yüksek:** renk burada kozmetik değil anlam taşıyıcısı. Bir kullanıcı aynı üründe
-"başarı" için iki farklı yeşil görüyor ve bunlardan biri Öğretmen portalının kimlik rengi.
-Ekran bazlı ezme ([[yamalama-kabul-degil]]) sorunu büyütüyor: her yeni modül hangi aileyi
-miras alacağına kendi karar veriyor.
-
-⬜ Kapatma yolu: kanon **markadır**. `shell.css` üç değişkeni marka değerlerine çekilir,
-`clubs.css`'teki kapsam ezmesi silinir, `exam.css` otomatik düzelir. Portal renkleri yalnız
-portal kimliği olarak kalır. Görsel regresyon riski var: değişiklik her ekranı etkiler,
-o yüzden tek commit ve gözle geçiş turu gerekir. **Kullanıcı kararı bekliyor.**
 
 ---
 ### `TB-117` · Depoda biriken biçim borcu her görevde commit'e sızıyor ⚪

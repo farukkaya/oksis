@@ -5706,3 +5706,101 @@ Kullanıcıya çıkan cümleler mevcut biçime uydu (isim öbeği, sayı yok):
 Bekçi testi işini yaptı ama **kimse bakmadığı için** altı gün kırmızı kaldı: günlük
 döngü (`test-changed.sh`) `Oksis.Tests`'i Docker gerektirdiği için seçmiyordu. Kırmızı
 bir bekçi, koşulmadığı sürece yeşil bir kapıdan ayırt edilemez.
+
+---
+
+## 42. `TB-118` · Durum renkleri markaya çekildi, ikinci ve üçüncü aile kapandı (2026-09-08) ✅
+
+**Kapanış türü: merkezî düzeltme — ekran bazlı ezme silindi, kanon tek noktaya alındı.**
+Kullanıcı kararı 2026-09-08: *kanon markadır, düzeltme şimdi, tek commit.*
+Kapanış `oksis-ui` @ `bca01c0` (`feature/exam-schedule`), Sınav Takvimi Faz 1 · Görev 1.12.
+
+### `TB-118` · Durum renkleri portal renkleriyle karışmış, üç ayrı aile yan yana yaşıyor 🟠
+
+`packages/ui/src/styles/shell.css` durum renklerini portal renklerinden alıyordu:
+`--success: #0e7a5a` (Öğretmen teal), `--warning: #b05a0a` (Veli bronz), `--danger: #c41c1c`.
+Marka profili (`brand.oksis.net` v1.0, `handoff-web/oksis-brand-tokens.md` §Status colors)
+bunu açıkça yasaklıyor: durum renkleri portaldan bağımsızdır ve kanon değerler
+`#16A34A / #D97706 / #DC2626`'dır — kasten portal kimlikleriyle çakışmayacak seçilmiş.
+`clubs.css` bunu fark edip `.club-page` kapsamında doğru değerlerle eziyordu; `exam.css`
+ise üçüncü palet açmamak için sapmış shell değerlerini miras almıştı.
+
+### Kapatırken üçüncü aile çıktı — ve o da kapandı
+
+Defterdeki kayıt iki aile sayıyordu (shell sapması + clubs ezmesi). Kapanış ölçümünde
+**üçüncüsü** bulundu: `packages/ui/src/styles/theme.css` `@theme` bloğu shadcn/Tailwind
+katmanı için `--color-success/-warning/-danger`'ı **aynı sapmış değerlerle** ayrıca
+tanımlıyordu. Bu aile ölü değil: `packages/ui/src/components/badge.tsx`
+`bg-success/10 text-success` ve `bg-warning/10 text-warning` üzerinden onu tüketiyor.
+Yalnız `shell.css` düzeltilseydi rozet bileşeni Öğretmen teal'inde kalır, TB-118 kâğıt
+üstünde kapanır gerçekte kapanmazdı ([[yamalama-kabul-degil]]).
+
+### Etki alanı ölçümü (değişiklikten önce)
+
+| Ölçüm | Değer |
+|---|---|
+| `var(--success)` / `var(--warning)` / `var(--danger)` toplam kullanım | **585** (build artefaktı hariç) |
+| — `var(--success)` | 142 |
+| — `var(--warning)` | 199 |
+| — `var(--danger)` | 252 |
+| Etkilenen dosya | **35** (24 CSS + 11 TSX/TS) |
+
+En yoğun yüzeyler: `screens.css` 180 · `grade.css` 56 · `duty.css` 45 · `homework.css` 41 ·
+`clubs.css` 32 · `schedule.css` 30 · `announcements.css` 26 · `auth.css` 24 ·
+`attendance.css` 19 · `students-wizard.css` 18 · `schedule-read.css` 14 · `exam.css` 14.
+
+### Değişen dosyalar
+
+| Dosya | Değişiklik |
+|---|---|
+| `packages/ui/src/styles/shell.css` | Kanon üç değişken marka değerlerine çekildi + neden portal renginden ayrıldığını anlatan yorum. Ayrıca dosyanın kendi içindeki 4 ham `#c41c1c` (bildirim rozeti, tehlikeli menü öğesi ve hover `color-mix`'i) `var(--danger)`'a bağlandı |
+| `packages/ui/src/styles/theme.css` | `@theme` bloğundaki ikinci durum ailesi markaya çekildi; `brand.ts` eşlemesinin `feedbackColor.*Bright` olduğu, `feedbackColor.success/.warning`'in ise PORTAL rengi olduğu yoruma yazıldı |
+| `packages/ui/src/styles/clubs.css` | `.club-page` kapsam ezmesi (3 değişken) ve "shell.css sapmasını düzelt" yorumu silindi; yerine "kanon shell.css'te" notu |
+| `packages/ui/src/styles/exam.css` | **Dokunulmadı** — değişkenlerden miras aldığı için kendiliğinden düzeldi (planın şartı) |
+
+### Portal kimlikleri bozulmadı — doğrulama
+
+Değişiklikten sonra `grep -rni "#0e7a5a\|#b05a0a\|#c41c1c"` ile kalan her kullanım
+tek tek sınıflandırıldı. Portal olarak kullanılan hiçbiri değişmedi:
+
+| Yer | Sınıf | Karar |
+|---|---|---|
+| `shell.css` `[data-role="teacher"/"parent"]` `--p/--a/--s` | Portal | Kaldı |
+| `packages/core/src/roles/roles.ts` `WEB_ROLE_THEME`, `ROLE_PORTAL_COLOR` | Portal | Kaldı |
+| `apps/mobile/src/theme/tokens.ts` `PORTAL_COLORS` | Portal | Kaldı |
+| `screens.css` `.rc-ic.teacher` | Portal | Kaldı |
+| `core/duty/constants.ts`, `core/schedule/constants.ts`, `teacher-assignments/labels.ts`, `screens.css .snf-avc*` | Kategorik palet (nöbet yeri, ders rengi, etiket, avatar) | Kaldı |
+
+Admin lacivert `#1B2B5E` 34 kullanımıyla dokunulmadan duruyor.
+
+### Kapanmayan komşu borçlar — bilinçli kapsam dışı
+
+| Kalan | Neden bırakıldı |
+|---|---|
+| `packages/core/src/tokens/brand.ts` `feedbackColor.success = #0E7A5A`, `.warning = #B05A0A` | **Adlandırma borcu, renk borcu değil.** Bu alanları `roles.ts` PORTAL rengi olarak tüketiyor (`teacher: feedbackColor.success`). Değeri değiştirmek Öğretmen/Veli portal kimliğini bozardı — bu görevin kırmızı çizgisi. Doğru düzeltme alanı `portalColor`'a taşımaktır; ayrı iş |
+| `screens.css` içindeki ham tint'ler (`#E2F3EC` ~30 yer, `#E4F4EE`, `#FBEBD5`) ve `.pr` / `.szn-*` / `.tkv-*` kapsam ezmeleri | Prototipten taşınan 5700 satırlık eski dosyanın kendi borcu; `grade.css`/`announcements.css`/`attendance.css` başlarında **zaten belgeli** ve dosya bazında ezilmiş. Tek turda 30+ noktaya dokunmak görsel regresyon riskini bu görevin kapsamının çok ötesine taşırdı |
+
+### Kanıt
+
+| Ölçüm | Sonuç |
+|---|---|
+| `npm run typecheck` | 6/6 görev yeşil |
+| `npm run lint` | 6/6 görev yeşil |
+| `prettier --check` (değişen 3 dosya) | shell.css/clubs.css uyarısı **HEAD'de de var** — önceden gelen biçim borcu, bu değişiklik kaynaklı değil (`git show HEAD:` sürümüyle karşılaştırıldı) |
+| Portal renk grep'i | Portal kullanımlarının hiçbiri değişmedi |
+
+### Görsel regresyon — açık kalan tek iş
+
+Değişiklik **585 kullanım / 35 dosyayı** etkiliyor; otomatik testle kapanmaz.
+Gözle geçilecek yüksek yoğunluklu ekranlar: **Notlar** (`grade.css`, 56 kullanım),
+**Nöbet** (`duty.css`, 45), **Ödevler** (`homework.css`, 41), **Ders Programı**
+(`schedule.css`, 30), **Duyurular** (26), **Giriş** (`auth.css`, 24), **Yoklama** (19),
+**Öğrenci kayıt sihirbazı** (18) ve **Sınav Takvimi** (`exam.css`, 14 — mirasla düzelen ekran).
+
+### Ders
+
+Bir sapmayı ekran kapsamında ezmek onu **düzeltmez, ikinci doğruluk kaynağı üretir** —
+ve ikinci kaynak varken üçüncüsünün sessizce doğduğu fark edilmez. `clubs.css` sapmayı
+2026-08-29'da görüp not düşmüştü; o not merkezî düzeltmeye dönüşmediği için on gün sonra
+`exam.css` yanlış aileyi miras aldı ve `theme.css`'teki üçüncü aile hiç sayılmadı bile.
+**Bir dosyanın başındaki "şunu düzelt" yorumu, düzeltmenin kendisi değil borcun faizidir.**
