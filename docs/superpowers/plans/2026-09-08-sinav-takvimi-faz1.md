@@ -1470,6 +1470,13 @@ public sealed class ExamRuleInspector(IExamScheduleReader reader, IExamPlacement
 }
 ```
 
+**Saat isteği olayları handler'dan yayınlanır.** `ExamHourRequestedEvent` ve
+`ExamHourAnsweredEvent` kayıtları Görev 1.2'de tanımlandı ama entity içinden `Raise`
+edilmiyor: `AggregateRoot.Raise` korumalıdır ve bu iki olay tek bir aggregate'in değil,
+sınav + istek çiftinin sonucudur. Handler `IPublisher` ile yayınlar — emsal
+`src/Oksis.Application/Modules/Schools/Commands/UpdateSchoolGradeLevels/UpdateSchoolGradeLevelsCommandHandler.cs`.
+`ExamWindow`'un iki yayın olayı ise entity içinden `Raise` edilir; ayrım bilinçlidir.
+
 `IExamPlacementCounter` aynı klasörde tanımlanır (`CountExamsAsync`, `HasExamOnAdjacentDayAsync`, `GetTermIdAsync`); uygulaması `IApplicationDbContext` üzerinden Görev 1.6'da yazılır.
 
 - [ ] **Adım 6: DI kaydı**
