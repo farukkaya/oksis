@@ -2217,6 +2217,64 @@ git commit -am "feat(exams): sınav türü listeleme ucu — pencere formunun ka
 > Bu görev bitince Görev 1.7'de boş bırakılan "Yeni pencere" aksiyonu Dilim 2'deki
 > `web/exam-window-modals.jsx` portuyla birlikte gerçek forma bağlanır.
 
+---
+
+### Görev 1.11: Menü satırı ve rota koruması (`[S-0]` kapanır)
+
+**Files:**
+- Modify: `packages/core/src/nav/nav-config.ts`
+- Modify: `apps/web/features/exam/exam-page.tsx` (öğretmen dalı yerleştirme ekranına bağlanır — Görev 1.8 ile birlikte)
+- Test: `packages/core/src/nav/*.test.ts` (mevcut nav testleri varsa genişlet)
+
+**Kullanıcı kararı (2026-09-08):** Sınav takvimi **kendi menü satırını** alır, ders programının
+hemen altında. Yönetici ve öğretmen menüsünde aynı ad: **"Sınav Takvimi"**. Öğrenci ve veli
+için **web'de satır yoktur** — onların takvimi mobilde yaşıyor.
+
+**Neden bu görev şart:** `RouteGuard` erişimi nav'dan türetiyor (`canAccessRoute` →
+`findNavItemByHref`). Satır olmadan `/exams` her rolde `ForbiddenScreen` çiziyor; yani
+Görev 1.7'de yazılan ekran bugün hiç açılamıyor.
+
+- [ ] **Adım 1: Testi yaz** — yönetici ve öğretmen `/exams`'e erişir, öğrenci ve veli erişemez.
+- [ ] **Adım 2: Kırmızıyı gör.**
+- [ ] **Adım 3: Nav satırını ekle** — ders programı satırının hemen ardına, mevcut satırların
+  ikon/izin alanı biçimini birebir izleyerek. **Yeni ikon üretme**, mevcut takvim ailesinden seç.
+- [ ] **Adım 4: Yeşili gör, `npm run typecheck && npm run lint`, commit**
+  `feat(core): sınav takvimi menü satırı ve rota erişimi`
+
+---
+
+### Görev 1.12: Durum renkleri markaya çekilir (`TB-118` kapanır)
+
+**Files:**
+- Modify: `packages/ui/src/styles/shell.css` (üç değişken)
+- Modify: `packages/ui/src/styles/clubs.css` (kapsam ezmesi silinir)
+- Kontrol: `packages/ui/src/styles/exam.css` (kendiliğinden düzelir, elle dokunma)
+
+**Kullanıcı kararı (2026-09-08):** merkezî düzeltme **şimdi** yapılır, tek commit.
+
+**Kanon marka değerleridir** (`handoff-web/oksis-brand-tokens.md` §Status colors):
+
+| Değişken | Bugün (yanlış) | Marka (doğru) | Bugünkü değerin gerçek anlamı |
+|---|---|---|---|
+| `--success` | `#0e7a5a` | `#16A34A` | Öğretmen portalı kimlik rengi |
+| `--warning` | `#b05a0a` | `#D97706` | Veli portalı kimlik rengi |
+| `--danger` | `#c41c1c` | `#DC2626` | — |
+
+Tint zeminleri de markadan: `#E7F6EC` / `#FCEFDD` / `#FBE7E7`.
+
+- [ ] **Adım 1: Etki alanını ölç** — `grep -rn "var(--success)\|var(--warning)\|var(--danger)" packages apps | wc -l` ve hangi ekranların etkilendiğini listele. Raporla.
+- [ ] **Adım 2: Üç değişkeni değiştir**, `clubs.css`'teki `.club-page` kapsam ezmesini ve onu açıklayan yorumu sil (yorumun yerine "kanon shell.css'te, marka değerleri" notu bırak).
+- [ ] **Adım 3: Portal renkleri karışmasın** — `#0e7a5a`, `#b05a0a` gibi değerler portal kimliği
+  olarak kullanılan yerlerde KALIR. Yalnız durum değişkenleri değişir. Değişiklikten sonra
+  `grep` ile portal kullanımlarının bozulmadığını doğrula.
+- [ ] **Adım 4: `npm run typecheck && npm run lint`** + commit
+  `fix(ui): durum renkleri marka değerlerine çekildi, kulüp kapsam ezmesi kaldırıldı`
+- [ ] **Adım 5:** `oksis` deposunda `TB-118`'i Bulgu Arşivi'ne taşı (kanıt: değişen dosya
+  listesi ve etkilenen ekran sayısı), defterden çıkar, özet sayaçlarını güncelle.
+
+> **Görsel regresyon uyarısı:** değişiklik her ekranı etkiler. Commit sonrası kullanıcıya
+> gözle geçiş turu önerilir; bu görev otomatik test ile kapanmaz.
+
 > **Dilim 1 biterken elde ne var:** yönetici pencere kurup yayınlayabiliyor, öğretmen kendi
 > sınavını kendi saatine koyabiliyor, başka şube için saat isteyebiliyor. Takvim henüz
 > yayınlanmıyor ve kimseye bildirim gitmiyor — o Dilim 2 ve 3'ün işi.
