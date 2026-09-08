@@ -2150,6 +2150,73 @@ git commit -am "fix(academics): ders silme kapısına planlı sınav ve dağıt�
 
 > Bu görev bittiğinde `TB-115` **kapanır** ve Bulgu Arşivi'ne taşınır.
 
+---
+
+### Görev 1.10: Sınav türü listeleme ucu
+
+**Files:**
+- Create: `src/Oksis.Application/Modules/Exams/Queries/ListExamTypes/{Query,Handler}.cs`
+- Modify: `src/Oksis.Api/Controllers/V1/ExamsController.cs`
+- Test: `tests/Oksis.Application.UnitTests/Modules/Exams/ListExamTypesQueryHandlerTests.cs`
+
+**Neden sonradan açıldı:** Görev 1.7'de ölçüldü — pencere oluşturma formu `examTypeId` alanını
+dolduramıyor, çünkü sunucuda sınav türlerini listeleyen **hiçbir uç yok**. `ExamType` yalnız
+DTO alanı olarak geçiyor. Pencere kurma ucu (Görev 1.5) yazıldı ama onu besleyen seçim
+listesi yoktu; bu, "eksik ekran eksik yetkiyi gizler" kalıbının tersi — eksik uç, yazılmış
+komutu kullanılamaz bırakıyor.
+
+**Interfaces:**
+- Produces: `GET /api/v1/exams/exam-types?termId={guid}` → `IReadOnlyList<ExamTypeOptionDto>`
+
+```csharp
+/// <summary>Pencere kurulabilecek sınav türü. Dönem sınavı olmayanlar listelenmez.</summary>
+public sealed record ExamTypeOptionDto(string id, string name, int termOrder, int displayOrder);
+```
+
+- [ ] **Adım 1: Testi yaz**
+
+```csharp
+[Fact]
+public async Task Should_ExcludeTermAgnosticTypes_When_Listed()
+{
+    // Sözlü / Performans / Proje TermOrder = 0 taşır; pencere kurulmaz (Görev 1.5 kuralı).
+    var result = await Send(new ListExamTypesQuery(TermId));
+    result.Value.Should().OnlyContain(t => t.termOrder > 0);
+}
+
+[Fact]
+public async Task Should_OrderByDisplayOrder_When_Listed()
+{
+    var result = await Send(new ListExamTypesQuery(TermId));
+    result.Value.Should().BeInAscendingOrder(t => t.displayOrder);
+}
+
+[Fact]
+public async Task Should_ExcludeTypesAlreadyHavingWindow_When_TermGiven()
+{
+    // Tekillik (AcademicTermId, ExamTypeId) — kullanılmış türü listelemek kullanıcıya
+    // kaçınılmaz bir 409 sunmaktır.
+    var result = await Send(new ListExamTypesQuery(TermIdWithExistingWindow));
+    result.Value.Should().NotContain(t => t.id == UsedExamTypeId.ToString());
+}
+```
+
+- [ ] **Adım 2: Kırmızıyı gör, sorguyu yaz**
+
+Dönemin sırasını (`AcademicTerm` içindeki dönem numarası) `ExamType.TermOrder` ile eşle;
+`termId` verilmezse yalnız `TermOrder > 0` süz. İzin: `[RequirePermission("exams.manage")]` —
+bu liste yalnız pencere kuran kişiyi ilgilendirir.
+
+- [ ] **Adım 3: Controller ucu, testler, commit**
+
+```bash
+./scripts/test-changed.sh --filter ListExamTypes
+git commit -am "feat(exams): sınav türü listeleme ucu — pencere formunun kaynağı"
+```
+
+> Bu görev bitince Görev 1.7'de boş bırakılan "Yeni pencere" aksiyonu Dilim 2'deki
+> `web/exam-window-modals.jsx` portuyla birlikte gerçek forma bağlanır.
+
 > **Dilim 1 biterken elde ne var:** yönetici pencere kurup yayınlayabiliyor, öğretmen kendi
 > sınavını kendi saatine koyabiliyor, başka şube için saat isteyebiliyor. Takvim henüz
 > yayınlanmıyor ve kimseye bildirim gitmiyor — o Dilim 2 ve 3'ün işi.
