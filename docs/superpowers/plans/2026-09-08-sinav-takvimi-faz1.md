@@ -2868,6 +2868,19 @@ git commit -am "feat(exams): öğrenci ve veli sınav takvimi ucu — pencere ve
 - Consumes: Görev 3.2 ve 3.5 uçları; `SUBJECT_PALETTE` + `subjectColorIndex` (`packages/core/src/schedule/{constants,logic}.ts`).
 - Produces: `<ExamScheduleTag />` (web + mobil), `<ExamScheduleScreen />` (mobil).
 
+**Barrel takma adı kaldırılır (Görev 0.1 sapması).** `packages/core/src/index.ts` bugün
+sınav modülünün gruplama fonksiyonunu `groupExamsByDay as groupScheduledExamsByDay` diye
+ihraç ediyor; çünkü `packages/core/src/grade/logic.ts` aynı adı öncü sürüm için kullanıyor
+ve mobil ekran onu o adla tüketiyor (TS2308). Bu görevde öncü sürüm emekli olduğunda iki
+satır tek satıra iner:
+
+```ts
+export * from "./exam/logic"
+```
+
+ve `grade/logic.ts`'teki `groupExamsByDay` ile `grade/types.ts`'teki `ExamScheduleItem` /
+`ExamScheduleDay` silinir.
+
 **Eski ekranın emekliliği (TB-116 ile ilgili):** mobilde bugün `GradeExamScheduleScreen` var; veriyi `useExamSchedule` ile `/api/v1/grades/exam-schedule` yolundan alıyor ve bu yol **hiç açılmadı** — `packages/api/src/grade/contract.ts` içindeki `declare module` bloğu bilinçli bir drift bekçisidir. Yeni uç açıldığına göre: bekçi bloğu **silinir**, `ExamScheduleItem`/`ExamScheduleDay` tipleri `packages/core/src/grade/types.ts`'ten kaldırılır, ekran `apps/mobile/src/features/exam/` altına taşınır ve `useMyExamSchedule`'a bağlanır. Üç alan (`startTime`, `durationMinutes`, `classroomName`) artık **doludur**; `durationMinutes` zil çizelgesinden hesaplanır.
 
 - [ ] **Adım 1: Tasarımı oku** — `web/exam-schedule-tag.jsx`, `mobile/exam-schedule.jsx`, `mobile/exam-schedule-tag.jsx` (DesignSync).
