@@ -2062,6 +2062,94 @@ git add apps/web packages/api
 git commit -m "feat(web): öğretmen sınav yerleştirme ekranı ve saat seçici"
 ```
 
+---
+
+### Görev 1.9: Ders silme kapısına planlı sınav (ve dağıtım kısıtı) eklenir
+
+**Files:**
+- Modify: `src/Oksis.Application/Modules/Academics/Internal/SubjectUsageInspector.cs`
+- Modify: `tests/Oksis.Tests/Architecture/SubjectUsageCoverageTests.cs` (yalnız gerekiyorsa)
+- Test: `tests/Oksis.Application.UnitTests/Modules/Academics/SubjectUsageInspectorTests.cs` (varsa genişlet, yoksa oluştur)
+
+**Neden bu görev planda sonradan açıldı:** Görev 1.2'de `ScheduledExam` `SubjectId` taşımaya
+başladı ve mimari bekçi testi kırmızıya döndü. Aynı test **zaten kırmızıydı**: `TB-115`
+(2026-09-01'den beri açık) `DistributionConstraint`'in de kapı dışında olduğunu söylüyor.
+Tek bir kapıyı iki ayrı turda yamamak yerine ikisi birlikte kapanır ([[yamalama-kabul-degil]]).
+Test `Oksis.Tests` altında ve günlük döngüde koşmuyor (Docker ister), bu yüzden fark edilmesi
+gecikti.
+
+**Kural — engel mi, geçmiş mi:** `SubjectUsageInspector` "dersi **canlı kullanan**" tabloları
+engeller, olmuş işin defterini tutanları değil. İki yeni tip **canlı kullanandır**, ama
+ikisinde de bir yaşam işareti aranır:
+
+- `ScheduledExam` → bağlı olduğu `ExamWindow.Status != Locked` olanlar engeller. Kilitli
+  pencerenin sınavı geçmiştir; haziranda ders silmeyi eylülde yapılmış bir sınav yüzünden
+  engellemek, `GradeEntryReminder`'ın geçmiş kaydı sayılmasıyla aynı gerekçeyle yanlıştır.
+- `DistributionConstraint` → aktif kısıtlar engeller (entity'deki durum/aktiflik alanını
+  **koddan doğrula**; `IsActive` benzeri bir alan yoksa hepsi engeller ve bu gerekçesiyle
+  yorumlanır).
+
+**Interfaces:**
+- Consumes: `IApplicationDbContext.ScheduledExams`, `.ExamWindows`, `.DistributionConstraints`.
+- Produces: `FindBlockingUsagesAsync` dönüşüne iki yeni Türkçe engel cümlesi.
+
+- [ ] **Adım 1: Testi koştur ve kırmızıyı GÖR**
+
+```bash
+dotnet test tests/Oksis.Tests --filter "FullyQualifiedName~SubjectUsageCoverageTests" --nologo
+```
+Beklenen: FAIL, mesajda `DistributionConstraint` ve `ScheduledExam` listelenir. Docker
+gerekiyorsa başlat.
+
+- [ ] **Adım 2: Engel cümlelerinin testini yaz**
+
+Mevcut `SubjectUsageInspector` testlerinin kalıbını izle (yoksa emsal olarak
+`AttendanceSessions`/`GradeBooks` dallarını taklit eden yeni bir test dosyası aç):
+
+```csharp
+[Fact]
+public async Task Should_Block_When_SubjectHasScheduledExamInOpenWindow()
+{
+    var usages = await FindBlockingUsagesAsync(SubjectId);
+    usages.Should().Contain(u => u.Contains("sınav"));
+}
+
+[Fact]
+public async Task Should_NotBlock_When_OnlyLockedWindowHasScheduledExam()
+{
+    var usages = await FindBlockingUsagesAsync(SubjectId);
+    usages.Should().NotContain(u => u.Contains("sınav"));
+}
+
+[Fact]
+public async Task Should_Block_When_SubjectHasActiveDistributionConstraint()
+{
+    var usages = await FindBlockingUsagesAsync(SubjectId);
+    usages.Should().Contain(u => u.Contains("dağıtım kısıtı"));
+}
+```
+
+- [ ] **Adım 3: İki dalı `FindBlockingUsagesAsync`'e ekle**
+
+Mevcut dalların yazım biçimini birebir izle (her dal bir `if (await db.X.AnyAsync(...))` ve
+listeye Türkçe bir cümle ekler). Cümleler kullanıcıya çıkar, `tr-TR` ve açıklayıcı olsun:
+"Bu ders için planlanmış sınav var." / "Bu ders bir ders programı dağıtım kısıtında kullanılıyor."
+
+- [ ] **Adım 4: Mimari testi yeşile al**
+
+`SubjectUsageCoverageTests` iki tipi artık kapıda görmeli. `_historicalLogTypes` ya da
+`_catalogDefinitionTypes` listelerine **ekleme yapma** — bu iki tip gerçekten kullanıyor.
+
+- [ ] **Adım 5: Koştur ve commit**
+
+```bash
+dotnet test tests/Oksis.Tests --filter "FullyQualifiedName~SubjectUsageCoverageTests" --nologo
+./scripts/test-changed.sh
+git commit -am "fix(academics): ders silme kapısına planlı sınav ve dağıtım kısıtı eklendi"
+```
+
+> Bu görev bittiğinde `TB-115` **kapanır** ve Bulgu Arşivi'ne taşınır.
+
 > **Dilim 1 biterken elde ne var:** yönetici pencere kurup yayınlayabiliyor, öğretmen kendi
 > sınavını kendi saatine koyabiliyor, başka şube için saat isteyebiliyor. Takvim henüz
 > yayınlanmıyor ve kimseye bildirim gitmiyor — o Dilim 2 ve 3'ün işi.
