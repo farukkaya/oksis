@@ -542,9 +542,15 @@ public sealed class ExamSeatArrangerTests
 
         var pattern = Pattern(ExamSeatArranger.Arrange(sections, rooms), sections, rooms[0].RoomId);
 
-        pattern.Should().Be("AAABAAAABAAA");
+        // A(n=10) kesirleri 1,3,5,…,19/20; B(n=2) kesirleri 5/20 ve 15/20 — ikisi de
+        // A'nın 3. ve 8. öğrencisiyle TAM EŞİT. Eşitlikte SortKey kuralı ikisinde de A'yı
+        // öne alır, yani B 4. ve 10. sıraya oturur.
+        // (Planın ilk yazımında "AAABAAAABAAA" yazıyordu; o dizi ilk eşitlikte A'nın,
+        // ikincisinde B'nin kazanmasını gerektirir — tutarlı hiçbir eşitlik kuralı üretemez.
+        // Elle hesap kaymasıydı, 2026-09-09'da Görev 2.1'de ölçülüp düzeltildi.)
+        pattern.Should().Be("AAABAAAAABAA");
         pattern.IndexOf('B').Should().BeGreaterThan(1, "küçük şube başa yığılmamalı");
-        pattern.LastIndexOf('B').Should().BeLessThan(pattern.Length - 2, "sona da yığılmamalı");
+        pattern.LastIndexOf('B').Should().BeLessThan(pattern.Length - 1, "sona da yığılmamalı");
     }
 
     [Fact]
