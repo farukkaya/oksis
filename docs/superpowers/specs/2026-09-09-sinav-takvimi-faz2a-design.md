@@ -113,8 +113,13 @@ bir ızgaraya dökülür. Sınırı §5'te açıkça yazılıdır.
 ### 4.1 Pencere
 
 Faz 1'in `CreateExamWindow` komutu `Mode = Session` ile açılır; `PublishWindow` (hafta
-duyurusu) aynen çalışır. Değişen tek şey Faz 1'in koyduğu kapının kalkmasıdır: oturum
-modundaki pencere artık `PublishSchedule`'a kadar gidebilir.
+duyurusu) aynen çalışır.
+
+Faz 1'in koyduğu kapı **pencere oluşturmadadır, yayında değil**: bugün
+`CreateExamWindowCommandHandler` oturum modunu reddediyor ("Oturum modu henüz
+kullanılamıyor"). Faz 2a bu dalı kaldırır. Ayrıca `ExamMode` enum yorumu "pencere
+oluşturulabilir ama yayınlanamaz" diyerek yanılıyor; o da düzeltilir.
+*(2026-09-09 ön uçuş taramasında koddan ölçüldü.)*
 
 ### 4.2 Oturum iki yoldan doğar
 

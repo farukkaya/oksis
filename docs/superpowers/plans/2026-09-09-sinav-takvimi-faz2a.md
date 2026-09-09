@@ -33,6 +33,7 @@ Her görevin gereksinimleri bunları **örtük olarak** içerir. 1-14 Faz 1 plan
 13. **Test koşumu:** `./scripts/test-changed.sh` (entegrasyon yalnız `--integration`). `oksis-ui` bitiş öncesi `npm run typecheck && npm run lint`.
 14. **Commit:** `<type>(<scope>): türkçe açıklama` — sonda nokta yok, ≤90 karakter. Scope `oksis-api`'de `exams`, `oksis-ui`'de {`core`,`api`,`mobile`,`web`,`ui`}. İmza iki satır.
 15. **Faz 1 davranışı değişmez.** `ExamSessionId` null olan her yol Faz 1'deki gibi çalışmalıdır. Her görev sonunda Faz 1'in `Exams` testleri de yeşil kalır; bu, "değiştirmedim" iddiasının tek kanıtıdır.
+15b. **Sert ihlal istisna DEĞİL, `Result` döner.** Bu depoda `ExamRuleViolationException` **yoktur**. Faz 1 sert ihlali `Result<T>.Conflict(mesaj)` ile döndürür (emsal: `PlaceExamCommandHandler`, sert ihlalleri süzüp `Conflict` üretir) ve ihlal kaydı `ExamViolationDto(string Code, string Severity, string Message, Guid? ExamId, string? SectionName)`'dur — **`Severity` bir string**tir (`"hard"` / `"soft"`), enum değil. Komut testleri `Result` durumunu ölçer; kod düzeyinde iddia (`EX-H06` geldi mi) **denetleyici testinde** yapılır, komut testinde değil. *(Ön uçuş kararı R1, 2026-09-09 — plan ilk yazımında istisna varsayıyordu, koddan ölçülüp düzeltildi.)*
 16. **`ExamSeatArranger` saftır.** `DbContext`, `IApplicationDbContext`, `CancellationToken` almaz; girdisi bellekteki kayıtlar, çıktısı bellekteki kayıtlardır. Sebebi: yerleşim kuralının yüzlerce senaryosu veritabanı olmadan ölçülebilsin.
 17. **Yerleşim belirlenimcidir.** Aynı girdi hep aynı `SeatNo` dizisini verir. Sıralama anahtarlarının hiçbiri nullable bırakılmaz; `StudentProfile.StudentNumber` **nullable**'dır ve yedek anahtar zorunludur (Görev 2.2).
 18. **Kayan noktalı sayı ile sıralama YASAK.** Serpiştirme anahtarı `(2i+1)/2n` kesridir ve **çapraz çarpımla tamsayı olarak** karşılaştırılır. `double` ile sıralamak farklı platformlarda farklı sonuç verebilir ve Kısıt 17'yi çiğner.
@@ -1192,11 +1193,13 @@ public async Task Should_NotApplyOwnHourRule_When_WindowIsSessionMode()
 public async Task Should_StillApplyOwnHourRule_When_WindowIsLessonHourMode()
 {
     // Kısıt 15: Faz 1 davranışı değişmez.
+    // Kısıt 15b: sert ihlal ATILMAZ, Result.Conflict döner.
     var handler = NewHandler(windowMode: ExamMode.LessonHour, teacherHasLessonAt: false);
 
-    var act = () => handler.Handle(PlaceAt(Tuesday, 2), default);
+    var result = await handler.Handle(PlaceAt(Tuesday, 2), default);
 
-    await act.Should().ThrowAsync<ExamRuleViolationException>().Where(e => e.Code == "EX-H03");
+    result.Status.Should().Be(ResultStatus.Conflict);
+    result.Errors.Should().ContainMatch("*kendi dersi*");
 }
 
 [Fact]
@@ -1377,9 +1380,11 @@ public async Task Should_RedistributeStudents_When_RoomIsRemoved()
 - Produces: `SetInvigilatorCommand(Guid ExamRoomId, Guid? TeacherId, string? Reason)` — `TeacherId == null` gözetmeni boşaltır.
 - Uç: `PUT /api/v1/exams/rooms/{id}/invigilator` · `exams.window.manage`
 
-Yazılan gözetmen **her zaman** `InvigilatorSource.Manual` taşır. EX-H06 burada ısırır: aynı öğretmen aynı gün ve saatte başka bir dersliğe yazılıysa reddedilir.
+Yazılan gözetmen **her zaman** `InvigilatorSource.Manual` taşır.
 
-Yayınlanmış pencerede değişiklik `ExamInvigilatorChangedEvent` yayar (Dilim 6).
+**EX-H06 BU GÖREVDE yazılır** (ön uçuş kararı R3): kural yalnız elle doldurmada ısırır — türetme aynı öğretmeni iki dersliğe koyamaz. `ExamRuleInspector`'a eklenir, birim testi burada. Görev 4.2 dördünün (EX-H05/H06/H09/H10) gerçek SQL kapsamasını yapar.
+
+**`ExamInvigilatorChangedEvent` KAYDI da burada doğar** (ön uçuş kararı R4): olayı yayan komut budur. Görev 6.1 yalnız işleyiciyi ve bildirimi ekler. Olayı yayanı ondan önce yazmak, 6.1'e kadar ölü kod bırakırdı.
 
 - [ ] **Adım 1: Testi yaz**
 
@@ -1396,11 +1401,22 @@ public async Task Should_MarkManual_When_InvigilatorIsSet()
 [Fact]
 public async Task Should_Reject_When_TeacherIsAlreadyInvigilatingAtSameHour()
 {
+    // Kısıt 15b: sert ihlal Result.Conflict döner. Kodun kendisi (EX-H06)
+    // denetleyici testinde ölçülür, komut testinde değil.
     GiveInvigilation(otherRoomInSameHour: true, teacher: MehmetId);
 
-    var act = () => Handler.Handle(new SetInvigilatorCommand(RoomId, MehmetId, null), default);
+    var result = await Handler.Handle(new SetInvigilatorCommand(RoomId, MehmetId, null), default);
 
-    await act.Should().ThrowAsync<ExamRuleViolationException>().Where(e => e.Code == "EX-H06");
+    result.Status.Should().Be(ResultStatus.Conflict);
+}
+
+[Fact]
+public void Should_EmitH06_When_TeacherIsAlreadyInvigilatingAtSameHour()
+{
+    // Denetleyici testi: kod burada iddia edilir.
+    var violations = Inspector.CheckInvigilator(MehmetId, RoomId, occupiedElsewhereAtSameHour: true);
+
+    violations.Should().ContainSingle(v => v.Code == "EX-H06" && v.Severity == "hard");
 }
 
 [Fact]
@@ -1408,9 +1424,9 @@ public async Task Should_AllowSameTeacher_When_HoursDiffer()
 {
     GiveInvigilation(otherRoomInSameHour: false, teacher: MehmetId);
 
-    var act = () => Handler.Handle(new SetInvigilatorCommand(RoomId, MehmetId, null), default);
+    var result = await Handler.Handle(new SetInvigilatorCommand(RoomId, MehmetId, null), default);
 
-    await act.Should().NotThrowAsync();
+    result.Status.Should().Be(ResultStatus.Success);
 }
 
 [Fact]
@@ -1553,7 +1569,9 @@ public void Should_WarnOnSingleSection_NotSingleGradeLevel()
 
 **Files:** `ExamRuleInspector.cs`, `ErrorMessageCatalog.cs` · Test: `tests/Oksis.Application.IntegrationTests/Modules/Exams/ExamSessionRuleTests.cs`
 
-**Neden entegrasyon testi:** üçü de çoklu tablo JOIN'i üzerinden ölçülür; `MockQueryable` çeviri hatalarına kördür ve bu desen bu depoda üç kez ısırmıştır (`B-15`, `X-07`, `X-04`).
+**EX-H06 zaten Görev 3.6'da yazıldı** (ön uçuş kararı R3). Bu görev EX-H05, EX-H09 ve EX-H10'u ekler, **dördünün de** gerçek SQL kapsamasını yapar.
+
+**Neden entegrasyon testi:** dördü de çoklu tablo JOIN'i üzerinden ölçülür; `MockQueryable` çeviri hatalarına kördür ve bu desen bu depoda üç kez ısırmıştır (`B-15`, `X-07`, `X-04`).
 
 | Kod | Metin (tr-TR, sunucuda üretilir) |
 |---|---|
@@ -1621,9 +1639,15 @@ public async Task Should_ProduceTurkishMessage_RegardlessOfProcessCulture()
 
 ### Görev 4.3: EX-S06 ve oturum modunda yayın kapısı
 
-**Files:** `ExamRuleInspector.cs` (`CheckPublishAsync`), `PublishExamScheduleCommandHandler.cs`, `ExamWindow.cs` · Test: `ExamSessionPublishGateTests.cs`
+**Files:** `ExamRuleInspector.cs` (`CheckPublishAsync`), `CreateExamWindowCommandHandler.cs`, `src/Oksis.Api/Errors/ErrorMessageCatalog.cs`, `src/Oksis.Domain/Modules/Exams/Enums/ExamMode.cs` · Test: `ExamSessionPublishGateTests.cs`
 
-**Faz 1'in kapısı kaldırılır.** Bugün `Session` modundaki pencere yayınlanamıyor (Faz 1 planı, Global Constraint 13). O kural silinir; yerine üç yeni koşul gelir:
+**Faz 1'in kapısı YAYINDA DEĞİL, PENCERE OLUŞTURMADA** (ön uçuş kararı R2 — koddan ölçüldü). Üç yer düzeltilir:
+
+- `CreateExamWindowCommandHandler.cs` — `Session` modunu reddeden dal **silinir**. Bugün oturum modunda pencere hiç kurulamıyor.
+- `ErrorMessageCatalog.cs` — "Oturum modu henüz kullanılamıyor; kelebek düzeni sonraki fazda açılacak." satırı **silinir**.
+- `ExamMode.cs` — enum XML yorumu "Faz 1 yalnız LessonHour'u uygular; Session penceresi oluşturulabilir ama yayınlanamaz" diyerek **yanılıyor** (pencere zaten oluşturulamıyordu). Yorum güncellenir.
+
+Kaldırılacak bir yayın kapısı **yoktur**. Yayın tarafına üç YENİ koşul eklenir:
 
 1. Her `ExamRoom`'un gözetmeni var (K-20).
 2. Oturumdaki her öğrenci bir `ExamSeat`'e oturmuş.
@@ -1639,13 +1663,14 @@ Faz 1'in "bekleyen saat isteği yok" koşulu oturum modunda **boş geçer**: saa
 [Fact]
 public async Task Should_BlockPublish_When_AnyRoomHasNoInvigilator()
 {
+    // Kısıt 15b: Result.Conflict, istisna değil.
     await using var db = await Fixture.CreateDbAsync();
     var window = await SeedSessionWindow(db, invigilatorHoles: 1);
 
-    var act = () => Publish(db, window.Id);
+    var result = await Publish(db, window.Id);
 
-    await act.Should().ThrowAsync<ExamRuleViolationException>()
-        .Where(e => e.Message.Contains("gözetmen"));
+    result.Status.Should().Be(ResultStatus.Conflict);
+    result.Errors.Should().ContainMatch("*gözetmen*");
 }
 
 [Fact]
@@ -1654,9 +1679,9 @@ public async Task Should_BlockPublish_When_SomeStudentHasNoSeat()
     await using var db = await Fixture.CreateDbAsync();
     var window = await SeedSessionWindowWithUnseatedStudent(db);
 
-    var act = () => Publish(db, window.Id);
+    var result = await Publish(db, window.Id);
 
-    await act.Should().ThrowAsync<ExamRuleViolationException>();
+    result.Status.Should().Be(ResultStatus.Conflict);
 }
 
 [Fact]
@@ -1666,9 +1691,20 @@ public async Task Should_AllowPublish_When_OnlySoftViolationsRemain()
     await using var db = await Fixture.CreateDbAsync();
     var window = await SeedSessionWindow(db, overCapacity: true, unmixedRoom: true);
 
-    var act = () => Publish(db, window.Id);
+    var result = await Publish(db, window.Id);
 
-    await act.Should().NotThrowAsync();
+    result.Status.Should().Be(ResultStatus.Success);
+}
+
+[Fact]
+public async Task Should_CreateWindow_When_SessionMode()
+{
+    // R2: Faz 1 bunu reddediyordu; kapı kalktı.
+    await using var db = await Fixture.CreateDbAsync();
+
+    var result = await CreateWindow(db, ExamMode.Session);
+
+    result.Status.Should().Be(ResultStatus.Success);
 }
 
 [Fact]
