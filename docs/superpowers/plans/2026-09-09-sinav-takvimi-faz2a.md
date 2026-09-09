@@ -41,13 +41,26 @@ Her görevin gereksinimleri bunları **örtük olarak** içerir. 1-14 Faz 1 plan
 
 ---
 
-## Tasarım kaynağı hakkında uyarı
+## Tasarım kaynağı — GATE-1 GEÇTİ (2026-09-09)
 
-Faz 1'in aksine bu plan bir Claude Design teslimine dayanmıyor — Faz 2a için tasarım projesine brief gönderilmedi. Sonuçları:
+Brief `uploads/oturum-ayrintisi-brief.md` olarak gönderildi ve teslim alındı. Kaynak dosyalar Claude Design `Oksis Layout v2` (`7d876f6c-70ee-4894-bac1-2be5c96dd34a`) projesindedir; **DesignSync** ile okunur (`method: "get_file"`), zip indirilmez.
 
-- **Genişleyen ekranlar** (yerleştirme, pano, öğrenci/veli takvimi, ders programı etiketi) Faz 1'in teslim edilmiş tasarımını sürdürür; yeni görsel karar gerektirmez.
-- **Tek yeni ekran** "oturum ayrıntısı"dır (Görev 7.5). Görev, ekranı mevcut OKSİS kalıplarından türetecek biçimde yazılmıştır.
-- Uygulama başlamadan önce bu ekran için tasarım istenirse, gelen dosya **gate-1 kaynağı** olur ve Görev 7.5 yeniden yazılır. Karar kullanıcınındır; plan iki durumda da yürür.
+| Dosya | Rol |
+|---|---|
+| `web/exam-session.jsx` | Oturum ayrıntısı ekranının tamamı — Görev 7.5'in kaynağı |
+| `web/exam-data.jsx` | `EXAM_SESSIONS`, `examSessionDetail()`, `EXAM_INVIGILATOR_CANDIDATES`, `EXAM_ROOM_CANDIDATES` — sözleşmenin kaynağı |
+| `web/exam-board.jsx` | Oturum kartı — Görev 7.4'ün kaynağı |
+| `web/exam.css` | `.exs-*` sınıfları |
+| `screenshots/es-1…es-8.png` | Dokuz durumun görüntüleri |
+
+**Genişleyen diğer ekranlar** (yerleştirme, öğrenci/veli takvimi, ders programı etiketi) Faz 1'in teslim edilmiş tasarımını sürdürür; yeni görsel karar gerektirmez.
+
+**Teslim planı iki noktada değiştirdi.** İkisi de tasarım incelemesinde çıktı ve düzeltildi:
+
+1. **Görev 5.6 açıldı** — ekranın iki modali gözetmen/derslik aday listesi tüketiyor; plan bu uçları öngörmemişti.
+2. **EX-H10 eklendi** (Görev 4.2) — ekran "gözetmen eksik" kartını istemcide türetiyordu, Kısıt 4'ü çiğniyordu. Kural sunucuya alındı.
+
+Ayrıca üç küçük uyumsuzluk Görev 7.5'te sunucu lehine karara bağlandı (gerekçe eşiği 15, kapasite kodu EX-S06, gözetmen eksikliği sunucudan).
 
 ---
 
@@ -1547,6 +1560,9 @@ public void Should_WarnOnSingleSection_NotSingleGradeLevel()
 | EX-H05 | "{Öğrenci} aynı gün ve saatte başka bir sınav oturumunda." |
 | EX-H06 | "{Öğretmen} aynı gün ve saatte başka bir derslikte gözetmen." |
 | EX-H09 | "{Derslik} aynı gün ve saatte başka bir oturumda kullanılıyor." |
+| **EX-H10** | "{Derslik} için gözetmen yok — o saatte bu sınıfta dersi olan öğretmen bulunamadı." |
+
+**EX-H10 neden var (2026-09-09 tasarım incelemesinde çıktı):** teslim edilen ekran "gözetmen eksik" kartını `rooms.filter(r => !r.invigilator)` ile **istemcide** türetiyor ve sahte bir `EX-H` kodu basıyordu. Kısıt 4: ekranın uyguladığı ama sunucunun bilmediği kural yok sayılır. Gözetmensiz derslik yayını engelleyen bir koşuldur, dolayısıyla sunucunun döndürdüğü bir **sert ihlal**dir; ekran onu `violations` dizisinden çizer.
 
 - [ ] **Adım 1: Testi yaz**
 
@@ -1820,6 +1836,77 @@ public async Task Should_TagTeacherCellAsInvigilation()
 
 ---
 
+### Görev 5.6: Seçici uçları — gözetmen ve derslik adayları
+
+**Files:** `Queries/GetInvigilatorCandidates/*`, `Queries/GetRoomCandidates/*`, `ExamsController.cs` · Test: `ExamCandidateQueryTests.cs`
+
+**Bu görev tasarım incelemesinde doğdu.** Teslim edilen ekranın iki modali (`invigilator`, `addRoom`) aday listesi tüketiyor; plan bu iki ucu öngörmemişti.
+
+**Interfaces:**
+- `GET /api/v1/exams/rooms/{examRoomId}/invigilator-candidates` · `exams.window.manage` →
+  `[ { "id", "name", "subjectAreaName", "isBusy", "busyRoomName" } ]`
+- `GET /api/v1/exams/sessions/{id}/room-candidates` · `exams.window.manage` →
+  `[ { "roomId", "name", "capacity", "isInUse" } ]`
+
+**Kural sunucuda (Kısıt 4):** `isBusy`, EX-H06'nın **aynı yüklemiyle** hesaplanır — aynı gün ve saatte başka bir `ExamRoom`'a yazılı öğretmen. `isInUse`, EX-H09'un aynı yüklemi. Ekran bu bayrakları yalnız çizer ve düğmeyi kilitler; kendi kuralını üretmez. İki yüklem `ExamRuleInspector` içindeki tek tanımdan çağrılır — ikinci bir kopya yazılmaz.
+
+Aday listesi **okulun bütün öğretmenleri** değildir: o gün okulda dersi olan öğretmenler öncelikli sıralanır, ama liste kısıtlanmaz — yönetici gerekirse herkesi seçebilmelidir (izinli öğretmeni sistem bilmiyor, K-24 mantığı).
+
+- [ ] **Adım 1: Testi yaz**
+
+```csharp
+[Fact]
+public async Task Should_MarkBusy_When_TeacherInvigilatesAnotherRoomAtSameHour()
+{
+    await using var db = await Fixture.CreateDbAsync();
+    await SeedTeacherInvigilatingElsewhere(db, AyseId, Tuesday, period: 2);
+
+    var rows = await Handler(db).Handle(new GetInvigilatorCandidatesQuery(RoomId), default);
+
+    rows.Single(r => r.Id == AyseId).IsBusy.Should().BeTrue();
+    rows.Single(r => r.Id == AyseId).BusyRoomName.Should().Be("9-A Sınıfı");
+}
+
+[Fact]
+public async Task Should_NotMarkBusy_When_HoursDiffer()
+{
+    await using var db = await Fixture.CreateDbAsync();
+    await SeedTeacherInvigilatingElsewhere(db, AyseId, Tuesday, period: 5);
+
+    var rows = await Handler(db).Handle(new GetInvigilatorCandidatesQuery(RoomId), default);
+
+    rows.Single(r => r.Id == AyseId).IsBusy.Should().BeFalse();
+}
+
+[Fact]
+public async Task Should_MarkRoomInUse_When_ClaimedByAnotherSession()
+{
+    await using var db = await Fixture.CreateDbAsync();
+    await SeedRoomClaimedByAnotherSession(db, Tuesday, period: 2);
+
+    var rows = await RoomHandler(db).Handle(new GetRoomCandidatesQuery(SessionId), default);
+
+    rows.Single(r => r.RoomId == SharedRoomId).IsInUse.Should().BeTrue("EX-H09 ile aynı yüklem");
+}
+
+[Fact]
+public async Task Should_ExcludeRoomsAlreadyInThisSession()
+{
+    await using var db = await Fixture.CreateDbAsync();
+
+    var rows = await RoomHandler(db).Handle(new GetRoomCandidatesQuery(SessionId), default);
+
+    rows.Should().NotContain(r => r.RoomId == RoomAlreadyInSession);
+}
+```
+
+- [ ] **Adım 2: Testi koştur, kırmızı olduğunu gör** — `./scripts/test-changed.sh --integration --filter ExamCandidateQueryTests`
+- [ ] **Adım 3: İki sorguyu ve ucu yaz**
+- [ ] **Adım 4: Testi koştur, yeşil olduğunu gör**
+- [ ] **Adım 5: Commit** — `git commit -am "feat(exams): gözetmen ve derslik aday uçları"`
+
+---
+
 # Dilim 6 — Bildirimler
 
 ### Görev 6.1: `ExamInvigilationChanged` devreye alınıyor
@@ -1921,9 +2008,11 @@ Pencere oturum modundaysa: saat seçimi öğretmenin kendi programıyla sınırl
 
 ### Görev 7.4: Web — pano oturum görünümü
 
-**Files:** `apps/web/features/exam/board/*`
+**Files:** `apps/web/features/exam/board/*` · **Tasarım kaynağı:** `web/exam-board.jsx` (2026-09-09 teslimi, oturum kartı eklenmiş hâli)
 
 Gün × ders saati ızgarasında oturum kartları; her kartta ders adı, şube/öğrenci sayısı, gözetmen deliği rozeti, yumuşak uyarı sayısı. Karta tıklamak oturum ayrıntısını açar.
+
+`lessonHour` modundaki pencerede kart **hiç görünmez** — Faz 1'in pano davranışı birebir korunur (Kısıt 15).
 
 - [ ] **Adım 1-5:** durum matrisi → ekran → gerçek uçla doğrulama → typecheck/lint → commit
 
@@ -1933,25 +2022,44 @@ Gün × ders saati ızgarasında oturum kartları; her kartta ders adı, şube/�
 
 **Files:** `apps/web/features/exam/session-detail/*`, `packages/ui/src/styles/exam.css` (genişler)
 
-> **Tasarım kaynağı yok.** Ekran mevcut OKSİS kalıplarından türetilir. Claude Design teslimi gelirse bu görev gate-1'den yeniden geçer.
+**Tasarım kaynağı — GATE-1 GEÇTİ (2026-09-09 teslimi):**
 
-**Yerleşim** (mevcut kalıplar: not defteri derslik listesi + ders programı hücre ızgarası):
+| Dosya | Rol |
+|---|---|
+| `web/exam-session.jsx` | Ekranın tamamı — **kaynak** |
+| `web/exam-data.jsx` | `EXAM_SESSIONS`, `examSessionDetail()`, `EXAM_INVIGILATOR_CANDIDATES`, `EXAM_ROOM_CANDIDATES` |
+| `web/exam-board.jsx` | Oturum kartı (Görev 7.4'ün kaynağı) |
+| `web/exam.css` | `.exs-*` sınıfları |
+| `screenshots/es-1…es-8.png` | Dokuz durumun görüntüleri |
 
-- Üst şerit: ders adı, tarih, ders saati, sorumlu öğretmen(ler), sürüm.
-- Sol sütun: derslik listesi. Her satır — derslik adı, gözetmen adı + kaynağı (türetildi/elle rozeti), `mevcut/kapasite` (aşımda kırmızı, EX-S06), şube dağılımı çipleri.
-- Sağ sütun: seçili dersliğin sıra listesi — sıra no, öğrenci adı, numarası, şubesi. Takas edilmiş sıra işaretli.
-- Alt şerit: ihlal listesi (sert kırmızı, yumuşak sarı) ve dersliksiz şube uyarısı.
-- Eylemler: gözetmen doldur/değiştir, derslik ekle/çıkar, sıra takas, yerleşimi yeniden üret, oturum birleştir.
+DesignSync ile okunur (`method: "get_file"`), zip indirilmez.
 
-**Yeniden üretme uyarısı zorunlu:** kaç takasın silineceği onay metninde yazar (Görev 3.7 `ClearedSwapCount`).
+**Teslim edilen yapı** — bunu takip edin, yeniden tasarlamayın:
 
-**Kısıt 10:** yeni renk üretilmez; ders tonu `subjectColorIndex`, durum renkleri mevcut `exam.css` değişkenleri.
+- `ExamSessionScreen` — `PageHeader` + bağlam şeridi (`.exs-ctx`) + `.exs-split` iki sütun + `.exs-alerts`.
+- `ExamSessionRoomRow` — derslik satırı: ad · `elle eklendi` etiketi · `mevcut/kapasite` (aşımda `.over`) · gözetmen + `türetildi`/`elle` rozeti · şube çipleri (tek çip kalınca `.solo` + "karışım yok").
+- Sağ sütun düz sıra listesi (`.exs-seat`), iki tıkla takas; seçim durumu `pick`.
+- Altı modal: `invigilator`, `addRoom`, `removeRoom`, `swap`, `regenerate`, `merge`, artı bir `info` ("Oturum nasıl kurulur?").
+- `ExamSessionReasonField` — yayınlanmış pencerede her modalde zorunlu.
 
-- [ ] **Adım 1: Durum matrisini kur** (R8) — `loading / empty / error` + "gözetmen eksik" + "kapasite aşımı" + "dersliksiz şube" + "yayınlanmış (değişiklik gerekçe ister)".
-- [ ] **Adım 2: Ekranı yaz**
-- [ ] **Adım 3: Gerçek uçla doğrula** — delik doldur, derslik çıkar, takas yap, yeniden üret; her birinin sunucuya gittiğini gör.
-- [ ] **Adım 4:** `npm run typecheck && npm run lint`
-- [ ] **Adım 5: Commit** — `git commit -am "feat(web): oturum ayrıntısı ekranı"`
+**Tasarımın iki açık sorusuna cevabı:** sıra listesi **düz liste** (sahte ızgara çizilmedi), sıralar **sağ sütunda** (akordeon değil). İkisi de kabul.
+
+**ÜÇ UYUMSUZLUK — sunucu kazanır, ekran uyarlanır:**
+
+1. **Gerekçe eşiği.** Tasarım "en az 10 karakter" yazıyor; sunucunun eşiği `ExamWindow.MinReasonLength = 15`'tir. Ekran **15** yazar ve 15'te etkinleşir. Metni de düzeltin: "En az 15 karakter."
+2. **Kapasite kuralının kodu.** Tasarım mock'u `EX-S07` üretiyor; spec ve sunucu **`EX-S06`**'dır. Kodu sunucudan geldiği gibi çizin, mock'taki değeri taşımayın.
+3. **Gözetmen eksikliği ekranda hesaplanıyor.** Tasarım "Yayın engeli" kartını `rooms.filter(r => !r.invigilator)` ile istemcide türetiyor ve sahte bir `EX-H` kodu basıyor. **Kısıt 4'ü çiğner.** Sunucu bunu gerçek bir ihlal olarak döndürür (`EX-H10`, Görev 4.2); ekran `violations` dizisinden çizer, kendi kuralını üretmez.
+
+**Yeniden üretme uyarısı:** kaç takasın silineceği onay metninde yazar (Görev 3.7 `ClearedSwapCount`) — tasarım bunu zaten yapıyor.
+
+**Kısıt 10:** tasarım `PRG_SUBJ` paletini `EXAM_SUBJECT_TONE_KEY` ile eşliyor ve şube tonlarını **aynı paletten** sırayla dağıtıyor. İkinci palet yok, aynen sürdürün; üründe eşleme `subjectColorIndex` üzerinden yapılır.
+
+- [ ] **Adım 1: `handoff-web` gate-2/gate-3 envanteri** — teslim edilen dosyaları DesignSync ile okuyun, kullanılan ortak bileşenleri (`PageHeader`, `GradeModal`, `GIc`, `att-*` sınıfları) üründeki karşılıklarıyla eşleyin.
+- [ ] **Adım 2: Durum matrisini kur** (R8) — tasarımın dokuz senaryosu: `Normal · Yükleniyor · Boş · Hata · Gözetmen eksik · Kapasite aşımı · Dersliksiz şube · Yayınlanmış · Kilitli`. Hepsi gerçek query state'ine bağlanır, yerel bayrağa değil.
+- [ ] **Adım 3: Ekranı yaz** — üç uyumsuzluğu uygulayarak.
+- [ ] **Adım 4: Gerçek uçla doğrula** — delik doldur, derslik çıkar, takas yap, yeniden üret, oturum birleştir; her birinin sunucuya gittiğini ağ sekmesinden gör.
+- [ ] **Adım 5:** `npm run typecheck && npm run lint`
+- [ ] **Adım 6: Commit** — `git commit -am "feat(web): oturum ayrıntısı ekranı"`
 
 ---
 
@@ -2019,9 +2127,9 @@ Her sınav kartına derslik adı ve sıra numarası eklenir. Ayrıntı yayınlan
 | 2 | 2.1 · 2.2 · 2.3 · 2.4 · 2.5 | **Serpiştirme** · girdi okuma · derslik türetme · gözetmen türetme · bestekâr |
 | 3 | 3.1 … 3.7 | Yönetici oturumu · öğretmen yerleştirmesi · şube · birleştirme · derslik · gözetmen · sıra |
 | 4 | 4.1 · 4.2 · 4.3 | Kaldırılan kurallar · yeni sert kurallar · yayın kapısı |
-| 5 | 5.1 … 5.5 | Oturum ayrıntısı · pano · öğrenci takvimi · gözetmenlik · program etiketi |
+| 5 | 5.1 … 5.6 | Oturum ayrıntısı · pano · öğrenci takvimi · gözetmenlik · program etiketi · **aday uçları** |
 | 6 | 6.1 | Gözetmen değişimi bildirimi |
 | 7 | 7.1 … 7.8 | core · api · yerleştirme · pano · **oturum ayrıntısı** · etiket · mobil · gözetmenlik |
 | 8 | 8.1 · 8.2 | Uçtan uca doğrulama · belgeler |
 
-**Toplam 34 görev.** Risk yoğunluğu Dilim 2'dedir; 2.1 planın çekirdeğidir ve dokuz testle çevrilmiştir.
+**Toplam 35 görev.** Risk yoğunluğu Dilim 2'dedir; 2.1 planın çekirdeğidir ve dokuz testle çevrilmiştir.

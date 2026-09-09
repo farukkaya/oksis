@@ -83,14 +83,17 @@ değiştirmez, yalnız üstüne katman ekler.
 
 ### 3.3 ExamRoom — Oturumun bir dersliği
 
-`ExamSessionId`, `RoomId`, `InvigilatorTeacherId?`, `InvigilatorSource`, `IsManuallyAdded`.
+`ExamSessionId`, `RoomId`, `InvigilatorTeacherId?`, `InvigilatorSource?`, `IsManuallyAdded`, `IsExcluded`.
 
-- `InvigilatorTeacherId` **boş olabilir** — delik demektir; kırmızı görünür ve yayını
-  engeller (K-20).
+- `InvigilatorTeacherId` **boş olabilir** — delik demektir; sunucu bunu **EX-H10** sert
+  ihlali olarak döndürür ve yayını engeller (K-20). Ekran kendi hesaplamaz.
 - `InvigilatorSource` (`Derived` | `Manual`): elle yazılan gözetmenin üzerine yeniden
   türetme yazmaz.
 - `IsManuallyAdded`: yöneticinin eklediği dersliği (konferans salonu) giren şubelerin
   kendi sınıflarından ayırır — üyelik değişince türetme onu silmez.
+- `IsExcluded`: yöneticinin çıkardığı derslik silinmez, işaretlenir; yeniden türetme
+  onu görür ve atlar. Dördüncü bir tablo açmamanın sebebi budur — dışlama, dersliğin
+  kendi hâlidir.
 
 Kapasite kopyalanmaz; kural denetiminde `Room.Capacity` okunur (omurga spec'i §3.5 ile aynı
 gerekçe).
@@ -235,6 +238,7 @@ tablosu — değişenler kalın:
 | EX-H06 | Sert | Bir öğretmen aynı gün ve saatte tek derslikte gözetmen | Türetme bunu üretemez; **elle doldurmada ısırır** |
 | EX-H07 | Sert | Aynı dönemde pencere çakışması | **Oturum yarısı çıkarıldı** |
 | **EX-H09** | Sert | Bir derslik aynı gün ve saatte tek oturuma ait | **Yeni** |
+| **EX-H10** | Sert | Dersliğin gözetmeni yok | **Yeni** (2026-09-09 tasarım incelemesi) |
 | EX-H08 | Sert | Takvim yayını ilk sınava ≥ N gün — gerekçeyle geçilir | Aynen |
 | EX-S01 | Yumuşak | Aynı şubeye art arda iki gün sınav | Aynen |
 | ~~EX-S02~~ | — | ~~Dersin öğretmeni kendi öğrencisinin dersliğinde gözetmen~~ | **Kaldırıldı** |
@@ -256,7 +260,7 @@ kurulumda uyarı basardı; susturulmayı öğrenilen uyarı, uyarı olmaktan ç�
 
 Faz 1'in koşullarına (`ExamRuleInspector.CheckPublishAsync`) ek olarak:
 
-- Her `ExamRoom`'un gözetmeni var (K-20).
+- Her `ExamRoom`'un gözetmeni var (K-20) — eksikse EX-H10.
 - Oturumdaki her öğrenci bir `ExamSeat`'e oturmuş — yerleşim üretilmiş ve eksiksiz.
 - EX-H09 ve EX-H05 ihlali yok.
 
