@@ -1012,7 +1012,12 @@ git commit -am "feat(exams): gözetmen ders programından türüyor, delikler ra
 **Interfaces:**
 - Consumes: `ExamRoomDeriver`, `ExamInvigilatorDeriver`, `ExamSeatingReader`, `ExamSeatArranger`.
 - Produces: `ExamSessionComposer.RecomposeAsync(Guid schoolId, Guid sessionId, CancellationToken) -> CompositionReport`
-  where `CompositionReport(int RoomCount, int StudentCount, IReadOnlyList<Guid> RoomsWithoutInvigilator, IReadOnlyList<Guid> ClassRoomsWithoutRoom, IReadOnlyList<Guid> OverCapacityRoomIds)`
+  where `CompositionReport(int RoomCount, int StudentCount, IReadOnlyList<Guid> RoomsWithoutInvigilator, IReadOnlyList<Guid> ClassRoomsWithoutRoom, IReadOnlyList<Guid> OverCapacityRoomIds, IReadOnlyList<Guid> RoomsWithoutCapacity)`
+
+**`RoomsWithoutCapacity` ZORUNLU (2026-09-09 kararı R13).** `Room.Capacity == 0` bu depoda
+"kapasite belirtilmemiş" demektir, "sıfır kişilik" değil. Ham geçerse serpiştirme o dersliğe
+0 pay verir; **bütün** dersliklerin kapasitesi 0 ise yerleşim sessizce boş çıkar ve hiçbir
+kural bunu yakalamaz. Rapor bu dersliği adlandırır, ekran uyarı gösterir.
 
 **Neden tek giriş noktası:** üyelik değişimi sekiz komuttan tetiklenir (Dilim 3). Her komut üç türeticiyi ayrı ayrı çağırsaydı sıralama hatası (önce yerleşim, sonra derslik) sessiz bozukluk üretirdi. **Sıra sabittir:** derslik → gözetmen → yerleşim.
 
