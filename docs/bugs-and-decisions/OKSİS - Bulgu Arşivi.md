@@ -5883,3 +5883,24 @@ zorundadır.** Satırı geç yaratmak doğru karardı; hatalı olan, "kaç satı
 sorusunun cevabını bir yerde görevlendirmeden, başka yerde tablodan üretmekti. İki
 tanım yan yana durduğu sürece hangisinin kapıyı beklediği rastlantıdır — ve burada
 kapıyı bekleyen, **hiçbir şey olmadığında sıfır dönen** tanımdı.
+---
+
+## 44. `TB-116` · Sınav takvimi ekranının tasarım kaynağı projede yok ✅
+
+**Kapanış:** 2026-09-09, sınav takvimi Faz 1 · Görev 3.6b (`oksis-ui` @ `455bbd5`).
+
+Bulgu, mobil `GradeExamScheduleScreen`'in kaynak olarak gösterdiği tasarım dosyasının
+projede bulunmamasıydı — ekran çalışıyordu ama güncellemek isteyen bir sonraki turun
+bakacağı yer yoktu.
+
+**Nasıl kapandı:** ekran emekliye ayrıldı. Sınav takvimi kendi modülüne taşındı ve
+kaynağı belli bir tasarımdan yeniden yazıldı (`mobile/exam-schedule.jsx`, indirilip
+diske konuldu). Silinenler: `grade-exam-schedule-screen.tsx`, grade'deki öncü
+`ExamScheduleItem`/`ExamScheduleDay` tipleri ve `groupExamsByDay`, `packages/api`
+tarafındaki `contract.ts` drift bekçisi ile `useExamSchedule`, MSW fixture'ı ve
+handler'ları. `grep` ile kalan tüketici olmadığı doğrulandı.
+
+**Ders:** kaynağı kaybolmuş bir ekranı yamamak yerine, kaynağı olan bir ekranla
+değiştirmek daha ucuzdu — çünkü ekranın kendisi de bekleyen bir sözleşmenin
+(üç boş alan: saat, süre, derslik) yarım hâliydi. İzlenebilirlik boşluğu çoğu zaman
+bitmemiş işin izidir.

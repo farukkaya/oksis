@@ -36,11 +36,11 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 8 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 4 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 3 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **14** | |
+| **Toplam** | **13** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 4
+**Modül dağılımı:** Notlar 4 · Ödevler 4 · Nöbet 1 · Çapraz kesen 4
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -209,27 +209,7 @@ payda gerekiyor — "hedef" kavramı finans dışında tanımlı değil.
 
 ---
 
-### `TB-116` · Sınav takvimi ekranının tasarım kaynağı projede yok ⚪
 
-`apps/mobile/src/features/grade/components/grade-exam-schedule-screen.tsx` ve
-`packages/core/src/grade/types.ts` (`ExamScheduleItem`) kaynak olarak
-`mobile/grade-exam-schedule.jsx :: GradeExamScheduleScreen` dosyasını gösteriyor.
-2026-09-08'de tasarım projesi (`Oksis Layout v2`) dosya listesi tarandı: o yolda
-dosya **yok** — `mobile/` altında grade dosyaları `grade-book-list`,
-`grade-component-sheet`, `grade-entry`, `grade-family`, `grade-feedback`,
-`grade-parts` ile sınırlı. Ekran teslim edildi ve çalışıyor; kaybolan şey
-**izlenebilirlik**: kaynak dosya silinmiş ya da yeniden adlandırılmışsa, o ekranın
-tasarımını güncellemek isteyen bir sonraki tur neye bakacağını bilemez.
-
-Sınav Takvimi modülü brief'i (2026-09-08) bu ekranı "yeniden tasarlama, genişlet"
-diye işaretliyor — kaynağın bulunamaması o talimatı da askıya alır.
-
-⬜ Kapatma yolu: tasarım projesinde dosyanın yeni adı bulunur ve koddaki üç kaynak
-yorumu düzeltilir; dosya gerçekten silinmişse ekranın kaynağı `grade-parts.jsx`'e mi
-taşındığı doğrulanır. R6 (ölü dosya yasak) silmeyi meşru kılar, ama kod hâlâ eski adı
-gösteriyorsa kayıt bayattır.
-
----
 ### `TB-117` · Depoda biriken biçim borcu her görevde commit'e sızıyor ⚪
 
 `dotnet format` (pre-commit zorunlu) sınav takvimi görevlerinde **dokunulmamış** dosyalarda da
