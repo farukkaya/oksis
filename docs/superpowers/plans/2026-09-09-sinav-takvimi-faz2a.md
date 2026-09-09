@@ -719,7 +719,7 @@ git commit -m "feat(exams): oransal serpiştirme algoritması — kuyrukta şube
 
 **Files:**
 - Create: `src/Oksis.Application/Modules/Exams/Internal/ExamSeatingReader.cs`
-- Test: `tests/Oksis.Application.IntegrationTests/Modules/Exams/ExamSeatingReaderTests.cs`
+- Test: `tests/Oksis.Infrastructure.IntegrationTests/Modules/Exams/ExamSeatingReaderTests.cs`
 
 **Interfaces:**
 - Consumes: `IApplicationDbContext`, `SeatingSection`, `SeatingRoom` (Görev 2.1).
@@ -798,7 +798,7 @@ Expected: PASS
 - [ ] **Adım 5: Commit**
 
 ```bash
-git add src/Oksis.Application/Modules/Exams/Internal/ExamSeatingReader.cs tests/Oksis.Application.IntegrationTests
+git add src/Oksis.Application/Modules/Exams/Internal/ExamSeatingReader.cs tests/Oksis.Infrastructure.IntegrationTests
 git commit -m "feat(exams): serpiştirme girdisi — numarasız öğrenci için belirlenimci yedek anahtar"
 ```
 
@@ -808,7 +808,7 @@ git commit -m "feat(exams): serpiştirme girdisi — numarasız öğrenci için 
 
 **Files:**
 - Create: `src/Oksis.Application/Modules/Exams/Internal/ExamRoomDeriver.cs`
-- Test: `tests/Oksis.Application.IntegrationTests/Modules/Exams/ExamRoomDeriverTests.cs`
+- Test: `tests/Oksis.Infrastructure.IntegrationTests/Modules/Exams/ExamRoomDeriverTests.cs`
 
 **Interfaces:**
 - Produces: `ExamRoomDeriver.DeriveAsync(Guid schoolId, Guid sessionId, CancellationToken) -> DerivationResult`
@@ -900,7 +900,7 @@ git commit -am "feat(exams): oturum derslikleri şube sınıflarından türüyor
 
 **Files:**
 - Create: `src/Oksis.Application/Modules/Exams/Internal/ExamInvigilatorDeriver.cs`
-- Test: `tests/Oksis.Application.IntegrationTests/Modules/Exams/ExamInvigilatorDeriverTests.cs`
+- Test: `tests/Oksis.Infrastructure.IntegrationTests/Modules/Exams/ExamInvigilatorDeriverTests.cs`
 
 **Interfaces:**
 - Produces: `ExamInvigilatorDeriver.DeriveAsync(Guid schoolId, Guid sessionId, CancellationToken) -> IReadOnlyList<Guid> RoomsWithoutInvigilator`
@@ -1007,7 +1007,7 @@ git commit -am "feat(exams): gözetmen ders programından türüyor, delikler ra
 
 **Files:**
 - Create: `src/Oksis.Application/Modules/Exams/Internal/ExamSessionComposer.cs`
-- Test: `tests/Oksis.Application.IntegrationTests/Modules/Exams/ExamSessionComposerTests.cs`
+- Test: `tests/Oksis.Infrastructure.IntegrationTests/Modules/Exams/ExamSessionComposerTests.cs`
 
 **Interfaces:**
 - Consumes: `ExamRoomDeriver`, `ExamInvigilatorDeriver`, `ExamSeatingReader`, `ExamSeatArranger`.
@@ -1579,7 +1579,7 @@ public void Should_WarnOnSingleSection_NotSingleGradeLevel()
 
 ### Görev 4.2: Yeni sert kurallar — EX-H05, EX-H06, EX-H09
 
-**Files:** `ExamRuleInspector.cs`, `ErrorMessageCatalog.cs` · Test: `tests/Oksis.Application.IntegrationTests/Modules/Exams/ExamSessionRuleTests.cs`
+**Files:** `ExamRuleInspector.cs`, `ErrorMessageCatalog.cs` · Test: `tests/Oksis.Infrastructure.IntegrationTests/Modules/Exams/ExamSessionRuleTests.cs`
 
 **EX-H06 zaten Görev 3.6'da yazıldı** (ön uçuş kararı R3). Bu görev EX-H05, EX-H09 ve EX-H10'u ekler, **dördünün de** gerçek SQL kapsamasını yapar.
 
