@@ -4,6 +4,13 @@
 >
 > **Ayrıca zorunlu:** her web görevinden önce `oksis-ui/.claude/skills/handoff-web`, her mobil görevden önce `handoff-mobile` skill'i. Bu plan dört kapıyı **domain seviyesinde** bir kez geçmiştir (aşağıdaki Handoff Intake Report); her ekran kendi gate-2/gate-3 envanterini yine yapar.
 
+> **DURUM: Faz 1 TAMAMLANDI — 2026-09-09.** Otuz bir görevin hepsi bitti ve üç depo push edildi
+> (`oksis-api` 20 commit, `oksis-ui` 14 commit, `oksis` 16 commit; dal `feature/exam-schedule`).
+> Plan yürütülürken altı görev sonradan açıldı: 1.9 (ders silme kapısı), 1.10 (sınav türü ucu),
+> 1.11 (menü satırı), 1.12 (durum renkleri), 2.7 (taşıma yetkisi) ve 2.5'in üçe bölünmesi.
+> **Açık kalanlar kullanıcı kararı:** tarayıcıda gezme, renk geçişi göz muayenesi, ayarlardaki
+> sayısal alanların yazı tipi, master'a birleştirme. Faz 2 (kelebek) için tasarım henüz istenmedi.
+
 **Goal:** Sınav takvimi modülünün `lessonHour` (ders saatinde sınav) modunu uçtan uca teslim etmek: sunucuda pencere/planlı sınav/saat isteği omurgası, kural denetleyicisi ve iki adımlı yayın; istemcide yönetici panosu, öğretmen yerleştirme, saat istekleri, ders programı sınav etiketi ve öğrenci/veli takvimi.
 
 **Architecture:** Yeni `Exams` modülü `oksis-api`'de Clean Architecture + CQRS kalıbıyla (Domain entity + durum makinesi → Application command/query + `ExamRuleInspector` → Api controller). Modül Grades, Timetable ve Attendance modüllerini **yalnız okur**; onlara domain event ile haber verir, tablolarına yazmaz. İstemcide `oksis-ui` katmanları: domain beyni `packages/core/src/exam/`, veri erişimi `packages/api/src/exam/`, görünüm `apps/web/features/exam/` ve `apps/mobile/src/features/exam/`. Her dilimde **önce sunucu, sonra ekran** — ekran mock'la değil gerçek uçla açılır.
