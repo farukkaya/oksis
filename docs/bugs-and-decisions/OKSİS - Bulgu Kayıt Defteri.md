@@ -20,7 +20,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-122` · `E-23` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-123` · `E-23` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -35,12 +35,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 7 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 8 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 7 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **16** | |
+| **Toplam** | **17** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 6
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 7
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -210,6 +210,30 @@ payda gerekiyor — "hedef" kavramı finans dışında tanımlı değil.
 ---
 
 
+### `TB-122` · "Aktif mevcut" yüklemi iki yerde ayrı yazılı, ortak bir okuyucu yok 🟡
+
+"Bu şubede şu an kim var" sorusunun cevabı iki yerde bağımsız tanımlanıyor:
+
+- `AttendanceRosterBuilder` (Attendance) — `ClassRoomStudent.LeftAt == null` **ve**
+  `StudentEnrollment.Status == Active`. Kanonik tanım budur.
+- `ExamSeatingReader` (Exams, 2026-09-09) — aynı yüklemi **aynalayarak** uyguluyor.
+
+Aynalama bilinçliydi ve gerekçesi kayıtlı: `AttendanceRosterBuilder` şube başına üç sorgu
+atıyor (çok şubeli kelebek oturumunda N+1 olurdu) ve kurucusunda üç Attendance sağlayıcısı
+istiyor. Sınıf dokümantasyonuna kanonik tanımın orası olduğu ve **sapmada oranın kazandığı**
+yazıldı. Yani bugün doğru, ama koruması yalnız bir yorum.
+
+Neden kayıtlı: bu, `TB-119`'un birebir sınıfı. Orada "hangi şube hangi dersi alıyor" iki
+yerde ayrı tanımlanmıştı; sayaçlar sessizce çatallandı ve boş bir sınav penceresi yayın
+kapısından geçti. Yüklem üçüncü bir tüketici kazandığında ya da kayıt durumlarına yeni bir
+değer eklendiğinde (izinli, nakil bekliyor) aynı çatallanma tekrar doğar.
+
+⬜ Kapatma yolu: yüklemi tek bir paylaşılan okuyucuya çıkarmak — ama nereye ait olduğu açık
+değil (Attendance mı, AcademicSessions mı, ortak bir `Internal` mi) ve iki çağıranın sorgu
+şekli farklı (biri tek şube, diğeri çok şube). **Yer kararı verilmeden başlamak yanlış.**
+Ara koruma olarak, iki yüklemin eşitliğini ölçen tek bir bekçi testi ucuz olur.
+
+---
 ### `TB-121` · Göçler hiçbir testte koşmuyor — entegrasyon fixture'ı modeli kuruyor ⚪
 
 `DatabaseFixture` veritabanını `EnsureCreatedAsync()` ile kuruyor: şema **EF modelinden**
