@@ -20,7 +20,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-120` · `E-23` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-121` · `E-23` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -210,6 +210,26 @@ payda gerekiyor — "hedef" kavramı finans dışında tanımlı değil.
 ---
 
 
+### `TB-120` · Şubenin dersliği zorunlu değil, türetme yapan her yer boşa düşüyor ⚪
+
+`ClassRoom.RoomId` **nullable**. Şubenin fiziksel dersliği tanımlanmamış olabiliyor ve bunu
+zorlayan bir kural yok — ne oluşturmada, ne şube sihirbazında, ne de okul kurulumunda.
+
+Bugün bunun iki görünen sonucu var: sınav takvimi etiketleri `roomName: null` dönüyor
+(Faz 1'de kapatılmadı), ve kelebek oturumunun derslik kümesi şubelerin kendi sınıflarından
+türediği için (2026-09-09 kararı) derslik tanımsız olan şube oturuma derslik getiremiyor.
+Türetmenin dayandığı alan isteğe bağlı olduğu sürece bu sınıf bulgu her yeni tüketicide
+tekrar doğar.
+
+Kullanıcı kararı (2026-09-09): **kural şubenin dersliğinin zorunlu olması yönünde**, ama iş
+sınav takvimi modülünün içinde YAPILMAYACAK — modül bitince kendi turunda ele alınacak.
+
+⬜ Kapatma yolu: alanın zorunluya çevrilmesi (göç + mevcut boş satırların doldurulması),
+şube oluşturma/düzenleme akışlarında kapı, ve türetme yapan tüketicilerin (`Exams`,
+`Timetable`) boş hâl dallarının kaldırılması. Kelebek oturumu bu kapanana kadar eksik
+derslik için yöneticiye elle ekleme sunar — geçici köprü, kalıcı çözüm değil.
+
+---
 ### `TB-117` · Depoda biriken biçim borcu her görevde commit'e sızıyor ⚪
 
 `dotnet format` (pre-commit zorunlu) sınav takvimi görevlerinde **dokunulmamış** dosyalarda da
