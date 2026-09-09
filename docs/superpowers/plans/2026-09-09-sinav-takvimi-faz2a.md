@@ -1019,6 +1019,19 @@ git commit -am "feat(exams): gözetmen ders programından türüyor, delikler ra
 0 pay verir; **bütün** dersliklerin kapasitesi 0 ise yerleşim sessizce boş çıkar ve hiçbir
 kural bunu yakalamaz. Rapor bu dersliği adlandırır, ekran uyarı gösterir.
 
+**ZORUNLU ÖN KOŞUL (2026-09-09 kararı R18):** üç türetici **aynı `DbContext` ve aynı birim
+işlemde** çağrılır. `ExamInvigilatorDeriver` derslikleri `db.ExamRooms.Local` üzerinden de
+okur, çünkü `ExamRoomDeriver`'ın az önce eklediği satırlar henüz kaydedilmemiştir ve EF
+`Added` satırlarını sorguda göstermez. Ayrı bağlamda çağrılırsa **gözetmen hiç türemez ve
+hata da çıkmaz** — sessiz boş sonuç. Bestekârın bunu ihlal edemeyeceğini gösteren bir test
+yaz.
+
+**ZORUNLU (2026-09-09 kararı R19):** rapor "aktif derslik yok" hâlini **ayrıca** bildirir.
+Bugün bütün derslikleri çıkarılmış bir oturumda delik listesi boş döner ve hiçbir sinyal
+çıkmaz; `ExamRuleInspector`'da da bugün hiçbir derslik/gözetmen kuralı yoktur, yani bu hâl
+hiçbir yerde yakalanmaz. Görev 2.4 bugünkü davranışı testle kilitledi — bu görev onu
+**bilinçli olarak** değiştirir.
+
 **Neden tek giriş noktası:** üyelik değişimi sekiz komuttan tetiklenir (Dilim 3). Her komut üç türeticiyi ayrı ayrı çağırsaydı sıralama hatası (önce yerleşim, sonra derslik) sessiz bozukluk üretirdi. **Sıra sabittir:** derslik → gözetmen → yerleşim.
 
 **Sıra takasları temizlenir** (spec §4.3): `RecomposeAsync` bütün `ExamSeat` satırlarını siler ve yeniden yazar; `IsManuallySwapped` bilgisi kaybolur. Çağıran komut kullanıcıya uyarı gösterir.
