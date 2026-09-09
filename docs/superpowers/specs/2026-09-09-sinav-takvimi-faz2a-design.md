@@ -279,9 +279,15 @@ Omurga spec'i §6'nın anahtarları geçerlidir; Faz 2a **yeni izin açmaz**. E�
 
 | Eylem | Anahtar |
 |---|---|
-| Yönetici oturum açar, birleştir, derslik ekle/çıkar, gözetmen doldur/değiştir, sıra takas, yerleşimi yeniden üret | `exams.window.manage` |
-| Öğretmen yerleştirir (oturumu doğuran hâli dahil) | `exams.exam.place` |
-| Öğrenci/veli kendi dersliği ve sırası | `exams.read.self` |
+| Yönetici oturum açar, birleştir, derslik ekle/çıkar, gözetmen doldur/değiştir, sıra takas, yerleşimi yeniden üret | `exams.manage` |
+| Öğretmen yerleştirir (oturumu doğuran hâli dahil) | `exams.place` |
+| Öğrenci/veli kendi dersliği ve sırası | `exams.read` |
+
+**Anahtarlar koddan ölçüldü (2026-09-09, Görev 3.1).** Bu belgenin ilk yazımında omurga
+spec'inden `exams.window.manage` / `exams.exam.place` / `exams.read.self` diye alınmıştı;
+**üçü de depoda yok.** Gerçek katalog dört anahtar taşır: `exams.manage` ("pencere kur,
+yayınla, revize et, kilitle"), `exams.place`, `exams.read`, `exams.report`. Var olmayan bir
+slug yazmak `RequirePermissionSeedCoverageTests`'i kırmızıya düşürür.
 
 Öğretmenin yerleştirmesi bir oturum doğuruyor olsa da yeni bir yetki gerektirmez: doğan
 şey kendi sınavının organizasyonudur, başkasının sınavına dokunmaz. Yöneticinin denetim

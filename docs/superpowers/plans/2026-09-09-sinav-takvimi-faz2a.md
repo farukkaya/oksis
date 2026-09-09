@@ -1139,7 +1139,7 @@ Ortak kapı: yayınlanmış pencerede (`Status == SchedulePublished`) yapılan h
 
 **Interfaces:**
 - Produces: `CreateExamSessionCommand(Guid ExamWindowId, Guid SubjectId, DateOnly Date, int Period, IReadOnlyList<Guid> ClassRoomIds) : IRequest<ExamSessionSummaryDto>`
-- Uç: `POST /api/v1/exams/sessions` · `[RequirePermission("exams.window.manage")]`
+- Uç: `POST /api/v1/exams/sessions` · `[RequirePermission("exams.manage")]`
 
 **Davranış:** verilen şube kimlikleri için `ExamExpectationReader`'dan şube × ders çiftleri doğrulanır (o şube o dersi almıyorsa hata), her çift için `ScheduledExam` yazılır veya mevcut satır bulunur, `Date`/`Period` yerleştirilir, `AttachToSession` çağrılır, bestekâr koşar.
 
@@ -1268,7 +1268,7 @@ public async Task Should_JoinExistingSession_When_SameSubjectDateAndPeriod()
 
 **Interfaces:**
 - Produces: `UpdateSessionSectionsCommand(Guid SessionId, IReadOnlyList<Guid> AddClassRoomIds, IReadOnlyList<Guid> RemoveClassRoomIds, string? Reason)`
-- Uç: `PATCH /api/v1/exams/sessions/{id}/sections` · `exams.window.manage`
+- Uç: `PATCH /api/v1/exams/sessions/{id}/sections` · `exams.manage`
 
 **Davranış:** çıkarılan şubenin `ScheduledExam` satırı `DetachFromSession()` + `Unplace()` çağırır — sınav silinmez, **yerleşmemiş** hâle döner ve EX-S05 uyarısına konu olur. Son şube de çıkarılırsa oturum silinir (spec §4.3).
 
@@ -1320,7 +1320,7 @@ public async Task Should_RequireReason_When_WindowIsPublished()
 
 **Interfaces:**
 - Produces: `MergeExamSessionsCommand(Guid TargetSessionId, Guid SourceSessionId, string? Reason)`
-- Uç: `POST /api/v1/exams/sessions/{id}/merge` · `exams.window.manage`
+- Uç: `POST /api/v1/exams/sessions/{id}/merge` · `exams.manage`
 
 **Kapı:** iki oturumun `ExamWindowId`, `SubjectId`, `Date` ve `Period` değerleri **aynı olmalı**. Farklıysa `InvalidExamDataException`. Kaynak oturumun `ScheduledExam` satırları hedefe bağlanır, kaynak silinir, hedef yeniden bestelenir — üç öğretmenin öğrencileri gerçekten karışır (kullanıcı kararı).
 
@@ -1366,7 +1366,7 @@ public async Task Should_Reject_When_CoordinatesDiffer(string differing)
 
 **Interfaces:**
 - Produces: `UpdateSessionRoomsCommand(Guid SessionId, IReadOnlyList<Guid> AddRoomIds, IReadOnlyList<Guid> RemoveRoomIds, string? Reason)`
-- Uç: `PATCH /api/v1/exams/sessions/{id}/rooms` · `exams.window.manage`
+- Uç: `PATCH /api/v1/exams/sessions/{id}/rooms` · `exams.manage`
 
 Eklenen derslik `IsManuallyAdded = true` ile doğar (Kısıt 19). Çıkarılan derslik **silinmez**, `Exclude()` ile işaretlenir (Görev 1.1'in `IsExcluded` alanı): yeniden türetme satırı görür ve atlar, böylece yöneticinin çıkardığı derslik geri gelmez. Dördüncü bir tablo açmamanın sebebi budur — dışlama, dersliğin kendi hâlidir, ayrı bir varlık değil.
 
@@ -1408,7 +1408,7 @@ public async Task Should_RedistributeStudents_When_RoomIsRemoved()
 
 **Interfaces:**
 - Produces: `SetInvigilatorCommand(Guid ExamRoomId, Guid? TeacherId, string? Reason)` — `TeacherId == null` gözetmeni boşaltır.
-- Uç: `PUT /api/v1/exams/rooms/{id}/invigilator` · `exams.window.manage`
+- Uç: `PUT /api/v1/exams/rooms/{id}/invigilator` · `exams.manage`
 
 Yazılan gözetmen **her zaman** `InvigilatorSource.Manual` taşır.
 
@@ -1481,7 +1481,7 @@ public async Task Should_RaiseEvent_When_ChangedAfterPublish()
 
 **Interfaces:**
 - Produces: `SwapSeatsCommand(Guid SeatAId, Guid SeatBId, string? Reason)`, `RegenerateSeatingCommand(Guid SessionId, string? Reason)`
-- Uçlar: `POST /api/v1/exams/seats/swap`, `POST /api/v1/exams/sessions/{id}/seating` · `exams.window.manage`
+- Uçlar: `POST /api/v1/exams/seats/swap`, `POST /api/v1/exams/sessions/{id}/seating` · `exams.manage`
 
 Takas iki sıranın öğrencilerini değiştirir ve ikisini de `MarkSwapped()` ile işaretler. Sıralar **farklı dersliklerde olabilir** — kelebekte iki öğrenciyi yer değiştirmek derslik değiştirmek demektir.
 
@@ -1762,7 +1762,7 @@ public async Task Should_AllowPublish_When_SessionModeIsComplete()
 **Files:** `Queries/GetExamSession/*`, `ExamsController.cs` · Test: `GetExamSessionQueryHandlerTests.cs`
 
 **Interfaces:**
-- Produces: `GET /api/v1/exams/sessions/{id}` · `exams.window.manage` →
+- Produces: `GET /api/v1/exams/sessions/{id}` · `exams.manage` →
 
 ```jsonc
 {
@@ -1859,7 +1859,7 @@ public async Task Should_HideRoomAndSeat_When_ScheduleNotPublished()
 **Files:** `Queries/GetMyExamDuties/*` (yeni) · Test: `GetMyExamDutiesQueryHandlerTests.cs`
 
 **Interfaces:**
-- Produces: `GET /api/v1/exams/me/duties?termId=` · `exams.read.self` →
+- Produces: `GET /api/v1/exams/me/duties?termId=` · `exams.read` →
   `{ "exams": [ … ], "invigilations": [ { "sessionId", "date", "period", "periodLabel", "roomName", "subjectName", "studentCount" } ] }`
 
 Öğretmen kendi sınavlarını Faz 1'den zaten görüyor; bu uç **gözetmenlik** satırlarını ekler. İki liste ayrı döner — birleştirmek istemcinin işidir, çünkü rozetleri farklıdır.
@@ -1909,9 +1909,9 @@ public async Task Should_TagTeacherCellAsInvigilation()
 **Bu görev tasarım incelemesinde doğdu.** Teslim edilen ekranın iki modali (`invigilator`, `addRoom`) aday listesi tüketiyor; plan bu iki ucu öngörmemişti.
 
 **Interfaces:**
-- `GET /api/v1/exams/rooms/{examRoomId}/invigilator-candidates` · `exams.window.manage` →
+- `GET /api/v1/exams/rooms/{examRoomId}/invigilator-candidates` · `exams.manage` →
   `[ { "id", "name", "subjectAreaName", "isBusy", "busyRoomName" } ]`
-- `GET /api/v1/exams/sessions/{id}/room-candidates` · `exams.window.manage` →
+- `GET /api/v1/exams/sessions/{id}/room-candidates` · `exams.manage` →
   `[ { "roomId", "name", "capacity", "isInUse" } ]`
 
 **Kural sunucuda (Kısıt 4):** `isBusy`, EX-H06'nın **aynı yüklemiyle** hesaplanır — aynı gün ve saatte başka bir `ExamRoom`'a yazılı öğretmen. `isInUse`, EX-H09'un aynı yüklemi. Ekran bu bayrakları yalnız çizer ve düğmeyi kilitler; kendi kuralını üretmez. İki yüklem `ExamRuleInspector` içindeki tek tanımdan çağrılır — ikinci bir kopya yazılmaz.
