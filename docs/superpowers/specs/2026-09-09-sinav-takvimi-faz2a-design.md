@@ -158,8 +158,19 @@ Elle yapılan müdahaleler korunur (`IsManuallyAdded`, `InvigilatorSource = Manu
 verir ve yönetici elle ekler. Bu bir köprüdür, kalıcı çözüm `TB-120`'dedir (K-26).
 
 **Oturumun ömrü.** `ExamSession`, ilk `ScheduledExam` bağlandığında doğar; son satırı da
-çıkarıldığında silinir (`ExamRoom` ve `ExamSeat` ile birlikte). Yayınlanmış bir oturumun
-boşaltılması silme değil `Revise` konusudur — Faz 1'in gerekçeli değişiklik akışı işler.
+çıkarıldığında **silinir** (`ExamRoom` ve `ExamSeat` ile birlikte) — pencere yayınlanmış
+olsun ya da olmasın.
+
+Yayınlanmış pencerede fark **silinip silinmemesi değil, silmenin nasıl olduğudur**: gerekçe
+zorunludur, `ExamWindowRevision` satırı yazılır ve etkilenen öğrenci/veliye bildirim gider.
+Silme sessiz olamaz.
+
+*(2026-09-09 kararı R30 — ilk yazımda bu paragraf "silme değil `Revise` konusudur" diyordu
+ve iki türlü okunabiliyordu. Boş kabuğun ayakta bırakılması reddedildi: şubesi çıkan
+öğrencinin sınavı zaten yerleşmemişe döndüğü için takviminden düşer, ama panoda **sahipsiz**
+bir oturum kartı kalır — K-15 gereği sorumlu öğretmen de bağlı satırlardan türediği için —
+ve bestekârın "aktif derslik yok" uyarısı onu düzeltilmeyi bekleyen bir kusur gibi gösterir.
+Kimlik ve tarihçe kaygısı soft-delete ile revizyon satırlarından zaten karşılanıyor.)*
 
 ### 4.4 Yerleşim algoritması
 
