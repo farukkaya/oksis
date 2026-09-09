@@ -372,7 +372,13 @@ git commit -m "feat(exams): planlı sınav oturum çatısına bağlanabiliyor"
 - Modify: `src/Oksis.Infrastructure/Persistence/Configurations/Exams/ScheduledExamConfiguration.cs`
 - Modify: `src/Oksis.Application/Common/Abstractions/IApplicationDbContext.cs`
 - Modify: `src/Oksis.Infrastructure/Persistence/OksisDbContext.cs`
+- Modify: `src/Oksis.Application/Modules/Academics/Internal/SubjectUsageInspector.cs`
+- Modify: `tests/Oksis.Tests/Architecture/SubjectUsageCoverageTests.cs` (muafiyet kaldırılır)
 - Test: `tests/Oksis.Infrastructure.IntegrationTests/Modules/Exams/ExamSessionPersistenceTests.cs`
+
+**Ders silme kapısı burada kapanır (ön uçuş kararı R5).** `ExamSession.SubjectId` taşır, dolayısıyla TB-53 mimari bekçisi yeni bir tüketici görür. Görev 1.1 `DbSet<ExamSession>` henüz doğmadığı için bekleyen-tip listesiyle **geçici** bir muafiyet açtı; bu görev muafiyeti kaldırır ve `SubjectUsageInspector.FindBlockingUsagesAsync`'e oturum sorgusunu ekler — bir derse bağlı oturum varken ders silinemez.
+
+Emsal Faz 1'dedir: aynı sınıf bulgu `TB-115` olarak yaşandı (`ScheduledExam` ve `DistributionConstraint` kapıya eklenmemişti). Muafiyeti açık bırakmak o bulguyu geri getirir. **Kapatılması bu görevin kabul ölçütüdür**, isteğe bağlı değil.
 
 **Interfaces:**
 - Produces: `IApplicationDbContext.ExamSessions`, `.ExamRooms`, `.ExamSeats` (`DbSet<>`)
