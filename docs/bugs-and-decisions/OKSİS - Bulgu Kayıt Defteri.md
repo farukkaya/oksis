@@ -35,12 +35,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 8 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 3 | Kozmetik, temizlik, adlandırma |
+| 🟡 Orta | 7 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 7 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **13** | |
+| **Toplam** | **16** | |
 
-**Modül dağılımı:** Notlar 4 · Ödevler 4 · Nöbet 1 · Çapraz kesen 4
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 6
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
