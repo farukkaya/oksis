@@ -275,6 +275,20 @@ satır oturumun aktif kümesinde değildir ve sayılırsa yanlış pozitif üret
 | EX-S05 | Yumuşak | Yerleşmemiş şube × ders varken yayın | Aynen |
 | **EX-S06** | Yumuşak | Derslikte kapasite aşıldı | **Yeni** (K-23) |
 
+**Tablodaki kuralların çoğu Faz 1'de HİÇ YAZILMADI (2026-09-09 kararı R47).** Ön uçuşta
+koddan ölçüldü: `ExamRuleInspector` yalnız **altı** kural taşıyor — `EX-H01`, `EX-H03`,
+`EX-H06` (Faz 2a Görev 3.6'da geldi), `EX-H08`, `EX-S01`, `EX-S05`. Geri kalanı
+(`EX-H02`, `EX-H04`, `EX-H05`, `EX-H07`, `EX-S02`, `EX-S03`, `EX-S04`) omurga spec'inde
+listelenmiş ama **hiç uygulanmamış**; yorumlarda bile geçmiyorlar.
+
+Bu belgenin ilk yazımı onları var kabul etti ve "kaldırıldı" / "aynen" / "ölçüm değişti"
+diye yazdı. Doğrusu:
+- `EX-H04`, `EX-S02`, `EX-S03` → **kaldırılmıyor, hiç yazılmadı.** Faz 2a'da da yazılmayacak
+  (K-19/K-23 gerekçeleri geçerli).
+- `EX-S04` → "ölçüm seviyeden şubeye çevrilir" değil, **sıfırdan yazılacak** (Görev 4.1).
+- `EX-H02` ve `EX-H07` → "aynen" değil, **Faz 1 boşluğu**; Faz 2a kapsamına alınmıyor,
+  deftere yazıldı.
+
 **Omurga spec'inin "aynı tarihte oturumlar ders saati olarak çakışamaz" kuralı yanlıştı.**
 Ahmet'in matematiği ile Ayşe'nin Türkçesi salı 2. derste yan yana durabilir. Çakışamayan
 oturum değil, üç kaynaktır: aynı derslik (EX-H11), aynı öğrenci (EX-H05), aynı gözetmen
