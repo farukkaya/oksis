@@ -5,7 +5,10 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son yeniden düzenleme:** 2026-09-03 — Notlar ve Ödevler domain-map taramaları
+> **Son yeniden düzenleme:** 2026-09-10 — bildirim altyapısı taraması
+> (`oksis-api` @ `61808d25`): §11 Bildirimler açıldı, `TB-125`/`TB-126`/`TB-127` ve
+> `E-23` eklendi. Defter **23**.
+> Önceki: 2026-09-03 — Notlar ve Ödevler domain-map taramaları
 > (`oksis-api` @ `b72c819`): `TB-105`…`TB-113` ve `X-20` eklendi. Defter **12**.
 > Önceki: 2026-09-01 — `TB-48`/`X-03` bayat çıktı ([[OKSİS - Bulgu Arşivi]] §39); `K-12 §A1` hükümsüz.
 
@@ -20,7 +23,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-125` · `E-23` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-128` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -34,13 +37,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 0 | — |
-| 🟠 Yüksek | 2 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 10 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 7 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 12 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 8 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **19** | |
+| **Toplam** | **23** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Nöbet 1 · Çapraz kesen 8 · Sınav 1
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 4 · Nöbet 1 · Çapraz kesen 8 · Sınav 1
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -181,6 +184,78 @@ ileri alındıysa sıfırla" da mümkün.
 tamamlama, idari kaldırma); sözleşmede `/homework/{id}/audit` bildirilmediği için hiçbir
 ekranda görünmüyor. Not modülünün denetim ucu emsal (`grades.manage`). Çağrılmayan uç
 arkasındaki kusuru da saklar — ucu yazmadan satırların şekli doğrulanamaz.
+
+---
+
+## 11. Bildirimler 🟠
+
+Kaynak: `oksis-api` @ `61808d25` bildirim altyapısı taraması (2026-09-10). Zincirin
+kendisi (olay → Hangfire → dispatcher → kanal → teslim kaydı) ayakta; bulgular
+**ayar yüzeyi ile teslimat arasındaki kopukluk** üzerinde toplanıyor — `TB-43`'ün
+kapattığı sahte toggle sınıfının kalan hâli.
+
+### `TB-125` · Okulun bildirim ana anahtarı ve Portal kararı, kapsam eşlemesi dışındaki tiplerde hiç uygulanmıyor 🟠
+
+`InAppNotificationChannel` iki kapısını da (`NotificationConfig.IsEnabled` ana anahtarı
+ve `NotificationRuleConfig.PortalEnabled`) `PushEventKeyMap.TryGetEventKey` **başarılı
+olursa** çalıştırıyor; eşlemede karşılığı olmayan tip `if` bloğunu atlıyor ve satır
+koşulsuz yazılıyor. Eşlemede bugün 14 tip var, `NotificationKind` 39 değer taşıyor.
+
+Kodun gerekçesi "eşlemede olmayan tipin matriste satırı da yoktur" — **bu artık doğru
+değil.** Katalogda satırı olan ve gerçekten bildirim üreten beş olay eşlemenin dışında:
+`ATT_THRESHOLD`, `ATT_DAILY_SUMMARY`, `ANNOUNCEMENT`, `HOMEWORK_MISSING`,
+`EXAM_WINDOW_PUBLISHED`. Yönetici bu beşinin Portal sütununu kapatıyor, bildirim yine
+düşüyor. Aynı sebeple **"bildirimleri tümden kapat" düğmesi** bu tipler ve eşleme dışı
+kalan 20 tip (ders programı, nöbet, mazeret, düzeltme, izin, duyurunun sekiz hâli,
+kayıt yenileme) için de çalışmıyor — kapının tek durağı in-app kanalıydı.
+
+⬜ Kapı eşlemeden bağımsızlaştırılmalı: ana anahtar her tipte, Portal kararı ise
+katalogda satırı olan her olayda uygulanmalı. `PushEventKeyMap` push kapsamının kaynağı
+olarak kalır; matris kapısının kaynağı olmaktan çıkar.
+
+### `TB-126` · Katalogda `email: true` seed edilen üç olay e-posta üretmiyor 🟡
+
+`EmailNotificationChannel`'ın 1. kapısı da aynı eşlemedir: `PushEventKeyMap`'te olmayan
+tip e-posta atmaz. Seed ise `ATT_THRESHOLD`, `HOMEWORK_MISSING` ve `ANNOUNCEMENT_URGENT`
+satırlarını `email: true` ile yazıyor — yani "uyarı eşiği aşıldı e-postaya da gider"
+kararı her okulun `notification_rule_configs` tablosunda yazılı, karşılığı yok.
+`HOMEWORK_MISSING`'in kendi seed yorumu bunu ayrıca vurguluyor ("e-posta YALNIZ burada
+açık: velinin kaçırmaması gereken tek ödev haberi").
+
+Fiilen e-posta üreten tek katalog varsayılanı `GRADE_PUBLISHED`. Kalan 13 eşlemeli olay
+e-postayı okul açarsa gönderir. `ANNOUNCEMENT_URGENT` zaten `delivered: false` ile
+işaretli, diğer ikisi `true` — yani ekran onları "çalışıyor" diye gösteriyor.
+⬜ `TB-125` ile aynı kapı düzeltmesine bağlı.
+
+### `E-23` · SMS kanalının hiçbir uygulaması yok; matris sütunu, okul ayarı ve kota kartı sahte yüzey 🟡
+
+`ISmsSender` bir arayüz olarak duruyor ("MVP'de concrete provider yok"), `Infrastructure`
+altında implementasyonu ve DI kaydı **yok**; tek çağıranı da yorum satırı
+(`RequestLoginOtpCommandHandler`). `INotificationChannel` uygulayan üç sınıfın hiçbiri
+SMS değil. Buna karşılık sunucu yüzeyi SMS'i tam ciddiyetle taşıyor:
+`NotificationChannel` enum'unda `Sms = 4`, katalogda `SupportsSms` + `DefaultSmsEnabled`,
+altı olayda `supportsSms: true`, `PAYMENT_REMINDER`'da `sms: true` varsayılan,
+`UpdateNotificationConfig`'te `SmsEnabled` + `DailySmsLimit`, ve `GET /schools/sms-quota`
+sabit bir kota kartı döndürüyor (`IsPlaceholder: true`, 1000 kontör, gönderici başlığı
+"OKUL").
+
+`K-06` (2026-08-16) davet kanalı için "SMS/WhatsApp seçilemez" demişti ama matris sütunu
+o kararla birlikte kaldırılmadı. ⬜ İki yoldan biri: sağlayıcı (Netgsm/İletimerkezi)
+bağlanıp `SmsNotificationChannel` yazılır, ya da sütun ayar yüzeyinden gizlenip
+`SupportsSms` katalogda `false`'a çekilir. Arada kalan hâl, yöneticiye kontör harcadığını
+düşündüren bir toggle.
+
+### `TB-127` · Kulübün dört katalog satırı hâlâ `delivered: false`, üreticileri var ⚪
+
+`NotificationEventTypeSeedData` dört `CLUB_*` satırını `delivered: false` ile yazıyor ve
+yorumu "handler'lar Faz 5'te yazıldığında bayrak kendi migration'ıyla `true`'ya çevrilir"
+diyor. Faz 5 geldi: dört bildirim handler'ı da (`ClubActivityPublished`,
+`ClubActivityCancelled`, `ClubAnnouncementPublished`, `ClubApplicationDecided`) yazılı ve
+`PushEventKeyMap` kapısı da açık. Bayrağı çeviren migration yazılmamış — model
+snapshot'ta dördü hâlâ `IsDelivered = false`.
+
+Zararı `TB-24`'ün tersi yönde: ekran çalışan bir bildirimi "henüz teslim edilmiyor" diye
+gösteriyor. ⬜ Tek satırlık seed düzeltmesi + migration (emsal: `20260828130231`).
 
 ---
 

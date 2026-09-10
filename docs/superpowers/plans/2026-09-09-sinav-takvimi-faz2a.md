@@ -1685,6 +1685,16 @@ Kaldırılacak bir yayın kapısı **yoktur**. Yayın tarafına üç YENİ koşu
 
 EX-S06 (kapasite) ve EX-S04 (karışmamış derslik) **yayını engellemez** (K-23).
 
+**ZORUNLU (2026-09-10 kararı R50) — `MoveExam` oturum modunda ödünç saat dalına düşmemeli.**
+Görev 3.2 `PlaceExam` ve `RequestExamHour` için mod körlüğünü kapattı (R26); **üçüncü komut
+`MoveExam` atlandı.** Bugün oturum penceresinde bir sınavı taşımak `isBorrowed` dalına
+düşüp `HourRequest` doğurabiliyor. İki sonucu var: (a) açıklanamayan bir bekleyen istek
+`EX-H09` ile yayını kapatır — üstelik yanlış mesajla ("saat isteği karara bağlanmalı",
+oysa kimse istek göndermedi); (b) taşınan sınav `ExamSessionId`'sine bağlı kalırken
+oturumun kendi saati değişmez, yani **iki farklı saatte duran bir oturum** doğar.
+Görev 4.1'in kazısında ölçüldü; o görev yanlış davranışı yeşil bir testle mühürlememek
+için dokunmadı. Kapı buraya yazılır ve ikisi de test edilir.
+
 Faz 1'in "bekleyen saat isteği yok" koşulu oturum modunda **boş geçer**: saat serbest seçildiği için (K-17) ödünç alma kavramı yoktur ve `HourRequest` satırı doğmaz. Koşul kaldırılmaz — `LessonHour` modunda hâlâ ısırır; yalnız oturum modunda sorgusu boş küme döner. Testi bu iki hâli ayrı ayrı ölçer.
 
 - [ ] **Adım 1: Testi yaz**
