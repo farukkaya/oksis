@@ -2106,6 +2106,7 @@ DesignSync ile okunur (`method: "get_file"`), zip indirilmez.
 - `ExamSessionRoomRow` — derslik satırı: ad · `elle eklendi` etiketi · `mevcut/kapasite` (aşımda `.over`) · gözetmen + `türetildi`/`elle` rozeti · şube çipleri (tek çip kalınca `.solo` + "karışım yok").
 - Sağ sütun düz sıra listesi (`.exs-seat`), iki tıkla takas; seçim durumu `pick`.
 - Altı modal: `invigilator`, `addRoom`, `removeRoom`, `swap`, `regenerate`, `merge`, artı bir `info` ("Oturum nasıl kurulur?").
+- **`merge` modalinde onay metni ZORUNLU (2026-09-09 kararı R32):** hangi oturumun **silineceğini** ve hangisinin **kalacağını** ad vererek söyler. Uçta yön `{id}` ile belirleniyor, silme geri alınamaz ve tasarımın teslim ettiği modal metni bunu söylemiyor — yönetici yanlış kartın düğmesine basarsa geri dönüşü yok.
 - `ExamSessionReasonField` — yayınlanmış pencerede her modalde zorunlu.
 
 **Tasarımın iki açık sorusuna cevabı:** sıra listesi **düz liste** (sahte ızgara çizilmedi), sıralar **sağ sütunda** (akordeon değil). İkisi de kabul.
