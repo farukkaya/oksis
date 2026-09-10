@@ -253,7 +253,19 @@ tablosu — değişenler kalın:
 | EX-H05 | Sert | Öğrenci aynı gün ve saatte tek oturumda, tek derslikte, tek sırada | Netleşti |
 | EX-H06 | Sert | Bir öğretmen aynı gün ve saatte tek derslikte gözetmen | Türetme bunu üretemez; **elle doldurmada ısırır** |
 | EX-H07 | Sert | Aynı dönemde pencere çakışması | **Oturum yarısı çıkarıldı** |
-| **EX-H09** | Sert | Bir derslik aynı gün ve saatte tek oturuma ait | **Yeni** |
+| **EX-H11** | Sert | Bir derslik aynı gün ve saatte tek oturuma ait | **Yeni** |
+
+**Neden EX-H09 değil (2026-09-09 kararı R34).** Bu belgenin ilk yazımında kural `EX-H09`
+diye numaralandırılmıştı; **o kod Faz 1'de zaten kullanımda** — `ExamRuleInspector` onu
+"bekleyen saat isteği var, yayın öncesi karara bağlanmalı" için yayıyor ve
+`PublishExamScheduleCommandHandler` onu geçilemez sayıyor. Omurga spec'i o kurala kod
+vermemişti, Faz 1 uygularken kendi verdi; ben de aynı kodu ikinci kez dağıttım.
+Derslik çakışması **EX-H11**'dir. `EX-H10` gözetmensiz dersliktir.
+
+**Kural `ExamRoom` satırları üzerinden yazılır**, "elle eklenmiş dersliği özel kapsa" diye
+değil: `ClassRoom.RoomId`'de benzersiz dizin yoktur, yani iki şube ev dersliğini paylaşabilir
+ve **türetilmiş derslikler de çakışabilir**. Yüklem `!IsExcluded` süzmelidir — çıkarılmış
+satır oturumun aktif kümesinde değildir ve sayılırsa yanlış pozitif üretir.
 | **EX-H10** | Sert | Dersliğin gözetmeni yok | **Yeni** (2026-09-09 tasarım incelemesi) |
 | EX-H08 | Sert | Takvim yayını ilk sınava ≥ N gün — gerekçeyle geçilir | Aynen |
 | EX-S01 | Yumuşak | Aynı şubeye art arda iki gün sınav | Aynen |
@@ -265,7 +277,7 @@ tablosu — değişenler kalın:
 
 **Omurga spec'inin "aynı tarihte oturumlar ders saati olarak çakışamaz" kuralı yanlıştı.**
 Ahmet'in matematiği ile Ayşe'nin Türkçesi salı 2. derste yan yana durabilir. Çakışamayan
-oturum değil, üç kaynaktır: aynı derslik (EX-H09), aynı öğrenci (EX-H05), aynı gözetmen
+oturum değil, üç kaynaktır: aynı derslik (EX-H11), aynı öğrenci (EX-H05), aynı gözetmen
 (EX-H06).
 
 **EX-S02 neden kaldırıldı:** sahip öğretmen kendi ders saatini seçtiğinde kendi sınıfında
@@ -278,7 +290,7 @@ Faz 1'in koşullarına (`ExamRuleInspector.CheckPublishAsync`) ek olarak:
 
 - Her `ExamRoom`'un gözetmeni var (K-20) — eksikse EX-H10.
 - Oturumdaki her öğrenci bir `ExamSeat`'e oturmuş — yerleşim üretilmiş ve eksiksiz.
-- EX-H09 ve EX-H05 ihlali yok.
+- EX-H11 ve EX-H05 ihlali yok.
 
 EX-S06 (kapasite) ve EX-S04 (karışmamış derslik) yayını **engellemez**, panoda görünür.
 
@@ -350,7 +362,7 @@ Bu fazda **zorunlu** entegrasyon testleri:
 - Türetme ile `AsNoTracking` etkileşimi — Faz 1'de `MarkMoved()` sessizce yazmamıştı
   ([[asnotracking-join-ile-yayilir]]).
 - Yerleşimin belirlenimciliği: aynı girdiyle iki kez üretim, birebir aynı `SeatNo` dizisi.
-- EX-H09 / EX-H05 / EX-H06 — üçü de çoklu tablo JOIN'i üzerinden ölçülür.
+- EX-H11 / EX-H05 / EX-H06 — üçü de çoklu tablo JOIN'i üzerinden ölçülür.
 - Yayın kapısı: gözetmensiz derslik ve eksik yerleşim ayrı ayrı yayını engelliyor mu.
 
 Günlük döngü `./scripts/test-changed.sh`; entegrasyon yalnız `--integration`.

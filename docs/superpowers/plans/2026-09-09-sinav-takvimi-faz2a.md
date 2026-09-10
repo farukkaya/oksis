@@ -388,9 +388,9 @@ Emsal Faz 1'dedir: aynı sınıf bulgu `TB-115` olarak yaşandı (`ScheduledExam
 | Tablo | Dizin | Neden |
 |---|---|---|
 | `ExamSessions` | `(SchoolId, ExamWindowId)` | Pano pencere başına oturumları listeler |
-| `ExamSessions` | `(SchoolId, Date, Period)` | EX-H09 ve birleştirme adayı aynı hücreye bakar |
+| `ExamSessions` | `(SchoolId, Date, Period)` | EX-H11 ve birleştirme adayı aynı hücreye bakar |
 | `ExamRooms` | `(SchoolId, ExamSessionId)` | Oturum ayrıntısı |
-| `ExamRooms` | `(SchoolId, RoomId)` — filtreli değil | EX-H09: derslik aynı saatte iki oturumda mı |
+| `ExamRooms` | `(SchoolId, RoomId)` — filtreli değil | EX-H11: derslik aynı saatte iki oturumda mı |
 | `ExamSeats` | `(SchoolId, ExamRoomId)` | Derslik sıra listesi |
 | `ExamSeats` | `(SchoolId, StudentPersonId)` | Öğrenci takvimi kendi sırasını okur |
 | `ScheduledExams` | `(SchoolId, ExamSessionId)` | Oturumun şubeleri |
@@ -1595,11 +1595,11 @@ public void Should_WarnOnSingleSection_NotSingleGradeLevel()
 
 ---
 
-### Görev 4.2: Yeni sert kurallar — EX-H05, EX-H06, EX-H09
+### Görev 4.2: Yeni sert kurallar — EX-H05, EX-H06, EX-H11
 
 **Files:** `ExamRuleInspector.cs`, `ErrorMessageCatalog.cs` · Test: `tests/Oksis.Infrastructure.IntegrationTests/Modules/Exams/ExamSessionRuleTests.cs`
 
-**EX-H06 zaten Görev 3.6'da yazıldı** (ön uçuş kararı R3). Bu görev EX-H05, EX-H09 ve EX-H10'u ekler, **dördünün de** gerçek SQL kapsamasını yapar.
+**EX-H06 zaten Görev 3.6'da yazıldı** (ön uçuş kararı R3). Bu görev EX-H05, EX-H11 ve EX-H10'u ekler, **dördünün de** gerçek SQL kapsamasını yapar.
 
 **Neden entegrasyon testi:** dördü de çoklu tablo JOIN'i üzerinden ölçülür; `MockQueryable` çeviri hatalarına kördür ve bu desen bu depoda üç kez ısırmıştır (`B-15`, `X-07`, `X-04`).
 
@@ -1607,7 +1607,7 @@ public void Should_WarnOnSingleSection_NotSingleGradeLevel()
 |---|---|
 | EX-H05 | "{Öğrenci} aynı gün ve saatte başka bir sınav oturumunda." |
 | EX-H06 | "{Öğretmen} aynı gün ve saatte başka bir derslikte gözetmen." |
-| EX-H09 | "{Derslik} aynı gün ve saatte başka bir oturumda kullanılıyor." |
+| EX-H11 | "{Derslik} aynı gün ve saatte başka bir oturumda kullanılıyor." |
 | **EX-H10** | "{Derslik} için gözetmen yok — o saatte bu sınıfta dersi olan öğretmen bulunamadı." |
 
 **EX-H10 neden var (2026-09-09 tasarım incelemesinde çıktı):** teslim edilen ekran "gözetmen eksik" kartını `rooms.filter(r => !r.invigilator)` ile **istemcide** türetiyor ve sahte bir `EX-H` kodu basıyordu. Kısıt 4: ekranın uyguladığı ama sunucunun bilmediği kural yok sayılır. Gözetmensiz derslik yayını engelleyen bir koşuldur, dolayısıyla sunucunun döndürdüğü bir **sert ihlal**dir; ekran onu `violations` dizisinden çizer.
@@ -1646,7 +1646,7 @@ public async Task Should_DetectRoomUsedByAnotherSession()
 
     var violations = await Inspector(db).CheckSessionAsync(SchoolId, SecondSessionId, default);
 
-    violations.Should().Contain(v => v.Code == "EX-H09");
+    violations.Should().Contain(v => v.Code == "EX-H11");
 }
 
 [Fact]
@@ -1658,12 +1658,12 @@ public async Task Should_ProduceTurkishMessage_RegardlessOfProcessCulture()
 
     var violations = await Inspector(db).CheckSessionAsync(SchoolId, SecondSessionId, default);
 
-    violations.Single(v => v.Code == "EX-H09").Message.Should().Contain("oturumda kullanılıyor");
+    violations.Single(v => v.Code == "EX-H11").Message.Should().Contain("oturumda kullanılıyor");
 }
 ```
 
 - [ ] **Adım 2-4:** kırmızı → yaz → yeşil (`./scripts/test-changed.sh --integration --filter ExamSessionRuleTests`)
-- [ ] **Adım 5: Commit** — `git commit -am "feat(exams): EX-H05, EX-H06 ve EX-H09 sert kuralları"`
+- [ ] **Adım 5: Commit** — `git commit -am "feat(exams): EX-H05, EX-H06 ve EX-H11 sert kuralları"`
 
 ---
 
@@ -1681,7 +1681,7 @@ Kaldırılacak bir yayın kapısı **yoktur**. Yayın tarafına üç YENİ koşu
 
 1. Her `ExamRoom`'un gözetmeni var (K-20).
 2. Oturumdaki her öğrenci bir `ExamSeat`'e oturmuş.
-3. EX-H05, EX-H06, EX-H09 ihlali yok.
+3. EX-H05, EX-H06, EX-H11 ihlali yok.
 
 EX-S06 (kapasite) ve EX-S04 (karışmamış derslik) **yayını engellemez** (K-23).
 
@@ -1914,7 +1914,7 @@ public async Task Should_TagTeacherCellAsInvigilation()
 - `GET /api/v1/exams/sessions/{id}/room-candidates` · `exams.manage` →
   `[ { "roomId", "name", "capacity", "isInUse" } ]`
 
-**Kural sunucuda (Kısıt 4):** `isBusy`, EX-H06'nın **aynı yüklemiyle** hesaplanır — aynı gün ve saatte başka bir `ExamRoom`'a yazılı öğretmen. `isInUse`, EX-H09'un aynı yüklemi. Ekran bu bayrakları yalnız çizer ve düğmeyi kilitler; kendi kuralını üretmez. İki yüklem `ExamRuleInspector` içindeki tek tanımdan çağrılır — ikinci bir kopya yazılmaz.
+**Kural sunucuda (Kısıt 4):** `isBusy`, EX-H06'nın **aynı yüklemiyle** hesaplanır — aynı gün ve saatte başka bir `ExamRoom`'a yazılı öğretmen. `isInUse`, EX-H11'un aynı yüklemi. Ekran bu bayrakları yalnız çizer ve düğmeyi kilitler; kendi kuralını üretmez. İki yüklem `ExamRuleInspector` içindeki tek tanımdan çağrılır — ikinci bir kopya yazılmaz.
 
 Aday listesi **okulun bütün öğretmenleri** değildir: o gün okulda dersi olan öğretmenler öncelikli sıralanır, ama liste kısıtlanmaz — yönetici gerekirse herkesi seçebilmelidir (izinli öğretmeni sistem bilmiyor, K-24 mantığı).
 
@@ -1952,7 +1952,7 @@ public async Task Should_MarkRoomInUse_When_ClaimedByAnotherSession()
 
     var rows = await RoomHandler(db).Handle(new GetRoomCandidatesQuery(SessionId), default);
 
-    rows.Single(r => r.RoomId == SharedRoomId).IsInUse.Should().BeTrue("EX-H09 ile aynı yüklem");
+    rows.Single(r => r.RoomId == SharedRoomId).IsInUse.Should().BeTrue("EX-H11 ile aynı yüklem");
 }
 
 [Fact]
