@@ -1985,7 +1985,12 @@ public async Task Should_ExcludeRoomsAlreadyInThisSession()
 
 **Kısıt 2 burada ısırır:** işleyici `INotificationHandler<DomainEventNotification<ExamInvigilatorChangedEvent>>` olarak bağlanır. Düz `INotificationHandler<ExamInvigilatorChangedEvent>` **hiç çalışmaz** ve test yeşil görünür — bu yüzden testin kendisi sarmalayıcıyı yayınlar.
 
-`NotificationKind.ExamInvigilationChanged` Faz 1'de seed edildi; yeni tür açılmaz.
+**`NotificationKind.ExamInvigilationChanged` YOKTUR — bu görev onu YARATIR** (2026-09-09
+ön uçuş kararı R39). Spec'in ilk yazımı türü "Faz 1'de seed edildi" sayıyordu; ölçüldü,
+enum 33-39 arası yalnız `ExamWindowPublished`, `ExamPlacementReminder`, `ExamHourRequested`,
+`ExamHourAnswered`, `ExamSchedulePublished`, `ExamMoved`, `ExamTomorrow` taşıyor. Bu görev
+enum değerini (**40**), seed satırını ve göçü ekler; `PushEventKeyMap` karşılığı da gerekir.
+**"Zaten var" sanıp seed'siz bırakmak, bildirimin sessizce hiç gitmemesi demektir.**
 
 Zenginleşen içerikler: `ExamSchedulePublished` ve `ExamMoved` gövdesine derslik ve sıra girer ("9-B Sınıfı, 7. sıra").
 

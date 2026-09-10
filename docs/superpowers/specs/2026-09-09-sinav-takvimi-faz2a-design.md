@@ -345,7 +345,7 @@ Yeni tür yok. Faz 1'de tanımlı olanların davranışı:
 |---|---|
 | `ExamSchedulePublished` | İçerik derslik ve sıra ile zenginleşir |
 | `ExamMoved` | Derslik/sıra değişimi de "taşıma" sayılır; yalnız etkilenen öğrenciye gider |
-| `ExamInvigilationChanged` | **Devreye girer** — yayından sonra gözetmen değişirse o kişiye gider |
+| `ExamInvigilationChanged` | **YARATILIR** (Görev 6.1: enum değeri 40 + seed + göç). Bu belgenin ilk yazımı türü "Faz 1'de tanımlı" sanıyordu; 2026-09-09 ön uçuşunda ölçüldü, enum 33-39 arası onu **taşımıyor**. Görev 3.6 yalnız domain olayını yayar — yayından sonra gözetmen değişirse o kişiye gider |
 | `ExamReviewOpened` | Faz 2b |
 
 ---
