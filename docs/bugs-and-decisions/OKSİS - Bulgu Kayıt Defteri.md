@@ -6,8 +6,8 @@
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Son yeniden düzenleme:** 2026-09-11 — sınav bildirim dilimi
-> (`oksis-api` @ `7f716bb6`): Faz 2a Görev 6.1 bildirim dilimi — `TB-128`/`TB-129` eklendi.
-> Defter **25**.
+> (`oksis-api` @ `7f716bb6`): Faz 2a Görev 6.1 ve 8.2 — `TB-128`/`TB-129`/`X-21` eklendi.
+> Defter **26**.
 > Önceki: 2026-09-10 — bildirim altyapısı taraması
 > (`oksis-api` @ `61808d25`): §11 Bildirimler açıldı, `TB-125`/`TB-126`/`TB-127` ve
 > `E-23` eklendi. Defter **23**.
@@ -26,7 +26,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-130` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-130` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -42,11 +42,11 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 12 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 10 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 11 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **25** | |
+| **Toplam** | **26** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 8 · Sınav 1
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 9 · Sınav 1
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -303,6 +303,33 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `X-21` · Modül dokümantasyon sistemi baştan sona doldurulmamış şablon ⚪
+
+`docs/documents/modules/` altında 19 modül klasörü var ve her biri 10 dosyalık iskeletle
+açılmış. **Hiçbiri doldurulmamış:** `marks/README.md` 11, `homework/README.md` 11,
+`marks/domain-model.md` 12 `{{TBD}}` taşıyor; dosya satır sayıları modüller arasında birebir
+aynı, yani şablondan hiç ayrılmamışlar.
+
+`_MODULE_GUIDE.md` sistemi "modül bazlı **canlı** dokümantasyon" diye tarif ediyor ve
+"kullanıcı 'X modülüne Y özelliği ekle' dediğinde AI bu kurallara göre davranır" diyor.
+Pratikte kural işletilmiyor: bugüne kadar tamamlanan modüllerin (Kulüpler, Duyurular, Notlar,
+Ödevler, Sınav Faz 1) hiçbiri kendi klasörünü doldurmadı. Gerçek bilgi `docs/superpowers/specs/`
+ve `docs/superpowers/plans/` altındaki spec + plan çiftlerinde yaşıyor.
+
+2026-09-11'de Faz 2a Görev 8.2'de ölçüldü: plan "`modules/exams/README.md`'ye oturum bölümü
+ekle" diyordu, klasör **hiç yoktu**. O turda `exams/README.md` sıfırdan ve dolu yazıldı —
+19 modül içinde dolu tek dosya.
+
+Pratik anlamı: iki paralel dokümantasyon sistemi var, biri boş. Yeni gelen biri
+`modules/`'e bakıp modülün belgesiz olduğunu sanır; oysa spec'i 400 satır.
+
+⬜ Kapatma yolu **karar gerektiriyor**, bu yüzden iş olarak açılmadı: (a) `modules/` sistemini
+terk edip `_MODULE_GUIDE.md`'yi arşive almak ve spec+plan çiftini tek kaynak ilan etmek;
+(b) modül başına yalnız `README.md`'yi doldurup kalan dokuzu silmek (sınav bugün bu hâlde);
+(c) sistemi gerçekten işletmek — 19 modül × 10 dosya, büyük ve tekrarlı iş.
+**Tercih verilmeden başlamak yanlış.**
+
+---
 ### `TB-114` · KPI kartlarının değişim/eğilim verisi hiçbir uçta yok ⚪
 
 Claude Design'ın KPI kart kataloğu (`Oksis KPI Kartlari.dc.html`) her karoda üç alan
