@@ -6,8 +6,8 @@
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Son yeniden düzenleme:** 2026-09-11 — sınav bildirim dilimi
-> (`oksis-api` @ `7f716bb6`): Faz 2a Görev 6.1 ve 8.2 — `TB-128`/`TB-129`/`TB-130`/`X-21` eklendi.
-> Defter **27**.
+> (`oksis-api` @ `7f716bb6`): Faz 2a Görev 6.1 ve 8.2 — `TB-128`…`TB-131` ve `X-21` eklendi.
+> Defter **28**.
 > Önceki: 2026-09-10 — bildirim altyapısı taraması
 > (`oksis-api` @ `61808d25`): §11 Bildirimler açıldı, `TB-125`/`TB-126`/`TB-127` ve
 > `E-23` eklendi. Defter **23**.
@@ -26,7 +26,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-131` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-132` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -41,12 +41,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 13 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 14 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 11 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **27** | |
+| **Toplam** | **28** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 10 · Sınav 1
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 11 · Sınav 1
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -303,6 +303,32 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-131` · Faz 1 sınav sayaçları pencereyi okul süzmeden okuyor 🟡
+
+`ExamPlacementCounter`'ın üç Faz 1 metodu — `CountPendingRequestsAsync`,
+`GetFirstExamDateAsync`, `FindDayLimitBreachesAsync` — yalnız `examWindowId` alıyor
+(`IExamPlacementCounter`'daki imzalarda okul kimliği **hiç yok**) ve sorgularında açık
+`SchoolId` yüklemi taşımıyorlar. Tek koruma küresel süzgeç; o da `IsSuperAdmin || (...)`
+biçiminde olduğu için süper yönetici oturumunda **düşüyor**.
+
+Bunlar yayın kapısının besleyicileri: bekleyen ödünç saat isteği sayısı (`EX-H09`), ilk
+sınav tarihi (`EX-H08`) ve günlük sınav limiti (`EX-H01`). Süper yönetici bir okulu
+üstlendiğinde bu sayaçlar yabancı okulun satırlarını da görebilir; sonucu yanlış bir
+yayın engeli ya da engelin yanlış yerde düşmesidir.
+
+2026-09-11'de Faz 2a'nın kapanış düzeltmesinde ölçüldü. Aynı turda **Faz 2a'nın kendi**
+kapsam sorgularına açık yüklem eklendi (commit `68bdccdc`); açık kalan Faz 1 yüzeyi.
+Uygulayıcının süper yönetici testi bu yüzden `BeEmpty()` diyemiyor, yalnız kendi
+kodlarıyla sınırlı `NotContain` diyebiliyor — testin ifade gücü bu boşluk yüzünden kısıtlı.
+
+Kardeşi `TB-130` (`ExamCaller.ResolveAsync`). İkisi aynı sınıf: **Faz 1'in sınav yüzeyi
+tenant izolasyonunda küresel süzgece güveniyor, süper yönetici yolunda güvence yok.**
+
+⬜ Kapatma yolu: üç imzaya okul kimliğini almak ve yüklemi eklemek, sonra süper yönetici
+testini `BeEmpty()`'ye yükseltmek. `TB-130` ile **birlikte** yapılmalı — ikisi de sınav
+modülünün aynı çağrı zincirinde ve tek turda kapanırsa tek regresyon yeter.
+
+---
 ### `TB-130` · `ExamCaller.ResolveAsync` çağıranı okul süzmeden çözüyor 🟡
 
 `src/Oksis.Application/Modules/Exams/Internal/ExamCaller.cs` çağıranın `Person` satırını
