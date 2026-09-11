@@ -6,8 +6,8 @@
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Son yeniden düzenleme:** 2026-09-11 — sınav bildirim dilimi
-> (`oksis-api` @ `7f716bb6`): Faz 2a Görev 6.1 ve 8.2 — `TB-128`/`TB-129`/`X-21` eklendi.
-> Defter **26**.
+> (`oksis-api` @ `7f716bb6`): Faz 2a Görev 6.1 ve 8.2 — `TB-128`/`TB-129`/`TB-130`/`X-21` eklendi.
+> Defter **27**.
 > Önceki: 2026-09-10 — bildirim altyapısı taraması
 > (`oksis-api` @ `61808d25`): §11 Bildirimler açıldı, `TB-125`/`TB-126`/`TB-127` ve
 > `E-23` eklendi. Defter **23**.
@@ -26,7 +26,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-130` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-131` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -41,12 +41,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 12 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 13 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 11 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **26** | |
+| **Toplam** | **27** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 9 · Sınav 1
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 10 · Sınav 1
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -303,6 +303,35 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-130` · `ExamCaller.ResolveAsync` çağıranı okul süzmeden çözüyor 🟡
+
+`src/Oksis.Application/Modules/Exams/Internal/ExamCaller.cs` çağıranın `Person` satırını
+yalnız hesap bağıyla buluyor:
+
+```csharp
+db.Persons.AsNoTracking()
+  .Where(p => p.LinkedAccountId == currentUser.Id)   // açık SchoolId yüklemi YOK
+```
+
+Küresel süzgeç `IsSuperAdmin || (...)` biçiminde, yani süper yönetici için **düşüyor**.
+Süper yönetici bir okulu üstlendiğinde çağıran, hesabının bağlı olduğu **başka okuldaki**
+kişiye çözülebiliyor; o kimlikle koşan "benim sınavlarım" / "benim gözetmenliklerim"
+okumaları yanlış okulun kapsamında çalışır.
+
+Faz 1 boşluğu; 2026-09-11'de Faz 2a Görev 5.2-5.5'in uygulamasında ölçüldü. Sınav modülünün
+**yeni** okuma uçları (5.1, 5.2, 5.6) kendi açık `SchoolId` yüklemlerini taşıyor ve o yolu
+kapatıyor — hatta üç süper yönetici testi bu hâli *kullanarak* kuruluyor. Açık olan
+`ExamCaller`'ın kendisi.
+
+Sıradan kullanıcı için ısırmaz (onun küresel süzgeci düşmez); etki süper yönetici oturumuyla
+sınırlı, bu yüzden 🟠 değil 🟡.
+
+⬜ Kapatma yolu: imzaya okul kimliğini almak ve yüklemi eklemek. Uygulayıcı bilinçle
+yapmadı — **beş çağırana dokunuyor** ve o sırada aynı çalışma ağacında ikinci bir ajan
+vardı. Aynı sınıf düzeltme `R55` altında üç kez tekrarladığı için (5.1, 5.6, 5.2) kapanışın
+tek seferde ve testiyle yapılması doğru olur.
+
+---
 ### `X-21` · Modül dokümantasyon sistemi baştan sona doldurulmamış şablon ⚪
 
 `docs/documents/modules/` altında 19 modül klasörü var ve her biri 10 dosyalık iskeletle
