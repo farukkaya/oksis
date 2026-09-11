@@ -5,7 +5,10 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son yeniden düzenleme:** 2026-09-10 — bildirim altyapısı taraması
+> **Son yeniden düzenleme:** 2026-09-11 — sınav bildirim dilimi
+> (`oksis-api` @ `7f716bb6`): Faz 2a Görev 6.1 bildirim dilimi — `TB-128`/`TB-129` eklendi.
+> Defter **25**.
+> Önceki: 2026-09-10 — bildirim altyapısı taraması
 > (`oksis-api` @ `61808d25`): §11 Bildirimler açıldı, `TB-125`/`TB-126`/`TB-127` ve
 > `E-23` eklendi. Defter **23**.
 > Önceki: 2026-09-03 — Notlar ve Ödevler domain-map taramaları
@@ -23,7 +26,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-128` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-21` · `TB-130` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -39,11 +42,11 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 0 | — |
 | 🟠 Yüksek | 3 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 12 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 8 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 10 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **23** | |
+| **Toplam** | **25** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 4 · Nöbet 1 · Çapraz kesen 8 · Sınav 1
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 8 · Sınav 1
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -256,6 +259,42 @@ snapshot'ta dördü hâlâ `IsDelivered = false`.
 
 Zararı `TB-24`'ün tersi yönde: ekran çalışan bir bildirimi "henüz teslim edilmiyor" diye
 gösteriyor. ⬜ Tek satırlık seed düzeltmesi + migration (emsal: `20260828130231`).
+
+---
+
+### `TB-128` · Sınav bildirimlerinin alıcı çözümü öğrenci başına iki sorgu koşuyor ⚪
+
+`ExamNotificationAudience.StudentConsumersAsync` her öğrenci için ayrı ayrı veli çözümlemesi
+yapıyor — öğrenci sayısı kadar resolver çağrısı, her çağrı iki sorgu. Bir kelebek oturumunun
+takvimi yayınlandığında oturumdaki öğrenci sayısı yüzleri bulabilir; bildirim üretimi o anda
+lineer sayıda gidiş-dönüş yapar.
+
+2026-09-11'de Faz 2a Görev 6.1'in uygulamasında ölçüldü. Bugün ısırmıyor çünkü üretim arka
+planda (`Enqueue`) koşuyor ve kimse beklemiyor; borç, sınıf mevcudu değil **oturum mevcudu**
+büyüdükçe birikiyor.
+
+⬜ Kapatma yolu: veli çözümleyici port'una toplu bir uç eklemek
+(`ResolveGuardiansByStudentMapAsync(IEnumerable<Guid>)` → `Dictionary<Guid, Guid[]>`), çağrıyı
+tek sorguya indirmek.
+
+---
+### `TB-129` · Sınav modülünün Faz 1 bildirim işleyicileri testsiz ⚪
+
+`Modules/Exams/Events/Notifications/` altındaki üç Faz 1 işleyicisi —
+`ExamWindowPublishedNotificationHandler`, `ExamHourRequestedNotificationHandler`,
+`ExamHourAnsweredNotificationHandler` — hiçbir testte ölçülmüyor (`tests/` altında karşılık
+gelen dosya yok). Faz 2a Görev 6.1'de eklenen üç işleyicinin (`ExamInvigilatorChanged`,
+`ExamSeatingChanged`, `ExamSessionSectionsChanged`) testi var; eski üçü boşlukta.
+
+2026-09-11'de Görev 6.1'in ön uçuşunda ölçüldü, kapsam genişlemesi olacağı için o göreve
+alınmadı.
+
+Pratik anlamı: bu üçünün alıcı kümesi, eşiği ve gövde metni yalnız kod okumasıyla
+doğrulanmış durumda. Bir refactor sessizce kitleyi daraltsa ya da bildirimi hiç üretmese
+paket yeşil kalır.
+
+⬜ Kapatma yolu: Görev 6.1'in `ExamSessionNotificationTests` deseni birebir uygulanabilir —
+sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yaklaşık altı test.
 
 ---
 
