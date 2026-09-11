@@ -94,6 +94,12 @@ değiştirmez, yalnız üstüne katman ekler.
 - `IsExcluded`: yöneticinin çıkardığı derslik silinmez, işaretlenir; yeniden türetme
   onu görür ve atlar. Dördüncü bir tablo açmamanın sebebi budur — dışlama, dersliğin
   kendi hâlidir.
+- **Çıkarma gözetmeni de boşaltır** (Görev 3.5, 2026-09-10): `Exclude()` `IsExcluded`'ı
+  yazarken `ClearInvigilator()` de çağırır. Gerekçe: çıkarılmış bir dersliğin gözetmeni
+  "görevli" görünmeye devam ederse öğretmen takvimine ve gözetmenlik bildirimine ölü bir
+  satır düşer, üstelik yayın kapısının delik sayımı o kişiyi dolu sayarak gerçek bir deliği
+  gizleyebilir. Dersliği geri almak (`Include()`) gözetmeni **geri getirmez** — yeniden
+  türetme ya da elle atama gerekir.
 
 Kapasite kopyalanmaz; kural denetiminde `Room.Capacity` okunur (omurga spec'i §3.5 ile aynı
 gerekçe).
@@ -253,7 +259,16 @@ tablosu — değişenler kalın:
 | EX-H05 | Sert | Öğrenci aynı gün ve saatte tek oturumda, tek derslikte, tek sırada | Netleşti |
 | EX-H06 | Sert | Bir öğretmen aynı gün ve saatte tek derslikte gözetmen | Türetme bunu üretemez; **elle doldurmada ısırır** |
 | EX-H07 | Sert | Aynı dönemde pencere çakışması | **Oturum yarısı çıkarıldı** |
+| **EX-H10** | Sert | Dersliğin gözetmeni yok | **Yeni** (2026-09-09 tasarım incelemesi) |
 | **EX-H11** | Sert | Bir derslik aynı gün ve saatte tek oturuma ait | **Yeni** |
+| **EX-H12** | Sert | Oturumda sıraya oturamamış öğrenci var | **Yeni** (Görev 4.3, 2026-09-11) |
+| EX-H08 | Sert | Takvim yayını ilk sınava ≥ N gün — gerekçeyle geçilir | Aynen |
+| EX-S01 | Yumuşak | Aynı şubeye art arda iki gün sınav | Aynen |
+| ~~EX-S02~~ | — | ~~Dersin öğretmeni kendi öğrencisinin dersliğinde gözetmen~~ | **Kaldırıldı** |
+| ~~EX-S03~~ | — | ~~Gözetmen yükü dengesizliği~~ | **Kaldırıldı** (K-19) |
+| EX-S04 | Yumuşak | Bir dersliğe tek şubeden öğrenci düştü | Seviye değil **şube** ölçülür |
+| EX-S05 | Yumuşak | Yerleşmemiş şube × ders varken yayın | Aynen |
+| **EX-S06** | Yumuşak | Derslikte kapasite aşıldı | **Yeni** (K-23) |
 
 **Neden EX-H09 değil (2026-09-09 kararı R34).** Bu belgenin ilk yazımında kural `EX-H09`
 diye numaralandırılmıştı; **o kod Faz 1'de zaten kullanımda** — `ExamRuleInspector` onu
@@ -266,14 +281,6 @@ Derslik çakışması **EX-H11**'dir. `EX-H10` gözetmensiz dersliktir.
 değil: `ClassRoom.RoomId`'de benzersiz dizin yoktur, yani iki şube ev dersliğini paylaşabilir
 ve **türetilmiş derslikler de çakışabilir**. Yüklem `!IsExcluded` süzmelidir — çıkarılmış
 satır oturumun aktif kümesinde değildir ve sayılırsa yanlış pozitif üretir.
-| **EX-H10** | Sert | Dersliğin gözetmeni yok | **Yeni** (2026-09-09 tasarım incelemesi) |
-| EX-H08 | Sert | Takvim yayını ilk sınava ≥ N gün — gerekçeyle geçilir | Aynen |
-| EX-S01 | Yumuşak | Aynı şubeye art arda iki gün sınav | Aynen |
-| ~~EX-S02~~ | — | ~~Dersin öğretmeni kendi öğrencisinin dersliğinde gözetmen~~ | **Kaldırıldı** |
-| ~~EX-S03~~ | — | ~~Gözetmen yükü dengesizliği~~ | **Kaldırıldı** (K-19) |
-| EX-S04 | Yumuşak | Bir dersliğe tek şubeden öğrenci düştü | Seviye değil **şube** ölçülür |
-| EX-S05 | Yumuşak | Yerleşmemiş şube × ders varken yayın | Aynen |
-| **EX-S06** | Yumuşak | Derslikte kapasite aşıldı | **Yeni** (K-23) |
 
 **Tablodaki kuralların çoğu Faz 1'de HİÇ YAZILMADI (2026-09-09 kararı R47).** Ön uçuşta
 koddan ölçüldü: `ExamRuleInspector` yalnız **altı** kural taşıyor — `EX-H01`, `EX-H03`,
@@ -302,11 +309,19 @@ kurulumda uyarı basardı; susturulmayı öğrenilen uyarı, uyarı olmaktan ç�
 
 Faz 1'in koşullarına (`ExamRuleInspector.CheckPublishAsync`) ek olarak:
 
-- Her `ExamRoom`'un gözetmeni var (K-20) — eksikse EX-H10.
-- Oturumdaki her öğrenci bir `ExamSeat`'e oturmuş — yerleşim üretilmiş ve eksiksiz.
+- Her `ExamRoom`'un gözetmeni var (K-20) — eksikse **EX-H10**.
+- Oturumdaki her öğrenci bir `ExamSeat`'e oturmuş — eksikse **EX-H12**.
 - EX-H11 ve EX-H05 ihlali yok.
 
 EX-S06 (kapasite) ve EX-S04 (karışmamış derslik) yayını **engellemez**, panoda görünür.
+
+**EX-H12 neden yeni bir numara aldı (Görev 4.3, 2026-09-11).** Boşta duran `EX-H02`,
+`EX-H04`, `EX-H07` kodları ödünç alınmadı: o kodlar "boş" değil, **hiç yazılmamış**
+kurallara ait (R47) ve biri sonradan yazıldığında ödünç veren kod iki anlama gelirdi.
+
+**EX-S04 pencere kapsamına alınmadı (Görev 4.3).** Karışım olgusu derslik başına
+gruplanıyor; pencere kapsamında iki ayrı oturumun aynı odası birleşir ve uyarı tam
+gerektiği yerde susar. Doğrusu olgu sözleşmesini değiştirmeyi gerektiriyor — ayrı iş.
 
 ---
 
@@ -353,7 +368,9 @@ Ders rengi yine sunucuya alınmaz; K-13 (deterministik `subjectColorIndex` palet
 
 ## 9. Bildirimler
 
-Yeni tür yok. Faz 1'de tanımlı olanların davranışı:
+**Bir yeni tür var** (`ExamInvigilationChanged`, aşağıda); geri kalanı Faz 1'de
+tanımlı olanların davranış değişikliğidir. *(Bu paragraf 2026-09-11'de düzeltildi: eski hâli
+"Yeni tür yok" diyerek tablonun kendi satırıyla çelişiyordu — Görev 6.1'in ön uçuşu yakaladı.)*
 
 | Kind | Faz 2a'da |
 |---|---|
