@@ -340,10 +340,24 @@ ve platform yüzeyi kısa devre kalkınca da çalışır. Arka plan işleri zate
 muafiyet değildir"). Göç aracının tasarım zamanı bağlamı (`OksisDbContextFactory`)
 `IsSuperAdmin => true` sabitliyor; o EF aracıdır, ürün yolu değil.
 
-⬜ Kapatma yolu **karar ve kendi ölçüm turu gerektiriyor** — Faz 2a kapsamında değil:
-(a) kısa devreyi kaldır, süper yönetici tenant verisini ancak bir okulu ÜSTLENEREK görsün;
-(b) kısa devreyi "platform kapsamı" diye adlandırılmış dar bir varlık kümesine indir;
-(c) rol tanımını değiştir (kullanıcı bunu reddetti).
+**Kararlar alındı (2026-09-13):**
+- Yol **(a)**: kısa devre kalkacak; süper yönetici tenant verisini ancak bir okulu
+  ÜSTLENEREK görecek.
+- **Üstlenme okulun ONAYINA bağlı olacak:** okul yöneticisi "destek erişimi aç" demeden
+  OKSİS personeli okulun iç verisine giremez. Üstlenme sessiz bir metot değil, gerekçeli ve
+  izli bir olaydır.
+- **Zamanlama:** Faz 2a kapanışından sonra, kendi turunda. Faz 2a'nın içine alınmadı.
+
+Rol tanımı `docs/documents/permission-matrix.md §1.1`'e yazıldı.
+
+⬜ Turun ilk adımı ÖLÇÜMDÜR, kod değil: bugün süper yönetici kimliğiyle koşan ve **birden
+çok okula** dokunan akışların çıkarılması (destek paneli, platform raporları, okullar arası
+sweep'ler) ve `IgnoreQueryFilters()` kullanan yerlerin taranması. Kısa devre bunlar
+bilinmeden kaldırılırsa sessizce boş dönen ekranlar üretir.
+
+⬜ İkinci adım izin kümesinin TERSİNE kurulması: bugün "hepsi eksi 24". Doğrusu sıfırdan
+başlayıp platformun işinin gerektirdiğini eklemek — bunun için önce **platform izin modülü**
+açılmalı (`schools.*`, `tenants.*`, `support.*`); bugün katalogda hiç yok.
 
 Kaldırmadan önce ölçülmesi gerekenler: bugün süper yönetici kimliğiyle koşan ve **birden
 çok okula** dokunan akışlar (destek paneli, platform raporları, okullar arası sweep'ler)
