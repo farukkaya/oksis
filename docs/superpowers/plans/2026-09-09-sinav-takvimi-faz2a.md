@@ -2179,6 +2179,48 @@ Her sınav kartına derslik adı ve sıra numarası eklenir. Ayrıntı yayınlan
 
 ---
 
+### Görev 7.9: Web — yöneticinin oturum kurması **(2026-09-12'de eklendi)**
+
+**Files:** `apps/web/features/exam/board/*` (Görev 7.4 ile aynı ekran, genişler),
+`packages/api/src/exam/session-endpoints.ts` (genişler)
+
+**Neden var:** sunucudaki `CreateExamSession` (Görev 3.1, `POST /api/v1/exams/sessions`,
+izin `exams.manage`) ürüne hiçbir yerden çağrılmıyordu — oturum yalnız öğretmenin
+yerleştirmesiyle doğuyordu. Çağrılmayan uç arkasındaki izin ve sözleşme kusurlarını da
+saklar; `TB-132`.
+
+**Sözleşme — sunucudan birebir:**
+
+```ts
+// POST /api/v1/exams/sessions → ExamSessionSummaryDto
+createExamSession(input: {
+  windowId: string
+  courseId: string
+  date: string      // YYYY-MM-DD
+  period: number
+  sectionIds: string[]   // ŞUBE (ClassRoom) kimlikleri — fiziksel derslik DEĞİL
+}): Promise<ExamSessionSummary>
+```
+
+**Derslik ve gözetmen komutta YOKTUR** (K-19) — ikisi de sunucuda türetilir. Ekran
+yöneticiye derslik ya da gözetmen seçtirmeye kalkmaz; yalnız hücreyi (ders × gün × saat)
+ve giren şubeleri sorar. Bu, Görev 7.3'ün öğretmen tarafındaki `ExamSessionSlotPicker`
+akışının yönetici ikizidir; bileşen paylaşılabiliyorsa paylaşılsın.
+
+- [ ] **Adım 1: Durum matrisini kur** (R8) — `loading / empty / error` + "ders seçilmedi"
+      + "şube seçilmedi" + "hücre dolu (EX-H05 çakışması)" + "yayınlanmış pencere
+      (gerekçe zorunlu, en az 15 karakter)".
+- [ ] **Adım 2: Uç fonksiyonunu yaz** — `session-endpoints.ts`'e `createExamSession`;
+      mutasyon `exam-session` ve `exam-board` anahtarlarını geçersizleştirir.
+- [ ] **Adım 3: Ekranı yaz** — panonun boş hücresinden "Oturum kur".
+- [ ] **Adım 4: Gerçek uçla doğrula** — oturumu kur, panoda kartın doğduğunu ve oturum
+      ayrıntısının açıldığını gör; `exams.manage` izni olmayan bir hesapla düğmenin
+      görünmediğini **ve uca çağrı yapılırsa 403 döndüğünü** gör.
+- [ ] **Adım 5:** `npm run typecheck && npm run lint`
+- [ ] **Adım 6: Commit** — `git commit -am "feat(web): yöneticinin oturum kurma akışı"`
+
+---
+
 # Dilim 8 — Kapanış
 
 ### Görev 8.1: Uçtan uca doğrulama ve örnek veri

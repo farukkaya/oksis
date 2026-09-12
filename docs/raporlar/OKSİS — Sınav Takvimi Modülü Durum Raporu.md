@@ -3,7 +3,7 @@
 > **Yaşayan belge.** Sınav takvimi modülünün fazları arasında "nerede kaldık"
 > sorusunun tek cevabı. Her oturum sonunda güncellenir; tarihli kopya çıkarılmaz.
 >
-> **Son güncelleme:** 2026-09-11 · **Yazan:** Claude Opus 5 (1M context)
+> **Son güncelleme:** 2026-09-12 · **Yazan:** Claude Opus 5 (1M context)
 
 ---
 
@@ -13,12 +13,25 @@
 |---|---|---|---|
 | **Faz 1** — Ders saatinde sınav | Pencere, yerleştirme, pano, iki adımlı yayın, etiket katmanı, takvimler | ✅ **Bitti, merge edildi** | `master` (üç depoda) |
 | **Faz 2a** — Oturum ve yerleşim (sunucu) | `ExamSession`/`ExamRoom`/`ExamSeat`, besteci, komutlar, kurallar, okuma uçları, bildirim | ✅ **Sunucu tarafı 26/26 bitti** | `oksis-api` dalı `feature/exam-session` |
-| **Faz 2a** — İstemci | Dilim 7 (8 görev) + Görev 8.1 uçtan uca doğrulama | ⬜ **Hiç başlanmadı** | `oksis-ui` dalı `feature/exam-session` (boş) |
+| **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | 🟡 **3/9 — 7.1 ve 7.2 bitti, 7.3 tarayıcı doğrulaması bekliyor** | `oksis-ui` dalı `feature/exam-session` |
 | **Faz 2b** — Çıktılar ve yoklama | Kapı listesi, oturma planı, gözetmen çizelgesi, gözetmen yoklaması, görüş penceresi | ⬜ Beyin fırtınası yapılmadı | — |
 | **Faz 3** — Otomatik dağıtıcı | Derslik ve gözetmeni öneren Hangfire işi | ⬜ Kapsam kilitli, planlanmadı | — |
 
-**Bir sonraki oturumun işi: Dilim 7 + Görev 8.1.** Tahmini 13–19 saat etkin çalışma
-(§5). Sunucu tarafı tamamen hazır ve yeşil; istemci gerçek uca bağlanabilir.
+**Bir sonraki oturumun işi: Görev 7.3'ün tarayıcı doğrulaması, sonra 7.4–7.9 ve 8.1.**
+Kalan tahmin **11–16 saat** etkin çalışma. Sunucu tarafı hazır ve yeşil, istemcinin
+`core` + `api` katmanı da hazır; ekranlar gerçek uca bağlanabilir.
+
+### Dal ve ağaç topolojisi (2026-09-12'de sadeleştirildi)
+
+| Depo | Dal | Ağaç |
+|---|---|---|
+| `oksis-api` | `feature/exam-session` (46 commit, master'a alınmadı) | `~/Repositories/oksis-api` |
+| `oksis-ui` | `feature/exam-session` (5 commit) | **`~/Repositories/worktrees/oksis-ui-faz2a`** — istemci işi burada |
+| `oksis-ui` | `master` | `~/Repositories/oksis-ui` |
+| `oksis-ui` | `chore/test-env` | `~/Repositories/oksis-ui-testenv` |
+
+`codex/faz2a-ui` dalı `feature/exam-session`'a katılıp silindi. İstemci worktree'si
+`/private/tmp`'den çıkarıldı — sistem geçici dizini periyodik temizleniyordu.
 
 ---
 
@@ -85,17 +98,18 @@ enum değil. Ekran bunu olduğu gibi çizer.
 **Plan:** `docs/superpowers/plans/2026-09-09-sinav-takvimi-faz2a.md`, satır 2043'ten
 itibaren. Her görevden önce `handoff-web` (mobil görevlerde `handoff-mobile`) skill'i.
 
-| Görev | Tahmin | Not |
-|---|---|---|
-| 7.1 `packages/core` — oturum tipleri + saf mantık | 0,5–1 s | Faz 1'de `groupExamsByDay` çakışması yaşandı; yeni adlar `Session` önekli |
-| 7.2 `packages/api` — uçlar + query'ler | 1–1,5 s | Codegen turu |
-| 7.3 Web — yerleştirme ekranı oturum modu | 1,5–2 s | Var olan `exam-place-screen.tsx` (325 satır) genişler |
-| 7.4 Web — pano oturum görünümü | 1,5–2 s | `exam-board-screen.tsx` (975 satır); `lessonHour` modunda kart **hiç görünmez** (Kısıt 15) |
-| **7.5 Web — oturum ayrıntısı ekranı (YENİ)** | **4–6 s** | İşin üçte biri: iki sütun, 7 modal, 9 durumluk matris, 3 uyumsuzluk |
-| 7.6 Web — ders programı sınav etiketi | 0,5–1 s | Faz 1 etiketi genişler |
-| 7.7 Mobil — öğrenci/veli takvimine derslik + sıra | 1–1,5 s | `exam-schedule-screen.tsx` (591 satır); **ekran içi başlık yok** (kullanıcı kararı) |
-| 7.8 Öğretmen gözetmenlik takvimi (web + mobil) | 1,5–2 s | Tek görev, iki platform |
-| 8.1 Uçtan uca doğrulama ve örnek veri | 1–2 s | Altı adım; bulgu çıkarsa maliyeti bu tahminin dışında |
+| Görev | Durum | Tahmin | Not |
+|---|---|---|---|
+| 7.1 `packages/core` — oturum tipleri + saf mantık | ✅ `e63b61a` | — | `session.ts` 97 satır; tipler sunucu DTO'larıyla alan alan birebir |
+| 7.2 `packages/api` — uçlar + query'ler | ✅ `d5dcfc8` | — | 10 uç yolunun 10'u sunucu rotalarıyla birebir; `schema.ts` HEAD'den taze |
+| 7.3 Web — yerleştirme ekranı oturum modu | 🟡 `128ed5f` | 0,5 s | Kod yazıldı, test/typecheck/lint yeşil; **tarayıcı doğrulaması yapılmadı** |
+| 7.4 Web — pano oturum görünümü | ⬜ | 1,5–2 s | `exam-board-screen.tsx` (975 satır); `lessonHour` modunda kart **hiç görünmez** (Kısıt 15) |
+| **7.5 Web — oturum ayrıntısı ekranı (YENİ)** | ⬜ | **4–6 s** | İşin üçte biri: iki sütun, 7 modal, 9 durumluk matris, 3 uyumsuzluk |
+| 7.6 Web — ders programı sınav etiketi | ⬜ | 0,5–1 s | Faz 1 etiketi genişler |
+| 7.7 Mobil — öğrenci/veli takvimine derslik + sıra | ⬜ | 1–1,5 s | `exam-schedule-screen.tsx` (591 satır); **ekran içi başlık yok** (kullanıcı kararı) |
+| 7.8 Öğretmen gözetmenlik takvimi (web + mobil) | ⬜ | 1,5–2 s | Tek görev, iki platform |
+| **7.9 Web — yöneticinin oturum kurması** | ⬜ | 1,5–2 s | 2026-09-12'de eklendi (`TB-132`); `CreateExamSession` ürüne hiç bağlanmamıştı |
+| 8.1 Uçtan uca doğrulama ve örnek veri | ⬜ | 1–2 s | Altı adım; bulgu çıkarsa maliyeti bu tahminin dışında |
 
 ### Görev 7.5'in üç uyumsuzluğu — sunucu kazanır, ekran uyarlanır
 
@@ -142,6 +156,13 @@ npm run codegen -w packages/api
 **Dev ortam:** API `:5112` · Web `:3000` · seed hesapları `s1`'den başlar,
 ders programı verisi `s3`'te.
 
+> **Not (2026-09-12):** Yukarıdaki üç adım, ekranı **host'taki** geliştirme sunucusunda
+> açmak içindir. `chore/test-env` dalındaki `./scripts/test-env.sh <ref>` betiği aynı işi
+> container'da yapar: istenen ref'i (dal/etiket/SHA) .NET API + Next web + Expo Metro
+> olarak ayağa kaldırır ve çalışma dizinine hiçbir şey yazmaz. Görev 8.1'in ekran
+> doğrulaması ve paralel ajan koşuları için host sunucusuyla yarışmaktan iyidir.
+> Dal henüz master'a alınmadı.
+
 ---
 
 ## 6. Kullanıcı kararı bekleyen üç şey
@@ -151,6 +172,7 @@ ders programı verisi `s3`'te.
 | `TB-130` | `ExamCaller.ResolveAsync` çağıranı okul süzmeden çözüyor 🟡 | Faz 1'in sınav yüzeyinde tenant yüklemi eksik |
 | `TB-131` | Faz 1 sınav sayaçları pencereyi okul süzmeden okuyor 🟡 | `CountPendingRequestsAsync`, `GetFirstExamDateAsync`, `FindDayLimitBreachesAsync` yalnız `examWindowId` alıyor |
 | `X-21` | Modül dokümantasyon sistemi baştan sona doldurulmamış şablon ⚪ | 19 modülün doküman klasörü boş — sistemi terk mi, modül başına yalnız README mi, yoksa 19×10 dosya gerçekten doldurulsun mu? |
+| `TB-132` | Yöneticinin oturum kurma komutunun ekranı yok 🟡 | **Karara bağlandı (2026-09-12):** plana Görev 7.9 olarak eklendi |
 | — | `EX-S04`'ün pencere kapsamına alınması | Olgu sözleşmesi değişikliği gerektiriyor; Faz 2b'de mi? |
 
 **`TB-130` ve `TB-131` birlikte, tek turda, testleriyle kapatılmalı** — ikisi de aynı
