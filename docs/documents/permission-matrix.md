@@ -8,7 +8,7 @@
 
 | Kod | Tanım | Tenant Scope |
 |---|---|---|
-| `SuperAdmin` | OKSİS firma yöneticisi | Cross-tenant (sistem geneli) |
+| `SuperAdmin` | OKSİS personeli — platform yaşam döngüsü | **Okul dışı.** Okul verisine ancak ÜSTLENEREK ve okulun onayıyla (bkz. §1.1) |
 | `SchoolAdmin` | Okul müdürü / yönetici | Tek okul |
 | `SchoolStaff` | Müdür yardımcısı, koordinatör | Tek okul |
 | `Teacher` | Öğretmen | Tek okul |
@@ -16,6 +16,50 @@
 | `Student` | Öğrenci | Tek okul |
 | `Secretary` | Sekreter / idari | Tek okul (sınırlı) |
 | `Accountant` | Muhasebe | Tek okul (sadece finans) |
+
+### 1.1 `SuperAdmin` — tanım (2026-09-13 kullanıcı kararı)
+
+> Süper Yönetici rolü aslında OKSİS'in kendi personeli olacak. Yeni okul kaydı, mevcut
+> okullar, destek paneli yönetimi gibi konularda aktif olacak; **okulların tamamını
+> görebilen bir üst rol değildir. Okulların iç işlerindeki süreçleri görmeyecekler.**
+
+**Ayrım:** "okulu yönetmek" ile "okulları yönetmek" aynı iş değildir. Okul müdürü okulunu
+yönetir (yoklama, not, sınav, kulüp). OKSİS personeli okulun kendisini değil, **okulun
+sistemdeki varlığını** yönetir. `SuperAdmin` müdürün büyüğü DEĞİL, başka bir meslektir —
+bu yüzden yetkisi müdürün yetkisinin üst kümesi olarak tanımlanamaz.
+
+**Yaptığı iş** dört öbektir:
+1. **Okul kaydı:** yeni okulu açmak, okul kodu, ilk yöneticinin daveti, kademe/sezon iskeleti.
+2. **Mevcut okullar:** liste, durum (aktif/askıda/arşiv), lisans, kullanım, modül açma-kapama.
+   Bunlar okul HAKKINDA veridir, okulun içindeki veri değil.
+3. **Destek:** bir okulun sorununu görebilmek — üstlenme yoluyla, aşağıdaki kapıyla.
+4. **Platform ayarları:** bütün okulları ilgilendiren, tek okulun kararı olmayan ayarlar
+   (`files.policies.manage`, `school-settings.manage-authority`).
+
+**Yapmadığı iş:** okulun yoklamasını almaz, notunu girmez, sınavını kurmaz, duyurusunu
+yayınlamaz. Okulların verisini **yan yana görmez** — öyle bir ihtiyaç varsa adı RAPORdur,
+kimliği ayrıdır ve kişisel veri taşımaz.
+
+**Destek erişimi okulun ONAYINA bağlıdır (2026-09-13 kararı).** Okul yöneticisi "destek
+erişimi aç" demeden OKSİS personeli okulun iç verisini göremez. Üstlenme sessiz bir teknik
+ayrıntı değil, gerekçeli ve izli bir OLAYdır.
+
+**Kime verilir:** OKSİS'in kendi personeline ve az kişiye. Pratikte iki görev var
+(operasyon ve destek) ve ikisi aynı yetkiye ihtiyaç duymuyor; tek rolde tutulmaları MVP
+kararıdır, hedef değil.
+
+> **⚠️ KOD BU TANIMLA HENÜZ UYUŞMUYOR — `TB-139`.** Ölçüldü (2026-09-13):
+> izin kataloğunda **platform modülü yok** (25 modülün hepsi okul içi, `schools.create` /
+> `tenants.*` / `support.*` diye bir izin bulunmuyor); `SuperAdmin` 101 izin taşıyor ve
+> bunun yalnız **2 tanesi** `SchoolAdmin`de yok. Çıkarılmış 24 izin tamamen YAZMA
+> yetkileridir — sınır bir kez çizilmeye başlanmış, okuma tarafında durmuş: rol hâlâ
+> `grades.read`, `attendance.read`, `students.view-detail`, `files.view` taşıyor. Üstüne
+> `OksisDbContext.ApplyTenantFilter`'daki `IsSuperAdmin ||` kısa devresi okul sınırını da
+> kaldırıyor. Pratik sonucu: **OKSİS personeli bugün bütün okullardaki bütün öğrencilerin
+> notunu, devamsızlığını ve kimlik ayrıntısını okuyabiliyor.** Düzeltme Faz 2a kapanışından
+> sonra kendi turunda yapılacak (kullanıcı kararı 2026-09-13).
+
+---
 
 > **⚠️ MVP seed = 5 rol (2026-06-05, Issue #1).** Backend `system_roles` seed'i MVP'de yalnızca şu 5 rolü içerir: **`SuperAdmin, SchoolAdmin, Teacher, Parent, Student`**. `SchoolStaff`, `Secretary`, `Accountant` (ve eski seed'deki `VicePrincipal`/`Counselor`) **henüz seed'de yok**; MVP sonrasına ertelendi. Bu tablodaki ve aşağıdaki matristeki o sütunlar **hedef/gelecek durumu** dokümante eder — runtime'da bu roller atanamaz. Yeni rol eklendiğinde seed (`SystemRoleSeedData`/`RolePermissionSeedData`) + bu matris birlikte güncellenir. Detay: `modules/identity/completion_status.md → Spec Dışına Çıkılanlar`.
 
