@@ -303,6 +303,26 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-132` · Yöneticinin oturum kurma komutunun ekranı yok 🟡
+
+Sunucuda `POST /api/v1/exams/sessions` (`CreateExamSession`, Faz 2a Görev 3.1,
+izin `exams.manage`) var; yöneticinin kelebek oturumunu **elle** kurmasını sağlıyor.
+İstemcide bu uca ne bir fonksiyon ne de bir ekran var, ve Faz 2a planının Dilim 7'sinde
+de yoktu. Üründe oturum yalnız öğretmenin yerleştirmesiyle doğuyor.
+
+2026-09-12'de Codex'in ürettiği `session-endpoints.ts` denetlenirken bulundu: on uç
+yolunun onu da sunucuyla birebir eşleşiyordu, eksik olan tek şey bu uçtu — yani
+uygulayıcının atlaması değil, planın kendisinin boşluğu.
+
+[[eksik-ekran-eksik-yetkiyi-gizler]]: çağrılmayan uç, arkasındaki izin ve sözleşme
+kusurlarını da saklar. Komut yazıldı ve testlendi ama hiçbir gerçek çağrıyla
+doğrulanmadı; `exams.manage` kapısının bu uçta doğru davrandığı ekran üzerinden
+hiç ölçülmedi.
+
+⬜ Kapatma yolu: 2026-09-12 kullanıcı kararıyla plana **Görev 7.9** olarak eklendi —
+panodan yöneticinin oturum kurması. Görev bitince bu madde kapanır.
+
+---
 ### `TB-131` · Faz 1 sınav sayaçları pencereyi okul süzmeden okuyor 🟡
 
 `ExamPlacementCounter`'ın üç Faz 1 metodu — `CountPendingRequestsAsync`,
