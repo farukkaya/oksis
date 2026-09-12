@@ -13,12 +13,12 @@
 |---|---|---|---|
 | **Faz 1** — Ders saatinde sınav | Pencere, yerleştirme, pano, iki adımlı yayın, etiket katmanı, takvimler | ✅ **Bitti, merge edildi** | `master` (üç depoda) |
 | **Faz 2a** — Oturum ve yerleşim (sunucu) | `ExamSession`/`ExamRoom`/`ExamSeat`, besteci, komutlar, kurallar, okuma uçları, bildirim | ✅ **Sunucu tarafı 26/26 bitti** | `oksis-api` dalı `feature/exam-session` |
-| **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | 🟡 **3/9 — 7.1 ve 7.2 bitti, 7.3 tarayıcı doğrulaması bekliyor** | `oksis-ui` dalı `feature/exam-session` |
+| **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | 🟡 **3/9 — 7.1, 7.2, 7.3 bitti** | `oksis-ui` dalı `feature/exam-session` |
 | **Faz 2b** — Çıktılar ve yoklama | Kapı listesi, oturma planı, gözetmen çizelgesi, gözetmen yoklaması, görüş penceresi | ⬜ Beyin fırtınası yapılmadı | — |
 | **Faz 3** — Otomatik dağıtıcı | Derslik ve gözetmeni öneren Hangfire işi | ⬜ Kapsam kilitli, planlanmadı | — |
 
-**Bir sonraki oturumun işi: Görev 7.3'ün tarayıcı doğrulaması, sonra 7.4–7.9 ve 8.1.**
-Kalan tahmin **11,5–17 saat** etkin çalışma (§4 tablosunun toplamı). Sunucu tarafı hazır ve yeşil, istemcinin
+**Bir sonraki oturumun işi: 7.4–7.9 ve 8.1.** Kalan tahmin **11–16,5 saat** etkin
+çalışma (§4 tablosunun toplamı). Sunucu tarafı hazır ve yeşil, istemcinin
 `core` + `api` katmanı da hazır; ekranlar gerçek uca bağlanabilir.
 
 ### Dal ve ağaç topolojisi (2026-09-12'de sadeleştirildi)
@@ -102,7 +102,7 @@ itibaren. Her görevden önce `handoff-web` (mobil görevlerde `handoff-mobile`)
 |---|---|---|---|
 | 7.1 `packages/core` — oturum tipleri + saf mantık | ✅ `e63b61a` | — | `session.ts` 97 satır; tipler sunucu DTO'larıyla alan alan birebir |
 | 7.2 `packages/api` — uçlar + query'ler | ✅ `d5dcfc8` | — | 10 uç yolunun 10'u sunucu rotalarıyla birebir; `schema.ts` HEAD'den taze |
-| 7.3 Web — yerleştirme ekranı oturum modu | 🟡 `128ed5f` | 0,5 s | Kod yazıldı, test/typecheck/lint yeşil; **tarayıcı doğrulaması yapılmadı** |
+| 7.3 Web — yerleştirme ekranı oturum modu | ✅ `7f0dde3` | — | Tarayıcıda uçtan uca doğrulandı; üç kusur bulunup düzeltildi (§4.1) |
 | 7.4 Web — pano oturum görünümü | ⬜ | 1,5–2 s | `exam-board-screen.tsx` (975 satır); `lessonHour` modunda kart **hiç görünmez** (Kısıt 15) |
 | **7.5 Web — oturum ayrıntısı ekranı (YENİ)** | ⬜ | **4–6 s** | İşin üçte biri: iki sütun, 7 modal, 9 durumluk matris, 3 uyumsuzluk |
 | 7.6 Web — ders programı sınav etiketi | ⬜ | 0,5–1 s | Faz 1 etiketi genişler |
@@ -110,6 +110,34 @@ itibaren. Her görevden önce `handoff-web` (mobil görevlerde `handoff-mobile`)
 | 7.8 Öğretmen gözetmenlik takvimi (web + mobil) | ⬜ | 1,5–2 s | Tek görev, iki platform |
 | **7.9 Web — yöneticinin oturum kurması** | ⬜ | 1,5–2 s | 2026-09-12'de eklendi (`TB-132`); `CreateExamSession` ürüne hiç bağlanmamıştı |
 | 8.1 Uçtan uca doğrulama ve örnek veri | ⬜ | 1–2 s | Altı adım; bulgu çıkarsa maliyeti bu tahminin dışında |
+
+### 4.1 · Görev 7.3'ün tarayıcı doğrulamasında çıkan üç kusur (2026-09-12, düzeltildi)
+
+Üçü de ekranı **kullanılamaz** bırakıyordu; hiçbiri birim testiyle yakalanamazdı.
+
+1. **Pencere seçici yoktu.** `pickExamPlacementWindow` ilk açık pencereyi alıyordu; Faz 1
+   penceresi açıkken öğretmen kelebek penceresine **hiç ulaşamıyordu**. Dönem içinde birden
+   çok pencerenin açık olması olağan. `resolveExamPlacementWindow` + şeritte seçici eklendi.
+2. **Oturum saati ızgarası öğretmende olmayan izne bağlıydı.** Zil çizelgesi ucu
+   `school-settings.view` ister; modal "Zil çizelgesi yüklenemedi" diyor ve düğme hiç
+   açılmıyordu. Izgara Faz 1'in kullandığı `slots` ucuna (`exams.place`) taşındı — K-17
+   korunuyor, kural core'da tek yerde (`sessionPeriodOptions`).
+3. **Derslik türetilemediğinde özet "gözetmenler tamam" diyordu.** Boşluk sayısı sıfırdı
+   çünkü doldurulacak derslik yoktu; sırasız kalan öğrenci de hiç görünmüyordu.
+
+**Ayrıca iki ön koşul plan dışıydı ve bulundu:**
+- Oturum modu pencere kurma modalinde ve ayarlarda **kapalıydı** (Faz 1 kilidi). Sunucu
+  kapısı Görev 4.1'de kaldırılmıştı ama ekran tarafı Dilim 7'nin hiçbir görevinde yoktu →
+  arayüzden kelebek penceresi kurulamıyordu (`bd95af5`).
+- `s2`'de **hiç fiziksel derslik yoktu ve şubelerin `room_id`'si NULL'dı** → oturum kuruluyor
+  ama 0 derslik / 0 sıra türüyordu (`TB-120` alanı). Dev verisi tamamlandı; sonraki oturum
+  `[[dev-ortam-giris-bilgileri]]`'ne bakmalı.
+
+**Doğrulanan zincir:** oturum modunda pencere aç → yayınla → öğretmen yerleştirir → oturum
+doğar → derslik şubenin ev dersliğinden türer → sıralar serpiştirmeyle üretilir → gözetmen
+ders programından atanır. Türkçe oturumu: 1 şube, 1 derslik, 7 sıra, 1 gözetmen.
+
+---
 
 ### Görev 7.5'in üç uyumsuzluğu — sunucu kazanır, ekran uyarlanır
 
@@ -173,6 +201,7 @@ ders programı verisi `s3`'te.
 | `TB-131` | Faz 1 sınav sayaçları pencereyi okul süzmeden okuyor 🟡 | `CountPendingRequestsAsync`, `GetFirstExamDateAsync`, `FindDayLimitBreachesAsync` yalnız `examWindowId` alıyor |
 | `X-21` | Modül dokümantasyon sistemi baştan sona doldurulmamış şablon ⚪ | 19 modülün doküman klasörü boş — sistemi terk mi, modül başına yalnız README mi, yoksa 19×10 dosya gerçekten doldurulsun mu? |
 | `TB-132` | Yöneticinin oturum kurma komutunun ekranı yok 🟡 | **Karara bağlandı (2026-09-12):** plana Görev 7.9 olarak eklendi |
+| `TB-133` | Yerleştirme saatleri sorgusu pencereyi okul süzmeden okuyor 🟡 | `TB-130`/`TB-131` ile aynı sınıf, aynı turda kapatılmalı |
 | — | `EX-S04`'ün pencere kapsamına alınması | Olgu sözleşmesi değişikliği gerektiriyor; Faz 2b'de mi? |
 
 **`TB-130` ve `TB-131` birlikte, tek turda, testleriyle kapatılmalı** — ikisi de aynı
