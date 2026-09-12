@@ -3,7 +3,7 @@
 > **Yaşayan belge.** Sınav takvimi modülünün fazları arasında "nerede kaldık"
 > sorusunun tek cevabı. Her oturum sonunda güncellenir; tarihli kopya çıkarılmaz.
 >
-> **Son güncelleme:** 2026-09-12 · **Yazan:** Claude Opus 5 (1M context)
+> **Son güncelleme:** 2026-09-13 · **Yazan:** Claude Opus 5 (1M context)
 
 ---
 
@@ -13,13 +13,31 @@
 |---|---|---|---|
 | **Faz 1** — Ders saatinde sınav | Pencere, yerleştirme, pano, iki adımlı yayın, etiket katmanı, takvimler | ✅ **Bitti, merge edildi** | `master` (üç depoda) |
 | **Faz 2a** — Oturum ve yerleşim (sunucu) | `ExamSession`/`ExamRoom`/`ExamSeat`, besteci, komutlar, kurallar, okuma uçları, bildirim | ✅ **Sunucu tarafı 26/26 bitti** | `oksis-api` dalı `feature/exam-session` |
-| **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | 🟡 **3/9 — 7.1, 7.2, 7.3 bitti** | `oksis-ui` dalı `feature/exam-session` |
+| **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | ✅ **BİTTİ — 9/9 + 8.1** | `oksis-ui` dalı `feature/exam-session-client` |
 | **Faz 2b** — Çıktılar ve yoklama | Kapı listesi, oturma planı, gözetmen çizelgesi, gözetmen yoklaması, görüş penceresi | ⬜ Beyin fırtınası yapılmadı | — |
 | **Faz 3** — Otomatik dağıtıcı | Derslik ve gözetmeni öneren Hangfire işi | ⬜ Kapsam kilitli, planlanmadı | — |
 
-**Bir sonraki oturumun işi: 7.4–7.9 ve 8.1.** Kalan tahmin **11–16,5 saat** etkin
-çalışma (§4 tablosunun toplamı). Sunucu tarafı hazır ve yeşil, istemcinin
-`core` + `api` katmanı da hazır; ekranlar gerçek uca bağlanabilir.
+**Faz 2a BİTTİ.** Sunucu 26/26, istemci 9/9, uçtan uca doğrulama koşuldu. Sırada
+`TB-130`/`TB-131`/`TB-133` turu ve Faz 2b beyin fırtınası var (§6, §7).
+
+### Görev 8.1 — uçtan uca doğrulama (2026-09-13)
+
+Altı adımın beşi gerçek arayüzde koşuldu; biri kısmen ve sebebi aşağıda.
+
+| Adım | Sonuç |
+|---|---|
+| Oturum modunda pencere aç, sınavları aynı saate yerleştir | ✅ Öğretmen yolundan (Cem Kılıç) ve yönetici yolundan (Görev 7.9) |
+| **İki oturumu birleştir**, derslikler birleşsin, öğrenciler karışsın | ✅ Aynı hücredeki iki Matematik oturumu birleşti: **4 şube · 4 derslik · 31 öğrenci**, sürüm v1→v2, kaynak oturum silindi. Her derslikte `10-B ×2 11-A ×2 11-B ×2 12-B ×2`; sıra listesi dört şubeyi dönüşümlü diziyor — yan yana hiçbir öğrenci kendi şubesinden değil. `R32`'nin onayı hangi oturumun KALACAĞINI ve hangisinin SİLİNECEĞİNİ ad vererek söyledi |
+| Gözetmen deliği yarat, yayın engellensin; deliği doldur, geçsin | 🟡 **Yayın engeli ve kalkması doğrulandı** ama `EX-H10` üzerinden değil, `EX-H12` (sırasız öğrenci) üzerinden: dersliksiz oturum yayını engelledi, yeniden üretme derslikleri türetti, engel kalktı, takvim yayınlandı. **`EX-H10` arayüzden tetiklenemedi** — türetme dışarıdan deterministik olarak boş düşürülemiyor (o saatte yayınlanmış dersi olmayan şubelerin dersliklerine bile gözetmen türedi). Kural sunucu entegrasyon testlerinde ölçülü ve ekran ihlal listesini sunucudan olduğu gibi çiziyor |
+| Öğrenci ve veli mobilden derslik ve sırayı görsün | ✅ **Gerçek Android cihazda** (Xiaomi M2003J15SC). Öğrenci: 11-B Dersliği sıra 3 + "kendi sınıfında değil" ipucu. Veli: şeritte çocuğun adı, 10-A Dersliği sıra 1 |
+| Öğretmen gözetmenlik satırını ve "Gözetmen" rozetini görsün | ✅ Web ve cihazda görev listesi; ders programında dersi olmayan saatte "MATEMATİK 3. SINAV · Gözetmen · 10-B Dersliği" |
+| Bulguları deftere işle | ✅ `TB-132`…`TB-138` |
+
+**Dilim 7 + 8.1 turunda çıkan yedi bulgu:** `TB-132` (yöneticinin oturum kurma ekranı
+yoktu → Görev 7.9), `TB-133` (yerleştirme saatleri sorgusu okul süzmüyor), `TB-134`
+(tasarım "elle gözetmen korunmaz" diyordu, sunucu tersini yapıyor), `TB-135` (pencere
+kendi döneminin dışına kurulabiliyor), `TB-136` 🟠 (öğretmen kendi programında okulun
+BÜTÜN etiketlerini görüyordu), `TB-137` ve `TB-138` (diyalog yerleşimi ve metni).
 
 ### Dal ve ağaç topolojisi (2026-09-12'de sadeleştirildi)
 
