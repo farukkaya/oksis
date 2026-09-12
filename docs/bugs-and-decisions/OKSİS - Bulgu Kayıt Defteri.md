@@ -303,6 +303,31 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-133` · Yerleştirme saatleri sorgusu pencereyi okul süzmeden okuyor 🟡
+
+`GetPlacementSlotsQueryHandler` (Faz 1) pencereyi yalnız kimlikle buluyor:
+
+```csharp
+var window = await db.ExamWindows.AsNoTracking()
+    .FirstOrDefaultAsync(w => w.Id == request.WindowId, cancellationToken);
+```
+
+`windowId` istemciden geliyor ve sorguda açık `SchoolId` yüklemi yok. Tek koruma
+küresel süzgeç; o da `IsSuperAdmin || (...)` biçiminde olduğu için süper yönetici
+oturumunda **düşüyor**. Handler pencereyi bulduktan sonra `window.AcademicTermId` ile
+şubenin hücrelerini okuyor — yani yabancı okulun penceresi, yabancı dönemin
+hücrelerini çekebilir.
+
+2026-09-12'de Görev 7.3'ün tarayıcı doğrulamasında, oturum saati ızgarasının hangi uçtan
+besleneceği araştırılırken görüldü. `TB-130` ve `TB-131` ile **aynı sınıf**: Faz 1'in
+sınav yüzeyi tenant izolasyonunda küresel süzgece güveniyor, süper yönetici yolunda
+güvence yok.
+
+⬜ Kapatma yolu: yükleme `w.SchoolId == schoolId` eklemek (handler `tenant.CurrentSchoolId`'yi
+zaten okuyor, üç satır yukarıda) ve süper yönetici testini yazmak. `TB-130` + `TB-131` ile
+**aynı turda** kapatılmalı — üçü de sınav modülünün aynı çağrı zincirinde.
+
+---
 ### `TB-132` · Yöneticinin oturum kurma komutunun ekranı yok 🟡
 
 Sunucuda `POST /api/v1/exams/sessions` (`CreateExamSession`, Faz 2a Görev 3.1,
