@@ -303,6 +303,40 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-137` · Oturum diyaloglarında gerekçe alanı eylem listesinin altında kalıyordu ⚪
+
+Gözetmen, derslik ekleme ve birleştirme diyaloglarında eylem düğmesi ayakta değil
+**listenin içindedir** ("Seç" / "Ekle" / satır seçimi) ve takvim yayındayken gerekçe
+boşken kapalıdır. Gerekçe alanı listenin ALTINA yerleştirilmişti: yönetici on altı
+satırlık derslik listesinde kapalı "Ekle" düğmesine basıyor, sebebi ekranın
+kaydırılmamış alt kısmında duruyordu.
+
+Tasarım bu üç diyalogda gerekçeyi listeden ÖNCE koyuyordu; ortak diyalog kabuğu
+yazılırken alan sabit biçimde sona alınmış ve fark gözden kaçmıştı.
+
+2026-09-13'te Görev 8.1'in uçtan uca doğrulamasında görüldü.
+
+✅ Kapatıldı: `DialogShell`e `reasonFirst` eklendi, üç liste diyaloğu onu kullanıyor.
+
+---
+### `TB-138` · "Derslik ekle" metni gözetmenin türemeyeceğini söylüyordu ⚪
+
+Diyalog şunu yazıyordu: *"Burada eklenen derslik kimsenin sınıfı değildir: gözetmenini
+yönetici yazar."* Yanlış. Yönetici aday listesinden **gerçek bir şube dersliği** seçer
+(liste okulun dersliklerinden gelir) ve türetme o derslikte ders yapan öğretmeni
+bulabilir. Doğrulamada elle eklenen 10-A Dersliği'ne **Kübra Aslan türetildi**.
+
+Toast da aynı yanlışı taşıyordu ("gözetmeni elle yazılmalı").
+
+`TB-134`'ün ailesinden: tasarımın kural hakkındaki cümlesi sunucunun davranışıyla
+uyuşmuyordu ve ekran o cümleyi kopyalamıştı. Faz 2a'da bu dördüncü örnek — plan tasarımın
+ÜÇ uyumsuzluğunu listeliyordu, gerçek sayı beş.
+
+✅ Kapatıldı 2026-09-13: metin ikisini de söylüyor ("türeyebilir de türemeyebilir de; yoksa
+delik kalır ve yayından önce elle yazılır"), toast artık gözetmen hakkında iddia kurmuyor —
+türemediyse satır zaten "Gözetmen eksik" rozetiyle ve `EX-H10` ile görünür.
+
+---
 ### `TB-136` · Öğretmen kendi programında okulun BÜTÜN sınav etiketlerini görüyordu 🟠
 
 `GetExamBadgesQueryHandler` kapsamı şöyle kuruyordu:
