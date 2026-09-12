@@ -18,7 +18,7 @@
 | **Faz 3** — Otomatik dağıtıcı | Derslik ve gözetmeni öneren Hangfire işi | ⬜ Kapsam kilitli, planlanmadı | — |
 
 **Bir sonraki oturumun işi: Görev 7.3'ün tarayıcı doğrulaması, sonra 7.4–7.9 ve 8.1.**
-Kalan tahmin **11–16 saat** etkin çalışma. Sunucu tarafı hazır ve yeşil, istemcinin
+Kalan tahmin **11,5–17 saat** etkin çalışma (§4 tablosunun toplamı). Sunucu tarafı hazır ve yeşil, istemcinin
 `core` + `api` katmanı da hazır; ekranlar gerçek uca bağlanabilir.
 
 ### Dal ve ağaç topolojisi (2026-09-12'de sadeleştirildi)
