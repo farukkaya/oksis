@@ -303,6 +303,53 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-139` · Küresel tenant süzgeci süper yöneticiyi BÜTÜN okullara açıyor 🔴
+
+**Kullanıcı kararı (2026-09-13) rolü şöyle tarif etti:**
+
+> Süper Yönetici rolü aslında OKSİS'in kendi personeli olacak. Yeni okul kaydı, mevcut
+> okullar, destek paneli yönetimi gibi konularda aktif olacak; **okulların tamamını
+> görebilen bir üst rol değildir. Okulların iç işlerindeki süreçleri görmeyecekler.**
+
+Kod bunun tersini yapıyor. `OksisDbContext.ApplyTenantFilter`:
+
+```csharp
+IsSuperAdmin || (CurrentSchoolId.HasValue && e.SchoolId == CurrentSchoolId)
+```
+
+`IsSuperAdmin` süzgeci **tamamen kısa devre ediyor**. Ölçüldü:
+
+- Süzgeç `IHasTenant` uygulayan HER varlığa takılıyor; `TenantEntity`/`PermanentTenantEntity`
+  türeten **90 varlık** var — pratikte okul veri modelinin tamamı.
+- `IsSuperAdmin` yalnız JWT'deki `SuperAdmin` rol talebidir.
+- `OverrideForSuperAdmin(schoolId)` bir okulu "üstlenmeyi" sağlıyor ama **`IsSuperAdmin`
+  true kalıyor**, yani üstlenme kapsamı DARALTMIYOR: süper yönetici bir okulu üstlenmişken
+  de doksan varlığın hepsinde bütün okulların satırlarını görmeye devam ediyor.
+- Yazma tarafında da aynı muafiyet var:
+  `TenantSaveChangesInterceptor` → `!tenantContext.IsSuperAdmin && entry.Entity.SchoolId != ...`
+
+**Bu bulgu `TB-130`, `TB-131` ve `TB-133`'ün kök nedenidir.** O üçü "açık `SchoolId` yüklemi
+yok" diye işlenmişti; yüklemin neden gerektiği ise bu satır. Üçünü kapatmak doğru ve
+gereklidir (yüklem aynı zamanda sorgunun KAPSAMINI tutar — `M17` dersi), ama sınav modülünü
+düzeltmek sorunu çözmez: aynı açık diğer modüllerde de duruyor ve oralarda hiç aranmadı.
+
+**Kaldırmanın önündeki engel ölçüldü, sanıldığı kadar büyük değil:**
+`School` varlığı `IHasTenant` DEĞİL (`AggregateRoot, IAuditableEntity`), yani okul listesi
+ve platform yüzeyi kısa devre kalkınca da çalışır. Arka plan işleri zaten
+`CurrentSchoolId`'yi okula eşitliyor (`SessionMaterializer` notu: "IsSuperAdmin burada bir
+muafiyet değildir"). Göç aracının tasarım zamanı bağlamı (`OksisDbContextFactory`)
+`IsSuperAdmin => true` sabitliyor; o EF aracıdır, ürün yolu değil.
+
+⬜ Kapatma yolu **karar ve kendi ölçüm turu gerektiriyor** — Faz 2a kapsamında değil:
+(a) kısa devreyi kaldır, süper yönetici tenant verisini ancak bir okulu ÜSTLENEREK görsün;
+(b) kısa devreyi "platform kapsamı" diye adlandırılmış dar bir varlık kümesine indir;
+(c) rol tanımını değiştir (kullanıcı bunu reddetti).
+
+Kaldırmadan önce ölçülmesi gerekenler: bugün süper yönetici kimliğiyle koşan ve **birden
+çok okula** dokunan akışlar (destek paneli, platform raporları, okullar arası sweep'ler)
+ve `IgnoreQueryFilters()` kullanan yerler.
+
+---
 ### `TB-137` · Oturum diyaloglarında gerekçe alanı eylem listesinin altında kalıyordu ⚪
 
 Gözetmen, derslik ekleme ve birleştirme diyaloglarında eylem düğmesi ayakta değil
