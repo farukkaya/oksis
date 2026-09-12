@@ -303,6 +303,35 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-135` · Sınav penceresi kendi döneminin dışına kurulabiliyor 🟡
+
+`CreateExamWindowCommandHandler` pencerenin `StartDate`/`EndDate`'ini bağlı olduğu
+`AcademicTerm`'ün sınırlarına karşı **doğrulamıyor**. Dev verisinde üç pencereden ikisi
+dönemin dışında — biri Faz 1'in kendi seed'inden geliyor:
+
+| Pencere | Tarih | Dönem | |
+|---|---|---|---|
+| 1. Sınav | 21–25 Eyl | 17 Ağu – 30 Eyl | içinde |
+| 2. Sınav | 28 Eyl – 2 Eki | 17 Ağu – 30 Eyl | **dışında** |
+| 3. Sınav | 5–9 Eki | 17 Ağu – 30 Eyl | **dışında** |
+
+**Sonucu sessiz:** sınav makinesi çalışmaya devam ediyor, çünkü derslik/gözetmen türetmesi
+ve `GetPlacementSlots` tarihi değil **haftanın gününü** kullanıyor — dönemin yayınlanmış
+programından okuyorlar. Ama ders programı EKRANI dönemin dışındaki haftayı hiç çizmiyor
+("Bu hafta dönemin dışında"). Yani o pencerede kurulan sınav:
+
+- oturum olarak kuruluyor, derslik ve gözetmen türüyor, pano gösteriyor;
+- ama öğrencinin/öğretmenin **ders programında hiç görünmüyor** — etiket katmanının
+  ulaşamadığı bir tarihte duruyor.
+
+2026-09-12'de Görev 7.6'nın tarayıcı doğrulamasında bulundu: gözetmenlik etiketini
+doğrulamak için öğretmenin programına gidildi, hafta dönemin dışında çıktı.
+
+⬜ Kapatma yolu: pencere kurma ve revizyonunda tarih aralığının döneme sığdığını doğrula
+(`EX-` kural kodu gerektirmez, `Result.Conflict` yeter). Ayrıca **dev seed'indeki 2. Sınav
+penceresi de düzeltilmeli** — seed yanlış örneği çoğaltıyor.
+
+---
 ### `TB-134` · Oturum tasarımı "elle gözetmen korunmaz" diyor, sunucu tersini yapıyor ⚪
 
 Faz 2a oturum ayrıntısı tasarımı (`web/exam-session.jsx`) iki yerde şunu yazıyor:
