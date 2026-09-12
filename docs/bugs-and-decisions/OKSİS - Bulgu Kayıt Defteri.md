@@ -303,6 +303,38 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-134` · Oturum tasarımı "elle gözetmen korunmaz" diyor, sunucu tersini yapıyor ⚪
+
+Faz 2a oturum ayrıntısı tasarımı (`web/exam-session.jsx`) iki yerde şunu yazıyor:
+
+> Elle yazılan gözetmen **yeniden üretmede korunmaz**.
+
+Sunucu tam tersini yapıyor. `ExamInvigilatorDeriver` başlığında yazılı:
+
+> **Yöneticinin eli ezilmez (Kısıt 19):** `InvigilatorSource.Manual` olan derslik ATLANIR
+> — ne üzerine yazılır, ne delik sayılır.
+
+`PUT /rooms/{id}/invigilator` belgesi de aynı şeyi söylüyor: "Yazılan gözetmen her zaman
+'elle' işaretlenir ve **yeniden besteleme onu bozmaz**."
+
+2026-09-12'de Görev 7.5'in tarayıcı doğrulamasında görüldü: elle yazılan gözetmen
+(Hatice Doğan) yeniden üretmeden sonra yerinde durdu, oysa ekranın onay metni silineceğini
+söylüyordu.
+
+**Neden önemli:** yanlış olan metin yöneticiyi *yanlış yöne* iter. "Korunmaz" okuyan
+yönetici, gözetmen deliğini doldurduktan sonra yerleşimi yeniden üretmekten kaçınır —
+oysa güvenle üretebilir. Kuralı ekranın uydurması değil, ekranın sunucunun yapmadığı bir
+kuralı **anlatması** hâli. Krş. [[kural-ekranda-degil-sunucuda]] — bu onun aynadaki hâli.
+
+Plan Görev 7.5'te tasarımın **üç** uyumsuzluğunu listeliyordu (gerekçe eşiği 10 vs 15,
+`EX-S07` vs `EX-S06`, gözetmen deliğinin istemcide hesaplanması); bu **dördüncüsü** ve
+plan onu görmemişti.
+
+✅ Kapatıldı 2026-09-12: iki metin de sunucunun davranışına çevrildi — gözetmen diyaloğunun
+bilgi kutusu ve yeniden üretme onayının kontrol satırı artık "korunur" diyor ve gerekçesini
+(türetme o dersliği atlar) yazıyor.
+
+---
 ### `TB-133` · Yerleştirme saatleri sorgusu pencereyi okul süzmeden okuyor 🟡
 
 `GetPlacementSlotsQueryHandler` (Faz 1) pencereyi yalnız kimlikle buluyor:
