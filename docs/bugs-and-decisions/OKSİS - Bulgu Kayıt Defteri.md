@@ -303,6 +303,53 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-136` · Öğretmen kendi programında okulun BÜTÜN sınav etiketlerini görüyordu 🟠
+
+`GetExamBadgesQueryHandler` kapsamı şöyle kuruyordu:
+
+```csharp
+var canSeeAnySection =
+    await permissions.HasPermissionAsync("exams.manage", ...)
+    || await permissions.HasPermissionAsync("exams.place", ...);
+...
+else if (!canSeeAnySection)   // ← öğretmen kolu
+{
+    query = query.Where(x => x.OwnerTeacherId == teacherId || ...);
+}
+```
+
+**`exams.place` HER öğretmende vardır.** Dolayısıyla `canSeeAnySection` öğretmende her
+zaman `true` ve öğretmen kolu **hiç çalışmıyordu**. Şube istenmediğinde (kendi haftalık
+programı; `schedule-read-page` `sectionId` göndermez) sorgu **hiç süzülmüyor** ve okulun
+tarih aralığındaki bütün yerleşmiş sınavları dönüyordu.
+
+Ekrandaki hâli: beş şubeli bir kelebek oturumunun beş etiketi, o şubelerin hiçbirini
+okutmayan öğretmenin tek hücresine üst üste biniyordu.
+
+İznin adı doğru, kullanımı yanlıştı: `canSeeAnySection` "istediğim şubeyi **sorabilirim**"
+demektir; "şube sormadığımda **hepsini görürüm**" demez. İlki `request.SectionId` kapısıdır
+ve orada doğru kullanılıyor.
+
+**Testin neden yakalamadığı ayrıca öğretici.** `ExamBadgeSessionModeTests` izin okuyucusunu
+şöyle kuruyordu — kendi yorumuyla:
+
+> Çağıran ne idaredir ne yerleştirici… İzin okuyucusu bu yüzden ikisine de "hayır" der.
+
+Yani test, **üründe var olamayan** bir kişiyi modelliyordu: `exams.place`'i olmayan bir
+öğretmen. Fikstür gerçek rolün izinlerini taşımayınca, role bağlı bir dal test edilmiş
+görünüp hiç koşmuyor.
+
+2026-09-13'te Görev 7.6'nın tarayıcı doğrulamasında bulundu.
+
+✅ Kapatıldı: kapsam dalı `!canSeeAnySection` kapısından çıkarıldı — şube istenmediğinde
+kapsam her zaman çağıranın kendisidir. Fikstüre `canPlace` eklendi ve gerçek öğretmeni
+modelleyen test yazıldı (`Should_ScopeToOwnRows_When_CallerIsTeacherWithPlacePermission`);
+düzeltmeden önce kırmızı olduğu görüldü.
+
+**Ders:** rol davranışını ölçen testin fikstürü, o rolün ÜRÜNDEKİ izinlerini taşımalı.
+Krş. [[eksik-ekran-eksik-yetkiyi-gizler]] — bunun test tarafındaki eşi.
+
+---
 ### `TB-135` · Sınav penceresi kendi döneminin dışına kurulabiliyor 🟡
 
 `CreateExamWindowCommandHandler` pencerenin `StartDate`/`EndDate`'ini bağlı olduğu
