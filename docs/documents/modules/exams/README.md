@@ -33,6 +33,22 @@ sınav günü **yoklaması** (`attendance`; kelebek oturumunda nasıl tutulacağ
 > Tam yetki matrisi için bkz. `permission-matrix.md` (proje kökü). Modülün izinleri:
 > `exams.manage`, `exams.place`, `exams.read`, `exams.report`.
 
+**`exams.place` 2026-09-12'de okul yöneticisine de verildi** (göç
+`20260912174958`). Sebebi: yönetici kelebek oturumunu elle kurabiliyor
+(`CreateExamSession`, izin `exams.manage`) ama oturumun konabileceği ders
+saatlerini okuyamıyordu — o ızgara `GetPlacementSlots`'tan gelir ve o sorgu
+`exams.place` ister. Tek alternatif okulun zil çizelgesiydi; o kaynak "okulda
+kaçıncı ders var" der, **"bu şube o saatte okulda mı" demez**, dolayısıyla
+yönetici şubenin okulda olmadığı saate oturum kurabilir ve hata ancak yayın
+anında `EX-H10` ile çıkardı.
+
+İznin açtığı altı uçtan yalnız biri yeni davranıştır. `GetMyExamPlacements` ve
+`ListHourRequests` yöneticide **boş** döner (sahip olduğu sınav yoktur);
+`PlaceExam`, `RequestExamHour` ve `AnswerHourRequest` sahiplik kapısında
+reddedilir (`ExamPlacementLoader`: `exam.OwnerTeacherId == caller`). Sahipliği
+atlayan tek yol `MoveExam`'in `ignoreOwnership`'idir ve o zaten `exams.manage`'e
+bağlıdır.
+
 ---
 
 ## İki yerleştirme modu
