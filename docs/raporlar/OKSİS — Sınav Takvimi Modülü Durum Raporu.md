@@ -313,10 +313,11 @@ dersliğin sıra × sütun düzeni · şube dersliğinin zorunlu kılınması (`
 
 ### Faz 2b'den önce
 
-⬜ **`TB-140` kısa turu** (kullanıcı kararı 2026-09-13): yoklama ve duyuru modüllerinin
-çağıran çözümleyicileri okul süzmüyor — `TB-130`'un ikizleri. *Not: bu kararın ilk
-gerekçesi "Faz 2b'nin yoklama köprüsü bu yüzeyin üstüne kurulacak" idi; 1 numaralı kararla
-köprü kapsamdan çıktı, yani turun aciliyeti düştü ama bulgu geçerliliğini koruyor.*
+✅ **`TB-140` turu bitti** (2026-09-13, `oksis-api` @ `1905abbc`). Yoklama ve duyuru
+modüllerinin çağıran çözümleyicileri okul yüklemine bağlandı; ölçüm defterin sayısını yine
+aştı (21 dosya değil **35 çağrı**, üç modül) ve kapsam büyüdü: kaynak kontrolü yapan dokuz
+okuma ile mazeret uygulayıcısının yazma yolu da yüklem aldı. Testi önce kırmızı doğrulandı;
+koşum birim 2603 + 427 + 7, entegrasyon 1386/1386. Ayrıntı defterde.
 
 ⬜ **`EX-S04`'ün pencere kapsamına alınması** — olgu sözleşmesi değişikliği gerektiriyor;
 Faz 2b'nin içinde mi, ayrı mı, hâlâ açık.

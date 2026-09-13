@@ -7,7 +7,8 @@
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Son ekleme:** 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
 > (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
-> bugün erişilemez olduğu ölçümü eklendi. Defter **36**.
+> bugün erişilemez olduğu ölçümü eklendi. `TB-140` aynı gün kapandı
+> (`oksis-api` @ `1905abbc`). Defter **35**.
 > **Son yeniden düzenleme:** 2026-09-13 — belge merkezi yeniden yapılandırması
 > (`oksis-api` @ `294ffe6`): `X-21` kapandı ([[OKSİS - Bulgu Arşivi]] §45); özet tablosu ve
 > sıradaki boş ID başlıklar sayılarak yeniden hesaplandı. Defter **35**.
@@ -47,12 +48,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 13 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **36** | |
+| **Toplam** | **35** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 20 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 19 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -337,10 +338,48 @@ db.Persons.AsNoTracking().Where(p => p.LinkedAccountId == accountId)
 çalışan üründe hiçbir zaman `true` olmuyor; yani bu yüklemler bugün kimsenin görmediği bir
 kapıyı açık bırakıyor. Rol talebi JWT'ye eklendiği gün üç modül birden açılır.
 
-⬜ Kapanış yolu `TB-130` ile aynı: imzaya `schoolId` ekle, çağıranları bağla, testi önce
-kırmızı doğrula. **`TB-130` dersi geçerli:** yukarıdaki sayılar bir tarif değil işarettir;
-tur başında yeniden ölç (`TB-130`'da 5 denilen çağıran 14, `TB-131`'de 3 denilen metot 7
-çıktı).
+✅ Kapatıldı 2026-09-13 (`oksis-api` @ `1905abbc`) — **yol saptı, kapsam büyüdü.**
+
+**Ölçüm yine defteri aştı.** Yukarıda "21 dosya" yazıyordu; gerçek sayı **35 çağrı noktası,
+üç modül**: `AttendanceCallerResolver.ResolveMyPersonIdAsync` **20** (Attendance 19 +
+Documents 1), `AnnouncementCallerResolver.ResolveMyPersonIdAsync` **8**,
+`GetAmendmentWindowHoursAsync` **7**.
+
+**Yol farkı — okul imzaya DEĞİL, `ITenantContext`'e bağlandı.** `TB-130`'da `ExamCaller`'ın
+imzasına `Guid schoolId` eklenmişti; burada eklenmedi, çünkü ölçüldü: 35 çağrının **12'si**
+tenant bağlamını hiç enjekte etmiyordu. Okulu parametre yapmak o on iki sınıfa YENİ bir
+"okul yok" hata yolu eklemek demekti; okul çözümleyicinin içinde okununca cevap zaten var
+olan *"çağıran çözülemedi"* dalına düşüyor ve hiçbir uç yeni bir hata kodu öğrenmiyor.
+Emsal `TB-131` (`ExamPlacementCounter`). Düzeltme penceresi okuması da aynı yolu izliyor;
+okul yoksa `0` döner, yani pencere **kapalı** sayılır — yabancı okulun geniş penceresi
+burada düzeltmeyi açamaz.
+
+**Kapsam büyümesi — kimliği süzmek yetmedi.** `attendance.manage` sahibi bir çağıran için
+kimlik kapısı zaten atlanıyor; yabancı okulun oturumu kimlikle istendiğinde hâlâ okunurdu.
+Kaynak kontrolü yapan **dokuz okuma** açık okul yüklemi aldı: `SubmitAttendance`,
+`AmendRecord`, `CreateAmendmentRequest`, `DecideAmendmentRequest`, `DecideExcuse`,
+`OpenOrGetSession`, `RemindTeacher`, `GetSessionRoster`, `GetRecordHistory`. Ayrıca
+`ExcuseApprovalApplier.ApplyManyAsync` (**yazma yolu**): yüklemsiz hâlde tarih aralığındaki
+BÜTÜN okulların tamamlanmış oturumlarını belleğe alıyordu — `M17` dersinin birebir
+tekrarı.
+
+**Test:** `AttendanceTenantScopeTests` düzeltmeden ÖNCE kırmızı doğrulandı
+(`leaked.IsSuccess` **True** çıktı) ve "önce durum" aynı testte yeşildi — ölçülen şey
+"hep 404" değil. **Koşum:** birim 2603 + 427 + 7 mimari bekçi; entegrasyon **1386/1386**
+(Garage ve ClamAV konteynerleri ayağa kaldırılarak — onlarsız 46 test ortam yüzünden
+kırmızı düşüyor, kodla ilgisi yok).
+
+⬜ **Kalan, ölçüldü ama daraltılmadı:** `src/Oksis.Application` içinde `db.SchoolSettings`
+okumalarının **53'ünden 30'u** açık yüklemli; kalanı denetlenmedi. Olay ve DTO yolundaki
+beş okuma (`AttendanceSubmittedNotificationHandler`, `AmendmentRequestDtoBuilder`,
+`GetStudentToday`, `GetTeacherDailySessions`, Timetable `PublishedScheduleQueryHandler`)
+kimlik listesinden besleniyor; ikisi doğrulandı (liste okul süzülü bir kaynaktan geliyor),
+üçü ölçülmedi.
+
+**Kusur DEĞİL, kayda geçsin:** `SubjectUsageInspector`'ın on `AnyAsync` kontrolünün hiçbiri
+okul süzmüyor ve **süzmemeli** — `Subject` bir `MasterEntity`'dir; "bu master kaydı hangi
+tablolar tüketiyor" sorusu okullar üstüdür. Yüklem eklenirse A okulu, B okulunun kullandığı
+dersi silebilir. (`TB-130` turunda `ExamType` için aynı karar verilmişti.)
 
 ---
 ### `TB-139` · Küresel tenant süzgeci süper yöneticiyi BÜTÜN okullara açıyor 🔴
