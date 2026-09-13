@@ -33,7 +33,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-145` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-146` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -48,12 +48,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 5 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **38** | |
+| **Toplam** | **39** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 22 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 23 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +310,35 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-145` · "Sınav haftası" duyurusu okulun tamamına değil, tek şubeye gidiyor 🟡
+
+`NotificationKind.ExamWindowPublished`'ın kendi dokümanı iki yerde okul geneli diyor:
+
+> *"Alıcı okulun üç yüzü birden: öğrenci ve veli 'sınav haftası şu tarihlerde' bilgisini
+> alır; öğretmen aynı cümleyle 'yerleştirme açıldı' haberini alır."*
+> *"Push YOK — gerekçe fan-out'tur: tek işlemde **okulun tamamına** gider…"*
+
+**Kod okulun tamamına göndermiyor.** `ExamWindowPublishedNotificationHandler` alıcı kümesini
+BEKLENEN SINAV kümesinden (`ExamExpectationReader`) türetiyor: yalnız o pencerede sınavı
+beklenen şubelerin öğrenci/velileri ve o sınavların sorumlu öğretmenleri.
+
+Ölçüldü (2026-09-13, ekran testi, `s2` 1. Dönem penceresi): pencere yayınlandığında **25**
+bildirim doğdu ve öğrenci tarafındaki alıcıların tamamı **tek şubedendi (11-A)** — çünkü o
+dönemde beklenen 10 şube × ders çiftinin hepsi 11-A'nın. Ders programında 1. Dönem'de altı
+şube (10-A, 10-B, 11-A, 11-B, 12-A, 12-B) olmasına rağmen 11-B öğrencisi
+(`ogrenci.s2.001`) haberi hiç almadı. Testi yapan kişi "bildirim düşmedi" diye okudu;
+düşmemesi doğruydu ama sebebi belgede yazmıyor.
+
+**Neden önemli:** ② `ExamSchedulePublished`'ın doküman cümlesi *"`ExamWindowPublished`'dan
+DARDIR — yalnız sınavı olan şubeler"* diyor. İkisi aynı kapsamı kullanıyorsa bu ayrım
+yoktur; ① push'un kapsam dışı bırakılma gerekçesi (okul geneli fan-out) da gerçeğe
+dayanmıyor — gerçek fan-out tek şube kadar.
+
+⬜ **Karar gerekiyor:** ya kapsam okul geneline çıkarılır (o zaman push gerekçesi de doğru
+olur), ya iki tipin doküman cümleleri gerçeğe çekilir ve "dar/geniş" ayrımı kaldırılır.
+Ürün kararıdır: *sınavı olmayan şube "sınav haftası" haberini almalı mı?*
+
+---
 ### `TB-144` · Taslak kartı ihlal sayısı gösteriyor ama açılacak yeri yok ⚪
 
 Taslak pencerenin kartında **"1 İhlal"** yazıyor; panoya girince ekran
