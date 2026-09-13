@@ -266,10 +266,34 @@ Anahtar `ExamRoom.Id`'dir; tek oturumda ikisi zaten aynıdır (`EX-H11`).
 `PublishExamSchedule` çağıranı `ExamCaller` yerine kendi kopyasıyla, okul yüklemsiz
 çözüyordu.
 
-### Kalan
+### Dilim 5 — uçtan uca doğrulama (2026-09-13)
 
-⬜ **Dilim 5 — uçtan uca tarayıcı doğrulaması.** Sunucu ve istemci bitti; senaryo
-(§ Dilim 5) gerçek arayüzde koşulmadı.
+**Koşulan zincir (gerçek dev verisi, `s2` okulu, oturum modlu pencere):**
+görüşe aç → öğretmen listesi → yorum bırak → yayın ön kontrolü → çöz → ön kontrol
+yeniden → gözetmen çizelgesi.
+
+| Adım | Sonuç |
+|---|---|
+| Görüşe aç | ✅ Pencere kartındaki düğmeden; tarihler **okulun ayarından** türedi (13→15 Eylül, 3 gün) |
+| Öğretmenin listesi | ✅ `ogretmen.s2.02` **3 oturum** gördü; "gözetmen · 11-B Dersligi", 5 şube · 5 derslik · 38 öğrenci |
+| Yorum bırakma | ✅ İzin niteliği olmadan geçti; yazar adı sunucudan indi |
+| Yayın ön kontrolü | ✅ `EX-H08 · EX-S05 · EX-S07 · EX-S08 · EX-S04` — **yeni üçü de gerçek veride konuştu** ve Faz 1 kodlarının ARDINA eklendi |
+| Çözme | ✅ Çözen adı ve not kaydedildi; ikinci çağrı **422** (tek yönlü) |
+| Ön kontrol (çözüm sonrası) | ✅ `EX-S08` **düştü**, kalan üç kod yerinde |
+| Gözetmen çizelgesi | ✅ 3 gün · ilk günde 5 satır; derslik, öğrenci sayısı ve gözetmen adı doğru |
+
+**Doğrulama bir hata yakaladı — `TB-142`:** `review-comments/{id}:resolve` yolu ham iki
+noktayla **404** veriyordu (yalnız `%3A` ile yönleniyordu), oysa
+`windows/{id}:publish-window` aynı kalıpta çalışıyor. İstemci iki noktayı kodlamadan
+gönderdiği için uç **üründe ölü** olurdu; birim testleri `fetch`'i taklit ettiği için
+yakalayamazdı. Yol düz alt-kaynağa çevrildi (`oksis-api` `2891f6d9`, `oksis-ui` `4a80516`).
+
+**İkinci eksik:** `openExamReview` ucu vardı ama ekranda tetikleyen düğme yoktu; pencere
+kartına eklendi.
+
+⚠️ **Görsel doğrulama YAPILAMADI.** Chrome penceresi 0×0 (küçültülmüş) olduğu için
+ekran görüntüsü ve tıklama çalışmadı; akış uçlardan doğrulandı, ekranların kendisi
+gözle görülmedi. Dev verisi bulunduğu hâle geri alındı (pencere durumu ve test yorumları).
 
 ---
 

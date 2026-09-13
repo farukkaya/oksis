@@ -33,7 +33,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-142` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-143` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -49,11 +49,11 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 13 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 14 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **36** | |
+| **Toplam** | **37** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 20 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 21 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +310,33 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-142` · Alt-eylem (`:fiil`) yolu bir konumda yönlenmiyor — sessiz 404 ⚪
+
+Faz 2b'nin uçtan uca doğrulamasında ölçüldü (2026-09-13, çalışan API):
+
+| Yol | Ham iki nokta | `%3A` |
+|---|---|---|
+| `POST exams/windows/{id}:publish-window` | ✅ yönleniyor (422 = handler'a ulaştı) | — |
+| `POST exams/windows/{id}:open-review` | ✅ yönleniyor | — |
+| `POST exams/review-comments/{id}:resolve` | ❌ **404, `Content-Length: 0`** (yönlendirme 404'ü, handler'ın değil) | ✅ 200 |
+
+İkisi de aynı kalıpta (`{param:guid}` + literal `:fiil`) yazılmıştı; biri yönleniyor,
+öteki yönlenmiyor. **Neden ölçülmedi** — fark ya `review-comments` literalindeki tireden
+ya da rota ağacındaki konumdan geliyor olabilir; iki hipotez de denenmedi.
+
+**Ürün etkisi gerçekti:** istemci iki noktayı kodlamadan gönderir (`openapi-fetch` yol
+parametresini yerine koyar, literali kodlamaz), yani uç üründe **ölü** olurdu. Birim
+testleri yakalayamazdı: onlar `fetch`'i taklit ediyor, rota ağacını değil.
+
+✅ Kapatıldı 2026-09-13: yol düz alt-kaynağa çevrildi
+(`review-comments/{id}/resolve`). Alt-eylem kalıbı pencere komutlarında olduğu gibi
+KALIR — orada ölçülmüş biçimde çalışıyor.
+
+⬜ **Açık kalan soru:** kalıbın hangi koşulda kırıldığı. Yeni bir `:fiil` yolu
+eklenmeden önce **gerçek sunucuda** bir kez denenmeli; sözleşme testinden geçmesi
+yönlendiğini göstermiyor.
+
+---
 ### `TB-141` · Çağıran çözümü depo genelinde okul süzmüyor — kalıbın kendisi 🟡
 
 `TB-140` iki ORTAK çözümleyiciyi (Attendance, Announcements) düzeltti. Ama kalıp ortak bir
