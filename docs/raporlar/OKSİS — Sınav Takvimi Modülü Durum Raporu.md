@@ -294,7 +294,10 @@ alan modeli `SessionReviewComment` (oturum, öğretmen, metin, çözüldü mü).
 **③ Yayın kapısı iki yeni yumuşak kural kazanıyor** — ikisi de `ExamRuleInspector.CheckPublish`
 içine, mevcut `EX-S` kalıbıyla: görüş süresi dolmadan yayın, ve açık yorumla yayın.
 
-### Faz 2b'nin dilim iskeleti (plan henüz yazılmadı)
+### Faz 2b'nin dilim iskeleti
+
+**Plan yazıldı:** `oksis/docs/gecici/planlar/2026-09-13-sinav-takvimi-faz2b.md` — beş dilim,
+on iki görev, dört açık karar. Aşağıdaki iskelet onun özetidir.
 
 1. **Görüş penceresi — sunucu:** `SessionReviewComment` + `OpenExamReview` /
    `AddSessionReviewComment` / `ResolveSessionReviewComment` komutları + iki yayın kuralı +
