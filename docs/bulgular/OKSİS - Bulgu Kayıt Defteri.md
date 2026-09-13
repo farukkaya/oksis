@@ -33,7 +33,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-149` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-150` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -48,12 +48,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 19 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 20 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **42** | |
+| **Toplam** | **43** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 26 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 27 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +310,43 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-149` · Bir sınav için birden çok bekleyen istek açılabiliyor; artakalanlar kutuda asılı kalıyor 🟡
+
+Ekran testinde ortaya çıktı (2026-09-14): tek bir sınav (11-A · Görsel Sanatlar) için
+**dört** saat isteği açıldı; biri kabul edilince ötekiler ne düştü ne cevaplanabilir kaldı.
+
+Ölçüldü:
+
+| İstek | Hücre | Ev sahibi | Durum |
+|---|---|---|---|
+| 20:59 | 13 Ağu · 2. | Şeyma Özdemir | kabul |
+| 21:01 | 13 Ağu · 3. | Furkan Polat | kabul |
+| **21:05** | **12 Ağu · 2.** | **Deniz Çetin** | **bekliyor — asılı** |
+| 21:05 | 13 Ağu · 3. | Furkan Polat | kabul |
+
+**İki ayrı kusur var, kökleri aynı:**
+
+**① Yeni istek açarken kapı yok.** `RequestExamHourCommandHandler` sınavın mevcut
+`HourRequestStatus`'una ya da `PlacementState`'ine hiç bakmıyor: zaten bekleyen isteği
+olan (hatta yerleşmiş) bir sınav için ikinci, üçüncü istek açılabiliyor. Öğretmen aynı
+sınavı birden çok ev sahibine "ihaleye çıkarabiliyor".
+
+**② Biri kabul edilince ötekiler temizlenmiyor.** `AnswerHourRequest` hem istek satırının
+hem sınavın `Pending` olmasını şart koşuyor; sınav bir kez `Accepted` olunca artakalan
+istek satırları **cevaplanamaz** hâle geliyor (ev sahibi kabul/ret'e bastığında
+*"Sınavın bekleyen bir saat isteği yok"* çıkıyor) ama listede **bekliyor** görünmeye devam
+ediyor. Ev sahibi kapatamadığı bir iş görüyor.
+
+**Yayın kapısına etkisi:** `EX-H09` bekleyen isteği **sınav satırından** sayıyor
+(`ScheduledExams.HourRequestStatus == Pending`), istek tablosundan değil. Asılı satırlar
+yayını engellemiyor — bu doğru sonuç ama yanlış sebeple: sayım o satırların var olduğunu
+bilmiyor.
+
+⬜ **Yapılacak:** ① yeni istek açarken sınavın bekleyen isteği varsa reddet (ya da eskisini
+geri çek); ② bir istek kabul edildiğinde aynı sınavın öteki bekleyen istekleri otomatik
+düşsün (`Declined`, gerekçesi "başka saat kabul edildi") ve ev sahiplerine haber verilsin.
+
+---
 ### `TB-148` · Öğretmen yerleştirdiği sınavı geri alamıyor — domainde var, üründe yok 🟡
 
 Sınav saatini seçen öğretmen onu **yalnız değiştirebiliyor**; kaldırıp "henüz karar
