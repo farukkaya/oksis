@@ -3,7 +3,7 @@ aliases: [RoleAssignment, Yetkilendirme]
 tags: [domain/people]
 table: identity.role_assignments
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Rol Ataması
@@ -33,6 +33,9 @@ Kullanıcının çalışma anındaki izinleri JWT'ye basılmaz; her istekte akti
 - Yalnız iptal edilmiş (`Inactive`) atama yeniden aktive edilir.
 - İptal gerekçesi zorunludur.
 - Süresiz atama mümkündür (`ValidUntil` boş).
+- **Yalnız aktif atama yetki verir.** Çalışma anındaki izin çözümlemesi de atayanın seviye hesabı da yalnız `Active` atamaya bakar; süresi dolmuş bir atamanın hâlâ izin ya da seviye kazandırdığı sızıntı kapatıldı.
+- **Elle iptal canlı oturumu keser:** kişinin izin önbelleği silinir, izin sürümü artırılır ve refresh jetonları geri çekilir. Gerekçe: yetki düşürmek acil bir işlemdir, "çıkardım ama hâlâ görüyor" durumu kabul edilmez.
+- **Süre dolumu ve yeni atama oturumu kesmez:** yalnız izin önbelleği silinir ve izin sürümü artırılır; eski access token bir sonraki istekte sessizce yenilenir ve güncel izin kümesini taşır. Gerekçe: süre dolumu acil iptal değildir ve kişinin başka rolleri sürüyor olabilir; yeni atama ise yetki ekler.
 
 ## Yetki yükseltme koruması
 

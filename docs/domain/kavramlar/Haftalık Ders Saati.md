@@ -3,7 +3,7 @@ aliases: [CurriculumHourTemplate, SchoolWeeklyHourOverride, Haftalık Ders Çize
 tags: [domain/academic]
 table: master.curriculum_hour_templates
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Haftalık Ders Saati
@@ -21,16 +21,22 @@ Kavram iki katmanlıdır ve bu ayrım belirleyicidir:
 
 Çözüm sırası nettir: **override varsa o, yoksa MEB şablonu.** Hiçbiri yoksa o seviye için hedef saat yoktur.
 
+Üçüncü bir katman yoktur: ders–kademe eşlemesi saat taşımaz ([[0005-haftalik-ders-saati-ders-kademe-kaydinda-tutulmaz]]).
+
 ## Yaşam döngüsü
 
 MEB şablonu seed verisiyle gelir ve sürüm etiketiyle yaşar; bugün tek bir aktif sürüm sabit olarak tanımlıdır, sürüm seçimi ileriye bırakılmış.
 
-Okul override'ı sezona bağlıdır: açılır, saati ve gerekçesi güncellenir.
+Okul override'ı sezona bağlıdır ve **tek bir yazma komutuyla uzlaştırılır**: okul bir dersin seçili kademelerindeki hedef saatleri gönderir; istenen saat MEB şablonuna eşitse (şablon yoksa sıfıra) override kaydı **silinir**, farklıysa yazılır ya da güncellenir. Böylece "MEB değerine dön" ayrı bir işlem değildir ve MEB'le aynı değeri tekrarlayan gereksiz override birikmez.
 
 ## Kurallar
 
 - MEB şablonunda haftalık saat 1-40 aralığındadır.
-- Okul override'ında **alt sınır sıfırdır** — okul bir dersi o seviyede hiç okutmama seçeneğine sahiptir; şablonda bu mümkün değildir.
+- Okul override'ında aralık 0–40'tır; **alt sınır sıfırdır** — okul bir dersi o seviyede hiç okutmama seçeneğine sahiptir; şablonda bu mümkün değildir.
+- MEB değerine eşit okul değeri override olarak saklanmaz; kayıt silinir.
+- Override yalnız dersin atanmış kademelerinden biri için yazılabilir.
+- Sezon belirtilmezse aktif sezon kullanılır; aktif sezon yoksa istek reddedilir.
+- Yazma `curriculum-hours.override` iznine bağlıdır.
 - Şablon zorunlu/seçmeli ayrımını taşır.
 - Sürüm etiketi zorunludur; hangi MEB kararından geldiği kayıtlıdır.
 - Kademe burada **kod** olarak taşınır (kimlik değil) — [[Sınıf Seviyesi]]'nin kısa koduyla eşleşir.
@@ -62,4 +68,3 @@ Bir şubenin ders programı kurulurken "bu sınıfın haftada kaç saat dersi ol
 
 - Görevlendirmedeki haftalık saat ile buradaki hedef saat **birbirini doğrulamıyor** görünüyor. Bir öğretmene müfredat hedefinden fazla saat verilirse bir uyarı çıkıyor mu?
 - Aktif MEB sürümü kodda sabit. Yeni bir çizelge kararı çıktığında geçmiş sezonların hesabı nasıl korunacak — sürüm seçimi geldiğinde eski sezonlar eski sürümde mi kalacak?
-- Okul override'ının açıklaması "bu spec'te yazma yolu yok" diyor ama yazma komutu ve kendi izni var; açıklama bayat.

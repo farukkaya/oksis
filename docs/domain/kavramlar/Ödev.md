@@ -3,7 +3,7 @@ aliases: [Homework, HomeworkAttachment, HomeworkTargetStudent, HomeworkAuditEntr
 tags: [domain/academic]
 table: academic.homework
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Ödev
@@ -31,7 +31,7 @@ last-synced: 2026-09-03 (b72c819)
 ```
 
 - **Draft** — kimseye ulaşmaz; takip satırı yoktur; hedef ve ekler serbestçe değişir; silinebilir (yumuşak, sessiz, bildirimsiz). Yönetici listesinde yalnız sahibi **ayrılmışsa** görünür: çalışan öğretmenin yayınlamadığı taslağı onun özel çalışmasıdır.
-- **Published** — **geri alınamaz;** yayından taslağa dönüş yoktur. Yayın öğrenciye ulaşmıştır; geri alınsa ekranından sessizce kaybolurdu. Geri almanın yerine gerekçeli iptal vardır. Hedef bu anda **dondurulur**; içerik hâlâ düzenlenebilir ve "içerik güncellendi" damgası yalnız burada ilerler.
+- **Published** — **geri alınamaz;** yayından taslağa dönüş yoktur. Yayın öğrenciye ulaşmıştır; geri alınsa ekranından sessizce kaybolurdu. Geri almanın yerine gerekçeli iptal vardır. Hedef bu anda **dondurulur**; içerik hâlâ düzenlenebilir ve "içerik güncellendi" damgası yalnız burada ilerler. Bu damga kaydın genel güncellenme damgasıyla aynı şey değildir: genel damga yayın, kapatma ve iptal dâhil her kaydetmede ilerler; ona bağlansaydı hiç düzenlenmemiş ödevde öğrenciye "güncellendi" gösterilirdi.
 - **Closed** — sahibi kapatır; yeni yükleme ve işaretleme alınmaz. Kapatma **denetlenmez**: idari bir müdahale değil, ödevin doğal sonudur.
 - **Cancelled** — yalnız yayındaki ödev iptal edilir; gerekçe en az 15 karakterdir ve **öğrenciye görünür**. İptal edilmiş ödev öğrenci listesinden düşer ama detayda kalır — "ödevim nerede" sorusunun cevabı ancak oradan alınır.
 
@@ -40,12 +40,13 @@ last-synced: 2026-09-03 (b72c819)
 - **Tekillik kısıtı yoktur;** aynı öğretmen aynı şubeye aynı gün iki ödev verebilir. Not defterinin sınav türü tekilliği burada karşılık bulmaz.
 - **Son teslim bir gündür, saati yoktur.** "Bugün" okulun günüdür ([[Okul]] takvimi ve saat dilimi), sunucunun makinesinin günü değil. Gecikme, tarih etiketleri ve iki zamanlanmış iş bunun üstüne kurulur.
 - **Hedef yayında çözülür, oluşturmada değil** ([[0004-odev-hedefi-yayinda-dondurulur]]). "Tüm sınıf" yayın anındaki mevcuda bakar; "seçili öğrenciler" taslaktaki seçimin mevcutla kesişimidir (aradaki hafta içinde ayrılan öğrenciye satır açılmaz). Çözülen hedef boşsa yayın 409 ile reddedilir — sessiz başarı bu hatanın kendisinden çok daha pahalı çıkmıştı. Seçim yayında tüketilir ve temizlenir.
+- **Seçili öğrenci hedefi yalnız tek şubeyle kullanılabilir.** Çoklu şubeye verilen ödevde alt küme seçilemez; açık olsaydı hangi öğrencinin hangi şubenin kaydına düşeceği sorusunun sunucuda cevabı olmazdı (bkz. [[0003-coklu-sube-ayri-odev-kaydi]]).
 - **Yayında hedef tipi değişmez:** gönderilen değer mevcutla aynıysa sessizce yok sayılır (ekran gövdeyi tam gönderir), farklıysa 409 (değişiklik sessizce düşmesin).
 - **Son teslim günü okul gününden önce olamaz;** kontrol yayında yapılır, taslakta geçmiş tarih tutulabilir.
 - **Ekler:** sıra geliş sırasından türer, istemciden alınmaz. Bağlantı yalnız http/https; kontrol karakteri içeren adres ayrıştırılmadan reddedilir (doğrulanan dize ile saklanan dize aynı olmalı). Dosya ekinde dosya kimliği doğrulanır, sahibi çağıran olmalıdır ve Documents tarafına ayrıca bir [[Dosya Bağı]] yazılır — aksi hâlde dosya "kullanılmıyor" görünüp imha edilebilirdi. Kategorisi öğrenci teslimininkinden ayrıdır ([[Dosya Kategorisi]]). Düzenlemede ek alanı **gönderilmezse korunur**, boş dizi temizler.
 - **Sahiplik ≠ yazma kapsamı.** Oluşturmada soru "bu şube-dersi okutuyor musun"dur ve [[Ders Programı]]'ndan cevaplanır (görevlendirme değil, vekâlet kapsama girmez). Var olan kayıtta soru "bu ödev senin mi"dir: program değişip öğretmen o şubeden alınsa da kendi ödevini kapatabilir. Sahibi olmayan için kayıt 404'tür, 403 değil.
-- **Yönetici yazma kapısından geçmez.** Adına yayın yalnız sahibi **ayrılmış** taslakta çalışır, gerekçelidir ve yeni son teslim tarihini zorunlu ister. "Ayrılmış" bir kolon değil, çalışan öğretmenler kümesinin tümleyenidir; sezona bağlı bir kayda bağlansaydı sezon devri gününde bütün öğretmenler ayrılmış görünürdü. Sahiplik **devredilmez** (açık soru).
-- **Gecikmiş** = yayında ve son teslim günü geçmiş; **kontrol bekliyor** = gecikmiş ve işaretlenmemiş satırı var. İkisi sayaçlardan türer, istemcide hesaplanmaz.
+- **Yönetici yazma kapısından geçmez.** Adına yayın yalnız sahibi **ayrılmış** taslakta çalışır, gerekçelidir ve yeni son teslim tarihini zorunlu ister. "Ayrılmış" bir kolon değil, çalışan öğretmenler kümesinin tümleyenidir; sezona bağlı bir kayda bağlansaydı sezon devri gününde bütün öğretmenler ayrılmış görünürdü ([[0016-ayrilmis-ogretmen-kadrodan-turer]]). Sahiplik **devredilmez** (açık soru).
+- **Gecikmiş** ayrı bir durum değil türevdir: yayında ve son teslim günü geçmiş; **kontrol bekliyor** = gecikmiş ve işaretlenmemiş satırı var. İkisi sayaçlardan türer, istemcide hesaplanmaz. Gecikme teslimi kapatmaz; teslimi kapatan sahibinin ödevi kapatmasıdır (bkz. [[Ödev Teslimi]]).
 - **Denetim:** yayın, adına yayın, iptal, toplu tamamlama ve idari teslim kaldırma yazılır; tekil işaretleme ve kapatma yazılmaz. Gerekçe aileyle paylaşılmaz. Okuyan uç bugün yoktur.
 - **Bildirim:** yayın hedef öğrencilere ve velilerine gider; alıcı listesi takip satırlarından okunur, mevcuttan değil (seçili hedefte ikisi ayrışır). İki yayın ucu tek üreticiden geçer ve bildirim kayıt bittikten **sonra** kuyruklanır. Oluşturma, taslak silme ve teslim yükleme bildirim üretmez.
 

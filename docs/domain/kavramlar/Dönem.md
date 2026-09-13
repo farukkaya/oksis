@@ -3,7 +3,7 @@ aliases: [AcademicTerm, Yarıyıl, T1/T2]
 tags: [domain/academic]
 table: academic_terms
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Dönem
@@ -34,11 +34,13 @@ Dönem kapanışı bir domain event yayar ve karne üretimini tetikler (BR-AS-00
 - Başlangıç tarihi bitiş tarihinden önce olmalıdır.
 - Tarih değişikliği yalnızca parent sezon `Setup` iken ve parent üzerinden yapılır; döneme doğrudan tarih yazılmaz.
 - `Activate` idempotenttir; zaten aktif döneme ikinci çağrı no-op'tur.
+- **Yarıyıl üçüncü bir dönem değildir.** İki dönem arasındaki tatil bir [[Okul Tatili]] kaydıdır ve sezon taslaktan açılırken `1. dönem bitişi < yarıyıl başı ≤ yarıyıl sonu < 2. dönem başı` sıralaması doğrulanır; bozuksa açılış reddedilir.
 
 ## İlişkiler
 
 - [[Sezon]] — sahip (owner); dönem sezonsuz var olamaz, sezonla birlikte yaratılır
 - `academic_term_types` (master veri) — `TermTypeId` ile tip referansı; sabit lookup, ayrı not değil, [[Müfredat]]'ta yaşar
+- [[Okul Tatili]] — yarıyıl tatili iki dönemin arasına yerleşir
 - [[Sınav Türü]] — sınav türleri bir döneme (ya da her ikisine) bağlıdır
 - [[Not Defteri]] — defter dönem × şube × ders koordinatıdır; kapanış sütunları kilitler
 
@@ -61,3 +63,4 @@ Dönem kapanışı bir domain event yayar ve karne üretimini tetikler (BR-AS-00
 
 - "Aynı sezonda tek aktif dönem" kuralı entity'de değil handler'da duruyor. Bilinçli bir tercih mi (cross-aggregate olduğu için), yoksa domain'e taşınması gereken bir kaçak mı?
 - Dönem kapanışının tetiklediği karne üretimi (BR-AS-009) bu repoda uçtan uca izlenemedi; report-cards tarafı taranmadı.
+- Yarıyıl sıralaması yalnız sezon taslaktan açılırken denetleniyor. Sezon `Setup`'tayken dönem tarihleri sonradan değişirse mevcut yarıyıl kaydı yeniden denetleniyor mu?

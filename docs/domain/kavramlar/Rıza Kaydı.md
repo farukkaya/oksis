@@ -3,7 +3,7 @@ aliases: [ConsentRecord, Açık Rıza, KVKK Onayı]
 tags: [domain/people]
 table: identity.consents
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Rıza Kaydı
@@ -26,7 +26,9 @@ Dört tip rıza vardır: veri işleme, pazarlama, fotoğraf kullanımı, sağlı
 - Onay anındaki metnin hash'i (`EvidenceHash`) kayda yazılır — metin sonradan değişse bile neyin onaylandığı bilinir.
 - Yalnız verilmiş bir rıza geri çekilebilir; gerekçe zorunludur.
 - IP ve tarayıcı bilgisi opsiyoneldir ama kanıt zincirinin parçasıdır.
-- **Veri işleme** rızasının geri çekilmesi ayrı bir sinyal taşır: bu rızanın kaybı aşağı akıştaki erişimin kapatılmasını tetiklemek üzere işaretlenir.
+- **Rıza kapısı** girişte ve jeton yenilemede kişinin en son **veri işleme** rızasına bakar: kayıt yoksa, geri çekilmişse ya da onaylanan paket sürümü yürürlükteki sürümden farklıysa reddeder. Yürürlükte paket yoksa kapı devre dışıdır. Diğer rıza tipleri girişi etkilemez.
+- Parolası doğrulanmış kullanıcı aynı giriş isteğinde yürürlükteki paketi kabul ederse rıza orada kaydedilir ve giriş sürer. Gerekçe: rızası düşen kullanıcı oturum açamadığı için "giriş sonrası rıza ekranı" mümkün değil; ayrı bir anonim rıza ucu ise ikinci bir kimlik doğrulama yolu açardı.
+- **Veri işleme** rızasının geri çekilmesi açık oturumu sonlandırır: kişinin refresh jeton zinciri geri çekilir, yenileme de rıza kapısından geçtiği için oturum uzatılamaz. Elde kalan access token ömrü dolana kadar (≤ 15 dakika) geçerlidir. Rızayı yönetici de kişinin kendisi de geri çekebilir; iki yol aynı noktadan geçer. Pazarlama, fotoğraf ve sağlık rızasının geri çekilmesi oturuma dokunmaz (TB-10).
 - Davet kabulünde veri işleme rızası olmadan ilerlenemez (`USERS_CONSENT_DATA_PROCESSING_REQUIRED`).
 
 ## İlişkiler
@@ -34,7 +36,7 @@ Dört tip rıza vardır: veri işleme, pazarlama, fotoğraf kullanımı, sağlı
 - [[Kişi]] — rızanın sahibi
 - [[Rıza Paketi]] — onaylanan metnin sürümü ve hash kaynağı
 - [[Davet]] — kabul akışında rıza kayıtları üretilir
-- [[Hesap]] — giriş sırasında rıza kapısı hesabın rıza sürümüne bakar
+- [[Hesap]] — rıza kapısı hesabın giriş ve jeton yenileme akışında uygulanır; karar hesaptaki bir alana değil kişinin rıza kaydına bakar
 
 ## Geçtiği modüller
 
@@ -49,6 +51,5 @@ Dört tip rıza vardır: veri işleme, pazarlama, fotoğraf kullanımı, sağlı
 
 ## Açık Sorular
 
-- Rıza kapısı (`IConsentGate`) hâlâ "her zaman izin ver" iskeletinde. Veri işleme rızası geri çekilince oturumun gerçekten kapanması bağlanmış mı?
 - Reşit olmayan öğrencinin rızasını veli mi verir? Kayıtta veli adına verme (delegasyon) alanı görünmüyor.
 - `Account` üzerindeki rıza sürümü sayısal (`int`), `ConsentRecord` üzerindeki sürüm metin (`v2026.05.01` biçimi). İki alan aynı şeyi mi anlatıyor?

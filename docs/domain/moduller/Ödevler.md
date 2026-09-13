@@ -2,7 +2,7 @@
 aliases: [Homework, api/v1/homework, Ödev Modülü]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Ödevler
@@ -23,7 +23,7 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 - [[Dönem]] / [[Şube]] / [[Ders]] — koordinat; form bağlamı her zaman güncel döneme düşer
 - [[Ders Programı]] — "hangi şubeye ödev verebilirim" sorusunun tek kaynağı; görevlendirme kullanılmaz
 - [[Öğrenci Kaydı]] — yayın anındaki mevcut ve sonradan katılan/ayrılan öğrenci kuralları
-- [[Kişi]] — sahip, öğrenci, veli, idare hep kişi kimliğidir; "ayrılmış öğretmen" çalışan kişiler kümesinin tümleyenidir
+- [[Kişi]] — sahip, öğrenci, veli, idare hep kişi kimliğidir; "ayrılmış öğretmen" çalışan kişiler kümesinin tümleyenidir ([[0016-ayrilmis-ogretmen-kadrodan-turer]])
 - [[Veli-Öğrenci İlişkisi]] — aile kapsamı; kapsam dışı çocuk 404; iptal edilmiş bağ kapsam dışı
 - [[Saklı Dosya]] / [[Dosya Bağı]] / [[Dosya Kategorisi]] — öğretmen eki ve öğrenci teslimi iki ayrı kategori, iki ayrı bağ tipi
 - [[Okul]] — okulun günü ve saat dilimi; tüm tarih kararları buradan
@@ -34,7 +34,7 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 
 ## Ana akışlar
 
-1. **Oluşturma ve düzenleme** — Form bağlamı sunucunun gününü, öğretmenin dersini ve o dersin şubelerini verir; hedef seçici şubenin öğrencilerini listeler (kapsam dışı şube 404). Kayıt taslak doğar, bildirim gitmez. Düzenlemede ek alanı gönderilmezse ekler korunur, boş dizi temizler; hedef tipi yayında donmuştur. Kapanmış ve iptal edilmiş ödev düzenlenemez.
+1. **Oluşturma ve düzenleme** — Form bağlamı sunucunun gününü, öğretmenin dersini ve o dersin şubelerini verir; hedef seçici şubenin öğrencilerini listeler (kapsam dışı şube 404). Kayıt taslak doğar, bildirim gitmez. Düzenlemede ek alanı gönderilmezse ekler korunur, boş dizi temizler; hedef tipi yayında donmuştur. Seçili öğrenci hedefi yalnız tek şubeyle kullanılabilir. Kapanmış ve iptal edilmiş ödev düzenlenemez.
 
 2. **Yayın** — Geri alınamaz. Hedef bu anda mevcutla çözülür; boş hedef 409, geçmiş son teslim 400. Takip satırları açılır, seçim tüketilir, yayın denetim kaydı yazılır, kayıt bittikten sonra hedef öğrencilere ve velilerine bildirim kuyruklanır.
 
@@ -44,7 +44,7 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 
 5. **Öğrenci ve veli yüzü** — Kimlik oturumdan gelir; öğrencinin listesinde yalnız yayında ve kapanmış ödevler vardır, detayda iptal edilmiş de döner. Tanınmayan liste süzgeci 400'dür, sessiz "hepsi" değil. Velinin listesi öğrencininkinin salt okunur ikizidir: çocuk sorgudan gelir, kapsam sunucuda süzülür, kapsam dışı çocuk 404. Aile şemasında "yükleyebilir" ve muafiyet gerekçesi alanları hiç yoktur.
 
-6. **Teslim** — Öğrenci yayındaki ödeve en fazla 5 aktif dosya yükler; kaldırma yumuşaktır. Yükleme 201 döner ama tekil teslimin adresi yoktur. Bildirim üretmez.
+6. **Teslim** — Öğrenci yayındaki ödeve, son teslim günü geçmiş olsa da, en fazla 5 aktif dosya yükler; kaldırma yumuşaktır. Yükleme takip satırının durumunu değiştirmez; kararı öğretmen verir. Yükleme 201 döner ama tekil teslimin adresi yoktur. Bildirim üretmez.
 
 7. **İdare** — Okul geneli listede taslak yalnız sahibi ayrılmışsa görünür; öğretmen parametresi bir süzgeçtir, kapsam kapısı değil (kapsamı olmayan kimlik boş liste alır, 403 değil); gün süzgeci ile aralık süzgeci birlikte kullanılamaz. Süzgeç evreni listeden türetilmez. Yoğunluk panosu haftanın herhangi bir gününü alır, içeren haftanın **Pazartesi–Cuma**'sına indirger ve indirgenmiş hâlini döner; hafta sonu girdi önceki pazartesiye düşer. **Öğretmen parametresi yoktur** — pano yük ölçerdir, performans karnesi değil. Kontrol bekleyenler "gecikmiş ve işaretlenmemiş satırı var" koşuluyla, en eski üstte. Adına yayın yalnız ayrılmış öğretmenin taslağına, gerekçeli ve yeni tarihle; sahibi çalışan taslak 409. İdari teslim kaldırma gerekçeli ve denetimli.
 
@@ -68,6 +68,7 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 - **E-posta kanalı.** Seed'de işaretli ama depo genelinde kanal yok.
 - **Çok dersli form.** Form bağlamı ilk dersi alır.
 - **Kaçırılan hatırlatmanın telafisi.** Geç kalmış hatırlatma gürültü sayıldı.
+- **Aile yüzünde "gördü" damgası.** [[Notlar]]'daki "yeni not" rozetinin karşılığı yoktur; ödev okumaları hiçbir şey yazmaz.
 - **Modül açık/kapalı kontrolü.** Seed'de anahtar bile yok; bkz. `X-20`.
 
 <!-- generated:end -->

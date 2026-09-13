@@ -3,7 +3,7 @@ aliases: [ModuleConfig, PlanModule, Modül Ayarı, Plan Kısıtı]
 tags: [domain/platform]
 table: school.school_module_configs
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Modül Yapılandırması
@@ -34,6 +34,8 @@ Dört sınıf vardır ve davranışları farklıdır:
 ## Kurallar
 
 - **Çekirdek modüller devre dışı bırakılamaz.**
+- **Plan dışı modül açılamaz** (`module.plan-required`): açma isteği okulun planına karşı katalogdan doğrulanır.
+- **Kapatma plan kontrolüne girmez.** Gerekçe: plan düşürüldüğünde okul, artık planında olmayan bir modüldeki eski "açık" tercihini kapatabilmelidir; kapatmayı da plana bağlamak okulu kapatamadığı bir modülle bırakırdı.
 - Güncellemede yalnız açık/kapalı değişir; modülün sınıfı ve plan kısıtlılığı değiştirilemez — bunlar okulun değil platformun kararıdır.
 - Plan kataloğu okula özelleştirilemez.
 - Değişiklik olay yayınlar.

@@ -3,7 +3,7 @@ aliases: [ScheduleVersion, Yayın Snapshot'ı]
 tags: [domain/academic]
 table: academic.schedule_versions
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Program Sürümü
@@ -18,7 +18,9 @@ Kavramın varlık sebebi şu: öğretmen, öğrenci ve veli programın **canlı 
 
 ## Yaşam döngüsü
 
-Yoktur — yazılır, bir daha değişmez. Her yayın yeni bir sürüm satırı üretir; eskiler silinmez, yayın geçmişini oluşturur.
+Yazılır, bir daha değişmez. Her yayın yeni bir sürüm satırı üretir; sürümler tek tek silinmez, program yaşadığı sürece yayın geçmişini oluşturur.
+
+**Tek istisna programın silinmesidir:** [[Ders Programı]] silindiğinde o programın bütün sürümleri — ve bütün [[Program İstisnası]] kayıtları — programla birlikte **yumuşak silinir** (kayıt işaretlenir, fiziksel olarak kalkmaz). Yani yayın geçmişi programdan bağımsız yaşamaz.
 
 ## Kurallar
 
@@ -26,10 +28,12 @@ Yoktur — yazılır, bir daha değişmez. Her yayın yeni bir sürüm satırı 
 - Boş snapshot yazılamaz; en az bir yerleşim içermelidir (boş program zaten yayınlanamaz).
 - Yayınlanan sürüm numarası kaydın kendisinden değil, **yayın geçmişinden** türetilir — yeniden yayında numara çakışmasın diye.
 - Geçmiş bir sürüme dönülebilir: o snapshot'tan program yeniden kurulur, mevcut aktif yerleşimler pasifleşir, blok grupları yeniden oluşturulur ve program **Revize** durumuna geçer. Dönüş yeni bir yayın değildir; yayınlanması ayrı adımdır.
+- **Geri dönüş bildirim üretmez.** Yeni sürüm doğmadığı için tüketici değişikliği ancak bir sonraki yayında görür; o yayın kendi bildirimini taşır.
+- Snapshot içindeki gün değerleri de gerçek takvim günüdür (Pazartesi=1 … Cuma=5). Gün değeri hizalanırken yayınlanmış snapshot'lar da aynı taşımayla kaydırıldı — aksi hâlde eski programlar tüketicide bir gün kaymış görünürdü. Bkz. [[0013-gun-degeri-gercek-system-dayofweek]].
 
 ## İlişkiler
 
-- [[Ders Programı]] — sürümün kaynağı
+- [[Ders Programı]] — sürümün kaynağı; silinirse sürümler de birlikte yumuşak silinir
 - [[Şube]] / [[Dönem]] — sürüm hangi şubenin hangi dönemine ait
 - [[Program İstisnası]] — tüketici görünümü bu snapshot'ın üstüne günlük sapmaları biner
 - [[Yoklama Oturumu]] — oturumlar bu snapshot'tan üretilir ve program alanlarını yazım anında dondurur; sonraki sürümler geçmiş oturumu değiştirmez

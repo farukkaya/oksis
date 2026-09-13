@@ -3,7 +3,7 @@ aliases: [ClubActivityParticipation, Katılım, Etkinlik Kaydı]
 tags: [domain/clubs]
 table: school.club_activity_participations
 status: active
-last-synced: 2026-09-02 (f5d6777)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Etkinlik Katılımı
@@ -32,11 +32,11 @@ Bir öğrencinin bir kulüp etkinliğine kaydı **ve** yoklaması — ikisi tek 
 
 - **Tekillik koşulsuzdur ve satır silinmez.** Üyelikten farklı olarak "ayrılıp yeniden kaydolma" burada tarihçe değil çift kayıttır — etkinlik tek bir andır, aynı öğrenci iki kez kayıtlı görünemez. Bu yüzden geri çekilmiş satır yeniden açılır, yeni satır doğmaz.
 - **Geri çekme yalnız "kayıtlı" hâlden çalışır.** Yoklaması yapılmış kaydı öğrenci geri çekemez — öğretmen kararını vermiştir. Canlı kayıt yoksa (ya da zaten geri çekilmişse) sonuç 404'tür, "zaten iptal" değil: çekilecek bir şey yoktur. Yeniden kayıt da yalnız geri çekilmiş satırdan çalışır; zaten kayıtlı satırda ikinci kayıt sessiz no-op değil hatadır — no-op sayaç bağını ikinci kez tetiklerdi.
-- **Öğretmenin işaretlemesinde durum kapısı yoktur ve bu kasıtlıdır.** Roster kaydı her satırı gövdedekiyle eşitler; "geldi → gelmedi → geldi" öğretmenin fikir değiştirmesidir. Geri çekilmiş satırı "geldi" işaretlemek de meşrudur ama sayaca dokunmaz: satır kaydın hayatını değil **yoklamanın gerçeğini** saklar.
-- **Sayaç bağı yalnız kayıtlı ↔ geri çekilmiş döngüsündedir** ve bu sınıf kurmaz; handler önce etkinliğin sayaç kapısını, sonra bu satırı yazar — iki aggregate, tek işlem.
+- **Öğretmenin işaretlemesinde durum kapısı yoktur ve bu kasıtlıdır.** Roster kaydı her satırı gövdedekiyle eşitler; "geldi → gelmedi → geldi" öğretmenin fikir değiştirmesidir. Geri çekilmiş satırı "geldi" işaretlemek de meşrudur ama sayaca dokunmaz: satır kaydın hayatını değil **yoklamanın gerçeğini** saklar. Tek istisna geri çekmedir: roster'da "geri çekilmiş" hedefi yalnız kayıtlı satırda çalışır, geldi/gelmedi işaretli satırı iptale çekmek 409'dur. Öğretmenin yoklama işareti ile öğrencinin kaydını çekmesi ayrı jestlerdir ve sunucu ikisini karıştırmaz.
+- **Sayaç bağı yalnız öğrencinin kayıt ↔ geri çekme döngüsündedir** ve bu sınıf kurmaz; öğrencinin uçları önce etkinliğin sayaç kapısını, sonra bu satırı yazar — iki aggregate, tek işlem. **Öğretmenin roster kaydı sayaç bağını kurmaz:** roster'dan kayıtlı bir satır geri çekilmiş yapıldığında sayaç düşmez; kaydı olmayan bir üye için roster'da yeni satır açıldığında sayaç artmaz. Sayacın gerçek satırlardan sapabildiği yol budur ve kodda açık borç olarak işaretlidir.
 - **İşaretleme anı öğretmenin işaretlediği andır, öğrencinin geldiği an değil**; "yoklamayı geri al" da bu anı günceller — o kararın da bir zamanı vardır. Kayıt anı ise geri çekmede korunur, yeniden kayıtta güncellenir ("ne zaman kaydoldu" son kaydı söyler).
 - **Üye olmayan öğrenci kaydolamaz**; kapı bunu ayrı bir hata değil "bu etkinlik senin için yok" (404) olarak döndürür. Kontenjan doluysa 409.
-- **Geçmişte yalnız "geldi" sayılır.** Öğrencinin ve velinin dönem içi aktivite geçmişinde etkinlik sayısı yalnız Present satırlarıdır; gelmedi, geri çekilmiş ve henüz yapılmamış yoklama geçmiş sayılmaz. Saat sayısı satırların dakikalarının toplamının saate yuvarlanmasıdır. Geçmiş yalnız aktif sezondur.
+- **Geçmişte yalnız "geldi" sayılır.** Öğrencinin ve velinin dönem içi aktivite geçmişi ile velinin çocuk özetindeki etkinlik sayısı aynı tanımı paylaşır: yalnız Present satırlar, yalnız **başlamış** ve **iptal edilmemiş** etkinliklerde. Gelmedi, geri çekilmiş, yoklaması henüz yapılmamış kayıt ve gelecekteki etkinlik sayılmaz; kayıt yaptırıp işaretlenmemiş öğrenci o etkinliğe katılmış sayılamaz. Özet bir ara kayıtlıları da sayıyordu ve veli iki ekranda iki farklı sayı görüyordu (B-48). Saat sayısı satırların dakikalarının toplamının saate yuvarlanmasıdır. Geçmiş yalnız aktif sezondur.
 - Kimliği çözülemeyen çağıran geçmiş sorgusunda boş özet alır, 403 değil.
 
 ## İlişkiler

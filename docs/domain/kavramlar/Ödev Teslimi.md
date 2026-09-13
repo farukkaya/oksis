@@ -3,7 +3,7 @@ aliases: [HomeworkSubmission, Teslim Dosyası, Ödev Yükleme, Teslim]
 tags: [domain/academic]
 table: academic.homework_submission
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Ödev Teslimi
@@ -22,7 +22,7 @@ last-synced: 2026-09-03 (b72c819)
 
 **Kaldırma yumuşaktır,** öğrencinin kendi silmesi dâhil: satır kalır, kaldıran ve an yazılır, erişim kapanır. Öğrenci "dosyam kayboldu" demez; idare kimin neyi ne zaman kaldırdığını görür. Öğrencinin kendi kaldırması gerekçesizdir; idarenin kaldırması gerekçelidir ve denetim izine yazılır. İkinci kaldırma 409 — sessizce yutulsaydı idari kaldırma öğrencininkinin üstünü örterdi. Bu yumuşak kaldırma, altyapının yumuşak silmesinden ayrı bir kavramdır: biri öğrencinin kararı, diğeri imhadır.
 
-Kapanmış ya da iptal edilmiş ödevde yükleme **ve** kaldırma 409'dur; idari kaldırma da aynı kapıdan geçer (açık soru).
+**Son teslim günü geçmiş ama hâlâ yayındaki ödeve yükleme serbesttir:** teslimi kapatan tarih değil, sahibinin ödevi kapatmasıdır. Kapanmış ya da iptal edilmiş ödevde yükleme **ve** kaldırma 409'dur; idari kaldırma da aynı kapıdan geçer (açık soru).
 
 ## Kurallar
 
@@ -31,6 +31,7 @@ Kapanmış ya da iptal edilmiş ödevde yükleme **ve** kaldırma 409'dur; idari
 - Dosya kimliği üç kapıdan geçer: var olmalı, sahibi öğrenci olmalı, kategorisi teslim olmalı.
 - İçerik türü kırpılmaz, uzunsa reddedilir; kırpılmış tür yanlış ikon çizer. Ad kırpılabilir.
 - **Teslim sayacı öğrenci sayar:** üç fotoğraf yükleyen öğrenci birdir.
+- **Yükleme takip satırının durumunu değiştirmez.** Dosya gelmesi "tamamlandı" demek değildir; öğretmen dosyaya bakar ve kararı kendisi verir.
 - **Yükleme bildirim üretmez** ve bu kasıtlıdır: 30 kişilik sınıfta akşam 30 bildirim olurdu; öğretmen ızgarada sayıyı görür.
 - Rehber öğretmen teslim içeriğini görmez; veli görür ama yükleyemez ve veli şemasında "yükleyebilir" alanı **hiç yoktur** — alanın varlığı bile bir iddiadır.
 - Tekil teslimin kendi okuma ucu yoktur; dosya ödev detayının teslim listesinden okunur.

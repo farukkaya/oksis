@@ -3,7 +3,7 @@ aliases: [FileCategoryPolicy, FileCategories, Dosya Politikası]
 tags: [domain/platform]
 table: "-"
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Dosya Kategorisi
@@ -32,15 +32,17 @@ Sınırlar kategoriye göre ciddi biçimde değişir — sanal kitap yarım giga
 
 ## Saklama süresi ve imha
 
-Saklama süresi **sezon bitişinden itibaren** işler ve günlük çalışan bir iş süresi dolan dosyaları yumuşak siler. Süresi tanımsız olan kategoriler bu işin kapsamı dışındadır: okul logosu süresizdir, sanal kitap sözleşme süresine bağlıdır ve ayrı bir ayrılış imhasıyla ele alınır.
+Saklama süresi **sezon bitişinden itibaren** işler ve günlük çalışan bir iş süresi dolan dosyaları yumuşak siler. Süresi tanımsız olan kategoriler bu işin kapsamı dışındadır: okul logosu süresizdir, sanal kitap sözleşme süresine bağlıdır ve okuldan ayrılış imhasına bırakılmıştır — o akış henüz yazılmadı (bkz. [[0010-okul-basina-depolama-alani]]).
 
-Bu alan KVKK tarafının doğrudan karşılığıdır; mazeret belgesinin süresi devamsızlık itirazlarının dayanabileceği süreye göre seçilmiş ve kodda **teyit bekleyen taslak** olarak işaretlenmiştir.
+Bu alan KVKK tarafının doğrudan karşılığıdır. Defterdeki **bütün** saklama süreleri taslaktır ve KVKK hukuk teyidi bekler; teyit geldiğinde yalnız defterde güncellenir. Mazeret belgesinin süresi, devamsızlık itirazlarının dayanabileceği süreye göre seçilmiştir.
 
 ## Kurallar
 
 - Kategorisi tanınmayan bir dosya yüklenemez.
 - Kategori kuralları yükleme anında uygulanır; kategori sonradan değiştirilmez.
 - Tarama gerektirmeyen kategoride dosya doğrudan aktif doğar.
+- **Önizleme bir sistem kategorisidir; istemci bu kategoriyle dosya yükleyemez.** Önizleme taramaya girmediği için, yükleme uçlarından erişilebilseydi istemci herhangi bir dosyayı önizleme diye yükleyip virüs taramasını atlatabilirdi. İki yükleme yolu da bu kategoriyi reddeder.
+- Kota yalnız okul geneli toplamdır; kategori başına kota yoktur.
 
 ## İlişkiler
 
@@ -64,3 +66,4 @@ Bu alan KVKK tarafının doğrudan karşılığıdır; mazeret belgesinin süres
 - **Öğrenci belgesi kategorisi hiç tanımlı değil** — o taraf kendi ham dosya adresini tutuyor (bkz. [[Öğrenci Belgesi]]).
 - Mazeret belgesinin saklama süresi kodda "KVKK teyidi bekleyen taslak" diye işaretli. Teyit alındı mı?
 - Kategori defteri kodda sabit. Okulun kendi kategorisini tanımlaması gerekirse ne olacak?
+- Defterdeki saklama sürelerinin **tamamı** KVKK hukuk teyidi bekleyen taslak. Teyit kimde ve ne zaman kesinleşecek? Teyit gelmeden süre dolan dosyalar yine günlük işle yumuşak siliniyor. (2026-09-13)

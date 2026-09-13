@@ -6,7 +6,7 @@ tags:
   - domain/clubs
   - module
 status: completed
-last-synced: 2026-09-02 (f5d6777)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Kulüpler
@@ -36,11 +36,11 @@ Modülün iki karakteristik özelliği var. Birincisi **izin ile kapsamın ayrı
 
 ## Ana akışlar
 
-1. **Kulüp açma ve düzenleme** — İdare gövdede durum ve sezon göndermez: sezonu sunucu çözer (yoksa 409), durum danışmandan türer. Düzenleme gövdesi oluşturmayla aynıdır; danışman alanı her kaydetmede gönderilir, `null` danışmanı kaldırır ama kulübü taslağa düşürmez, dolu değer taslağı yayına alır. Durum değişikliği ayrı uçtur (aktif ↔ pasif, arşiv); "adı düzelten" bir istek kulübü sessizce kapatamaz. Danışman seçicisinin havuzu okulun bugünkü kadrosudur ve kulüp bağlamı olmadan da açılır; yalnız idare okur — öğretmen listesi kadro kaydıdır.
+1. **Kulüp açma ve düzenleme** — İdare gövdede durum ve sezon göndermez: sezonu sunucu çözer (yoksa 409), durum danışmandan türer. Düzenleme gövdesi oluşturmayla aynıdır; danışman alanı her kaydetmede gönderilir, `null` danışmanı kaldırır ama kulübü taslağa düşürmez, dolu değer taslağı yayına alır. Durum değişikliği ayrı uçtur (aktif ↔ pasif, arşiv); "adı düzelten" bir istek kulübü sessizce kapatamaz. Danışman seçicisinin havuzu okulun bugünkü kadrosudur ve kulüp bağlamı olmadan da açılır; yalnız idare okur — öğretmen listesi kadro kaydıdır ([[0016-ayrilmis-ogretmen-kadrodan-turer]]).
 
-2. **Katılma ve ayrılma** — Tek katılma komutu iki modu karşılar: açık kulüpte anında üyelik ve sayaç artışı, onaylı kulüpte bekleyen başvuru. Ayrı "başvur" ucu yoktur ve yazılmayacaktır. Ayrılma da tek uçtur: bekleyen için geri çekme, üye için ayrılma; kulübün durumu süzülmez. Kimlik yetkilendirme başlığından çözülür; öğrenci başkasının adına işlem yapamaz. Kontenjan başvuruda kapatılır, onayda yeniden bakılır; bekleme listesi yoktur.
+2. **Katılma ve ayrılma** — Tek katılma komutu iki modu karşılar: açık kulüpte anında üyelik ve sayaç artışı, onaylı kulüpte bekleyen başvuru. Ayrı "başvur" ucu yoktur ve yazılmayacaktır. Ayrılma da tek uçtur: bekleyen için geri çekme, üye için ayrılma; kulübün durumu süzülmez. Kimlik yetkilendirme başlığından çözülür; öğrenci başkasının adına işlem yapamaz. Kontenjan başvuruda kapatılır, onayda yeniden bakılır; bekleme listesi yoktur. Başvuru ve üyelik tek kayıttır ([[0014-kulup-basvurusu-ve-uyeligi-tek-kayit]]).
 
-3. **Başvuru kararı** — Onay ve ret tek komut, iki kol. Kararı danışman **ya da** idare verir; izin `clubs.write`'tır (`clubs.manage` değil) çünkü karar danışmanın asli işidir ve öğretmende yönetme izni yoktur. Kulüp satırı karar sırasında değişmişse ayrı bir çakışma kodu döner. Onay iki olay yayar; bugün yalnız "sonuçlandı" olayının tüketicisi var.
+3. **Başvuru kararı** — Onay ve ret tek komut, iki kol. Kararı danışman **ya da** idare verir; izin `clubs.write`'tır (`clubs.manage` değil) çünkü karar danışmanın asli işidir ve öğretmende yönetme izni yoktur. Kulüp satırı karar sırasında değişmişse ayrı bir çakışma kodu döner. Danışmansız aktif kulüpte kararı idare verir; sonradan atanan danışman bekleyenleri devralır ([[0015-danismansiz-aktif-kulup-basvuru-alir]]). Onay iki olay yayar; bugün yalnız "sonuçlandı" olayının tüketicisi var.
 
 4. **Etkinlik ve yoklama** — Danışman etkinliği taslak açar, ayrı bir jestle yayınlar; iptal gerekçe ister. Yoklama listesi ilk açılışta üye listesinden türetilir, kaydedilince yalnız gönderilen satırlar yazılır. Tamamlanmış etkinlikte de yoklama yazılabilir. Her gece 23:00'te bir iş bitmiş yayınları "tamamlandı"ya çeker; okul okul, seri, idempotent.
 
@@ -50,7 +50,7 @@ Modülün iki karakteristik özelliği var. Birincisi **izin ile kapsamın ayrı
 
 7. **Veli yüzü** — Rota "velinin çocukları" bir kapsam bildirimidir: çocukları sunucu bulur, öğrencinin kendisi bu uçlardan kendini göremez (404), çocuğu olmayan veli boş liste alır. Kapsam dışı çocuk 404'tür, 403 değil. Sezonsuz okulda özet boş döner, tekil kulüp 404. Veli katılamaz, işaretleyemez; öğrencinin detay DTO'su aynen döner ama yazma düğmesi hiç çizilmez ve veli şemasında "katılabilir" alanı `false` değil **hiç yoktur**. Bekleyen başvuru veli özetinde görünmez — veli sürecin sonucunu bekler, adımlarını görmez.
 
-8. **Bildirim ve push** — Dört domain olayı dört handler'la uygulama içi bildirime ve push'a akar. Alıcı kümeleri bilinçli olarak farklıdır: başvuru sonucu yalnız öğrenciye; etkinlik yayını üyelere **ve** velilerine; etkinlik iptali yalnız kayıtlılara ve velilerine; duyuru yalnız üyelere. Kaynak kayıt okunamıyorsa bildirim sessizce düşer. Push eşlemesi handler'larla aynı fazda açıldı — erken açılsaydı her hesabın tercih ekranında çalışmayan bir düğme doğardı.
+8. **Bildirim ve push** — Dört domain olayı dört handler'la uygulama içi bildirime ve push'a akar. Alıcı kümeleri bilinçli olarak farklıdır: başvuru sonucu yalnız öğrenciye; etkinlik yayını üyelere **ve** velilerine; etkinlik iptali yalnız kayıtlılara ve velilerine; duyuru yalnız üyelere. Kaynak kayıt okunamıyorsa bildirim sessizce düşer. Push eşlemesi handler'larla aynı fazda açıldı — erken açılsaydı her hesabın tercih ekranında çalışmayan bir düğme doğardı. Push kilit ekranına düşen bir kesintidir; bu yüzden varsayılanı yalnız alıcının planını bozan ya da beklediği cevabı taşıyan iki olayda açıktır (etkinlik iptali, başvuru sonucu). Etkinlik yayını ve kulüp duyurusu haber niteliğindedir, okul matristen açar. E-posta ve SMS dördünde de kapalıdır. Bildirim kataloğunda dört olayın "teslim ediliyor" bayrağı, üreticileri yazılmış olduğu hâlde hâlâ kapalıdır.
 
 **Yetki — iki katman.** İzin anahtarları ucu açar: **okuma** (liste, detay, etkinlik, duyuru), **yazma** (danışmanın kendi kulübünde etkinlik/duyuru, üyelik kararı, yoklama), **yönetme** (açma, kapama, danışman atama, okul geneli görünüm), **katılma** (kulübe başvurma, etkinliğe kaydolma). Seed'de idarede okuma-yazma-yönetme; öğretmende okuma-yazma; velide yalnız okuma; öğrencide okuma-katılma. Katılma hiçbir yetişkin rolde yoktur.
 
@@ -60,7 +60,7 @@ Handler içindeki ikinci katman "hangi kulüp" sorusunu sorar ve sırası sabitt
 
 **Sezon izolasyonu.** Tenant süzgeci otomatiktir, sezon süzgeci değildir; her sorgu elle yazar ve okuma ile yazma aynı kapıdan geçer — aksi hâlde "okuma 404 verirken yazmanın çalıştığı" bir kulüp doğardı. Sezonsuz okulda **okuma** boş liste ya da 404 döner (kulüp yoktur), **yazma** 409 döner (kaydı nereye yazacağını bilemez). Tek istisna danışman havuzudur: sezon eksenli değil kadro eksenlidir, yoksa sezon devri gününde bütün öğretmenler havuzdan düşerdi.
 
-**Hata sözleşmesi.** Kodlar `Clubs.` önekiyle gelir ve HTTP durumu önekten çözülür: doğrulama 400 (bozuk süzgeç, tanınmayan kategori, kadroda olmayan danışman); durum makinesi ihlali, kontenjan dolu, eşzamanlı karar, sezon yok ve aynı adda kulüp 409; kapsam dışı, başka sezonun kulübü ve okuma yolunda sezonsuz okul 404. 409 ölçütü: "gövde kusursuz, kaydın hâli uygun değil" — aynı istek koşul değişince aynen geçer. Domain istisnasının Türkçe mesajı korunur ve doğrudan kullanıcıya gösterilir. Ad tekilliği iki katmandır: ön kontrol hatayı anlaşılır yapar, indeks son savunmadır ve ihlal indeks adından tanınır.
+**Hata sözleşmesi.** Kodlar `Clubs.` önekiyle gelir ve HTTP durumu önekten çözülür: doğrulama 400 (bozuk süzgeç, tanınmayan kategori, kadroda olmayan danışman, durum değiştirmede taslak hedefi, roster'da üye olmayan öğrenci); durum makinesi ihlali, kontenjan dolu, eşzamanlı karar, sezon yok ve aynı adda kulüp 409; kapsam dışı, başka sezonun kulübü ve okuma yolunda sezonsuz okul 404. 409 ölçütü: "gövde kusursuz, kaydın hâli uygun değil" — aynı istek koşul değişince aynen geçer. Domain istisnasının Türkçe mesajı korunur ve doğrudan kullanıcıya gösterilir. Ad tekilliği iki katmandır: ön kontrol hatayı anlaşılır yapar, indeks son savunmadır ve ihlal indeks adından tanınır.
 
 ## Kapsam dışı
 
@@ -76,6 +76,7 @@ Handler içindeki ikinci katman "hangi kulüp" sorusunu sorar ve sırası sabitt
 - **Öğretmen için etkinlik detay ucu** ve öğrenci için **geçmiş etkinlik listesi.**
 - **Veliye yazma.** Salt okunur; tercih listesi rol süzgeci push tarafında ayrı iş.
 - **Taslak etkinlik silme.**
+- **Etkinlik hatırlatması.** Ödevin bir yükümlülüğü vardır; etkinliğe kaydolmak gönüllüdür.
 
 <!-- generated:end -->
 

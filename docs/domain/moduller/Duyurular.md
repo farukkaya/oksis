@@ -2,11 +2,19 @@
 aliases:
   - Announcements
   - announcements
+  - AnnouncementModeration
+  - Duyuru Moderasyonu
+  - AudienceDimension
+  - Hedef Kitle
+  - DeliveryChannel
+  - Gelen Kutusu
+  - Gönderim Raporu
+  - AnnouncementAuditEntry
 tags:
   - domain/messaging
   - module
 status: completed
-last-synced: 2026-08-10 (238f5e1)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Duyurular
@@ -32,7 +40,7 @@ Ayrı notu olmayan üç yardımcı kayıt: **hedef** (yayın anında dondurulan 
 
 1. **Oluşturma ve yayınlama** — Tek istekte tek transaction: hedefler dondurulur, alıcılar materyalize edilir, sayı mühürlenir, olay yayılır. Fan-out bilinçli olarak arka plana atılmaz; yayın cevabındaki alıcı sayısı doğru olmak zorundadır, çünkü ekrandaki açık onay adımı ona dayanır. Ek dosya da aynı transaction'dadır: hata durumunda duyuru hiç yayınlanmaz. Etiketi çözülemeyen hedef seçimi tamamen elenir — ne dondurulur, ne alıcı üretir, ne erişim kapsamını etkiler.
 
-2. **Zamanlanmış yayın** — Gelecek tarihli duyuruda hedefler donar ama alıcılar **materyalize edilmez**; liste yayın anında sabitlenir, zamanlama anında değil, çünkü arada sınıf mevcudu değişebilir. Dakikalık bir sweep vadesi gelenleri yayınlar. Hedef yayın anında kimseye çözülmezse duyuru **yayınlanmaz**, beklemede kalır ve yayınlayana ayrı bir bildirim gider — sıfır alıcıyla "yayınlandı" demek gönderim raporunda kimsenin fark etmeyeceği bir yalan üretirdi. Job'ın kendi oturumu yoktur; duyurunun **yayınlayanının** yönetim yetkisi ayrıca çözülür ve hesabı bağlanamayan yayınlayan güvenli tarafa, kapsamı daraltılmış hâline düşürülür.
+2. **Zamanlanmış yayın** — Gelecek tarihli duyuruda hedefler donar ama alıcılar **materyalize edilmez**; liste yayın anında sabitlenir, zamanlama anında değil, çünkü arada sınıf mevcudu değişebilir. Dakikalık bir sweep vadesi gelenleri yayınlar. Hedef yayın anında kimseye çözülmezse duyuru **yayınlanmaz**, beklemede kalır ve yayınlayana ayrı bir bildirim gider — sıfır alıcıyla "yayınlandı" demek gönderim raporunda kimsenin fark etmeyeceği bir yalan üretirdi. Job'ın kendi oturumu yoktur; duyurunun **yayınlayanının** yönetim yetkisi ayrıca çözülür ve hesabı bağlanamayan yayınlayan güvenli tarafa, kapsamı daraltılmış hâline düşürülür. Aynı yetki **acil işaretini** de yayın anında yeniden ölçer: yayınlayan artık yetkili değilse bayrak yayından önce düşürülür ve duyuru yine yayınlanır (bkz. [[Duyuru]]). Eşikli moderasyonda onay gerektirecek bir duyuru zamanlanamaz; önce onaya gönderilmelidir. Yayınlayana iki ayrı bildirim türü gider: "yayınlandı" (gönderim raporuna bağlantılı) ve "yayınlanamadı" (duyuru başına tek bildirim — iş her dakika yeniden denediği için her denemede bildirim göndermek bitmeyen bir gürültü olurdu).
 
 3. **Eşikli moderasyon** — [[Okul Ayarları]] eşikliyse öğretmenin velilere giden duyurusu onay kuyruğuna düşer; öğrencilere gidenler serbest yayınlanır. Karar rol kovasına bakar, hedef katmanına değil, ve yalnız **hayatta kalan** seçimlere uygulanır — elenmiş bir veli seçimi duyuruyu kuyruğa sokmaz. Onay duyuruyu yayınlar; red taslağa döndürür ve gerekçe yalnız denetim iziyle bildirimde yaşar.
 
@@ -48,16 +56,18 @@ Ayrı notu olmayan üç yardımcı kayıt: **hedef** (yayın anında dondurulan 
 
 9. **Şablon defteri** — Çağıranın kendi hazır metinleri: listeleme, oluşturma, düzenleme, silme. Modülün **tek** silme ucu buradadır ve ayrı bir controller'da durması bilinçlidir: duyuru yüzeyindeki "sıfır DELETE" bekçisi, duyurunun silinmezliğinin API katmanındaki tek otomatik kanıtıdır. Duyuru oluştururken verilen şablon bağı yalnız kullanım sayacı içindir.
 
-10. **Raporlar ve denetim izi** — Gönderim raporu kanal kırılımını kasten gizler: tek satır döner, çünkü sunucuda kayıtlı tek teslim kanalı uygulama içidir; birden çok satır göstermek olmayan bir kanal ölçümü uydururdu. Denetim izi eskiden yeniye, değiştirilemez. İkisine de öğretmen yalnız kendi duyurusu için erişir.
+10. **Raporlar ve denetim izi** — Gönderim raporu kanal kırılımını kasten gizler: tek satır döner, çünkü duyuru bildirimleri push ve e-posta kapsamında değildir, yalnız uygulama içinden gider; birden çok satır göstermek olmayan bir kanal ölçümü uydururdu. Bağlı hesabı olmayan alıcılar "ulaşılamadı" olarak ayrıca listelenir. Denetim izi eskiden yeniye, değiştirilemez. İkisine de öğretmen yalnız kendi duyurusu için erişir.
 
 **Yetki — iki katman.** İzin anahtarları ucu açar: görüntüleme (liste, tekil kayıt, gelen kutusu), oluşturma (+ hedef havuzu + moderasyon modunu **okuma**), düzeltme, geri çekme (ve geri alma), onay (onay/red **ve** "yönetim yetkisi var mı" sorusunun tek cevabı), moderasyon modunu değiştirme, şablon yönetimi, rapor görüntüleme (+ denetim izi). Seed'de yönetimde hepsi; öğretmende görüntüleme, oluşturma, düzeltme, geri çekme, rapor ve şablon yönetimi; veli ve öğrencide yalnız görüntüleme; platform hesabında yalnız görüntüleme — okul adına duyuru yayınlayamaz.
 
-Handler içindeki ikinci katman farklı bir soru sorar: (a) *envanter mi gelen kutusu mu* — görüntüleme izni velide de vardır, envanteri ayıran oluşturma iznidir; (b) *hangi kayda* — yönetim hepsine, öğretmen yalnız kendi yayınladığına; (c) *hangi şablona* — sahiplik hesap kimliğiyle ölçülür; (d) *acil işareti* — yalnız yönetimde; (e) öğretmenin **açık** okul geneli kapsam isteği bir güvenlik sınırıdır ve reddedilir, ama parametre hiç gelmezse sessizce kendi kayıtlarına düşürülür. Rol **hiç sorulmaz** — bu depoda JWT'ye rol claim'i yazılmaz, tüm yetki soruları izinden çözülür.
+Handler içindeki ikinci katman farklı bir soru sorar: (a) *envanter mi gelen kutusu mu* — görüntüleme izni velide de vardır, envanteri ayıran oluşturma iznidir; (b) *hangi kayda* — yönetim hepsine, öğretmen yalnız kendi yayınladığına; (c) *hangi şablona* — sahiplik hesap kimliğiyle ölçülür; (d) *acil işareti* — yalnız yönetimde; (e) öğretmenin **açık** okul geneli kapsam isteği bir güvenlik sınırıdır ve reddedilir, ama parametre hiç gelmezse sessizce kendi kayıtlarına düşürülür; (f) *taslak* — taslak kişiseldir: envanter listesinde ve özet sayaçlarında yalnız yazarı görür, yönetim de göremez. Rol **hiç sorulmaz** — bu depoda JWT'ye rol claim'i yazılmaz, tüm yetki soruları izinden çözülür.
 
 ## Kapsam dışı
 
-- **Push ve e-posta teslimi.** Kanal enum'unda tanımlıdırlar ama kayıtlı tek teslim kanalı uygulama içi bildirimdir; alıcı uygulamayı açmazsa duyuru telefonuna düşmez. Bilinçli MVP sınırı — kanal geldiğinde fan-out akışı değişmez, kanal eklenir.
-- **Acil duyurunun bir kısıtı delmesi.** Acil işareti bugün yalnız bildirim başlığına ön ek koyar, süzgeç ve özet sayacına girer, denetim izine damga düşer. Bildirim önceliği ve sessiz saat kavramı bu depoda yoktur.
+- **Duyurunun push ve e-posta teslimi.** Sunucuda push ve e-posta kanalları artık kayıtlı, ama bir olayın bu kanallardan gitmesi push kapsam listesine alınmasına bağlı ve duyuru türleri listede değil. Alıcı uygulamayı açmazsa duyuru telefonuna düşmez. Listeye alındığı gün fan-out akışı değişmez; yalnız olay listeye eklenir.
+- **Acil duyurunun bir kısıtı delmesi.** Acil işareti bugün yalnız bildirim başlığına ön ek koyar, süzgeç ve özet sayacına girer, denetim izine damga düşer. Bildirim önceliği kavramı yoktur. Sessiz saat yalnız push'ta var ve duyurular push almadığı için delinecek bir kısıt da yok. Ayarlar kataloğundaki "acil duyuru" olayının e-posta varsayılanı açık görünür, ama bu olay hiçbir koda bağlı değildir.
+- **"Okudum" onayı.** Rapor "ulaştı" ve "görüldü"den öte bir kanıt üretmez; tebliğ gereken duyurularda okul kâğıt forma devam eder. V2'ye bırakıldı (KR-02).
+- **Taslağı yöneticiyle paylaşmak.** Taslak kişiseldir; reddedilip taslağa dönen duyuru da bu yüzden yöneticinin yüzeylerinden çıkar. Yöneticiye reddettiği kayıtların izi gerekirse çözüm taslak kuralını gevşetmek değil, ayrı bir yüzey olmalıdır (C6-6).
 - **Duyuru silme.** Uç yoktur ve yazılmayacaktır.
 - **Yayın sonrası hedef değiştirme.** Yanlış hedeflenen duyuru geri çekilip yeniden yayınlanır.
 - **Şablon geçmişi.** Şablon değişikliği denetim izine yazılmaz; denetim izi bir duyurunun geçmişidir ve sahte bir duyuru kimliği uydurmak izi kirletirdi.
@@ -75,3 +85,4 @@ Handler içindeki ikinci katman farklı bir soru sorar: (a) *envanter mi gelen k
 - Onay izni tek başına dört ayrı kuralı taşıyor: onay kuyruğunda karar verme, yayınlayan kapsamı, kayıt sahipliği ve acil işareti. Kodda gerekçesi yazılı bilinçli bir seçim, ama izin matrisi ileride ayrışırsa dört kural birden kayar. Ayrı bir anahtar düşünüldü mü?
 - Zamanlanmış yayın job'ında hesabı bağlanamayan yayınlayan güvenli tarafa düşürülüyor; kabul edilen maliyet, ayrılmış bir yöneticinin okul geneli duyurusunun sıfır alıcıyla kalıp yayınlayana **yanlış** bir "hedefin boş kaldı" bildirimi göndermesi. Bu durumun sahada bir izleme karşılığı var mı?
 - Moderasyon modu okul ayarları satırında yaşıyor: o satır yoksa güncelleme 404 dönüyor, okuma ise sessizce "serbest"e düşüyor. İki ucun farklı davranması bilinçli mi?
+- Duyuru türleri push/e-posta kapsam listesinde yok. Ders programı ve sınav penceresi yayını, toplu gönderim kısıtlaması olmadığı için bilinçli olarak dışarıda tutuluyor; okul geneli duyuru da aynı gerekçeyle mi dışarıda, yoksa henüz karar verilmedi mi? (2026-09-13)

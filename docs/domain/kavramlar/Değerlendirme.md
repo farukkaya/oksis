@@ -1,5 +1,5 @@
 ---
-aliases: [Assessment, Sütun, Değerlendirme Sütunu, Sınav Sütunu]
+aliases: [Assessment, Sütun, Değerlendirme Sütunu, Sınav Sütunu, Sınav]
 tags: [domain/academic]
 table: academic.assessments
 status: active

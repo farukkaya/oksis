@@ -1,5 +1,5 @@
 ---
-aliases: [ActivityRollCall, ActivityGroup, ActivityTour, Gezi Sayımı, Etkinlik]
+aliases: [ActivityRollCall, ActivityGroup, ActivityTour, Gezi Sayımı, Etkinlik, ActivityHandoverReason, Sorumlu Devri]
 tags: [domain/academic]
 table: academic.activity_roll_calls
 status: active

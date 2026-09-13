@@ -1,5 +1,5 @@
 ---
-aliases: [AttendanceSession, Ders Oturumu, Yoklama]
+aliases: [AttendanceSession, Ders Oturumu, Yoklama, DailyLeave, Gün İçi İzin]
 tags: [domain/academic]
 table: academic.attendance_sessions
 status: active

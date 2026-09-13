@@ -3,7 +3,7 @@ aliases: [GradeLevel, Sınıf Kademesi, Kademe]
 tags: [domain/academic]
 table: master.grade_levels
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Sınıf Seviyesi
@@ -25,7 +25,7 @@ Yoktur. Seed verisiyle sabit kimliklerle gelir ve değişmez. Nadir değiştiği
 - Kod ve ad zorunludur; kod kısa biçimdir (`0`, `1`, `9`), ad kullanıcıya görünen biçimdir (`Anaokulu`, `1. Sınıf`).
 - Sıralama önceliği ayrı bir alandır — kod alfabetik sıralandığında `10` ile `2` yer değiştirirdi.
 - Her kademe bir öğretim düzeyine (`EducationLevel`) bağlıdır.
-- Okulun hangi kademeleri sunduğu [[Okul Ayarları]] tarafında ayrı bir kayıtta tutulur ve okuma sorguları bunu **filtre olarak** uygular: bir lise, bir dersin ortaokul kademelerini görmez. Okul hiç kademe tanımlamamışsa geri uyum için tüm kademeler gösterilir. **En az bir kademe açık kalmak zorundadır.**
+- Okulun hangi kademeleri sunduğu [[Okul Ayarları]] tarafında ayrı bir kayıtta tutulur; okul oluşturulurken okul türünden türetilir. Bu liste görevlendirmenin ders havuzunda ve sezon geçişi / terfi hesaplarında okunur; **ders kataloğu sorguları ve şube açma bu listeyle süzülmez**. **En az bir kademe açık kalmak zorundadır.**
 - Kademe bazında not ölçeği override'ı verilebilir; yoksa okulun varsayılan geçme notuna düşülür.
 - [[Şube]] adının öneki bu kaydın **kodundan** üretilir: kod `9`, şube adı `A` ise şubenin tam adı `9-A` olur. Kademe kodu değişirse mevcut şube adları kendiliğinden güncellenmez — ad şube üzerinde saklanır.
 - Şube kurulurken kademenin master'da var olduğu doğrulanır; yoksa istek reddedilir.

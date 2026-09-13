@@ -3,7 +3,7 @@ aliases: [ClubMembership, Kulüp Başvurusu, Üyelik]
 tags: [domain/clubs]
 table: school.club_memberships
 status: active
-last-synced: 2026-09-02 (f5d6777)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Kulüp Üyeliği
@@ -41,14 +41,14 @@ Bir öğrencinin bir kulüpteki ilişkisi — **başvuru ve üyelik aynı kayıt
 - **Ayrılma tek uçtur ve iki iş yapar:** bekleyen satır için geri çekme, üye satır için ayrılma. Kulübün durumu süzülmez — pasif ya da arşiv kulüpten de ayrılınır.
 - **Onay ve ret tek komut, iki koldur.** Kapı sırası, sezon süzgeci, karar veren kişi, sayaç bağı ve iyimser kilit çevrimi ortaktır; ayrışan tek şey seçilen domain metodudur. Zaten karara bağlanmış satırda ikinci onay **sessiz dönmez, hata verir** — sessiz no-op ikinci bir sayaç artışı demek olurdu.
 - **Tekillik filtrelidir:** aynı öğrenci aynı kulüpte yalnız bir **canlı** satır tutar; indeks terminal hâlleri dışlar. Yeni bir hâl eklenirken terminal ise filtreye eklenmeli, canlı ise dokunulmamalı — canlı hâlleri sayan bir izin listesi, yeni bir canlı hâlde sessizce çift satıra izin verirdi. Sayısal değerler indeks filtresine gömülüdür, değiştirilemez.
-- **Tek tablo, iki tel projeksiyonu.** Başvuru listesi Pending / Rejected / onaylanmış-Active satırları (`approved`) gösterir; üye listesi Active / Paused satırları. Left iki listeden de düşer. Ayrı "başvuru" ve "üyelik" tabloları, onay anında satır taşımak ve yarıda kalan taşımanın öğrenciyi iki listede birden ya da hiçbirinde bırakması demek olurdu.
+- **Tek tablo, iki tel projeksiyonu.** Başvuru listesi Pending / Rejected / onaylanmış-Active satırları (`approved`) gösterir; üye listesi Active / Paused satırları. Left iki listeden de düşer. Ayrı "başvuru" ve "üyelik" tabloları, onay anında satır taşımak ve yarıda kalan taşımanın öğrenciyi iki listede birden ya da hiçbirinde bırakması demek olurdu. Bkz. [[0014-kulup-basvurusu-ve-uyeligi-tek-kayit]].
 - **Sayaç bağının tek tanımı üyeliğin "aktif üye mi" yüklemidir.** Handler bir geçişten önce ve sonra bu değere bakar: yanlış → doğru ise kulübün sayacı artar, doğru → yanlış ise azalır, değişmediyse dokunulmaz. Yeni satırda "önce" değeri yoktur, yanlış sayılır. Kural entity'de durur, dört handler'a kopyalanmaz. Paused bu tanıma **dâhil değildir**.
 - **"Üye mi" ile "sayaçta yer tutuyor mu" bilerek ayrı iki sorudur.** Üye yüklemi Active + Paused'u kapsar (öğrenci listededir, "Ayrıl" düğmesi görür, keşifte katılınabilir görünmez); sayaç yüklemi yalnız Active'i.
 - **Karar verildiği an açık kulüpte boştur** — orada karar veren bir insan yoktur. Bu yüzden "onaylanmış" görünen satır gerçekten bir insanın onayladığı satırdır ve üyeliğin başlangıç anı "karar anı, yoksa başvuru anı"dır; kural tek yerde durur.
 - **Başvuru anı domain zamanıdır**, denetim damgası değil; ikisi bugün aynı değere düşse de denetim alanı iş kuralına kaynak yapılmaz.
 - **Ret gerekçesi yalnız ret kolunda saklanır ve zorunlu değildir**; boş metin `null`'a indirgenir. Onay kolunda alınır ama yazılmaz (sözleşme iki uca aynı gövdeyi veriyor).
 - **Onay anında kulüp satırı değişmişse** ayrı bir kod döner ("karar verilirken kulüp değişti"); bu "kulüp dolu" ile aynı şey değildir ve ekranda farklı cümle kurmalıdır.
-- **Öğrencinin ekranda gördüğü beş durumlu hâl** (katılınabilir / bekliyor / üye / dolu / kapalı) bu satırın hâli **değildir**; kulübün durumu, penceresi, kontenjanı ve öğrencinin kendi satırından **sunucuda, tek yerde** türer ve katılma ucunun kapılarıyla aynı cümleyi söyler. Sıra: öğrencinin kendi satırı her şeyden önce (dolu kulübün üyesi "dolu" değil "üye" görür), sonra "kapalı", sonra "dolu". Danışmansız aktif kulüp "kapalı" **değildir** (B-44).
+- **Öğrencinin ekranda gördüğü beş durumlu hâl** (katılınabilir / bekliyor / üye / dolu / kapalı) bu satırın hâli **değildir**; kulübün durumu, penceresi, kontenjanı ve öğrencinin kendi satırından **sunucuda, tek yerde** türer ve katılma ucunun kapılarıyla aynı cümleyi söyler. Sıra: öğrencinin kendi satırı her şeyden önce (dolu kulübün üyesi "dolu" değil "üye" görür), sonra "kapalı", sonra "dolu". Danışmansız aktif kulüp "kapalı" **değildir** (B-44, bkz. [[0015-danismansiz-aktif-kulup-basvuru-alir]]).
 - **Katılma izni yalnız öğrencidedir** (`clubs.join`); veli okur, idare yönetir. Kimlik yetkilendirme başlığından çözülür — öğrenci başkasının adına katılamaz.
 - **Kulüp içi rol etikettir, yetki değildir** ve MVP'de yazan uç yoktur; her üyelik "üye" doğar.
 - Onay iki olay yayar (başvuru sonuçlandı + öğrenci katıldı). Bugün yalnız ilkinin tüketicisi vardır; ikincisine tüketici bağlanırsa onaylı kulüpte **çift bildirim** doğar.

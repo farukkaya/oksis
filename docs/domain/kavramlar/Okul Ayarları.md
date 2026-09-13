@@ -3,7 +3,7 @@ aliases: [SchoolSettings, Kurum Bilgileri, Akademik Politika]
 tags: [domain/platform]
 table: school.school_settings
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Okul Ayarları
@@ -26,11 +26,11 @@ Okul oluşturulduğunda varsayılan değerlerle otomatik açılır ve hiç silin
 
 **İletişim ve adres** — telefon, e-posta, web sitesi, fiziksel adres.
 
-**Tema** — logo, favicon, marka renkleri. Logonun **tek gerçek kaynağı** [[Saklı Dosya]] referansıdır; temadaki serbest logo bağlantısı geriye dönük uyum için duruyor ama yükleme/silme akışı ona dokunmaz.
+**Tema** — logo ve favicon. **Marka renkleri 2026-06-24'te kaldırıldı** (K2); okul artık kendi renklerini tutmaz. Giriş öncesi ekranları besleyen anonim marka ucu yalnız okul adı ve logoyu verir; yanıttaki renk alanları mevcut istemciler kırılmasın diye sabit platform değeriyle doldurulur. Logonun **tek gerçek kaynağı** [[Saklı Dosya]] referansıdır; temadaki serbest logo bağlantısı geriye dönük uyum için duruyor ama yükleme/silme akışı ona dokunmaz.
 
 **Akademik yapı** — okulun çalıştığı türler (bir okul aynı anda ortaokul + lise olabilir), eğitim dili, haftalık ders günleri, öğrenci numarası ön eki ve uzunluğu, mezun verisi saklama süresi.
 
-**Akademik politika** — varsayılan [[Not Ölçeği]] ve geçme notu, yuvarlama kuralı, yazılı/performans sayısı ve ağırlıkları, teşekkür/takdir eşikleri, devamsızlık sınırları. *(Ölçek ve sınav türü kataloğu [[Müfredat]]'ta; buradaki alanlar seçim ve okul politikasıdır.)*
+**Akademik politika** — varsayılan [[Not Ölçeği]] ve geçme notu, yuvarlama kuralı, yazılı/performans sayısı ve ağırlıkları, teşekkür/takdir eşikleri, devamsızlık sınırları. *(Ölçek ve sınav türü kataloğu [[Müfredat]]'ta; buradaki alanlar seçim ve okul politikasıdır.)* Politika **okul geneli tek kayıttır, sezona bağlı değildir**. Devamsızlık eşiklerinin tek yeri burasıdır; [[Bildirim Yapılandırması]]'ndaki eşik alanları 2026-08-12'de kaldırıldı.
 
 **Modül politikaları** — nöbet yancılığı, haftalık nöbet sıklığı ve gün deseni; duyuru moderasyon kipi; yoklama düzeltme penceresi (saat), geç kalma birikimi ve yarım gün eşiği.
 
@@ -40,7 +40,11 @@ Okul oluşturulduğunda varsayılan değerlerle otomatik açılır ve hiç silin
 
 ## Okulun sunduğu kademeler
 
-Hangi sınıf kademelerinin ([[Sınıf Seviyesi]]) okulda fiilen çalıştığı ayrı satırlarda tutulur. Bu liste bir **filtre** gibi davranır: [[Şube]] açılırken ve ders kademeleri gösterilirken uygulanır — bir lise, ortaokul kademelerini görmez.
+Hangi sınıf kademelerinin ([[Sınıf Seviyesi]]) okulda fiilen çalıştığı ayrı satırlarda tutulur.
+
+**Okul oluşturulurken liste okul türünden türetilir** — MEB kademe düzeni: anaokulu → AN, ilkokul → 1–4, ortaokul → 5–8, lise → 9–12 (ortaokul türü 5–8'in hepsini açar). Sonraki güncellemede türetim zorlanmaz; yönetici listeyi serbestçe işaretler, tür bilgisi listeyi sınırlamaz.
+
+Liste görevlendirmenin ders havuzunda ve sezon geçişi / terfi hesaplarında okunur. **Şube açarken sunucu bu listeye bakmaz** — yalnız kademenin master'da var olduğunu doğrular; kademe süzgeci orada yalnız arayüzdedir. Ders kataloğu sorguları da bu listeyle süzülmez.
 
 **En az bir aktif kademe kalmalıdır**; toplu güncellemede son kademeyi kapatma denemesi reddedilir.
 
@@ -54,10 +58,17 @@ Ayrıca kademe bazında **not ölçeği override'ı** verilebilir: okul ilkokulu
 
 - Okul başına tam olarak bir ayar kaydı vardır.
 - En az bir aktif sınıf kademesi bulunmalıdır.
-- Mezun verisi saklama süresi 1-30 yıl aralığındadır.
+- Mezun verisi saklama süresi 1-30 yıl aralığındadır; varsayılan 5 yıldır (KVKK'daki yasal saklama süresine eşitlendi).
+- **Akademik politika değişmezleri** (INV-POL-1..3):
+  - toplam devamsızlık sınırı > özürsüz devamsızlık sınırı > uyarı eşiği; üçü de en az 1;
+  - takdir eşiği > teşekkür eşiği; ikisi de 1–100;
+  - yazılı ve performans ağırlıklarının her biri 1–99 ve toplamları tam 100;
+  - yazılı ve performans görevi sayısı 1–3.
+- Geçme notu, seçili ölçek sayısal sınır taşıyorsa o aralığın içinde olmalıdır (INV-POL-4); sınırı olmayan (harf) ölçekte aralık denetimi yapılmaz.
+- Zaman dilimi burada tutulmaz; tek kaynak [[Okul]] kaydıdır (TB-36).
 - Kademe bazlı ölçek override'ında (okul, kademe) çifti tekildir.
 - Ön ek onayı append-only'dir; hiçbir güncelleme yolu yoktur.
-- Yetki alan bazında ayrılmıştır: temel bilgi, iletişim, adres, yetkili, tema, akademik yapı, akademik politika, zil, tatil, modül, bildirim ve logo için ayrı izinler vardır.
+- Yetki alan bazında ayrılmıştır: temel bilgi, iletişim, adres, yetkili, tema, akademik yapı, akademik politika, zil, tatil, modül, bildirim ve logo için ayrı izinler vardır. Akademik yapı ile akademik politika ayrı izinlerdir; ders ve branş kataloğunun yazımı da akademik yapı iznini kullanır.
 
 ## İlişkiler
 
@@ -88,6 +99,9 @@ Ayrıca kademe bazında **not ölçeği override'ı** verilebilir: okul ilkokulu
 
 ## Açık Sorular
 
-- Zaman dilimi burada **Windows** biçiminde (`Turkey Standard Time`), [[Okul]] kaydında **IANA** biçiminde tutuluyor. İki alan, iki format — hangisi yetkili?
-- Devamsızlık eşiği hem burada hem [[Bildirim Yapılandırması]]'nda var. Motor buradakini okuyor; oradaki alanların tüketicisi yok.
 - ~~Not ölçeği ve sınav ağırlıkları tanımlı ama not modülü henüz haritalanmadı.~~ Haritalandı: varsayılan ölçek okunuyor (üst sınır), kademe override'ı okunmuyor; yazılı/performans ağırlıkları politika ucunda dönüyor ama hiçbir hesaba girmiyor; yazılı/performans **sayısı** ve yuvarlama kuralı da tüketicisiz. Bkz. [[Notlar]].
+- Kademe listesi okul türünden yalnız oluşturmada türetiliyor; türün sonradan değişmesi listeyi etkilemiyor. Tür yalnız bilgi amaçlı mı kalacak, yoksa kademe listesini sınırlamalı mı?
+- Akademik yapı ile politika izinlerinin ayrılma gerekçesi — yapı müdür yardımcısına devredilebilir, geçme notu müdürde kalır — rol dağılımına yansımış mı? Beş rollü MVP setinde bu ayrımı taşıyacak ikinci bir idari rol görünmüyor.
+- Politika sezondan bağımsız tek kayıt; değiştiğinde geçmiş sezonun hangi politikayla yürüdüğü saklanmıyor. Geçmiş sezon için yeniden hesap gerekirse hangi değer kullanılacak?
+- Karne otomatik yayın ayarı yazılıyor ve okunuyor ama hiçbir davranışa bağlı değil; tüketicisi yok.
+- Mezun verisi saklama süresi dolduğunda veriyi silen bir iş yok; süre bugün yalnız kayıtlı bir değer.

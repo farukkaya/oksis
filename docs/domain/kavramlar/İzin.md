@@ -3,7 +3,7 @@ aliases: [Permission, RolePermission, Yetki]
 tags: [domain/people]
 table: identity.permissions
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # İzin
@@ -27,6 +27,7 @@ Seed verisiyle gelir; çalışma anında oluşturulmaz. Matris değiştiğinde i
 - Rol adına dayalı kontrol yazılmaz — kaynak-seviyesi kapsam kontrolü bile çözülmüş izin koduna bakar (örn. `users.view-all`).
 - RBAC izni geçtikten sonra ayrıca kaynak kapsamı (ABAC) kontrol edilir: kendi kaydı, veli bağı olan çocuk, öğretmenin kendi şubesi.
 - Reddedilen yetki denemesi olay olarak yayınlanır ve denetim kaydına düşer.
+- İzin kataloğunda **platform modülü yoktur**: bütün izin modülleri okul içidir; okul kaydı, tenant ve destek işleri için izin tanımlı değildir. [[0008-super-yonetici-platform-roludur]] kararının uygulaması bu modülün açılmasını ve süper yönetici izin kümesinin sıfırdan kurulmasını gerektirir (TB-139).
 
 ## İlişkiler
 

@@ -1,14 +1,16 @@
 ---
-aliases: [ExamType, Sınav Tipi, Sınav, Yazılı (eski ad)]
+aliases: [ExamType, Sınav Tipi, Yazılı (eski ad)]
 tags: [domain/academic]
 table: master.exam_types
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Sınav Türü
 
 <!-- generated:start -->
+
+Takvimdeki sınav için [[Planlanmış Sınav]].
 
 ## Nedir
 

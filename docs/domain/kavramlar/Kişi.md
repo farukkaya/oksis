@@ -3,7 +3,7 @@ aliases: [Person, Kullanıcı]
 tags: [domain/people]
 table: identity.persons
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Kişi
@@ -16,7 +16,7 @@ Okul ekosistemindeki gerçek insanı temsil eden aggregate root. Öğrenci, öğ
 
 Bu ayrımın pratik karşılığı şu: kendi çocuğu aynı okulda okuyan bir öğretmen tek kişi kaydıdır, iki profili vardır ve tek girişle ikisi arasında geçiş yapar. Türkiye'de yaygın olan bu durumu ikinci bir hesap açmadan çözmek modelin ana gerekçesidir.
 
-Kimlik doğrulama burada değil, [[Hesap]] tarafındadır: Kişi "kim olduğunu", Hesap "nasıl giriş yaptığını" tutar.
+Kimlik doğrulama burada değil, [[Hesap]] tarafındadır: Kişi "kim olduğunu", Hesap "nasıl giriş yaptığını" tutar. Bu ayrım tek kimlik modelinin parçasıdır; ad, rol ve durumu tek satıra gömen eski kullanıcı kaydı kaldırıldı ([[0009-tek-kimlik-modeli]]).
 
 ## Yaşam döngüsü
 
@@ -42,6 +42,8 @@ Geçişlerin tamamı aggregate metotlarıyla korunur; geçersiz geçiş `USERS_L
 - Kimlik belgesi TCKN, YKN veya pasaport olabilir; doğrulama tipe göre dallanır.
 - Mezuniyet yalnız öğrenci profilinde, nakil yalnız `Active` durumda mümkündür.
 - Nakil hedefi kendi okulu olamaz.
+- Kişi bir okula aittir: iki okulda çalışan öğretmen her okulda **ayrı bir Kişi** kaydıdır. Okullar arası ortak bir kimlik katmanı yoktur ve MVP kapsamı dışındadır; kimlik numarası tuzunun okula özel olması da bu kurgunun sonucudur.
+- Mezun (`Graduated`) kişinin girişi engellenmez; girişi yalnız askı, arşiv ve nakil durumları keser ([[Kimlik Doğrulama]]).
 
 ## Kimi görebilir (kapsam kuralı)
 
@@ -81,3 +83,8 @@ Kişiye `PersonId` ile bağlanan ama henüz notu olmayan modüller: Teachers, Me
 
 - Nakil (`Transferred`) hedef okulda kopya kişi üretmiyor; bu ikinci adım hangi modülün işi olacak?
 - `EmergencyContact` değer nesnesi tanımlı ama `Person` üzerinde bir alan olarak görünmüyor — nereye bağlanacak?
+- Aynı e-posta adresi iki okulda iki ayrı Kişi'ye kayıtlıysa e-postayla giriş hangi okulu çözer?
+- Arşive geçişi belirleyen KVKK saklama süresi ne kadar ve süreyi uygulayan bir iş olacak mı?
+- Mezun portalı MVP sonrasına bırakıldı; o zamana kadar girişi açık kalan mezun kişi hangi yüzeyi görecek?
+- Davet kabulünde ek bir OTP doğrulaması olacak mı?
+- Tek web adresinden birden çok okula giriş yapıldığında giriş ekranı hangi okulun markasını gösterecek?

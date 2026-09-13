@@ -3,7 +3,7 @@ aliases: [ClubActivity, Etkinlik, Kulüp Faaliyeti]
 tags: [domain/clubs]
 table: school.club_activities
 status: active
-last-synced: 2026-09-02 (f5d6777)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Kulüp Etkinliği
@@ -37,10 +37,11 @@ Adı bilinçli olarak "etkinlik"tir, "olay" değil: bu depoda `…Event` soneki 
 - **Doğum durumu daima taslaktır** (kulübün danışmandan türeyen doğum durumundan farklı): danışmanın gözden geçirme fırsatı "taslak, sonra yayın" iki adımıyla çözülür. Oluşturma olayı yayılmaz — taslak kimseye ulaşmaz.
 - **Başlangıç geçmişte olamaz, bugün olabilir** (gün içi akşam etkinliği); karşılaştırma tam anla yapılır, gün değil. Bitiş başlangıçtan sonra olmalıdır; aynı gün serbesttir.
 - **Kayıt yalnız yayındaki etkinliğe** alınır; kapı domain'dedir, handler'a emanet edilmez.
-- **Katılımcı sayacı denormalizedir, tek yazarı etkinliğin metotlarıdır** ve yalnız **kontenjan tutan** satırları sayar: kayıtlı, geldi ve gelmedi tutar; geri çekilmiş tutmaz. Kontenjan kapısı burada durur; sürüm damgası kontenjan yarışının birinci savunmasıdır, tekil indeks üçüncüsü. Azaltmada durum kontrolü yoktur (iptal edilmiş etkinliğin kaydını yönetici temizleyebilmeli); eksiye düşme istisnadır.
+- **Katılımcı sayacı denormalizedir, tek yazarı etkinliğin metotlarıdır** ve yalnız **kontenjan tutan** satırları sayar: kayıtlı, geldi ve gelmedi tutar; geri çekilmiş tutmaz. Sayacı yalnız öğrencinin kayıt ve geri çekme uçları hareket ettirir; öğretmenin roster kaydı sayaca dokunmaz (bkz. [[Etkinlik Katılımı]]). Kontenjan kapısı burada durur; sürüm damgası kontenjan yarışının birinci savunmasıdır, tekil indeks üçüncüsü. Azaltmada durum kontrolü yoktur (iptal edilmiş etkinliğin kaydını yönetici temizleyebilmeli); eksiye düşme istisnadır.
 - **Sayaç bağı ile katılım satırı iki ayrı aggregate'tir, tek işlemde yazılır**: önce sayaç kapısı (etkinlik), sonra satır (katılım). Bkz. [[Etkinlik Katılımı]].
 - **Yayın anında toplu katılım satırı doğmaz.** 24 üyeli kulübün 3 kişilik atölyesinde 21 anlamsız satır üretirdi. Roster (yoklama listesi) ilk açıldığında kulübün üye listesinden "kayıtlı" varsayılanıyla **türetilir**, fiziksel satır açılmaz.
-- **Roster kaydı delta davranışlıdır:** gövdedeki her satırın hâli yazılır, gövdede olmayan satırlara dokunulmaz. Tamamlanmış ve iptal edilmiş etkinlikte de roster yazılabilir.
+- **Roster kaydı delta davranışlıdır:** gövdedeki her satırın hâli yazılır, gövdede olmayan satırlara dokunulmaz. Tamamlanmış ve iptal edilmiş etkinlikte de roster yazılabilir. Roster yalnız kulübün aktif ya da duraklatılmış üyesi için yazılır; üye olmayan öğrenci gövdede 400'dür. Kayıttan sonra kulüpten ayrılan öğrencinin kaydedilmiş satırı roster'da görünmeye devam eder (satırı düşürmek geçmişi ekranda değiştirmek olurdu) ama yeni işaret alamaz.
+- **İdare ve danışman listesinde "yaklaşan / geçmiş" ayrımı başlangıç anına göredir, güne göre değil:** öğleden sonra bakılan akşam etkinliği hâlâ yaklaşandır.
 - **Kontenjan:** boş = sınırsız; sıfır ve negatif reddedilir. Türetilmiş "dolu mu" değeri kolon değildir ve sorgu içinde kullanılamaz — kod derlenir, ilk gerçek çağrıda 500 verir.
 - **Öğrencinin kapsamı üyelikten gelir, kimlikten değil.** Yalnız üyesi olduğu (aktif ya da duraklatılmış) kulübün yayındaki etkinliğini görür; bekleyen başvuru üye sayılmaz; üye olmayanın kayıt denemesi 404'tür ("bu etkinlik senin için yok"). Öğrencinin yaklaşan listesi yalnız yayında + başlangıcı okul saatine göre gelecekte olanları döner; geçmiş etkinlik listesi MVP'de öğrenciye yoktur.
 - **Bildirim:** yayın **üyelere (aktif + duraklatılmış) ve velilerine** gider — etkinlik okul saatleri dışına taşabilir, ücret veya ulaşım gerektirebilir. İptal **yalnız kayıtlı katılımcılara ve velilerine** gider; gerekçe olduğu gibi taşınır. Etkinlik ya da kulüp okunamıyorsa bildirim sessizce düşer. Tamamlanma olayı yayılır ama tüketicisi yoktur (bilinçli).
@@ -68,7 +69,7 @@ Adı bilinçli olarak "etkinlik"tir, "olay" değil: bu depoda `…Event` soneki 
 
 ## Açık Sorular
 
-- Öğrenci ve veli detayındaki `activityCount` "kulübün yaklaşan etkinliği" olarak seçildi, "öğrencinin katıldığı" değil. Sözleşme belirtmiyor; ekranın hangi anlamı istediği kararlaştırılmadı, tek satırla değişir.
+- Öğrenci ve veli **kulüp detayındaki** `activityCount` "kulübün yaklaşan etkinliği" olarak seçildi, "öğrencinin katıldığı" değil. Sözleşme belirtmiyor; detay ekranının hangi anlamı istediği kararlaştırılmadı, tek satırla değişir. (Veli özeti ve geçmişindeki aynı adlı alan bu sorunun dışında: `B-48`'den beri orada çocuğun fiilen katıldığı, başlamış etkinlikler sayılıyor.)
 - Saat dilimi iki yerden okunuyor: okul takvimi servisi yalnız "okulun şu anı"nı veriyor, etkinlik oluşturma ise okulun saat dilimini doğrudan veritabanından okuyor. İkisi bir gün ayrışabilir; ortak okuyucu ikinci ihtiyaçla birlikte doğacak.
 - Roster kaydının delta davranışı sözleşmede "tam liste" diye yazıyor; ekranın tam liste mi delta mı gönderdiği ölçülmedi. Yanlış varsayım "gözden kaybolan yoklama"ya dönüşebilir.
 - Etkinlik ve katılım tablolarının migration'ı hiç koşmadı; entegrasyon testleri şemayı modelden kuruyor. Faz 3'ün 13 entegrasyon iddiası Docker'lı ortamda henüz ölçülmedi.

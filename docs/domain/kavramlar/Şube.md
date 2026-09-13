@@ -3,7 +3,7 @@ aliases: [ClassRoom, Branch (Timetable), BranchId (Timetable), Sınıf Şubesi]
 tags: [domain/academic]
 table: class_rooms
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Şube
@@ -13,6 +13,8 @@ last-synced: 2026-09-03 (b72c819)
 ## Nedir
 
 Bir sınıf seviyesinin (9. sınıf, 10. sınıf …) tek bir şubesi — MEB dilinde "şube", gündelik dilde "9-A". Öğrenciler şubeye atanır, ders programı ve yoklama şube üzerinden yürür. Kendi aggregate root'udur ve bir sezona aittir; sezon değişince şube taşınmaz, yeni sezonda yenisi üretilir.
+
+Şube **yıla bağlıdır, döneme değil** (BR-AS-010): not, devamsızlık ve karne döneme bağlı hesaplanır, ama öğrencinin şubesi yıl boyunca aynı kalır.
 
 Şube adı serbest metindir: "A", "B" kadar "Papatya", "Lale" da geçerlidir (saha bulgusu, sınır 2026-06-10'da 3'ten 30 karaktere genişletildi). Tek harfli adlar büyük harfe normalize edilir.
 
@@ -32,7 +34,9 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 ## Kurallar
 
 - Aynı sezonda aynı (sınıf seviyesi, şube adı) ikilisi tekildir; DB unique index ile korunur, handler erken hata döndürür.
-- Kapasite **soft** limittir: aşım engellenmez, UI uyarır. Mevcut öğrenci sayısının altına düşürmek de serbesttir. (2026-06-10 kararı; önceki hard kontroller kaldırıldı.)
+- Şube açarken sunucu okulun sunduğu kademe listesine bakmaz; yalnız kademenin master'da var olduğunu doğrular.
+- Kapasite **atamada ve transferde yumuşak** limittir: aşım engellenmez, UI uyarır. Mevcut öğrenci sayısının altına düşürmek de serbesttir. (2026-06-10 kararı; önceki hard kontroller kaldırıldı.)
+- **Yeni öğrenci kaydında ise kapasite serttir:** şubenin aktif öğrenci sayısı kapasiteye ulaşmışsa kayıt reddedilir (`classroom-full`).
 - Kapasite değeri 1-100 aralığında olmalıdır — soft olan aşım kontrolü, alanın kendi sınırı değil.
 - Öğrenci ataması yalnızca `Active` şubeye yapılır. `Draft`'a çekilen şubede **mevcut öğrenciler kalır**, yalnız yeni atama engellenir.
 - Bir öğrencinin okul genelinde en fazla **bir aktif ataması** olabilir. Bu kural artık handler'a bırakılmış değil: `(school_id, student_id) WHERE left_at IS NULL` filtreli unique index'i ile veritabanı seviyesinde korunur; ihlal `STUDENT_ALREADY_ASSIGNED` olarak döner.
@@ -40,7 +44,9 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 - Transfer yalnızca aynı tenant ve aynı sezon içindeki iki farklı `Active` şube arasında yapılabilir (BR-AS-011). Kaynak atama `Transfer` sebebiyle kapatılır, hedefte yenisi açılır.
 - Arşivlenmiş şubede hiçbir yazma işlemi kabul edilmez (BR-AS-014).
 - Arşivleme ve silme, **aktif öğrenci varken** reddedilir; önce öğrenciler taşınmalıdır. Sezon kapanışında ayrı bir yol vardır: aktif atamalar `Archive` sebebiyle topluca kapatılır ve şube arşive geçer.
-- Silme arşivlemeden farklıdır: statü engel değildir, kayıt fiziksel silinmez (`is_deleted`) ve (sezon, seviye, şube adı) slotu serbest kalır — aynı ad yeniden açılabilir.
+- Arşivleme gerekçe ister; gerekçe en fazla 500 karakterdir.
+- **Arşiv ile silme ayrı niyetlerdir.** Arşiv *geçmişi korur*: şube salt-okunur kalır ve (sezon, seviye, şube adı) slotunu **dolu tutar**. Silme *yanlış açılmış şubeyi kaldırır*: statü engel değildir, kayıt fiziksel silinmez (`is_deleted`) ve slot **serbest kalır** — aynı ad yeniden açılabilir.
+- Bir öğretmen **birden çok şubeye rehber** olabilir (2026-06-10'da tek şube sınırı kaldırıldı). Ayrılmış öğretmen rehber atanamaz; arşivlenmiş şubeye rehber atanamaz.
 - Şube adı 1-30 karakter.
 - Öğrenci [[Profil]]'indeki "güncel şube" alanı bu defterin **aynasıdır**, ayrı bir doğruluk kaynağı değil: defter her değiştiğinde aynı transaction içinde bir interceptor tarafından türetilir.
 - [[Öğrenci Kaydı]] da bir şube alanı taşır ve o da aynadır — ama **otomatik senkron değildir**: yalnız terfi akışında yazılır. Yıl içi transfer bu alana dokunmaz, dolayısıyla bayatlayabilir. Şube sorusunun tek güvenilir cevabı defterdir.
@@ -52,7 +58,7 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 - [[Derslik]] — şubenin sabit ev odası (opsiyonel); bir oda birden çok şubeye atanabilir
 - `ClassRoomStudent` — sahiplik (owned koleksiyon); öğrenci-şube atamasının tarihsel kaydı, ayrı not değil
 - `SourceClassRoomId` — kendine referans; şubenin hangi kaynak şubeden terfi/klonla üretildiği ("köken bağı"), sezon geçişinde öğrenci terfisi bunu izler
-- `HomeroomTeacherId` — rehber öğretmene ID-only referans; şube rehbersiz kalabilir
+- `HomeroomTeacherId` — rehber öğretmene ID-only referans; şube rehbersiz kalabilir, bir öğretmen birden çok şubenin rehberi olabilir
 
 ## Geçtiği modüller
 
@@ -60,7 +66,7 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 - [[Sezon Yönetimi]] — sezon geçişinde şubelerin üretilmesi ve öğrenci terfisi
 - [[Görevlendirmeler]] — [[Şube Ders Görevlendirmesi]]'nin şube ekseni; sezon kopyalaması şubenin köken bağını izler
 - [[Yoklama ve Devamsızlık]] — [[Yoklama Oturumu]] şube bazında üretilir
-- [[Öğrenci Kayıt Yönetimi]] — terfi sırasında yenileme taslakları şube koltuğuna yerleşir
+- [[Öğrenci Kayıt Yönetimi]] — terfi sırasında yenileme taslakları şube koltuğuna yerleşir; yeni kayıtta kapasite sert uygulanır
 - [[Kullanıcılar]] — öğrenci [[Profil]]'i güncel şube bağını taşır; öğretmenin erişim kapsamı kendi şubeleriyle sınırlıdır
 - [[Notlar]] — [[Not Defteri]] koordinatının bir ekseni; "bu şubeye kim not girer" sorusu ders programından çözülür
 - [[Ödevler]] — [[Ödev]] şube başına ayrı kayıttır; rehber öğretmen kendi şubesinin ödevlerini salt liste olarak görür; yoğunluk panosu şube × gün sayar
@@ -77,3 +83,4 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 
 - Tek-şube invariant'ı ("bir öğrenci aynı anda tek şubede") entity içinde yalnızca şube-içi kontrol ediyor; tenant genelindeki kontrol handler'a bırakılmış. Bu kuralın tek bir yerde toplanması gerekir mi?
 - `RoomId` "varsayılan derslik" olarak duruyor, saatlik derslik kullanımı Timetable'a ait. İki kavram ileride çakışacak mı?
+- Boş (öğrencisiz) şube hiçbir akışta engellenmiyor. "Engellenmez ama uyarılır" kuralının (BR-AS-013) sunucu tarafında bir uyarı ürettiği bulunamadı; uyarı yalnız arayüzde mi?

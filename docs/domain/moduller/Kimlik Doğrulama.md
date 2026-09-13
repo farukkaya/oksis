@@ -2,7 +2,7 @@
 aliases: [Identity, api/v1/auth]
 tags: [domain/people, module]
 status: completed
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Kimlik Doğrulama
@@ -27,11 +27,11 @@ OKSİS'e özgü olan kısım bağlam yönetimidir: tek girişle birden fazla [[P
 
 ## Ana akışlar
 
-1. **Giriş** — kullanıcının girdiği tanımlayıcı önce normalize edilip sınıflandırılır (e-posta, telefon, TCKN, öğrenci numarası). Parola doğrulanır, hesap kilidi ve askı durumu kontrol edilir, rıza kapısından geçilir. Birden fazla profil varsa istemciden profil seçimi istenir ve aktif profil boş bırakılır.
+1. **Giriş** — kullanıcının girdiği tanımlayıcı önce normalize edilip sınıflandırılır. Geçerli giriş tanımlayıcıları e-posta, telefon ve öğrenci numarasıdır; **TCKN girişte reddedilir** (yalnız parola kurtarmada, okul bilindiğinde kabul edilir). Öğrenci numarasıyla giriş okul ipucu olmadan çözülmez. **Hesap var/yok sızdırılmaz:** kişinin bulunamaması, bağlı hesabın olmaması ve yanlış parola aynı tip 401 döner; her durumda sabit bir sahte hash üzerinde parola doğrulaması koşturularak yanıt süresi eşitlenir. Tek istisna: parola doğru ama kişi askıda, arşivde ya da nakil edilmişse açıklayıcı bir 403 döner. Ardından rıza kapısından geçilir ([[Rıza Kaydı]]) ve bağlam çözülür; birden fazla profil varsa ve seçim yapılamıyorsa oturum açılmaz, profil seçimi istenir ([[Hesap]]).
 2. **Kilitlenme** — yalnız hatalı parola sayacı artırır; eşiğe ulaşınca hesap süreli kilitlenir. Yönetici elle açabilir, açan kişi kayda geçer.
-3. **Jeton yenileme** — refresh token her yenilemede döner: eskisi geri çekilir, yenisi zincire eklenir. Kullanılmış bir jeton tekrar gelirse bu saldırı sayılır; tüm zincir geri çekilir ve şüpheli kullanım olayı yayınlanır.
-4. **Bağlam geçişi** — profil, çocuk ve sezon geçişleri ayrı akışlardır; her biri hesaba yazılır ve kendi olayını yayınlar. Sezon geçişi salt-okunur bilgisini de taşır (geçmiş sezona bakmak yazma yetkisi vermez).
-5. **Parola** — kullanıcı kendi parolasını değiştirir (tüm oturumlar kapanır), unuttuysa kanal üzerinden tek kullanımlık sıfırlama jetonu ister. Jeton ham saklanmaz, 30 dakika yaşar, tek kullanımlıktır.
+3. **Jeton yenileme** — refresh token her yenilemede döner: eskisi geri çekilir, yenisi zincire eklenir. Kullanılmış bir jeton tekrar gelirse bu saldırı sayılır; tüm zincir geri çekilir ve şüpheli kullanım olayı yayınlanır. Yenileme de rıza kapısından geçer; veri işleme rızası geri çekilmiş kullanıcı oturumunu jeton döndürerek uzatamaz (TB-10).
+4. **Bağlam geçişi** — profil, çocuk ve sezon geçişleri ayrı akışlardır; her biri hesaba yazılır ve kendi olayını yayınlar. Sezon geçişi salt-okunur bilgisini de taşır (geçmiş sezona bakmak yazma yetkisi vermez). Yürürlükteki sezona geçiş serbesttir; kurulum aşamasındaki (Setup) sezona `season.update` izniyle, arşiv sezona `season.archive.view` izniyle geçilir ve ikisi de salt okunurdur. `season.archive.view` yalnız süper yönetici ve okul yöneticisine verilir; arşive geçişin ikinci kaynağı okulun rol bazlı ayarıdır ve ikisinden biri yeter.
+5. **Parola** — kullanıcı kendi parolasını değiştirir (tüm oturumlar kapanır), unuttuysa kanal üzerinden tek kullanımlık sıfırlama jetonu ister. Jeton ham saklanmaz, 30 dakika yaşar, tek kullanımlıktır. Parola hash'i Argon2id'dir.
 6. **Çıkış** — tek oturumdan veya tüm oturumlardan. Zorla çıkarma (askıya alma, rıza geri çekme, parola değişimi) olay üzerinden tetiklenir ve istemciye bildirilir.
 7. **İzin çözümleme** — izinler jetona basılmaz. Her istekte hesabın aktif sezondaki rol atamalarından çözülür ve önbelleğe alınır; matris veya atama değişince izin sürümü artırılır ve önbellek geçersizleşir.
 8. **Denetim** — başarılı/başarısız giriş, kilit, çıkış, bağlam geçişi, yetki reddi ayrı olaylar olarak denetim kaydına düşer; kişisel veri maskelenerek yazılır.
@@ -54,6 +54,6 @@ OKSİS'e özgü olan kısım bağlam yönetimidir: tek girişle birden fazla [[P
 
 ## Açık Sorular
 
-- Rıza kapısı hâlâ "her zaman izin ver" iskeletinde. Veri işleme rızası geri çekilince girişin gerçekten engellenmesi ne zaman bağlanacak?
 - İki adımlı doğrulama bayrağı hesapta var ama giriş akışında karşılığı görünmüyor.
-- Parola hash'leme için Argon2id planlanmış; şu anki uygulama hangi algoritmada?
+- Denetim kaydındaki IP ve tarayıcı bilgisinin 1 yıl sonra anonimleşmesi hedefleniyor ve saklama işi tanımlı, ama iş bugün iskelet: eşiği hesaplayıp log yazıyor, anonimleştirme adımı yok. Ne zaman bağlanacak?
+- Kilitli hesap tek tip 401 yerine ayrı bir kilit hatası dönüyor. Kilit ancak var olan bir hesap için oluşabildiğinden bu yanıt hesabın varlığını ele veriyor mu?

@@ -3,7 +3,7 @@ aliases: [ParentStudentRelationship, Veli Bağı]
 tags: [domain/people]
 table: identity.parent_student_relationships
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Veli-Öğrenci İlişkisi
@@ -34,6 +34,10 @@ Bitiş tarihi yoksa sonlandırma günü bitiş olarak yazılır; henüz başlama
 ## Yetki bayrakları
 
 Beş ayrı bayrak taşınır: bilgi görebilir, karar verebilir, ödeme sorumlusu, öğrenciyi teslim alabilir, birincil iletişim kişisi. Bunlardan **bilgi görebilir** doğrudan erişim kapısıdır: veli, ancak bu bayrağı açık olan çocuğunun kaydını görebilir — ilişkinin varlığı yetkinin kendisidir.
+
+Bu bayrak veli için rol iznini **her zaman ezer**: veli rolünün izni (RBAC) geçse bile çocuğa ait kaynağa erişim ayrıca bu bayrağa bakar; bayrak kapalıysa ya da ilişki sonlandırılmışsa rol izni tek başına erişim vermez. Bayraktan bağımsız görebilenler yalnız okul geneli kapsam izni taşıyan personeldir.
+
+Bayrakların neden ayrı tutulduğunu gösteren MEB örnekleri (kurgu gerekçesi, kodda kural değil): boşanmış ailede mahkeme kararıyla karar verme yetkisi yalnız annede olabilir; üvey ebeveyn yalnız öğrenciyi teslim alabilir; dede/nine bilgi görür ve öğrenciyi teslim alır ama ödeme sorumlusu olmaz.
 
 ## İlişkiler
 

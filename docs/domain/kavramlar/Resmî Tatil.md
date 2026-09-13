@@ -3,7 +3,7 @@ aliases: [OfficialHoliday, Ulusal Bayram, Resmi Tatil]
 tags: [domain/academic]
 table: master.official_holidays
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Resmî Tatil
@@ -12,22 +12,27 @@ last-synced: 2026-08-10 (2270867)
 
 ## Nedir
 
-Türkiye'nin sabit tarihli ulusal tatilleri: 23 Nisan, 19 Mayıs, 29 Ekim. Platform genelinde tanımlı, okuldan bağımsız bir listedir.
+Türkiye'nin resmî tatilleri: millî bayramlar ve dini bayramlar. Platform genelinde tanımlı, okuldan bağımsız bir listedir; ders programı, nöbet planlayıcısı ve takvim hesapları bu listeden okuyup o günleri kapatır.
 
-Kaydın ayırt edici yanı **yıl taşımamasıdır** — yalnız ay ve gün tutulur. Her takvim yılı için aynı satır geçerlidir; ders programı ve nöbet planlayıcısı bu listeden okuyup o günleri kapatır.
+## İki tür kayıt
 
-## Neden dini bayramlar burada değil
+- **Sabit tarihli millî tatiller** yıl taşımaz — yalnız ay ve gün tutulur, her takvim yılı için aynı satır geçerlidir: Yılbaşı, 23 Nisan, 1 Mayıs, 19 Mayıs, 15 Temmuz, 30 Ağustos, 29 Ekim.
+- **Dini bayramlar** (Ramazan ve Kurban Bayramı) kameri takvime bağlı olduğu için her yıl başka güne düşer; bu yüzden **yıla çivili** satırlardır. Çok günlü aralık için bitiş günü, arife için **yarım gün** işareti taşırlar. 2026–2030 arası seed verisiyle gelir (E-13, 2026-08-31).
 
-Bilinçli bir sınır: dini bayramlar kameri takvime bağlı olduğu için her yıl farklı güne düşer ve sabit ay-gün ikilisiyle ifade edilemez. Onları okul kendi takvimine [[Okul Tatili]] olarak ekler.
+## Neden dini bayramlar da burada
 
-Bu ayrım tatil resminin üç parçalı olmasının sebebidir: **sabit ulusal liste** (burası), **okulun kendi takvimi** ([[Okul Tatili]]) ve okulun günlük düzeninde kapalı işaretlenen günler ([[Zil Çizelgesi]]).
+Önceden dini bayramlar bu listede tutulmuyor, her okulun kendi takvimine elle eklemesi bekleniyordu. Sonuç ölçüldü: 2026'da iki bayram da sezon içine düşüyordu, takvim bunu bilmediği için devamsızlık, ders programı ve yoklama pencereleri o günleri normal ders günü sayıyordu. Aynı işin her okulda her yıl doğru yapılmasına bağlı kalmak yerine liste platforma alındı.
+
+Tatil resmi yine üç parçalıdır: **platform listesi** (burası), **okulun kendi takvimi** ([[Okul Tatili]] — okul etkinliği, eğitime kapalı gün ve sezon tatilleri) ve okulun günlük düzeninde kapalı işaretlenen günler ([[Zil Çizelgesi]]).
 
 ## Kurallar
 
 - Ad zorunludur; ay 1-12, gün 1-31 aralığındadır.
-- Her yıl tekrar edip etmediği bir bayrakla taşınır.
-- Kategori bugün yalnız "ulusal"dır; bölgesel ve dini kategoriler için yer ayrılmış ama kullanılmıyor.
-- Liste okula açılmaz — okul bu listeyi değiştiremez, yalnız kendi tatillerini ekler.
+- Kategori **millî** ya da **dinî**dir; bölgesel kategori ileriye bırakıldı.
+- Yılı boş satır her yıl tekrar eder; yılı dolu satır yalnız o yıl geçerlidir.
+- Arife günleri yarım gün olarak işaretlenir.
+- Dini bayram tarihleri taslak işaretlidir: Diyanet takvimiyle teyit edilmeden canlıya çıkmamalıdır.
+- Liste okula açılmaz — okul bu listeyi değiştiremez, yalnız kendi günlerini [[Okul Tatili]] olarak ekler.
 
 ## İlişkiler
 
@@ -48,5 +53,7 @@ Bu ayrım tatil resminin üç parçalı olmasının sebebidir: **sabit ulusal li
 
 ## Açık Sorular
 
-- Yarım gün tatiller (arife günleri gibi) bu modelde ifade edilemiyor — yalnız tam gün var. Zil çizelgesindeki yarım gün şablonuyla birleştirilmesi gerekir mi?
-- Kategori alanı bölgesel ve dini değerler için hazır ama kullanılmıyor; dini bayramların ileride buraya taşınması mı planlanıyor?
+- Arife satırlarındaki yarım gün işareti, [[Zil Çizelgesi]]'ndeki yarım gün şablonuyla birleştirilmeli mi?
+- Dini bayram tarihleri Diyanet takvimiyle teyit edilmedi. Teyidi kim, hangi tarihe kadar yapacak?
+- Dini bayram seed'i 2030'da bitiyor; sonraki yılları ekleyen bir akış yok.
+- Arife satırındaki yarım gün işaretini tüketiciler (yoklama, program, devamsızlık) yarım gün olarak mı işliyor, yoksa günü tümüyle kapalı mı sayıyor?

@@ -2,54 +2,54 @@
 aliases: [TeachingAssignment, Öğretmen Görevlendirmesi, Görevlendirme v1]
 tags: [domain/academic]
 table: academic.teaching_assignments
-status: active
-last-synced: 2026-08-10 (2270867)
+status: removed
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Şube Ders Görevlendirmesi
 
 <!-- generated:start -->
 
-## Nedir
+## Durum: kaldırıldı (2026-08-18)
 
-"Bu öğretmen bu şubede bu dersi haftada şu kadar saat verir" cümlesinin kaydı. Öğretmen × [[Şube]] × [[Ders]] üçlüsü üzerinden kurulur ve **haftalık saat** taşır. Bir öğretmenin toplam yükü, aktif görevlendirmelerinin saatleri toplamıdır.
+Bu kayıt ve tablosu kodda **yok**. Not tarihçe ve arama köprüsü olarak durur: eski bir migration'da, bir yorumda ya da izin adında `TeachingAssignment` / `teaching-assignments` görüp buraya düşen kişi, bugünkü karşılığı aşağıda bulur. Görevlendirmenin tek kanonik kaydı artık [[Ders Görevlendirmesi]]'dir (`K-10`, `X-15`).
 
-Taşıdığı sınır nettir: *kim hangi dersi verecek* sorusunu çözer, *hangi gün hangi saatte* sorusunu değil — o [[Ders Programı]]'nın işidir. Değişim olduğunda olay yayınlar ve program senkron kalır.
+## Neydi
 
-Kodda ayrıca "Görevlendirme v2" diye anılan daha yeni bir kardeş vardır: [[Ders Görevlendirmesi]]. O, saati ve şubeyi bilinçle dışarıda bırakır ve yalnız yetkinliği taşır. İkisi şu an yan yana yaşıyor.
+"Bu öğretmen bu şubede bu dersi haftada şu kadar saat verir" cümlesinin elle tutulan kaydı: öğretmen × [[Şube]] × [[Ders]] × [[Sezon]] ve 1-40 arası haftalık saat. Öğretmen yükü bu saatlerin toplamıydı, ders programının otomatik üretimi de talebini buradan alıyordu.
 
-## Yaşam döngüsü
+## Neden kaldırıldı
 
-Açılır ve kaldırılır. Kaldırma **silme değil arşivdir**: kayıt işaretlenir, görev geçmişi korunur. Zaten kaldırılmış bir görevlendirmeyi tekrar kaldırmak işlem üretmez.
+Kayıt, **fiili yükün elle tutulan bir kopyasıydı** — yani programın her değişiminde bayatlaması kaçınılmaz bir kaynak. Ölçüm bunu doğruladı:
 
-Sezon değişince yeni görevlendirme açılır; kişi ve istihdam kalıcıdır, görevlendirme sezona bağlıdır. Bu ayrım modelin kurucu fikridir: **"öğretmen ≠ görevlendirme"**.
+- Tabloya yazan tek yol seed verisi ve sezon devri kopyasıydı; yazma ucu vardı ama **hiçbir istemci çağırmıyordu**. Görevlendirmeler ekranı zaten yetkinlik kaydına yazıyordu.
+- Arayüzden kurulan bir okulda tablo **boştu**. Onu okuyan her yüzey — öğretmen yükü, öğretmenin ders listesi, görev geçmişi, duyuru hedef havuzu, vekil adayları, otomatik program üretimi — hata vermeden **boş sonuç** döndü. Geliştirme okullarında doğru görünmesinin tek sebebi seed verisiydi.
+- Seed satırları okula ait olmayan dersleri taşıdığı için otomatik üretim bir lise şubesine ortaokul derslerini yerleştirdi.
 
-## Kurallar
+"İki kaynağı birbirine senkron tutmak" seçeneği bilinçli olarak reddedildi: iki doğruluk kaynağının en kötü hâlidir ve senkron kodu kalıcı bakım borcudur.
 
-- Aynı (öğretmen, şube, ders, sezon) dörtlüsü için yalnız bir **aktif** kayıt olabilir.
-- Haftalık saat 1-40 aralığında olmalıdır.
-- Öğretmen, şube, ders ve sezon kimlikleri zorunludur.
-- Kaldırma geri alınamaz; yeniden görevlendirme yeni kayıt demektir.
-- Diğer aggregate'lere yalnız ID ile bağlanır.
-- Öğretmen yükü özeti sık sorulduğu için sezon bazında önbelleklenir; atama veya kaldırma bu önbelleği geçersiz kılar.
+## Yerini ne aldı
 
-## Sezon kopyalama
+- **Kim hangi dersi verebilir** → [[Ders Görevlendirmesi]] (yetkinlik, sezona bağlı)
+- **Hangi şube, kaç saat** → programı üretilen şubenin kendisi ve kademenin müfredatı ([[Haftalık Ders Saati]])
+- **Kim nerede kaç saat veriyor (fiili yük), öğretmenin dersleri** → yayınlanmış [[Ders Programı]]'ndan türetilir
+- **Görev geçmişi** → yetkinlik kayıtları (kapatılan kayıt silinmez); hangi şubede ders verildiğinin izi [[Program Sürümü]]'nde yaşar
+- **"9-A'yı şu öğretmen alsın" niyeti** → [[Dağıtım Kısıtı]]
 
-Yeni sezona kopyalama, [[Şube]]'lerin köken bağını izler: hedef sezondaki şubeler hangi kaynak şubeden üretildiyse, o şubenin görevlendirmeleri hedefe taşınır. Dört sebeple satır atlanır — öğretmen işten ayrılmış, eşleşen hedef şube yok, hedef şube arşivlenmiş, hedefte aynı (şube, ders) zaten aktif. Son madde işlemi tekrar çalıştırmayı güvenli kılar.
+## Kalıntılar
+
+- `teaching-assignments.view` izni **duruyor**: öğretmenin ders listesi ve görev geçmişi okumalarını korur. İki okuma da artık bu tablodan değil, canlı programdan ve yetkinlik kaydından beslenir. `assign` ve `copy-season` izinleri yazma yüzeyiyle birlikte kalktı.
+- Kaldırma migration'ının geri alması şemayı geri getirir, **satırları getirmez**.
 
 ## İlişkiler
 
-- [[Şube]] — görevlendirmenin şube ekseni
-- [[Ders]] — verilen ders
-- [[Profil]] — öğretmen profili
-- [[Sezon]] — görevlendirme sezona bağlıdır
-- [[Ders Görevlendirmesi]] — aynı alanı yetkinlik ekseninde modelleyen yeni nesil
+- [[Ders Görevlendirmesi]] — yerine geçen kanonik kayıt
+- [[Ders Programı]] — fiili yükün yeni kaynağı
+- [[Dağıtım Kısıtı]] — dağıtım niyetinin yeni ifadesi
 
 ## Geçtiği modüller
 
-- [[Görevlendirmeler]] — kavramın sahibi; atama, kaldırma, görev geçmişi, yük, sezon kopyalama
-- [[Sezon Yönetimi]] — sezon aktivasyonunda görevlendirmelerin kopyalanması
-- [[Ders Programı Yönetimi]] — yerleştirilecek ders-öğretmen taleplerinin ve haftalık saatin kaynağı
+- [[Görevlendirmeler]] — eskiden sahibiydi; bugün yalnız yetkinlik kaydıyla çalışır
 
 <!-- generated:end -->
 
@@ -59,5 +59,4 @@ Yeni sezona kopyalama, [[Şube]]'lerin köken bağını izler: hedef sezondaki �
 
 ## Açık Sorular
 
-- [[Ders Görevlendirmesi]] ile ikili yaşam: hangisi kanonik? Bu nesil emekliye mi ayrılıyor?
-- İki neslin ayrı sezon kopyalama komutu var ve farklı eksenler üzerinden çalışıyor (biri şube eşlemesi, diğeri ders+öğretmen). Yıl geçişinde ikisi birden mi çalıştırılıyor?
+- (Şu an açık soru yok.)

@@ -3,7 +3,7 @@ aliases: [ConsentBundle, Aydınlatma Metni]
 tags: [domain/people]
 table: master.consent_bundles
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Rıza Paketi
@@ -24,6 +24,7 @@ Yayınlanır ve bir sürüm "yürürlükteki" (current) olarak işaretlenir. MVP
 
 - İçerik hash'i deterministiktir ve [[Rıza Kaydı]]'nın kanıt hash'ini üretmekte kullanılır.
 - [[Davet]] açılırken yürürlükteki sürüm daveti üzerine yazılır; yürürlükte sürüm yoksa kullanıcı oluşturulamaz (`USERS_CONSENT_BUNDLE_NOT_FOUND` / `NoConsentBundle`).
+- Yeni sürüm yürürlüğe girince eski sürümü onaylamış kişi bir sonraki girişte ve jeton yenilemede rıza kapısında reddedilir; yeniden onayı giriş isteğinin içinde verir. Eski onay kaydı eski sürüme bağlı kalır ([[Rıza Kaydı]]).
 
 ## İlişkiler
 
@@ -33,6 +34,7 @@ Yayınlanır ve bir sürüm "yürürlükteki" (current) olarak işaretlenir. MVP
 ## Geçtiği modüller
 
 - [[Kullanıcılar]] — yürürlükteki paketi okur, davet ve rıza akışlarında kullanır
+- [[Kimlik Doğrulama]] — giriş ve jeton yenilemede rıza kapısı yürürlükteki sürümle karşılaştırır
 
 ## Kapsam dışı
 
@@ -46,4 +48,4 @@ Yayınlanır ve bir sürüm "yürürlükteki" (current) olarak işaretlenir. MVP
 
 ## Açık Sorular
 
-- Yeni sürüm yayınlandığında mevcut kullanıcılardan yeniden onay isteme (re-consent) akışı nasıl olacak? Şu an giriş sırasında sürüm karşılaştırması yapan bir kapı bağlı değil.
+- (Şu an açık soru yok.)

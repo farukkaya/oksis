@@ -3,7 +3,7 @@ aliases: [GradeBook, Ders Defteri, Not Çizelgesi]
 tags: [domain/academic]
 table: academic.grade_books
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Not Defteri
@@ -33,7 +33,7 @@ Defter hiç silinmez; dönem kapanışının etkisi defterin değil sütunların
 - **Öğrenci listesi (roster) [[Öğrenci Kaydı]]'ndan gelir:** aktif ve dondurulmuş kayıtlar yazılabilir. Şubeden ayrılmış öğrenci ancak **notu varsa** listede kalır; notu görünür, kutusu kapalıdır ve sayaçlara girmez. Notu yoksa listede görünmez — geçmiş roster gürültüsü her deftere sızardı.
 - **Şube adı, ders adı ve öğrenci sayısı kolon değildir;** okuma anında çözülür. Modüller arası referanslar yalnız kimliktir, navigasyon açılmaz.
 - **Ortak çalışan:** aynı şube-ders çiftini okutan başka bir öğretmen varsa adı istemciye bildirilir; istemci çakışma şeridi çizer.
-- **Aile yüzündeki ders listesi de defterlerden kurulmaz:** programdan gelen dersler ile defteri olan dersler birleştirilir. Aksi hâlde henüz not girilmemiş ders veli ekranında hiç görünmüyordu ve "bu ders yok" ile "henüz not girilmedi" ayırt edilemiyordu.
+- **Aile yüzündeki ders listesi de defterlerden kurulmaz:** programdan gelen dersler ile defteri olan dersler birleştirilir. Aksi hâlde henüz not girilmemiş ders veli ekranında hiç görünmüyordu ve "bu ders yok" ile "henüz not girilmedi" ayırt edilemiyordu. Yalnız program da yetmez, birleşim şarttır: program sonradan değişmişse notu girilmiş bir defter artık programda olmayabilir.
 - **Dışa aktarım senkron xlsx'tir;** tek defter küçüktür. Gerekçe alanları dosyaya girmez.
 
 ## İlişkiler

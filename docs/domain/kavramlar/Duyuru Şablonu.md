@@ -3,7 +3,7 @@ aliases: [AnnouncementTemplate, Şablon]
 tags: [domain/messaging]
 table: announcement_templates
 status: active
-last-synced: 2026-08-10 (238f5e1)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Duyuru Şablonu
@@ -33,6 +33,8 @@ Silme hiçbir duyuruyu etkilemez: aralarında yabancı anahtar yoktur ve silme o
 - **Düzenleme sayacı ve son kullanım anını korur** — sayaç metnin yaşını değil, şablonun kullanım değerini ölçer.
 - **Yetim bağ sessizce atlanır.** Şablon silinmişse sayaç hiç yazılmaz ve yayın etkilenmez; yanlış bir sayı yazmaktansa hiç yazmamak tercih edilir.
 - **Şablon metninin bir üst sınırı vardır, duyuru gövdesinin yoktur.** Bu tavanın üstündeki bir gövde "şablon olarak kaydet" akışında reddedilir — ölçülmüş bir kısıttan değil, 2026-08-09 tarihli kullanıcı kararından gelen bilinçli bir sınırdır.
+- **"Şablon olarak kaydet" her zaman yeni bir şablon oluşturmayı dener; var olanı güncellemez.** Aynı adda şablon zaten varsa istek çakışma (409) ile reddedilir. Üzerine yazmak, kullanıcının haberi olmadan eski metnini değiştiren gizli bir yan etki olurdu.
+- **Acil işaretli şablonu yalnız yönetim yetkisi olan kaydedebilir** (oluşturma ve düzenleme). Kapı ve hata cümlesi duyurudakiyle aynıdır, çünkü ayrım şablon/duyuru değil yetkidir. Kapı olmasaydı yetkisiz kişi, kendisinin hiç kullanamayacağı bir şablon üretirdi (C6).
 - Şablonun kendi denetim izi yoktur; denetim izi bir duyurunun geçmişidir.
 
 ## İlişkiler
@@ -51,6 +53,5 @@ Silme hiçbir duyuruyu etkilemez: aralarında yabancı anahtar yoktur ve silme o
 
 ## Açık Sorular
 
-- Şablon acil tercihi taşıyor, ama acil işareti yalnız yönetim yetkisi olanda kullanılabiliyor. Öğretmen acil işaretli bir şablon kaydedebilir mi — şablon ucunda böyle bir kapı görülmedi; kaydederse o şablondan üretilen duyuru oluşturma anında reddedilir mi? Kapının şablon yüzeyinde olmaması bilinçli mi?
 - Sahiplik hesap kimliğine bağlı: kişinin hesabı değişirse (yeniden bağlanma, hesap birleştirme) defterindeki şablonlara ne olur? Taşıma yolu kodda görülmedi.
 - Şablon değişikliği için ayrı bir denetim tablosu "gerekirse" diye bırakılmış; ihtiyaç kararı verilmiş mi?

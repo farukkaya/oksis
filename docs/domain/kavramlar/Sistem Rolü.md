@@ -3,7 +3,7 @@ aliases: [SystemRole, Rol]
 tags: [domain/people]
 table: identity.system_roles
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Sistem Rolü
@@ -16,6 +16,8 @@ Platform genelinde tanımlı rol tanımı — müdür, öğretmen, veli, öğren
 
 Rolün iki ayırt edici alanı vardır: bağlı olduğu **portal** (platform, yönetim, öğretmen, veli, öğrenci) ve **ayrıcalık seviyesi**.
 
+MVP'de beş rol vardır: süper yönetici, okul yöneticisi, öğretmen, veli, öğrenci. Diğer roller (okul personeli, sekreter, muhasebeci) ertelendi ve çalışma anında atanamaz ([[0007-mvp-rol-seti-bes-rol]]).
+
 ## Yaşam döngüsü
 
 Roller seed verisiyle sabit kimlikle gelir; bu sayede yeniden migrate edilse bile atama kayıtlarının bağı kırılmaz. MVP rollerinin tamamı sistem korumalıdır: silinemez, kodu değiştirilemez.
@@ -27,6 +29,8 @@ Roller seed verisiyle sabit kimlikle gelir; bu sayede yeniden migrate edilse bil
 - Ayrıcalık seviyesi sayısaldır ve **büyük sayı yüksek yetki** demektir. Seed: süper admin 100, okul yöneticisi 80, diğerleri 40.
 - Atama guard'ı bu seviyeyi kullanır: bir kişi yalnız kendi seviyesinden **kesin düşük** seviyeli rol atayabilir.
 - Portal bilgisi girişten sonra kullanıcının hangi arayüze yönleneceğini belirler.
+- Rol-izin listesinde yönetici yalnız **kendi seviyesi ve altındaki** rolleri görür; atanabilir roller listesi yalnız **kesin düşük** seviyeleri içerir. Gerekçe: okul yöneticisi süper yöneticinin yetki kümesini görmesin.
+- **Süper yönetici platform rolüdür**, okul içi rollerin üstü değildir: okulun iç verisine yalnız o okulun onayıyla, okulu üstlenerek ve izli biçimde erişir ([[0008-super-yonetici-platform-roludur]]). ⚠️ Bu karar henüz uygulanmadı: **bugünkü kod davranışı karara aykırıdır** — küresel tenant süzgeci süper yöneticiyi bütün okulların verisine açıyor ve rol seed açıklaması hâlâ "tüm tenantlara erişim" diyor (TB-139).
 
 ## İlişkiler
 

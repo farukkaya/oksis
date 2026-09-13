@@ -3,7 +3,7 @@ aliases: [BellSchedule, Ders Saatleri, Zil Programı]
 tags: [domain/academic]
 table: school.school_bell_schedules
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Zil Çizelgesi
@@ -29,9 +29,11 @@ Haftanın her günü ayrı bir kayıtla bir şablona bağlanır. **Şablonu olma
 ## Kurallar
 
 - Ders sırası 1-20 aralığındadır — [[Ders Programı]]'ndaki ders saati sınırıyla aynı aralık.
+- Ders sırası okul içinde tekildir; veritabanı index'i korur. Toplu kurulumda aynı listede sıra tekrarı reddedilir.
+- Toplu kurulumda aynı şablondaki slotlar zaman olarak **örtüşemez**.
 - Bitiş saati başlangıçtan sonra olmalıdır.
 - Yalnız "ders" tipindeki slotlar programın ders saatlerini oluşturur; teneffüs ve öğle arası sıralamaya girmez.
-- Çizelge okula özeldir.
+- Çizelge okula özeldir ve **okul geneldir**: kademeye göre farklı zil düzeni yoktur (bilinçli kapsam dışı).
 - Bir güne şablon atanmamışsa o gün kapalıdır.
 
 ## İlişkiler
@@ -58,3 +60,5 @@ Haftanın her günü ayrı bir kayıtla bir şablona bağlanır. **Şablonu olma
 - Çizelge döneme veya sezona bağlı değil, doğrudan okula ait. Dönem ortasında zil düzeni değişirse geçmiş günlerin ders saatleri geriye dönük olarak yeni saatlerle mi görünecek?
 - ~~Hangi günün hangi şablonu kullanacağını belirleyen kural bulunamadı.~~ → **Cevaplandı:** ayrı bir gün-şablon ataması kaydı var; şablonsuz gün kapalı sayılıyor.
 - Gün kapalı işaretlendiğinde o güne ait ders programı yerleşimlerine ve yoklama oturumlarına ne oluyor? Üretim bu ayarı okuyor mu?
+- Sıra tekilliği index'i şablon anahtarını içermiyor (okul, ders sırası). Tam gün ve yarım gün şablonları aynı ders sırasını nasıl taşıyor — tam gün kuruluyken yarım gün şablonu kaydedilebiliyor mu?
+- Örtüşme denetimi yalnız toplu kurulumda var; tekil slot ekleme ve güncelleme örtüşmeye bakmıyor. Bilinçli mi?

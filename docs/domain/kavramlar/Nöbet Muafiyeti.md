@@ -3,7 +3,7 @@ aliases: [DutyExemption, Nöbet Muafiyeti Kaydı]
 tags: [domain/academic]
 table: academic.duty_exemptions
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Nöbet Muafiyeti
@@ -25,7 +25,16 @@ Açılır ve kaldırılır. Geçici muafiyet aralığı geçtiğinde kendiliğin
 - **Gerekçe zorunludur.** Muafiyet sessizce verilemez; kim neden muaf, kayıtta durur.
 - Geçici muafiyette başlangıç ve bitiş tarihi zorunludur ve başlangıç bitişten sonra olamaz.
 - Sürekli muafiyette tarihler tutulmaz — verilse bile temizlenir.
-- Muafiyet **hem otomatik dağıtımı hem elle atamayı engeller**: muaf öğretmene nöbet atanamaz, dağıtım havuzuna girmez. Bu [[Nöbet Çizelgesi]]'nin dört değişmezinden biridir.
+- Muaf öğretmene nöbet atanamaz ve dağıtım havuzuna girmez; bu [[Nöbet Çizelgesi]]'nin dört değişmezinden biridir.
+
+## Hangi yüzey hangi muafiyeti okur
+
+Muafiyetin etkisi yüzeyden yüzeye farklı tarih okur; fark bilinçlidir ama yeni gelen için tuzaktır:
+
+- **Elle çizelge taslağı** — yalnız **sürekli** muafiyet atamayı engeller. Çizelge haftalık tekrar eden bir şablondur; tarihe bağlı geçici muafiyet şablona uygulanmaz.
+- **Yancı aday listesi** — yalnız **sürekli** muafiyeti dışlar, tarihe bakmaz.
+- **Otomatik dağıtım** — sürekli muafiyeti ve **dönemle örtüşen geçici** muafiyeti havuzdan çıkarır. Dağıtım belirli bir döneme bağlandığı için tarih-duyarlı dışlamayı bilinçli olarak ekler.
+- **Nöbet yükü raporu** — sürekli muafiyeti ya da rapor aralığıyla örtüşen geçici muafiyeti olan öğretmeni yük tablosundan çıkarır ve ayrı bir muafiyet listesinde gösterir. Ataması olduğu hâlde **sonradan muafiyet verilmiş** öğretmen de tablodan çıkar — adalet ölçüsü muaf öğretmeni ortalamaya katıp dengeyi bozmasın diye (bkz. [[Nöbetler]] → Nöbet yükü).
 
 ## İlişkiler
 
@@ -34,7 +43,11 @@ Açılır ve kaldırılır. Geçici muafiyet aralığı geçtiğinde kendiliğin
 
 ## Geçtiği modüller
 
-- [[Nöbetler]] — kavramın sahibi; muafiyet verme, kaldırma, listeleme
+- [[Nöbetler]] — kavramın sahibi; muafiyet verme, kaldırma, listeleme; dağıtım ve yük raporunda dışlama
+
+## Açık Sorular (koddan doğrulanamayan)
+
+- Elle taslakta geçici muafiyet için "tarihe göre tüketimde uygulanır" deniyor, ama yayınlanmış çizelgenin tüketildiği noktada (öğretmenin nöbet görünümü, günlük pano) geçici muafiyeti uygulayan bir kontrol bulunamadı. Geçici muaf öğretmen elle atanırsa o tarihlerde nöbetçi görünmeye devam mı ediyor?
 
 <!-- generated:end -->
 

@@ -3,7 +3,7 @@ aliases: [School, Tenant, Kurum]
 tags: [domain/platform]
 table: school.schools
 status: active
-last-synced: 2026-08-10 (2270867)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Okul
@@ -34,8 +34,8 @@ Okul oluşturulduğunda altı adımlık bir kurulum durumu otomatik açılır: o
 - **Okul kodu platform genelinde tekildir** ve büyük harfe normalize edilir; 3-50 karakter, yalnız harf/rakam/tire, tireyle başlayıp bitemez. Alt alan adı veya arama anahtarı olarak kullanılabilir.
 - Okul **adı** tekil değildir.
 - Kod bir kez verilir, değiştirilemez; ad değiştirilebilir.
-- Zaman dilimi IANA biçimindedir (`Europe/Istanbul`) ve sistemde tanımlı olduğu doğrulanır. Tenant'ın bütün zaman hesaplarının — sessiz saatler, zamanlanmış işler, raporlar — kaynağıdır.
-- Okul oluşturulduğunda varsayılan [[Okul Ayarları]] kaydı, kurulum adımları ve **kendi depolama alanı** olay üzerinden otomatik üretilir (bkz. [[Dosya Yönetimi]]).
+- Zaman dilimi IANA biçimindedir (`Europe/Istanbul`) ve sistemde tanımlı olduğu doğrulanır. Tenant'ın bütün zaman hesaplarının — sessiz saatler, zamanlanmış işler, raporlar — **tek** kaynağıdır. [[Okul Ayarları]]'nda Windows biçiminde ikinci bir zaman dilimi alanı vardı; hiçbir hesap onu okumadığı ve iki alan sessizce ayrışabildiği için kaldırıldı (TB-36).
+- Okul oluşturulduğunda aynı olay üzerinden şunlar otomatik üretilir: varsayılan [[Okul Ayarları]] kaydı, kurulum adımları, okulun **kendi depolama alanı** (bkz. [[Dosya Yönetimi]]), varsayılan [[Modül Yapılandırması]], varsayılan bildirim kuralları ve okul türünden türetilen sunulan kademeler (bkz. [[Sınıf Seviyesi]]).
 - Askıya alma gerekçesizse reddedilir.
 
 ## Abonelik planı
@@ -64,6 +64,5 @@ Okul kimliğini taşımayan tek bir kayıt yoktur; bu yüzden "geçtiği modüll
 
 ## Açık Sorular
 
-- **İki ayrı zaman dilimi alanı var:** okulda IANA biçimi, [[Okul Ayarları]]'nda Windows biçimi (`Turkey Standard Time`). Hangisi yetkili? Zamanlanmış işler ve sessiz saatler hangisini okuyor?
 - Arşiv sonrası "veri 6 ay tutulur, sonra kalıcı silinir" deniyor ama bu süreyi uygulayan bir iş bu taramada bulunamadı.
 - Okul oluşturma/askıya alma uçları bu taramada görünmedi; süper admin tarafı ayrı bir yüzeyde mi?

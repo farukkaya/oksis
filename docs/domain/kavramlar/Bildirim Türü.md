@@ -1,9 +1,9 @@
 ---
-aliases: [NotificationKind, NotificationType, NotificationEventType, Bildirim Tipi, Olay Tipi]
+aliases: [NotificationKind, NotificationEventType, Bildirim Tipi, Olay Tipi, NotificationType (removed)]
 tags: [domain/messaging]
-table: master.notification_types
+table: master.notification_event_types
 status: active
-last-synced: 2026-09-03 (b72c819)
+last-synced: 2026-09-13 (294ffe6)
 ---
 
 # Bildirim Türü
@@ -14,9 +14,9 @@ last-synced: 2026-09-03 (b72c819)
 
 "Bu bildirim ne hakkında" sorusunun cevabı — devamsızlık uyarısı mı, duyuru mu, nöbet çizelgesi mi.
 
-⚠️ **Bu kavramın kodda üç ayrı temsili var ve üçü aynı şey değil.** Yeni gelenin en çok takılacağı yer burasıdır; hangisine baktığını bilmeden karar verme.
+⚠️ **Bu kavramın kodda iki ayrı temsili var ve ikisi aynı şey değil.** Yeni gelenin en çok takılacağı yer burasıdır; hangisine baktığını bilmeden karar verme. Eskiden üçüncü bir temsil de vardı (dağıtım master kataloğu, `NotificationType`): seed'li ve "yetkili" diye belgelenmişti ama hiçbir kod onu okumuyordu, bu yüzden silindi (TB-44).
 
-## Üç temsil
+## İki temsil
 
 **1. Fiilen kullanılan enum (`NotificationKind`)** — Üretilen her bildirim satırının taşıdığı değer. Yirmi beşten fazla değeri var ve gerçek hayat burada: ders programı yayını, vekâlet, ders iptali, nöbet çizelgesi, yoklama alınmadı uyarısı, mazeret kararı, düzeltme talebi kararı, gün içi izin, etkinlik toplu mazereti, devamsızlık eşiği, duyuru yayını/geri çekme/düzeltme/onay/red/zamanlanmış yayın ve zamanlama başarısızlığı, kulüp olayları, **not yayınlandı**, ödev yayınlandı ve son teslim hatırlatması.
 
@@ -26,20 +26,20 @@ last-synced: 2026-09-03 (b72c819)
 
 Bu enum'un değerleri kabaca "kim, neyi, hangi durumda öğrenmeli" ayrımını taşır. Örneğin duyurunun geri çekilmesi **yalnız yayınlayana** gider, düzeltilmesi **yalnız alıcılara**; bu yüzden ayrı değerlerdir.
 
-**2. Dağıtım master kataloğu (`NotificationType`)** — `ATT_ABSENT`, `GRADE_PUBLISHED` gibi kodlar, izinli kanal kombinasyonu ve varsayılan açıklık taşır. Belgesinde "MVP'de bu satırlar yetkilidir" yazıyor — **ama hiçbir kod bu tabloyu okumuyor.**
+**2. Ayarlar matrisi kataloğu (`NotificationEventType`)** — Okul ayarlarındaki olay×kanal matrisini besler: olay grupları (devamsızlık, akademik, ödev, kulüp, ödeme, duyuru), SMS'in o olay için uygulanabilir olup olmadığı, yeni okullar için kanal varsayılanları (portal, e-posta, SMS, push) ve **bu olayın bugün gerçekten bir bildirim üretip üretmediği**. Okulun olay kararları ve kişisel push tercihleri bu kataloğun olay anahtarlarını kullanır.
 
-**3. Ayarlar matrisi kataloğu (`NotificationEventType`)** — Okul ayarlarındaki olay×kanal matrisini besler: olay grupları (devamsızlık, akademik, ödeme, duyuru), SMS'in o olay için uygulanabilir olup olmadığı, yeni okullar için varsayılan kanal durumları. Kodun kendisi bu kataloğun "ayarlar arayüzüne özel bir görünüm" olduğunu ve dağıtım kataloğuyla ortak kodlar üzerinden uzlaştırılabileceğini söylüyor.
+Enum ile katalog arasındaki köprü **push kapsam listesidir**: listedeki her enum değeri bir katalog anahtarına eşlenir. Push ve e-posta yalnız bu listedeki olaylarda çalışır; listede olmayan enum değerinin matriste karşılığı yoktur. Bkz. [[Bildirim Yapılandırması]].
 
-## İki katalog neden ayrı
+## Katalog neden enum'dan ayrı
 
-Kod bu ayrımı bilinçli anlatıyor: ayarlar matrisi, henüz dağıtım karşılığı olmayan olayları da (taksit hatırlatması, ödeme alındı, karne, acil duyuru) **yer tutucu** olarak gösterebilmek için ayrı tutulmuş. İlgili modüller geldikçe dağıtıma bağlanacakları belirtilmiş ve bu borç olarak işaretlenmiş.
+Katalog, henüz dağıtım karşılığı olmayan olayları da (taksit hatırlatması, ödeme alındı, karne, acil duyuru) **yer tutucu** olarak gösterebilmek için ayrı tutuluyor; ilgili modüller geldikçe bağlanacaklar. Yer tutucu olaylar kullanıcıya çalışıyormuş gibi görünmesin diye her katalog satırı "gerçekten bildirim üretiyor mu" bayrağı taşır (TB-44). Bayrak teslimatı değiştirmez, yalnız gerçeği söyler.
 
-Pratikte bunun anlamı şu: **ayarlar ekranında görünen bir olay, gerçekten gönderilen bir bildirim olmayabilir.**
+En keskin örnek acil duyurudur: katalogda e-posta varsayılanı açık gelir, ama duyuru yayın bildirimini bu olaya eşleyen kod yoktur ve duyurular push/e-posta kapsamında değildir. **Ayarlar ekranında görünen bir olay, gerçekten gönderilen bir bildirim olmayabilir.**
 
 ## Kurallar
 
-- Dağıtım kataloğunda kod tekildir, büyük harfe normalize edilir ve en az bir kanal seçili olmalıdır.
-- Ayarlar kataloğunda SMS uygulanamayan bir olayda SMS varsayılanı açık bırakılamaz; kayıt bunu düzeltir.
+- Katalogda olay anahtarı ve ad zorunludur; anahtar büyük harfe normalize edilir.
+- SMS'in uygulanamadığı bir olayda SMS varsayılanı açık olamaz; böyle bir kayıt reddedilir.
 - Enum değerleri arayüzle kilitli sözleşmedir.
 
 ## İlişkiler
@@ -62,6 +62,4 @@ Pratikte bunun anlamı şu: **ayarlar ekranında görünen bir olay, gerçekten 
 
 ## Açık Sorular
 
-- **Dağıtım kataloğunun hiçbir tüketicisi yok.** Seed'li, belgeli ve "yetkili" diye işaretli ama okunmuyor. Kaldırılsın mı, yoksa dağıtım gerçekten ona bağlansın mı?
-- Fiilen kullanılan enum ile iki katalog arasında bir eşleme yok. Bir bildirim üretildiğinde hangi katalog satırına karşılık geldiği koddan çıkmıyor.
-- Ayarlar matrisinde yer tutucu olarak duran olaylar (ödeme, karne) kullanıcıya çalışıyormuş gibi görünüyor. İşaretlenmeli mi?
+- (Şu an açık soru yok.)
