@@ -33,7 +33,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-148` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-149` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -48,12 +48,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 19 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **41** | |
+| **Toplam** | **42** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 25 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 26 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +310,36 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-148` · Öğretmen yerleştirdiği sınavı geri alamıyor — domainde var, üründe yok 🟡
+
+Sınav saatini seçen öğretmen onu **yalnız değiştirebiliyor**; kaldırıp "henüz karar
+vermedim" hâline döndüremiyor. Kullanıcının ekran testindeki tespiti (2026-09-14).
+
+**Ölçüldü:** `ScheduledExam.Unplace()` domainde **yazılı ve eksiksiz** — tarihi, saati,
+ev sahibi yerleşimini, ödünç saat bayrağını ve istek durumunu temizleyip satırı
+`Unplaced`'a döndürüyor. Tek çağıranı `UpdateSessionSectionsCommandHandler` (kelebekte
+şube oturumdan çıkarıldığında). Öğretmenin kullanabileceği bir komut, uç ya da düğme
+**yok**.
+
+`TB-132`/`TB-146` ailesinden: yetenek sunucuda duruyor, ürün ona hiç ulaşmıyor.
+
+⬜ **Kullanıcı kararı (2026-09-14):** *"Takvim yayınlanmadığı sürece öğretmen geri
+alabilmeli."* Yani kapı pencerenin durumudur: `Draft`/`WindowPublished`'da serbest,
+`SchedulePublished`/`Locked`'da kapalı — yayınlanmış bir takvimden sınav çekmek
+öğrencinin gördüğü satırı sessizce silmek olurdu; o iş zaten yöneticinin revizyon
+yoludur.
+
+**Kapsam kararı gereken üç ayrıntı:**
+1. **Ödünç saat:** sınav başkasının saatine yerleşmişse geri alma o saati ev sahibine
+   iade eder. Bekleyen (cevaplanmamış) bir istek varsa ne olur — iptal mi edilir,
+   yoksa geri alma reddedilir mi?
+2. **Kelebek modu:** oturumdaki sınavı geri almak şubeyi oturumdan çıkarmaktır ve
+   derslik/sıra yeniden üretimi gerektirir (`UpdateSessionSections` yolu). Öğretmene
+   açılacak mı, yoksa yönetici yolu mu kalacak?
+3. **Bildirim:** pencere yayındayken geri alma öğrenciye/veliye haber verilmeli mi?
+   (Takvim yayınlanmadığı için aile henüz saati görmüyor — muhtemelen hayır.)
+
+---
 ### `TB-147` · Aynı şubenin aynı saatine İKİ sınav konabiliyor — hücre denetimi yok 🔴
 
 Ekran testinde yakalandı (2026-09-14): Görsel Sanatlar öğretmeni, Matematik sınavının
