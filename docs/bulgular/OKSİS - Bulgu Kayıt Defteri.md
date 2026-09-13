@@ -33,7 +33,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-143` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-144` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -47,13 +47,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
-| 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 5 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 14 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **36** | |
+| **Toplam** | **37** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 20 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 21 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +310,36 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-143` · Pencere modali olmayan bir yola gönderiyor — sınav türü hiçbir yerden tanımlanamıyor 🟠
+
+Dönemin sınav türleri tükendiğinde pencere kurma modali şunu yazıyor ve düğmeyi kapatıyor:
+
+> *"Bu dönemin bütün sınav türleri için pencere zaten açılmış. **Yeni tür akademik
+> takvimden tanımlanır.**"*
+
+**Böyle bir yol yok.** Ölçüldü (2026-09-13, çalışan API): `exam-types` ucunun tek metodu
+`GET`'tir; `ExamType` bir `MasterEntity`'dir ve depoda onu yazan hiçbir komut, hiçbir uç,
+hiçbir ekran yoktur. "Akademik takvim" ekranlarında da dönem açma/kapama dışında bir şey
+yok. Yani cümle kullanıcıyı var olmayan bir kapıya yolluyor.
+
+**Somut sonucu ölçüldü:** `s2` (Atatürk AL) 2. Dönem'de üç tür de kullanılmış
+(`1./2./3. Sınav`, hepsi `term_order = 2`); `Sözlü`/`Performans`/`Proje` ise
+`term_order = 0` olduğu için listeye ZATEN girmez. Dolayısıyla o okulda o döneme
+**dördüncü bir pencere kurmanın hiçbir yolu kalmıyor** — ne üründen, ne yönetimden.
+Ekran testinde tam olarak buraya çarpıldı.
+
+⬜ **Karar gerekiyor, iki yol var:**
+- **(a) Cümleyi gerçeğe çevir:** "Bu dönemde açılabilecek tür kalmadı" de ve nokta koy.
+  Ucuz, dürüst; ama sınırın kendisi (dönem başına üç sınav) kalır.
+- **(b) Türü yönetilebilir yap:** platform/okul düzeyinde sınav türü tanımlama yüzeyi aç
+  (`term_order` ile birlikte). `ExamType` master olduğu için bu bir **platform izin
+  modülü** işidir — `TB-139`'un açacağı kapının aynısı.
+
+Bu madde `TB-32` ailesindendir: **ekranın söylediği ile sunucunun yapabildiği ayrışmış.**
+Farkı, buradaki yönün tersine olması — ekran bir kural uydurmuyor, olmayan bir yetenek
+vaat ediyor.
+
+---
 ### `TB-142` · Alt-eylem (`:fiil`) yolu bir konumda yönlenmiyor — sessiz 404 ⚪
 
 Faz 2b'nin uçtan uca doğrulamasında ölçüldü (2026-09-13, çalışan API):

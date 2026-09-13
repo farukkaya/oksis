@@ -1,3 +1,4 @@
+
 # OKSİS — Web Bileşen Tekrarı İnceleme Raporu
 
 > **Tarih:** 2026-09-13
