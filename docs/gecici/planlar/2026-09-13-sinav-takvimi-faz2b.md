@@ -1,7 +1,7 @@
 ---
 tags: [plan, exams]
 date: 2026-09-13
-status: ready
+status: in-progress
 ---
 
 # Sınav Takvimi — Faz 2b Uygulama Planı
@@ -235,6 +235,43 @@ taze başlatılmadan ekranlar boş açılır.
 
 Paralelleştirilecekse `R53` geçerli: her ajan kendi `git worktree`'sinde koşar; `oksis-ui`
 tek ağaçta iki ajanla ölçülemez.
+
+## Uygulama günlüğü — Dilim 1-4 bitti (2026-09-13)
+
+**Commit'ler:** `oksis-api` `24863224` (sunucu) · `oksis-ui` `83ab71e` (istemci).
+**Koşum:** birim 1051 + 2612 + 427 + 7 mimari bekçi · entegrasyon **1396/1396** ·
+UI typecheck 6/6, lint temiz, core 542, api 304.
+
+### Planın dışına çıkan dört şey — üçü ölçümden çıktı
+
+**① Öğretmenin görüş yüzeyi PLANDAKİ YERDE OLAMAZDI.** Görev 4.1 "öğretmen oturum
+ayrıntısında yorum bırakır" diyordu. Ölçüm: oturum ayrıntısı ucu `exams.manage` ister —
+öğretmen o ekranı hiç açamaz. Öğretmenin görev listesi (`me/duties`) ise yalnız
+**yayınlanmış** pencereleri gösterir, görüş dönemi ise tanımı gereği yayından ÖNCEdir.
+Yani öğretmenin hakkında görüş bildireceği planı görebileceği **hiçbir yüzey yoktu**.
+Çözüm: yeni bir teacher-scoped uç — `GET exams/me/review` — ve görev listesinin içinde
+çizilen bir panel. Panel görev listesi BOŞKEN de görünür; görüş tam da o sırada açıktır.
+
+**② Bildirim push kapsamına ALINMADI.** Seed'de `push: false` kararı verilmişken
+`PushEventKeyMap`'e eklenmişti; katalog bekçi testleri tutarsızlığı yakaladı ve seed
+kararı korundu (`EXAM_WINDOW_PUBLISHED` ile aynı gerekçe: geniş fan-out, saat başına
+duyarsız bilgi).
+
+**③ `EX-S04`'ün pencere kapsamında gruplama anahtarı fiziksel oda DEĞİL.** Aynı oda iki
+oturumda kullanıldığında odaya göre gruplamak iki oturumun şubelerini tek kümede
+birleştirir ve uyarı **yanlış yerde susardı** — defterin tarif ettiği tuzağın ta kendisi.
+Anahtar `ExamRoom.Id`'dir; tek oturumda ikisi zaten aynıdır (`EX-H11`).
+
+**④ `TB-141` sınav ayağı yol üstünde kapatıldı:** `PublishExamWindow` ve
+`PublishExamSchedule` çağıranı `ExamCaller` yerine kendi kopyasıyla, okul yüklemsiz
+çözüyordu.
+
+### Kalan
+
+⬜ **Dilim 5 — uçtan uca tarayıcı doğrulaması.** Sunucu ve istemci bitti; senaryo
+(§ Dilim 5) gerçek arayüzde koşulmadı.
+
+---
 
 ## Karara bağlandı (2026-09-13)
 

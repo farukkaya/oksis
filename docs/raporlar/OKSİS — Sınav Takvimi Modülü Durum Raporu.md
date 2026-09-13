@@ -15,7 +15,7 @@
 | **Faz 1** — Ders saatinde sınav | Pencere, yerleştirme, pano, iki adımlı yayın, etiket katmanı, takvimler | ✅ **Bitti, merge edildi** | `master` (üç depoda) |
 | **Faz 2a** — Oturum ve yerleşim (sunucu) | `ExamSession`/`ExamRoom`/`ExamSeat`, besteci, komutlar, kurallar, okuma uçları, bildirim | ✅ **Sunucu tarafı 26/26 bitti** | `oksis-api` · **`master`** |
 | **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | ✅ **BİTTİ — 9/9 + 8.1** | `oksis-ui` · **`master`** |
-| **Faz 2b** — Çıktılar ve görüş | Kapı listesi, oturma planı, gözetmen çizelgesi, görüş penceresi | 🟡 **Beyin fırtınası yapıldı (2026-09-13)**, kapsam kilitlendi (§7); plan yazılmadı | — |
+| **Faz 2b** — Çıktılar ve görüş | Kapı listesi, oturma planı, gözetmen çizelgesi, görüş penceresi | 🟡 **Dilim 1-4 bitti (2026-09-13)**; kalan: uçtan uca doğrulama | `oksis-api` `24863224` · `oksis-ui` `83ab71e` |
 | **Faz 3** — Otomatik dağıtıcı | Derslik ve gözetmeni öneren Hangfire işi | ⬜ Kapsam kilitli, planlanmadı | — |
 
 **Faz 2a BİTTİ.** Sunucu 26/26, istemci 9/9, uçtan uca doğrulama koşuldu.
