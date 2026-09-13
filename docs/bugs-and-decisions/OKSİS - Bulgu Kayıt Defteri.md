@@ -469,9 +469,19 @@ programından okuyorlar. Ama ders programı EKRANI dönemin dışındaki haftay�
 2026-09-12'de Görev 7.6'nın tarayıcı doğrulamasında bulundu: gözetmenlik etiketini
 doğrulamak için öğretmenin programına gidildi, hafta dönemin dışında çıktı.
 
-⬜ Kapatma yolu: pencere kurma ve revizyonunda tarih aralığının döneme sığdığını doğrula
-(`EX-` kural kodu gerektirmez, `Result.Conflict` yeter). Ayrıca **dev seed'indeki 2. Sınav
-penceresi de düzeltilmeli** — seed yanlış örneği çoğaltıyor.
+✅ Kapatıldı 2026-09-13: `CreateExamWindowCommandHandler` dönemin sınırlarını sezon
+kimliğiyle AYNI turda okuyor ve `StartDate < term.StartDate || EndDate > term.EndDate`
+ise `Conflict` dönüyor. Hata cümlesi dönemin kendi aralığını da söylüyor — kullanıcı
+hangi tarihlere sığacağını denemeyle değil ekrandan öğreniyor. Sınıra OTURAN pencere
+geçerlidir (kural kapsayıcı). Testler: üç ret senaryosu (`Theory`) + sınır senaryosu.
+
+**Revizyon yolu YOK:** pencerenin tarihlerini değiştiren ikinci bir komut aranıp
+bulunamadı; `CreateExamWindow` tek giriş noktası.
+
+**Dev verisi kendiliğinden düzelmiş:** veritabanı okundu, dönem artık 17 Ağu – 31 Eki ve
+üç pencerenin üçü de içeride. Defterin tablosu o gün doğruydu ama bugün bayat — seed'de
+düzeltilecek bir şey kalmadı. Ayrıca kodda sınav penceresi yazan bir seed sınıfı hiç yok;
+üç pencere ekrandan kurulmuş.
 
 ---
 ### `TB-134` · Oturum tasarımı "elle gözetmen korunmaz" diyor, sunucu tersini yapıyor ⚪
@@ -526,9 +536,11 @@ besleneceği araştırılırken görüldü. `TB-130` ve `TB-131` ile **aynı sı
 sınav yüzeyi tenant izolasyonunda küresel süzgece güveniyor, süper yönetici yolunda
 güvence yok.
 
-⬜ Kapatma yolu: yükleme `w.SchoolId == schoolId` eklemek (handler `tenant.CurrentSchoolId`'yi
-zaten okuyor, üç satır yukarıda) ve süper yönetici testini yazmak. `TB-130` + `TB-131` ile
-**aynı turda** kapatılmalı — üçü de sınav modülünün aynı çağrı zincirinde.
+✅ Kapatıldı 2026-09-13: `GetPlacementSlots` ve `GetMyExamPlacements` pencereyi artık
+`w.SchoolId == schoolId` ile buluyor; `ExamPlacementLoader`'ın pencere/satır okumaları da
+(yazılmış satır, koordinat penceresi, aynı koordinattaki mevcut satır) açık yüklem taşıyor.
+Test: `ExamTenantScopeTests.Should_NotFindWindow_OfAnotherTenant` — düzeltmeden ÖNCE
+kırmızı doğrulandı. `TB-130` + `TB-131` ile aynı turda kapandı.
 
 ---
 ### `TB-132` · Yöneticinin oturum kurma komutunun ekranı yok 🟡
@@ -572,9 +584,19 @@ kodlarıyla sınırlı `NotContain` diyebiliyor — testin ifade gücü bu boşl
 Kardeşi `TB-130` (`ExamCaller.ResolveAsync`). İkisi aynı sınıf: **Faz 1'in sınav yüzeyi
 tenant izolasyonunda küresel süzgece güveniyor, süper yönetici yolunda güvence yok.**
 
-⬜ Kapatma yolu: üç imzaya okul kimliğini almak ve yüklemi eklemek, sonra süper yönetici
-testini `BeEmpty()`'ye yükseltmek. `TB-130` ile **birlikte** yapılmalı — ikisi de sınav
-modülünün aynı çağrı zincirinde ve tek turda kapanırsa tek regresyon yeter.
+✅ Kapatıldı 2026-09-13 — ama **imzalar değişmedi**. Defterin önerdiği yol "üç imzaya okul
+kimliğini al"dı; uygulanan yol okulu `ITenantContext`'ten okumak oldu, çünkü sınıf onu zaten
+alıyordu ve `CountUnplacedAsync` emsali oradan okuyordu. Arayüze okul eklemek, kuralı taklit
+eden bütün birim testlerini gereksizce kırardı — sayaç ZATEN tek bir okul bağlamında koşuyor.
+
+Kapsam da üçten yediye çıktı: `CountExamsAsync`, `HasExamOnAdjacentDayAsync`,
+`GetTermIdAsync`, `CountPendingRequestsAsync`, `GetFirstExamDateAsync`,
+`FindDayLimitBreachesAsync` ve `ReadSessionRoomMixAsync` — Faz 1 yüzeyinin yükemsiz kalan
+her sorgusu. Okul bağlamı yoksa sayım yapılmaz ve nötr değer döner (0 / `false` / boş);
+`GetTermIdAsync` tek istisnadır, dönem kimliği nötr bir değere indirgenemez.
+
+Test: `ExamTenantScopeTests.Should_NotCountForeignWindow_When_SuperAdminHoldsASchool` —
+"kendi pencerem GERÇEKTEN sayılıyor" ÖNCE durumuyla birlikte.
 
 ---
 ### `TB-130` · `ExamCaller.ResolveAsync` çağıranı okul süzmeden çözüyor 🟡
@@ -600,10 +622,22 @@ kapatıyor — hatta üç süper yönetici testi bu hâli *kullanarak* kuruluyor
 Sıradan kullanıcı için ısırmaz (onun küresel süzgeci düşmez); etki süper yönetici oturumuyla
 sınırlı, bu yüzden 🟠 değil 🟡.
 
-⬜ Kapatma yolu: imzaya okul kimliğini almak ve yüklemi eklemek. Uygulayıcı bilinçle
-yapmadı — **beş çağırana dokunuyor** ve o sırada aynı çalışma ağacında ikinci bir ajan
-vardı. Aynı sınıf düzeltme `R55` altında üç kez tekrarladığı için (5.1, 5.6, 5.2) kapanışın
-tek seferde ve testiyle yapılması doğru olur.
+✅ Kapatıldı 2026-09-13: imza `ResolveAsync(db, currentUser, schoolId, ct)` oldu ve yükleme
+`p.SchoolId == schoolId` eklendi. Çağıran sayısı beş değil **on dört** çıktı; üçü okul
+kimliğini bağlamak için ayrıca elden geçti (`ListHourRequests`, `GetExamBadges`,
+`ExamPlacementLoader`). Okul, yükleyicide alan değil METOT PARAMETRESİ — tek bir yükleyici
+örneği iki farklı okul bağlamında yanlışlıkla paylaşılamasın diye.
+
+Aynı turda `ListHourRequests`'in üç sorgusuna da (istekler, sınav satırları, pencereler)
+açık yüklem eklendi: kapsamı yalnız çağıran kimliğine bırakmak, okulu sınır saymamaktı.
+
+Test: `ExamTenantScopeTests.Should_NotResolveCaller_When_PersonBelongsToAnotherSchool` —
+düzeltmeden ÖNCE kırmızı doğrulandı.
+
+**Yan etki — güvence bir kat yukarı taşındı.** `GetMyExamDutiesQueryHandlerTests`'in iki
+`R55` testi "çağıran yabancı kişiye çözülür ama sorgunun yüklemi satırı eler" hâlini
+ölçüyordu (`IsSuccess == true`, liste boş). Artık kimlik hiç çözülmüyor ve uç `Forbidden`
+dönüyor; testler bu daha güçlü cevaba göre güncellendi. Ölçülen kırmızı çizgi aynı.
 
 ---
 ### `X-21` · Modül dokümantasyon sistemi baştan sona doldurulmamış şablon ⚪
@@ -631,6 +665,30 @@ terk edip `_MODULE_GUIDE.md`'yi arşive almak ve spec+plan çiftini tek kaynak i
 (b) modül başına yalnız `README.md`'yi doldurup kalan dokuzu silmek (sınav bugün bu hâlde);
 (c) sistemi gerçekten işletmek — 19 modül × 10 dosya, büyük ve tekrarlı iş.
 **Tercih verilmeden başlamak yanlış.**
+
+> ⚠️ **2026-09-13 — ölçüm tazelendi, yukarıdaki tarif BAYAT.** (b) şıkkını uygulamak üzere
+> klasörler sayıldığında "hiçbiri doldurulmamış" cümlesinin doğru olmadığı görüldü:
+>
+> | | dosya | satır |
+> |---|---|---|
+> | Şablonun 20 satır üstüne çıkmış — gerçek içerik | **75** | **18 809** |
+> | Şablona yakın — boş iskelet | 126 | 8 278 |
+>
+> Dolu dosyaların dağılımı: `timetable` 9 · `school-settings` 9 · `academic-years` 8 ·
+> `students` 7 · `users` 7 · `identity` 7 · `documents` 7 · `announcements` 3 ·
+> `classrooms` 3 · `schools` 2. `timetable/api-contracts.md` **942**,
+> `students/api-contracts.md` **675**, `users/database-schema.md` **591** satır — hiçbiri
+> `{{TBD}}` taşımıyor. Defterdeki örnekler (`marks/README.md`, `homework/README.md`)
+> gerçekten boş, ama onlar 19 modülün tamamını değil bir azınlığını temsil ediyor.
+>
+> **Sonuç:** (b) "modül başına yalnız README'yi tutup kalan dokuzu sil" olduğu gibi
+> uygulanırsa ~18 800 satır gerçek belge silinir — üstelik `README.md` çoğu modülde
+> **dolu olmayan** dosya (yalnız 5 modülde dolu). Bu yüzden silme İŞLETİLMEDİ.
+>
+> [[karar-oncesi-yeniden-olcum]]: bayat tarif yanlış kullanıcı kararı üretir. Yeni şıklar:
+> **(b′)** yalnız şablona yakın 126 dosyayı sil, dolu 75'i yerinde bırak (klasör yapısı
+> kalır, boş gürültü gider); **(a′)** `modules/`'ü tümüyle arşive al ve dolu dosyaları
+> `docs/documents/` altına taşı. Karar yine kullanıcınındır.
 
 ---
 ### `TB-114` · KPI kartlarının değişim/eğilim verisi hiçbir uçta yok ⚪
