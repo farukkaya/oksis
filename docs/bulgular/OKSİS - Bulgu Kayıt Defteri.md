@@ -33,7 +33,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-146` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-147` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -47,13 +47,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
-| 🟠 Yüksek | 5 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **39** | |
+| **Toplam** | **40** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 23 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 24 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +310,42 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-146` · Saat isteği gönderme yolu üründe HİÇ YOK — cevaplama ekranı boş kalıyor 🟠
+
+Sınav takviminin en özgün akışı — öğretmenin başka bir öğretmenin ders saatine talip
+olması — sunucuda **eksiksiz**, üründe **girişsiz**.
+
+Ölçüldü (2026-09-13, ekran testi + kod taraması):
+
+| Katman | Durum |
+|---|---|
+| Komut / uç | ✅ `RequestExamHour`, `POST exams/{examId}:request-hour` |
+| Alan modeli | ✅ `HourRequest` + cevap komutu (`AnswerHourRequest`) |
+| Kural | ✅ `EX-H09` — cevaplanmamış istek yayını SERT engeller |
+| Bildirim | ✅ `ExamHourRequested` / `ExamHourAnswered` |
+| Sweep | ✅ taslak son gününde cevapsız istekler düşer |
+| İstemci uç + kanca | ✅ `requestExamHour`, `useRequestExamHour` (`packages/api`) |
+| **Gönderme ekranı** | ❌ **YOK** — `useRequestExamHour`'u çağıran hiçbir web/mobil bileşeni yok |
+| Cevaplama ekranı | ✅ `exam-hour-requests-screen.tsx` (gelen/giden segmentli) |
+
+**Ekranda görülen:** yerleştirme ızgarasında başkasının ders saati yalnız
+*"Sosyal Bilgiler · Tuğçe Avcı — dersiniz değil"* yazıyor ve tıklanamıyor. Haftada tek
+saati olan öğretmen (Görsel Sanatlar, Cuma 6. ders) için ürün içinde **başka hiçbir
+seçenek yok**: ya o saate razı olur ya sınavı hiç yerleştirmez.
+
+**Sonuç zinciri:** gönderme yolu olmadığı için "Saat istekleri" ekranının gelen listesi
+hiçbir zaman dolmaz, `EX-H09` hiçbir zaman ısırmaz, iki bildirim tipi hiç üretilmez ve
+sweep hiç iş görmez. Yani **bir alan modeli, bir kural, iki bildirim ve bir arka plan işi
+tek bir düğmenin yokluğu yüzünden ölü**.
+
+`TB-132`'nin kardeşi (yöneticinin oturum kurma komutunun ekranı yoktu) — ama etkisi daha
+geniş, çünkü orada tek komut ölüydü, burada bütün bir akış.
+
+⬜ **Yapılacak:** yerleştirme ızgarasındaki "dersiniz değil" hücresine **"Bu saati iste"**
+eylemi eklenmeli (gerekçe alanıyla). Sunucu hazır; iş yalnız ekran tarafında. Kapsam:
+`exam-place-screen.tsx` + hücre modali.
+
+---
 ### `TB-145` · "Sınav haftası" duyurusu okulun tamamına değil, tek şubeye gidiyor 🟡
 
 `NotificationKind.ExamWindowPublished`'ın kendi dokümanı iki yerde okul geneli diyor:
