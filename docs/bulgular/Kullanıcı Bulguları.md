@@ -1,2 +1,1 @@
-- Yönetici: Etkinlikler ekranı  Tümü Yaklaşan Geçmiş switch'i tablonun sağ üstünde konumlandırmalıyız genel yapı bu şekil(Örnek Ders Programı Hub Ekranı)
-- Yönetici: Duyurular Ekranı Filtre barındaki sezon seçiciyi kaldır. İlgili görevi TopBar'daki Sezon bağlamın devredilecek. Ve Native selectboxları Öğrenciler ekranında ki SelectBox gibi olmalı
+
