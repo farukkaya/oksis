@@ -5,7 +5,10 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son ekleme:** 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
+> **Son ekleme:** 2026-09-14 — sınav takvimi ekran testi (Bölüm A): `TB-143`…`TB-150`
+> eklendi. `TB-150` aynı gün merkezî olarak kapandı (`shell.css` baskı tabanı); `TB-146`,
+> `TB-147` ve `TB-149` kodda düzeltildi, doğrulama turu bekliyor. Defter **44**.
+> Önceki: 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
 > (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
 > bugün erişilemez olduğu ölçümü eklendi. `TB-140` aynı gün kapandı
 > (`oksis-api` @ `1905abbc`). Defter **35**.
@@ -47,13 +50,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) |
-| 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 7 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 20 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **43** | |
+| **Toplam** | **44** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 27 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 28 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +313,50 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-150` · Hiçbir yazdırma çıktısı kâğıda düşmüyor — kabuk gövdeyi kırpıyor 🟠
+
+Ekran testinde yakalandı (2026-09-14, A7): sınav takviminin *"Yazdır"* düğmesi tarayıcı
+önizlemesini açıyor ama önizleme **bembeyaz** — tek boş A4, üstünde tarih, altında
+`localhost:3000/exams 1/1`. Oysa aynı anda diyaloğun arkasındaki ekranda kâğıt doğru
+çizilmiş durumda (*"4 sınav yerleşti · 10 şube × ders"*).
+
+**Kök sebep — kabukta, ekranda değil.** `shell.css` gövdeyi bilerek kilitliyor:
+
+```css
+body { ... overflow: hidden; }     /* .shell 100vh ızgara, kaydırma .main'de */
+```
+
+Gövdedeki taşma bildirimi CSS gereği **görüntü alanına yayılır** (`html` görünür olduğu
+sürece). Ekranda bu istenen davranıştır; **baskıda belgeyi tek sayfaya kırpar** ve gerçek
+içerik `.main`in kaydırma kutusunda kaldığı için kâğıda hiçbir şey düşmez.
+
+**Ekranın doğru görünmesi yanılttı.** `.ex-pr` çizilmişti, `@media print` blokları
+yazılmıştı, `.shell`/`.main` ezmeleri de yerindeydi — eksik olan tek satır gövdenin
+kendisiydi. Önizleme doğrulanmış, **gerçek baskı hiç doğrulanmamıştı**
+(krş. [[besleyen-yuzey-olculmeden-kapanmaz]]).
+
+**Kapsam tek ekran değil.** Aynı kırpma, yazdırma stili olan her yüzeyi vuruyor:
+
+| Yüzey | Stil | Durum |
+|---|---|---|
+| Sınav — şube takvimi / kapı listesi / oturma planı / gözetmen çizelgesi | `exam.css` | boş basıyordu |
+| **Ders Programım** (öğretmen/öğrenci salt okunur) | `schedule-read.css` | **aynı kusur — ölçüldü** |
+| Eşik aşımı resmî yazısı | `threshold-letter.css` | gövdeyi `body > *` ile boşaltıyor, aynı kırpmaya tabi |
+
+Üç dosyanın üçü de aynı iki ezmeyi (`.shell { display:block }`, `.main { overflow:visible }`)
+**kopyalayarak** taşıyordu; üçü de gövdeyi atlamıştı. Kalıbın kendisi kusurluydu — yeni
+her yazdırma ekranı aynı tuzağa düşecekti.
+
+✅ **Düzeltildi** (`oksis-ui`, 2026-09-14): ezmeler ekranlardan alındı, `shell.css`e tek bir
+**baskı tabanı** kuruldu — `html, body { overflow: visible; height: auto }`, ızgaranın
+çözülmesi ve gezinme parçalarının gizlenmesi orada bir kez yazılır. `exam.css` ile
+`schedule-read.css` artık yalnız KENDİ parçalarını gizliyor. Merkezî kapanış,
+[[yamalama-kabul-degil]] gereği.
+
+⬜ **Kalan:** kullanıcı yeniden bastığında doğrulanacak; `threshold-letter.css` çıktısı da
+aynı turda gözle görülmeli (tabandan faydalanıyor ama kendi yolu farklı).
+
+---
 ### `TB-149` · Bir sınav için birden çok bekleyen istek açılabiliyor; artakalanlar kutuda asılı kalıyor 🟡
 
 Ekran testinde ortaya çıktı (2026-09-14): tek bir sınav (11-A · Görsel Sanatlar) için
