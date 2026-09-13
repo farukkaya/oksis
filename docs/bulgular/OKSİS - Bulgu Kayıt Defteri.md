@@ -310,42 +310,33 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
-### `TB-146` · Saat isteği gönderme yolu üründe HİÇ YOK — cevaplama ekranı boş kalıyor 🟠
+### `TB-146` · Saat isteği yalnız KARDEŞ ŞUBE yolundan açılabiliyor; kendi şubende yok 🟠
 
 Sınav takviminin en özgün akışı — öğretmenin başka bir öğretmenin ders saatine talip
-olması — sunucuda **eksiksiz**, üründe **girişsiz**.
+olması — ürün içinde **yarım** duruyor.
 
-Ölçüldü (2026-09-13, ekran testi + kod taraması):
+**Ölçüldü (2026-09-13, ekran testi + kod):**
 
-| Katman | Durum |
+| Yol | Durum |
 |---|---|
-| Komut / uç | ✅ `RequestExamHour`, `POST exams/{examId}:request-hour` |
-| Alan modeli | ✅ `HourRequest` + cevap komutu (`AnswerHourRequest`) |
-| Kural | ✅ `EX-H09` — cevaplanmamış istek yayını SERT engeller |
-| Bildirim | ✅ `ExamHourRequested` / `ExamHourAnswered` |
-| Sweep | ✅ taslak son gününde cevapsız istekler düşer |
-| İstemci uç + kanca | ✅ `requestExamHour`, `useRequestExamHour` (`packages/api`) |
-| **Gönderme ekranı** | ❌ **YOK** — `useRequestExamHour`'u çağıran hiçbir web/mobil bileşeni yok |
-| Cevaplama ekranı | ✅ `exam-hour-requests-screen.tsx` (gelen/giden segmentli) |
+| Kardeş şubede istek | ✅ **VAR** — saat seçicideki *"Aynı sınavı başka şubelerde de yap"* kutusu; kendi saatini kaydederken öteki şubeler için `requestExamHour` gönderiyor |
+| **Kendi şubende istek** | ❌ **YOK** — ızgarada başkasının hücresi yalnız *"… — dersiniz değil"* yazıyor, tıklanamıyor |
 
-**Ekranda görülen:** yerleştirme ızgarasında başkasının ders saati yalnız
-*"Sosyal Bilgiler · Tuğçe Avcı — dersiniz değil"* yazıyor ve tıklanamıyor. Haftada tek
-saati olan öğretmen (Görsel Sanatlar, Cuma 6. ders) için ürün içinde **başka hiçbir
-seçenek yok**: ya o saate razı olur ya sınavı hiç yerleştirmez.
+**İlk yazımda "akışın hiç girişi yok" demiştim; yanlıştı** — kardeş şube yolu çalışıyor.
+Doğrusu şu: istek ancak **kendi saatin varken** ve **yan şube için** açılabiliyor.
 
-**Sonuç zinciri:** gönderme yolu olmadığı için "Saat istekleri" ekranının gelen listesi
-hiçbir zaman dolmaz, `EX-H09` hiçbir zaman ısırmaz, iki bildirim tipi hiç üretilmez ve
-sweep hiç iş görmez. Yani **bir alan modeli, bir kural, iki bildirim ve bir arka plan işi
-tek bir düğmenin yokluğu yüzünden ölü**.
+**Çıkmaz somut:** haftada tek saati olan öğretmen (11-A · Görsel Sanatlar, Cuma 6. ders).
+O saat sınav için kötüyse yapabileceği hiçbir şey yok: kendi şubesinde başka saat isteyemez,
+kardeş şube yolu da kendi saatini kaydetmesini şart koşuyor. Yani en çok isteğe muhtaç
+öğretmen, isteğe hiç ulaşamıyor.
 
-`TB-132`'nin kardeşi (yöneticinin oturum kurma komutunun ekranı yoktu) — ama etkisi daha
-geniş, çünkü orada tek komut ölüydü, burada bütün bir akış.
-
-⬜ **Yapılacak:** yerleştirme ızgarasındaki "dersiniz değil" hücresine **"Bu saati iste"**
-eylemi eklenmeli (gerekçe alanıyla). Sunucu hazır; iş yalnız ekran tarafında. Kapsam:
-`exam-place-screen.tsx` + hücre modali.
+⬜ **Yapılacak (kullanıcı kararı, 2026-09-13):** ızgarada **kendine ait olmayan hücre de
+seçilebilsin**; seçildiğinde birincil düğme *"Saati kaydet"* yerine **"Saati Talep Et"**
+olsun ve `requestExamHour` çağrılsın. Sunucu hazır (`RequestExamHourCommand`, gövde
+`:place` ile aynı); iş yalnız seçicide.
 
 ---
+
 ### `TB-145` · "Sınav haftası" duyurusu okulun tamamına değil, tek şubeye gidiyor 🟡
 
 `NotificationKind.ExamWindowPublished`'ın kendi dokümanı iki yerde okul geneli diyor:
