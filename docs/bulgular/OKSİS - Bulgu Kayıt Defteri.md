@@ -33,7 +33,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-144` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-145` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -49,11 +49,11 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 5 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 14 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **37** | |
+| **Toplam** | **38** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 21 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 22 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +310,25 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-144` · Taslak kartı ihlal sayısı gösteriyor ama açılacak yeri yok ⚪
+
+Taslak pencerenin kartında **"1 İhlal"** yazıyor; panoya girince ekran
+*"Pencere henüz yayınlanmadı — panonun gösterecek içeriği yok"* diyor ve ihlal listesi
+hiç çizilmiyor. Yönetici sayıyı görüyor, karşılığını göremiyor.
+
+Ölçüldü (2026-09-13, ekran testi, `s2` 1. Dönem): kartın `violationCount` alanı pencere
+listesinin BEKLENEN kümesinden türüyor (`ExamPublishFacts.FromExpectations`) ve taslakta
+tek satır `EX-S05` oluyor — "10 şube × ders için saat seçilmedi". Bu taslakta zaten
+kaçınılmaz: hiçbir şey yerleşmemiştir.
+
+**İki yol var, biri seçilmeli:**
+- **(a)** Taslakta ihlal sayacını **gösterme** — sayı bilgi taşımıyor, yalnız kaygı üretiyor.
+- **(b)** Panonun taslak boş-hâli ihlal listesini **yine de** çizsin (yalnız `EX-S05`).
+
+(a) daha doğru görünüyor: taslağın anlamı "henüz kimse yerleştirmedi"dir ve bunu kart
+zaten `0/10 · %0` ile söylüyor.
+
+---
 ### `TB-143` · Pencere modali olmayan bir yola gönderiyor — sınav türü hiçbir yerden tanımlanamıyor 🟠
 
 Dönemin sınav türleri tükendiğinde pencere kurma modali şunu yazıyor ve düğmeyi kapatıyor:
