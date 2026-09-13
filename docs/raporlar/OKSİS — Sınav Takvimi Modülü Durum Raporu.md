@@ -3,7 +3,8 @@
 > **Yaşayan belge.** Sınav takvimi modülünün fazları arasında "nerede kaldık"
 > sorusunun tek cevabı. Her oturum sonunda güncellenir; tarihli kopya çıkarılmaz.
 >
-> **Son güncelleme:** 2026-09-13 (tenant turu) · **Yazan:** Claude Opus 5 (1M context)
+> **Son güncelleme:** 2026-09-13 (Faz 2a master'a alındı · Faz 2b kapsamı kilitlendi) ·
+> **Yazan:** Claude Opus 5 (1M context)
 
 ---
 
@@ -14,13 +15,14 @@
 | **Faz 1** — Ders saatinde sınav | Pencere, yerleştirme, pano, iki adımlı yayın, etiket katmanı, takvimler | ✅ **Bitti, merge edildi** | `master` (üç depoda) |
 | **Faz 2a** — Oturum ve yerleşim (sunucu) | `ExamSession`/`ExamRoom`/`ExamSeat`, besteci, komutlar, kurallar, okuma uçları, bildirim | ✅ **Sunucu tarafı 26/26 bitti** | `oksis-api` · **`master`** |
 | **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | ✅ **BİTTİ — 9/9 + 8.1** | `oksis-ui` · **`master`** |
-| **Faz 2b** — Çıktılar ve yoklama | Kapı listesi, oturma planı, gözetmen çizelgesi, gözetmen yoklaması, görüş penceresi | ⬜ Beyin fırtınası yapılmadı | — |
+| **Faz 2b** — Çıktılar ve görüş | Kapı listesi, oturma planı, gözetmen çizelgesi, görüş penceresi | 🟡 **Beyin fırtınası yapıldı (2026-09-13)**, kapsam kilitlendi (§7); plan yazılmadı | — |
 | **Faz 3** — Otomatik dağıtıcı | Derslik ve gözetmeni öneren Hangfire işi | ⬜ Kapsam kilitli, planlanmadı | — |
 
 **Faz 2a BİTTİ.** Sunucu 26/26, istemci 9/9, uçtan uca doğrulama koşuldu.
 **Tenant turu da kapandı** (2026-09-13): `TB-130` · `TB-131` · `TB-133` · `TB-135`
-düzeltildi ve testlendi (§6). Sırada **Faz 2b beyin fırtınası** (§7) ve ayrı bir tur
-olarak `TB-139` var.
+düzeltildi ve testlendi (§6). **Faz 2b'nin beyin fırtınası 2026-09-13'te yapıldı** ve
+kapsamı daralttı (§7): gözetmen yoklaması kapsam dışına alındı, görüş penceresi tam
+uygulanacak. Sıradaki iş: `TB-140` kısa turu, sonra Faz 2b planı. `TB-139` ayrı tur.
 
 ### Görev 8.1 — uçtan uca doğrulama (2026-09-13)
 
@@ -41,23 +43,23 @@ yoktu → Görev 7.9), `TB-133` (yerleştirme saatleri sorgusu okul süzmüyor),
 kendi döneminin dışına kurulabiliyor), `TB-136` 🟠 (öğretmen kendi programında okulun
 BÜTÜN etiketlerini görüyordu), `TB-137` ve `TB-138` (diyalog yerleşimi ve metni).
 
-### Dal ve ağaç topolojisi (2026-09-13'te yeniden kuruldu)
+### Dal ve ağaç topolojisi (2026-09-13'te ölçüldü)
 
-2026-09-12'de kullanıcı Faz 2a dallarını **master'a merge edip push etti** ve bütün
-eski dal/worktree'leri sildi. Bugünkü hâl:
+Faz 2a'nın tamamı **master'a alındı ve push edildi**. Her iki depoda
+`feature/exam-session-client` = `master` = `origin/master`; dallar merge'den sonra da
+aynı ucu gösterdiği için silinmedi, geride iş bırakmıyorlar.
 
-| Depo | Dal | Ağaç | Kim |
-|---|---|---|---|
-| `oksis-api` | `feature/exam-session-client` (master'dan **3 commit** ileri) | `~/Repositories/oksis-api` | sınav işi |
-| `oksis-ui` | `feature/exam-session-client` (master'dan **3 commit** ileri) | `~/Repositories/oksis-ui` | sınav işi |
-| `oksis-api` | `fix/polish` | `~/Repositories/worktrees/oksis-api-polish` | **kullanıcı** — dokunulmaz |
-| `oksis-ui` | `fix/polish` | `~/Repositories/worktrees/oksis-ui-polish` | **kullanıcı** — dokunulmaz |
+| Depo | Dal | Uç | Ağaç | Kim |
+|---|---|---|---|---|
+| `oksis-api` | `feature/exam-session-client` = `master` = `origin/master` | `20ab14bd` | `~/Repositories/oksis-api` | sınav işi |
+| `oksis-ui` | `feature/exam-session-client` = `master` = `origin/master` | `3dcfeed` | `~/Repositories/oksis-ui` | sınav işi |
+| `oksis-api` | `fix/polish` | `dda332cf` | `~/Repositories/worktrees/oksis-api-polish` | **kullanıcı** — dokunulmaz |
+| `oksis-ui` | `fix/polish` | `1ab7a20` | `~/Repositories/worktrees/oksis-ui-polish` | **kullanıcı** — dokunulmaz |
 
-`master` her iki depoda Faz 2a'nın tamamını taşıyor; ad aynı olsa da dallar
+Kapanış merge'leri: `oksis-api` `294ffe62` · `oksis-ui` `ec9ea8c`. Ad aynı olsa da dallar
 **master'dan yeniden türetildi**, eski `feature/exam-session` geçmişi master'ın içinde.
-
-⬜ **Karar bekliyor:** bu üç commit'lik dallar master'a ne zaman alınsın — şimdi mi,
-kullanıcının `fix/polish` işi bitince birlikte mi?
+Sonrasında iki depo kabuk işi daha aldı: belge merkezine taşıma (`2cf181c6` / `3dcfeed`)
+ve bayat kod yorumlarının düzeltilmesi (`20ab14bd`).
 
 ---
 
@@ -120,23 +122,25 @@ enum değil. Ekran bunu olduğu gibi çizer.
 
 ---
 
-## 4. Faz 2a — kalan iş: Dilim 7 + Görev 8.1
+## 4. Faz 2a — istemci dilimi: bitti (9/9 + 8.1)
 
-**Plan:** `docs/superpowers/plans/2026-09-09-sinav-takvimi-faz2a.md`, satır 2043'ten
-itibaren. Her görevden önce `handoff-web` (mobil görevlerde `handoff-mobile`) skill'i.
+**Plan:** `2026-09-09-sinav-takvimi-faz2a.md` — belge merkezi yeniden yapılandırmasında
+silindi, `oksis` @ `1061fe8^` içinde duruyor (§8). Commit'ler `oksis-ui` deposundandır.
 
-| Görev | Durum | Tahmin | Not |
-|---|---|---|---|
-| 7.1 `packages/core` — oturum tipleri + saf mantık | ✅ `e63b61a` | — | `session.ts` 97 satır; tipler sunucu DTO'larıyla alan alan birebir |
-| 7.2 `packages/api` — uçlar + query'ler | ✅ `d5dcfc8` | — | 10 uç yolunun 10'u sunucu rotalarıyla birebir; `schema.ts` HEAD'den taze |
-| 7.3 Web — yerleştirme ekranı oturum modu | ✅ `7f0dde3` | — | Tarayıcıda uçtan uca doğrulandı; üç kusur bulunup düzeltildi (§4.1) |
-| 7.4 Web — pano oturum görünümü | ⬜ | 1,5–2 s | `exam-board-screen.tsx` (975 satır); `lessonHour` modunda kart **hiç görünmez** (Kısıt 15) |
-| **7.5 Web — oturum ayrıntısı ekranı (YENİ)** | ⬜ | **4–6 s** | İşin üçte biri: iki sütun, 7 modal, 9 durumluk matris, 3 uyumsuzluk |
-| 7.6 Web — ders programı sınav etiketi | ⬜ | 0,5–1 s | Faz 1 etiketi genişler |
-| 7.7 Mobil — öğrenci/veli takvimine derslik + sıra | ⬜ | 1–1,5 s | `exam-schedule-screen.tsx` (591 satır); **ekran içi başlık yok** (kullanıcı kararı) |
-| 7.8 Öğretmen gözetmenlik takvimi (web + mobil) | ⬜ | 1,5–2 s | Tek görev, iki platform |
-| **7.9 Web — yöneticinin oturum kurması** | ⬜ | 1,5–2 s | 2026-09-12'de eklendi (`TB-132`); `CreateExamSession` ürüne hiç bağlanmamıştı |
-| 8.1 Uçtan uca doğrulama ve örnek veri | ⬜ | 1–2 s | Altı adım; bulgu çıkarsa maliyeti bu tahminin dışında |
+| Görev | Durum | Not |
+|---|---|---|
+| 7.1 `packages/core` — oturum tipleri + saf mantık | ✅ `e63b61a` | `session.ts`; tipler sunucu DTO'larıyla alan alan birebir |
+| 7.2 `packages/api` — uçlar + query'ler | ✅ `d5dcfc8` | 10 uç yolunun 10'u sunucu rotalarıyla birebir |
+| 7.3 Web — yerleştirme ekranı oturum modu | ✅ `128ed5f` + `7f0dde3` | Ön koşul `bd95af5` (kelebek modu ekranda kapalıydı); tarayıcıda doğrulandı, üç kusur çıktı (§4.1) |
+| 7.4 Web — pano oturum görünümü | ✅ `63a6c38` + `fb993f4` | Izgara tasarımın diline çekildi |
+| 7.5 Web — oturum ayrıntısı ekranı | ✅ `de2757c` | 1 815 satır: iki sütun, 7 modal, 9 durumluk matris; üç uyumsuzlukta sunucu kazandı (aşağıda) |
+| 7.6 Web — ders programı sınav etiketi | ✅ `6fa6928` | Sunucu ayağı `oksis-api` `f19c114a`; etiket dersi olmayan saatte de çiziliyor |
+| 7.7 Mobil — öğrenci/veli takvimine derslik + sıra | ✅ **istemci değişikliği gerekmedi** | `exam-schedule-screen.tsx` alanları Faz 1'de (`455bbd5`) yazılmıştı; eksik olan sunucu ayağıydı (`oksis-api` `1faeaced`). Gerçek cihazda doğrulandı |
+| 7.8 Öğretmen gözetmenlik takvimi (web + mobil) | ✅ `f2b696b` | Tek görev, iki platform; sunucu ayağı `oksis-api` `734fbe12` |
+| 7.9 Web — yöneticinin oturum kurması | ✅ `4172c25` | `TB-132`; `CreateExamSession` ürüne hiç bağlanmamıştı |
+| 8.1 Uçtan uca doğrulama ve örnek veri | ✅ 2026-09-13 | Altı adımın beşi tam, biri kısmen (§1); yedi bulgu çıktı, düzeltmeleri `30f8e97` |
+
+**Kapanış merge'i:** `oksis-ui` `ec9ea8c`.
 
 ### 4.1 · Görev 7.3'ün tarayıcı doğrulamasında çıkan üç kusur (2026-09-12, düzeltildi)
 
@@ -196,7 +200,7 @@ Bu üç adım atlanırsa ekran boş açılır ve bir tur boşa gider.
 # 1. Göçleri uygula — API göçleri otomatik uygulamıyor.
 #    Bu yapılmazsa oturum tabloları dev veritabanında YOK ve her ekran "veri yok" gösterir.
 cd ~/Repositories/oksis-api
-git checkout feature/exam-session-client
+git checkout master   # feature/exam-session-client aynı ucu gösteriyor
 dotnet ef database update --project src/Oksis.Infrastructure --startup-project src/Oksis.Api
 
 # 2. API'yi TAZE başlat. Bayat :5112 süreci Faz 1'de codegen'e boş şema ürettirdi
@@ -211,12 +215,10 @@ npm run codegen -w packages/api
 **Dev ortam:** API `:5112` · Web `:3000` · seed hesapları `s1`'den başlar,
 ders programı verisi `s3`'te.
 
-> **Not (2026-09-12):** Yukarıdaki üç adım, ekranı **host'taki** geliştirme sunucusunda
-> açmak içindir. `chore/test-env` dalındaki `./scripts/test-env.sh <ref>` betiği aynı işi
-> container'da yapar: istenen ref'i (dal/etiket/SHA) .NET API + Next web + Expo Metro
-> olarak ayağa kaldırır ve çalışma dizinine hiçbir şey yazmaz. Görev 8.1'in ekran
-> doğrulaması ve paralel ajan koşuları için host sunucusuyla yarışmaktan iyidir.
-> Dal henüz master'a alınmadı.
+> **Not (2026-09-13'te ölçüldü):** Yukarıdaki üç adım, ekranı **host'taki** geliştirme
+> sunucusunda açmak içindir. Daha önce burada anılan `chore/test-env` dalı ve
+> `./scripts/test-env.sh` betiği **artık hiçbir depoda yok** — dal silinmiş, betik
+> geçmişte de bulunamıyor. Container'da ayağa kaldırma gerekirse yeniden yazılacaktır.
 
 ---
 
@@ -260,44 +262,90 @@ denetlenir yapmak.
 
 ---
 
-## 7. Faz 2b — kapsam ve ilk karar noktası
+## 7. Faz 2b — kapsam kilitlendi (2026-09-13 beyin fırtınası)
 
-**Kapsam (Faz 2a spec'i §11'den):**
-- Kapı listesi / oturma planı / gözetmen çizelgesi çıktıları
-- Gözetmen yoklaması ve Attendance bağı
-- Görüş penceresi (`ExamWindow.OpenReview` Faz 1'de yazıldı, hâlâ çağrılmıyor) ve
-  `ExamReviewOpened`
+**Kapsam:** kapı listesi · oturma planı · gözetmen çizelgesi çıktıları · görüş penceresi
+(`ExamWindow.OpenReview` + `SessionReviewComment`) ve `ExamReviewOpened`.
 
-**İlk karar noktası — beyin fırtınasının ilk sorusu:**
+**Kapsam DIŞI (bu turda alınan karar):** gözetmen yoklaması ve Attendance bağı.
 
-`AttendanceSession` bir `PlacementId` ve **tek** bir `ActualTakerId` taşır. Kelebekte
-9-A üç ayrı dersliğe bölünür ve üç ayrı gözetmen tarafından işaretlenir — yani tek
-şubenin tek yoklama oturumuna üç kişi yazar. `AttendanceRecord.MarkedBy` kayıt bazında
-olduğu için veri modeli bunu taşıyabilir, ama oturumun "kim aldı" alanı ve
-`SubmitAttendance` teslim akışı tek kişi varsayar. Omurga spec'i §5.4 bu çakışmayı
-görmemişti.
+### Alınan beş karar
 
-**Bu fazda hiç yapılmayacaklar:** derslik müsaitliği/tadilat kavramı (`K-24`) ·
-derslik başına ikinci gözetmen (`K-25`) · dersliğin sıra × sütun düzeni ·
-şube dersliğinin zorunlu kılınması (`K-26`, `TB-120`).
+| # | Soru | Karar | Gerekçe |
+|---|---|---|---|
+| 1 | Kelebekte yoklamayı kim alır? | **Sınav saatinde yoklamaya hiç dokunulmaz.** Sunucuda tek satır değişmez; yoklamayı ders öğretmeni normal akışından alır, gözetmen kâğıt imza listesi tutar | Kelebeğe özel ikinci bir yoklama sistemi istenmiyor |
+| 2 | Üç çıktı nereden beslenir? | Kapı listesi ve oturma planı **`GetExamSession`'ın mevcut okumasından**; yalnız gün/pencere eksenli **gözetmen çizelgesi için yeni sorgu** | Faz 1'in "yeni sorgu açılmaz" kuralı korunur; ekranda karşılığı olmayan tek çıktı çizelgedir |
+| 3 | Görüş penceresi? | **Tam uygulanacak** — `SessionReviewComment` varlığı, aç/yorum bırak/çözüldü işaretle komutları, `ExamReviewOpened` bildirimi, öğretmen yüzeyi | Alanlar ve okul ayarı zaten yarım duruyordu |
+| 4 | Görüş süresi dolmadan yayın? | **Yumuşak kapı** — uyarı üretir, yönetici gerekçe yazarak geçer | `EX-H08` (7 gün) ve `EX-S05` emsali: kural sunucuda, kaçış yolu izli |
+| 5 | Açık (çözülmemiş) yorum? | **Uyarı üretir, gerekçe ister** — yayın ön kontrolünde listelenir | Yorum sessizce gömülmez, ama tek unutulmuş yorum yayını kilitlemez |
+
+### Kararların sonuçları
+
+**① Omurga spec §5.4 hükümsüz.** Orada yazılı olan *"ders öğretmeni o saatte kendi
+şubesinden yoklama almaya kalkarsa 'bu saat sınav oturumunda, yoklama gözetmenden gelir'
+hatası"* kuralı ve onu denetleyecek `IsInExamSession(classRoomId, date, period)` sorgusu
+**yazılmayacak**. Sınav saatinde şube oturumu normal akışında kalır; yoklama hatırlatma
+sweep'i de o saatleri normal ders gibi görmeye devam eder. `AttendanceSession`'ın tek
+`ActualTakerId` alanı ve `Submit`'in "hepsi ya da hiç" varsayımı **değişmeden kalır**.
+
+**② Faz 2b küçüldü.** Sunucu tarafında Attendance'a hiç dokunulmuyor; yeni yazılacak tek
+alan modeli `SessionReviewComment` (oturum, öğretmen, metin, çözüldü mü).
+
+**③ Yayın kapısı iki yeni yumuşak kural kazanıyor** — ikisi de `ExamRuleInspector.CheckPublish`
+içine, mevcut `EX-S` kalıbıyla: görüş süresi dolmadan yayın, ve açık yorumla yayın.
+
+### Faz 2b'nin dilim iskeleti (plan henüz yazılmadı)
+
+1. **Görüş penceresi — sunucu:** `SessionReviewComment` + `OpenExamReview` /
+   `AddSessionReviewComment` / `ResolveSessionReviewComment` komutları + iki yayın kuralı +
+   `ExamReviewOpened` bildirimi.
+2. **Gözetmen çizelgesi sorgusu:** gün/pencere ekseninde derslik × gözetmen okuması.
+3. **İstemci — üç çıktı:** kapı listesi ve oturma planı oturum ekranından, çizelge kendi
+   sorgusundan; yazdırma kalıbı Faz 1'in `exam-print-section-schedule.tsx`'i.
+4. **İstemci — görüş yüzeyi:** öğretmenin yorum bırakması, yöneticinin çözüldü işaretlemesi,
+   yayın ön kontrolünde iki yeni uyarının çizilmesi.
+
+### Bu fazda hiç yapılmayacaklar
+
+Derslik müsaitliği/tadilat kavramı (`K-24`) · derslik başına ikinci gözetmen (`K-25`) ·
+dersliğin sıra × sütun düzeni · şube dersliğinin zorunlu kılınması (`K-26`, `TB-120`) ·
+**gözetmen yoklaması ve Attendance bağı** (yukarıdaki 1 numaralı karar).
+
+### Faz 2b'den önce
+
+⬜ **`TB-140` kısa turu** (kullanıcı kararı 2026-09-13): yoklama ve duyuru modüllerinin
+çağıran çözümleyicileri okul süzmüyor — `TB-130`'un ikizleri. *Not: bu kararın ilk
+gerekçesi "Faz 2b'nin yoklama köprüsü bu yüzeyin üstüne kurulacak" idi; 1 numaralı kararla
+köprü kapsamdan çıktı, yani turun aciliyeti düştü ama bulgu geçerliliğini koruyor.*
+
+⬜ **`EX-S04`'ün pencere kapsamına alınması** — olgu sözleşmesi değişikliği gerektiriyor;
+Faz 2b'nin içinde mi, ayrı mı, hâlâ açık.
 
 ---
 
 ## 8. Kaynak haritası
 
+**2026-09-13 uyarısı:** belge merkezi yeniden yapılandırmasında (`oksis` @ `1061fe8`)
+`docs/superpowers/` tümüyle silindi — omurga tasarımı ve iki fazın plan/spec'leri dahil.
+Kaybolmadılar, **çalışma ağacında yoklar**; `git show 1061fe8^:<yol>` ile okunur.
+Modülün yaşayan bilgisi artık domain notundadır.
+
 | Ne | Nerede |
 |---|---|
-| Omurga tasarımı (üç fazın ortak iskeleti) | `oksis/docs/superpowers/specs/2026-09-08-sinav-takvimi-modulu-design.md` |
-| Faz 1 planı | `oksis/docs/superpowers/plans/2026-09-08-sinav-takvimi-faz1.md` |
-| Faz 2a tasarımı | `oksis/docs/superpowers/specs/2026-09-09-sinav-takvimi-faz2a-design.md` |
-| Faz 2a planı | `oksis/docs/superpowers/plans/2026-09-09-sinav-takvimi-faz2a.md` |
-| Modül dokümanı | `oksis/docs/documents/modules/exams/README.md` |
-| Ekran tasarım brief'i | `oksis/docs/tasarim-briefleri/sinav-takvimi-ekranlari-brief.md` |
-| Bulgu Kayıt Defteri | `oksis/docs/bugs-and-decisions/OKSİS - Bulgu Kayıt Defteri.md` |
-| **Faz 2a uygulama defteri (kararlar `R1`–`R59`)** | `oksis-api/.superpowers/sdd/2026-09-09-sinav-takvimi-faz2a/progress.md` |
+| **Modülün domain notu (kapsam, akışlar, kural kodları, açık sorular)** | `oksis/docs/domain/moduller/Sınav Takvimi.md` |
+| Kelebek kararı — derslik ve gözetmen türetilir | `oksis/docs/domain/kararlar/0017-kelebek-derslik-ve-gozetmen-turetilir.md` |
+| Sınav kuralları denetleyicide kararı | `oksis/docs/domain/kararlar/0018-sinav-kurallari-denetleyicide.md` |
+| Omurga tasarımı (üç fazın ortak iskeleti) | ⚠️ `git show 1061fe8^:docs/superpowers/specs/2026-09-08-sinav-takvimi-modulu-design.md` |
+| Faz 1 planı | ⚠️ `git show 1061fe8^:docs/superpowers/plans/2026-09-08-sinav-takvimi-faz1.md` |
+| Faz 2a tasarımı | ⚠️ `git show 1061fe8^:docs/superpowers/specs/2026-09-09-sinav-takvimi-faz2a-design.md` |
+| Faz 2a planı | ⚠️ `git show 1061fe8^:docs/superpowers/plans/2026-09-09-sinav-takvimi-faz2a.md` |
+| Ekran tasarım brief'i | `oksis/docs/gecici/tasarim-briefleri/sinav-takvimi-ekranlari-brief.md` |
+| Bulgu Kayıt Defteri | `oksis/docs/bulgular/OKSİS - Bulgu Kayıt Defteri.md` |
+| Kapanmış bulgular | `oksis/docs/bulgular/OKSİS - Bulgu Arşivi.md` |
+| **Faz 2a uygulama defteri (kararlar `R1`–`R59`)** | `oksis-api/.superpowers/sdd/2026-09-09-sinav-takvimi-faz2a/progress.md` (git dışı, diskte) |
 
 **Defterde bir sonraki boş kimlikler:**
-`B-51` · `D-19` · `V-04` · `X-22` · `TB-132` · `E-24` · `ENG-03`
+`B-51` · `D-19` · `V-04` · `X-22` · `TB-140` · `E-24` · `ENG-03`
 
 ---
 

@@ -5,6 +5,9 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
+> **Son ekleme:** 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
+> (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
+> bugün erişilemez olduğu ölçümü eklendi. Defter **36**.
 > **Son yeniden düzenleme:** 2026-09-13 — belge merkezi yeniden yapılandırması
 > (`oksis-api` @ `294ffe6`): `X-21` kapandı ([[OKSİS - Bulgu Arşivi]] §45); özet tablosu ve
 > sıradaki boş ID başlıklar sayılarak yeniden hesaplandı. Defter **35**.
@@ -29,7 +32,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-140` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-141` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -44,12 +47,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 13 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **35** | |
+| **Toplam** | **36** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 19 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 20 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -306,6 +309,40 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-140` · Çağıran çözümleyicileri iki modülde okul süzmüyor — `TB-130`'un ikizleri 🟡
+
+`TB-130` sınav modülünde kapandı; **aynı şekil iki modülde daha duruyor** ve Faz 2b'nin
+gözetmen yoklaması tam bu yüzeyin üstüne kurulacak.
+
+Ölçüldü (2026-09-13, `oksis-api` @ `20ab14bd`):
+
+```csharp
+// AttendanceCallerResolver.ResolveMyPersonIdAsync — TB-130 öncesi ExamCaller ile satır satır aynı
+db.Persons.AsNoTracking().Where(p => p.LinkedAccountId == accountId)
+```
+
+- Kullanan: Attendance'ta **21 dosya** (7 sorgu, 12 komut, 2 ortak); ayrıca
+  `Documents/Security/AttendanceExcuseEntityScopeResolver` aynı çözümleyiciye dayanıyor.
+- `AnnouncementCallerResolver.ResolveMyPersonIdAsync` aynı gövdeyi taşıyor ve doc'unda
+  "`AttendanceCallerResolver` kalıbı" yazıyor — kalıp KOPYALANARAK yayılmış.
+- Aynı dosyadaki `GetAmendmentWindowHoursAsync` okul yüklemi taşımıyor:
+  `db.SchoolSettings.Select(s => s.AttendanceAmendmentWindowHours).FirstOrDefaultAsync()`.
+  Süzgeç düşerse **rastgele bir okulun** düzeltme penceresi saatini döndürür.
+- `SubmitAttendanceCommandHandler` oturumu `s.Id == request.SessionId` ile okuyor; okul
+  yüklemi yok.
+- Geniş ayak ölçüldü, daraltılmadı: `src/Oksis.Application` içinde **53** `db.SchoolSettings`
+  okuması var, bunların **30**'u açık `SchoolId` yüklemi taşıyor. Kalanı denetlenmedi.
+
+**Bugün sızdırmıyor, yarın sızdırır.** `TB-139`'un altındaki ölçüme göre `IsSuperAdmin`
+çalışan üründe hiçbir zaman `true` olmuyor; yani bu yüklemler bugün kimsenin görmediği bir
+kapıyı açık bırakıyor. Rol talebi JWT'ye eklendiği gün üç modül birden açılır.
+
+⬜ Kapanış yolu `TB-130` ile aynı: imzaya `schoolId` ekle, çağıranları bağla, testi önce
+kırmızı doğrula. **`TB-130` dersi geçerli:** yukarıdaki sayılar bir tarif değil işarettir;
+tur başında yeniden ölç (`TB-130`'da 5 denilen çağıran 14, `TB-131`'de 3 denilen metot 7
+çıktı).
+
+---
 ### `TB-139` · Küresel tenant süzgeci süper yöneticiyi BÜTÜN okullara açıyor 🔴
 
 **Kullanıcı kararı (2026-09-13) rolü şöyle tarif etti:**
@@ -342,6 +379,23 @@ ve platform yüzeyi kısa devre kalkınca da çalışır. Arka plan işleri zate
 `CurrentSchoolId`'yi okula eşitliyor (`SessionMaterializer` notu: "IsSuperAdmin burada bir
 muafiyet değildir"). Göç aracının tasarım zamanı bağlamı (`OksisDbContextFactory`)
 `IsSuperAdmin => true` sabitliyor; o EF aracıdır, ürün yolu değil.
+
+⚠️ **Ölçüm eklendi (2026-09-13, `oksis-api` @ `20ab14bd`) — kısa devre bugün ERİŞİLEMEZ.**
+`TenantContext.IsSuperAdmin` tek bir şeye bakıyor: `User.IsInRole("SuperAdmin")`. Token'ı
+üreten tek yer `AccountTokenIssuer` ve o JWT'ye **hiçbir rol talebi yazmıyor** (claim listesi:
+`sub`, `jti`, `person_id`, `school_id`, `perms_ver`, `require_password_change`,
+`active_profile_type`, `available_profiles`, `active_child_id?`, `active_season_id?`).
+Depoda rol talebi yazan ikinci bir yol yok. Sonuçları:
+
+- Çalışan üründe `IsSuperAdmin` **her zaman `false`** — yani bugün kısa devreden geçen
+  canlı bir sızıntı yok; açık **gizil**dir.
+- `OverrideForSuperAdmin` her çağrıda `SecurityException` atar: bugün "okul üstlenme"
+  akışı hiç yok, kaldırılacak bir kullanım da yok.
+- Kısa devreyi kaldırmanın maliyeti bu yüzden sanılandan **düşük**: kaldırma, bugün hiçbir
+  isteğin girmediği bir dalı siler. Riski, üstlenmenin ürün tarafını kurmadan rol talebini
+  eklemektir.
+- Buna karşılık sınıfın kendisi gerçektir: `TB-130`/`TB-131`/`TB-133` ve `TB-140` rol talebi
+  eklendiği gün aynı anda açılır. Yüklem ayrıca sorgunun kapsamını tutar (`M17` dersi).
 
 **Kararlar alındı (2026-09-13):**
 - Yol **(a)**: kısa devre kalkacak; süper yönetici tenant verisini ancak bir okulu
