@@ -3,7 +3,7 @@
 > **Yaşayan belge.** Sınav takvimi modülünün fazları arasında "nerede kaldık"
 > sorusunun tek cevabı. Her oturum sonunda güncellenir; tarihli kopya çıkarılmaz.
 >
-> **Son güncelleme:** 2026-09-13 · **Yazan:** Claude Opus 5 (1M context)
+> **Son güncelleme:** 2026-09-13 (tenant turu) · **Yazan:** Claude Opus 5 (1M context)
 
 ---
 
@@ -12,13 +12,15 @@
 | Faz | Kapsam | Durum | Nerede |
 |---|---|---|---|
 | **Faz 1** — Ders saatinde sınav | Pencere, yerleştirme, pano, iki adımlı yayın, etiket katmanı, takvimler | ✅ **Bitti, merge edildi** | `master` (üç depoda) |
-| **Faz 2a** — Oturum ve yerleşim (sunucu) | `ExamSession`/`ExamRoom`/`ExamSeat`, besteci, komutlar, kurallar, okuma uçları, bildirim | ✅ **Sunucu tarafı 26/26 bitti** | `oksis-api` dalı `feature/exam-session` |
-| **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | ✅ **BİTTİ — 9/9 + 8.1** | `oksis-ui` dalı `feature/exam-session-client` |
+| **Faz 2a** — Oturum ve yerleşim (sunucu) | `ExamSession`/`ExamRoom`/`ExamSeat`, besteci, komutlar, kurallar, okuma uçları, bildirim | ✅ **Sunucu tarafı 26/26 bitti** | `oksis-api` · **`master`** |
+| **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | ✅ **BİTTİ — 9/9 + 8.1** | `oksis-ui` · **`master`** |
 | **Faz 2b** — Çıktılar ve yoklama | Kapı listesi, oturma planı, gözetmen çizelgesi, gözetmen yoklaması, görüş penceresi | ⬜ Beyin fırtınası yapılmadı | — |
 | **Faz 3** — Otomatik dağıtıcı | Derslik ve gözetmeni öneren Hangfire işi | ⬜ Kapsam kilitli, planlanmadı | — |
 
-**Faz 2a BİTTİ.** Sunucu 26/26, istemci 9/9, uçtan uca doğrulama koşuldu. Sırada
-`TB-130`/`TB-131`/`TB-133` turu ve Faz 2b beyin fırtınası var (§6, §7).
+**Faz 2a BİTTİ.** Sunucu 26/26, istemci 9/9, uçtan uca doğrulama koşuldu.
+**Tenant turu da kapandı** (2026-09-13): `TB-130` · `TB-131` · `TB-133` · `TB-135`
+düzeltildi ve testlendi (§6). Sırada **Faz 2b beyin fırtınası** (§7) ve ayrı bir tur
+olarak `TB-139` var.
 
 ### Görev 8.1 — uçtan uca doğrulama (2026-09-13)
 
@@ -39,17 +41,23 @@ yoktu → Görev 7.9), `TB-133` (yerleştirme saatleri sorgusu okul süzmüyor),
 kendi döneminin dışına kurulabiliyor), `TB-136` 🟠 (öğretmen kendi programında okulun
 BÜTÜN etiketlerini görüyordu), `TB-137` ve `TB-138` (diyalog yerleşimi ve metni).
 
-### Dal ve ağaç topolojisi (2026-09-12'de sadeleştirildi)
+### Dal ve ağaç topolojisi (2026-09-13'te yeniden kuruldu)
 
-| Depo | Dal | Ağaç |
-|---|---|---|
-| `oksis-api` | `feature/exam-session` (46 commit, master'a alınmadı) | `~/Repositories/oksis-api` |
-| `oksis-ui` | `feature/exam-session` (5 commit) | **`~/Repositories/worktrees/oksis-ui-faz2a`** — istemci işi burada |
-| `oksis-ui` | `master` | `~/Repositories/oksis-ui` |
-| `oksis-ui` | `chore/test-env` | `~/Repositories/oksis-ui-testenv` |
+2026-09-12'de kullanıcı Faz 2a dallarını **master'a merge edip push etti** ve bütün
+eski dal/worktree'leri sildi. Bugünkü hâl:
 
-`codex/faz2a-ui` dalı `feature/exam-session`'a katılıp silindi. İstemci worktree'si
-`/private/tmp`'den çıkarıldı — sistem geçici dizini periyodik temizleniyordu.
+| Depo | Dal | Ağaç | Kim |
+|---|---|---|---|
+| `oksis-api` | `feature/exam-session-client` (master'dan **3 commit** ileri) | `~/Repositories/oksis-api` | sınav işi |
+| `oksis-ui` | `feature/exam-session-client` (master'dan **3 commit** ileri) | `~/Repositories/oksis-ui` | sınav işi |
+| `oksis-api` | `fix/polish` | `~/Repositories/worktrees/oksis-api-polish` | **kullanıcı** — dokunulmaz |
+| `oksis-ui` | `fix/polish` | `~/Repositories/worktrees/oksis-ui-polish` | **kullanıcı** — dokunulmaz |
+
+`master` her iki depoda Faz 2a'nın tamamını taşıyor; ad aynı olsa da dallar
+**master'dan yeniden türetildi**, eski `feature/exam-session` geçmişi master'ın içinde.
+
+⬜ **Karar bekliyor:** bu üç commit'lik dallar master'a ne zaman alınsın — şimdi mi,
+kullanıcının `fix/polish` işi bitince birlikte mi?
 
 ---
 
@@ -74,8 +82,9 @@ ayarlarda sınav politikası kartı.
 
 ## 3. Faz 2a — sunucu tarafı bitti (26/26)
 
-**Dal:** `oksis-api` · `feature/exam-session` · **46 commit** ·
-`8132bad6` (09-09 15:57) → `f19c114a` (09-11 13:17) · ağaç temiz, **master'a merge edilmedi**.
+**Dal:** `oksis-api` · eski `feature/exam-session` · **46 commit** ·
+`8132bad6` (09-09 15:57) → `f19c114a` (09-11 13:17) · **2026-09-12'de master'a merge
+edildi ve dal silindi** (bkz. §1 topoloji).
 
 **Son tam regresyon HEAD'de yeşil (2026-09-11):**
 `Oksis.Domain.UnitTests` 1041 · `Oksis.Application.UnitTests` 2599 ·
@@ -187,7 +196,7 @@ Bu üç adım atlanırsa ekran boş açılır ve bir tur boşa gider.
 # 1. Göçleri uygula — API göçleri otomatik uygulamıyor.
 #    Bu yapılmazsa oturum tabloları dev veritabanında YOK ve her ekran "veri yok" gösterir.
 cd ~/Repositories/oksis-api
-git checkout feature/exam-session
+git checkout feature/exam-session-client
 dotnet ef database update --project src/Oksis.Infrastructure --startup-project src/Oksis.Api
 
 # 2. API'yi TAZE başlat. Bayat :5112 süreci Faz 1'de codegen'e boş şema ürettirdi
@@ -211,19 +220,37 @@ ders programı verisi `s3`'te.
 
 ---
 
-## 6. Kullanıcı kararı bekleyen üç şey
+## 6. Tenant turu — kapandı (2026-09-13)
 
-| # | Konu | Soru |
+Kullanıcı kararı: *"Şimdi, Faz 2b'den önce."* Dört madde tek turda kapandı; hepsinin
+testi düzeltmeden ÖNCE kırmızı doğrulandı.
+
+| # | Konu | Sonuç |
 |---|---|---|
-| `TB-130` | `ExamCaller.ResolveAsync` çağıranı okul süzmeden çözüyor 🟡 | Faz 1'in sınav yüzeyinde tenant yüklemi eksik |
-| `TB-131` | Faz 1 sınav sayaçları pencereyi okul süzmeden okuyor 🟡 | `CountPendingRequestsAsync`, `GetFirstExamDateAsync`, `FindDayLimitBreachesAsync` yalnız `examWindowId` alıyor |
-| `X-21` | Modül dokümantasyon sistemi baştan sona doldurulmamış şablon ⚪ | 19 modülün doküman klasörü boş — sistemi terk mi, modül başına yalnız README mi, yoksa 19×10 dosya gerçekten doldurulsun mu? |
-| `TB-132` | Yöneticinin oturum kurma komutunun ekranı yok 🟡 | **Karara bağlandı (2026-09-12):** plana Görev 7.9 olarak eklendi |
-| `TB-133` | Yerleştirme saatleri sorgusu pencereyi okul süzmeden okuyor 🟡 | `TB-130`/`TB-131` ile aynı sınıf, aynı turda kapatılmalı |
-| — | `EX-S04`'ün pencere kapsamına alınması | Olgu sözleşmesi değişikliği gerektiriyor; Faz 2b'de mi? |
+| `TB-130` | `ExamCaller.ResolveAsync` çağıranı okul süzmeden çözüyor 🟡 | ✅ İmzaya `schoolId` eklendi, **on dört** çağıran bağlandı (defter beş diyordu) |
+| `TB-131` | Faz 1 sınav sayaçları pencereyi okul süzmeden okuyor 🟡 | ✅ **Yedi** metot (defter üç diyordu); arayüz imzaları DEĞİŞMEDİ, okul `ITenantContext`'ten okunuyor |
+| `TB-133` | Yerleştirme saatleri sorgusu pencereyi okul süzmeden okuyor 🟡 | ✅ İki sorgu + yükleyicinin üç okuması açık yüklemli |
+| `TB-135` | Pencere kendi döneminin dışına kurulabiliyor 🟡 | ✅ `CreateExamWindow` dönem sınırını doğruluyor; revizyon komutu yok, dev verisi kendiliğinden düzelmiş |
+| `TB-132` | Yöneticinin oturum kurma komutunun ekranı yok 🟡 | ✅ Görev 7.9 olarak yazıldı ve doğrulandı |
+| `X-21` | Modül dokümantasyon sistemi ⚪ | ⏸️ **Kullanıcının derleme turuna bırakıldı** (2026-09-13). Silme İŞLETİLMEDİ: ölçüm tazelenince defterin tarifi bayat çıktı — `modules/` altında **75 dosya / 18 809 satır gerçek içerik** var ve `README.md` yalnız 5 modülde dolu, yani "README'yi tut kalan dokuzu sil" çoğu modülde boş dosyayı tutup dolu dosyayı silerdi |
+| — | `EX-S04`'ün pencere kapsamına alınması | ⬜ Olgu sözleşmesi değişikliği gerektiriyor; Faz 2b'de mi? |
 
-**`TB-130` ve `TB-131` birlikte, tek turda, testleriyle kapatılmalı** — ikisi de aynı
-kök nedenin iki yüzü.
+**Commit'ler:** `oksis-api` `06e03596` (tenant üçlüsü) · `a72856f2` (`TB-135`) ·
+`oksis` `cfae923` (defter). Koşum: sınav birim 116/116, sınav entegrasyon 325/325,
+`test-changed.sh` 427 + 7 mimari bekçi — temiz.
+
+**Turun iki sürprizi kayda değer.** ① Ölçüm defterin sayısını ikisinde de aştı (5→14
+çağıran, 3→7 metot): *bulgu metni bir tarif değil bir işarettir, sayısına güvenilmez.*
+② `TB-130` kapanınca `GetMyExamDuties`'in iki `R55` testi kırmızıya döndü, çünkü
+güvence bir kat YUKARI taşındı — eskiden çağıran yabancı kişiye çözülüyor ve sorgunun
+yüklemi satırı eliyordu; artık kimlik hiç çözülmüyor ve uç `Forbidden` dönüyor.
+
+**Açık kalan kök neden — `TB-139` 🔴.** Yukarıdaki dördü belirtiyi kapattı, hastalığı
+değil: küresel süzgeç hâlâ `IsSuperAdmin || (...)` biçiminde ve süper yönetici
+oturumunda tümden düşüyor. Ayrı turun ilk adımı ÖLÇÜMDÜR (birden çok okula dokunan
+akışlar, `IgnoreQueryFilters()` kullanımları), sonra izin kümesini yeni bir platform
+izin modülü etrafında kurmak ve "üstlenme"yi onaya bağlı, gerekçeli, süreli ve
+denetlenir yapmak.
 
 > **Ölçülmüş ders (mutasyon turu, `M17`):** okul yüklemi kaldırılınca sorgu paylaşılan
 > entegrasyon veritabanının **tamamını taramaya** başladı; on testlik sınıf 50 dakikada
