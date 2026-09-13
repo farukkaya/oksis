@@ -1,7 +1,7 @@
 ---
 tags: [plan, exams]
 date: 2026-09-13
-status: draft
+status: ready
 ---
 
 # Sınav Takvimi — Faz 2b Uygulama Planı
@@ -70,8 +70,9 @@ zorunluluğu).
 - Göç: `dotnet ef migrations add 20260914_exam_session_review_comments`.
 - İndeks: `(school_id, exam_session_id, resolved_at)` — yayın kapısı "açık yorum var mı"yı
   bu yoldan sorar.
-- ⬜ **Karar gerekiyor:** metin sınırı. Emsal `ExamWindow.MinReasonLength = 15` (gerekçe
-  içindir). Yorum gerekçe değildir; öneri **10–1000 karakter**. Uygulamada kullanıcıya sorulur.
+- ✅ **Karar (2026-09-13):** metin **10–1000 karakter**. Gerekçenin 15'i (`MinReasonLength`)
+  burada geçerli değil — yorum gerekçe değildir: *"Salon 3 küçük"* (13) geçer, *"olmaz"* (5)
+  geçmez. Sabit domain'de (`SessionReviewComment.MinTextLength`), ekran onu yansıtır.
 
 **Test:** domain birim — boş/kısa metin reddi, `Resolve` iki kez çağrılamaz.
 
@@ -90,27 +91,43 @@ reddedilir; tarihler ayardan türer. Entegrasyon — tenant kapsam testi.
 
 ### Görev 1.3 · Yorum bırakma ve çözme komutları
 
-- `AddSessionReviewComment` — izin **`exams.place`** (öğretmenin zaten sahip olduğu izin).
-  Ek kapı: çağıran o oturumda **sorumlu öğretmen ya da gözetmen** olmalı; değilse `404`
-  (varlık sızdırmama, `MarkNotificationRead` emsali). Pencere görüş süresi **açık** olmalı.
+- `AddSessionReviewComment` — ✅ **izin YOK** (karar 2026-09-13): yorum bırakmak izin
+  gerektirmez, **öğretmen olmak yeterlidir**. Komutta `[RequirePermission]` **bulunmaz**;
+  emsali `AccountChangePassword` — kimliğin kendisiyle yetkilenen komut.
+  - **Öğretmenlik nasıl bilinir:** rol talebinden DEĞİL. Bu depoda `ICurrentUser.Roles`
+    **her zaman boştur** (`AccountTokenIssuer` JWT'ye hiç rol talebi yazmaz — ölçüldü), yani
+    `IsInRole` ölü koddur. Öğretmenlik **kişinin profilinden** okunur:
+    `db.Profiles.OfType<TeacherProfile>()` (emsal `ListAssignableCandidates`), çağıranın
+    kişisi ise `ExamCaller.ResolveAsync(db, currentUser, schoolId, ct)` ile — **okul
+    yüklemli** (`TB-130`).
+  - Kalan kapılar: pencere görüş süresi **açık** olmalı ve oturum bu okulun olmalı; değilse
+    `404` (varlık sızdırmama, `MarkNotificationRead` emsali).
 - `ResolveSessionReviewComment` — izin `exams.manage`; süre kapandıktan sonra da çözülebilir
   (yayın kapısı açık yorumu ısırıyor, yöneticinin kapatma yolu her zaman açık kalmalı).
-- ⬜ **Not:** omurga spec'i ayrı bir `exams.review.comment` izni öneriyordu; katalogda
-  bugün `exams.manage/place/read/report` var. Yeni izin = yeni göç + rol seed'i; karşılığı
-  ölçülmedi. **Öneri: `exams.place` yeniden kullanılsın**, gerekirse sonra ayrılır.
+- **Reddedilen yol:** omurga spec'inin `exams.review.comment` izni yazılmayacak; ayrıca
+  `exams.place`'e de bağlanmayacak. Gerekçe: yorum bırakmak bir yetki değil, öğretmenin
+  kendi işi hakkında konuşmasıdır.
 
 **Test:** birim — taraf olmayan öğretmen `404`; süre kapalıyken yorum reddedilir; çözülen
 yorum ikinci kez çözülmez. Entegrasyon — tenant kapsam testi (yabancı okulun oturumuna
 yorum bırakılamaz).
 
-### Görev 1.4 · İki yumuşak yayın kuralı
+### Görev 1.4 · Üç yumuşak yayın kuralı
 
-`ExamPublishFacts`'e iki olgu eklenir ve `Evaluate` iki satır kazanır:
+`ExamPublishFacts` üç olgu kazanır ve `Evaluate` üç satır:
 
 | Kod | Şiddet | Cümle (sunucu üretir) |
 |---|---|---|
 | `EX-S07` | yumuşak | "Görüş penceresi {tarih} tarihinde kapanıyor; süre dolmadan yayınlıyorsunuz." |
 | `EX-S08` | yumuşak | "{n} çözülmemiş öğretmen görüşü var." |
+| `EX-S04` | yumuşak | "{derslik} dersliğine yalnız {şube} şubesinden öğrenci düştü." |
+
+✅ **`EX-S04` karar (2026-09-13): Faz 2b'ye alınıyor.** Bugün yalnız `CheckSessionAsync`
+içinde, **oturum** kapsamında çalışıyor ve yayın kapısında hiç yok (ölçüldü); aynı oda iki
+oturumda birleştiğinde uyarı yanlış yerde susuyor. Pencere kapsamı için
+`ExamPlacementCounter`'a `ReadWindowRoomMixAsync` eklenir — `ReadSessionRoomMixAsync`'in
+pencere ikizi, **açık okul yüklemiyle** (`TB-131` kalıbı). Kural gövdesi `CheckSeating`
+olduğu gibi yeniden kullanılır: iki kapsamın iki cevabı olmasın.
 
 - Olguları sayan okumalar `ExamPlacementCounter` kalıbında, **açık okul yüklemiyle**.
 - Yumuşak kural = gerekçeyle geçilir; `EX-H08`/`EX-S05` ile aynı yol (`PublishSchedule`'ın
@@ -146,8 +163,12 @@ gerekçesiz yayın reddi ve gerekçeli geçiş.
 
 - `Queries/GetInvigilatorSchedule/` — `(windowId, date?)` → gün × ders saati × oturum ×
   derslik × gözetmen (ad) + o dersliğin öğrenci sayısı.
-- İzin: `exams.manage` (yönetici çıktısı). ⬜ Sekreterin salt okur yazdırma yetkisi omurga
-  spec'inde var ama katalogda karşılığı yok; ayrı karar.
+- ✅ **İzin `exams.manage`** (karar 2026-09-13). Üç çıktının üçü de aynı izinle açılır.
+  - Omurga spec'inin "sekreter yazdırır" satırının bugün **sahibi yok**: seed'de beş rol var
+    (Süper Admin, Okul Yöneticisi, Öğretmen, Veli, Öğrenci — `0007` kararı), sekreter yok.
+    Yeni izin (`exams.print`) açmak, kullanıcısı olmayan bir izin üretirdi.
+  - `exams.report` ("okul geneli sınav panosu", okul yöneticisine seed'li) bu turda da
+    tüketicisiz kalıyor — domain notundaki açık soru **açık kalır**, kapatılmadı.
 - Açık okul yüklemi + kapsam testi (Kural 1).
 - **Neden yeni sorgu:** pano kartı yalnız sayı taşıyor, oturum ayrıntısı tek oturumluk.
   Gün eksenli derslik × gözetmen listesini veren bir okuma yok (ölçüldü).
@@ -215,11 +236,18 @@ taze başlatılmadan ekranlar boş açılır.
 Paralelleştirilecekse `R53` geçerli: her ajan kendi `git worktree`'sinde koşar; `oksis-ui`
 tek ağaçta iki ajanla ölçülemez.
 
-## Açık kalan kararlar
+## Karara bağlandı (2026-09-13)
 
-1. **Yorum metni sınırı** (Görev 1.1) — öneri 10–1000.
-2. **Yorum izni** (Görev 1.3) — `exams.place` yeniden kullanılsın mı, yoksa
-   `exams.review.comment` açılsın mı.
-3. **Sekreterin yazdırma yetkisi** (Görev 2.1) — omurga spec'inde var, katalogda yok.
-4. **`EX-S04`'ün pencere kapsamına alınması** — olgu sözleşmesi değişikliği; bu fazın içinde
-   mi, ayrı mı.
+| # | Soru | Karar |
+|---|---|---|
+| 1 | Yorum metni sınırı | **10–1000 karakter**; gerekçenin 15'i geçerli değil |
+| 2 | Yorum izni | **İzin yok** — öğretmen olmak yeterli; öğretmenlik profilden okunur, rolden değil |
+| 3 | Çıktı izni | **`exams.manage`**; `exams.print` açılmaz (kullanıcısı olmayan izin olurdu) |
+| 4 | `EX-S04` | **Faz 2b'ye alınır** — pencere kapsamı olgusu + yayın listesinde üçüncü yumuşak kural |
+
+Açık karar kalmadı; plan uygulanmaya hazır.
+
+**2. kararın ölçülmüş ayrıntısı:** "öğretmen olmak yeterli" bu depoda bir ROL kontrolüyle
+uygulanamaz — `AccountTokenIssuer` JWT'ye hiçbir rol talebi yazmaz, dolayısıyla
+`ICurrentUser.Roles` her zaman boştur ve `IsInRole` ölü koddur. Öğretmenlik, çağıranın
+kişisinin **`TeacherProfile` taşıması** ile bilinir.

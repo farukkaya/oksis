@@ -322,8 +322,10 @@ aştı (21 dosya değil **35 çağrı**, üç modül) ve kapsam büyüdü: kayna
 okuma ile mazeret uygulayıcısının yazma yolu da yüklem aldı. Testi önce kırmızı doğrulandı;
 koşum birim 2603 + 427 + 7, entegrasyon 1386/1386. Ayrıntı defterde.
 
-⬜ **`EX-S04`'ün pencere kapsamına alınması** — olgu sözleşmesi değişikliği gerektiriyor;
-Faz 2b'nin içinde mi, ayrı mı, hâlâ açık.
+✅ **`EX-S04` Faz 2b'ye alındı** (karar 2026-09-13): bugün yalnız oturum kapsamında çalışıyor
+ve yayın kapısında hiç yok; pencere kapsamı olgusu eklenip yayın listesinde üçüncü yumuşak
+kural olacak. Planın dört açık kararının dördü de aynı gün bağlandı — yorum metni 10–1000,
+yorum **izin istemez** (öğretmen olmak yeterli), çıktılar `exams.manage`.
 
 ---
 
