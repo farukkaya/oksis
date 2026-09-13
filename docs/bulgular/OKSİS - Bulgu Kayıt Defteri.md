@@ -49,8 +49,8 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) |
-| 🟠 Yüksek | 7 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
+| 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 20 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
@@ -313,48 +313,71 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
-### `TB-150` · Hiçbir yazdırma çıktısı kâğıda düşmüyor — kabuk gövdeyi kırpıyor 🟠
+### `TB-150` · Devamsızlık'ın resmî yazı kuralı TÜM uygulamanın çıktısını gizliyor 🔴
 
 Ekran testinde yakalandı (2026-09-14, A7): sınav takviminin *"Yazdır"* düğmesi tarayıcı
-önizlemesini açıyor ama önizleme **bembeyaz** — tek boş A4, üstünde tarih, altında
-`localhost:3000/exams 1/1`. Oysa aynı anda diyaloğun arkasındaki ekranda kâğıt doğru
-çizilmiş durumda (*"4 sınav yerleşti · 10 şube × ders"*).
+önizlemesini açıyor ama önizleme **bembeyaz** — tek boş A4, altında `localhost:3000/exams 1/1`.
+Oysa diyaloğun arkasındaki ekranda kâğıt doğru çizilmiş durumda.
 
-**Kök sebep — kabukta, ekranda değil.** `shell.css` gövdeyi bilerek kilitliyor:
+**Kök sebep — başka bir modülün kapsamsız baskı kuralı.** `threshold-letter.css`
+(Devamsızlık › Eşik Aşımı Resmî Yazısı) şunu taşıyor:
 
 ```css
-body { ... overflow: hidden; }     /* .shell 100vh ızgara, kaydırma .main'de */
+@media print {
+  body > *:not(.tl-print-root) { display: none !important; }
+}
 ```
 
-Gövdedeki taşma bildirimi CSS gereği **görüntü alanına yayılır** (`html` görünür olduğu
-sürece). Ekranda bu istenen davranıştır; **baskıda belgeyi tek sayfaya kırpar** ve gerçek
-içerik `.main`in kaydırma kutusunda kaldığı için kâğıda hiçbir şey düşmez.
+Resmî yazı `document.body`'e portal atıldığı için kabuğu boşaltması doğrudur — **ama kural
+o ekranın açık olmasına bağlı değil.** `globals.css` tüm stilleri tek pakette yüklüyor, yani
+bu satır **her sayfada** yürürlükte. Uygulama kabuğu da `body`'nin doğrudan çocuğu
+(`body > div.shell`). Sonuç: **hangi ekrandan basılırsa basılsın `.shell` `display:none`
+oluyor** ve kâğıda hiçbir şey düşmüyor.
 
-**Ekranın doğru görünmesi yanılttı.** `.ex-pr` çizilmişti, `@media print` blokları
-yazılmıştı, `.shell`/`.main` ezmeleri de yerindeydi — eksik olan tek satır gövdenin
-kendisiydi. Önizleme doğrulanmış, **gerçek baskı hiç doğrulanmamıştı**
-(krş. [[besleyen-yuzey-olculmeden-kapanmaz]]).
+**Tarayıcıda ölçüldü** (Playwright, `emulateMedia({media:'print'})`, yönetici oturumu,
+1. Sınav panosu → Yazdır görünümü):
 
-**Kapsam tek ekran değil.** Aynı kırpma, yazdırma stili olan her yüzeyi vuruyor:
-
-| Yüzey | Stil | Durum |
+| Ölçüm | Düzeltmeden önce | Sonra |
 |---|---|---|
-| Sınav — şube takvimi / kapı listesi / oturma planı / gözetmen çizelgesi | `exam.css` | boş basıyordu |
-| **Ders Programım** (öğretmen/öğrenci salt okunur) | `schedule-read.css` | **aynı kusur — ölçüldü** |
-| Eşik aşımı resmî yazısı | `threshold-letter.css` | gövdeyi `body > *` ile boşaltıyor, aynı kırpmaya tabi |
+| `.shell` `display` | **`none`** | `block` |
+| Belge yüksekliği | 823 px (tek görüntü alanı) | 2271 px |
+| `.ex-pr-sheet` sayısı | 5 (DOM'da var, kâğıtta yok) | 5 |
+| Üretilen PDF | boş | **5 sayfa, şube başına bir sayfa** |
 
-Üç dosyanın üçü de aynı iki ezmeyi (`.shell { display:block }`, `.main { overflow:visible }`)
-**kopyalayarak** taşıyordu; üçü de gövdeyi atlamıştı. Kalıbın kendisi kusurluydu — yeni
-her yazdırma ekranı aynı tuzağa düşecekti.
+**Kapsam tek modül değil.** Kural genel olduğu için yazdırma stili olan her yüzeyi
+vuruyordu: sınav takviminin dört çıktısı (şube takvimi · kapı listesi · oturma planı ·
+gözetmen çizelgesi) ve **Ders Programım** (`schedule-read.css`). İkisi de kendi
+`@media print` bloğunu doğru yazmıştı; hiçbiri iş görmüyordu.
 
-✅ **Düzeltildi** (`oksis-ui`, 2026-09-14): ezmeler ekranlardan alındı, `shell.css`e tek bir
-**baskı tabanı** kuruldu — `html, body { overflow: visible; height: auto }`, ızgaranın
-çözülmesi ve gezinme parçalarının gizlenmesi orada bir kez yazılır. `exam.css` ile
-`schedule-read.css` artık yalnız KENDİ parçalarını gizliyor. Merkezî kapanış,
-[[yamalama-kabul-degil]] gereği.
+**Neden bugüne kadar görülmedi:** her iki ekranda da "yazdır" bir ÖNİZLEME görünümü açıyor
+ve önizleme ekranda doğru çiziliyor. Doğrulama orada durmuş, **kâğıt hiç üretilmemişti**
+(krş. [[besleyen-yuzey-olculmeden-kapanmaz]]). Bu, modülün Faz 1 çıktısının da hiç
+çalışmamış olduğu anlamına gelir.
 
-⬜ **Kalan:** kullanıcı yeniden bastığında doğrulanacak; `threshold-letter.css` çıktısı da
-aynı turda gözle görülmeli (tabandan faydalanıyor ama kendi yolu farklı).
+**İkinci, daha küçük kusur aynı turda ölçüldü:** kabuk `body { overflow: hidden }` ile
+kilitli (ızgara `100vh`, kaydırma `.main`'de) ve gövdedeki taşma bildirimi CSS gereği
+görüntü alanına yayılıp baskıda belgeyi tek sayfaya kırpıyor. Kabuk gizlenmeseydi bile
+çıktı tek sayfada kalacaktı.
+
+✅ **Düzeltildi** (`oksis-ui`, 2026-09-14):
+
+1. `threshold-letter.css` kuralı sahibine bağlandı —
+   `body:has(.tl-print-root) > *:not(.tl-print-root)`. Resmî yazı açıkken davranış
+   birebir aynı (portal `body`'nin doğrudan çocuğu), kapalıyken kural hiç yok.
+2. `shell.css`e tek bir **baskı tabanı** kuruldu: `html, body { overflow: visible;
+   height: auto }`, ızgaranın çözülmesi, gezinme parçalarının gizlenmesi. `exam.css` ve
+   `schedule-read.css` kopyaladıkları kabuk ezmelerini bıraktı, yalnız kendi parçalarını
+   gizliyor. Blok dosyanın SONUNDADIR — `.shell { display: grid }` ile aynı özgüllükte
+   olduğu için ondan sonra gelmek zorunda (başa konduğunda ızgara kazanıyordu, bu da
+   ölçüldü).
+
+Merkezî kapanış, [[yamalama-kabul-degil]] gereği.
+
+⬜ **Kalan:** resmî yazı çıktısının kendisi (`.tl-print-root` yolu) gözle doğrulanmadı —
+kapsam daraltması davranışı değiştirmemeli ama o ekrandan bir baskı alınmalı.
+
+**Ders:** bir modülün `@media print` kuralı `body > *` gibi kökten seçici kullanıyorsa,
+kendi kökünün varlığına bağlanmadıkça **uygulamanın tamamının** kuralıdır.
 
 ---
 ### `TB-149` · Bir sınav için birden çok bekleyen istek açılabiliyor; artakalanlar kutuda asılı kalıyor 🟡
