@@ -33,7 +33,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-147` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-148` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -46,14 +46,14 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
+| 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **40** | |
+| **Toplam** | **41** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 24 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 25 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -310,6 +310,33 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-147` · Aynı şubenin aynı saatine İKİ sınav konabiliyor — hücre denetimi yok 🔴
+
+Ekran testinde yakalandı (2026-09-14): Görsel Sanatlar öğretmeni, Matematik sınavının
+ZATEN durduğu hücreyi (11-A · 13 Ağustos · 2. ders) talep etti, ev sahibi kabul etti ve
+sınav oraya yerleşti. Aynı şube, aynı gün, aynı ders saati, **iki sınav**.
+
+**Neden ısırmadı — ölçüldü.** `ExamRuleInspector.CheckPlacementAsync` üç şeye bakıyor:
+`EX-H03` (saat senin dersin mi — istek yolunda EV SAHİBİNİN dersi üzerinden ölçülür,
+dolayısıyla geçer), `EX-H01` (şubenin O GÜNKÜ sınav sayısı ≥ sınır; varsayılan 2, bir
+sınav varken ikincisi geçer) ve `EX-S01` (komşu gün, yumuşak). **Hücrenin kendisine
+bakan tek bir kural yok.** `EX-H02`'nin veritabanı tekilliği de şube × ders × pencere
+içindir — iki FARKLI dersi aynı saatte engellemez.
+
+**Ulaşılabilirliği:** bu boşluk saat isteği yolundan geçiyordu ve `TB-146` düzeltilmeden
+önce de vardı — kardeş şube isteği aynı çakışmayı üretebilirdi. Düzeltme onu yalnız daha
+kolay görülür yaptı.
+
+**Zararı somut:** öğrenci aynı saatte iki sınava çağrılır; ders programı etiketi iki sınav
+gösterir; kapı listesi ve not defteri tarihleri çelişir. Yayın kapısı da bunu görmez,
+çünkü aynı olgu orada da yalnız gün bazında sayılıyor.
+
+⬜ **Yapılacak:** yeni sert kural — **bir şube aynı gün ve saatte tek sınava girer**
+(`EX-H13`). Denetim hem yerleştirmede hem saat isteğinde koşmalı; `EX-H05`'in ders saati
+karşılığıdır. İstemci tarafında ek iş yok: kural sunucuda ısırır ve seçici sunucunun
+cümlesini olduğu gibi gösterir (Kısıt 3).
+
+---
 ### `TB-146` · Saat isteği yalnız KARDEŞ ŞUBE yolundan açılabiliyor; kendi şubende yok 🟠
 
 Sınav takviminin en özgün akışı — öğretmenin başka bir öğretmenin ders saatine talip
