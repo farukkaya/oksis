@@ -48,12 +48,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 1 | Tenant izolasyonu / güvenlik (`TB-139`) |
 | 🟠 Yüksek | 4 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 18 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 17 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 14 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **37** | |
+| **Toplam** | **36** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 21 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 20 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -722,7 +722,14 @@ hiç ölçülmedi.
 ⬜ Kapatma yolu: 2026-09-12 kullanıcı kararıyla plana **Görev 7.9** olarak eklendi —
 panodan yöneticinin oturum kurması. Görev bitince bu madde kapanır.
 
+✅ Kapatıldı 2026-09-12 (`oksis-ui` `4172c25`) — **defterde kapanışı yazılmamıştı, bugün
+yazıldı.** Yöneticinin oturum kurma akışı Dilim 7'ye Görev 7.9 olarak eklendi
+(`exam-admin-session-dialog.tsx`) ve Görev 8.1'in uçtan uca turunda gerçek arayüzde
+doğrulandı. Gecikmenin kendisi kayda değer: kod bir aydır üründeydi, defter bunu
+bilmiyordu — kapanış commit'le birlikte yazılmazsa yazılmıyor.
+
 ---
+
 ### `TB-131` · Faz 1 sınav sayaçları pencereyi okul süzmeden okuyor 🟡
 
 `ExamPlacementCounter`'ın üç Faz 1 metodu — `CountPendingRequestsAsync`,
