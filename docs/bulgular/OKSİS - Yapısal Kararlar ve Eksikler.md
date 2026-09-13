@@ -137,7 +137,7 @@ Stack'te FCM *planlı* görünüyordu ama onaylanmış değildi. Kodda `INotific
 - [ ] D-U-N-S başvurusu *(Apple + Google kurumsal hesabın ortak ön koşulu, takvimin uzun ayağı)*
 - [ ] Firebase projesi *(ücretsiz, Parti 1 ve 2 yalnız bunu bekler)*
 - [ ] Play Console'un 2024'te kapatılan hesabının durumu destekten teyit edilsin
-- [ ] ADR-002 → `oksis/.claude/specs/adr-002-os-push-altyapisi.md`
+- [ ] ADR-002 → karar kaydı bugün [[K-02 - OS Push Altyapısı]]; ayrı bir teknik ADR gerekirse `docs/teknik/mimari/` altına yazılır (`.claude/specs/` 2026-09-13'te kaldırıldı)
 - [ ] Yeni `TB` maddesi: `appsettings.json`'da düz metin SMTP parolası
 
 --- end-multi-column

@@ -456,7 +456,7 @@ Ders Programı → Otomatik Oluştur → 9-A → Taslak Üret → Önerileni Edi
 | `ogretmen.s1.01` *(yayınlayan DEĞİL)* | 404 | **403** |
 | `mudur.s1` | 200 | 200 |
 
-  Kapı `AnnouncementLifecycleGuard.CanActOn` = `IsManager || PublisherId == caller`. Rapor **ayrı bir uçtur**, duyuru DTO'sunun içinde taşınmıyor — yani "network sekmesinden okunabilir kalır" riski gerçekleşmiyor. Ham çıktı: [[B-01-be-403-olcumu.txt]]
+  Kapı `AnnouncementLifecycleGuard.CanActOn` = `IsManager || PublisherId == caller`. Rapor **ayrı bir uçtur**, duyuru DTO'sunun içinde taşınmıyor — yani "network sekmesinden okunabilir kalır" riski gerçekleşmiyor. Ham çıktı: [[B-01-be-403-olcumu]]
 - 🔍 **Gerçek kök neden BAŞKAYDI:** sızan veri değil **başlıktı**. Mobil duyuru detayı (`apps/mobile/.../announcement-detail-screen.tsx`) **dört rolün de tek yüzeyi** ve raporu yalnız `hasDeliveryReport`e (= "duyuru yayınlandı mı") bakarak çiziyordu. Öğrenci yayında bir duyuruyu açınca "GÖNDERİM RAPORU" başlığı + boş iskelet görüyor, ardından 403 dönüyor ve altı boş kalıyordu — **olmayan bir yönetim yeteneği duyuruluyordu**. Web'de sorun yok: `AnnouncementsScreen` veli/öğrenciyi zaten ayrı yüzeye ayırıyor.
 - ✅ **KAPANDI** *(`oksis-ui` @ `bf41f07`, 2026-08-11)*:
   - Karar core'a alındı: `showsDeliveryReport(row, role)` = `hasDeliveryReport(row) && announcementRoleSurface(role) !== "inbox"`.
@@ -1246,7 +1246,7 @@ Oysa `AssignTeacherCommand` (uç: `PUT /timetable/programs/{id}/placements/{pid}
 - **Nereden çıktı:** `B-01` kapanışı. Sunucu kapısı `IsManager || PublisherId == caller`; istemci ise oturumda **`personId` taşımadığı için** (`sessionSchema` yalnız `userId` = hesap kimliği) ikinci koşulu hesaplayamıyor.
 - **Bugünkü sonucu:** öğretmen derin bağlantıyla başkasının duyurusunu açarsa "GÖNDERİM RAPORU" bölümü çizilir, uç 403 döner, bölüm boş kalır. **Veri sızmaz** — yalnız boş bir bölüm görünür.
 - **Kesin çözüm:** `AnnouncementDto`'ya `canViewDeliveryReport` alanı; aynı guard metodundan hesaplanırsa drift edemez. `B-01`'de yapılmadı çünkü `AnnouncementMapper.ToDto` **12 çağrı yerinden** besleniyor ve bunların 4'ü çağıran kimliğinin elde olmadığı komut handler'ları — düzeltmenin boyutu, düzelttiği şeyle (boş bir başlık) oransız.
-- ➕ **Aynı ölçümde çıkan ikinci tutarsızlık:** aynı uç 403'ü **iki farklı hata koduyla** dönüyor — `ogrenci`/`veli` için `"Forbidden"`, `ogretmen` için `"Error.Forbidden"`. İki ayrı ret yolu (yetki pipeline'ı vs. handler kapısı) aynı sözleşme alanını farklı dolduruyor; istemci koda göre dallanmak isterse yanılır. Bkz. [[B-01-be-403-olcumu.txt]].
+- ➕ **Aynı ölçümde çıkan ikinci tutarsızlık:** aynı uç 403'ü **iki farklı hata koduyla** dönüyor — `ogrenci`/`veli` için `"Forbidden"`, `ogretmen` için `"Error.Forbidden"`. İki ayrı ret yolu (yetki pipeline'ı vs. handler kapısı) aynı sözleşme alanını farklı dolduruyor; istemci koda göre dallanmak isterse yanılır. Bkz. [[B-01-be-403-olcumu]].
 
 ---
 
@@ -5904,3 +5904,77 @@ handler'ları. `grep` ile kalan tüketici olmadığı doğrulandı.
 değiştirmek daha ucuzdu — çünkü ekranın kendisi de bekleyen bir sözleşmenin
 (üç boş alan: saat, süre, derslik) yarım hâliydi. İzlenebilirlik boşluğu çoğu zaman
 bitmemiş işin izidir.
+
+---
+
+## 45. `X-21` · Modül dokümantasyon sistemi kaldırıldı — domain bilgisi tek kaynağa indi ✅
+
+**Kapanış:** 2026-09-13, belge merkezi yeniden yapılandırması (`oksis-api` @ `294ffe6`).
+
+**Karar (kullanıcı):** `oksis` deposu kodsuz, yalnız md belge merkezi; tek Obsidian vault
+`docs/`. Domain bilgisinin **tek kaynağı `docs/domain/`**. Paralel sistemler kaldırıldı:
+`docs/documents/modules/` (10 dosyalık modül iskeleti ve `_MODULE_GUIDE`), `.claude/specs/`,
+`docs/superpowers/`. Kod repolarında (`oksis-api`, `oksis-ui`) belge tutulmaz.
+
+**Nasıl kapandı:** (b′) ve (a′) şıklarının ikisi de uygulanmadı. Silmeden önce dolu dosyalar,
+spec'ler ve modül `ARCHITECTURE.md`'leri beş paralel taramayla `docs/domain/` notlarına karşı
+karşılaştırıldı; her aday bilgi kodla yeniden doğrulandı, **kodla çelişen içerik aktarılmadı**
+(örnek: "12. sınıf = mezuniyet", eski öğrenci numarası biçimi, eski davet ve rol matrisleri).
+Sonuç: 65 not güncellendi, 14 karar notu açıldı (`0005`…`0018`), vault'ta hiç olmayan
+[[Sınav Takvimi]] modülü ve kavramları yazıldı; koda göre bayatlamış 18 domain notu düzeltildi.
+
+**Ders:** iki paralel belge sisteminde boş olanı doldurmak da, doluyu olduğu gibi taşımak da
+yanlıştı — dolu 75 dosyanın önemli bir kısmı koda göre bayattı. Doğru yol, kaynağı silmeden
+önce **kodla doğrulanmış farkı** tek kaynağa aktarmaktı.
+
+**Kapanan bloğun özgün metni:**
+
+### `X-21` · Modül dokümantasyon sistemi baştan sona doldurulmamış şablon ⚪
+
+`docs/documents/modules/` altında 19 modül klasörü var ve her biri 10 dosyalık iskeletle
+açılmış. **Hiçbiri doldurulmamış:** `marks/README.md` 11, `homework/README.md` 11,
+`marks/domain-model.md` 12 `{{TBD}}` taşıyor; dosya satır sayıları modüller arasında birebir
+aynı, yani şablondan hiç ayrılmamışlar.
+
+`_MODULE_GUIDE.md` sistemi "modül bazlı **canlı** dokümantasyon" diye tarif ediyor ve
+"kullanıcı 'X modülüne Y özelliği ekle' dediğinde AI bu kurallara göre davranır" diyor.
+Pratikte kural işletilmiyor: bugüne kadar tamamlanan modüllerin (Kulüpler, Duyurular, Notlar,
+Ödevler, Sınav Faz 1) hiçbiri kendi klasörünü doldurmadı. Gerçek bilgi `docs/superpowers/specs/`
+ve `docs/superpowers/plans/` altındaki spec + plan çiftlerinde yaşıyor.
+
+2026-09-11'de Faz 2a Görev 8.2'de ölçüldü: plan "`modules/exams/README.md`'ye oturum bölümü
+ekle" diyordu, klasör **hiç yoktu**. O turda `exams/README.md` sıfırdan ve dolu yazıldı —
+19 modül içinde dolu tek dosya.
+
+Pratik anlamı: iki paralel dokümantasyon sistemi var, biri boş. Yeni gelen biri
+`modules/`'e bakıp modülün belgesiz olduğunu sanır; oysa spec'i 400 satır.
+
+⬜ Kapatma yolu **karar gerektiriyor**, bu yüzden iş olarak açılmadı: (a) `modules/` sistemini
+terk edip `_MODULE_GUIDE.md`'yi arşive almak ve spec+plan çiftini tek kaynak ilan etmek;
+(b) modül başına yalnız `README.md`'yi doldurup kalan dokuzu silmek (sınav bugün bu hâlde);
+(c) sistemi gerçekten işletmek — 19 modül × 10 dosya, büyük ve tekrarlı iş.
+**Tercih verilmeden başlamak yanlış.**
+
+> ⚠️ **2026-09-13 — ölçüm tazelendi, yukarıdaki tarif BAYAT.** (b) şıkkını uygulamak üzere
+> klasörler sayıldığında "hiçbiri doldurulmamış" cümlesinin doğru olmadığı görüldü:
+>
+> | | dosya | satır |
+> |---|---|---|
+> | Şablonun 20 satır üstüne çıkmış — gerçek içerik | **75** | **18 809** |
+> | Şablona yakın — boş iskelet | 126 | 8 278 |
+>
+> Dolu dosyaların dağılımı: `timetable` 9 · `school-settings` 9 · `academic-years` 8 ·
+> `students` 7 · `users` 7 · `identity` 7 · `documents` 7 · `announcements` 3 ·
+> `classrooms` 3 · `schools` 2. `timetable/api-contracts.md` **942**,
+> `students/api-contracts.md` **675**, `users/database-schema.md` **591** satır — hiçbiri
+> `{{TBD}}` taşımıyor. Defterdeki örnekler (`marks/README.md`, `homework/README.md`)
+> gerçekten boş, ama onlar 19 modülün tamamını değil bir azınlığını temsil ediyor.
+>
+> **Sonuç:** (b) "modül başına yalnız README'yi tutup kalan dokuzu sil" olduğu gibi
+> uygulanırsa ~18 800 satır gerçek belge silinir — üstelik `README.md` çoğu modülde
+> **dolu olmayan** dosya (yalnız 5 modülde dolu). Bu yüzden silme İŞLETİLMEDİ.
+>
+> [[karar-oncesi-yeniden-olcum]]: bayat tarif yanlış kullanıcı kararı üretir. Yeni şıklar:
+> **(b′)** yalnız şablona yakın 126 dosyayı sil, dolu 75'i yerinde bırak (klasör yapısı
+> kalır, boş gürültü gider); **(a′)** `modules/`'ü tümüyle arşive al ve dolu dosyaları
+> `docs/documents/` altına taşı. Karar yine kullanıcınındır.
