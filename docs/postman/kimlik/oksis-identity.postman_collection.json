@@ -1,0 +1,335 @@
+{
+  "info": {
+    "name": "OKSİS — Identity API",
+    "description": "Users modülü endpoint'leri (oksis-api/src/Oksis.Api/Controllers/V1/UsersController.cs) + Auth endpoint'leri (AuthController.cs, account-tabanlı — legacy User login/refresh/revoke/reset-password/change-password Faz 1+2'de kaldırıldı).\n\nKoleksiyon-seviyesi auth: Bearer `{{accessToken}}`.\n\nKullanım:\n1. `POST Auth - Public / Account Login` çalıştır → test script `accessToken` (ve mobile header'lı isteklerde `refreshToken`) collection variable'larını otomatik doldurur. Web akışında refresh token httpOnly `oksis_rt` cookie'sinde taşınır (Postman cookie jar otomatik yönetir).\n2. Sonraki tüm yetkili istekler otomatik header alır.\n3. 401 alırsan `POST Auth - Public / Account Refresh Token` çalıştır → yeni access token yazılır.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "API_SERVICE",
+      "value": "https://localhost:5001/api/v1",
+      "type": "string",
+      "description": "API kök URL'i (dev için `https://localhost:5001/api/v1`)."
+    },
+    {
+      "key": "schoolId",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "type": "string",
+      "description": "Aktif tenant okulun GUID'i. Opsiyonel `schoolHint` olarak login/forgot-password body'sinde kullanılabilir; account login response'unda artık dönmez — gerekiyorsa manuel doldurun."
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string",
+      "description": "JWT access token. Login / refresh response'larından otomatik yazılır."
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string",
+      "description": "Refresh token. Web akışında httpOnly `oksis_rt` cookie'sinde taşınır (bu değişken doldurulmaz); yalnız `X-Client-Type: mobile` header'lı isteklerde login/refresh response body'sinden otomatik yazılır."
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string",
+      "description": "Detay/güncelleme/silme isteklerinde kullanılan kullanıcı GUID'i."
+    },
+    {
+      "key": "resetToken",
+      "value": "",
+      "type": "string",
+      "description": "Reset password e-postasından gelen raw token (manuel yapıştır)."
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth - Public",
+      "description": "Anonim çağrılar — `[AllowAnonymous]`. Bearer header gönderilmez.",
+      "item": [
+        {
+          "name": "Account Login",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_SERVICE}}/auth/account/login",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["auth", "account", "login"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"admin@okul.com\",\n  \"password\": \"Strong1Password\"\n}"
+            },
+            "description": "Account aggregate üzerinden login (legacy User-tabanlı login endpoint'i Faz 1+2'de kaldırıldı). Kademeli lockout: 5 başarısız denemede 5 dk, 10'da 30 dk, 20'de 2 saat kilit (Redis). Hesap yok/inaktif/soft-deleted/yanlış parola için aynı `InvalidCredentials` (401) döner (enumeration koruması). Çoklu profilli hesapta 409 `NEEDS_PROFILE_SELECTION` + `availableProfiles` döner."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "  pm.test('access token set', () => pm.expect(data.accessToken).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Account Refresh Token",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_SERVICE}}/auth/account/refresh",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["auth", "account", "refresh"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Web akışında refresh token httpOnly `oksis_rt` cookie'den okunur (bu body yok sayılır); yalnız `X-Client-Type: mobile` header'lı istekte body kullanılır. Rotation: eski refresh token tüketilir, yeni token üretilir. Aynı token 2. kez gelirse reuse-detection → kullanıcının tüm session'ları revoke edilir."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  const data = json.data || json;",
+                  "  if (data.accessToken) pm.collectionVariables.set('accessToken', data.accessToken);",
+                  "  if (data.refreshToken) pm.collectionVariables.set('refreshToken', data.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Account Forgot Password (request link)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_SERVICE}}/auth/account/forgot-password",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["auth", "account", "forgot-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"admin@okul.com\",\n  \"schoolHint\": \"{{schoolId}}\",\n  \"channel\": \"Email\"\n}"
+            },
+            "description": "TR-auth-008: her durumda 202 Accepted döner (enumeration koruması — var olmayan/inaktif/soft-deleted identifier için de). Email kanalında reset linki Hangfire job ile arka planda gönderilir; SMS kanalı henüz aktif değil (ISSUE-13)."
+          }
+        },
+        {
+          "name": "Account Reset Password",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_SERVICE}}/auth/account/reset-password",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["auth", "account", "reset-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"{{resetToken}}\",\n  \"newPassword\": \"Strong1Password\"\n}"
+            },
+            "description": "Reset e-postasındaki opaque token (raw), tek kullanım. Başarılı reset sonrası kullanıcının tüm refresh token'ları revoke edilir."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth - Authenticated",
+      "description": "Bearer token gerektiren auth aksiyonları.",
+      "item": [
+        {
+          "name": "Account Logout (logout / specific session)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_SERVICE}}/auth/account/logout",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["auth", "account", "logout"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "description": "Web akışında refresh token httpOnly cookie'den okunur (bu body yalnız mobile header'lı istekte kullanılır); refresh token revoke edilir + access token jti Redis'te kalan ömrü kadar TTL ile blacklist'e alınır. Boş gövde idempotent (204)."
+          }
+        },
+        {
+          "name": "Account Change Password (self)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_SERVICE}}/auth/account/change-password",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["auth", "account", "change-password"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Strong1Password\",\n  \"newPassword\": \"NewStrong2Password\"\n}"
+            },
+            "description": "Mevcut parola doğrulanır; başarılı değişimde `RequirePasswordChange=false` ve **tüm refresh token'lar revoke** edilir (kullanıcı tüm cihazlardan çıkar)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "description": "Yetkili user CRUD + profile. Default Deny — izin matrix'ine göre 403 alırsın.",
+      "item": [
+        {
+          "name": "List Users",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/users?page=1&pageSize=20&search=ahmet&role=4&status=1",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["users"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "20" },
+                { "key": "search", "value": "ahmet", "description": "FirstName/LastName/Email içinde ILIKE", "disabled": true },
+                { "key": "role", "value": "4", "description": "UserRole numeric: 1 SuperAdmin, 2 SchoolAdmin, 3 SchoolStaff, 4 Teacher, 5 Parent, 6 Student, 7 Secretary, 8 Accountant", "disabled": true },
+                { "key": "status", "value": "1", "description": "UserStatus numeric: 1 Active, 2 Inactive, 3 Suspended", "disabled": true }
+              ]
+            },
+            "description": "Permission: `users.view`. Mapster SQL projection (`ProjectToType<UserListDto>`) — gereksiz column çekmez. Tenant filter otomatik uygulanır."
+          }
+        },
+        {
+          "name": "Get User By Id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/users/{{userId}}",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Permission: `users.view-detail`. Diğer tenant kullanıcısı için 404 döner (403 değil — kaynak varlığını sızdırmamak için)."
+          }
+        },
+        {
+          "name": "Get My Profile (self)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/users/me",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["users", "me"]
+            },
+            "description": "Self-only — izin gerektirmez, sadece JWT zorunlu."
+          }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_SERVICE}}/users",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["users"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"yeni.kullanici@okul.com\",\n  \"firstName\": \"Ayşe\",\n  \"lastName\": \"Demir\",\n  \"role\": 4\n}"
+            },
+            "description": "Permission: `users.create`. Geçici parola üretilir + Hangfire ile davet e-postası kuyruğa alınır. SuperAdmin (role=1) ataması validator'da reddedilir."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  const newId = json.data;",
+                  "  if (newId) pm.collectionVariables.set('userId', newId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": {
+              "raw": "{{API_SERVICE}}/users/{{userId}}",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Ayşe\",\n  \"lastName\": \"Yıldız\",\n  \"role\": 4\n}"
+            },
+            "description": "Permission: `users.update`. Email güncellenmez (immutable). SuperAdmin role yükseltmesi reddedilir."
+          }
+        },
+        {
+          "name": "Deactivate User",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/users/{{userId}}/deactivate",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["users", "{{userId}}", "deactivate"]
+            },
+            "description": "Permission: `users.update`. `Status=Inactive` yapar; refresh token'lar silinmez (kullanıcı geri açılabilir)."
+          }
+        },
+        {
+          "name": "Soft Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/users/{{userId}}",
+              "host": ["{{API_SERVICE}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Permission: `users.delete`. `IsDeleted=true`, `Status=Inactive`, tüm refresh token'lar Redis'ten temizlenir. Self-delete reddedilir (400 `CannotDeleteSelf`)."
+          }
+        }
+      ]
+    }
+  ]
+}

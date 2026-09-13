@@ -4,7 +4,7 @@
 > yasaklar) ve üç repo'ya birebir aynı kopyalanır.
 >
 > **Format kaynağı: 2026-07-21 kararı** — `<type>(<scope>): türkçe açıklama`.
-> Kanonik doküman `oksis/docs/documents/git-commit-rules.md` 2026-08-30'da bu
+> Kanonik doküman `oksis/docs/teknik/kurallar/ortak/git-commit-rules.md` 2026-08-30'da bu
 > formata çevrildi; iki dosya **eş tutulmalıdır** — biri değişirse diğeri de
 > değişir. Format bugün makine tarafından zorlanmıyor (`commit-msg` hook'u yok),
 > tek zorlayıcı bu komuttur.
