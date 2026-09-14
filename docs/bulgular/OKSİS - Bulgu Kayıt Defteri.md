@@ -51,12 +51,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 20 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 21 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **44** | |
+| **Toplam** | **45** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 28 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 29 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -313,6 +313,51 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-151` · Taslak kelebek penceresinde "Oturum kur" ölü bir kapı 🟡
+
+Ekran testinde yakalandı (2026-09-14, Bölüm B): yeni kurulan oturumlu pencerenin
+panosunda sağ üstte **"Oturum kur"** düğmesi duruyor. Basınca modal açılıyor ve şunu
+yazıyor:
+
+> *"Bu pencerede yerleştirilmeyi bekleyen sınav yok; kurulacak oturum da yok."*
+
+Düğme *"**0 şubeyle** oturumu kur"* olup devre dışı kalıyor. Yani kapı görünür, açılır ve
+arkasında hiçbir şey yoktur.
+
+**Zincir ölçüldü:**
+
+| Halka | Ölçüm |
+|---|---|
+| Düğme koşulu | `isSession && view === "sessions" && w.status !== "locked"` → **taslakta çizilir** |
+| Pano sorgusu | `useExamBoard(isDraft ? undefined : w.id)` → taslakta `enabled: false`, **hiç koşmaz** |
+| Modalın kaynağı | panonun kendi yanıtı (`exams` prop'u, ikinci uç yok) → **boş dizi** |
+| Sunucu | `CreateExamSession` yalnız `Locked`'ı reddeder (`ExamPlacementGuards`) → **taslakta oturum kurmaya İZİN VERİR** |
+
+Yani ekran, sunucunun izin verdiği bir işi görünür bir düğmeyle vaat edip yapamıyor.
+Beklenen satırların (`49` şube × ders) DB'de karşılığı yok — pano onları
+`ExamExpectationReader` ile ders programından türetir ve taslakta o okuma hiç yapılmaz.
+
+**İkinci kusur aynı ekranda:** taslak panosunun boş durum metni **mod körü**:
+
+> *"Pencere yayınlanmadan planlı sınav üretilmez… Önce pencereyi yayınlayın, **öğretmenler
+> sınavlarını yerleştirsin**."*
+
+Kelebekte öğretmen yerleştirme yapmaz; oturumu **yönetici** kurar (domain notu §4: *"Oturum
+iki yoldan doğar: öğretmen yerleştirdiğinde ya da yönetici şube listesiyle kurduğunda"*).
+Cümle ders saati modundan devralınmış.
+
+⬜ **Karar gerekiyor:** taslakta oturum kurulabilmeli mi?
+- **(a) Hayır** → düğme taslakta **çizilmesin** (koşula `!isDraft` eklensin) ve boş durum
+  metni kelebekte mod farkını söylesin. Ucuz; sunucu kapısı da `Draft`'ı reddetmeli
+  ki [[kural-ekranda-degil-sunucuda]] ihlali kalmasın.
+- **(b) Evet** → taslakta pano sorgusu koşsun (`enabled` kapısı kalksın); yönetici haftayı
+  duyurmadan önce oturumları hazırlayabilsin. Kelebeğin akışına daha yakın, çünkü
+  yerleştiren öğretmen yok.
+
+**Bu tur için etkisi:** akış **önce "Pencereyi yayınla"** diyerek işliyor; test bloke
+olmadı, ama yönetici önce ölü kapıya çarpıyor.
+
+---
 ### `TB-150` · Devamsızlık'ın resmî yazı kuralı TÜM uygulamanın çıktısını gizliyor 🔴
 
 Ekran testinde yakalandı (2026-09-14, A7): sınav takviminin *"Yazdır"* düğmesi tarayıcı
