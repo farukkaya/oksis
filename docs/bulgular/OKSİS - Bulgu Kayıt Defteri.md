@@ -51,12 +51,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 21 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 22 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **45** | |
+| **Toplam** | **46** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 29 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 30 (sınav maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -313,6 +313,49 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
+### `TB-152` · Ders programı yayınlanmamış şube sınav takviminden sessizce düşüyor 🟡
+
+Ekran testinde yakalandı (2026-09-14, Bölüm B): kelebek oturumu kurarken Türkçe için
+**5 şube** listeleniyor, oysa okulda 6 şube var ve altısının da Türkçe dersi tanımlı.
+Eksik olan **12-A**. Pano da aynı şeyi söylüyor: toplam beklenti **49**, oysa
+6 şube × 10 ders = **60** olmalıydı.
+
+**Sebep ölçüldü ve DOĞRU davranış:** `ExamExpectationReader` beklentileri yalnız CANLI
+ders programından türetir — `IsActive && IsReserving`. `IsReserving`, yerleşimin sahibi
+programın `Published`/`Revising` olduğunu söyler; taslak programların yerleşimleri slot
+rezerve etmez. 12-A'nın ders programı henüz **taslak** durumda:
+
+| Süzgeç | Çift sayısı |
+|---|---|
+| `is_active = 1` | 59 |
+| `is_active = 1 AND is_reserving = 1` (beklenti kaynağı) | **49** |
+| Fark | **10 — hepsi 12-A** (o şubenin on dersinin tamamı) |
+
+Yayınlanmamış bir programdan sınav saati türetmek yanlış olurdu; kural yerinde.
+
+**Kusur, kuralın GÖRÜNMEZ olması.** Hiçbir yüzey 12-A'nın neden yok olduğunu söylemiyor:
+
+| Yüzey | Ne diyor | Ne demesi gerekirdi |
+|---|---|---|
+| Pano KPI | `0/49` | 49'un neyi kapsadığı ve neyin dışarıda kaldığı |
+| Oturum sihirbazı, ders kartı | *"5 şube bekliyor"* | 6 şubeden 5'i; 12-A'nın programı taslak |
+| Oturum sihirbazı, şube adımı | 12-A satırı **hiç yok** | satır dursun, sebebiyle birlikte seçilemez olsun |
+| Yayın ön kontrolü | `EX-S05` yalnız beklenen çiftleri sayar | beklentiye hiç girmeyen şube orada da görünmez |
+
+Modülün kendi yazılı kuralı bunun tersini söylüyor — kâğıt çıktılarının üçüncü maddesi:
+*"ÇIKTI SESSİZCE EKSİLTMEZ. Sırasız kalan öğrenci ve gözetmensiz derslik kâğıtta ADIYLA
+yazılır."* Aynı ilke ekranda uygulanmamış.
+
+**Zararı somut:** 12-A'nın öğrencileri o sınav döneminde hiçbir sınava girmez ve bunu
+kimse fark etmez — ne yönetici panosunda bir uyarı çıkar, ne yayın kapısı ısırır. Sessiz
+bir eksilme, yanlış bir sayıdan daha tehlikelidir çünkü kimse aramaz.
+
+⬜ **Yapılacak:** beklenti okuyucusu, elenen şube × ders çiftlerini de SEBEBİYLE birlikte
+döndürsün (canlı program yok / görevlendirme yok) ve üç yüzey bunu göstersin: pano bir
+uyarı satırı, sihirbaz seçilemez bir satır, yayın ön kontrolü yumuşak bir kural. Kural
+değişmez — yalnız görünür olur.
+
+---
 ### `TB-151` · Taslak kelebek penceresinde "Oturum kur" ölü bir kapı 🟡
 
 Ekran testinde yakalandı (2026-09-14, Bölüm B): yeni kurulan oturumlu pencerenin
