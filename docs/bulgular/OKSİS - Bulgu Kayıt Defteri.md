@@ -5,10 +5,11 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son ekleme:** 2026-09-15 — sınav takvimi ekran testi (Bölüm B, görüş penceresi):
-> `TB-154` (yayın gerekçesi iki yerde iki türlü), `TB-155` (tarih/saat bitişikliği, kapandı)
-> ve `TB-156` (görüş döngüsü bildirimsiz) eklendi. Önceki gün `TB-143`…`TB-153`; `TB-150`,
-> `TB-153` ve `TB-155` merkezî olarak kapandı. Defter **50**.
+> **Son ekleme:** 2026-09-15 — sınav takvimi ekran testi (Bölüm B, görüş penceresi ve ilk
+> gerçek push turu): `TB-154`…`TB-158`. Kapananlar: `TB-155` (tarih/saat bitişikliği),
+> `TB-157` (mükerrer push + yanıltıcı sıra gövdesi), `TB-158` (Android bildirim kanalı).
+> Açık kalanlar: `TB-154` (karar bekliyor), `TB-156`. Önceki gün `TB-143`…`TB-153`.
+> Defter **52**.
 > Önceki: 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
 > (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
 > bugün erişilemez olduğu ölçümü eklendi. `TB-140` aynı gün kapandı
@@ -37,7 +38,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-157` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-159` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -51,11 +52,11 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 7 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 23 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟠 Yüksek | 8 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 24 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 17 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **50** | |
+| **Toplam** | **52** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 30 (sınav maddeleri dahil)
 
@@ -313,6 +314,77 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-157` · Takvim yayınında öğrenciye oturum sayısı kadar kuyruk kaydı açılıyordu 🟠
+
+Gerçek push testinde yakalandı (2026-09-15, Bölüm B8). Takvim yayınlandığında telefona
+**aynı bildirim üç kez** düştü. `push_deliveries`'te aynı olay · aynı hesap · aynı cihaz
+için üç ayrı FCM mesajı var: `29.682`, `29.704`, `29.772` — 90 ms içinde. Teslim kütüğünde
+ise **tek** satır; yani sunucu üç kez gönderdi, kütük ikisini reddetti.
+
+Kök neden `ExamSchedulePublishedNotificationHandler`'da:
+
+```
+seatRows  →  her SIRA satırı için bir enqueue
+eventId   =  Combine(okul, pencere, sürüm, öğrenciKimliği, "…_SEAT")
+```
+
+Tekilleştirme anahtarı **oturumu taşımıyordu**. Ölçüm anında pencerede 9 oturum vardı;
+öğrencinin 9 sıra satırı, dolayısıyla **aynı `eventId` ile 9 kuyruk kaydı**. Dağıtıcının
+kütük kontrolü gönderimden ÖNCE, kütük yazımı SONRA (kodda `Debt-N6` diye adı konmuş
+yarış); dokuz iş neredeyse aynı anda koşunca üçü kapıdan geçti.
+
+**İkinci ve daha ağır yanı:** gövde *"12-B Dersliği, 6. sıra"* diyordu — ama öğrencinin o
+hafta 9 sınavı var ve ölçümde öğrenciler pencere boyunca **1–2 farklı yerde** oturuyor.
+Mesaj, hangi sınavın sırası olduğunu söylemeden tek bir yeri "senin yerin" diye sunuyordu.
+Hangi kuyruk kaydı yarışı kazanırsa o gösteriliyordu.
+
+✅ **Kapandı** (`oksis-api`) — kullanıcı kararıyla: yerleşmiş öğrenciye **pencere başına tek
+bildirim**, gövdede sıra yok, uygulamaya yönlendirme var:
+
+> *"3. Sınav takvimi yayınlandı. Sınav yerlerini uygulamadan görebilirsin."*
+
+Gövde artık öğrenciye göre değişmediği için **tek olay + çok alıcı** yeterli; teslim kütüğü
+zaten (olay, alıcı, kanal) üçlüsünde tekil. Böylece mükerrerliğin kaynağı kurudu —
+`Debt-N6` yarışı duruyor ama onu besleyen çoklu kayıt yok. Tek bir sınavdan söz eden
+bildirimler (`ExamMoved`, oturma planı değişikliği) sırayı taşımaya **devam ediyor**; orada
+belirsizlik yok. İki test: gövde iddiası güncellendi, bir de "iki oturumu olan öğrenci için
+tek kuyruk kaydı" regresyon bekçisi eklendi (11 test yeşil).
+
+---
+
+### `TB-158` · Android bildirim kanalı hiç oluşturulmuyordu 🟡
+
+Aynı testte ölçüldü (2026-09-15): push telefona **düştü** ama **ekran uyanmadı**, bildirim
+üste çıkmadı — kilit ekranında sessizce bekliyordu.
+
+Android 8'den (API 26) beri bir bildirimin sesini, titreşimini ve üste çıkıp çıkmayacağını
+**payload değil KANAL** belirler. İki uçta birden eksikti:
+
+| Yer | Eksik |
+|---|---|
+| Sunucu (`FcmSender`) | Mesajda `AndroidConfig` **hiç yoktu** — öncelik, kanal kimliği, ses belirtilmiyordu; `ApnsConfig` de yoktu |
+| Mobil | Kanal **hiç oluşturulmuyordu**; manifest'te `default_notification_channel_id` meta-verisi de yoktu |
+
+Kanal yokken FCM kendi yedek kanalını kullanıyor ve onun önem derecesi düşük.
+
+✅ **Kapandı** — iki uçta birden, tek kimlikle (`oksis-default`):
+- `FcmSender`: `AndroidConfig` (`Priority.High` + `ChannelId`) ve `ApnsConfig`
+  (`apns-priority: 10`, `Sound = "default"`). Kimlik `FcmSender.AndroidChannelId` sabitinde.
+- `apps/mobile/plugins/with-notification-channel.js`: `MainApplication.onCreate`'te
+  `IMPORTANCE_HIGH` kanalını oluşturur, manifest'e varsayılan kanal meta-verisini yazar.
+  **Config plugin olmak zorunda** — `android/` üretilir ve gitignore'dadır (`TB-90`).
+  `expo prebuild` koşturularak çıktı doğrulandı.
+
+**İki kimlik ayrışırsa sessizce gerilenir:** sunucu var olmayan bir kanal ister ve yine
+yedek kanala düşülür — hata değil, sessiz kayıp. İkisi de kendi dosyasında bu gerekçeyle
+yorumlandı.
+
+⬜ **Kalan:** iOS'tan bugüne kadar **hiç cihaz kaydı gelmemiş** (17 kaydın 17'si Android).
+Bu ayrı bir arıza ve muhtemelen Apple hesabı eksikliğine dayanıyor
+([[magaza-hesaplari-yok]]); ayrıca ölçülmeli.
+
+---
 
 ### `TB-154` · Yayın kapısının "gerekçe" kuralı ekranda ve sunucuda iki türlü 🟠
 
