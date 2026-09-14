@@ -10,7 +10,7 @@
 > `TB-157` (mükerrer push + yanıltıcı sıra gövdesi). `TB-158` yarı kapandı: kanal kuruldu
 > ve ölçüldü, gösterim belirtisi sürüyor.
 > Açık kalanlar: `TB-154` (karar bekliyor), `TB-156`. Önceki gün `TB-143`…`TB-153`.
-> Ek olarak `TB-159` (kelebek oturumu taşınamıyor). Bir de `TB-160` (gözetmen çizelgesi ters koşul, kapandı). Defter **54**.
+> Ek olarak `TB-159` (kelebek oturumu taşınamıyor). Bir de `TB-160` (gözetmen çizelgesi ters koşul, kapandı). Ve `TB-161` (serpiştirme oturumdan oturuma değişiyor, kapandı). Defter **55**.
 > Önceki: 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
 > (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
 > bugün erişilemez olduğu ölçümü eklendi. `TB-140` aynı gün kapandı
@@ -39,7 +39,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-161` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-162` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -54,10 +54,10 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 9 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 24 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 25 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 18 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **54** | |
+| **Toplam** | **55** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 30 (sınav maddeleri dahil)
 
@@ -315,6 +315,57 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-161` · Aynı şube kümesiyle kurulan her oturum birebir aynı dizilimi veriyordu 🟡
+
+Ekran testinde ölçüldü (2026-09-15, Bölüm B11). Bir haftanın **dokuz** oturumu aynı beş
+şubeyle kurulmuştu ve dokuzunda da öğrenciler **aynı derslikte, aynı sırada, aynı
+komşularla** oturuyordu:
+
+```
+10-B Dersliği · 5 Ekim 1. ders   ve   7 Ekim 5. ders
+  1 Ceren Erdoğan                  1 Ceren Erdoğan
+  2 Ayşe Yalçın                    2 Ayşe Yalçın
+  … sekizi de aynı
+```
+
+Sebep `ExamSeatArranger`'ın saf ve yalnız **girdiye** bağlı olmasıydı: `(şubeler, derslikler)`
+aynıysa çıktı da aynı. Kelebeğin birincil amacı (kimsenin yanı kendi şubesinden olmasın)
+tutuyordu, ama ikincil bir etki doğuyordu — **ilk sınavdan sonra herkes hafta boyunca yerini
+ve yan komşusunu biliyordu.** Ölçümde öğrenci başına 9 oturumda yalnız **1–2 farklı yer**
+düşüyordu.
+
+Kod bunu bilinçli bir karar olarak hiçbir yerde yazmamıştı; kullanıcıya soruldu, karar
+**"aynı olmasın"** çıktı (2026-09-15).
+
+✅ **Kapandı** — `Arrange`'a **tuz** eklendi; üretimde tuz `ExamSession.Id`'dir.
+
+**Tuz serpiştirmenin YAPISINA dokunmuyor**, yalnız şube İÇİ öğrenci sırasını diziyor.
+Kesir dizisi `(2i+1)/(2n)` aynı kaldığı için şubelerin diziye eşit aralıklarla yayılması ve
+"yan yana aynı şube olmasın" güvencesi **harfiyen korunuyor**; değişen tek şey kimin nereye
+düştüğü. Tuzu kesir sırasına katmak bu güvenceyi bozardı — ayrı bir test on farklı tuzla bunu
+kilitliyor.
+
+`GetHashCode()` **kullanılmadı**: .NET'te süreç başına rastgeleleştirilir, aynı girdi iki
+çalıştırmada farklı sayı verir ve Kısıt 17 sessizce delinirdi — üstelik testler tek süreçte
+koştuğu için yeşil kalırdı. Yerine FNV-1a (64 bit) yazıldı: tanımı sabit, platformdan ve
+kültürden bağımsız.
+
+**Belirlenimcilik korunuyor:** tuz oturumun ömrü boyunca sabit olduğu için "yerleşimi yeniden
+üret" aynı dizilimi geri getiriyor (Kısıt 17). Değişen şey oturumlar ARASI.
+
+Gerçek veride ölçüldü (9 oturum yeniden üretildi):
+
+| | Önce | Sonra |
+|---|---|---|
+| Öğrenci başına farklı yer | 1–2 | **4–8** (çoğunluk 5–7) |
+| Tek şubeden oluşan derslik | 0 | **0** (karışım bozulmadı) |
+| 9 oturumun ≥5'inde aynı yerde kalan | çoğu | **0** |
+
+Testler: mevcut 11 iddia bozulmadan geçti, 2 yeni bekçi eklendi (tuz dizilimi değiştirir ·
+tuz karışımı bozmaz); 338 sınav entegrasyon testi yeşil.
+
+---
 
 ### `TB-160` · Gözetmen çizelgesi yalnız boş kaldığı modda görünüyordu ⚪
 
