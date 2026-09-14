@@ -9,7 +9,7 @@
 > gerçek push turu): `TB-154`…`TB-158`. Kapananlar: `TB-155` (tarih/saat bitişikliği),
 > `TB-157` (mükerrer push + yanıltıcı sıra gövdesi), `TB-158` (Android bildirim kanalı).
 > Açık kalanlar: `TB-154` (karar bekliyor), `TB-156`. Önceki gün `TB-143`…`TB-153`.
-> Defter **52**.
+> Ek olarak `TB-159` (kelebek oturumu taşınamıyor). Defter **53**.
 > Önceki: 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
 > (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
 > bugün erişilemez olduğu ölçümü eklendi. `TB-140` aynı gün kapandı
@@ -38,7 +38,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-159` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-160` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -52,11 +52,11 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 8 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 9 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 24 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 17 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **52** | |
+| **Toplam** | **53** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 30 (sınav maddeleri dahil)
 
@@ -314,6 +314,41 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-159` · Kurulan kelebek oturumunun saati değiştirilemiyor, şubesi düzenlenemiyor 🟠
+
+Ekran testinde çıktı (2026-09-15, Bölüm B9). Yayınlanmış bir kelebek penceresinde bir
+oturumu başka güne/saate almanın **hiçbir yolu yok**. Dört kapı da kapalı:
+
+| Kapı | Durum |
+|---|---|
+| `ExamSession.Date` / `Period` | `private set`; **onları değiştiren tek bir metot bile yok** |
+| "Oturumu taşı" komutu | **Yok** — `Commands/` altında karşılığı bulunmuyor |
+| `MoveExam` (tek sınavı taşır) | Sunucuda **var**, ama tek UI kapısı panonun `Liste` görünümü ve o görünüm oturum modunda **bilerek gizli** (`exam-board-screen.tsx:714`) |
+| `UpdateSessionSections` (şube çıkar) | Sunucuda var, `packages/api`'de mutation'ı da var, **hiçbir ekran çağırmıyor** |
+
+Son satır ayrıca kendi başına bir ölü kapı (`TB-151` ile aynı sınıf): uç ve istemci
+sarmalayıcısı yazılmış, çağıran yüzey hiç yazılmamış.
+
+**Pratik sonucu ağır.** Son şube çıkarıldığında oturum derslikleri ve sıralarıyla birlikte
+siliniyor (`UpdateSessionSectionsCommandHandler:293`) — yani *silme* aslında var, ama ona
+ulaşan bir düğme yok. Dolayısıyla yanlış saate kurulmuş bir oturum **kalıcıdır**. Takvim
+yayınlandıktan sonra sınav saatinin hiç değiştirilememesi, modülün gerekçe/sürüm/revizyon
+makinesiyle de çelişiyor: o makine "yayından sonra değişiklik olur, izi tutulur" varsayımı
+üzerine kurulmuş (`ExamWindowRevision`, `EX-H08`, sürüm artışı) ama oturumun kendi zamanı o
+makinenin kapsamı dışında kalmış.
+
+Ders saati modunda (Faz 1) aynı sorun yok: orada `Liste` görünümü ve "Taşı" düğmesi duruyor.
+Eksik yalnız kelebekte.
+
+⬜ **Kapatma yolu kararla başlar.** İki seçenek var ve ikisi farklı şey:
+① oturumu bütün olarak taşıyan bir komut (derslikler ve gözetmenler yeniden türer, sıralar
+yeniden üretilir, revizyon kaydı düşer); ② oturum ekranına şube düzenleme yüzeyi (var olan
+`UpdateSessionSections`'ı çağırır, son şube çıkınca oturum silinir). ①'siz ②, yöneticiyi
+"sil ve yeniden kur"a mecbur bırakır ve öğretmen görüşleri ile elle yazılmış gözetmenler
+her seferinde kaybolur.
+
+---
 
 ### `TB-157` · Takvim yayınında öğrenciye oturum sayısı kadar kuyruk kaydı açılıyordu 🟠
 
