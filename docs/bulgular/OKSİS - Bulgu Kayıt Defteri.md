@@ -7,7 +7,8 @@
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Son ekleme:** 2026-09-15 — sınav takvimi ekran testi (Bölüm B, görüş penceresi ve ilk
 > gerçek push turu): `TB-154`…`TB-158`. Kapananlar: `TB-155` (tarih/saat bitişikliği),
-> `TB-157` (mükerrer push + yanıltıcı sıra gövdesi), `TB-158` (Android bildirim kanalı).
+> `TB-157` (mükerrer push + yanıltıcı sıra gövdesi). `TB-158` yarı kapandı: kanal kuruldu
+> ve ölçüldü, gösterim belirtisi sürüyor.
 > Açık kalanlar: `TB-154` (karar bekliyor), `TB-156`. Önceki gün `TB-143`…`TB-153`.
 > Ek olarak `TB-159` (kelebek oturumu taşınamıyor). Defter **53**.
 > Önceki: 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
@@ -388,7 +389,7 @@ tek kuyruk kaydı" regresyon bekçisi eklendi (11 test yeşil).
 
 ---
 
-### `TB-158` · Android bildirim kanalı hiç oluşturulmuyordu 🟡
+### `TB-158` · Push tepsiye düşüyor ama ekranı uyandırmıyor 🟡
 
 Aynı testte ölçüldü (2026-09-15): push telefona **düştü** ama **ekran uyanmadı**, bildirim
 üste çıkmadı — kilit ekranında sessizce bekliyordu.
@@ -403,7 +404,28 @@ Android 8'den (API 26) beri bir bildirimin sesini, titreşimini ve üste çıkı
 
 Kanal yokken FCM kendi yedek kanalını kullanıyor ve onun önem derecesi düşük.
 
-✅ **Kapandı** — iki uçta birden, tek kimlikle (`oksis-default`):
+🟡 **YARI KAPANDI — belirti sürüyor.** Aşağıdaki iki uç da yapıldı ve ölçüldü, ama
+**ekran hâlâ uyanmıyor, ses ve titreşim yok** (2026-09-15, Redmi M2003J15SC / MIUI).
+Bildirim tepsiye düşüyor, üste çıkmıyor.
+
+Kesin olan (ölçüldü):
+
+| Ölçüm | Sonuç |
+|---|---|
+| Kanal cihazda var mı | ✅ `dumpsys notification` → `mId='oksis-default'`, **`mImportance=4`** (HIGH), `mOriginalImp=4`, `mUserLockedFields=0`, `mVibrationEnabled=true`, ses tanımlı |
+| Sunucu gönderdi mi | ✅ `push_deliveries` → `Sent`, `error_code` boş |
+| Bildirim sayısı | ✅ **tek** — mükerrerlik yok |
+
+Yani Android'in kendi kayıtlarına göre kanal doğru, öncelik doğru, teslim başarılı; **kalan
+şey gösterim.** Sınanmamış ilk şüpheli: MIUI'nin kanal önem derecesinin ÜSTÜNE binen kendi
+"kayan bildirim" anahtarı — yeni kurulan uygulamalarda varsayılan kapalıdır ve Android'in
+`mImportance` değerini değiştirmeden davranışı bastırır. **Doğrulanmadı**; sıradaki iş
+cihazın uygulama bildirim ayarlarını açıp kanalın MIUI tarafındaki hâline bakmak, sonra
+aynı yükü ikinci bir (MIUI olmayan) cihazda denemek. Kullanıcı kararı: bulgu açık kalsın,
+sonra dönülecek.
+
+Yapılan ve yerinde duran (kapatmanın ön koşulu, tek başına yetmedi) — tek kimlikle
+(`oksis-default`):
 - `FcmSender`: `AndroidConfig` (`Priority.High` + `ChannelId`) ve `ApnsConfig`
   (`apns-priority: 10`, `Sound = "default"`). Kimlik `FcmSender.AndroidChannelId` sabitinde.
 - `apps/mobile/plugins/with-notification-channel.js`: `MainApplication.onCreate`'te
