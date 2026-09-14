@@ -5,9 +5,10 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son ekleme:** 2026-09-14 — sınav takvimi ekran testi (Bölüm A ve B): `TB-143`…`TB-153`
-> eklendi. `TB-150` (baskı) ve `TB-153` (derslik adı) aynı gün merkezî olarak kapandı;
-> `TB-146`, `TB-147` ve `TB-149` kodda düzeltildi, doğrulama turu bekliyor. Defter **47**.
+> **Son ekleme:** 2026-09-15 — sınav takvimi ekran testi (Bölüm B, görüş penceresi):
+> `TB-154` (yayın gerekçesi iki yerde iki türlü), `TB-155` (tarih/saat bitişikliği, kapandı)
+> ve `TB-156` (görüş döngüsü bildirimsiz) eklendi. Önceki gün `TB-143`…`TB-153`; `TB-150`,
+> `TB-153` ve `TB-155` merkezî olarak kapandı. Defter **50**.
 > Önceki: 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
 > (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
 > bugün erişilemez olduğu ölçümü eklendi. `TB-140` aynı gün kapandı
@@ -36,7 +37,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-154` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-157` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -50,11 +51,11 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 22 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 16 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 7 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 23 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 17 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **47** | |
+| **Toplam** | **50** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 30 (sınav maddeleri dahil)
 
@@ -312,6 +313,82 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-154` · Yayın kapısının "gerekçe" kuralı ekranda ve sunucuda iki türlü 🟠
+
+Ekran testinde çıktı (2026-09-15, Bölüm B7). Takvim yayınlarken hangi ihlalin **gerekçe**
+istediği iki yerde ayrı tanımlanmış ve ikisi uyuşmuyor:
+
+| | Engelleyen | Gerekçe isteyen |
+|---|---|---|
+| Sunucu (`PublishExamScheduleCommandHandler`) | sert kodlar − `EX-H08` | **yalnız** `EX-H08` ve `EX-S05` |
+| Ekran (`ExamPublishScheduleModal`) | sert kodlar − `EX-H08` | **her yumuşak ihlal** (`warned.length > 0`) |
+
+Engelleme tarafı tutarlı; ayrılık gerekçededir ve **iki yöne birden** kanıyor:
+
+- **Ekran fazla sıkı.** `EX-S04` (karışmamış derslik) ve `EX-S06` (kapasite aşımı) için
+  gerekçe dayatıyor — oysa sunucunun kendi yorumu açık: *"K-23 gereği ikisi de yalnız
+  görünür, yayını kapatmaz ve **gerekçe de istemez**."* Ekran, kararın reddettiği kapıyı
+  kuruyor.
+- **Sunucu fazla gevşek.** `EX-S08` (çözülmemiş öğretmen görüşü) için gerekçe istemiyor;
+  oysa kuralın kendi yorumu şöyle: *"Yorum sessizce gömülmez: yönetici ya 'ele aldım' der
+  ya gerekçe yazar."* İkinci şık kurulmamış. Ekran dışından yapılan bir `POST
+  windows/{id}:publish-schedule` çağrısı, çözülmemiş öğretmen görüşlerinin üzerinden
+  **gerekçesiz** geçer.
+
+Sınıf tanıdık: [[kural-ekranda-degil-sunucuda]] (`TB-32`). Ekranın uyguladığı kural,
+sunucunun bilmediği kuraldır — ikinci bir istemci ya da düz uç çağrısı onu yok sayar.
+
+⬜ **Kapatma yolu kararla başlar, kodla değil.** Önce tek bir soru cevaplanmalı: gerekçe
+kapısı hangi kodlarda açılır? Cevap `packages/core`'da tek bir `examPublishNeedsReason(codes)`
+yüklemine yazılır, ekran ve sunucu **onu** okur. Bugün liste iki dosyada elle tutuluyor;
+üçüncü bir kod eklendiğinde yine ayrışır.
+
+---
+
+### `TB-155` · Görüş satırında tarih ile ders saati bitişik akıyordu ⚪
+
+Ekran testinde görüldü (2026-09-15, Bölüm B7): öğretmenin görüş listesinde başlık
+**"Salı, 6 Ekim2. Ders"** yazıyordu — araya boşluk girmiyordu.
+
+Sebep kopyalanan işaretleme: `exam-review-panel.tsx` tarih+saat ikilisini `.dw > .dd + .dp`
+kalıbıyla yazıyor, ama bu kalıbın stili yalnız `.ex-dutyrow` altında tanımlıydı. Stilsiz iki
+`span` bitişik akar. **Kalıbın stili de kalıpla birlikte gelir.**
+
+✅ **Kapandı** — `.ex-review-row .dw/.dd/.dp` `.ex-dutyrow` ile birebir aynı biçimde
+tanımlandı (`oksis-ui`), yorumla gerekçelendirildi. `.dw` kullanan öteki üç yer tarandı;
+onlar tek değerli, kendi kuralları var.
+
+---
+
+### `TB-156` · Görüş döngüsü açıldıktan sonra iki yönde de sessiz 🟡
+
+Ekran testinde yakalandı (2026-09-15, Bölüm B7). Görüş penceresinin **tek** bildirimi var:
+`ExamReviewOpened` (yönetici → öğretmenler). Döngünün geri kalanı sessiz:
+
+| Olay | Bildirim | Sonuç |
+|---|---|---|
+| Yönetici görüşe açar | ✅ `ExamReviewOpened` | öğretmen zilden görür |
+| Öğretmen görüş bırakır | ❌ yok | **yönetici haberdar olmaz** |
+| Yönetici "çözüldü" işaretler | ❌ yok | öğretmen haberdar olmaz |
+
+`SessionReviewComment.Resolve()` ve yorum ekleme yolu hiç olay üretmiyor (`Raise` çağrısı
+yok, `NotificationKind`'da karşılığı yok).
+
+**Ağır olan ikinci satır.** Görüş penceresi 3 gün açık; yönetici oturum ekranına girip
+**Öğretmen Görüşleri** sekmesindeki sayaca bakmadıkça öğretmenin uyarısından haberi olmaz.
+`EX-S08` de yayını kapatmadığı için (`TB-154`) takvim, okunmamış bir görüşün üzerine
+yayınlanabilir. Öğretmene "görüşünü bırak" denip görüşün okunmaması, yüzeyi ölü hâle
+getirir.
+
+Üçüncü satır daha hafif ama kullanıcı testinde ilk fark edilen bu oldu: yönetici çözdüğünde
+öğretmenin zili artmıyor; etiket yalnız sayfayı yeniden açarsa görünüyor.
+
+⬜ Kapatma yolu: iki yeni `NotificationKind` (`ExamReviewCommentAdded` → oturumun yöneticisi,
+`ExamReviewCommentResolved` → yorumun sahibi). İkisi de `Info`; "bekleyen iş" işaretlenmez —
+`ExamReviewOpened`in gerekçesi burada da geçerli. Push haritasına **girmez**, zil yeter.
+
+---
 
 ### `TB-153` · Derslik adının ardına bir daha "derslik" ekleniyor ⚪
 
