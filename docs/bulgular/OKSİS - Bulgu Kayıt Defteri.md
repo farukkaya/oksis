@@ -578,6 +578,14 @@ Bu madde `TB-32` ailesindendir: **ekranın söylediği ile sunucunun yapabildiğ
 Farkı, buradaki yönün tersine olması — ekran bir kural uydurmuyor, olmayan bir yetenek
 vaat ediyor.
 
+**İkinci kez çarpıldı ve bu kez TESTİ BLOKE ETTİ** (2026-09-14, ekran testi Bölüm B):
+kelebek/oturumlu takvimi taslaktan yayına kadar sürmek için yeni bir oturum penceresi
+gerekiyordu; aktif dönemde açılabilecek tür kalmadığı için pencere kurulamadı. Kalan tek
+tür (`VZ2`, 1. Dönem) GEÇMİŞ bir dönemde (3–14 Ağustos) ve oradan kurulacak pencere
+görüş penceresini, yayın duyuru payını ve mobil okuma yüzlerini test edilemez kılıyor —
+üçü de bugüne bakıyor. Yani sınır yalnız ürünü değil, ürünün doğrulanabilirliğini de
+kapatıyor.
+
 ---
 ### `TB-142` · Alt-eylem (`:fiil`) yolu bir konumda yönlenmiyor — sessiz 404 ⚪
 
