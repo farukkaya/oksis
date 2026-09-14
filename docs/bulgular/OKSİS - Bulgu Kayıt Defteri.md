@@ -5,9 +5,9 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son ekleme:** 2026-09-14 — sınav takvimi ekran testi (Bölüm A): `TB-143`…`TB-150`
-> eklendi. `TB-150` aynı gün merkezî olarak kapandı (`shell.css` baskı tabanı); `TB-146`,
-> `TB-147` ve `TB-149` kodda düzeltildi, doğrulama turu bekliyor. Defter **44**.
+> **Son ekleme:** 2026-09-14 — sınav takvimi ekran testi (Bölüm A ve B): `TB-143`…`TB-153`
+> eklendi. `TB-150` (baskı) ve `TB-153` (derslik adı) aynı gün merkezî olarak kapandı;
+> `TB-146`, `TB-147` ve `TB-149` kodda düzeltildi, doğrulama turu bekliyor. Defter **47**.
 > Önceki: 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
 > (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
 > bugün erişilemez olduğu ölçümü eklendi. `TB-140` aynı gün kapandı
@@ -36,7 +36,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-150` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-154` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -52,9 +52,9 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 22 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 15 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 16 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **46** | |
+| **Toplam** | **47** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 30 (sınav maddeleri dahil)
 
@@ -312,6 +312,36 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-153` · Derslik adının ardına bir daha "derslik" ekleniyor ⚪
+
+Ekran testinde yakalandı (2026-09-14, Bölüm B): gözetmen yazma penceresinde meşgul aday
+satırı **"Matematik · aynı saatte 12-B Dersliği dersliğinde (EX-H06)"** yazıyordu. Derslik
+adı kendi adını zaten taşıdığı için cümle sözcüğü ikiliyor.
+
+Sınıfın kendisi tek ekran değil — aynı kalıp iki yerdeydi:
+
+| Yer | Eski | Sonuç |
+|---|---|---|
+| `exam-session-dialogs.tsx:236` | `${busyRoomName} dersliğinde` | "12-B Dersliği dersliğinde" |
+| `packages/core/.../my-schedule.ts:242` | `Ders ${roomName} dersliğinde yapılacak.` | "Ders 11-B Dersliği dersliğinde yapılacak." |
+
+Ada **hâl eki takmak da çözüm değil**: keyfî adda ("A-101" ile "12-B Dersliği") Türkçe ünlü
+uyumu tek kalıpla çözülemez. Çözüm cümleyi ADIN yalnız başına durabileceği biçimde kurmak:
+
+- `· aynı saatte başka derslikte: 12-B Dersliği (EX-H06)`
+- `Ders yeri değişti: A-101.`
+
+✅ **Kapandı** — `oksis-ui`, iki çağrı yeri birden; `my-schedule.test.ts` beklentisi de
+güncellendi (22 test yeşil). Kural her iki dosyaya yorumla yazıldı.
+
+**Not (bulgu değil, geliştirme verisi):** `academic.rooms` içinde 23 dersliğin 16'sının adı
+`Dersligi` — ğ'siz ASCII. Üstelik "X Dersligi" adlarının her biri **iki satır**; ikizin biri
+hiçbir şubeye bağlı değil (`D-B8` gibi kodlarla öksüz duruyor). Ürün kodu değil, seed
+verisi; testlerde ad doğru yazılıyor (`$"{key} Dersliği"`). Gerçek okul verisiyle
+karşılaşılmadan borç sayılmaz.
+
+---
 
 ### `TB-152` · Ders programı yayınlanmamış şube sınav takviminden sessizce düşüyor 🟡
 
