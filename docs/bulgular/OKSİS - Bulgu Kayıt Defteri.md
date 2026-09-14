@@ -10,7 +10,7 @@
 > `TB-157` (mükerrer push + yanıltıcı sıra gövdesi). `TB-158` yarı kapandı: kanal kuruldu
 > ve ölçüldü, gösterim belirtisi sürüyor.
 > Açık kalanlar: `TB-154` (karar bekliyor), `TB-156`. Önceki gün `TB-143`…`TB-153`.
-> Ek olarak `TB-159` (kelebek oturumu taşınamıyor). Defter **53**.
+> Ek olarak `TB-159` (kelebek oturumu taşınamıyor). Bir de `TB-160` (gözetmen çizelgesi ters koşul, kapandı). Defter **54**.
 > Önceki: 2026-09-13 — Faz 2b ön ölçümü (`oksis-api` @ `20ab14bd`): `TB-140` açıldı
 > (çağıran çözümleyicilerinin Attendance/Announcements ikizleri) ve `TB-139`'a kısa devrenin
 > bugün erişilemez olduğu ölçümü eklendi. `TB-140` aynı gün kapandı
@@ -39,7 +39,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-160` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-161` · `E-24` · `ENG-03`
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -55,9 +55,9 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 3 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 9 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 24 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 17 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 18 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **53** | |
+| **Toplam** | **54** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 30 (sınav maddeleri dahil)
 
@@ -315,6 +315,32 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-160` · Gözetmen çizelgesi yalnız boş kaldığı modda görünüyordu ⚪
+
+Ekran testinde çıktı (2026-09-15, Bölüm B10). Panonun görünüm süzgeci
+(`exam-board-screen.tsx:714`) gözetmen çizelgesini **ters** koşulla gösteriyordu.
+
+Uçtan ölçüldü (`GET windows/{id}/invigilator-schedule`):
+
+| Pencere | Mod | Çizelge | Sekme (eski) |
+|---|---|---|---|
+| 3. Sınav | Oturum | **5 gün dolu** | **gizli** |
+| 1. Sınav | Ders saatinde | 0 gün | görünür |
+| 2. Sınav | Ders saatinde | 0 gün | görünür |
+
+Sebep yapısal: çizelge oturumları, derslikleri ve gözetmenleri okur — ders saati modunda
+bunların hiçbiri yoktur. Süzgeç "oturum modunda yalnız `sessions` ve `violations`" derken
+Faz 2b'de eklenen bu görünümü hesaba katmamış; Faz 1 dalı da `!== "sessions"` dediği için
+çizelgeyi otomatik içeri almış. Yani kâğıt, içerik ürettiği **tek** modda erişilemezdi.
+
+Görünümün kendisi eksiksiz yazılmıştı (sorgu, yükleniyor/hata durumları, basılan bileşen) —
+yalnız kapısı yanlış yere açılmıştı. Sınıf tanıdık: [[eksik-ekran-eksik-yetkiyi-gizler]].
+
+✅ **Kapandı** — koşul düzeltildi ve iki yöne de yazıldı: oturum modunda görünür, ders
+saati modunda gizli. Gerekçe ölçüm değerleriyle birlikte yoruma işlendi.
+
+---
 
 ### `TB-159` · Kurulan kelebek oturumunun saati değiştirilemiyor, şubesi düzenlenemiyor 🟠
 
