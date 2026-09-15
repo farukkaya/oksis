@@ -28,7 +28,7 @@ Kullanıcının çalışma anındaki izinleri JWT'ye basılmaz; her istekte akti
 ## Kurallar
 
 - Aynı (kişi, rol, sezon) üçlüsü tekildir; unique index ile korunur (`USERS_ROLE_ASSIGNMENT_DUPLICATE`).
-- Kişi, rol ve sezon kimlikleri zorunludur.
+- Kişi, rol ve sezon kimlikleri zorunludur. ⚠️ Karar değişti ([[0020-okul-yoneticisi-sezonsuz-atanir]], 2026-09-15): okul yöneticisi rolü **okul düzeyinde, sezonsuz** atanacak; boş sezon "tüm sezonlarda geçerli" demek. Öğretmen/veli/öğrenci sezon-bağlı kalır. Hangi sezonlarda görev yapıldığı atamanın tarih aralığı ile sezon tarihlerinin kesişiminden türer. Henüz uygulanmadı; bugünkü kod sezonu hâlâ zorunlu tutuyor.
 - Yalnız aktif atama iptal edilebilir veya süresi dolabilir; iş idempotency'si bu invariant'a dayanır.
 - Yalnız iptal edilmiş (`Inactive`) atama yeniden aktive edilir.
 - İptal gerekçesi zorunludur.
@@ -45,7 +45,7 @@ Atama yapan kişi kendi seviyesinden **kesin düşük** seviyeli bir rol atayabi
 
 - [[Kişi]] — atamanın öznesi
 - [[Sistem Rolü]] — verilen rol
-- [[Sezon]] — atamanın geçerli olduğu yıl; atama sezonsuz olamaz
+- [[Sezon]] — atamanın geçerli olduğu yıl; okul-düzeyi rolde (okul yöneticisi) boş bırakılır ([[0020-okul-yoneticisi-sezonsuz-atanir]])
 - [[İzin]] — çalışma anında izinler bu atamadan çözülür
 
 ## Geçtiği modüller

@@ -7249,3 +7249,89 @@ sunmuyor" gözlemi o çağıran için hâlâ geçerli.
 Bekçi testi maliyeti ölçüyor ve sabit bir sayıya değil **sabitliğe** çapalı: öğrenci
 eklendiğinde çağrı sayısı değişmemeli. Eski hâl geri konarak kırmızı doğrulandı (9 → 21).
 `oksis-api` `88d170e7`.
+
+---
+
+## 49. K-27 ilk dilim — platformdan okul açılışı (2026-09-15) ✅
+
+**Ne oldu:** `K-27 (a)` kararının ilk ve tek dilimi uygulandı. Plan:
+`gecici/planlar/2026-09-15-platform-okul-acilisi-dilim1.md`. Commit'ler: `oksis-api` `e91711bd`…`74427aa3`
+(0020 okul-düzeyi atama · platform hesabı ve token'ı · okul açma · uçtan uca akış testi),
+`oksis-ui` `bd8d0f6`/`47d6059` (platform ekranları · davet kabulü düzeltmesi).
+
+**Ölçüm:** entegrasyon 27/27 yeşil. Kapsam: `CreateSchoolCommandHandlerTests`,
+`SchoolAdminOnboardingFlowTests`, `PlatformLoginCommandHandlerTests`,
+`PlatformAccountBootstrapperTests`, `SchoolLevelRoleAssignmentTests` ve davet/rol regresyon
+takımları. Birim: Application 2650, Api 435, Domain 7 yeni, mimari bekçiler 7. Web tip denetimi
+temiz, `@workspace/api` 305 test. Elle senaryo: platform girişi → okul aç ("Platform Doğrulama
+Okulu", kod `PLT-DOGRULAMA`) → Mailpit'e davet → davet kabulü → müdür girişi → panel. Kanıt:
+`kanit/k27-platform-girisi.png`, `kanit/k27-okul-acildi.png`, `kanit/k27-mudur-ilk-ekran.png`.
+
+**Turun dersi — seed'siz yol, seed'in hiç ölçmediği bir kırığı ilk adımda buldu.** Web'in
+davet kabul ekranı yazıldığı günden beri `consentGrants: []` gönderiyordu; sunucu KVKK veri
+işleme rızasını zorunlu tuttuğu için **web'den yapılan her davet kabulü** 400 dönüyordu
+(`TB-167`). Dev hesapları seed'le doğduğu için hiç kimse web'den davet kabul etmemişti.
+
+### `E-24` · Yeni okul açmanın ve ilk okul yöneticisini yaratmanın üründe yolu yok 🟠
+
+Altınay Anadolu Lisesi sıfırdan açılış hazırlığında ölçüldü (2026-09-15, `oksis-api` @
+`20f5765f`). Bir okul OKSİS ile anlaştığı gün yapılacak ilk iş üründe yapılamıyor:
+
+| Kapı | Durum |
+|---|---|
+| `School.Create` | Domain'de var; **üretim kodunda hiç çağrılmıyor**, yalnız testler |
+| Okul/tenant/platform controller'ı | **Yok** — V1'deki `SchoolSettings`, `SchoolHolidays`, `PublicSchoolLogo` var olan okulu düzenler |
+| Dev okulları | `DevDataSeeder` okulu ham SQL ile yazıyor (`DevDataSeeder.cs:95`); `School.Create` ve `SchoolCreatedEvent` hiç koşmuyor — seed'li hiçbir okul gerçek açılış yolunu ölçmüyor |
+| İlk yönetici | `CreateInvitationCommandHandler:21` okulu çağıranın bağlamından alıyor; yeni okulda daveti gönderecek hesap yok (kısır döngü) |
+| Kurulum sihirbazı | `OnboardingStatus`'un altı satırı olayla açılıyor ama okuyan/ilerleten uç ve ekran **yok** |
+| Platform yüzeyi | İzin kataloğunda platform modülü yok; web'de platform rolü/rotası yok |
+
+**Sonucu:** pilot okul geliştirici müdahalesi olmadan açılamaz.
+
+⬜ **Kapatma yolu seçildi, kimlik kararı bekliyor.** 0008'in yalnız "okul kaydı" öbeği
+uygulanacak (okul oluştur + kademe/sezon iskeleti + ilk yönetici daveti); tasarımı
+[[OKSİS - Yapısal Kararlar ve Eksikler]] `K-27`'ye (platform kimliği) bağlı.
+
+### `TB-162` · Taze okulda kademeler hiç oluşmuyor — tohumlayıcı boş listeye bakıyor 🟡
+
+`SeedSchoolGradeLevelsHandler` kademeleri `SchoolSettings.SchoolTypes`'tan türetiyor ve
+liste boşsa hiçbir şey yapmadan dönüyor (`SeedSchoolGradeLevelsHandler.cs:76`). Aynı olayın
+`SchoolCreatedEventHandler`'ı ayarı `SchoolSettings.CreateDefault` ile açıyor ve okul türünü
+yazmıyor; olay da türü taşımıyor (`SchoolCreatedEvent(Guid SchoolId, string Name)`). Yani
+gerçek `School.Create` yolunda tohumlayıcı **her zaman** boş döner. Dev okullarında
+görünmüyor, çünkü `ClassRoomDevSeeder:84` onu ayar yazıldıktan sonra elle çağırıyor —
+`E-24`'teki "seed gerçek yolu ölçmüyor" kalıbının ilk somut kurbanı.
+
+Okul türünü sonradan yazan `UpdateAcademicStructureCommand` de kademeyi yeniden türetmiyor
+(`SchoolSettingsUpdatedEvent`'in kademeyle ilgili dinleyicisi yok). Yönetici kademeleri
+`UpdateSchoolGradeLevelsCommand` ile elle seçmek zorunda — alternatif yol var, bu yüzden 🟡.
+
+⬜ Kapatma `E-24`'ün okul kaydı dilimine girer: tür okul açılırken bilinir, tohumlama o anda
+yapılabilir.
+
+✅ **Kapandı** (2026-09-15, `oksis-api` `e91711bd`…`74427aa3`). `POST api/v1/platform/schools`
+(`CreateSchoolCommand`, `TenancyMode.PlatformOnly`) okulu açıyor, kurulum bağlamına geçiyor
+(`SetForLoginFlow`), ayarlara türü yazıyor, kademeleri türetiyor, müdürü `Staff` kişi olarak
+açıp **sezonsuz** `SCHOOL_ADMIN` daveti üretiyor ([[0020-okul-yoneticisi-sezonsuz-atanir]]).
+E-posta mevcut `UserInvitedEvent` zinciriyle gidiyor. Kısır döngü 0020 ile çözüldü: müdürün
+izinleri sezonsuz okulda da çözülüyor, `season.draft.create` dâhil. Kurulum sihirbazı ekranı
+ve `School.Activate` bilinçli olarak dışarıda kaldı.
+
+✅ **`TB-162` kapandı** (aynı commit). `CreateSchoolCommandHandler` türü ayara yazıp
+`SeedForSchoolAsync` çağırıyor. Test `BeGreaterThan(0)`, elle açılışta `gradeLevels=4`
+(Lise). Not: `SchoolCreatedEvent(SchoolId, Name)` hâlâ türü taşımıyor. Okul açmanın tek
+üretim yolu bu komut olduğu için kapanış geçerli; olaya tür eklemek `0019` turuna kalır.
+
+### `TB-167` · Web davet kabulü rıza listesini boş gönderiyor — her kabul 400 🟠
+
+Senaryoda bulundu ve aynı gün kapandı (2026-09-15). `invite-screen.tsx` kabul gövdesini
+`consentGrants: []` ile kuruyordu. Yorumu "ConsentType enum değerleri openapi'de sabit değil;
+onaylar şimdilik yalnız client-side kapı" diyordu. Oysa `@workspace/core`'da tam bu iş için
+`buildConsentGrants` ve `CONSENT_TYPES` zaten vardı. Sunucu
+(`AcceptInvitationCommandHandler`) veri işleme rızası yoksa
+`USERS_CONSENT_DATA_PROCESSING_REQUIRED` döndürüyor; ekran bunu "Bir şeyler ters gitti"
+diye gösteriyordu. Ölçüm: aynı token yalnız `DataProcessing` rızasıyla `curl`'den 200 döndü.
+Kanıt: `kanit/tb167-davet-kabul-400.png`.
+
+✅ **Kapandı** (`oksis-ui` `47d6059`): gövde `buildConsentGrants({ kvkk, notifications, photo })`
+ile kuruluyor; reddedilen tercihler `granted: false` olarak kayda geçiyor.

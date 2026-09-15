@@ -130,6 +130,8 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[0006-sezon-iki-asamali-materyalizasyon]] — sezon iki aşamada kurulur: yapı "Sezonu Aç"ta, terfi ve görevlendirme kopyası "Aktifleştir"de tek transaction'da
 - [[0007-mvp-rol-seti-bes-rol]] — MVP'de yalnız beş sistem rolü; diğerleri ertelendi, muhasebeci kapsam dalı IDOR yüzünden kaldırıldı
 - [[0008-super-yonetici-platform-roludur]] — süper yönetici okulun içini değil sistemdeki varlığını yönetir; iç veriye yalnız okul onayıyla erişir — uygulama bekliyor (TB-139)
+- [[0019-platform-rol-seti-uc-rol]] — platform üç rolle başlar: Yöneticisi, Okul Operasyonu, Destek (salt-okunur üstlenme); `SUPER_ADMIN` → `PLATFORM_ADMIN` — uygulama bekliyor (K-27)
+- [[0020-okul-yoneticisi-sezonsuz-atanir]] — okul yöneticisi okul düzeyinde (sezonsuz) atanır; sezon geçmişi atama tarihleri ile sezon tarihlerinin kesişiminden türer — uygulama bekliyor (K-27 ilk dilim)
 - [[0009-tek-kimlik-modeli]] — eski `User` kaldırıldı; tek kimlik modeli Kişi, Profil, Hesap, Rol Ataması
 - [[0010-okul-basina-depolama-alani]] — her okulun dosyaları kendi depolama alanında; adı okul kimliğinden, ayrılışta tek silmeyle imha
 - [[0011-dosya-tekillestirmesi-kapali]] — aynı içerik iki kez yüklenirse iki kayıt olur; silme referans sayımına dönmesin

@@ -37,7 +37,7 @@
 | **K-13** | Öğretmen haftalık kapasite alanı | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Preset + serbest · solver'da yumuşak kısıt · varsayılan 30 — BE `c6c4086` + web `oksis-ui` @ `3cc904e` |
 | **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz — BE `0cd40654` + web `oksis-ui` @ `3b14a36` |
 | **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ — BE `225f7623` + web `oksis-ui` @ `3cc904e` |
-| **K-27** | Platform kimliği: süper yönetici okulsuz platform hesabı mı, "OKSİS Merkez" iç okulu mu? | ⬜ Bekliyor | — | Kullanıcı araştırıyor (2026-09-15) · okul kaydı dilimini (`E-24`) bloke ediyor |
+| **K-27** | Platform kimliği: süper yönetici okulsuz platform hesabı mı, "OKSİS Merkez" iç okulu mu? | ✅ Karara bağlandı · ✅ ilk dilim uygulandı | 2026-09-15 | **(a) Ayrı platform hesabı** + üç platform rolü ([[0019-platform-rol-seti-uc-rol]]: `PLATFORM_ADMIN` / `PLATFORM_OPERATIONS` / `PLATFORM_SUPPORT`, destek salt-okunur) · izler kazındı: [[super-admin-izleri-envanteri]] · ilk hesap `PlatformBootstrap` ayarından tek seferlik · ilk dilim `oksis-api` `e91711bd`…`74427aa3`, `oksis-ui` `bd8d0f6`/`47d6059` · `E-24`/`TB-162` kapandı |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -950,7 +950,7 @@ border: off
 
 ### 📄 Bağlam
 
-**Durum:** ⬜ Bekliyor · **Kaynak:** Altınay Anadolu Lisesi sıfırdan açılış hazırlığı (2026-09-15) · [[0008-super-yonetici-platform-roludur]]
+**Durum:** ✅ Karara bağlandı (2026-09-15, seçenek **a**) · ✅ ilk dilim uygulandı · **Kaynak:** Altınay Anadolu Lisesi sıfırdan açılış hazırlığı (2026-09-15) · [[0008-super-yonetici-platform-roludur]]
 
 Gerçek bir okulu OKSİS'e sıfırdan teslim alma senaryosu ilk adımda duruyor: **yeni okul
 açmanın ve ilk okul yöneticisini yaratmanın üründe yolu yok** (`E-24`). Kapatma yolu
@@ -973,21 +973,61 @@ Bugünkü kod (`oksis-api` @ `20f5765f`):
 
 **Karar gereken:** (a) mı (b) mi — (a) ise ilk platform hesabı nasıl doğar (kurulumda yapılandırmadan tek sefer mi, başka bir yol mu).
 
-**Bağlı:** `E-24` · `TB-162` · `TB-139` · [[0008-super-yonetici-platform-roludur]]
+**Bağlı:** `E-24` · `TB-162` · `TB-139` · `TB-164` · `TB-165` · `TB-166` · [[0008-super-yonetici-platform-roludur]] · [[super-admin-izleri-envanteri]]
 
 --- column-break ---
 
 ### ✍️ Karar Alanı
 
-**Durum:** ⬜ Bekliyor
-**Tarih:** —
-**Karar veren:** —
+**Durum:** ✅ Karara bağlandı · ✅ ilk dilim uygulandı (2026-09-15)
+**Tarih:** 2026-09-15
+**Karar veren:** Kullanıcı
 
 **Karar**
-> 
+> **(a) Ayrı platform hesabı.** Süper yönetici okula bağlı olmayan bir platform kimliğiyle
+> var olur; "OKSİS Merkez" iç okulu seçeneği reddedildi.
 
 **Gerekçe**
-> 
+> Rolün tanımı değişti ([[0008-super-yonetici-platform-roludur]]): süper yönetici artık
+> bir okulun kişisi değil. Eski tanım (tenant bağımlı süper yönetici) kodda seed'ler dâhil
+> birçok yerde yaşıyor; planlamaya geçmeden önce bu izler doğru/yanlış ayırmadan kazındı
+> ([[super-admin-izleri-envanteri]]) ki plan eski tanıma göre davranan kodu bilerek kursun.
+
+**Ek karar (2026-09-15, aynı gün) — platform rol seti:** [[0019-platform-rol-seti-uc-rol]]
+> Üç rol: **Platform Yöneticisi** (`PLATFORM_ADMIN`, bugünkü `SUPER_ADMIN` yeniden adlanır),
+> **Okul Operasyonu** (`PLATFORM_OPERATIONS`), **Destek** (`PLATFORM_SUPPORT`). Destek
+> üstlenmesi salt-okunur. Operasyon hiçbir okula giriş yapmaz. Raporcu ve faturalama rolü
+> MVP'de yok.
+
+**Kapsam daraltması (2026-09-15, kullanıcı):** Platform ürünü şimdilik hedef değil. İlk ve
+tek dilim: **platformdan okul tanımlayan bir ekran** → okul müdürüne davet e-postası → müdür
+o e-postayla giriş yapıp okulu **sıfırdan** kursun. Amaç seed'siz, gerçek hayata benzer
+kurulum testi (`E-24`). Operasyon/Destek rolleri, üstlenme, lisans/modül yönetimi, platform
+raporları bu dilime girmez; 0019 karar olarak durur, uygulaması ertelenir.
+
+**Ek karar (2026-09-15) — ilk dilimin kısır döngüsü:** [[0020-okul-yoneticisi-sezonsuz-atanir]]
+> Sezonu müdür kendisi açar; sezon platforma kaydırılmaz. Bunun için okul yöneticisi rolü
+> **okul düzeyinde (sezonsuz)** atanır, boş sezon = tüm sezonlarda geçerli. Öğretmen/veli/
+> öğrenci sezon-bağlı kalır. Hangi sezonlarda yöneticilik yapıldığı atama tarihleri ile sezon
+> tarihlerinin kesişiminden türer (müdür → sonraki sezon öğretmen senaryosu kayıpsız izlenir).
+
+**Ek karar (2026-09-15) — ilk platform hesabı:**
+> `PlatformBootstrap` ayarından (`Email`/`Password`/`DisplayName`) **tek seferlik**. Açılışta
+> veritabanında hiç platform hesabı yoksa üretilir; varsa ayar bir daha okunmaz. Production'da
+> ortam değişkeniyle verilir. Dev: `platform@oksis.local`.
+
+**Uygulama (2026-09-15):** `oksis-api` `e91711bd`…`74427aa3` · `oksis-ui` `bd8d0f6`/`47d6059` · plan
+`gecici/planlar/2026-09-15-platform-okul-acilisi-dilim1.md` · kapanış [[OKSİS - Bulgu Arşivi]] §49.
+Platform token'ı `token_kind=platform` taşır, `school_id` taşımaz, refresh'i yoktur.
+`TenancyMode.SuperAdminOnly` yerine `PlatformOnly` geldi. `Required` modu platform token'ını
+reddeder; tenant kapısındaki süper yönetici muafiyeti ile middleware'deki `IsInRole("SuperAdmin")`
+kaldırıldı. `TB-139` kısa devresi (küresel süzgeç ve interceptor) **dokunulmadan** duruyor.
+
+**Açık kalan**
+- [x] İlk platform hesabı nasıl doğar → appsettings'ten tek seferlik (yukarıda).
+- [ ] Platform izin modülünün kesin slug listesi (`platform.*`, `schools.*`, `support.*`) — planda belirlenecek.
+- [x] İlk dilim (okul kaydı) planlandı ve uygulandı.
+- [ ] Kalan gruplar (`SUPER_ADMIN` → `PLATFORM_ADMIN`, Operasyon/Destek rolleri, `TB-139`, `UserRole` mirası, `TB-164`/`TB-165`/`TB-166`, `TB-169`) `0019` turunda dilimlenecek.
 
 --- end-multi-column
 

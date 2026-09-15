@@ -31,6 +31,7 @@ Roller seed verisiyle sabit kimlikle gelir; bu sayede yeniden migrate edilse bil
 - Portal bilgisi girişten sonra kullanıcının hangi arayüze yönleneceğini belirler.
 - Rol-izin listesinde yönetici yalnız **kendi seviyesi ve altındaki** rolleri görür; atanabilir roller listesi yalnız **kesin düşük** seviyeleri içerir. Gerekçe: okul yöneticisi süper yöneticinin yetki kümesini görmesin.
 - **Süper yönetici platform rolüdür**, okul içi rollerin üstü değildir: okulun iç verisine yalnız o okulun onayıyla, okulu üstlenerek ve izli biçimde erişir ([[0008-super-yonetici-platform-roludur]]). ⚠️ Bu karar henüz uygulanmadı: **bugünkü kod davranışı karara aykırıdır** — küresel tenant süzgeci süper yöneticiyi bütün okulların verisine açıyor ve rol seed açıklaması hâlâ "tüm tenantlara erişim" diyor (TB-139).
+- **Platform rol seti üç roldür** ([[0019-platform-rol-seti-uc-rol]], 2026-09-15): Platform Yöneticisi (`PLATFORM_ADMIN`, bugünkü süper yöneticinin yeni adı), Okul Operasyonu (`PLATFORM_OPERATIONS`) ve Destek (`PLATFORM_SUPPORT`). Platform rolleri okul rollerinin seviye/alt küme motoruna girmez; yalnız Platform Yöneticisi verir. ⚠️ Henüz uygulanmadı: seed'de tek platform rolü (`SUPER_ADMIN`) var.
 
 ## İlişkiler
 

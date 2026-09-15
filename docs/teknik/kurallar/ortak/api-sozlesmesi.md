@@ -127,7 +127,7 @@ Yeni hata kodları tanımlanırken bu eşleme `ResultExtensions.cs` içinde kont
 |---|---|
 | Model binding / JSON çözme hatası (`[ApiController]` otomatik doğrulaması; `InvalidModelStateResponseFactory` özelleştirilmemiş) | ASP.NET varsayılan **ProblemDetails**, 400 |
 | JwtBearer challenge (geçersiz, süresi dolmuş ya da kara listedeki token) | 401, gövde yok |
-| `TenantContextMiddleware`: kimliği doğrulanmış, SuperAdmin değil, `school_id` claim'i yok | 403, tek alanlı düz nesne (`Error`), zarf değil |
+| `TenantContextMiddleware`: kimliği doğrulanmış, platform token'ı değil (`token_kind=platform` yok), `school_id` claim'i yok | 403, tek alanlı düz nesne (`Error`), zarf değil |
 | Rate limiter reddi | 429 (bugün hiçbir uçta aktif değil, bkz. §8) |
 
 ### 4.4 İstemcinin hata gösterimi
@@ -205,7 +205,8 @@ Token seti: `{ accessToken, refreshToken, accessExpiresAt }`.
   - Token ömrü kontrol edilir, saat kayması toleransı 30 sn.
   - Her istekte `jti` kara listesi kontrol edilir (çıkış, acil iptal) → 401.
   - Her istekte `perms_ver` kontrol edilir. Rol ataması ya da yetki matrisi değişince hesabın eski token'ı → 401 ve yenileme zorunlu olur.
-- Kullanılan claim'ler: `sub`, `jti`, `school_id`, `perms_ver`, rol (`SuperAdmin`).
+- Okul token'ının claim'leri: `sub`, `jti`, `school_id`, `perms_ver`. Rol talebi yazılmaz.
+- Platform token'ının claim'leri (`K-27`): `sub` (platform hesabı), `jti`, `token_kind=platform`, `email`. `school_id` ve `perms_ver` yok, dolayısıyla izin sürümü kontrolü bu token'ı atlar; `jti` kara listesi işler. Refresh yok; ömür `Jwt:PlatformAccessTokenMinutes` (varsayılan 480 dk). Giriş ucu `POST api/v1/platform/auth/login`.
 
 ### 6.3 Refresh token: istemci türüne göre
 
@@ -243,7 +244,7 @@ Token seti: `{ accessToken, refreshToken, accessExpiresAt }`.
 
 ### 6.6 Kiracı (tenant)
 
-- Kimliği doğrulanmış her istek `school_id` claim'i taşımalıdır. `SuperAdmin` bu kuralın istisnasıdır.
+- Kimliği doğrulanmış her istek `school_id` claim'i taşımalıdır. Tek istisna platform token'ıdır (`token_kind=platform`); o da tenant komutlarına giremez (`TenancyMode.Required` reddeder).
 - Taşımıyorsa 403 döner (§4.3).
 - Muaf yollar: `/health*`, `/scalar*`, `/openapi*`.
 - Okul değiştirme bir istemci durumu değildir; token üzerinden yapılır (`switch-profile`).

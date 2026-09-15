@@ -18,7 +18,17 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-15 — Altınay Anadolu Lisesi sıfırdan açılış hazırlığı: `E-24`
+> **Son ekleme:** 2026-09-15 (gece) — `K-27` **ilk dilim uygulandı** (`oksis-api` `e91711bd`…`74427aa3`,
+> `oksis-ui` `bd8d0f6`/`47d6059`): platformdan okul açma ve sezonsuz müdür daveti. **Kapandı:** `E-24`, `TB-162`, bir de
+> senaryoda bulunup aynı gün düzeltilen `TB-167` (web davet kabulü rıza göndermiyordu, her kabul
+> 400) → [[OKSİS - Bulgu Arşivi]] §49. **Açıldı:** `TB-168` (sezonsuz okulda pano kartı hata
+> çiziyor 🟡), `TB-169` (platform girişinde hız sınırı yok ⚪). `TB-165`'e not düşüldü. Defter **44**.
+> Önceki (akşam): `K-27` **(a) ayrı platform hesabı** olarak bağlandı;
+> planlama öncesi süper yönetici izleri üç depoda kazındı
+> ([[super-admin-izleri-envanteri]]). Kazımadan üç madde: `TB-164` (ölü SQL seed ⚪),
+> `TB-165` (K5 ucu erişilemez, portal süzgeci `Platform`'u eliyor 🟡), `TB-166` (web mock
+> rol satırı yanlış ⚪), üçü de §12. Defter **44**.
+> Önceki: 2026-09-15 — Altınay Anadolu Lisesi sıfırdan açılış hazırlığı: `E-24`
 > (yeni okul açmanın yolu yok 🟠) ve `TB-162` (taze okulda kademe oluşmuyor 🟡), ikisi de §12.
 > Kapatma yolu platform kimliği kararına bağlı: [[OKSİS - Yapısal Kararlar ve Eksikler]] `K-27` ⬜.
 > Aynı gün önce: sınav takvimi ekran testi (Bölüm B, görüş penceresi ve ilk
@@ -55,7 +65,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-164` · `E-25` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-170` · `E-25` · `ENG-03`
 *(`K-##` karar sayacı: sıradaki `K-28` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -70,13 +80,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 7 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 20 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 10 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 21 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 13 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **41** | |
+| **Toplam** | **44** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 25 (sınav ve okul açılışı maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 28 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -295,42 +305,89 @@ gösteriyor. ⬜ Tek satırlık seed düzeltmesi + migration (emsal: `2026082813
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
-### `E-24` · Yeni okul açmanın ve ilk okul yöneticisini yaratmanın üründe yolu yok 🟠
+### `TB-164` · Ölü SQL seed'i okul-bağlı bir süper yönetici vadediyor ⚪
 
-Altınay Anadolu Lisesi sıfırdan açılış hazırlığında ölçüldü (2026-09-15, `oksis-api` @
-`20f5765f`). Bir okul OKSİS ile anlaştığı gün yapılacak ilk iş üründe yapılamıyor:
+`K-27` ön kazımasında ölçüldü (2026-09-15, `oksis-api` @ `4fb82833`;
+[[super-admin-izleri-envanteri]] §2.2). `infra/scripts/identity-dev-seed.sql` var olmayan
+`users` tablosuna (`OksisDbContextModelSnapshot`'ta sıfır geçiş) `school_id = @SchoolId` ile
+`superadmin@oksis.local` yazıyor — süper yöneticinin **bir okulun kullanıcısı** olduğu eski
+tanımın en saf hâli. Dosya başlığı "tercih edilen yol `IdentityDevSeeder`" diyor; o seeder
+ise süper yönetici hesabı hiç üretmiyor (başlığı: müdür, müdür yardımcısı, öğretmen,
+öğrenci, veli). Buna rağmen `Program.cs:305` ve `DependencyInjection.cs:464` yorumları
+hâlâ "1 SuperAdmin + 2 SchoolAdmin + …" vadediyor.
 
-| Kapı | Durum |
-|---|---|
-| `School.Create` | Domain'de var; **üretim kodunda hiç çağrılmıyor**, yalnız testler |
-| Okul/tenant/platform controller'ı | **Yok** — V1'deki `SchoolSettings`, `SchoolHolidays`, `PublicSchoolLogo` var olan okulu düzenler |
-| Dev okulları | `DevDataSeeder` okulu ham SQL ile yazıyor (`DevDataSeeder.cs:95`); `School.Create` ve `SchoolCreatedEvent` hiç koşmuyor — seed'li hiçbir okul gerçek açılış yolunu ölçmüyor |
-| İlk yönetici | `CreateInvitationCommandHandler:21` okulu çağıranın bağlamından alıyor; yeni okulda daveti gönderecek hesap yok (kısır döngü) |
-| Kurulum sihirbazı | `OnboardingStatus`'un altı satırı olayla açılıyor ama okuyan/ilerleten uç ve ekran **yok** |
-| Platform yüzeyi | İzin kataloğunda platform modülü yok; web'de platform rolü/rotası yok |
+Zarar: yeni gelen "süper yönetici seed'i var" sanıp bulamıyor ya da SQL dosyasını
+çalıştırıp tablo-yok hatasıyla karşılaşıyor.
 
-**Sonucu:** pilot okul geliştirici müdahalesi olmadan açılamaz.
+⬜ SQL dosyası silinir, iki yorum `IdentityDevSeeder`'ın gerçek kadrosuna göre düzeltilir.
+`K-27 (a)` uygulamasında platform hesabının dev seed'i ayrıca tasarlanır.
 
-⬜ **Kapatma yolu seçildi, kimlik kararı bekliyor.** 0008'in yalnız "okul kaydı" öbeği
-uygulanacak (okul oluştur + kademe/sezon iskeleti + ilk yönetici daveti); tasarımı
-[[OKSİS - Yapısal Kararlar ve Eksikler]] `K-27`'ye (platform kimliği) bağlı.
+### `TB-165` · K5 Kurum Yetkilisi ucu üründe erişilemez — izin atanmamış bir rolde 🟡
 
-### `TB-162` · Taze okulda kademeler hiç oluşmuyor — tohumlayıcı boş listeye bakıyor 🟡
+Aynı kazımada ölçüldü ([[super-admin-izleri-envanteri]] §3). `UpdateSchoolAuthorityCommand`
+`school-settings.manage-authority` istiyor; seed bu izni **yalnız `SUPER_ADMIN`**'e veriyor
+(`RolePermissionSeedData.cs:111`, `MasterSeedIds.cs:129`). `SUPER_ADMIN` rolünü hiçbir seed
+hiçbir kişiye atamıyor ve üründe rol atayacak yol da yok (`ListAssignableRoles` seviye
+süzgeci onu okul yöneticisinden gizler). Dolayısıyla `PUT school-settings/authority` bugün
+**kimse tarafından çağrılamaz**; web ve mobil kart bu yüzden salt-okunur
+(`general-tab.tsx:491`, `school-identity-screen.tsx:234`).
 
-`SeedSchoolGradeLevelsHandler` kademeleri `SchoolSettings.SchoolTypes`'tan türetiyor ve
-liste boşsa hiçbir şey yapmadan dönüyor (`SeedSchoolGradeLevelsHandler.cs:76`). Aynı olayın
-`SchoolCreatedEventHandler`'ı ayarı `SchoolSettings.CreateDefault` ile açıyor ve okul türünü
-yazmıyor; olay da türü taşımıyor (`SchoolCreatedEvent(Guid SchoolId, string Name)`). Yani
-gerçek `School.Create` yolunda tohumlayıcı **her zaman** boş döner. Dev okullarında
-görünmüyor, çünkü `ClassRoomDevSeeder:84` onu ayar yazıldıktan sonra elle çağırıyor —
-`E-24`'teki "seed gerçek yolu ölçmüyor" kalıbının ilk somut kurbanı.
+İkinci katman: rol elle bir kişiye atansa bile `AccountPermissionResolver.MapProfileToPortal`
+(`:72-90`) `Platform` portalını hiçbir profile eşlemiyor; aktif profil varken **portal
+süzgeci `Platform` rolünün bütün izinlerini eler**. Yani platform rolü bugünkü izin çözümü
+üzerinden hiçbir izin taşıyamaz — `K-27 (a)`'nın "ayrı izin çözümü" gereksiniminin ölçümü.
 
-Okul türünü sonradan yazan `UpdateAcademicStructureCommand` de kademeyi yeniden türetmiyor
-(`SchoolSettingsUpdatedEvent`'in kademeyle ilgili dinleyicisi yok). Yönetici kademeleri
-`UpdateSchoolGradeLevelsCommand` ile elle seçmek zorunda — alternatif yol var, bu yüzden 🟡.
+Alternatif yol var (kurum yetkilisi seed'de/DB'de elle yazılabilir), bu yüzden 🟡.
 
-⬜ Kapatma `E-24`'ün okul kaydı dilimine girer: tür okul açılırken bilinir, tohumlama o anda
-yapılabilir.
+⬜ Kapanış `K-27 (a)` platform yüzeyiyle gelir: kurum yetkilisi düzenleme platform izin
+modülüne taşınır; portal süzgeci platform token'ı için ayrı ele alınır.
+
+➕ **2026-09-15 · `K-27` ilk dilim sonrası:** platform yüzeyi geldi (`/platform/schools`,
+`oksis-api` `e91711bd`…`74427aa3`), ancak K5 düzenleme ucu hâlâ `SUPER_ADMIN` izninde ve platform token'ı
+okul komutlarına giremiyor (`TenancyMode.Required`). Madde açık kalır. `0019` uygulanınca
+K5 düzenlemesi Okul Operasyonu rolünün platform komutuna taşınır.
+
+### `TB-166` · Web MSW mock'u süper yönetici rolünü dört alanda yanlış tanımlıyor ⚪
+
+`oksis-ui/apps/web/mocks/permissions-handlers.ts:12-31` rolü `code: "SuperAdmin"`,
+`displayName: "Kurum Yetkilisi"`, `level: 0`, `portalType: "Super"` diye veriyor. Backend:
+`SUPER_ADMIN` / "Süper Admin" / **100** / `Platform` (`SystemRoleSeedData.cs:11`). Dosya
+başlığı "portalType değerleri gerçek backend'inkilerle aynı" diyor — değil. "Kurum
+Yetkilisi" K5'in adıdır, rolün değil; mock'la geliştiren biri iki kavramı karıştırır.
+Seviye 0 ise "en yetkisiz" demek (yüksek = yetkili).
+
+⬜ `K-27 (a)` web kabuğu yazılırken mock backend satırına eşitlenir; o güne kadar en azından
+seviye ve kod düzeltilir.
+
+### `TB-168` · Sezonsuz okulda pano "Devamsızlık riski yüklenemedi" diyor 🟡
+
+`K-27` ilk dilim senaryosunda ölçüldü (2026-09-15, platformdan açılan okulun müdürü ilk
+girişte). `AttendanceRiskCard` (`oksis-ui/apps/web/features/dashboard/attendance-risk-card.tsx:49`)
+aktif sezonu okuyan sorgu 404 dönünce ya da dönem kimliği yoksa **hata durumu** çiziyor:
+"Devamsızlık riski yüklenemedi · Tekrar dene". Oysa ortada hata yok; okulun henüz sezonu
+yok ve bu, platformdan açılan **her** okulun ilk günü. "Tekrar dene" hiçbir zaman başarıya
+dönmez. Seed'li okullarda sezon hep olduğu için görünmüyordu (`E-24`'ün "seed gerçek yolu
+ölçmüyor" kalıbı).
+
+Aynı ekranın yan kartları doğru davranıyor ("Aktif sezon yok", "Bugün ders günü değil").
+Alternatif yol var, müdür sezonu açınca kart düzelir. Bu yüzden 🟡.
+Kanıt: `kanit/k27-mudur-ilk-ekran.png`.
+
+⬜ Kapatma yolu: sezon/dönem yokluğu hata değil **boş durum** olarak ayrılsın ("Aktif sezon
+yok, sezon açıldığında risk burada görünür"). Kural tek kartın değil, sezona bağlı bütün pano
+kartlarının; [[yamalama-kabul-degil]] gereği sezon-yok durumu ortak bir bileşene çekilmeli.
+
+### `TB-169` · Platform giriş ucunda hız sınırı politikası yok ⚪
+
+`K-27` ilk diliminde bilinçli olarak dışarıda bırakıldı ve plan gereği deftere yazıldı.
+`POST api/v1/platform/auth/login` okul girişindeki `UseRateLimiter` politikasına bağlı değil.
+Hesap kilidi var: 5 hatalı denemede 15 dakika (`PlatformAccount.MaxFailedAttempts`), yani tek
+hesaba kaba kuvvet sınırlı. Ama IP bazlı sınır yok ve bilinmeyen e-postalar sayaca girmiyor,
+dolayısıyla hesap avı sınırsız. Şimdilik yalnız bir platform hesabı olduğu ve dev ortamında
+koştuğu için ⚪.
+
+⬜ Kapatma yolu: okul girişinin politikası platform ucuna da uygulanır. `0019` rolleri gelip
+platform hesap sayısı artmadan yapılmalı.
 
 ### `TB-158` · Push tepsiye düşüyor ama ekranı uyandırmıyor 🟡
 

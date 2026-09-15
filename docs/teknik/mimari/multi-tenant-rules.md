@@ -176,10 +176,11 @@ public sealed class TenantContextBehavior<TRequest, TResponse> : IPipelineBehavi
         var attr = request.GetType().GetCustomAttribute<TenancyAttribute>()
             ?? new TenancyAttribute(TenancyMode.Required); // default Required
 
-        if (attr.Mode == TenancyMode.Required && _tenant.CurrentSchoolId is null && !_tenant.IsSuperAdmin)
+        // K-27 (a): platform token'ı okul komutuna giremez; süper yönetici muafiyeti yok.
+        if (attr.Mode == TenancyMode.Required && (_platform.IsPlatformRequest || _tenant.CurrentSchoolId is null))
             throw new TenantRequiredException();
 
-        if (attr.Mode == TenancyMode.SuperAdminOnly && !_tenant.IsSuperAdmin)
+        if (attr.Mode == TenancyMode.PlatformOnly && !_platform.IsPlatformRequest)
             throw new ForbiddenException();
 
         return await next();
@@ -192,10 +193,10 @@ public sealed class TenancyAttribute(TenancyMode mode) : Attribute
     public TenancyMode Mode { get; } = mode;
 }
 
-public enum TenancyMode { Required, Optional, SuperAdminOnly }
+public enum TenancyMode { Required, Optional, PlatformOnly }
 ```
 
-Default: `Required`. Login/Refresh/Health gibi tenant-bağımsız endpoint'lerde `[Tenancy(TenancyMode.Optional)]`.
+Default: `Required`. Login/Refresh/Health gibi tenant-bağımsız endpoint'lerde `[Tenancy(TenancyMode.Optional)]`. Platform komutları (`K-27`: okul açma, okul listesi) `[Tenancy(TenancyMode.PlatformOnly)]` taşır. Yeni okul için tenant satırı yazan platform komutu, okulu oluşturduktan sonra `SetForLoginFlow(schoolId)` ile dar bir kurulum bağlamına geçer (`CreateSchoolCommandHandler`). Platform token'ında `school_id` olmadığı için geçiş serbesttir.
 
 ---
 
