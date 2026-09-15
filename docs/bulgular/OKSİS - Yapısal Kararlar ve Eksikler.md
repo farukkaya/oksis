@@ -18,7 +18,7 @@
 
 # 📋 Karar Panosu
 
-**Karara bağlanan: 13 / 17**
+**Karara bağlanan: 13 / 18**
 
 | ID | Konu | Durum | Tarih | Karar özeti |
 |:--|:--|:--|:--|:--|
@@ -37,6 +37,7 @@
 | **K-13** | Öğretmen haftalık kapasite alanı | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Preset + serbest · solver'da yumuşak kısıt · varsayılan 30 — BE `c6c4086` + web `oksis-ui` @ `3cc904e` |
 | **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz — BE `0cd40654` + web `oksis-ui` @ `3b14a36` |
 | **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ — BE `225f7623` + web `oksis-ui` @ `3cc904e` |
+| **K-27** | Platform kimliği: süper yönetici okulsuz platform hesabı mı, "OKSİS Merkez" iç okulu mu? | ⬜ Bekliyor | — | Kullanıcı araştırıyor (2026-09-15) · okul kaydı dilimini (`E-24`) bloke ediyor |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -933,6 +934,60 @@ bir `NonTeachingLoad` görünümü; toplam yük yalnız **rapor düzleminde** bi
 **Gerekçe**
 > Katsayı kurum politikasıdır; hesap sunucuda, değer okul ayarında yaşar ([[kural-ekranda-degil-sunucuda]]). Kapasiteye dahil edilseydi tüm yük KPI'larının bugünkü anlamı bir günde değişirdi; yüzde 'derse ayrılan kapasite'yi anlatmayı sürdürür, ders dışı görünürlük ayrıca kazanılır.
 > ✅ **Tasarım revizyonu işlendi (2026-09-01):** % ve Aşım tüm yüzeylerde (gösterge, tablo hücresi, KPI ortalaması) salt ders saatine bağlandı; ders dışı segment bilgi olarak duruyor.
+
+--- end-multi-column
+
+---
+
+## K-27 · Platform kimliği: süper yönetici hesabı nasıl var olur?
+
+--- start-multi-column: K-27
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor · **Kaynak:** Altınay Anadolu Lisesi sıfırdan açılış hazırlığı (2026-09-15) · [[0008-super-yonetici-platform-roludur]]
+
+Gerçek bir okulu OKSİS'e sıfırdan teslim alma senaryosu ilk adımda duruyor: **yeni okul
+açmanın ve ilk okul yöneticisini yaratmanın üründe yolu yok** (`E-24`). Kapatma yolu
+0008'in yalnız "okul kaydı" öbeği olarak seçildi — süper yönetici okulu açar, kademe/sezon
+iskeletini kurar, ilk yöneticiyi davet eder. Ama o öbek, süper yöneticinin **hangi
+kimlikle** oturum açacağı çözülmeden tasarlanamıyor.
+
+Bugünkü kod (`oksis-api` @ `20f5765f`):
+- `Account.Create` okulsuz hesabı reddediyor (`IDENTITY.ACCOUNT_SCHOOL_REQUIRED`, `Account.cs:62`).
+- Giriş tanımlayıcıdan bir `Person` çözüp onun okuluna geçiyor (`AccountLoginCommandHandler:74-119`); KVKK rızası da bu adımda soruluyor.
+- JWT'de `school_id` zorunlu, rol talebi hiç yazılmıyor — `IsSuperAdmin` üründe hep `false`, `TB-139` kısa devresi bugün erişilemez.
+- Dev seed'de süper yönetici hesabı yok; web'de platform rolü/rotası yok (`ROLE_KEYS` dört anahtar).
+- `CreateInvitationCommandHandler` okulu çağıranın bağlamından alıyor (`:21`), `Person` önceden var olmalı — başka okul adına davet üretilemiyor.
+
+**Seçenekler:**
+- **(a) Ayrı platform kimliği** — okula bağlı olmayan platform hesabı, ayrı giriş ucu, `school_id`'siz token, yalnız platform izin modülü. Tenant süzgeci okulsuz çağrıya satır göstermediği için okul içi veri **yapı gereği** kapalı; 0008 kendiliğinden sağlanır. Okul açma komutu yeni okul için dar bir kurulum bağlamı açar (`SetForLoginFlow` emsali). Maliyet: yeni kimlik varlığı, girişte ayrım, web'de platform kabuğu.
+- **(b) "OKSİS Merkez" iç okulu** — personel özel bir iç okulun hesabı; giriş, token, davet ve rıza akışı olduğu gibi kullanılır. Ucuz; ama personel bir okulun kişisi olarak durur (0008'in "başka meslek" ilkesine ters), sahte okul her okul listesinden gizlenmek zorunda, okul içi menü ve izinler personele sızmaya aday.
+
+Öneri (a) yönündeydi; kullanıcı kararı kendi araştırmasına bıraktı.
+
+**Karar gereken:** (a) mı (b) mi — (a) ise ilk platform hesabı nasıl doğar (kurulumda yapılandırmadan tek sefer mi, başka bir yol mu).
+
+**Bağlı:** `E-24` · `TB-162` · `TB-139` · [[0008-super-yonetici-platform-roludur]]
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ⬜ Bekliyor
+**Tarih:** —
+**Karar veren:** —
+
+**Karar**
+> 
+
+**Gerekçe**
+> 
 
 --- end-multi-column
 

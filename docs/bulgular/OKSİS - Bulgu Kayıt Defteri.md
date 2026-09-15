@@ -13,7 +13,10 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-15 — sınav takvimi ekran testi (Bölüm B, görüş penceresi ve ilk
+> **Son ekleme:** 2026-09-15 — Altınay Anadolu Lisesi sıfırdan açılış hazırlığı: `E-24`
+> (yeni okul açmanın yolu yok 🟠) ve `TB-162` (taze okulda kademe oluşmuyor 🟡), ikisi de §12.
+> Kapatma yolu platform kimliği kararına bağlı: [[OKSİS - Yapısal Kararlar ve Eksikler]] `K-27` ⬜.
+> Aynı gün önce: sınav takvimi ekran testi (Bölüm B, görüş penceresi ve ilk
 > gerçek push turu): `TB-154`…`TB-158`. Kapananlar: `TB-155` (tarih/saat bitişikliği),
 > `TB-157` (mükerrer push + yanıltıcı sıra gövdesi). `TB-158` yarı kapandı: kanal kuruldu
 > ve ölçüldü, gösterim belirtisi sürüyor.
@@ -47,7 +50,8 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-162` · `E-24` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-163` · `E-25` · `ENG-03`
+*(`K-##` karar sayacı: sıradaki `K-28` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -61,13 +65,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 6 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 19 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 12 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 7 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 20 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 10 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **39** | |
+| **Toplam** | **41** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 23 (sınav maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 25 (sınav ve okul açılışı maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -323,6 +327,43 @@ sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yakl
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `E-24` · Yeni okul açmanın ve ilk okul yöneticisini yaratmanın üründe yolu yok 🟠
+
+Altınay Anadolu Lisesi sıfırdan açılış hazırlığında ölçüldü (2026-09-15, `oksis-api` @
+`20f5765f`). Bir okul OKSİS ile anlaştığı gün yapılacak ilk iş üründe yapılamıyor:
+
+| Kapı | Durum |
+|---|---|
+| `School.Create` | Domain'de var; **üretim kodunda hiç çağrılmıyor**, yalnız testler |
+| Okul/tenant/platform controller'ı | **Yok** — V1'deki `SchoolSettings`, `SchoolHolidays`, `PublicSchoolLogo` var olan okulu düzenler |
+| Dev okulları | `DevDataSeeder` okulu ham SQL ile yazıyor (`DevDataSeeder.cs:95`); `School.Create` ve `SchoolCreatedEvent` hiç koşmuyor — seed'li hiçbir okul gerçek açılış yolunu ölçmüyor |
+| İlk yönetici | `CreateInvitationCommandHandler:21` okulu çağıranın bağlamından alıyor; yeni okulda daveti gönderecek hesap yok (kısır döngü) |
+| Kurulum sihirbazı | `OnboardingStatus`'un altı satırı olayla açılıyor ama okuyan/ilerleten uç ve ekran **yok** |
+| Platform yüzeyi | İzin kataloğunda platform modülü yok; web'de platform rolü/rotası yok |
+
+**Sonucu:** pilot okul geliştirici müdahalesi olmadan açılamaz.
+
+⬜ **Kapatma yolu seçildi, kimlik kararı bekliyor.** 0008'in yalnız "okul kaydı" öbeği
+uygulanacak (okul oluştur + kademe/sezon iskeleti + ilk yönetici daveti); tasarımı
+[[OKSİS - Yapısal Kararlar ve Eksikler]] `K-27`'ye (platform kimliği) bağlı.
+
+### `TB-162` · Taze okulda kademeler hiç oluşmuyor — tohumlayıcı boş listeye bakıyor 🟡
+
+`SeedSchoolGradeLevelsHandler` kademeleri `SchoolSettings.SchoolTypes`'tan türetiyor ve
+liste boşsa hiçbir şey yapmadan dönüyor (`SeedSchoolGradeLevelsHandler.cs:76`). Aynı olayın
+`SchoolCreatedEventHandler`'ı ayarı `SchoolSettings.CreateDefault` ile açıyor ve okul türünü
+yazmıyor; olay da türü taşımıyor (`SchoolCreatedEvent(Guid SchoolId, string Name)`). Yani
+gerçek `School.Create` yolunda tohumlayıcı **her zaman** boş döner. Dev okullarında
+görünmüyor, çünkü `ClassRoomDevSeeder:84` onu ayar yazıldıktan sonra elle çağırıyor —
+`E-24`'teki "seed gerçek yolu ölçmüyor" kalıbının ilk somut kurbanı.
+
+Okul türünü sonradan yazan `UpdateAcademicStructureCommand` de kademeyi yeniden türetmiyor
+(`SchoolSettingsUpdatedEvent`'in kademeyle ilgili dinleyicisi yok). Yönetici kademeleri
+`UpdateSchoolGradeLevelsCommand` ile elle seçmek zorunda — alternatif yol var, bu yüzden 🟡.
+
+⬜ Kapatma `E-24`'ün okul kaydı dilimine girer: tür okul açılırken bilinir, tohumlama o anda
+yapılabilir.
 
 ### `TB-159` · Kurulan kelebek oturumunun saati değiştirilemiyor, şubesi düzenlenemiyor 🟠
 
