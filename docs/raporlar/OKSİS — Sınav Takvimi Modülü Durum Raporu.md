@@ -16,15 +16,16 @@
 | **Faz 2a** — Oturum ve yerleşim (sunucu) | `ExamSession`/`ExamRoom`/`ExamSeat`, besteci, komutlar, kurallar, okuma uçları, bildirim | ✅ **Sunucu tarafı 26/26 bitti** | `oksis-api` · **`master`** |
 | **Faz 2a** — İstemci | Dilim 7 (**9 görev**) + Görev 8.1 uçtan uca doğrulama | ✅ **BİTTİ — 9/9 + 8.1** | `oksis-ui` · **`master`** |
 | **Faz 2b** — Çıktılar ve görüş | Kapı listesi, oturma planı, gözetmen çizelgesi, görüş penceresi | ✅ **Beş dilim de bitti (2026-09-13)**; uçtan uca uçlardan doğrulandı, ekranlar gözle görülmedi | `oksis-api` `2891f6d9` · `oksis-ui` `4a80516` |
-| **Kapanış turu** — ekran testi bulguları | Gerekçe kapısı, oturum taşıma, görüş döngüsü, geri alma, duyuru kapsamı, taslak panosu | ✅ **10 madde kapandı (2026-09-15)** | üç depo, dal başı |
+| **Kapanış turu** — ekran testi bulguları | Gerekçe kapısı, oturum taşıma, görüş döngüsü, geri alma, duyuru kapsamı, taslak panosu, sessiz eksilme | ✅ **11 madde kapandı (2026-09-15)** | üç depo, dal başı |
 | **Faz 3** — Otomatik dağıtıcı | Derslik ve gözetmeni öneren Hangfire işi | ⬜ Kapsam kilitli, planlanmadı | — |
 
 **Kapanış turu bitti (2026-09-15).** Ekran testi A+B'den kalan maddelerin onu kapandı:
 `TB-124` `TB-129` `TB-143` `TB-144` `TB-145` `TB-148` `TB-151` `TB-154` `TB-156` `TB-159`.
-`TB-152` yarı kapandı (`EX-S09` yazıldı; sihirbazın seçilemez satırı kaldı). Ayrıntı ve
-kanıtlar: [[OKSİS - Bulgu Arşivi]] §48. **Modülde açık kalan:** `TB-128` (alıcı çözümünde
-N+1), `TB-152`'nin sihirbaz ayağı, `TB-158` (push ekranı uyandırmıyor — cihaz işi),
-`TB-114` (KPI eğilimi), `TB-120` (`K-26`, faz dışı).
+`TB-152` de aynı gün tamamlandı (`EX-S09` + sihirbaz dipnotu) — toplam **11 madde**.
+Ayrıntı ve kanıtlar: [[OKSİS - Bulgu Arşivi]] §48. **Modülde açık kalan üç madde:**
+`TB-128` (alıcı çözümünde N+1, ⚪ — bugün ısırmıyor), `TB-158` (push ekranı uyandırmıyor;
+kullanıcı kararı 2026-09-15: şimdilik dokunulmuyor, cihaz işi), `TB-114` (KPI eğilimi, ⚪).
+`TB-120` faz dışıdır (`K-26`).
 
 **Yeni kural kodu:** `EX-S09` — ders programı yayınlanmamış şube sınav takvimine hiç
 girmiyor. Sıradaki boş kod `EX-S10`.

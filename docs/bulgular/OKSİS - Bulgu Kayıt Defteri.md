@@ -7,8 +7,8 @@
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Son kapanış turu:** 2026-09-15 — sınav takvimi kapanış turu: **10 madde kapandı**
 > ([[OKSİS - Bulgu Arşivi]] §48). Altı ürün kararı bağlandı. İkisi (`TB-124`, `TB-129`'un bir
-> ayağı) kod yazılmadan, ÖLÇÜLEREK kapandı. `TB-152` yarı kapandı: eleme artık `EX-S09` ile
-> görünür, sihirbazın seçilemez satırı kaldı. Defter **31**.
+> ayağı) kod yazılmadan, ÖLÇÜLEREK kapandı. `TB-152` de aynı gün tamamlandı (eleme `EX-S09`
+> ile görünür + sihirbazda dipnot) — **11 madde**. Defter **30**.
 >
 > **Önceki düzeltme:** 2026-09-15 (kapanış turu ön ölçümü) — defterdeki her madde koda karşı
 > ölçüldü. `TB-147`, `TB-149` ve `TB-146` **kodda zaten kapalıydı**, defter satırları
@@ -400,63 +400,6 @@ yorumlandı.
 ⬜ **Kalan:** iOS'tan bugüne kadar **hiç cihaz kaydı gelmemiş** (17 kaydın 17'si Android).
 Bu ayrı bir arıza ve muhtemelen Apple hesabı eksikliğine dayanıyor
 ([[magaza-hesaplari-yok]]); ayrıca ölçülmeli.
-
-### `TB-152` · Ders programı yayınlanmamış şube sınav takviminden sessizce düşüyor 🟡
-
-> 🟡 **YARI KAPANDI (2026-09-15).** Elenen şube artık **adıyla görünüyor**: yeni yumuşak
-> kural `EX-S09` (`ExamExpectationReader.ReadExcludedAsync` → `ExamPlacementCounter` →
-> `ExamRuleInspector`). Pano ve yayın ön kontrolü aynı listeyi okuduğu için **iki yüzey
-> birden** kazandı — defterin istediği üç yüzeyin ikisi.
->
-> Tarayıcıda gerçek veriyle görüldü: *"12-A şubesinin ders programı yayınlanmamış; 13 şube ×
-> ders çifti sınav takvimine hiç girmiyor ve bu şube dönem boyunca hiçbir sınava girmez."*
->
-> Ölçülebilir tek eleme sebebi budur ve kod bunu yazıyor: "görevlendirme yok" ayrı bir sebep
-> gibi görünür ama ölçülemez — bir şubenin hangi dersleri ALMASI gerektiğini söyleyen ikinci
-> bir kaynak yok. `oksis-api` `b684b58c`, 4 entegrasyon testi.
->
-> ⬜ **Kalan:** oturum sihirbazının şube adımında satırın SEBEBİYLE birlikte seçilemez
-> durması. Aşağıdaki tablonun üçüncü satırı; ötekiler kapandı.
-
-Ekran testinde yakalandı (2026-09-14, Bölüm B): kelebek oturumu kurarken Türkçe için
-**5 şube** listeleniyor, oysa okulda 6 şube var ve altısının da Türkçe dersi tanımlı.
-Eksik olan **12-A**. Pano da aynı şeyi söylüyor: toplam beklenti **49**, oysa
-6 şube × 10 ders = **60** olmalıydı.
-
-**Sebep ölçüldü ve DOĞRU davranış:** `ExamExpectationReader` beklentileri yalnız CANLI
-ders programından türetir — `IsActive && IsReserving`. `IsReserving`, yerleşimin sahibi
-programın `Published`/`Revising` olduğunu söyler; taslak programların yerleşimleri slot
-rezerve etmez. 12-A'nın ders programı henüz **taslak** durumda:
-
-| Süzgeç | Çift sayısı |
-|---|---|
-| `is_active = 1` | 59 |
-| `is_active = 1 AND is_reserving = 1` (beklenti kaynağı) | **49** |
-| Fark | **10 — hepsi 12-A** (o şubenin on dersinin tamamı) |
-
-Yayınlanmamış bir programdan sınav saati türetmek yanlış olurdu; kural yerinde.
-
-**Kusur, kuralın GÖRÜNMEZ olması.** Hiçbir yüzey 12-A'nın neden yok olduğunu söylemiyor:
-
-| Yüzey | Ne diyor | Ne demesi gerekirdi |
-|---|---|---|
-| Pano KPI | `0/49` | 49'un neyi kapsadığı ve neyin dışarıda kaldığı |
-| Oturum sihirbazı, ders kartı | *"5 şube bekliyor"* | 6 şubeden 5'i; 12-A'nın programı taslak |
-| Oturum sihirbazı, şube adımı | 12-A satırı **hiç yok** | satır dursun, sebebiyle birlikte seçilemez olsun |
-| Yayın ön kontrolü | `EX-S05` yalnız beklenen çiftleri sayar | beklentiye hiç girmeyen şube orada da görünmez |
-
-Modülün kendi yazılı kuralı bunun tersini söylüyor — kâğıt çıktılarının üçüncü maddesi:
-*"ÇIKTI SESSİZCE EKSİLTMEZ. Sırasız kalan öğrenci ve gözetmensiz derslik kâğıtta ADIYLA
-yazılır."* Aynı ilke ekranda uygulanmamış.
-
-**Zararı somut:** 12-A'nın öğrencileri o sınav döneminde hiçbir sınava girmez ve bunu
-kimse fark etmez — ne yönetici panosunda bir uyarı çıkar, ne yayın kapısı ısırır. Sessiz
-bir eksilme, yanlış bir sayıdan daha tehlikelidir çünkü kimse aramaz.
-
-⬜ **Yapılacak:** beklenti okuyucusu, elenen şube × ders çiftlerini de SEBEBİYLE birlikte
-döndürsün (canlı program yok / görevlendirme yok) ve üç yüzey bunu göstersin: pano bir
-uyarı satırı, sihirbaz seçilemez bir satır, yayın ön kontrolü yumuşak bir kural. Kural
-değişmez — yalnız görünür olur.
 
 ### `TB-150` · Devamsızlık'ın resmî yazı kuralı TÜM uygulamanın çıktısını gizliyor 🔴
 

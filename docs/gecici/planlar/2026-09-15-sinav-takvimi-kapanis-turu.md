@@ -64,7 +64,7 @@ Bir madde beklenenden büyük çıkarsa **atlanır** ve sebebi yazılır; yarım
 
 ## 4. Sonuç (2026-09-15 sabahı)
 
-**On madde kapandı, biri yarı kapandı.** Sıra planlandığı gibi işledi; iki madde kod
+**On bir madde kapandı.** Sıra planlandığı gibi işledi; iki madde kod
 yazılmadan, ölçülerek kapandı.
 
 | # | ID | Durum | Nerede |
@@ -72,7 +72,7 @@ yazılmadan, ölçülerek kapandı.
 | 1 | Defter temizliği | ✅ | `oksis` `d886be8` — 18 madde arşive (§46 + §47) |
 | 2 | `TB-154` | ✅ | `oksis-api` `854b074d` · `oksis-ui` `bfbb482` |
 | 3 | `TB-159` | ✅ | `oksis-api` `1cd24b83` · `oksis-ui` `bfbb482` |
-| 4 | `TB-152` | 🟡 yarı | `oksis-api` `b684b58c` — `EX-S09` yazıldı; sihirbaz satırı kaldı |
+| 4 | `TB-152` | ✅ | `oksis-api` `b684b58c` · `oksis-ui` `aecfd09` — `EX-S09` + sihirbaz dipnotu |
 | 5 | `TB-156` | ✅ | `oksis-api` `45fbfcde` |
 | 6 | `TB-148` | ✅ | `oksis-api` `5dbbd63f` · `oksis-ui` `32a19e1` |
 | 7 | `TB-145` | ✅ | `oksis-api` `45e466b6` |
@@ -95,3 +95,13 @@ düzeltildi — atlamak, kararın yarısını uygulamak olurdu.
 üretmiyordu.
 
 **Hiçbir şey push edilmedi.** Üç depoda da commit'ler yerel.
+
+---
+
+## 5. Kullanıcı kararları — 2026-09-15 sabahı
+
+| Soru | Karar |
+|---|---|
+| `EX-S07` gerekçe listesinde kalsın mı | **Kalsın** — Faz 2b karar 4 geçerli; kod zaten öyle, değişiklik yok |
+| `TB-152` elenen küme telde nasıl taşınsın | **Taşınmasın** — seçilemez satır yerine dipnot; adlar `EX-S09`'dan okunuyor |
+| `TB-158` sıradaki adım | **Şimdilik dokunulmasın** — açık kalıyor, cihaz turuna kalıyor |
