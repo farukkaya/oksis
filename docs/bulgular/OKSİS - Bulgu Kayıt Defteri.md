@@ -72,11 +72,11 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 7 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 20 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 10 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 9 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
 | **Toplam** | **41** | |
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 25 (sınav ve okul açılışı maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 25 (sınav ve okul açılışı maddeleri dahil)
 
 **Senin kararını bekleyenler:** `TB-109` (vekâleten yayında sahiplik devri) ve `TB-111`
 (tarihi ileri alınan ödevin yeniden hatırlatılması) ürün kararıdır; teknik borç olarak
@@ -290,23 +290,6 @@ snapshot'ta dördü hâlâ `IsDelivered = false`.
 Zararı `TB-24`'ün tersi yönde: ekran çalışan bir bildirimi "henüz teslim edilmiyor" diye
 gösteriyor. ⬜ Tek satırlık seed düzeltmesi + migration (emsal: `20260828130231`).
 
----
-
-### `TB-128` · Sınav bildirimlerinin alıcı çözümü öğrenci başına iki sorgu koşuyor ⚪
-
-`ExamNotificationAudience.StudentConsumersAsync` her öğrenci için ayrı ayrı veli çözümlemesi
-yapıyor — öğrenci sayısı kadar resolver çağrısı, her çağrı iki sorgu. Bir kelebek oturumunun
-takvimi yayınlandığında oturumdaki öğrenci sayısı yüzleri bulabilir; bildirim üretimi o anda
-lineer sayıda gidiş-dönüş yapar.
-
-2026-09-11'de Faz 2a Görev 6.1'in uygulamasında ölçüldü. Bugün ısırmıyor çünkü üretim arka
-planda (`Enqueue`) koşuyor ve kimse beklemiyor; borç, sınıf mevcudu değil **oturum mevcudu**
-büyüdükçe birikiyor.
-
-⬜ Kapatma yolu: veli çözümleyici port'una toplu bir uç eklemek
-(`ResolveGuardiansByStudentMapAsync(IEnumerable<Guid>)` → `Dictionary<Guid, Guid[]>`), çağrıyı
-tek sorguya indirmek.
-
 ## 12. Çapraz Kesen İşler ✳️
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
@@ -461,8 +444,30 @@ görüntü alanına yayılıp baskıda belgeyi tek sayfaya kırpıyor. Kabuk giz
 
 Merkezî kapanış, [[yamalama-kabul-degil]] gereği.
 
-⬜ **Kalan:** resmî yazı çıktısının kendisi (`.tl-print-root` yolu) gözle doğrulanmadı —
-kapsam daraltması davranışı değiştirmemeli ama o ekrandan bir baskı alınmalı.
+✅ **Kalan ayak ölçüldü (2026-09-15).** Kapsam daraltmasının davranışı değiştirmediği
+`emulateMedia({media:'print'})` altında İKİ YÖNDE birden doğrulandı:
+
+| Durum | `.shell` | `.tl-print-root` |
+|---|---|---|
+| Baskı · resmî yazı KAPALI | `block` — kâğıda düşer | — |
+| Baskı · resmî yazı AÇIK | `none` — gizlenir | `block` — kâğıda düşer |
+| Ekran | `grid` | — |
+
+Uygulanan kural sayfadan okundu: `body:has(.tl-print-root) > :not(.tl-print-root)
+{ display: none !important }`. Yani resmî yazı açıkken kabuk eskisi gibi boşalıyor,
+kapalıyken kural hiç yok.
+
+⬜ **Yine de ölçülmeyen bir şey kaldı ve sebebi ürün değil VERİ:** yazının kendi
+gövdesinin kâğıttaki dizilimi. "Resmî Yazı (PDF)" düğmesi yalnız eşik AŞILMIŞ öğrencide
+açılıyor (`thresholdLevel(...).level === "over"`) ve dev verisinde böyle bir öğrenci yok —
+en yüksek devamsızlık **1 gün**, sınır **30**. `absence_summaries` satırını elle
+büyütmek de işe yaramıyor: `unexcusedDays` özet satırından değil,
+`AbsenceDayBreakdownResolver.CalculateAbsentDaysAsync` ile yoklama KAYITLARINDAN canlı
+hesaplanıyor; düğmeyi açmak için ~31 gerçek devamsızlık kaydı uydurmak gerekir.
+
+**Bu kendi başına bir tohum boşluğudur** ve `TB-143`'ün sınav tarafında yaptığının aynısını
+yapıyor: kural değil, kuralın DOĞRULANABİLİRLİĞİ kapalı. Devamsızlık tohumuna eşik aşmış
+tek bir öğrenci eklemek, resmî yazının bütün yüzeyini teste açar.
 
 **Ders:** bir modülün `@media print` kuralı `body > *` gibi kökten seçici kullanıyorsa,
 kendi kökünün varlığına bağlanmadıkça **uygulamanın tamamının** kuralıdır.
@@ -489,9 +494,26 @@ testleri yakalayamazdı: onlar `fetch`'i taklit ediyor, rota ağacını değil.
 (`review-comments/{id}/resolve`). Alt-eylem kalıbı pencere komutlarında olduğu gibi
 KALIR — orada ölçülmüş biçimde çalışıyor.
 
-⬜ **Açık kalan soru:** kalıbın hangi koşulda kırıldığı. Yeni bir `:fiil` yolu
-eklenmeden önce **gerçek sunucuda** bir kez denenmeli; sözleşme testinden geçmesi
-yönlendiğini göstermiyor.
+✅ **Açık soru kapandı (2026-09-15) — ve cevap bulgunun kendisini hükümsüz kıldı.**
+Eski rota geçici olarak geri konup gerçek sunucuda denendi:
+
+| Yol | Sonuç |
+|---|---|
+| `review-comments/{id:guid}:resolve` | **401** — yönleniyor |
+| `hour-requests/{id:guid}:answer` | **401** — tireli literal de suçsuz |
+| `windows/{id:guid}:publish-window` | 401 |
+
+**404'ün sebebi rota ağacı değil KABUKTU.** zsh'de `$id:resolve` yazıldığında `:r` bir
+parametre düzenleyicisidir ("uzantıyı at") ve URL `<guid>esolve`ye dönüşür — var olmayan
+yol, yönlendirme 404'ü. `:publish-window` ve `:open-review` bozulmamıştı çünkü `:p` ve `:o`
+düzenleyici değil; `%3A`'nın "çalışması" da aynı sebeple, iki nokta kalmıyordu. İki
+hipotez de (tireli literal / rota ağacındaki konum) yanlıştı.
+
+Düz alt-kaynak yolu **yine de korunuyor**: istemci ve sözleşme ona geçti, geri döndürmek
+bedava değil. Değişen tek şey gerekçe.
+
+**Ders:** kabuk değişkeniyle kurulan URL'de iki nokta varsa `${}` ile sarmalanmalı;
+sarmalanmazsa ölçüm sunucuyu değil kabuğu ölçer. `oksis-api` `f399c8ea`.
 
 ---
 ### `TB-141` · Çağıran çözümü depo genelinde okul süzmüyor — kalıbın kendisi 🟡

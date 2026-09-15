@@ -7213,3 +7213,39 @@ bir eksilme, yanlış bir sayıdan daha tehlikelidir çünkü kimse aramaz.
 döndürsün (canlı program yok / görevlendirme yok) ve üç yüzey bunu göstersin: pano bir
 uyarı satırı, sihirbaz seçilemez bir satır, yayın ön kontrolü yumuşak bir kural. Kural
 değişmez — yalnız görünür olur.
+
+---
+
+### `TB-128` · Sınav bildirimlerinin alıcı çözümü öğrenci başına iki sorgu koşuyor ⚪
+
+`ExamNotificationAudience.StudentConsumersAsync` her öğrenci için ayrı ayrı veli çözümlemesi
+yapıyor — öğrenci sayısı kadar resolver çağrısı, her çağrı iki sorgu. Bir kelebek oturumunun
+takvimi yayınlandığında oturumdaki öğrenci sayısı yüzleri bulabilir; bildirim üretimi o anda
+lineer sayıda gidiş-dönüş yapar.
+
+2026-09-11'de Faz 2a Görev 6.1'in uygulamasında ölçüldü. Bugün ısırmıyor çünkü üretim arka
+planda (`Enqueue`) koşuyor ve kimse beklemiyor; borç, sınıf mevcudu değil **oturum mevcudu**
+büyüdükçe birikiyor.
+
+⬜ Kapatma yolu: veli çözümleyici port'una toplu bir uç eklemek
+(`ResolveGuardiansByStudentMapAsync(IEnumerable<Guid>)` → `Dictionary<Guid, Guid[]>`), çağrıyı
+tek sorguya indirmek.
+
+✅ **Kapandı** (2026-09-15) — ve ölçüm defterin sayısını düzeltti: maliyet öğrenci başına
+iki sorgu DEĞİL, **üç çözümleyici çağrısıydı** (kendi hesabı · velilerinin kişi kimlikleri ·
+o velilerin hesapları). Gerçek veride: 1 öğrencide 9 çağrı, 5 öğrencide 21.
+
+**Kapatma yolu defterin önerdiğinden farklı çıktı.** Öneri "veli çözümleyici port'una
+PARTİSYON veren toplu bir uç eklemek"ti. Ölçünce görüldü ki takvim yayınının partisyona
+İHTİYACI YOK: `TB-157`'den beri gövde herkes için aynı, yalnız BİRLEŞİM isteniyor. Port
+zaten toplu liste alıyor; eksik olan tek şey birleşim isteyen çağıran için ayrı bir kapıydı
+(`ExamNotificationAudience.StudentSetConsumersAsync`) — üç sorgu, öğrenci sayısından
+bağımsız. Yeni bir port ucu açılmadı.
+
+`ExamSeatingChanged`'in öğrenci başına turu **KALDI ve bu doğru**: orada gövde her öğrenciye
+KENDİ dersliğini yazıyor, yani bölümlemeye gerçekten muhtaç. Defterin "port partisyon
+sunmuyor" gözlemi o çağıran için hâlâ geçerli.
+
+Bekçi testi maliyeti ölçüyor ve sabit bir sayıya değil **sabitliğe** çapalı: öğrenci
+eklendiğinde çağrı sayısı değişmemeli. Eski hâl geri konarak kırmızı doğrulandı (9 → 21).
+`oksis-api` `88d170e7`.
