@@ -59,3 +59,39 @@ Bir madde beklenenden büyük çıkarsa **atlanır** ve sebebi yazılır; yarım
 
 `TB-158` (MIUI kayan bildirim · iOS token) · `TB-142` kalanı (`:fiil` kalıbı) — kullanıcıya kalır.
 `TB-150` kalanı (resmî yazı çıktısı) Playwright ile ölçülebilir; sıranın sonunda vakit kalırsa.
+
+---
+
+## 4. Sonuç (2026-09-15 sabahı)
+
+**On madde kapandı, biri yarı kapandı.** Sıra planlandığı gibi işledi; iki madde kod
+yazılmadan, ölçülerek kapandı.
+
+| # | ID | Durum | Nerede |
+|---|---|---|---|
+| 1 | Defter temizliği | ✅ | `oksis` `d886be8` — 18 madde arşive (§46 + §47) |
+| 2 | `TB-154` | ✅ | `oksis-api` `854b074d` · `oksis-ui` `bfbb482` |
+| 3 | `TB-159` | ✅ | `oksis-api` `1cd24b83` · `oksis-ui` `bfbb482` |
+| 4 | `TB-152` | 🟡 yarı | `oksis-api` `b684b58c` — `EX-S09` yazıldı; sihirbaz satırı kaldı |
+| 5 | `TB-156` | ✅ | `oksis-api` `45fbfcde` |
+| 6 | `TB-148` | ✅ | `oksis-api` `5dbbd63f` · `oksis-ui` `32a19e1` |
+| 7 | `TB-145` | ✅ | `oksis-api` `45e466b6` |
+| 8 | `TB-143` | ✅ | `oksis-ui` `bfbb482` |
+| 9 | `TB-151`+`TB-144` | ✅ | `oksis-api` `6b9d7fc1` · `oksis-ui` `bfbb482` |
+| 10 | `TB-124` | ✅ | `oksis-api` `b684b58c` — ölçüldü, kod gerekmedi |
+| 11 | `TB-129` | ✅ | `oksis-api` `32125169` |
+| — | `TB-128` | ⬜ | sıraya girmedi; ⚪ ve bugün ısırmıyor |
+
+**Test durumu:** birim 2644 ✅ · domain 1051 ✅ · sınav entegrasyon 365 ✅ ·
+`@workspace/api` 305 ✅ · `@workspace/core` 551 ✅ · web lint + typecheck temiz.
+
+**Planın dışına çıkılan tek yer:** `TB-151`'in sunucu kapısı 121 testi kırdı (tohumların
+hepsi pencereyi taslakta bırakıyordu). Kapı karar gereği yerinde bırakıldı ve tohumlar
+düzeltildi — atlamak, kararın yarısını uygulamak olurdu.
+
+**Yol boyunca bulunan iki gerçek kusur** (ikisi de ürün kodunda, ikisi de test yazarken):
+① `UnplaceExam`'ın kapı sırası — bekleyen istekli sınav "hiç yerleşmemiş" görünüyordu;
+② test konteynerinde `IExamScheduleReader` kaydı eksikti ve olay sessizce hiçbir şey
+üretmiyordu.
+
+**Hiçbir şey push edilmedi.** Üç depoda da commit'ler yerel.
