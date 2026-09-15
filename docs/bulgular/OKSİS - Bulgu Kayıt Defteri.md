@@ -55,7 +55,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-163` · `E-25` · `ENG-03`
+**Sıradaki boş ID:** `B-51` · `D-19` · `V-04` · `X-22` · `TB-164` · `E-25` · `ENG-03`
 *(`K-##` karar sayacı: sıradaki `K-28` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -72,7 +72,7 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 7 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 20 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 9 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 10 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
 | **Toplam** | **41** | |
 
@@ -731,6 +731,40 @@ sınav takvimi modülünün içinde YAPILMAYACAK — modül bitince kendi turund
 şube oluşturma/düzenleme akışlarında kapı, ve türetme yapan tüketicilerin (`Exams`,
 `Timetable`) boş hâl dallarının kaldırılması. Kelebek oturumu bu kapanana kadar eksik
 derslik için yöneticiye elle ekleme sunar — geçici köprü, kalıcı çözüm değil.
+
+---
+### `TB-163` · Biçim kapısı ~6000 adlandırma satırının altında boğuluyor ⚪
+
+`CLAUDE.md` `dotnet format`'ı **pre-commit zorunlu** ilan ediyor. Kapı bugün işletilemez:
+`--verify-no-changes` çözüm genelinde **5988 `IDE1006` satırı** döndürüyor ve
+`dotnet format` bunların HİÇBİRİNİ düzeltemiyor — adlandırma kuralları otomatik
+düzeltilmez, yalnız raporlanır. `TB-117`'nin asıl kökü budur: gerçek `IMPORTS` borcu
+altı bin satırın içinde görünmüyordu (bu gece onu bulmak için `head` ile kesmek gerekti
+ve ilk turda gözden kaçtı).
+
+Ölçüldü (2026-09-15, tek proje — `Oksis.Api`): **114 satır, 57 benzersiz konum**, iki sınıf:
+
+| Sınıf | Örnek | Durum |
+|---|---|---|
+| `private const` / `private static readonly`, PascalCase | `private const string PermissionPrefix = "perm:";` | **Kural fazla geniş.** `.editorconfig:53` `applicable_kinds = field` diyor ve `const`/`static readonly`'yi dışlamıyor; oysa ikisi de .NET sözleşmesinde PascalCase'dir ve depo da öyle yazıyor |
+| `Async` ekiyle bitmeyen `async` metot | `public async Task<IActionResult> RemoveExemption(...)` | **Gerçek ihlal** — deponun kendi kuralı (`.editorconfig:59`) |
+
+Yani altı binin bir kısmı kuralın kendi kusuru, bir kısmı gerçek borç; ikisi ayrılmadan
+kapı açılamaz.
+
+**Kapı ayrıca HİÇBİR YERDE işletilmiyor:** `.githooks/` altında yalnız `pre-push` var ve o
+derleme + birim testi koşuyor, `dotnet format` çalıştırmıyor. Yani CLAUDE.md'nin "zorunlu"
+dediği adım bugün ne otomatik ne de pratikte uygulanabilir durumda.
+
+⬜ **Karar gerekiyor, iki ayrı iş:**
+- **(a) Kuralı daralt** — `.editorconfig`'e `const` ve `static readonly` için PascalCase
+  istisnası ekle. Depo genelinde bir stil kararıdır; tek satırlık değil, öncelik sırası da
+  düşünülmeli.
+- **(b) `Async` eksiklerini kapat** — gerçek borç; sayısı (a) ayıklandıktan sonra ölçülür.
+  Metot adı değişikliği çağıranları da etkiler.
+
+İkisi bitmeden `dotnet format --verify-no-changes`'i pre-commit kapısı yapmak, her commit'i
+bloke etmek olur.
 
 ---
 ### `TB-117` · Depoda biriken biçim borcu her görevde commit'e sızıyor ⚪
