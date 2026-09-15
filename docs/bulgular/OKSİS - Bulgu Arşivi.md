@@ -5978,3 +5978,665 @@ terk edip `_MODULE_GUIDE.md`'yi arşive almak ve spec+plan çiftini tek kaynak i
 > **(b′)** yalnız şablona yakın 126 dosyayı sil, dolu 75'i yerinde bırak (klasör yapısı
 > kalır, boş gürültü gider); **(a′)** `modules/`'ü tümüyle arşive al ve dolu dosyaları
 > `docs/documents/` altına taşı. Karar yine kullanıcınındır.
+
+---
+
+## 46. Sınav Takvimi — kodda kapanmış, defterde açık kalmış üç madde (2026-09-15) ✅
+
+**Nasıl bulundu:** kapanış turu planı yazılırken defterdeki her madde **koda karşı
+ölçüldü** — hafızaya ya da defterin kendi cümlesine güvenilmedi. Üçü kodda zaten
+kapalıydı; kapanış commit'i atılmış, defter satırı yazılmamıştı.
+
+| ID | Kapatan commit | Ölçüm |
+|---|---|---|
+| `TB-147` 🔴 | `oksis-api` `0e376bb6` | `ExamRuleInspector:147` `EX-H13` yazılı · `IExamPlacementCounter` hücre sorgusu · üç birim testi |
+| `TB-149` 🟡 | `oksis-api` `f731f0fd` | "saat isteği tek muhataplı — artakalan istekler düşüyor" |
+| `TB-146` 🟠 | `oksis-ui` `13fe955` | "yabancı ders saati talep edilebiliyor — Saati Talep Et" |
+
+**Ders — `TB-132` ile birebir aynı:** *kapanış commit'le birlikte yazılmazsa yazılmıyor.*
+İki tur arayla aynı kusurun tekrarlaması, kuralın hatırlanmaya değil **akışa** bağlanması
+gerektiğini gösteriyor: madde kapatan commit'in kendisi defter satırını da taşımalı.
+
+Aşağıda üç bloğun defterdeki son hâli, olduğu gibi.
+
+---
+
+### `TB-147` · Aynı şubenin aynı saatine İKİ sınav konabiliyor — hücre denetimi yok 🔴
+
+Ekran testinde yakalandı (2026-09-14): Görsel Sanatlar öğretmeni, Matematik sınavının
+ZATEN durduğu hücreyi (11-A · 13 Ağustos · 2. ders) talep etti, ev sahibi kabul etti ve
+sınav oraya yerleşti. Aynı şube, aynı gün, aynı ders saati, **iki sınav**.
+
+**Neden ısırmadı — ölçüldü.** `ExamRuleInspector.CheckPlacementAsync` üç şeye bakıyor:
+`EX-H03` (saat senin dersin mi — istek yolunda EV SAHİBİNİN dersi üzerinden ölçülür,
+dolayısıyla geçer), `EX-H01` (şubenin O GÜNKÜ sınav sayısı ≥ sınır; varsayılan 2, bir
+sınav varken ikincisi geçer) ve `EX-S01` (komşu gün, yumuşak). **Hücrenin kendisine
+bakan tek bir kural yok.** `EX-H02`'nin veritabanı tekilliği de şube × ders × pencere
+içindir — iki FARKLI dersi aynı saatte engellemez.
+
+**Ulaşılabilirliği:** bu boşluk saat isteği yolundan geçiyordu ve `TB-146` düzeltilmeden
+önce de vardı — kardeş şube isteği aynı çakışmayı üretebilirdi. Düzeltme onu yalnız daha
+kolay görülür yaptı.
+
+**Zararı somut:** öğrenci aynı saatte iki sınava çağrılır; ders programı etiketi iki sınav
+gösterir; kapı listesi ve not defteri tarihleri çelişir. Yayın kapısı da bunu görmez,
+çünkü aynı olgu orada da yalnız gün bazında sayılıyor.
+
+⬜ **Yapılacak:** yeni sert kural — **bir şube aynı gün ve saatte tek sınava girer**
+(`EX-H13`). Denetim hem yerleştirmede hem saat isteğinde koşmalı; `EX-H05`'in ders saati
+karşılığıdır. İstemci tarafında ek iş yok: kural sunucuda ısırır ve seçici sunucunun
+cümlesini olduğu gibi gösterir (Kısıt 3).
+
+
+
+### `TB-149` · Bir sınav için birden çok bekleyen istek açılabiliyor; artakalanlar kutuda asılı kalıyor 🟡
+
+Ekran testinde ortaya çıktı (2026-09-14): tek bir sınav (11-A · Görsel Sanatlar) için
+**dört** saat isteği açıldı; biri kabul edilince ötekiler ne düştü ne cevaplanabilir kaldı.
+
+Ölçüldü:
+
+| İstek | Hücre | Ev sahibi | Durum |
+|---|---|---|---|
+| 20:59 | 13 Ağu · 2. | Şeyma Özdemir | kabul |
+| 21:01 | 13 Ağu · 3. | Furkan Polat | kabul |
+| **21:05** | **12 Ağu · 2.** | **Deniz Çetin** | **bekliyor — asılı** |
+| 21:05 | 13 Ağu · 3. | Furkan Polat | kabul |
+
+**İki ayrı kusur var, kökleri aynı:**
+
+**① Yeni istek açarken kapı yok.** `RequestExamHourCommandHandler` sınavın mevcut
+`HourRequestStatus`'una ya da `PlacementState`'ine hiç bakmıyor: zaten bekleyen isteği
+olan (hatta yerleşmiş) bir sınav için ikinci, üçüncü istek açılabiliyor. Öğretmen aynı
+sınavı birden çok ev sahibine "ihaleye çıkarabiliyor".
+
+**② Biri kabul edilince ötekiler temizlenmiyor.** `AnswerHourRequest` hem istek satırının
+hem sınavın `Pending` olmasını şart koşuyor; sınav bir kez `Accepted` olunca artakalan
+istek satırları **cevaplanamaz** hâle geliyor (ev sahibi kabul/ret'e bastığında
+*"Sınavın bekleyen bir saat isteği yok"* çıkıyor) ama listede **bekliyor** görünmeye devam
+ediyor. Ev sahibi kapatamadığı bir iş görüyor.
+
+**Yayın kapısına etkisi:** `EX-H09` bekleyen isteği **sınav satırından** sayıyor
+(`ScheduledExams.HourRequestStatus == Pending`), istek tablosundan değil. Asılı satırlar
+yayını engellemiyor — bu doğru sonuç ama yanlış sebeple: sayım o satırların var olduğunu
+bilmiyor.
+
+⬜ **Yapılacak:** ① yeni istek açarken sınavın bekleyen isteği varsa reddet (ya da eskisini
+geri çek); ② bir istek kabul edildiğinde aynı sınavın öteki bekleyen istekleri otomatik
+düşsün (`Declined`, gerekçesi "başka saat kabul edildi") ve ev sahiplerine haber verilsin.
+
+
+
+### `TB-146` · Saat isteği yalnız KARDEŞ ŞUBE yolundan açılabiliyor; kendi şubende yok 🟠
+
+Sınav takviminin en özgün akışı — öğretmenin başka bir öğretmenin ders saatine talip
+olması — ürün içinde **yarım** duruyor.
+
+**Ölçüldü (2026-09-13, ekran testi + kod):**
+
+| Yol | Durum |
+|---|---|
+| Kardeş şubede istek | ✅ **VAR** — saat seçicideki *"Aynı sınavı başka şubelerde de yap"* kutusu; kendi saatini kaydederken öteki şubeler için `requestExamHour` gönderiyor |
+| **Kendi şubende istek** | ❌ **YOK** — ızgarada başkasının hücresi yalnız *"… — dersiniz değil"* yazıyor, tıklanamıyor |
+
+**İlk yazımda "akışın hiç girişi yok" demiştim; yanlıştı** — kardeş şube yolu çalışıyor.
+Doğrusu şu: istek ancak **kendi saatin varken** ve **yan şube için** açılabiliyor.
+
+**Çıkmaz somut:** haftada tek saati olan öğretmen (11-A · Görsel Sanatlar, Cuma 6. ders).
+O saat sınav için kötüyse yapabileceği hiçbir şey yok: kendi şubesinde başka saat isteyemez,
+kardeş şube yolu da kendi saatini kaydetmesini şart koşuyor. Yani en çok isteğe muhtaç
+öğretmen, isteğe hiç ulaşamıyor.
+
+⬜ **Yapılacak (kullanıcı kararı, 2026-09-13):** ızgarada **kendine ait olmayan hücre de
+seçilebilsin**; seçildiğinde birincil düğme *"Saati kaydet"* yerine **"Saati Talep Et"**
+olsun ve `requestExamHour` çağrılsın. Sunucu hazır (`RequestExamHourCommand`, gövde
+`:place` ile aynı); iş yalnız seçicide.
+
+---
+
+---
+
+## 47. Defter temizliği — kapanmış 15 madde defterde kalmıştı (2026-09-15) ✅
+
+Defterin kendi kuralı dosyanın ilk satırında yazılı: *"Bir madde kapandığında bloğu
+Arşivi'ne taşınır; burada iz bırakmaz."* Kural işletilmemişti — **kapanmış 15 madde
+defterde duruyordu** ve bu, açık maddelerin sayısını da toplam sayıyı da yanlış
+gösteriyordu.
+
+Kusur soyut değildi: kapanış turu planlanırken defter "açık" diye okundu ve `TB-147`,
+`TB-149`, `TB-146` için iş açılmasına ramak kaldı — üçü de kodda kapalıydı (§46). Kapanmış
+maddenin açık maddeler listesinde durması, listeyi okunmaz hâle getiriyor.
+
+**Taşınanlar (15):** `TB-130` `TB-131` `TB-132` `TB-133` `TB-134` `TB-135` `TB-136`
+`TB-137` `TB-138` `TB-140` `TB-153` `TB-155` `TB-157` `TB-160` `TB-161`
+
+**Taşınmayanlar — bilerek:** `TB-19`, `TB-141`, `TB-142`, `TB-150`, `TB-158` bir yarısı
+kapalı ama açık kalan ayağı var; `TB-156` hiç kapanmadı (tablosundaki ✅ işareti var olan
+bir bildirimi gösteriyor, maddenin durumunu değil). Yarı kapalı madde **defterde kalır** —
+kapanmayan yarısı hâlâ iştir.
+
+Aşağıda 15 bloğun defterdeki son hâli, olduğu gibi.
+
+---
+
+### `TB-161` · Aynı şube kümesiyle kurulan her oturum birebir aynı dizilimi veriyordu 🟡
+
+Ekran testinde ölçüldü (2026-09-15, Bölüm B11). Bir haftanın **dokuz** oturumu aynı beş
+şubeyle kurulmuştu ve dokuzunda da öğrenciler **aynı derslikte, aynı sırada, aynı
+komşularla** oturuyordu:
+
+```
+10-B Dersliği · 5 Ekim 1. ders   ve   7 Ekim 5. ders
+  1 Ceren Erdoğan                  1 Ceren Erdoğan
+  2 Ayşe Yalçın                    2 Ayşe Yalçın
+  … sekizi de aynı
+```
+
+Sebep `ExamSeatArranger`'ın saf ve yalnız **girdiye** bağlı olmasıydı: `(şubeler, derslikler)`
+aynıysa çıktı da aynı. Kelebeğin birincil amacı (kimsenin yanı kendi şubesinden olmasın)
+tutuyordu, ama ikincil bir etki doğuyordu — **ilk sınavdan sonra herkes hafta boyunca yerini
+ve yan komşusunu biliyordu.** Ölçümde öğrenci başına 9 oturumda yalnız **1–2 farklı yer**
+düşüyordu.
+
+Kod bunu bilinçli bir karar olarak hiçbir yerde yazmamıştı; kullanıcıya soruldu, karar
+**"aynı olmasın"** çıktı (2026-09-15).
+
+✅ **Kapandı** — `Arrange`'a **tuz** eklendi; üretimde tuz `ExamSession.Id`'dir.
+
+**Tuz serpiştirmenin YAPISINA dokunmuyor**, yalnız şube İÇİ öğrenci sırasını diziyor.
+Kesir dizisi `(2i+1)/(2n)` aynı kaldığı için şubelerin diziye eşit aralıklarla yayılması ve
+"yan yana aynı şube olmasın" güvencesi **harfiyen korunuyor**; değişen tek şey kimin nereye
+düştüğü. Tuzu kesir sırasına katmak bu güvenceyi bozardı — ayrı bir test on farklı tuzla bunu
+kilitliyor.
+
+`GetHashCode()` **kullanılmadı**: .NET'te süreç başına rastgeleleştirilir, aynı girdi iki
+çalıştırmada farklı sayı verir ve Kısıt 17 sessizce delinirdi — üstelik testler tek süreçte
+koştuğu için yeşil kalırdı. Yerine FNV-1a (64 bit) yazıldı: tanımı sabit, platformdan ve
+kültürden bağımsız.
+
+**Belirlenimcilik korunuyor:** tuz oturumun ömrü boyunca sabit olduğu için "yerleşimi yeniden
+üret" aynı dizilimi geri getiriyor (Kısıt 17). Değişen şey oturumlar ARASI.
+
+Gerçek veride ölçüldü (9 oturum yeniden üretildi):
+
+| | Önce | Sonra |
+|---|---|---|
+| Öğrenci başına farklı yer | 1–2 | **4–8** (çoğunluk 5–7) |
+| Tek şubeden oluşan derslik | 0 | **0** (karışım bozulmadı) |
+| 9 oturumun ≥5'inde aynı yerde kalan | çoğu | **0** |
+
+Testler: mevcut 11 iddia bozulmadan geçti, 2 yeni bekçi eklendi (tuz dizilimi değiştirir ·
+tuz karışımı bozmaz); 338 sınav entegrasyon testi yeşil.
+
+---
+
+### `TB-160` · Gözetmen çizelgesi yalnız boş kaldığı modda görünüyordu ⚪
+
+Ekran testinde çıktı (2026-09-15, Bölüm B10). Panonun görünüm süzgeci
+(`exam-board-screen.tsx:714`) gözetmen çizelgesini **ters** koşulla gösteriyordu.
+
+Uçtan ölçüldü (`GET windows/{id}/invigilator-schedule`):
+
+| Pencere | Mod | Çizelge | Sekme (eski) |
+|---|---|---|---|
+| 3. Sınav | Oturum | **5 gün dolu** | **gizli** |
+| 1. Sınav | Ders saatinde | 0 gün | görünür |
+| 2. Sınav | Ders saatinde | 0 gün | görünür |
+
+Sebep yapısal: çizelge oturumları, derslikleri ve gözetmenleri okur — ders saati modunda
+bunların hiçbiri yoktur. Süzgeç "oturum modunda yalnız `sessions` ve `violations`" derken
+Faz 2b'de eklenen bu görünümü hesaba katmamış; Faz 1 dalı da `!== "sessions"` dediği için
+çizelgeyi otomatik içeri almış. Yani kâğıt, içerik ürettiği **tek** modda erişilemezdi.
+
+Görünümün kendisi eksiksiz yazılmıştı (sorgu, yükleniyor/hata durumları, basılan bileşen) —
+yalnız kapısı yanlış yere açılmıştı. Sınıf tanıdık: [[eksik-ekran-eksik-yetkiyi-gizler]].
+
+✅ **Kapandı** — koşul düzeltildi ve iki yöne de yazıldı: oturum modunda görünür, ders
+saati modunda gizli. Gerekçe ölçüm değerleriyle birlikte yoruma işlendi.
+
+---
+
+### `TB-157` · Takvim yayınında öğrenciye oturum sayısı kadar kuyruk kaydı açılıyordu 🟠
+
+Gerçek push testinde yakalandı (2026-09-15, Bölüm B8). Takvim yayınlandığında telefona
+**aynı bildirim üç kez** düştü. `push_deliveries`'te aynı olay · aynı hesap · aynı cihaz
+için üç ayrı FCM mesajı var: `29.682`, `29.704`, `29.772` — 90 ms içinde. Teslim kütüğünde
+ise **tek** satır; yani sunucu üç kez gönderdi, kütük ikisini reddetti.
+
+Kök neden `ExamSchedulePublishedNotificationHandler`'da:
+
+```
+seatRows  →  her SIRA satırı için bir enqueue
+eventId   =  Combine(okul, pencere, sürüm, öğrenciKimliği, "…_SEAT")
+```
+
+Tekilleştirme anahtarı **oturumu taşımıyordu**. Ölçüm anında pencerede 9 oturum vardı;
+öğrencinin 9 sıra satırı, dolayısıyla **aynı `eventId` ile 9 kuyruk kaydı**. Dağıtıcının
+kütük kontrolü gönderimden ÖNCE, kütük yazımı SONRA (kodda `Debt-N6` diye adı konmuş
+yarış); dokuz iş neredeyse aynı anda koşunca üçü kapıdan geçti.
+
+**İkinci ve daha ağır yanı:** gövde *"12-B Dersliği, 6. sıra"* diyordu — ama öğrencinin o
+hafta 9 sınavı var ve ölçümde öğrenciler pencere boyunca **1–2 farklı yerde** oturuyor.
+Mesaj, hangi sınavın sırası olduğunu söylemeden tek bir yeri "senin yerin" diye sunuyordu.
+Hangi kuyruk kaydı yarışı kazanırsa o gösteriliyordu.
+
+✅ **Kapandı** (`oksis-api`) — kullanıcı kararıyla: yerleşmiş öğrenciye **pencere başına tek
+bildirim**, gövdede sıra yok, uygulamaya yönlendirme var:
+
+> *"3. Sınav takvimi yayınlandı. Sınav yerlerini uygulamadan görebilirsin."*
+
+Gövde artık öğrenciye göre değişmediği için **tek olay + çok alıcı** yeterli; teslim kütüğü
+zaten (olay, alıcı, kanal) üçlüsünde tekil. Böylece mükerrerliğin kaynağı kurudu —
+`Debt-N6` yarışı duruyor ama onu besleyen çoklu kayıt yok. Tek bir sınavdan söz eden
+bildirimler (`ExamMoved`, oturma planı değişikliği) sırayı taşımaya **devam ediyor**; orada
+belirsizlik yok. İki test: gövde iddiası güncellendi, bir de "iki oturumu olan öğrenci için
+tek kuyruk kaydı" regresyon bekçisi eklendi (11 test yeşil).
+
+---
+
+### `TB-155` · Görüş satırında tarih ile ders saati bitişik akıyordu ⚪
+
+Ekran testinde görüldü (2026-09-15, Bölüm B7): öğretmenin görüş listesinde başlık
+**"Salı, 6 Ekim2. Ders"** yazıyordu — araya boşluk girmiyordu.
+
+Sebep kopyalanan işaretleme: `exam-review-panel.tsx` tarih+saat ikilisini `.dw > .dd + .dp`
+kalıbıyla yazıyor, ama bu kalıbın stili yalnız `.ex-dutyrow` altında tanımlıydı. Stilsiz iki
+`span` bitişik akar. **Kalıbın stili de kalıpla birlikte gelir.**
+
+✅ **Kapandı** — `.ex-review-row .dw/.dd/.dp` `.ex-dutyrow` ile birebir aynı biçimde
+tanımlandı (`oksis-ui`), yorumla gerekçelendirildi. `.dw` kullanan öteki üç yer tarandı;
+onlar tek değerli, kendi kuralları var.
+
+---
+
+### `TB-153` · Derslik adının ardına bir daha "derslik" ekleniyor ⚪
+
+Ekran testinde yakalandı (2026-09-14, Bölüm B): gözetmen yazma penceresinde meşgul aday
+satırı **"Matematik · aynı saatte 12-B Dersliği dersliğinde (EX-H06)"** yazıyordu. Derslik
+adı kendi adını zaten taşıdığı için cümle sözcüğü ikiliyor.
+
+Sınıfın kendisi tek ekran değil — aynı kalıp iki yerdeydi:
+
+| Yer | Eski | Sonuç |
+|---|---|---|
+| `exam-session-dialogs.tsx:236` | `${busyRoomName} dersliğinde` | "12-B Dersliği dersliğinde" |
+| `packages/core/.../my-schedule.ts:242` | `Ders ${roomName} dersliğinde yapılacak.` | "Ders 11-B Dersliği dersliğinde yapılacak." |
+
+Ada **hâl eki takmak da çözüm değil**: keyfî adda ("A-101" ile "12-B Dersliği") Türkçe ünlü
+uyumu tek kalıpla çözülemez. Çözüm cümleyi ADIN yalnız başına durabileceği biçimde kurmak:
+
+- `· aynı saatte başka derslikte: 12-B Dersliği (EX-H06)`
+- `Ders yeri değişti: A-101.`
+
+✅ **Kapandı** — `oksis-ui`, iki çağrı yeri birden; `my-schedule.test.ts` beklentisi de
+güncellendi (22 test yeşil). Kural her iki dosyaya yorumla yazıldı.
+
+**Not (bulgu değil, geliştirme verisi):** `academic.rooms` içinde 23 dersliğin 16'sının adı
+`Dersligi` — ğ'siz ASCII. Üstelik "X Dersligi" adlarının her biri **iki satır**; ikizin biri
+hiçbir şubeye bağlı değil (`D-B8` gibi kodlarla öksüz duruyor). Ürün kodu değil, seed
+verisi; testlerde ad doğru yazılıyor (`$"{key} Dersliği"`). Gerçek okul verisiyle
+karşılaşılmadan borç sayılmaz.
+
+---
+
+### `TB-140` · Çağıran çözümleyicileri iki modülde okul süzmüyor — `TB-130`'un ikizleri 🟡
+
+`TB-130` sınav modülünde kapandı; **aynı şekil iki modülde daha duruyor** ve Faz 2b'nin
+gözetmen yoklaması tam bu yüzeyin üstüne kurulacak.
+
+Ölçüldü (2026-09-13, `oksis-api` @ `20ab14bd`):
+
+```csharp
+// AttendanceCallerResolver.ResolveMyPersonIdAsync — TB-130 öncesi ExamCaller ile satır satır aynı
+db.Persons.AsNoTracking().Where(p => p.LinkedAccountId == accountId)
+```
+
+- Kullanan: Attendance'ta **21 dosya** (7 sorgu, 12 komut, 2 ortak); ayrıca
+  `Documents/Security/AttendanceExcuseEntityScopeResolver` aynı çözümleyiciye dayanıyor.
+- `AnnouncementCallerResolver.ResolveMyPersonIdAsync` aynı gövdeyi taşıyor ve doc'unda
+  "`AttendanceCallerResolver` kalıbı" yazıyor — kalıp KOPYALANARAK yayılmış.
+- Aynı dosyadaki `GetAmendmentWindowHoursAsync` okul yüklemi taşımıyor:
+  `db.SchoolSettings.Select(s => s.AttendanceAmendmentWindowHours).FirstOrDefaultAsync()`.
+  Süzgeç düşerse **rastgele bir okulun** düzeltme penceresi saatini döndürür.
+- `SubmitAttendanceCommandHandler` oturumu `s.Id == request.SessionId` ile okuyor; okul
+  yüklemi yok.
+- Geniş ayak ölçüldü, daraltılmadı: `src/Oksis.Application` içinde **53** `db.SchoolSettings`
+  okuması var, bunların **30**'u açık `SchoolId` yüklemi taşıyor. Kalanı denetlenmedi.
+
+**Bugün sızdırmıyor, yarın sızdırır.** `TB-139`'un altındaki ölçüme göre `IsSuperAdmin`
+çalışan üründe hiçbir zaman `true` olmuyor; yani bu yüklemler bugün kimsenin görmediği bir
+kapıyı açık bırakıyor. Rol talebi JWT'ye eklendiği gün üç modül birden açılır.
+
+✅ Kapatıldı 2026-09-13 (`oksis-api` @ `1905abbc`) — **yol saptı, kapsam büyüdü.**
+
+**Ölçüm yine defteri aştı.** Yukarıda "21 dosya" yazıyordu; gerçek sayı **35 çağrı noktası,
+üç modül**: `AttendanceCallerResolver.ResolveMyPersonIdAsync` **20** (Attendance 19 +
+Documents 1), `AnnouncementCallerResolver.ResolveMyPersonIdAsync` **8**,
+`GetAmendmentWindowHoursAsync` **7**.
+
+**Yol farkı — okul imzaya DEĞİL, `ITenantContext`'e bağlandı.** `TB-130`'da `ExamCaller`'ın
+imzasına `Guid schoolId` eklenmişti; burada eklenmedi, çünkü ölçüldü: 35 çağrının **12'si**
+tenant bağlamını hiç enjekte etmiyordu. Okulu parametre yapmak o on iki sınıfa YENİ bir
+"okul yok" hata yolu eklemek demekti; okul çözümleyicinin içinde okununca cevap zaten var
+olan *"çağıran çözülemedi"* dalına düşüyor ve hiçbir uç yeni bir hata kodu öğrenmiyor.
+Emsal `TB-131` (`ExamPlacementCounter`). Düzeltme penceresi okuması da aynı yolu izliyor;
+okul yoksa `0` döner, yani pencere **kapalı** sayılır — yabancı okulun geniş penceresi
+burada düzeltmeyi açamaz.
+
+**Kapsam büyümesi — kimliği süzmek yetmedi.** `attendance.manage` sahibi bir çağıran için
+kimlik kapısı zaten atlanıyor; yabancı okulun oturumu kimlikle istendiğinde hâlâ okunurdu.
+Kaynak kontrolü yapan **dokuz okuma** açık okul yüklemi aldı: `SubmitAttendance`,
+`AmendRecord`, `CreateAmendmentRequest`, `DecideAmendmentRequest`, `DecideExcuse`,
+`OpenOrGetSession`, `RemindTeacher`, `GetSessionRoster`, `GetRecordHistory`. Ayrıca
+`ExcuseApprovalApplier.ApplyManyAsync` (**yazma yolu**): yüklemsiz hâlde tarih aralığındaki
+BÜTÜN okulların tamamlanmış oturumlarını belleğe alıyordu — `M17` dersinin birebir
+tekrarı.
+
+**Test:** `AttendanceTenantScopeTests` düzeltmeden ÖNCE kırmızı doğrulandı
+(`leaked.IsSuccess` **True** çıktı) ve "önce durum" aynı testte yeşildi — ölçülen şey
+"hep 404" değil. **Koşum:** birim 2603 + 427 + 7 mimari bekçi; entegrasyon **1386/1386**
+(Garage ve ClamAV konteynerleri ayağa kaldırılarak — onlarsız 46 test ortam yüzünden
+kırmızı düşüyor, kodla ilgisi yok).
+
+⬜ **Kalan, ölçüldü ama daraltılmadı:** `src/Oksis.Application` içinde `db.SchoolSettings`
+okumalarının **53'ünden 30'u** açık yüklemli; kalanı denetlenmedi. Olay ve DTO yolundaki
+beş okuma (`AttendanceSubmittedNotificationHandler`, `AmendmentRequestDtoBuilder`,
+`GetStudentToday`, `GetTeacherDailySessions`, Timetable `PublishedScheduleQueryHandler`)
+kimlik listesinden besleniyor; ikisi doğrulandı (liste okul süzülü bir kaynaktan geliyor),
+üçü ölçülmedi.
+
+**Kusur DEĞİL, kayda geçsin:** `SubjectUsageInspector`'ın on `AnyAsync` kontrolünün hiçbiri
+okul süzmüyor ve **süzmemeli** — `Subject` bir `MasterEntity`'dir; "bu master kaydı hangi
+tablolar tüketiyor" sorusu okullar üstüdür. Yüklem eklenirse A okulu, B okulunun kullandığı
+dersi silebilir. (`TB-130` turunda `ExamType` için aynı karar verilmişti.)
+
+---
+
+### `TB-137` · Oturum diyaloglarında gerekçe alanı eylem listesinin altında kalıyordu ⚪
+
+Gözetmen, derslik ekleme ve birleştirme diyaloglarında eylem düğmesi ayakta değil
+**listenin içindedir** ("Seç" / "Ekle" / satır seçimi) ve takvim yayındayken gerekçe
+boşken kapalıdır. Gerekçe alanı listenin ALTINA yerleştirilmişti: yönetici on altı
+satırlık derslik listesinde kapalı "Ekle" düğmesine basıyor, sebebi ekranın
+kaydırılmamış alt kısmında duruyordu.
+
+Tasarım bu üç diyalogda gerekçeyi listeden ÖNCE koyuyordu; ortak diyalog kabuğu
+yazılırken alan sabit biçimde sona alınmış ve fark gözden kaçmıştı.
+
+2026-09-13'te Görev 8.1'in uçtan uca doğrulamasında görüldü.
+
+✅ Kapatıldı: `DialogShell`e `reasonFirst` eklendi, üç liste diyaloğu onu kullanıyor.
+
+---
+
+### `TB-138` · "Derslik ekle" metni gözetmenin türemeyeceğini söylüyordu ⚪
+
+Diyalog şunu yazıyordu: *"Burada eklenen derslik kimsenin sınıfı değildir: gözetmenini
+yönetici yazar."* Yanlış. Yönetici aday listesinden **gerçek bir şube dersliği** seçer
+(liste okulun dersliklerinden gelir) ve türetme o derslikte ders yapan öğretmeni
+bulabilir. Doğrulamada elle eklenen 10-A Dersliği'ne **Kübra Aslan türetildi**.
+
+Toast da aynı yanlışı taşıyordu ("gözetmeni elle yazılmalı").
+
+`TB-134`'ün ailesinden: tasarımın kural hakkındaki cümlesi sunucunun davranışıyla
+uyuşmuyordu ve ekran o cümleyi kopyalamıştı. Faz 2a'da bu dördüncü örnek — plan tasarımın
+ÜÇ uyumsuzluğunu listeliyordu, gerçek sayı beş.
+
+✅ Kapatıldı 2026-09-13: metin ikisini de söylüyor ("türeyebilir de türemeyebilir de; yoksa
+delik kalır ve yayından önce elle yazılır"), toast artık gözetmen hakkında iddia kurmuyor —
+türemediyse satır zaten "Gözetmen eksik" rozetiyle ve `EX-H10` ile görünür.
+
+---
+
+### `TB-136` · Öğretmen kendi programında okulun BÜTÜN sınav etiketlerini görüyordu 🟠
+
+`GetExamBadgesQueryHandler` kapsamı şöyle kuruyordu:
+
+```csharp
+var canSeeAnySection =
+    await permissions.HasPermissionAsync("exams.manage", ...)
+    || await permissions.HasPermissionAsync("exams.place", ...);
+...
+else if (!canSeeAnySection)   // ← öğretmen kolu
+{
+    query = query.Where(x => x.OwnerTeacherId == teacherId || ...);
+}
+```
+
+**`exams.place` HER öğretmende vardır.** Dolayısıyla `canSeeAnySection` öğretmende her
+zaman `true` ve öğretmen kolu **hiç çalışmıyordu**. Şube istenmediğinde (kendi haftalık
+programı; `schedule-read-page` `sectionId` göndermez) sorgu **hiç süzülmüyor** ve okulun
+tarih aralığındaki bütün yerleşmiş sınavları dönüyordu.
+
+Ekrandaki hâli: beş şubeli bir kelebek oturumunun beş etiketi, o şubelerin hiçbirini
+okutmayan öğretmenin tek hücresine üst üste biniyordu.
+
+İznin adı doğru, kullanımı yanlıştı: `canSeeAnySection` "istediğim şubeyi **sorabilirim**"
+demektir; "şube sormadığımda **hepsini görürüm**" demez. İlki `request.SectionId` kapısıdır
+ve orada doğru kullanılıyor.
+
+**Testin neden yakalamadığı ayrıca öğretici.** `ExamBadgeSessionModeTests` izin okuyucusunu
+şöyle kuruyordu — kendi yorumuyla:
+
+> Çağıran ne idaredir ne yerleştirici… İzin okuyucusu bu yüzden ikisine de "hayır" der.
+
+Yani test, **üründe var olamayan** bir kişiyi modelliyordu: `exams.place`'i olmayan bir
+öğretmen. Fikstür gerçek rolün izinlerini taşımayınca, role bağlı bir dal test edilmiş
+görünüp hiç koşmuyor.
+
+2026-09-13'te Görev 7.6'nın tarayıcı doğrulamasında bulundu.
+
+✅ Kapatıldı: kapsam dalı `!canSeeAnySection` kapısından çıkarıldı — şube istenmediğinde
+kapsam her zaman çağıranın kendisidir. Fikstüre `canPlace` eklendi ve gerçek öğretmeni
+modelleyen test yazıldı (`Should_ScopeToOwnRows_When_CallerIsTeacherWithPlacePermission`);
+düzeltmeden önce kırmızı olduğu görüldü.
+
+**Ders:** rol davranışını ölçen testin fikstürü, o rolün ÜRÜNDEKİ izinlerini taşımalı.
+Krş. [[eksik-ekran-eksik-yetkiyi-gizler]] — bunun test tarafındaki eşi.
+
+---
+
+### `TB-135` · Sınav penceresi kendi döneminin dışına kurulabiliyor 🟡
+
+`CreateExamWindowCommandHandler` pencerenin `StartDate`/`EndDate`'ini bağlı olduğu
+`AcademicTerm`'ün sınırlarına karşı **doğrulamıyor**. Dev verisinde üç pencereden ikisi
+dönemin dışında — biri Faz 1'in kendi seed'inden geliyor:
+
+| Pencere | Tarih | Dönem | |
+|---|---|---|---|
+| 1. Sınav | 21–25 Eyl | 17 Ağu – 30 Eyl | içinde |
+| 2. Sınav | 28 Eyl – 2 Eki | 17 Ağu – 30 Eyl | **dışında** |
+| 3. Sınav | 5–9 Eki | 17 Ağu – 30 Eyl | **dışında** |
+
+**Sonucu sessiz:** sınav makinesi çalışmaya devam ediyor, çünkü derslik/gözetmen türetmesi
+ve `GetPlacementSlots` tarihi değil **haftanın gününü** kullanıyor — dönemin yayınlanmış
+programından okuyorlar. Ama ders programı EKRANI dönemin dışındaki haftayı hiç çizmiyor
+("Bu hafta dönemin dışında"). Yani o pencerede kurulan sınav:
+
+- oturum olarak kuruluyor, derslik ve gözetmen türüyor, pano gösteriyor;
+- ama öğrencinin/öğretmenin **ders programında hiç görünmüyor** — etiket katmanının
+  ulaşamadığı bir tarihte duruyor.
+
+2026-09-12'de Görev 7.6'nın tarayıcı doğrulamasında bulundu: gözetmenlik etiketini
+doğrulamak için öğretmenin programına gidildi, hafta dönemin dışında çıktı.
+
+✅ Kapatıldı 2026-09-13: `CreateExamWindowCommandHandler` dönemin sınırlarını sezon
+kimliğiyle AYNI turda okuyor ve `StartDate < term.StartDate || EndDate > term.EndDate`
+ise `Conflict` dönüyor. Hata cümlesi dönemin kendi aralığını da söylüyor — kullanıcı
+hangi tarihlere sığacağını denemeyle değil ekrandan öğreniyor. Sınıra OTURAN pencere
+geçerlidir (kural kapsayıcı). Testler: üç ret senaryosu (`Theory`) + sınır senaryosu.
+
+**Revizyon yolu YOK:** pencerenin tarihlerini değiştiren ikinci bir komut aranıp
+bulunamadı; `CreateExamWindow` tek giriş noktası.
+
+**Dev verisi kendiliğinden düzelmiş:** veritabanı okundu, dönem artık 17 Ağu – 31 Eki ve
+üç pencerenin üçü de içeride. Defterin tablosu o gün doğruydu ama bugün bayat — seed'de
+düzeltilecek bir şey kalmadı. Ayrıca kodda sınav penceresi yazan bir seed sınıfı hiç yok;
+üç pencere ekrandan kurulmuş.
+
+---
+
+### `TB-134` · Oturum tasarımı "elle gözetmen korunmaz" diyor, sunucu tersini yapıyor ⚪
+
+Faz 2a oturum ayrıntısı tasarımı (`web/exam-session.jsx`) iki yerde şunu yazıyor:
+
+> Elle yazılan gözetmen **yeniden üretmede korunmaz**.
+
+Sunucu tam tersini yapıyor. `ExamInvigilatorDeriver` başlığında yazılı:
+
+> **Yöneticinin eli ezilmez (Kısıt 19):** `InvigilatorSource.Manual` olan derslik ATLANIR
+> — ne üzerine yazılır, ne delik sayılır.
+
+`PUT /rooms/{id}/invigilator` belgesi de aynı şeyi söylüyor: "Yazılan gözetmen her zaman
+'elle' işaretlenir ve **yeniden besteleme onu bozmaz**."
+
+2026-09-12'de Görev 7.5'in tarayıcı doğrulamasında görüldü: elle yazılan gözetmen
+(Hatice Doğan) yeniden üretmeden sonra yerinde durdu, oysa ekranın onay metni silineceğini
+söylüyordu.
+
+**Neden önemli:** yanlış olan metin yöneticiyi *yanlış yöne* iter. "Korunmaz" okuyan
+yönetici, gözetmen deliğini doldurduktan sonra yerleşimi yeniden üretmekten kaçınır —
+oysa güvenle üretebilir. Kuralı ekranın uydurması değil, ekranın sunucunun yapmadığı bir
+kuralı **anlatması** hâli. Krş. [[kural-ekranda-degil-sunucuda]] — bu onun aynadaki hâli.
+
+Plan Görev 7.5'te tasarımın **üç** uyumsuzluğunu listeliyordu (gerekçe eşiği 10 vs 15,
+`EX-S07` vs `EX-S06`, gözetmen deliğinin istemcide hesaplanması); bu **dördüncüsü** ve
+plan onu görmemişti.
+
+✅ Kapatıldı 2026-09-12: iki metin de sunucunun davranışına çevrildi — gözetmen diyaloğunun
+bilgi kutusu ve yeniden üretme onayının kontrol satırı artık "korunur" diyor ve gerekçesini
+(türetme o dersliği atlar) yazıyor.
+
+---
+
+### `TB-133` · Yerleştirme saatleri sorgusu pencereyi okul süzmeden okuyor 🟡
+
+`GetPlacementSlotsQueryHandler` (Faz 1) pencereyi yalnız kimlikle buluyor:
+
+```csharp
+var window = await db.ExamWindows.AsNoTracking()
+    .FirstOrDefaultAsync(w => w.Id == request.WindowId, cancellationToken);
+```
+
+`windowId` istemciden geliyor ve sorguda açık `SchoolId` yüklemi yok. Tek koruma
+küresel süzgeç; o da `IsSuperAdmin || (...)` biçiminde olduğu için süper yönetici
+oturumunda **düşüyor**. Handler pencereyi bulduktan sonra `window.AcademicTermId` ile
+şubenin hücrelerini okuyor — yani yabancı okulun penceresi, yabancı dönemin
+hücrelerini çekebilir.
+
+2026-09-12'de Görev 7.3'ün tarayıcı doğrulamasında, oturum saati ızgarasının hangi uçtan
+besleneceği araştırılırken görüldü. `TB-130` ve `TB-131` ile **aynı sınıf**: Faz 1'in
+sınav yüzeyi tenant izolasyonunda küresel süzgece güveniyor, süper yönetici yolunda
+güvence yok.
+
+✅ Kapatıldı 2026-09-13: `GetPlacementSlots` ve `GetMyExamPlacements` pencereyi artık
+`w.SchoolId == schoolId` ile buluyor; `ExamPlacementLoader`'ın pencere/satır okumaları da
+(yazılmış satır, koordinat penceresi, aynı koordinattaki mevcut satır) açık yüklem taşıyor.
+Test: `ExamTenantScopeTests.Should_NotFindWindow_OfAnotherTenant` — düzeltmeden ÖNCE
+kırmızı doğrulandı. `TB-130` + `TB-131` ile aynı turda kapandı.
+
+---
+
+### `TB-132` · Yöneticinin oturum kurma komutunun ekranı yok 🟡
+
+Sunucuda `POST /api/v1/exams/sessions` (`CreateExamSession`, Faz 2a Görev 3.1,
+izin `exams.manage`) var; yöneticinin kelebek oturumunu **elle** kurmasını sağlıyor.
+İstemcide bu uca ne bir fonksiyon ne de bir ekran var, ve Faz 2a planının Dilim 7'sinde
+de yoktu. Üründe oturum yalnız öğretmenin yerleştirmesiyle doğuyor.
+
+2026-09-12'de Codex'in ürettiği `session-endpoints.ts` denetlenirken bulundu: on uç
+yolunun onu da sunucuyla birebir eşleşiyordu, eksik olan tek şey bu uçtu — yani
+uygulayıcının atlaması değil, planın kendisinin boşluğu.
+
+[[eksik-ekran-eksik-yetkiyi-gizler]]: çağrılmayan uç, arkasındaki izin ve sözleşme
+kusurlarını da saklar. Komut yazıldı ve testlendi ama hiçbir gerçek çağrıyla
+doğrulanmadı; `exams.manage` kapısının bu uçta doğru davrandığı ekran üzerinden
+hiç ölçülmedi.
+
+⬜ Kapatma yolu: 2026-09-12 kullanıcı kararıyla plana **Görev 7.9** olarak eklendi —
+panodan yöneticinin oturum kurması. Görev bitince bu madde kapanır.
+
+✅ Kapatıldı 2026-09-12 (`oksis-ui` `4172c25`) — **defterde kapanışı yazılmamıştı, bugün
+yazıldı.** Yöneticinin oturum kurma akışı Dilim 7'ye Görev 7.9 olarak eklendi
+(`exam-admin-session-dialog.tsx`) ve Görev 8.1'in uçtan uca turunda gerçek arayüzde
+doğrulandı. Gecikmenin kendisi kayda değer: kod bir aydır üründeydi, defter bunu
+bilmiyordu — kapanış commit'le birlikte yazılmazsa yazılmıyor.
+
+---
+
+### `TB-131` · Faz 1 sınav sayaçları pencereyi okul süzmeden okuyor 🟡
+
+`ExamPlacementCounter`'ın üç Faz 1 metodu — `CountPendingRequestsAsync`,
+`GetFirstExamDateAsync`, `FindDayLimitBreachesAsync` — yalnız `examWindowId` alıyor
+(`IExamPlacementCounter`'daki imzalarda okul kimliği **hiç yok**) ve sorgularında açık
+`SchoolId` yüklemi taşımıyorlar. Tek koruma küresel süzgeç; o da `IsSuperAdmin || (...)`
+biçiminde olduğu için süper yönetici oturumunda **düşüyor**.
+
+Bunlar yayın kapısının besleyicileri: bekleyen ödünç saat isteği sayısı (`EX-H09`), ilk
+sınav tarihi (`EX-H08`) ve günlük sınav limiti (`EX-H01`). Süper yönetici bir okulu
+üstlendiğinde bu sayaçlar yabancı okulun satırlarını da görebilir; sonucu yanlış bir
+yayın engeli ya da engelin yanlış yerde düşmesidir.
+
+2026-09-11'de Faz 2a'nın kapanış düzeltmesinde ölçüldü. Aynı turda **Faz 2a'nın kendi**
+kapsam sorgularına açık yüklem eklendi (commit `68bdccdc`); açık kalan Faz 1 yüzeyi.
+Uygulayıcının süper yönetici testi bu yüzden `BeEmpty()` diyemiyor, yalnız kendi
+kodlarıyla sınırlı `NotContain` diyebiliyor — testin ifade gücü bu boşluk yüzünden kısıtlı.
+
+Kardeşi `TB-130` (`ExamCaller.ResolveAsync`). İkisi aynı sınıf: **Faz 1'in sınav yüzeyi
+tenant izolasyonunda küresel süzgece güveniyor, süper yönetici yolunda güvence yok.**
+
+✅ Kapatıldı 2026-09-13 — ama **imzalar değişmedi**. Defterin önerdiği yol "üç imzaya okul
+kimliğini al"dı; uygulanan yol okulu `ITenantContext`'ten okumak oldu, çünkü sınıf onu zaten
+alıyordu ve `CountUnplacedAsync` emsali oradan okuyordu. Arayüze okul eklemek, kuralı taklit
+eden bütün birim testlerini gereksizce kırardı — sayaç ZATEN tek bir okul bağlamında koşuyor.
+
+Kapsam da üçten yediye çıktı: `CountExamsAsync`, `HasExamOnAdjacentDayAsync`,
+`GetTermIdAsync`, `CountPendingRequestsAsync`, `GetFirstExamDateAsync`,
+`FindDayLimitBreachesAsync` ve `ReadSessionRoomMixAsync` — Faz 1 yüzeyinin yükemsiz kalan
+her sorgusu. Okul bağlamı yoksa sayım yapılmaz ve nötr değer döner (0 / `false` / boş);
+`GetTermIdAsync` tek istisnadır, dönem kimliği nötr bir değere indirgenemez.
+
+Test: `ExamTenantScopeTests.Should_NotCountForeignWindow_When_SuperAdminHoldsASchool` —
+"kendi pencerem GERÇEKTEN sayılıyor" ÖNCE durumuyla birlikte.
+
+---
+
+### `TB-130` · `ExamCaller.ResolveAsync` çağıranı okul süzmeden çözüyor 🟡
+
+`src/Oksis.Application/Modules/Exams/Internal/ExamCaller.cs` çağıranın `Person` satırını
+yalnız hesap bağıyla buluyor:
+
+```csharp
+db.Persons.AsNoTracking()
+  .Where(p => p.LinkedAccountId == currentUser.Id)   // açık SchoolId yüklemi YOK
+```
+
+Küresel süzgeç `IsSuperAdmin || (...)` biçiminde, yani süper yönetici için **düşüyor**.
+Süper yönetici bir okulu üstlendiğinde çağıran, hesabının bağlı olduğu **başka okuldaki**
+kişiye çözülebiliyor; o kimlikle koşan "benim sınavlarım" / "benim gözetmenliklerim"
+okumaları yanlış okulun kapsamında çalışır.
+
+Faz 1 boşluğu; 2026-09-11'de Faz 2a Görev 5.2-5.5'in uygulamasında ölçüldü. Sınav modülünün
+**yeni** okuma uçları (5.1, 5.2, 5.6) kendi açık `SchoolId` yüklemlerini taşıyor ve o yolu
+kapatıyor — hatta üç süper yönetici testi bu hâli *kullanarak* kuruluyor. Açık olan
+`ExamCaller`'ın kendisi.
+
+Sıradan kullanıcı için ısırmaz (onun küresel süzgeci düşmez); etki süper yönetici oturumuyla
+sınırlı, bu yüzden 🟠 değil 🟡.
+
+✅ Kapatıldı 2026-09-13: imza `ResolveAsync(db, currentUser, schoolId, ct)` oldu ve yükleme
+`p.SchoolId == schoolId` eklendi. Çağıran sayısı beş değil **on dört** çıktı; üçü okul
+kimliğini bağlamak için ayrıca elden geçti (`ListHourRequests`, `GetExamBadges`,
+`ExamPlacementLoader`). Okul, yükleyicide alan değil METOT PARAMETRESİ — tek bir yükleyici
+örneği iki farklı okul bağlamında yanlışlıkla paylaşılamasın diye.
+
+Aynı turda `ListHourRequests`'in üç sorgusuna da (istekler, sınav satırları, pencereler)
+açık yüklem eklendi: kapsamı yalnız çağıran kimliğine bırakmak, okulu sınır saymamaktı.
+
+Test: `ExamTenantScopeTests.Should_NotResolveCaller_When_PersonBelongsToAnotherSchool` —
+düzeltmeden ÖNCE kırmızı doğrulandı.
+
+**Yan etki — güvence bir kat yukarı taşındı.** `GetMyExamDutiesQueryHandlerTests`'in iki
+`R55` testi "çağıran yabancı kişiye çözülür ama sorgunun yüklemi satırı eler" hâlini
+ölçüyordu (`IsSuccess == true`, liste boş). Artık kimlik hiç çözülmüyor ve uç `Forbidden`
+dönüyor; testler bu daha güçlü cevaba göre güncellendi. Ölçülen kırmızı çizgi aynı.
