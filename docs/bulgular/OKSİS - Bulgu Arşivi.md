@@ -6640,3 +6640,505 @@ düzeltmeden ÖNCE kırmızı doğrulandı.
 `R55` testi "çağıran yabancı kişiye çözülür ama sorgunun yüklemi satırı eler" hâlini
 ölçüyordu (`IsSuccess == true`, liste boş). Artık kimlik hiç çözülmüyor ve uç `Forbidden`
 dönüyor; testler bu daha güçlü cevaba göre güncellendi. Ölçülen kırmızı çizgi aynı.
+
+---
+
+## 48. Sınav Takvimi kapanış turu — 10 madde (2026-09-15) ✅
+
+**Ne oldu:** modülün açık ve karar bekleyen bütün maddeleri tek oturumda derlendi, altı ürün
+kararı kullanıcıyla bağlandı ve sıraya konup uygulandı. Tur `oksis-api` `dff0f63b` üzerinde
+başladı.
+
+**Bağlanan kararlar (2026-09-15):**
+
+| ID | Karar |
+|---|---|
+| `TB-154` | Gerekçe isteyen kodlar: `EX-H08` · `EX-S05` · `EX-S07` · `EX-S08` |
+| `TB-159` | İkisi de: taşı komutu **+** şube düzenleme yüzeyi |
+| `TB-143` | (a) Cümleyi gerçeğe çevir; tür yönetimi `TB-139`'a kalsın |
+| `TB-145` | Duyuru okulun tamamına gider |
+| `TB-148` | Muhafazakâr paket (istek varsa ret · kelebekte kapalı · bildirim yok) |
+| `TB-151`/`TB-144` | Taslakta oturum kurulamaz; ihlal sayacı gösterilmez |
+
+**Turun kendi dersi — iki madde kod yazılmadan kapandı.** `TB-124` ölçüldüğünde `EX-H02`'nin
+veritabanı dizininde, `EX-H07`'nin pencere komutunda çoktan uygulandığı görüldü; `TB-129`'un
+üçte biri de o gün yazılan başka bir testle kapanmıştı. Plan yazılırken **her madde koda
+karşı ölçülmeseydi** üçü için boşuna iş açılacaktı (§46 aynı dersin ilk yarısıdır).
+
+**Ölçülerek bulunan iki gerçek kusur** — ikisi de test yazarken çıktı, ikisi de ürün kodunda:
+① `UnplaceExam`'da kapı sırası yanlıştı (bekleyen istekli sınav "hiç yerleşmemiş" görünüyor
+ve öğretmen yanlış cümleyi alıyordu); ② test konteynerinde `IExamScheduleReader` kaydı
+eksikti ve olay sessizce hiçbir şey üretmiyordu.
+
+**Tarayıcı doğrulaması** (Playwright, gerçek dev verisi, yönetici oturumu): `EX-S09` panoda
+12-A'yı adıyla anıyor; oturum taşıma `EX-H01`'e çarpıp dört şubeyi adıyla reddediyor, boş
+hücrede geçiyor, gözetmenleri yeni saatten türetiyor, elle yazılanları koruyor ve şube başına
+denetim satırı yazıyor. Taşınan oturum sonra bulunduğu hâle geri alındı.
+
+---
+
+### `TB-154` · Yayın kapısının "gerekçe" kuralı ekranda ve sunucuda iki türlü 🟠
+
+Ekran testinde çıktı (2026-09-15, Bölüm B7). Takvim yayınlarken hangi ihlalin **gerekçe**
+istediği iki yerde ayrı tanımlanmış ve ikisi uyuşmuyor:
+
+| | Engelleyen | Gerekçe isteyen |
+|---|---|---|
+| Sunucu (`PublishExamScheduleCommandHandler`) | sert kodlar − `EX-H08` | **yalnız** `EX-H08` ve `EX-S05` |
+| Ekran (`ExamPublishScheduleModal`) | sert kodlar − `EX-H08` | **her yumuşak ihlal** (`warned.length > 0`) |
+
+Engelleme tarafı tutarlı; ayrılık gerekçededir ve **iki yöne birden** kanıyor:
+
+- **Ekran fazla sıkı.** `EX-S04` (karışmamış derslik) ve `EX-S06` (kapasite aşımı) için
+  gerekçe dayatıyor — oysa sunucunun kendi yorumu açık: *"K-23 gereği ikisi de yalnız
+  görünür, yayını kapatmaz ve **gerekçe de istemez**."* Ekran, kararın reddettiği kapıyı
+  kuruyor.
+- **Sunucu fazla gevşek.** `EX-S08` (çözülmemiş öğretmen görüşü) için gerekçe istemiyor;
+  oysa kuralın kendi yorumu şöyle: *"Yorum sessizce gömülmez: yönetici ya 'ele aldım' der
+  ya gerekçe yazar."* İkinci şık kurulmamış. Ekran dışından yapılan bir `POST
+  windows/{id}:publish-schedule` çağrısı, çözülmemiş öğretmen görüşlerinin üzerinden
+  **gerekçesiz** geçer.
+
+Sınıf tanıdık: [[kural-ekranda-degil-sunucuda]] (`TB-32`). Ekranın uyguladığı kural,
+sunucunun bilmediği kuraldır — ikinci bir istemci ya da düz uç çağrısı onu yok sayar.
+
+⬜ **Kapatma yolu kararla başlar, kodla değil.** Önce tek bir soru cevaplanmalı: gerekçe
+kapısı hangi kodlarda açılır? Cevap `packages/core`'da tek bir `examPublishNeedsReason(codes)`
+yüklemine yazılır, ekran ve sunucu **onu** okur. Bugün liste iki dosyada elle tutuluyor;
+üçüncü bir kod eklendiğinde yine ayrışır.
+
+✅ **Kapandı** (2026-09-15) — kullanıcı kararı: gerekçe isteyen kodlar `EX-H08`, `EX-S05`,
+`EX-S07`, `EX-S08`. `EX-S07` soruda sayılmamıştı; Faz 2b beyin fırtınasının 4 numaralı
+kararı ("görüş süresi dolmadan yayın → gerekçe yazarak geçer") gereği listeye alındı.
+
+Tanım tek yerde: `ExamRuleInspector.RequiresPublishReason`. Ekran kendi tablosunu TUTMUYOR —
+cevap `ExamViolationDto.RequiresReason` ile telden geliyor. Bu, defterin önerdiği
+`packages/core` yükleminden daha dar bir çözüm: core'a yazılsaydı liste yine İKİ yerde
+(C# ve TS) durur ve üçüncü kodda yine ayrışırdı.
+
+Yan kazanç: pano KPI'ı ve yumuşak uyarı bloğunun alt satırı da dürüstleşti — "gerekçeyle
+geçilir" cümlesi artık yalnız gerçekten gerekçe isteyen bir kod varsa yazılıyor.
+
+`oksis-api` `854b074d` · `oksis-ui` `bfbb482`. Üç birim testi; biri yüklem ile telin aynı
+cevabı verdiğini kilitliyor.
+
+
+---
+
+### `TB-159` · Kurulan kelebek oturumunun saati değiştirilemiyor, şubesi düzenlenemiyor 🟠
+
+Ekran testinde çıktı (2026-09-15, Bölüm B9). Yayınlanmış bir kelebek penceresinde bir
+oturumu başka güne/saate almanın **hiçbir yolu yok**. Dört kapı da kapalı:
+
+| Kapı | Durum |
+|---|---|
+| `ExamSession.Date` / `Period` | `private set`; **onları değiştiren tek bir metot bile yok** |
+| "Oturumu taşı" komutu | **Yok** — `Commands/` altında karşılığı bulunmuyor |
+| `MoveExam` (tek sınavı taşır) | Sunucuda **var**, ama tek UI kapısı panonun `Liste` görünümü ve o görünüm oturum modunda **bilerek gizli** (`exam-board-screen.tsx:714`) |
+| `UpdateSessionSections` (şube çıkar) | Sunucuda var, `packages/api`'de mutation'ı da var, **hiçbir ekran çağırmıyor** |
+
+Son satır ayrıca kendi başına bir ölü kapı (`TB-151` ile aynı sınıf): uç ve istemci
+sarmalayıcısı yazılmış, çağıran yüzey hiç yazılmamış.
+
+**Pratik sonucu ağır.** Son şube çıkarıldığında oturum derslikleri ve sıralarıyla birlikte
+siliniyor (`UpdateSessionSectionsCommandHandler:293`) — yani *silme* aslında var, ama ona
+ulaşan bir düğme yok. Dolayısıyla yanlış saate kurulmuş bir oturum **kalıcıdır**. Takvim
+yayınlandıktan sonra sınav saatinin hiç değiştirilememesi, modülün gerekçe/sürüm/revizyon
+makinesiyle de çelişiyor: o makine "yayından sonra değişiklik olur, izi tutulur" varsayımı
+üzerine kurulmuş (`ExamWindowRevision`, `EX-H08`, sürüm artışı) ama oturumun kendi zamanı o
+makinenin kapsamı dışında kalmış.
+
+Ders saati modunda (Faz 1) aynı sorun yok: orada `Liste` görünümü ve "Taşı" düğmesi duruyor.
+Eksik yalnız kelebekte.
+
+⬜ **Kapatma yolu kararla başlar.** İki seçenek var ve ikisi farklı şey:
+① oturumu bütün olarak taşıyan bir komut (derslikler ve gözetmenler yeniden türer, sıralar
+yeniden üretilir, revizyon kaydı düşer); ② oturum ekranına şube düzenleme yüzeyi (var olan
+`UpdateSessionSections`'ı çağırır, son şube çıkınca oturum silinir). ①'siz ②, yöneticiyi
+"sil ve yeniden kur"a mecbur bırakır ve öğretmen görüşleri ile elle yazılmış gözetmenler
+her seferinde kaybolur.
+
+✅ **Kapandı** (2026-09-15) — kullanıcı kararı ①+② birlikte.
+
+**① `MoveExamSession`** (`PATCH sessions/{id}/slot`): oturum bütün şubeleriyle taşınır,
+derslik/gözetmen/sıra yeni saate göre yeniden türer, yayındaki taşıma gerekçe ister ve şube
+başına denetim satırı + `ExamMoved` bildirimi düşer. `ExamRevisionKind.SessionMoved = 5`.
+
+**② Şube düzenleme yüzeyi**: `UpdateSessionSections`'ın ilk çağıranı; son şube çıkınca
+oturum siliniyor ve ekran listeye dönüyor.
+
+**Sıra kilidi ölçüldü:** taşıma kaydedilmeden bestekâr çağrılırsa gözetmen ESKİ saatten
+türüyor. Bilerek bozulup test kırmızı doğrulandı, sonra düzeltildi.
+
+**Tarayıcıda gerçek veriyle doğrulandı:** 8 Ekim'e taşıma `EX-H01`'e çarptı ve dört şubeyi
+ADIYLA reddetti; boş hücreye (7 Ekim 4. ders) taşıma geçti; türetilen gözetmenler yeni
+saatin öğretmenlerine döndü (Furkan Polat → Deniz Çetin, Levent Koç → Melike Şen), **elle
+yazılanlar korundu** (Kısıt 19), dizilim değişmedi (`TB-161` — tuz oturum kimliği), 4 denetim
+satırı yazıldı (`kind=5`, sürüm 13→14). Sonra veri bulunduğu hâle geri alındı.
+
+`oksis-api` `1cd24b83` · `oksis-ui` `bfbb482`. 12 entegrasyon testi.
+
+
+---
+
+### `TB-156` · Görüş döngüsü açıldıktan sonra iki yönde de sessiz 🟡
+
+Ekran testinde yakalandı (2026-09-15, Bölüm B7). Görüş penceresinin **tek** bildirimi var:
+`ExamReviewOpened` (yönetici → öğretmenler). Döngünün geri kalanı sessiz:
+
+| Olay | Bildirim | Sonuç |
+|---|---|---|
+| Yönetici görüşe açar | ✅ `ExamReviewOpened` | öğretmen zilden görür |
+| Öğretmen görüş bırakır | ❌ yok | **yönetici haberdar olmaz** |
+| Yönetici "çözüldü" işaretler | ❌ yok | öğretmen haberdar olmaz |
+
+`SessionReviewComment.Resolve()` ve yorum ekleme yolu hiç olay üretmiyor (`Raise` çağrısı
+yok, `NotificationKind`'da karşılığı yok).
+
+**Ağır olan ikinci satır.** Görüş penceresi 3 gün açık; yönetici oturum ekranına girip
+**Öğretmen Görüşleri** sekmesindeki sayaca bakmadıkça öğretmenin uyarısından haberi olmaz.
+`EX-S08` de yayını kapatmadığı için (`TB-154`) takvim, okunmamış bir görüşün üzerine
+yayınlanabilir. Öğretmene "görüşünü bırak" denip görüşün okunmaması, yüzeyi ölü hâle
+getirir.
+
+Üçüncü satır daha hafif ama kullanıcı testinde ilk fark edilen bu oldu: yönetici çözdüğünde
+öğretmenin zili artmıyor; etiket yalnız sayfayı yeniden açarsa görünüyor.
+
+⬜ Kapatma yolu: iki yeni `NotificationKind` (`ExamReviewCommentAdded` → oturumun yöneticisi,
+`ExamReviewCommentResolved` → yorumun sahibi). İkisi de `Info`; "bekleyen iş" işaretlenmez —
+`ExamReviewOpened`in gerekçesi burada da geçerli. Push haritasına **girmez**, zil yeter.
+
+✅ **Kapandı** (2026-09-15) — iki yeni `NotificationKind` (42/43), defterin önerdiği adlarla.
+
+`ExamReviewCommentAdded` → okulun sınav yöneticileri (tek kişi değil: `CreatedByPersonId`
+oturumun sahibi değil izidir ve o kişi ayrılmış olabilirdi).
+`ExamReviewCommentResolved` → **yalnız yorumun sahibi**; çözüm notu gövdeye giriyor.
+
+İkisi de `Info` ve "bekleyen iş" DEĞİL; push haritasına GİRMEDİ — defterin dediği gibi zil
+yeter. Katalog satırları + göç yazıldı ve dev veritabanına uygulandı.
+
+**Gövde yorumun METNİNİ taşımıyor:** görüş 1000 karaktere kadar serbest metindir, kırpılmış
+bir alıntı yanlış anlaşılır. Haber "bir görüş var, git oku"dur.
+
+`oksis-api` `45fbfcde`. 4 entegrasyon testi.
+
+
+---
+
+### `TB-148` · Öğretmen yerleştirdiği sınavı geri alamıyor — domainde var, üründe yok 🟡
+
+Sınav saatini seçen öğretmen onu **yalnız değiştirebiliyor**; kaldırıp "henüz karar
+vermedim" hâline döndüremiyor. Kullanıcının ekran testindeki tespiti (2026-09-14).
+
+**Ölçüldü:** `ScheduledExam.Unplace()` domainde **yazılı ve eksiksiz** — tarihi, saati,
+ev sahibi yerleşimini, ödünç saat bayrağını ve istek durumunu temizleyip satırı
+`Unplaced`'a döndürüyor. Tek çağıranı `UpdateSessionSectionsCommandHandler` (kelebekte
+şube oturumdan çıkarıldığında). Öğretmenin kullanabileceği bir komut, uç ya da düğme
+**yok**.
+
+`TB-132`/`TB-146` ailesinden: yetenek sunucuda duruyor, ürün ona hiç ulaşmıyor.
+
+⬜ **Kullanıcı kararı (2026-09-14):** *"Takvim yayınlanmadığı sürece öğretmen geri
+alabilmeli."* Yani kapı pencerenin durumudur: `Draft`/`WindowPublished`'da serbest,
+`SchedulePublished`/`Locked`'da kapalı — yayınlanmış bir takvimden sınav çekmek
+öğrencinin gördüğü satırı sessizce silmek olurdu; o iş zaten yöneticinin revizyon
+yoludur.
+
+**Kapsam kararı gereken üç ayrıntı:**
+1. **Ödünç saat:** sınav başkasının saatine yerleşmişse geri alma o saati ev sahibine
+   iade eder. Bekleyen (cevaplanmamış) bir istek varsa ne olur — iptal mi edilir,
+   yoksa geri alma reddedilir mi?
+2. **Kelebek modu:** oturumdaki sınavı geri almak şubeyi oturumdan çıkarmaktır ve
+   derslik/sıra yeniden üretimi gerektirir (`UpdateSessionSections` yolu). Öğretmene
+   açılacak mı, yoksa yönetici yolu mu kalacak?
+3. **Bildirim:** pencere yayındayken geri alma öğrenciye/veliye haber verilmeli mi?
+   (Takvim yayınlanmadığı için aile henüz saati görmüyor — muhtemelen hayır.)
+
+✅ **Kapandı** (2026-09-15) — **muhafazakâr paket** (kullanıcı kararı). Üç açık ayrıntının
+cevabı: ① bekleyen istek varsa geri alma REDDEDİLİR ② kelebekte öğretmene açılmaz
+③ bildirim yok.
+
+`UnplaceExamCommand` + `POST exams/{id}:unplace` + öğretmen saat seçicisinde
+"Saati geri al" düğmesi. Satır SİLİNMİYOR: çift panoda kalıyor ve `EX-S05` onu yeniden
+sayıyor.
+
+**Testi yazarken gerçek bir sıra kusuru bulundu:** `PlaceBorrowedHour` `PlacementState`'i
+`Unplaced` bırakıyor (K-8), yani istek bekleyen sınav "hiç yerleşmemiş" görünüyordu ve
+öğretmen yanlış cümleyi alıyordu. Kapı öne alındı, ölçüt `Date`'e çevrildi.
+
+**Reddetme cümlesi OLMAYAN bir kapıya yollamıyor:** isteği geri çekmenin bir yolu bugün yok
+(ölçüldü) — cümle bu yüzden "önce geri çek" demiyor.
+
+⬜ **Tarayıcıda doğrulanamadı:** dev verisindeki üç pencerenin üçü de takvim yayında,
+düğmenin görüneceği durum yok; yeni pencere de kurulamıyor (`TB-143`'ün sınırı). Sunucu
+tarafı 9 birim testiyle kapalı.
+
+`oksis-api` `5dbbd63f` · `oksis-ui` `32a19e1`.
+
+
+---
+
+### `TB-145` · "Sınav haftası" duyurusu okulun tamamına değil, tek şubeye gidiyor 🟡
+
+`NotificationKind.ExamWindowPublished`'ın kendi dokümanı iki yerde okul geneli diyor:
+
+> *"Alıcı okulun üç yüzü birden: öğrenci ve veli 'sınav haftası şu tarihlerde' bilgisini
+> alır; öğretmen aynı cümleyle 'yerleştirme açıldı' haberini alır."*
+> *"Push YOK — gerekçe fan-out'tur: tek işlemde **okulun tamamına** gider…"*
+
+**Kod okulun tamamına göndermiyor.** `ExamWindowPublishedNotificationHandler` alıcı kümesini
+BEKLENEN SINAV kümesinden (`ExamExpectationReader`) türetiyor: yalnız o pencerede sınavı
+beklenen şubelerin öğrenci/velileri ve o sınavların sorumlu öğretmenleri.
+
+Ölçüldü (2026-09-13, ekran testi, `s2` 1. Dönem penceresi): pencere yayınlandığında **25**
+bildirim doğdu ve öğrenci tarafındaki alıcıların tamamı **tek şubedendi (11-A)** — çünkü o
+dönemde beklenen 10 şube × ders çiftinin hepsi 11-A'nın. Ders programında 1. Dönem'de altı
+şube (10-A, 10-B, 11-A, 11-B, 12-A, 12-B) olmasına rağmen 11-B öğrencisi
+(`ogrenci.s2.001`) haberi hiç almadı. Testi yapan kişi "bildirim düşmedi" diye okudu;
+düşmemesi doğruydu ama sebebi belgede yazmıyor.
+
+**Neden önemli:** ② `ExamSchedulePublished`'ın doküman cümlesi *"`ExamWindowPublished`'dan
+DARDIR — yalnız sınavı olan şubeler"* diyor. İkisi aynı kapsamı kullanıyorsa bu ayrım
+yoktur; ① push'un kapsam dışı bırakılma gerekçesi (okul geneli fan-out) da gerçeğe
+dayanmıyor — gerçek fan-out tek şube kadar.
+
+⬜ **Karar gerekiyor:** ya kapsam okul geneline çıkarılır (o zaman push gerekçesi de doğru
+olur), ya iki tipin doküman cümleleri gerçeğe çekilir ve "dar/geniş" ayrımı kaldırılır.
+Ürün kararıdır: *sınavı olmayan şube "sınav haftası" haberini almalı mı?*
+
+✅ **Kapandı** (2026-09-15) — kullanıcı kararı: **kapsam okul geneline çıktı.**
+
+`ExamNotificationAudience.WholeSchoolAsync`: aktif sezonun bütün şubelerindeki öğrenci ve
+veliler + okulun bütün öğretmenleri. Şube kümesi pencerenin SEZONUNDAN geliyor (dönemden
+türetmek aynı sezonun ikinci döneminde kümeyi boşaltırdı).
+
+"Beklenen çift yoksa sus" kapısı da kalktı: sınav haftası yerleştirme başlamadan da
+duyurulacak bir olgudur — iki adımlı yayının ilk adımının anlamı budur.
+
+Böylece `ExamSchedulePublished`'ın "bundan DARDIR" cümlesi karşılık buldu ve push'un kapsam
+dışı bırakılma gerekçesi (okul geneli fan-out) ölçümle de doğru hâle geldi. Enum dokümanına
+işlendi.
+
+`oksis-api` `45e466b6`. 2 entegrasyon testi.
+
+
+---
+
+### `TB-143` · Pencere modali olmayan bir yola gönderiyor — sınav türü hiçbir yerden tanımlanamıyor 🟠
+
+Dönemin sınav türleri tükendiğinde pencere kurma modali şunu yazıyor ve düğmeyi kapatıyor:
+
+> *"Bu dönemin bütün sınav türleri için pencere zaten açılmış. **Yeni tür akademik
+> takvimden tanımlanır.**"*
+
+**Böyle bir yol yok.** Ölçüldü (2026-09-13, çalışan API): `exam-types` ucunun tek metodu
+`GET`'tir; `ExamType` bir `MasterEntity`'dir ve depoda onu yazan hiçbir komut, hiçbir uç,
+hiçbir ekran yoktur. "Akademik takvim" ekranlarında da dönem açma/kapama dışında bir şey
+yok. Yani cümle kullanıcıyı var olmayan bir kapıya yolluyor.
+
+**Somut sonucu ölçüldü:** `s2` (Atatürk AL) 2. Dönem'de üç tür de kullanılmış
+(`1./2./3. Sınav`, hepsi `term_order = 2`); `Sözlü`/`Performans`/`Proje` ise
+`term_order = 0` olduğu için listeye ZATEN girmez. Dolayısıyla o okulda o döneme
+**dördüncü bir pencere kurmanın hiçbir yolu kalmıyor** — ne üründen, ne yönetimden.
+Ekran testinde tam olarak buraya çarpıldı.
+
+⬜ **Karar gerekiyor, iki yol var:**
+- **(a) Cümleyi gerçeğe çevir:** "Bu dönemde açılabilecek tür kalmadı" de ve nokta koy.
+  Ucuz, dürüst; ama sınırın kendisi (dönem başına üç sınav) kalır.
+- **(b) Türü yönetilebilir yap:** platform/okul düzeyinde sınav türü tanımlama yüzeyi aç
+  (`term_order` ile birlikte). `ExamType` master olduğu için bu bir **platform izin
+  modülü** işidir — `TB-139`'un açacağı kapının aynısı.
+
+Bu madde `TB-32` ailesindendir: **ekranın söylediği ile sunucunun yapabildiği ayrışmış.**
+Farkı, buradaki yönün tersine olması — ekran bir kural uydurmuyor, olmayan bir yetenek
+vaat ediyor.
+
+**İkinci kez çarpıldı ve bu kez TESTİ BLOKE ETTİ** (2026-09-14, ekran testi Bölüm B):
+kelebek/oturumlu takvimi taslaktan yayına kadar sürmek için yeni bir oturum penceresi
+gerekiyordu; aktif dönemde açılabilecek tür kalmadığı için pencere kurulamadı. Kalan tek
+tür (`VZ2`, 1. Dönem) GEÇMİŞ bir dönemde (3–14 Ağustos) ve oradan kurulacak pencere
+görüş penceresini, yayın duyuru payını ve mobil okuma yüzlerini test edilemez kılıyor —
+üçü de bugüne bakıyor. Yani sınır yalnız ürünü değil, ürünün doğrulanabilirliğini de
+kapatıyor.
+
+✅ **Kapandı** (2026-09-15) — kullanıcı kararı **(a)**: cümle gerçeğe çevrildi.
+
+> *"Bu dönemde açılabilecek sınav türü kalmadı — dönemin bütün türleri için pencere zaten
+> açılmış."*
+
+Sınav türü yönetimi `TB-139`'un açacağı platform izin modülüne bırakıldı. **Sınırın kendisi
+duruyor** ve testi bloke etmeye devam ediyor: bu turda `TB-148`'in öğretmen düğmesi tam bu
+yüzden tarayıcıda doğrulanamadı — yeni pencere kurulamadığı için gerekli pencere durumu
+üretilemedi.
+
+`oksis-ui` `bfbb482`.
+
+
+---
+
+### `TB-151` · Taslak kelebek penceresinde "Oturum kur" ölü bir kapı 🟡
+
+Ekran testinde yakalandı (2026-09-14, Bölüm B): yeni kurulan oturumlu pencerenin
+panosunda sağ üstte **"Oturum kur"** düğmesi duruyor. Basınca modal açılıyor ve şunu
+yazıyor:
+
+> *"Bu pencerede yerleştirilmeyi bekleyen sınav yok; kurulacak oturum da yok."*
+
+Düğme *"**0 şubeyle** oturumu kur"* olup devre dışı kalıyor. Yani kapı görünür, açılır ve
+arkasında hiçbir şey yoktur.
+
+**Zincir ölçüldü:**
+
+| Halka | Ölçüm |
+|---|---|
+| Düğme koşulu | `isSession && view === "sessions" && w.status !== "locked"` → **taslakta çizilir** |
+| Pano sorgusu | `useExamBoard(isDraft ? undefined : w.id)` → taslakta `enabled: false`, **hiç koşmaz** |
+| Modalın kaynağı | panonun kendi yanıtı (`exams` prop'u, ikinci uç yok) → **boş dizi** |
+| Sunucu | `CreateExamSession` yalnız `Locked`'ı reddeder (`ExamPlacementGuards`) → **taslakta oturum kurmaya İZİN VERİR** |
+
+Yani ekran, sunucunun izin verdiği bir işi görünür bir düğmeyle vaat edip yapamıyor.
+Beklenen satırların (`49` şube × ders) DB'de karşılığı yok — pano onları
+`ExamExpectationReader` ile ders programından türetir ve taslakta o okuma hiç yapılmaz.
+
+**İkinci kusur aynı ekranda:** taslak panosunun boş durum metni **mod körü**:
+
+> *"Pencere yayınlanmadan planlı sınav üretilmez… Önce pencereyi yayınlayın, **öğretmenler
+> sınavlarını yerleştirsin**."*
+
+Kelebekte öğretmen yerleştirme yapmaz; oturumu **yönetici** kurar (domain notu §4: *"Oturum
+iki yoldan doğar: öğretmen yerleştirdiğinde ya da yönetici şube listesiyle kurduğunda"*).
+Cümle ders saati modundan devralınmış.
+
+⬜ **Karar gerekiyor:** taslakta oturum kurulabilmeli mi?
+- **(a) Hayır** → düğme taslakta **çizilmesin** (koşula `!isDraft` eklensin) ve boş durum
+  metni kelebekte mod farkını söylesin. Ucuz; sunucu kapısı da `Draft`'ı reddetmeli
+  ki [[kural-ekranda-degil-sunucuda]] ihlali kalmasın.
+- **(b) Evet** → taslakta pano sorgusu koşsun (`enabled` kapısı kalksın); yönetici haftayı
+  duyurmadan önce oturumları hazırlayabilsin. Kelebeğin akışına daha yakın, çünkü
+  yerleştiren öğretmen yok.
+
+**Bu tur için etkisi:** akış **önce "Pencereyi yayınla"** diyerek işliyor; test bloke
+olmadı, ama yönetici önce ölü kapıya çarpıyor.
+
+✅ **Kapandı** (2026-09-15) — kullanıcı kararı **(a)**: taslakta oturum kurulamaz.
+
+Düğme taslakta çizilmiyor; boş durum metni artık mod körü değil ("oturumu YÖNETİCİ kurar",
+"öğretmenler yerleştirsin" değil). **Kapı sunucuda da kuruldu** — kararın ikinci yarısı buydu
+ve olmasaydı düz bir uç çağrısı kuralı yok sayardı (`TB-32`).
+
+Sunucu kapısı tohumların çoğunu ısırdı: **121 test kırmızıya döndü** çünkü hepsi pencereyi
+taslakta bırakıyordu. Hepsi ön koşulu sağlayacak biçimde düzeltildi; 365 sınav entegrasyon
+testi yeşil.
+
+`oksis-api` `6b9d7fc1` · `oksis-ui` `bfbb482`.
+
+
+---
+
+### `TB-144` · Taslak kartı ihlal sayısı gösteriyor ama açılacak yeri yok ⚪
+
+Taslak pencerenin kartında **"1 İhlal"** yazıyor; panoya girince ekran
+*"Pencere henüz yayınlanmadı — panonun gösterecek içeriği yok"* diyor ve ihlal listesi
+hiç çizilmiyor. Yönetici sayıyı görüyor, karşılığını göremiyor.
+
+Ölçüldü (2026-09-13, ekran testi, `s2` 1. Dönem): kartın `violationCount` alanı pencere
+listesinin BEKLENEN kümesinden türüyor (`ExamPublishFacts.FromExpectations`) ve taslakta
+tek satır `EX-S05` oluyor — "10 şube × ders için saat seçilmedi". Bu taslakta zaten
+kaçınılmaz: hiçbir şey yerleşmemiştir.
+
+**İki yol var, biri seçilmeli:**
+- **(a)** Taslakta ihlal sayacını **gösterme** — sayı bilgi taşımıyor, yalnız kaygı üretiyor.
+- **(b)** Panonun taslak boş-hâli ihlal listesini **yine de** çizsin (yalnız `EX-S05`).
+
+(a) daha doğru görünüyor: taslağın anlamı "henüz kimse yerleştirmedi"dir ve bunu kart
+zaten `0/10 · %0` ile söylüyor.
+
+✅ **Kapandı** (2026-09-15) — kullanıcı kararı **(a)**: taslakta ihlal sayacı gösterilmiyor.
+Taslağın anlamını kart zaten `0/N · %0` ile söylüyor. `oksis-ui` `bfbb482`.
+
+
+---
+
+### `TB-124` · `EX-H02` hiç yazılmamış — spec var, kod yok 🟡
+
+> **2026-09-15 ölçümü — madde yarıya indi.** `EX-H07` (aynı dönemde pencere çakışması)
+> **yazılmış**: `CreateExamWindowCommandHandler:48`, tarih aralığı kesişen ikinci pencereyi
+> `Conflict` ile reddediyor. Aşağıdaki metin `EX-H07` için BAYATTIR; madde yalnız `EX-H02`
+> içindir.
+
+Sınav takvimi modülünün kural kataloğu omurga spec'inde on dört madde sayıyor
+(`EX-H01`…`EX-H08`, `EX-S01`…`EX-S05` ve sonradan eklenenler). `ExamRuleInspector` bugün
+**altı** tanesini taşıyor: `EX-H01`, `EX-H03`, `EX-H06`, `EX-H08`, `EX-S01`, `EX-S05`.
+
+**Hiç yazılmamış olanlar:** `EX-H02` (şube × ders pencere içinde tek sınav), `EX-H07`
+(aynı dönemde pencere çakışması), artı Faz 2a'nın kapsamına aldığı `EX-H05`, `EX-S04`,
+`EX-S06` ve bilinçli olarak yazılmayacak `EX-H04`, `EX-S02`, `EX-S03`.
+
+Bu madde yalnız **`EX-H02` ve `EX-H07`** içindir; diğerlerinin sahibi ya Faz 2a ya da
+gerekçeli bir "yazılmayacak" kararı.
+
+- **`EX-H02` — şube × ders pencere içinde tek sınav.** Bugün aynı şubeye aynı dersten iki
+  sınav yazılabilir. Faz 1'in tembel satır modeli (`ScheduledExam` ilk yerleştirmede doğar)
+  bunu kısmen zorlaştırıyor ama engellemiyor; `ExamExpectationReader` çifti tekil sayıyor,
+  yazma yolu saymıyor.
+- **`EX-H07` — aynı dönemde pencere çakışması.** İki sınav penceresinin tarih aralığı
+  örtüşebiliyor. Kullanıcıya görünen belirtisi: aynı hafta iki pencere açılırsa öğrencinin
+  takviminde iki ayrı "sınav haftası" görünür.
+
+2026-09-10'da Faz 2a Görev 4.1'in brief ön uçuşunda ölçüldü — o görev "şu kuralları kaldır"
+diyordu ve kaldırılacakların dördü kodda hiç yoktu.
+
+⬜ Kapatma yolu: ikisi de `ExamRuleInspector`'a sert kural olarak eklenir ve yazma yollarında
+(`PlaceExam`, `CreateExamWindow`) denetlenir. Faz 2a kapsamına **alınmadı** çünkü ikisi de
+ders saati modunun kuralı; kelebek düzeni onlara dokunmuyor.
+
+✅ **Kapandı** (2026-09-15) — **kod yazılmadı, ÖLÇÜLDÜ.** İki kod da zaten uygulanıyordu,
+yalnız bu sınıfın dışında:
+
+- `EX-H07` → `CreateExamWindowCommandHandler:48`, tarih aralığı kesişen ikinci pencereyi
+  `Conflict` ile reddediyor.
+- `EX-H02` → **yapısal**: `ux_scheduled_exams_window_section_subject` tekil dizini
+  `(okul, pencere, şube, ders)` üzerinde, `is_deleted = 0` süzgeçli. Dev veritabanında
+  doğrulandı. Faz 1'in tembel satır modelinde satırın KİMLİĞİ zaten bu dörtlü; ikinci satır
+  kavramsal olarak da yok. Yazma yollarının ikisi de satırı önce ARIYOR, yani dizine hiç
+  çarpılmıyor.
+
+Dizinin gerçekten ısırdığı bağımsız olarak görüldü: `TB-129` testi ikinci bir satır kurmaya
+çalışınca SQL reddetti.
+
+Gerekçe `ExamRuleInspector`'ın kod tablosuna yazıldı — "eksik" ile "başka katmanda" ayrımı
+yoruma geçmezse madde altı ay sonra yeniden açılır. `oksis-api` `b684b58c`.
+
+
+---
+
+### `TB-129` · Sınav modülünün Faz 1 bildirim işleyicileri testsiz ⚪
+
+`Modules/Exams/Events/Notifications/` altındaki üç Faz 1 işleyicisi —
+`ExamWindowPublishedNotificationHandler`, `ExamHourRequestedNotificationHandler`,
+`ExamHourAnsweredNotificationHandler` — hiçbir testte ölçülmüyor (`tests/` altında karşılık
+gelen dosya yok). Faz 2a Görev 6.1'de eklenen üç işleyicinin (`ExamInvigilatorChanged`,
+`ExamSeatingChanged`, `ExamSessionSectionsChanged`) testi var; eski üçü boşlukta.
+
+2026-09-11'de Görev 6.1'in ön uçuşunda ölçüldü, kapsam genişlemesi olacağı için o göreve
+alınmadı.
+
+Pratik anlamı: bu üçünün alıcı kümesi, eşiği ve gövde metni yalnız kod okumasıyla
+doğrulanmış durumda. Bir refactor sessizce kitleyi daraltsa ya da bildirimi hiç üretmese
+paket yeşil kalır.
+
+⬜ Kapatma yolu: Görev 6.1'in `ExamSessionNotificationTests` deseni birebir uygulanabilir —
+sarmalayıcıyı yayınla, `Sent` kümesini ve `Kind`'ı ölç. Üç dosya, yaklaşık altı test.
+
+✅ **Kapandı** (2026-09-15) — üçünün de testi yazıldı, defterin önerdiği desenle.
+
+- `ExamWindowPublished` → `TB-145` turunda iki test
+- `ExamHourRequested` → yalnız EV SAHİBİNE gider, şubeye gitmez
+- `ExamHourAnswered` → yalnız İSTEYENE gider; kabul/ret/süre dolması ÜÇ AYRI gövde
+
+**Kayıt eksiği bulundu:** test konteynerinde `IExamScheduleReader` yoktu; eksikken MediatR
+saat isteği işleyicisini hiç kuramıyor ve olay sessizce hiçbir şey üretmiyordu. Kayıt
+prod'daki gibi tamamlandı — yoksa test "bildirim çıkmadı" ile "işleyici bağlanamadı"yı
+ayırt edemezdi (Kısıt 2'nin aynı dersi).
+
+`oksis-api` `32125169`.
