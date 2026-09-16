@@ -92,7 +92,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-187` · `E-28` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-188` · `E-29` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -108,10 +108,10 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 12 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 39 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 16 | Kozmetik, temizlik, adlandırma |
+| 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 17 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **71** | |
+| **Toplam** | **73** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 48 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
 
@@ -267,6 +267,21 @@ görür" kalıbının kardeşidir.
 yazdığı bilgisi bozulmadan kalır; ödev yönetme izni taşıyan idare, sahibi olmasa da işaretleme ve kapatma
 yapabilir. Kulüplerdeki danışman kalıbının kardeşi.
 
+✅ **Uygulandı — 2026-09-16 (doğrulama sürüyor, commit bekliyor).** Kapı tek yerde: `HomeworkWriteGate.OpenAsync`
+artık **varsayılanı olmayan zorunlu** bir erişim kipi parametresi alıyor (`OwnerOnly` / `OwnerOrManager`) — isteğe
+bağlı olsaydı yeni bir yazma ucu hiçbir şey yazmadan kapıyı sessizce gevşetebilirdi; zorunlu olması yedi çağrı
+noktasının hepsini yüzeye çıkardı ve politika tek `grep`'le denetlenebilir hâle geldi. İdare kolu
+`homework.manage` ile açılıyor; sıra "önce sahiplik", kapsam dışı hâlâ 404. **Sahiplik devredilmiyor**, denetim izi
+işlemi gerçekten yapanı (idareyi) yazıyor ve `GET homework/{id}/audit` orada gösteriyor.
+
+➕ **Karar (2026-09-16, kullanıcı) — kapsam genişledi:**
+1. **İptal de idareye açılır** (`OwnerOnly` → `OwnerOrManager`); bulgu metni zaten "kapatma ve iptal de
+   sahibinindir" diye şikâyet ediyordu.
+2. **İdari kapatma denetim izine yazılır** — bugün kapatma hiçbir yerde iz bırakmıyor; yeni bir denetim türü
+   değeri gerekiyor (enum sonuna eklenir, göç gerekmez).
+3. **İdare ödeve başka bir öğretmen atayabilmeli** — ayrılan öğretmenin ödevi yeni bir sahibe geçebilsin.
+   Bu ayrı bir özellik: `E-28`.
+
 ### `TB-110` · İdari teslim kaldırma kapanmış ödevde 409 🟡
 
 Uç 23 (`AdminRemoveHomeworkSubmission`) Faz 3'ün `Homework.RemoveSubmission`
@@ -277,6 +292,12 @@ Kural bilinçli olarak gevşetilmedi — ikinci bir kaldırma yolu aynı kuralı
 ayrıştırırdı. ⬜ Domain metoduna "idari" kolu eklenir (gerekçeli kaldırma durum kapısını
 atlar) ya da kapanmış ödevde kaldırma ürün olarak kabul edilir.
 
+✅ **Karar (2026-09-16, kullanıcı): idari kaldırma açılır.** Kapanmış ödevde de ödev yönetme izni taşıyan idare
+teslim dosyasını kaldırabilir. Gerekçe KVKK: başkasına ait ya da yanlış yüklenmiş bir dosya bugün kalıcı kalıyor
+ve ödevi yeniden açmanın yolu da yok. Domain metoduna gerekçeli **idari kol** eklenecek; durum kapısı yalnız bu
+kol için atlanacak, öğretmenin kendi yolu değişmeyecek. Kaldırma zaten denetim izine yazılıyor (`TB-112`'nin ucu
+onu gösteriyor).
+
 ### `TB-111` · Son teslim tarihi ileri alınan ödev ikinci kez hatırlatılmaz 🟡
 
 `HomeworkTracking.DueReminderSentAt` satır başına idempotency damgası; `UpdateContent`
@@ -284,6 +305,11 @@ atlar) ya da kapanmış ödevde kaldırma ürün olarak kabul edilir.
 tarihin öncesinde hatırlatma gitmez. Sıfırlamak tersini yapardı: tarih bir gün
 kaydırılınca herkese ikinci bildirim. ⬜ Ürün kararı; orta yol "tarih en az N gün
 ileri alındıysa sıfırla" da mümkün.
+
+✅ **`TB-111` karar (2026-09-16, kullanıcı): her erteleme yeniden hatırlatsın.** Son teslim tarihi değiştiğinde
+`DueReminderSentAt` damgası sıfırlanır ve yeni tarihin öncesinde hatırlatma yeniden gider. Eşik konmadı: kullanıcı
+öngörülebilirliği seçti, yani öğretmen saati düzeltse bile bildirim gider. **Ölçülecek yan etki:** aynı ödevde
+arka arkaya yapılan küçük düzeltmeler bildirim yığını üretebilir; sahada gözlenip gerekirse eşik sonradan eklenir.
 
 ### `TB-112` · Ödev denetim kaydı yazılıyor, okuyan uç yok ⚪
 
@@ -299,6 +325,24 @@ Homework'e taşındı: yeni `Homework/Queries/GetHomeworkAudit/` + `GET homework
 `homework.manage` (yeni izin açılmadı, göç gerekmedi), okul süzgeci açıkça yazılı, başka okulun ödevi 404.
 Dört test: sıralama ve alan eşlemesi, **başka okulun satırının sızmaması**, yabancı ödevde 404, okul bağlamı
 yokken 403.
+
+### `E-28` · Ayrılan öğretmenin ödevi başka bir öğretmene atanamıyor 🟡
+
+Kullanıcı isteği (2026-09-16, `TB-109` karar turunda): *"İdare, denetim yetkisiyle birlikte ayrılan öğretmenin
+yerine başka bir öğretmen de atayabilsin."*
+
+`TB-109` sahipliğin **devredilmemesine** karar verdi — "kim yazdı" bilgisi bozulmasın diye. Ama okul gerçeğinde
+öğretmen ayrıldığında ödevin bir sahibi olmalı: bugün ödev, artık okulda olmayan bir kişinin üstünde kalıyor ve
+yeni öğretmen onu kendi listesinde görmüyor. `TB-109`'un açtığı idari kapı (`homework.manage` ile işaretleme,
+kapatma, iptal) bu boşluğu yönetsel olarak kapatıyor ama **öğretmen tarafını** kapatmıyor.
+
+⬜ Tasarlanacak: ödevin sorumlu öğretmenini idarenin değiştirebildiği bir yol.
+- Sahiplik geçmişi korunmalı: "kim yazdı" ile "kim sorumlu" ayrı iki bilgi olabilir (`TB-109`'un kararıyla
+  çelişmemeli).
+- Denetim izine yazılmalı (kim, ne zaman, kimden kime).
+- Öğrenciye bildirim gitmeli mi, ödev listesi/panosu nasıl güncellenir — ürün kararı.
+- Aynı sınıfın kardeşi: vekâleten yayınlama (`:publish-for`) ve nöbet vekâleti; oradaki dil ve kalıp emsal alınmalı.
+- Öğretmen ayrılışının kendisi bir olay mı (toplu devir), yoksa ödev ödev mi yapılır — ölçülmeli.
 
 ## 11. Bildirimler 🟠
 
@@ -1252,6 +1296,22 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
    *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
    1. dönemi aktif görecek.
 
+### `TB-187` · Mapster'ın paylaşılan yapılandırması paralel test koşumunda çöküyor ⚪
+
+`TB-109` doğrulamasında ölçüldü (2026-09-16). `GetSchoolSettingsQueryHandlerTests` tam takım koşumunda
+`InvalidOperationException: Collection was modified` ile düştü; yığının tamamı Mapster'ın içinde
+(`SettingStore.Apply` → `TypeAdapterConfig.GetMergedSettings`). İki bağımsız kanıt belirtinin **paralellikten**
+geldiğini gösterdi: izole koşuda 8/8 yeşil, ikinci tam koşuda 2731/0 yeşil.
+
+Sebep: paylaşılan `TypeAdapterConfig` önbelleği xUnit'in paralel iş parçacıklarınca **eşzamanlı** derleniyor.
+Ürün kodunda tek süreçli ısınma olduğu için bugün yalnız testte görünüyor — ama aynı yapı, uygulama açılışında
+eşzamanlı ilk isteklerde de kuramsal olarak kırılgan.
+
+Sınıfı `TB-184` ile aynı: **sıraya bağlı kırmızı**, gerçek bir düşüşü gürültüye gömer.
+
+⬜ Kapatma yolu: eşleme yapılandırması uygulama/test açılışında **bir kez** ve deterministik biçimde derlensin
+(ısınma adımı), ya da testlerde koleksiyon paylaşımı kapatılsın. Önce hangisinin doğru olduğu ölçülmeli.
+
 ### `TB-186` · `isSchoolDay` sezonun durumuna bakmıyor — kurulumdaki sezonun günleri ders günü sayılabiliyor 🟡
 
 `TB-168` sunucu ölçümünde çıktı (2026-09-16). `SchoolCalendarService` (`:31-45`) bir günün ders günü olup olmadığını
@@ -1796,6 +1856,17 @@ karşılığı, ucuz ama `Down()`'ı yine kapsamaz. **Tercih verilmeden başlama
 ✅ **Karar (2026-09-16, kullanıcı): (b) bekçi testi.** "Model ile göçler eşit mi" sorusunu soran ucuz bir bekçi
 eklenecek; 1400+ entegrasyon testinin kurulum süresi uzamayacak. `Down()` tarafının sınanmadığı **bilinçli olarak
 kabul edildi** ve bu maddenin açık ayağı olarak kalır.
+
+✅ **Uygulandı — 2026-09-16 (commit bekliyor).** `tests/Oksis.Tests/Architecture/MigrationsMatchModelTests.cs`:
+`Database.HasPendingModelChanges()` (EF Core 10'un gerçek public API'si, belgeden doğrulandı) sahte bağlantı
+dizgisiyle kurulan bağlamda çalışıyor — **veritabanı istemiyor**, bağlantı hiç açılmıyor. Konum bilinçli:
+`test-changed.sh` `Oksis.Tests`'i yalnız `--integration` ile seçiyor **ama** `Architecture/` altındaki bekçileri
+her koşumda ayrıca süzgeçle çalıştırıyor. `UseSnakeCaseNamingConvention()` zorunluydu; olmasaydı bekçi gerçek
+sapma olmadan her tabloyu farklı sayardı.
+**Kırmızı kanıtı alındı** (bekçi, kanıtlanmadan bekçi sayılmaz): modele geçici bir gölge kolon eklendiğinde
+takım **1 kırmızı** verdi ve mesaj ne yapılacağını söyledi — "EF modeli ile göç dosyaları AYRIŞTI… Entegrasyon
+testleri bunu YAKALAMAZ… `dotnet ef migrations add` … ardından üretilen göçü OKUYUN". Gölge kolon geri alınınca
+yeşile döndü; depoda sonda izi kalmadı. Mimari bekçi sayısı 9 → 10.
 
 ---
 ### `TB-120` · Şubenin dersliği zorunlu değil, türetme yapan her yer boşa düşüyor ⚪
