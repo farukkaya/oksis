@@ -1429,6 +1429,15 @@ anahtarı düşüremiyordu, tek emniyet 24 saatlik ömürdü.
 API'de bütün dersler pasif ve seviyesiz görünecekti; yalnız zengin mock verisi gizliyordu) ve aynı kanca ders
 programı editörünü de besliyordu — hepsini yönetim ucuna yöneltmek o ekranı 403'e düşürürdü.
 
+➕ **Push kapısı üç testi yakaladı — ve kırılma öğretici.** Ders süzgeçli koşu (71/71) yeşildi ama **tam takım
+kırmızıydı**: süzgeç, çeviriyi *tüketen* müfredat saat testlerini adı eşleşmediği için hiç koşturmuyordu.
+Asıl mesele eksik sahtelik değildi: testler şablona ve okul override'ına **aynı ders kimliğini** veriyordu, yani
+çevirinin köprü kurduğu iki kimlik uzayını hiç ayırmamışlardı — **o hâlleriyle çeviri tümüyle silinse bile
+geçerlerdi.** Kurulum gerçeğe uyduruldu (okulun ders satırı kendi kimliğiyle ve çekirdek bağıyla kuruluyor),
+beklenen değerler gevşetilmedi ve çeviri **sahtelenip atlanmadı** — atlansaydı bu maddenin kapattığı "override
+sessizce yok sayılır" hatası bir daha hiç yakalanamazdı. Sonuç: Application 2827/2827, Api 448, Domain 1094,
+bekçiler 66/66. Bu, `TB-184`/`TB-187`/`TB-190` ailesinin dördüncü örneği: **dar süzgeç, yeşil görünen gerçek.**
+
 ### `TB-192` · Lise müfredatında Türk Dili ve Edebiyatı yok; saat şablonu kendini "doğrulanmadı" ilan ediyor 🟠
 
 Altınay B4 ölçümünde çıktı (2026-09-16). `master.curriculum_hour_templates` lise için 9–12 × 11 ders taşıyor,
