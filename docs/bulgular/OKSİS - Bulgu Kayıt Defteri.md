@@ -92,7 +92,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-191` · `E-29` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-199` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -106,12 +106,17 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
+| 🔴 Kritik | 3 | Tenant izolasyonu (`TB-139`, **`TB-191`**) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 13 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 41 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 18 | Kozmetik, temizlik, adlandırma |
+| 🟡 Orta | 39 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 19 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **76** | |
+| **Toplam** | **74** | |
+
+> **Sayaç düzeltmesi (2026-09-16):** tablo 76 diyordu, defterdeki gerçek blok sayısı **65**'ti — gün içindeki
+> hızlı eklemelerde sayaç elle artırıldığı için şişmişti. Sayılar `grep '^### \`'` ile **yeniden sayılarak**
+> hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
+> duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 48 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
 
@@ -1370,6 +1375,131 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
 2. **(c) iki gerçek sürüyor:** topbar dönemi tarih aralığından, sunucu `Status`'tan çözüyor. Bu düzeltme ikisini
    *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
    1. dönemi aktif görecek.
+
+### `TB-191` · Ders kataloğu GLOBAL — okul yöneticisinin ders eklemesi bütün okullara yansıyor 🔴
+
+Altınay B4 ölçümünde çıktı (2026-09-16). `POST /api/v1/academics/subjects` okul yöneticisinin izniyle
+(`school-settings.update-academic-structure`, `[Tenancy(Required)]`) korunuyor — **ama handler `master.subjects`'e
+yazıyor.** Tablo `school_id` taşımıyor (`Subject : MasterEntity`), tenant süzgeci yok, ders kodu benzersizliği
+(`ux_subjects_code`) **global**. Aynı durum güncelleme, silme ve durum değiştirme uçlarında da geçerli;
+`UpdateSubjectCommandHandler`'ın kendi yorumu bunu kabul ediyor: *"Subject GLOBAL master olduğundan tenant
+filtresi yok."*
+
+Sonuçları:
+- Bir okulun müdürü ders eklerse **bütün tenantlar** o dersi görür; pasifleştirirse **hepsinden** kalkar.
+- Bir okul "MAT" kodunu aldıysa başka okul aynı kodu **kullanamaz**.
+- Platform tarafında katalog yönetimi için ayrı bir uç **yok**, yani bu yetki başka yere taşınmış da değil.
+
+Tenant ihlali deponun kırmızı çizgisidir (`CLAUDE.md`); üstelik bu, izin kapısının doğru ama **veri sahipliğinin
+yanlış** olduğu bir sınıf — `TB-139`'un kardeşi.
+
+⬜ Kapatma yolu: ders kataloğu ya okul kapsamına taşınır (master satırları çekirdek, okul kendi satırını ekler —
+branşlardaki `school.branches` + `import-meb` deseni birebir emsal) ya da yazma uçları okul yöneticisinden alınıp
+platform yüzeyine taşınır. Karar verilmeden uçlar açık bırakılmamalı.
+
+### `TB-192` · Lise müfredatında Türk Dili ve Edebiyatı yok; saat şablonu kendini "doğrulanmadı" ilan ediyor 🟠
+
+Altınay B4 ölçümünde çıktı (2026-09-16). `master.curriculum_hour_templates` lise için 9–12 × 11 ders taşıyor,
+her kademe toplam **30 saat**. Ama:
+- **Türk Dili ve Edebiyatı katalogda yok.** Yalnız `TR` "Türkçe" var ve o **1–8**'e bağlı. Aynı şekilde **Müzik ve
+  Görsel Sanatlar da yalnız 1–8**'de. Yani Anadolu Lisesi'nin edebiyat ve müzik öğretmenine verilecek ders
+  katalogda **bulunmuyor**.
+- Her satırın `meb_decision` sütunu **"Doğrulanmadı — MEB çizelgesi bekleniyor"** diyor; şablon kendi doğruluğunu
+  garanti etmiyor. Toplam 30 saat duruyor, MEB ortaöğretim çizelgesinin 2026–2027 kırılımı **doğrulanmalı**.
+
+Belirtisi somut: Altınay ders kataloğunu ekrandan tamamlamak zorunda kalacak — ve bugün o ekleme `TB-191`
+yüzünden bütün okulları etkiliyor.
+
+⬜ Kapatma yolu: lise müfredat şablonu MEB çizelgesine göre tamamlanıp doğrulanmış olarak işaretlenir; eksik
+dersler kademe eşlemeleriyle birlikte katalogda yerini alır.
+
+### `TB-193` · Platformdan açılan okulun branş kataloğu boş doğuyor 🟠
+
+Altınay B4 ölçümünde çıktı (2026-09-16). Altınay `school.branches` = **0 satır**; seed okullarının her birinde
+15 satır var. Sebep ölçüldü: `SchoolCreated` akışı **kademeleri tohumluyor ama branşları tohumlamıyor**; seed'deki
+15 satır dev seeder'dan geliyor, açılış akışından değil. `PLT-DOGRULAMA`'da da 0 satır — yani **platformdan açılan
+her okul** branşsız doğuyor.
+
+Etkisi zincirleme: branş olmadan öğretmene branş atanamaz, branşsız öğretmene de görevlendirme yapılamıyor
+(`assignments.teacher-no-branch`). Yani kusur B6'da değil, **B9'da** patlıyor.
+
+İyi haber: branş tarafı ders tarafının tersine doğru kurgulanmış — `school.branches` tenant kapsamlı ve
+**`POST /api/v1/branches/import-meb`** idempotent toplu aktarım var.
+
+⬜ Kapatma yolu: `SchoolCreated` branşları da tohumlasın (MEB içe aktarımının aynısını açılışta çalıştırmak
+yeterli). Mevcut boş okullar için backfill.
+
+### `TB-194` · Müfredat saat kataloğu okulun kademelerini yok sayıyor 🟡
+
+Altınay B4 ölçümünde çıktı (2026-09-16). `GetCatalogWeeklyHoursQueryHandler` bütün `subject_grade_levels`
+satırlarını okuyup ders başına **global** min–max veriyor; okulun `school_grade_levels` listesi süzgeç olarak
+kullanılmıyor ve uçta `gradeLevelCode` parametresi **tanımlı bile değil** (gönderilse sessizce yok sayılır).
+
+Canlı ölçüm (lise okulu): katalog **Türkçe 5, Fen Bilimleri 4, Sosyal Bilgiler 3, Müzik, Görsel Sanatlar** döndü —
+hepsi ortaokul satırları. Yani Ders Kataloğu ekranı lisede ortaokul saatlerini gösteriyor.
+
+⬜ Kapatma yolu: katalog sorgusu okulun kademe listesiyle süzsün; kademe parametresi ya sözleşmeye girsin ya da
+kaldırılsın (bugün ikisi de değil).
+
+### `TB-195` · Sınav türü kataloğu global ve okul tarafından değiştirilemiyor 🟠
+
+Altınay B4 ölçümünde çıktı (2026-09-16). `master.exam_types` 8 satır ve `ExamType : MasterEntity` — `school_id`
+yok. Okulun kendi sınav türünü eklemesi için komut ya da uç **yok**; tür yalnız master tabloya satır eklenerek
+doğuyor.
+
+**Canlı kanıt:** `VZ5` "3. Sınav" 2026-09-12'de **bir seed okulu için elle** eklenmiş; tablo global olduğu için o
+satır bugün **Altınay'da da duruyor**. Yani Altınay 2. dönemde üç yazılı görüyor, kimse istemeden.
+
+`TB-191` ile aynı sınıf: katalog global, yazma yolu ya yanlış yerde ya hiç yok.
+
+⬜ Kapatma yolu: sınav türleri okul kapsamına taşınır (master çekirdek + okul eklemesi) ya da değiştirme yetkisi
+açıkça platforma verilir. Global tabloya elle satır eklemek bugün **bütün okulların** sınav yapısını değiştiriyor.
+
+### `E-29` · İdareci / müdür yardımcısı rolü yok — idari yetki vermek tam yönetici yapmak demek 🟡
+
+Altınay B6 ön ölçümünde çıktı (2026-09-16). Yapı çoklu profili destekliyor (`Person` birden çok `Profile` taşıyor,
+`RoleAssignment` çoklu aktif rol destekliyor, profil değiştirme komutu var) — yani "hem öğretmen hem idareci"
+teknik olarak mümkün. **Ama rol kataloğunda ara rol yok:** yalnız `SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`,
+`PARENT`, `STUDENT`. Müdür yardımcısına idari yetki vermek = ona **okulun tamamına erişim** vermek.
+`StaffProfile.Position` serbest metin ve yetkiyle ilişkili değil.
+
+Altınay'da somut: kadroda müdür yardımcısı var ve hem ders veriyor hem idari iş yapıyor.
+
+⬜ Ürün kararı: (a) `VICE_PRINCIPAL` rolü açılır ve izin kümesi tanımlanır (Issue #1'de "MVP sonrasına ertelendi"
+notu var, yani yol açık) · (b) `SCHOOL_ADMIN` verilir ve fark kabul edilir · (c) izinler rolden ayrılıp kişiye
+verilebilir hâle gelir (büyük iş).
+
+### `TB-196` · Şube açarken okulun kendi kademe listesi denetlenmiyor 🟡
+
+Altınay B4/B5 ölçümünde çıktı (2026-09-16). `CreateClassRoomCommandHandler` `GradeLevelId`'yi **master'daki 13
+kademeye** karşı doğruluyor, okulun `school_grade_levels` listesine karşı değil. Yani Anadolu Lisesi olan
+Altınay'da **"2-A" şubesi açılabilir**. `SchoolGradeLevel` entity belgesi "bu liste filtre olarak kullanılır"
+diyor; kod bunu yapmıyor.
+
+İkinci ayak (Altınay'ı etkilemiyor, ama aynı eşleşme kusuru): `SeedSchoolGradeLevelsHandler` anaokulu için `"AN"`
+kodunu arıyor, master'da anaokulunun kodu `"0"` → **saf anaokulu açılışında sıfır kademe** tohumlanır, sessizce.
+
+⬜ Kapatma yolu: şube oluşturma okulun kademe listesini süzgeç olarak kullansın; kademe kodu eşlemesi tek yerden
+okunsun.
+
+### `TB-197` · Rehber öğretmen doğrulaması stub — daima "var" diyor 🟡
+
+Altınay B5 ön ölçümünde çıktı (2026-09-16). Şube oluşturmada rehber öğretmenin varlığını denetleyen
+`TeacherExistsAsync` **gövdesi sabit `true` dönen bir stub**. Yani var olmayan ya da başka okulun öğretmeni
+rehber olarak atanabilir; kusur ancak o öğretmenden veri okunmaya çalışıldığında görünür.
+
+⬜ Kapatma yolu: kontrol gerçekten okulun öğretmen profillerine baksın (açık `SchoolId` yüklemiyle — `TB-141`'in
+kapattığı kalıp), ya da alan zorunlu değilse kontrol kaldırılıp beklenti belgeye yazılsın. Bugünkü hâli
+"kontrol var" yanılgısı üretiyor.
+
+### `TB-198` · `school_onboarding_status` ölü tablo — açılış ilerlemesi hiçbir yerde görünmüyor ⚪
+
+Altınay ölçümünde çıktı (2026-09-16). Tablo Altınay'da **6 satır** taşıyor, hepsi `Pending`. Satırları yaratan
+handler var; **okuyan sorgu, ilerleten komut ve uç yok**. Yani okul açılış sihirbazının ilerlemesi ne görünüyor ne
+de hiçbir zaman ilerliyor.
+
+⬜ Kapatma yolu: ya tüketicisi yazılır (açılış kontrol listesi ekranı — yeni okulun ilk gününde işe yarar) ya da
+tablo ve onu yazan handler kaldırılır. Bugünkü hâli, var olmayan bir özelliğin veri izini biriktiriyor.
 
 ### `TB-190` · Sahte bağlamla yazılan testte tenant alanı boş kalıyor; okul süzen sorgular sessizce "hepsi reddedildi" ölçüyor 🟡
 

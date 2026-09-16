@@ -117,10 +117,10 @@ Her başlıkta ortak denetim eksenleri:
 
 | ID | Başlık | Durum | Bulgu |
 |---|---|---|---|
-| B4.1 | Kademelerin doğrulanması (9–12) | ⬜ | |
-| B4.2 | Dersler ve Anadolu Lisesi haftalık ders saatleri (MEB çizelgesi + okul override'ı) | ⬜ | |
-| B4.3 | Branş kataloğu — kadronun 12 branşının hepsi var mı? | ⬜ | |
-| B4.4 | Not ölçeği ve sınav türleri | ⬜ | |
+| B4.1 | Kademelerin doğrulanması (9–12) — **✅ sorun yok:** tam 4 kademe (9, 10, 11, 12), hepsi aktif, fazlası eksiği yok; açılış akışı okul türünden doğru tohumlamış. Ama şube açarken okulun bu listesi **süzgeç olarak kullanılmıyor** (`TB-196`) | ✅ | `TB-196` |
+| B4.2 | Dersler ve Anadolu Lisesi haftalık ders saatleri — **❌ en ağır başlık.** Ders kataloğu global (`master.subjects`, 21 ders); lise müfredat şablonunda **Türk Dili ve Edebiyatı, Müzik ve Görsel Sanatlar YOK** (üçü de yalnız 1–8'e bağlı), şablonun her satırı kendini *"Doğrulanmadı — MEB çizelgesi bekleniyor"* diye işaretliyor. Okula özel saat override'ı 0 satır. Katalog ucu okulun kademesini yok sayıp **lisede ortaokul saatlerini** gösteriyor. **🔴 Üstelik ders ekleme/silme bütün okullara yansıyor** | ❌ | **`TB-191` 🔴** · `TB-192` · `TB-194` |
+| B4.3 | Branş kataloğu — **❌ Altınay'da 0 satır.** Açılış akışı kademeleri tohumluyor ama **branşları tohumlamıyor**; seed okullarındaki 15 satır dev seeder'dan geliyor. Kadronun 13 branşı master katalogda var, **eksik olan tek branş Rehberlik**. İyi haber: branş tarafı doğru kurgulanmış (okula ait tablo + idempotent MEB içe aktarımı) → kullanıcı tek tek girmeyecek, "MEB branşlarını içe aktar" + Rehberlik'i elle ekle | ❌ | `TB-193` |
+| B4.4 | Not ölçeği ve sınav türleri — **ölçek seçilmemiş** (`default_grade_scale_id` NULL, hiçbir okulda kademe override'ı yok); sistem 100'lük varsayılana düşüyor, geçme 50. `TB-105` ve `TB-108` **hâlâ geçerli**: harf ölçeği ekranda seçilebilir ama not girişi harf kabul etmiyor. **Sınav türleri global ve okul değiştiremiyor** — başka bir okul için elle eklenen "3. Sınav" bugün Altınay'da da duruyor | 🔄 | `TB-195` · `TB-105` · `TB-108` |
 
 ### B5 · Fiziksel yapı ve şubeler
 
