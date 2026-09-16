@@ -1397,6 +1397,38 @@ yanlış** olduğu bir sınıf — `TB-139`'un kardeşi.
 branşlardaki `school.branches` + `import-meb` deseni birebir emsal) ya da yazma uçları okul yöneticisinden alınıp
 platform yüzeyine taşınır. Karar verilmeden uçlar açık bırakılmamalı.
 
+✅ **Karar (2026-09-16, kullanıcı): okul kapsamına taşınır.** Master katalog **çekirdek** olarak kalır, okul kendi
+dersini kendi tablosuna ekler, içe aktarımla başlar — yani branşlardaki desenin aynısı. Gerekçe: okulun kendi
+dersini ekleme ihtiyacı gerçek (Altınay'ın edebiyat ve müzik dersleri `TB-192` yüzünden katalogda yok) ve yazma
+yetkisini platforma almak o ihtiyacı karşılamazdı. Ders kodu benzersizliği **okul içine** iner.
+**Bu karar `TB-192`'yi de güvenli kılıyor:** eksik dersleri eklemek artık başka okulları etkilemeyecek.
+Uygulama sürüyor; mevcut kataloğun okullara devri göçle yapılacak — hiçbir okul ders kaybetmemeli.
+
+✅ **Kapandı — 2026-09-16 (commit edildi ve push edildi).** Master katalog `MasterSubject` olarak **çekirdek**
+kaldı (tablo, satırlar, kimlikler, seed aynen; `subject_branches` ve `curriculum_hour_templates` dokunulmadan
+geçerli kaldı); `Subject` artık tenant varlığı, benzersizlik **okul içine** indi.
+**Branş emsalinde olmayan ayak:** kademe eşlemesi de tenant'a taşındı — eski kod onu master'da **tam-replace**
+ediyordu, yani bir okulun kademe düzenlemesi bütün okulların eşlemesini siliyordu. Sızıntının en sessiz ayağı buydu.
+**Düzenlenebilirlik bilinçli olarak branştan ayrışıyor:** branşta MEB satırı tamamen kilitli, derste yalnız katalog
+kimliği donduruldu (kod/ad/kategori/seçmelilik); sıra, açıklama, kademeler, aktiflik ve silme okulun kararı —
+aksi hâlde içe aktarılan 21 dersin hepsi kalıcı kilitlenir ve okul kendi kataloğunu düzenleyemezdi. Kural
+handler'da değil **domain'de**.
+**Merkezî çözüm:** veri kümesi adı korunduğu için dersi okuyan **45 sorgu değişmeden** tenant süzgecine girdi;
+çekirdek kimlikte kalan iki tablo için çeviri tek yerde toplandı, sekiz çağrı yeri ona bağlandı ve bir bekçi
+çevirisiz okumayı yasakladı.
+**Göç üretilirken EF'in iki kusuru yakalandı:** bir yapılandırma satırı eski tipi işaret ettiği için master
+tablosunun yabancı anahtarı **sessizce okul tablosuna kaydırılıyordu**, ve `Down()` `Up()`'ın hiç dokunmadığı bir
+kısıtı düşürüyordu. İkisi de düzeltildi — üretilen göç okunmadan uygulansaydı şema sessizce bozulacaktı.
+**Ölçüm:** altı okulun her birinde **21 ders** (Altınay dahil), okul tablosunda 126 ders + 816 kademe eşlemesi,
+master tabloları değişmedi, **çapraz tenant satır 0**, hiçbir okul ders kaybetmedi.
+**Kanıt testleri:** gerçek SQL Server'a karşı 6 tenant izolasyon testi — bir okulun dersi öbüründe **görünmüyor**,
+iki okul **aynı kodu kullanabiliyor**. Mimari bekçiler 11/11, ders süzgeçli 71 birim testi, arayüzde 314 test.
+**Bonus:** katalog artık tenant varlığı olduğu için önbellek temizleme kapısından geçiyor; eskiden hiçbir yazma o
+anahtarı düşüremiyordu, tek emniyet 24 saatlik ömürdü.
+➕ Arayüzde iki gerçek hata çıktı: ders yönetimi ekranı **arama ucunu** çağırıp yönetim verisi sanıyordu (gerçek
+API'de bütün dersler pasif ve seviyesiz görünecekti; yalnız zengin mock verisi gizliyordu) ve aynı kanca ders
+programı editörünü de besliyordu — hepsini yönetim ucuna yöneltmek o ekranı 403'e düşürürdü.
+
 ### `TB-192` · Lise müfredatında Türk Dili ve Edebiyatı yok; saat şablonu kendini "doğrulanmadı" ilan ediyor 🟠
 
 Altınay B4 ölçümünde çıktı (2026-09-16). `master.curriculum_hour_templates` lise için 9–12 × 11 ders taşıyor,
@@ -1428,6 +1460,12 @@ Etkisi zincirleme: branş olmadan öğretmene branş atanamaz, branşsız öğre
 
 ⬜ Kapatma yolu: `SchoolCreated` branşları da tohumlasın (MEB içe aktarımının aynısını açılışta çalıştırmak
 yeterli). Mevcut boş okullar için backfill.
+
+✅ **Karar (2026-09-16, kullanıcı): Altınay'ın engeli ürünün kendi yolundan kalkacak** — kullanıcı "MEB branşlarını
+içe aktar" düğmesini **ekrandan kendisi** kullanacak, Rehberlik'i de elle ekleyecek. Gerekçe: saha testinin amacı
+gerçek kullanıcı yolunu ölçmek; veriyi arkadan doldurmak o ölçümü yok ederdi.
+⬜ **Madde açık kalıyor:** açılış akışı hâlâ branşları tohumlamıyor, yani **bundan sonra açılan her okul** yine
+branşsız doğacak. Kalıcı düzeltme (açılışta tohum + mevcut boş okullara backfill) sıradaki turlarda yapılacak.
 
 ### `TB-194` · Müfredat saat kataloğu okulun kademelerini yok sayıyor 🟡
 
