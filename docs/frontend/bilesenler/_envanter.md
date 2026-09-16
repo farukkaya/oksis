@@ -17,9 +17,10 @@ the CLI).
 | --- | --- | --- |
 | `DataTable` | ⬜ planned | roadmap (`apps/web/CLAUDE.md`) |
 | `PageHeader` | ✅ built | `components/shared/page-header.tsx` — kullanıcılar handoff'unda kuruldu (stil `shell.css`) |
-| `FormDialog` | ⬜ planned | roadmap |
-| `ConfirmDialog` | ⬜ planned | roadmap |
-| `EmptyState` | ⬜ planned | roadmap |
+| `Dialog` | ✅ built | `components/shared/dialog.tsx` — `.att-modal` kabuğunun tek React karşılığı: scrim, Esc, ✕ (sağ üst), `role="dialog"`, odak geri dönüşü, `tone` (info/warn/danger). Stil `packages/ui/src/styles/dialog.css` (`.dlg-x`, `.dlg-warn`, `.dlg-danger`); bkz. 2026-09-16 turu |
+| `FormDialog` | ⬜ planned | roadmap — form modalları şimdilik `Dialog` + kendi gövdesi (emsal ayarların `AModal`'ı) |
+| `ConfirmDialog` | ✅ built | `components/shared/confirm-dialog.tsx` — `Dialog` üstünde onay akışı (`confirmLabel`, `confirmVariant: primary/danger`, `busy`). İlk tüketici Zil Programı "yeniden üret" (`D-19`) |
+| `EmptyState` | ✅ built | `components/shared/empty-state.tsx` — `D-10` "kayıt yok / eşleşme yok" ayrımı (`filtered`); stil `screens.css .att-state` (`page`) ve `.ayr-empty` (`compact`). Öğrenciler, Öğretmenler, Veliler, Kullanıcılar, Davetler, Etkinlikler, Dağıtım Kısıtları + ayarlar `AEmpty` sarmalayıcısı; bkz. 2026-09-15 turu |
 | `StatusBadge` | ⬜ planned | roadmap |
 | `Pager` | ✅ built | `components/shared/pager.tsx` — kullanıcılar+öğrenciler paylaşır (stil `screens.css .usr-foot`) |
 | `SelectCheckbox` | ✅ built | `components/shared/select-checkbox.tsx` — tablo/kart satır seçimi (stil `.usr-cb`) |
@@ -273,3 +274,69 @@ ailesi kaldı.
   `delta` prop'u ve `.dl` bloğu yapıda duruyor, uç açılınca tek yerden bağlanır.
 - **Dokunulmayan iki KPI ailesi:** bildirim merkezinin `.nx-kpi`'si ve canlı yoklamanın
   `.attl-kpi`'si — tasarımda da ayrı desenler (ikincisi prototiple zaten birebir aynı).
+
+## 2026-09-15 — Boş durum (`EmptyState`) terfisi
+
+`D-10` standardının merkezi uygulaması. **Yeni paylaşılan bileşen AÇILDI:**
+`EmptyState` (`components/shared/empty-state.tsx`). Emsal `FilterDropdown` terfisi (`e74d5d3`).
+
+Gerekçe: aynı `att-state`/`se-ico`/"Sonuç bulunamadı" markup'ı yedi ekranda ayrı ayrı
+yazılmıştı ve beşi (Öğrenciler, Öğretmenler, Veliler, Kullanıcılar ve kısmen Davetler)
+kayıt hiç yokken de "Filtreleri Temizle" diyordu. Doğru ayrım yalnız ayarların
+`AEmpty`'sindeydi.
+
+- **Sözleşme:** `filtered` cümleyi, ikonu ve düğmeyi seçer. `false` → ekranın kendi
+  ikon/başlık/açıklaması + isteğe bağlı `action` (yalnız sayfada zaten var olan oluşturma
+  eyleminin handler'ı). `true` → "Sonuç bulunamadı" + "Arama veya filtre ölçütlerinizle
+  eşleşen {entity} yok." + `onClear` verilmişse "Filtreleri Temizle".
+- **`filtered` türetmesi:** liste istemcide tamsa `kayıt sayısı > 0 && ölçüt açık`
+  (Öğrenciler, Öğretmenler, Kullanıcılar, Davetler, Etkinlikler, Dağıtım Kısıtları).
+  Sunucu sayfalı Veliler'de toplam ölçütsüz bilinmediğinden yalnız ölçütten türer.
+  Etkinlikler'de "Yaklaşan/Geçmiş" sekmesi de ölçüttür; temizleme sekmeyi "Tümü"ne döndürür.
+- **İki varyant, tek gerçek:** `page` (`.att-state`, liste kartı içi) ve `compact`
+  (`.ayr-empty`, ayarlar kartı içi). Ayarların `AEmpty`'si `compact`'a ince sarmalayıcı
+  kaldı — çağrı yerleri (6 sekme) ve görsel çıktı değişmedi. Yeni CSS yok.
+- **Görsel sapmalar (bilinçli):** filtreli dal her ekranda `funnel` ikonu kullanır
+  (Davetler ve Kısıtlar `search` gösteriyordu). Etkinlikler'in feature-local `ActIcon`
+  `flag`/`funnel`/`plus` glifleri `OksisIcon` karşılıklarına döndü; kayıt yok ikonu kenar
+  çubuğunun `etkinlik` glifi. Etkinlikler'in filtreli cümlesi standart cümleye çekildi.
+- Aynı turda liste ekranlarının arama kutularına `aria-label` eklendi (yalnız placeholder
+  vardı).
+- **Dokunulmayan boş durum aileleri:** Şubeler `SnfEmptyState` ve Ders Programı
+  `ScheduleNoResult`/`pr-empty` — farklı tasarım iskeleti; ikisi de D-10 ayrımını zaten
+  yapıyor. Davet partisi/parti listesi ve hata durumları `DvtState`'te kaldı (filtre
+  ayrımı yok).
+
+## 2026-09-16 — Diyalog temeli + Enter ile ilerleme (`D-19`, `B-51`, `TB-174` ekran ayağı)
+
+`D-19`'un merkezi kapanışı. **Yeni paylaşılan bileşen AÇILDI:** `Dialog` + `ConfirmDialog`
+(`components/shared/`), **yeni paylaşılan hook:** `useGridEnterNav`
+(`packages/ui/src/hooks/use-grid-enter-nav.ts`).
+
+- **Gerekçe:** uygulamada paylaşılan diyalog yoktu; 25'ten fazla özellik scrim/Esc/✕'yı
+  ayrı yazmıştı (`.snf-mclose`, `.dx`, `.grv-drawer-x`, `.gb-x` …). Ayarların `AModal`'ı
+  ve `ADrawer`'ı çarpıya `ayr-mx` sınıfını veriyordu ama o sınıfın **hiç CSS kuralı yoktu**
+  — çarpı sol üstte çıplak duruyordu.
+- **Kabuk yeniden tanımlanmadı:** `Dialog` screens.css'teki `.att-modal-wrap/.att-scrim/
+  .att-modal/-head/-body/-foot` sınıflarını kullanır. `dialog.css` yalnız eksik olanı ekler:
+  `.dlg-x` (ölçüler `.snf-mclose` ile birebir; `.dlg-x.inline` flex başlıklı çekmecede akışta
+  sağa yaslı), `.att-modal.dlg .att-modal-head` sağ boşluğu ve `.dlg-warn/.dlg-danger` ikon tonları.
+- **Sözleşme:** `Dialog` — `title`, `subtitle`, `icon`, `tone`, `onClose`, `closeDisabled`
+  (Esc/scrim/✕ kilidi), `closeOnScrim`, `className` (genişlik varyantı), `footer`.
+  `ConfirmDialog` — `title`, `subtitle`, `tone` (vars. warn), `children` (sonuç cümlesi),
+  `confirmLabel`, `cancelLabel` (vars. "Vazgeç"), `confirmVariant` (`primary`/`danger` →
+  portlu `.att-btn.primary` / `.att-btn.snf-danger`), `busy`, `busyLabel`, `onConfirm`, `onCancel`.
+- **Taşınan:** ayarların `AModal`'ı `Dialog`'a ince sarmalayıcı oldu (6 çağrı yeri, prop
+  sözleşmesi aynı); `ADrawer` çarpısı `.dlg-x.inline`. Zil Programı onayı doğrudan `ConfirmDialog`.
+- **Kademeli geçiş (açık iş):** kalan özel modallar (`features/*/modals.tsx`, roll-call,
+  grade, exam, club, duty, homework …) TAŞINMADI. Yeni modal `Dialog`/`ConfirmDialog` ile
+  yazılır; eskisine dokunulduğunda taşınır. Feature'a özgü çarpı sınıfları taşındıkça silinir.
+- **`useGridEnterNav({ rowCount, colCount, onAppendRow?, disabled? })`** →
+  `{ cellRef(r, c), onKeyDown(r, c), focusCell(r, c) }`. Satır öncelikli: Enter sonraki hücre,
+  satır sonunda sonraki satırın ilk hücresi, son hücrede `onAppendRow` ile yeni satır + odak;
+  Shift+Enter geri. İlk tüketici Zil Programı saat alanları.
+  **Not ızgarası (`grade-grid-screen.tsx` `onCellKey`) taşınmadı:** orada Enter sütun
+  öncelikli (aşağı), G/M tuşları, oklar/Tab ve hatalı hücrede kilit var — farklı anlam; ayrıca
+  canlı veriyle tarayıcıda ölçülemeden taşımak güvenli değildi.
+- **Mobil:** zil ekranı salt okunur; `D-19`/`B-51` kusurlarını taşımıyor. `TB-174` uyarısı
+  core'daki ortak cümleyle (`lessonlessDayWarning`) mobile de eklendi (`Note tone="warning"`).

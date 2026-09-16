@@ -24,6 +24,7 @@ OKSİS, Türk özel okulları için çok kiracılı (multi-tenant) bir SaaS okul
 | Bir modülün ihtiyaç / teknik analizi | `ihtiyac-analizleri/<modul>/`, `teknik-analizler/<modul>/` |
 | İnceleme ve durum raporları | `raporlar/` |
 | Açık bulgular, kararlar, engeller | `bulgular/` — Bulgu Kayıt Defteri |
+| Gerçek okul verisiyle seed'siz, sezon boyu yaşayan testler | `saha-testleri/<okul>/` |
 | Devam eden işin geçici belgeleri | `gecici/` |
 
 ## Klasör kuralları
@@ -32,3 +33,4 @@ OKSİS, Türk özel okulları için çok kiracılı (multi-tenant) bir SaaS okul
 - `domain/` koddan `domain-map` skill'iyle üretilir; `<!-- generated -->` blokları dışındaki el yazısı içerik korunur.
 - `domain/kararlar/` modelin kalıcı gerekçesidir; `bulgular/kararlar/` bulgu ve süreç kararlarıdır.
 - `gecici/` altındaki belgeler iş bitince silinir.
+- `saha-testleri/` public depoya girer: öğrenci/öğretmen adı yazılmaz; adlı kaynak listeler `raporlar/` altında git dışı tutulur.

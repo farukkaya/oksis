@@ -59,7 +59,9 @@
 ## 5. Ortak bileşenler
 
 - `packages/ui/src/components/`: `anchored-menu`, `avatar`, `badge`, `button`, `card`, `icon`, `logo-mark`.
-- `apps/web/components/shared/`: `filter-dropdown`, `forbidden-screen`, `kpi-card`, `page-header`, `pager`, `planned-screen`, `select-checkbox`, `sortable-th`, `toast`, `toast-host`.
+- `apps/web/components/shared/`: `confirm-dialog`, `dialog`, `empty-state`, `filter-dropdown`, `forbidden-screen`, `kpi-card`, `page-header`, `pager`, `planned-screen`, `select-checkbox`, `sortable-th`, `toast`, `toast-host`.
+- `packages/ui/src/hooks/`: `use-grid-enter-nav` (satır × sütun alanlarda Enter ile ilerleme, son hücrede yeni satır).
+- **Diyalog kuralı (2026-09-16, `D-19`):** yeni ortalanmış modal `Dialog`, onay akışı `ConfirmDialog` ile yazılır. Scrim, Esc, kapatma çarpısı ve `role="dialog"` feature içinde yeniden yazılmaz; yeni çarpı sınıfı açılmaz. Eski özel modallar dokunuldukça kademeli taşınır.
 - Kabuk: `components/app-shell.tsx`, `route-guard.tsx`, `season-context-picker.tsx`, `role-favicon.tsx`, `theme-provider.tsx` (next-themes).
 - **Yeni bir ortak bileşen yazmadan önce bileşen envanteri kontrol edilir.** Envanter: [[_envanter]] (`docs/frontend/bilesenler/_envanter.md`). Eşleşme yoksa **dur ve onay al.**
 - Sarmalayıcı bileşenler yerel prop'ları yutmaz: `...props` aktarılır, `disabled`, `type` ve `aria-*` korunur.

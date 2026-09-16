@@ -18,7 +18,7 @@
 
 # 📋 Karar Panosu
 
-**Karara bağlanan: 13 / 18**
+**Karara bağlanan: 14 / 19**
 
 | ID | Konu | Durum | Tarih | Karar özeti |
 |:--|:--|:--|:--|:--|
@@ -38,6 +38,7 @@
 | **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz — BE `0cd40654` + web `oksis-ui` @ `3b14a36` |
 | **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ — BE `225f7623` + web `oksis-ui` @ `3cc904e` |
 | **K-27** | Platform kimliği: süper yönetici okulsuz platform hesabı mı, "OKSİS Merkez" iç okulu mu? | ✅ Karara bağlandı · ✅ ilk dilim uygulandı | 2026-09-15 | **(a) Ayrı platform hesabı** + üç platform rolü ([[0019-platform-rol-seti-uc-rol]]: `PLATFORM_ADMIN` / `PLATFORM_OPERATIONS` / `PLATFORM_SUPPORT`, destek salt-okunur) · izler kazındı: [[super-admin-izleri-envanteri]] · ilk hesap `PlatformBootstrap` ayarından tek seferlik · ilk dilim `oksis-api` `e91711bd`…`74427aa3`, `oksis-ui` `bd8d0f6`/`47d6059` · `E-24`/`TB-162` kapandı |
+| **K-28** | Kurum yetkilisi: kim sorar, kim düzenler? | ✅ Karara bağlandı · ⬜ uygulanmadı | 2026-09-15 | **(a)** Platform okul açılışında sorar · sonradan platform düzenler · müdür yalnız görür — `TB-165`/`TB-171` bu kararla kapanır |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 
@@ -1028,6 +1029,66 @@ kaldırıldı. `TB-139` kısa devresi (küresel süzgeç ve interceptor) **dokun
 - [ ] Platform izin modülünün kesin slug listesi (`platform.*`, `schools.*`, `support.*`) — planda belirlenecek.
 - [x] İlk dilim (okul kaydı) planlandı ve uygulandı.
 - [ ] Kalan gruplar (`SUPER_ADMIN` → `PLATFORM_ADMIN`, Operasyon/Destek rolleri, `TB-139`, `UserRole` mirası, `TB-164`/`TB-165`/`TB-166`, `TB-169`) `0019` turunda dilimlenecek.
+
+--- end-multi-column
+
+---
+
+## K-28 · Kurum yetkilisi: kim sorar, kim düzenler?
+
+--- start-multi-column: K-28
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ✅ Karara bağlandı (2026-09-15, seçenek **a**) · ⬜ uygulanmadı · **Kaynak:** Altınay saha testi B2.1 (`saha-testleri/altinay/`)
+
+Platformdan açılan Altınay'da Ayarlar → Genel Bilgiler'deki **Kurum Yetkilisi** kartı boş ve
+kilitli geldi. Ölçüm (`oksis-api` @ `60e65caf`, `TB-171`):
+- `CreateSchoolCommand` yetkiliyi sormuyor; `SchoolSettings.CreateDefault` `authority_*`
+  alanlarını NULL bırakıyor.
+- Okul ekranındaki düzenleme ucu (`PUT school-settings/authority`) `SUPER_ADMIN` izninde; o rol
+  kimsede yok ve platform token'ı okul komutuna giremiyor (`TB-165`).
+- Platformda okul düzenleme ucu yok (`PlatformSchoolsController`: liste + oluştur).
+
+Sonuç: taze okulun kurum yetkilisi **hiçbir yoldan** doldurulamıyor.
+
+**Seçenekler:**
+- **(a)** Platform açılışta sorar, sonradan platform düzenler, müdür yalnız görür.
+- **(b)** Platform açılışta sorar, sonradan müdür de düzenleyebilir.
+- **(c)** Açılışta sorulmaz, müdür ayarlardan girer.
+
+Öneri (a) yönündeydi: yetkili OKSİS ile okul arasındaki resmî yazışmanın muhatabıdır (çoğu
+zaman kurucu/temsilci), müdür değişse de kalır. Müdürün değiştirebilmesi sözleşme muhatabını
+okul içinden değiştirmek olur.
+
+**Bağlı:** `TB-165` · `TB-171` · `K-27` · [[0008-super-yonetici-platform-roludur]]
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ✅ Karara bağlandı · ⬜ uygulanmadı
+**Tarih:** 2026-09-15
+**Karar veren:** Kullanıcı
+
+**Karar**
+> **(a)** Platform açılışta sorar ve sonradan platform düzenler, müdür yalnız görür.
+
+**Uygulamada gerekenler**
+- Platform okul açma formu ve `CreateSchoolCommand`: yetkili ad soyad, unvan, e-posta.
+- Platformda okul detayı + yetkili düzenleme ucu (`PlatformOnly`).
+- Okul tarafındaki `PUT school-settings/authority` ucu ve `school-settings.manage-authority`
+  izni emekli olur; web/mobil kart salt-okunur kalır, kilit ipucu "platform düzenler" der.
+
+**Açık kalan (kararın parçası değil, uygulama planında sorulacak)**
+- [ ] Formda "müdürle aynı kişi" kısayolu olacak mı?
+- [ ] Görünen ad açılışta okul adından tohumlansın mı (`TB-171`'in ikinci ayağı)?
+- [ ] Altınay'ın boş yetkilisi uygulama gelince platformdan doldurulur.
 
 --- end-multi-column
 

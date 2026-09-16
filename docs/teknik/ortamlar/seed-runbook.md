@@ -6,7 +6,8 @@
 > **Kaynak:**
 > - `oksis-api/README.md` § "Lokasyon (ülke / il / ilçe / mahalle) seed runbook" (bu belgeye taşındı).
 > - `src/Oksis.Api/Program.cs`, `src/Oksis.Infrastructure/Persistence/Seed/{LocationSeeder, DevDataSeeder, IdentityDevSeeder, ClassRoomDevSeeder, TimetableDevSeeder}.cs`, `Seed/MasterData/*`, `Seed/Data/locations/*.csv`.
-> - `tools/seed-locations/Generate-LocationCsvs.ps1`, `infra/scripts/seed_schools.sql`, `infra/scripts/identity-dev-seed.sql`, `scripts/init-garage.sh`.
+> - `tools/seed-locations/Generate-LocationCsvs.ps1`, `infra/scripts/seed_schools.sql`, `scripts/init-garage.sh`.
+>   (`infra/scripts/identity-dev-seed.sql` 2026-09-16'da silindi — `TB-164`.)
 > **Gizli bilgi:** Dev hesaplarının e-posta ve parolaları yazılmaz; seeder kaynağında tanımlıdır.
 
 İlgili notlar: [[yerel-kurulum]] · [[ortamlar]] · Alan: [[Okul Yönetimi]] · [[Kimlik Doğrulama]]
@@ -21,7 +22,7 @@
 | 2 | **Lokasyon** (ülke, il, ilçe, mahalle) | `LocationSeeder` + gömülü CSV | **Hepsi, prod dahil** | Her uygulama başlangıcında | Evet (var olan Id atlanır) |
 | 3 | **Dev verisi** (okullar, okul ayarları, kadro, şubeler, zil çizelgesi, görevlendirmeler) | `DevDataSeeder` → `IdentityDevSeeder`, `ClassRoomDevSeeder`, `TimetableDevSeeder` | **Yalnız Development** | Her uygulama başlangıcında | Evet |
 | 4 | Depolama ön koşulu (Garage layout + dev anahtarı) | `scripts/init-garage.sh` | Yerel | İlk kurulumda bir kez | Evet |
-| — | `infra/scripts/seed_schools.sql`, `infra/scripts/identity-dev-seed.sql` | Elle SQL | — | **Çalıştırmayın** (§5) | — |
+| — | `infra/scripts/seed_schools.sql` | Elle SQL | — | **Çalıştırmayın** (§5) | — |
 
 ## 2. Master veri (migration ile)
 
@@ -162,10 +163,11 @@ curl -H "Authorization: Bearer $TOKEN" \
 
 | Dosya | Durum (2026-09-13, `OksisDbContextModelSnapshot` ile karşılaştırıldı) |
 |---|---|
-| `infra/scripts/identity-dev-seed.sql` (2026-09-13'te `docs/seed/`'den taşındı) | Eski `users` tablosuna yazıyor. Güncel modelde bu tablo yok; kimlik `identity.accounts` ve `identity.persons` tablolarında. `IdentityDevSeeder` yorumu da "eski `[identity].[users]` artık seed edilmez" diyor. |
+| ~~`infra/scripts/identity-dev-seed.sql`~~ | **2026-09-16'da SİLİNDİ** (`TB-164`, commit bekliyor). Var olmayan `users` tablosuna okul-bağlı bir süper yönetici yazıyordu; kimlik `identity.accounts` ve `identity.persons` tablolarında. Aynı turda `Program.cs` ve `DependencyInjection.cs` yorumları `IdentityDevSeeder`'ın gerçek kadrosuna göre düzeltildi: okul başına müdür + müdür yardımcısı, 15 öğretmen (5'i aynı zamanda veli), 60 öğrenci, 50 veli; süper yönetici ya da platform hesabı **seed edilmez**. |
 | `infra/scripts/seed_schools.sql` | `schools` ve `school_settings` tablolarına şema öneki olmadan yazıyor (güncel şema `school`). Kullandığı `school_settings` kolonlarının bir kısmı modelde yok (örnek `tax_number`, `address_city`, `theme_primary_color`, `school_type`, `timezone`). Okul Id'leri `DevDataSeeder`'daki okullarla eşleşmiyor. |
 
-Tek geçerli dev verisi yolu §3'teki C# seeder'lardır. Bu iki dosyanın silinmesi ya da güncellenmesi: {{TBD}}.
+Tek geçerli dev verisi yolu §3'teki C# seeder'lardır. `identity-dev-seed.sql` silindi (`TB-164`);
+`seed_schools.sql`'in silinmesi ya da güncellenmesi: {{TBD}}.
 
 ## 6. Çalıştırma sırası
 
