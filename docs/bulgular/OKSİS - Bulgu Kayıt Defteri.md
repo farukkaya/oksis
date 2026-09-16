@@ -18,7 +18,11 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-16 (gece düzeltme turu, kullanıcı uyurken) — Altınay saha testinde işaretlenen
+> **Son ekleme:** 2026-09-16 (Ayarlar ekran revizyonu) — `TB-199` (ikon adı tipi hiçbir şeyi
+> korumuyor; olmayan ada sessizce boş ikon çiziliyor ⚪), §12. Bulgu, Akademik Yapı'nın katalog
+> sekme şeridinde `icon: "doc"` adının aylardır ikonsuz çizilmesiyle görüldü; o ayak aynı turda
+> düzeltildi, tipin kendisi açık kaldı. Defter **70**.
+> **Önceki:** 2026-09-16 (gece düzeltme turu, kullanıcı uyurken) — Altınay saha testinde işaretlenen
 > bulgular ve defterin karar-dışı maddeleri toplu olarak kapatıldı. **Kapanan 20 madde** (hepsi kodda,
 > **commit bekliyor**; dallar `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`):
 > `TB-174` · `TB-175` · `TB-125` · `TB-176` · `TB-177` · `D-19` · `B-51` · `D-20` (ekran ayağı) · `TB-166` ·
@@ -92,7 +96,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-199` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-200` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2468,6 +2472,26 @@ kapanır. ⬜ **Bu tercihi vermeden başlamak yanlış.**
 bir koşum yazılacak; borç tek hamlede kapanır ve bundan sonra yazılan her sorgu işleyicisi otomatik kapsanır.
 Çok günlük bir iş kalemi: önce koşum altyapısı + pilot bir modül, sonra kademeli geçiş. **Ölçüm güncellendi:**
 tarama sırasında sayı 150/92 idi, gece turunda 218 işleyicinin 132'si ölçüldü — oran sabit, mutlak borç büyüyor.
+
+### `TB-199` · İkon adı tipi hiçbir şeyi korumuyor; olmayan ada sessizce boş ikon çiziliyor ⚪
+
+Ayarlar ekran revizyonunda ölçüldü (2026-09-16, `oksis-ui`). `OksisIcon` bilinmeyen bir ad aldığında
+**sessizce `null` döner** (`packages/ui/src/components/icon.tsx`: `const shapes = SHAPES[name]; if (!shapes)
+return null`). Tip katmanı bunu yakalayamıyor: `OksisIconName = keyof typeof SHAPES` ve `SHAPES`
+`Record<string, Shape[]>` olarak yazılmış — yani `keyof` **`string`'e** çözülüyor; üstüne
+`OksisIconProps.name` de zaten `string`. Sonuç: ikon adı üç katmanda da denetimsiz.
+
+Somut belirti: Akademik Yapı › Kataloglar sekme şeridinde "Ders Kataloğu" sekmesi `icon: "doc"` diyordu;
+`SHAPES`'te `doc` diye bir ad yok, sekme ikonsuz çiziliyordu ve ne tip denetimi ne lint bunu gördü.
+
+✅ **Bu turda düzeltilen ayak:** sekme sabiti tipli bir arayüze (`ACardTab<T>`) bağlandı ve adlar var
+olanlarla değiştirildi (`notlar`, `karne`). Tip hâlâ `string` olduğu için düzeltme **yalnız o dosya için**
+geçerli — kalıbın kendisi açık.
+
+⬜ **Kapatma yolu:** `SHAPES` `Record<string, …>` açıklaması yerine `satisfies` ile yazılsın (ya da açıklama
+kaldırılsın) — `keyof typeof SHAPES` o zaman gerçek birleşim tipine çözülür; `OksisIconProps.name` de
+`OksisIconName` olsun. Depoda bilinmeyen adla çizilen başka ikon olup olmadığı **şu an bilinmiyor**; ancak bu
+değişiklikten sonra ölçülebilir.
 
 ---
 
