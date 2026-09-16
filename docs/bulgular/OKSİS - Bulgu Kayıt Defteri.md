@@ -1520,10 +1520,27 @@ onları okulun kimliklerine çevirdi — yani iki kimlik uzayı ürün kodunda b
 Göç ölçümü: altı okulun her birinde **8 tür** (Altınay dâhil), çekirdek 8 satır kaldı, 4 sınav penceresi ve 18
 değerlendirme kendi okulunun satırına bağlandı, **çapraz tenant satır 0**.
 
-⬜ **Kalan ayak — kullanıcı kararı (2026-09-16): yönetim uçları yazılacak.** Okul kendi türünü ekleyip
-pasifleştirebilsin ve ekranda görebilsin. Bugün domainde `CreateCustom`/`Activate`/`Deactivate` **hazır** ama
-komut ve uç yok; pratik sonuç: Altınay'da başka okul için eklenmiş "3. Sınav" **hâlâ görünüyor** — fark şu ki
-artık yalnız Altınay'ın satırını düşürmek yetiyor ve bu başka okulu etkilemiyor. Uygulama sürüyor.
+✅ **Yönetim ayağı da kapandı — 2026-09-16.** Dört komut + liste sorgusu (`ExamsController` üzerinde, yeni izin
+yok: okuma `school-settings.view`, yazma `school-settings.update-academic-structure`). Pencere formunun listesi
+**dokunulmadı**; yönetim listesi ondan üç noktada bilinçli ayrılıyor (pasif türler görünür, dönemsiz türler
+görünür, kullanılan tür düşmez) — yönetim listesi bir seçim kutusu değil, kataloğun kendisi.
+**Çekirdek–okul ayrımı:** `IsMasterSourced` satırda `Code`, `Name` **ve `TermOrder`** donuk; `DisplayOrder`,
+`Description`, `IsActive` ve silme okulun kararı. Dönemin de donması `TB-191`'den bilinçli ayrılış: derste
+**kademe** okula bırakılmıştı çünkü aynı ders okuldan okula farklı kademede okutulur; sınav türünde dönem
+**adın kendisidir** ("1. Sınav" = birinci dönemin ilk yazılısı) ve seçenek listesi yalnız `TermOrder` ile
+süzüldüğü için serbest bırakılsaydı kullanıcı bunu ancak yanlış dönemde beliren yanlış adlı bir seçenek olarak
+görürdü. Kural **domainde** (`ExamType.Update`), handler yalnız 409'a çeviriyor.
+**Silme ve pasifleştirme ayrı:** silme `ExamTypeUsageInspector` kapısından geçer (kullanımdaysa 409), pasifleştirme
+her zaman serbest — kullanımdaki tür de düşürülebilir, satır durur ve eski pencereler adını okumaya devam eder.
+Kapıda durum süzgeci **yok** ve bu bilinçli: tüketici pencerenin kendisi, kilitli pencere de türünün adını
+gösteriyor. Bekçi: `ExamTypeUsageCoverageTests` — `ExamTypeId` taşıyan yeni kalıcı varlık kapıya eklenmezse kırmızı.
+**Arayüz:** Ayarlar › Akademik Yapı › **Sınav Türü Kataloğu** sekmesi (liste, arama, "Çekirdekten Getir", yeni tür,
+düzenleme çekmecesi — çekirdek satırda kilitli alanlar ipucuyla, pasife al/yeniden aç, iki adımlı silme), mock'lar
+ve onları kilitleyen testler aynı turda (`TB-188` dersi).
+⬜ **İki borç:** (a) tenant izolasyonu gerçek SQL'e karşı ölçülmedi — `IgnoreQueryFilters()` yok ve hepsi
+`db.ExamTypes` üzerinden gidiyor ama bellek içi test DB kısıtını zorlamaz; (b) ekran tarayıcıda gezilmedi.
+⬜ **Doğrulanmamış ürün farkı:** yönetim uçları `ExamsController`'da olduğu için `active-season-write` politikasına
+tabi — **arşiv sezonda katalog yazılamıyor**, oysa ders kataloğu (`AcademicsController`) bu kısıta tabi değil.
 
 ### `E-29` · İdareci / müdür yardımcısı rolü yok — idari yetki vermek tam yönetici yapmak demek 🟡
 
