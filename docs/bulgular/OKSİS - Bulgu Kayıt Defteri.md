@@ -92,7 +92,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-189` · `E-29` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-190` · `E-29` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -109,9 +109,9 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 13 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 17 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 18 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **74** | |
+| **Toplam** | **75** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 48 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
 
@@ -616,6 +616,17 @@ sezon listesi 200+`[]`, dönem listesi 200+`[]`, `attendance/risk` 404, `grades/
 200+bayrak; ayrıca sınıf listesi `warning` alanı, dosya yükleme 422, kullanıcı/duyuru 409. İstemci artık bu
 dağınıklığa **bağışık** (durumu cevabın şeklinden değil sezon verisinden türetiyor), yani hizalama istemciyi
 kırmaz. Ölçümden çıkan iki somut kusur ayrı madde oldu: `TB-185`, `TB-186`.
+
+✅ **Sunucu ayağı da kapandı — 2026-09-16 (commit bekliyor).** Ölçüm: `AttendanceTermResolver` dönem
+çözemediğinde üç yoklama rapor ucu **404** dönüyordu; not modülünün altı ucu aynı kök durumda **200 + boş**
+dönüyor. Üç ucun da "dönem var ama veri yok" hâlinde **zaten** 200 + boş cevabı var, yani boş cevap o uçların
+meşru şekli. Hiçbir test 404 beklemiyordu ve istemcide bu uçların **404 kolu yoktu** — 404 doğrudan hata
+durumuna düşüyordu, `TB-168`'in "Devamsızlık riski yüklenemedi · Tekrar dene" belirtisi tam olarak buydu.
+Üç ucun "dönem yok" dalı boş başarı cevabına çekildi; **kıran değişiklik değil** (yeni şekil yok, alan
+kaldırılmadı, yalnız hata dalı tanımlı duruma bağlandı). Yazma yolu 404 olarak **bırakıldı** — dönemsiz yazmak
+gerçekten mümkün değil. `SeasonlessReadContractTests` 2 test. `oksis-ui`'de değişiklik gerekmedi.
+⬜ Tablodaki iki sözleşme bilerek dokunulmadan kaldı: sınıf listesinin `warning` alanı (zaten 200) ve dosya
+yüklemenin 422'si (yazma yolu).
 
 ➕ **2026-09-15 · Altınay saha testi, pano kartı envanteri** (`oksis-ui` @ `1bf6a51`, sezonsuz
 PLT-DOGRULAMA ve seed `s1` müdürüyle canlı GET): panonun 11 kartından
@@ -1325,6 +1336,24 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
    *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
    1. dönemi aktif görecek.
 
+### `TB-189` · Seed sezon verisi ürünün üretebildiği durumları temsil etmiyor ⚪
+
+`TB-185` canlı ölçümünde ortaya çıktı (2026-09-16), ölçümün kendisi iki kez buna takıldı.
+
+1. **Seed DB'de `Setup` durumundaki bütün sezonlar soft-delete'li** (`is_deleted = 1`; `DEV-OKUL` ve `TST-AL`).
+   Küresel süzgeç onları gizlediği için **görünür hiçbir sezon yeniden adlandırılamıyor** (`Rename` yalnız
+   `Setup`'ta izinli) ve **"kurulumdaki sezon" yüzeyleri seed veriyle hiç ölçülemiyor** — oysa `TB-168`/`TB-173`
+   kararının dört durumundan biri tam olarak budur. Sezonsuzluk yüzeylerini seed'le sınamak isteyen herkes aynı
+   duvara çarpar.
+2. **`DEV-OKUL` ve `TST-AL`'de aynı adı (`2026-2027`) taşıyan iki sezon satırı var**; biri silinmiş olduğu için
+   tekil ad kuralı bugün patlamıyor. Yani kısıt, verinin şu anki hâli sayesinde sessiz.
+
+Belirti ürün değil **test verisi**: seed, ürünün üretebileceği durum uzayını örneklemiyor, bu yüzden o durumlara
+bağlı kusurlar ancak sahada görülüyor (`E-24`'ün "seed gerçek yolu ölçmüyor" kalıbının kardeşi).
+
+⬜ Kapatma yolu: dev seed'inde **canlı bir `Setup` sezon** bulunsun (ve sezonsuz bir okul kalmaya devam etsin);
+silinmiş satırların ad çakışması temizlensin ya da tekil ad kuralının silinmişleri nasıl saydığı bilinçli yazılsın.
+
 ### `TB-188` · `canEdit` iki politikayı tek boolean'da topluyor — idarenin yeni yetkileri hiçbir ekranda görünmüyor 🟠
 
 `TB-109`/`TB-110` turunun hemen ardından ölçüldü (2026-09-16). Sunucu artık `homework.manage` taşıyan idarenin
@@ -1401,6 +1430,19 @@ Aynı kalıp `TB-179`'un (c) ayağının kardeşi: **tarih ekseni ile durum ekse
 birlikte ele alınmalı. Önce ölçülmeli: `SessionMaterializer` dönem durumuna ayrıca bakıyor mu, yani belirti bugün
 gerçekten oluşuyor mu.
 
+✅ **Kapandı — 2026-09-16 (commit bekliyor).** **Ölçüm önce yapıldı:** `SessionMaterializer` dönem/sezon durumuna
+ayrıca bakmıyor (tek kapı `IsSchoolDayAsync`) ve günlük süpürme işi bütün okulları geziyor; ama oturum üretimi
+ayrıca **yayınlanmış bir program** istiyor, o yüzden yeni açılmış okulda oturum doğmuyor. Buna karşılık **bugün
+yanlış cevap veren beş yüzey** var: canlı pano, gün ders saatleri, tarih eksenli nöbet, kaydedilmemiş oturumlar ve
+günlük kapatma işi — hepsi aynı kapıyı okuyor, yani kurulumdaki sezonun günleri "ders günü" sayılıyor.
+**Kapı sezonun durumu oldu (`Active`), dönemin değil.** Gerekçe: dönem durumunu kapı yapmak, `TB-179`'un açık
+ayağı yüzünden (2. dönemi başlatacak günlük iş henüz yok) 2. dönem elle başlatılana kadar yoklamayı **tamamen
+durdururdu** — ölçülmemiş bir kural için çalışan bir yüzeyi kırmak olurdu. Sezon `Active` değilken okul günü
+olmadığı ise tartışmasız.
+Kural yeni `AcademicCalendarRules`'ta: tarih kapsama cümlesi tek yerde yaşıyor ve **`TB-179`'un aktivasyon yolu ile
+okuma yolu aynı cümleyi okuyor** — tarih ekseni ile durum ekseni artık yapısal olarak ayrışamıyor. 6 test, içlerinde
+"dönem `NotStarted` olsa da `Active` sezon ders günü üretir" regresyon bekçisi var.
+
 ### `TB-185` · Sezonsuzluk cevabı bir saat önbellekte yapışıyor; sezonu açan yollar anahtarı temizlemiyor 🟡
 
 `TB-168` sunucu ölçümünde çıktı (2026-09-16). `GetCurrentSession` sorgusu `[Cacheable]` ve **başarısız sonuç da
@@ -1418,6 +1460,35 @@ kaldı) — bu, `TB-183`'ün kardeşi ve aynı sınıfın üçüncü örneği.
 ⬜ Kapatma yolu: sezonun durumunu değiştiren **her** yol anahtarı düşürsün (tercihen tek bir yerden, olay
 listesine güvenmek yerine); başarısız sonucun önbelleğe yazılıp yazılmayacağı bilinçli bir kural olsun; hata kodu
 merkezî eşlemeye taşınsın.
+
+✅ **Kapandı — 2026-09-16 (canlı doğrulama sürüyor, commit bekliyor).** Üç kusurun üçü de kapatıldı:
+1. **Temizlik olaya değil, yazılan satıra bağlandı.** Yeni `CacheInvalidationInterceptor` (EF
+   `SaveChangesInterceptor`): değişiklik kümesi `SavingChangesAsync`'te toplanıyor (kayıttan sonra `ChangeTracker`
+   "ne değişti"yi bilmez), anahtarlar `SavedChangesAsync`'te düşüyor — başarısız `SaveChanges` hiçbir anahtar
+   düşürmüyor. Eşleme tek yerde (`CacheInvalidationRules`). **Bu kapıyı atlamak için EF'i baypas etmek gerekir**;
+   eski beyaz liste yaklaşımı yerine seçilmesinin sebebi bu. Anahtar tenant'ı satırın kendisinden alıyor, ambient
+   bağlamdan değil — arka plan işleri okuldan okula gezerken doğru okul satırdadır. Eski olay handler'ı silindi;
+   iki mekanizma bırakmak yamalama olurdu.
+2. **Başarısız sonuç artık bilinçli kural:** `[Cacheable]`'a `CacheFailures` eklendi, **varsayılan `false`**.
+   Gerekçe belgede: bir sorgunun başarısızlığı neredeyse her zaman durumsaldır ve kullanıcının bir sonraki
+   hamlesiyle değişir; başarısızlığı saklamak, kullanıcıya **kendi yaptığı değişikliği göstermemektir**.
+3. `NO_ACTIVE_SESSION` merkezî `MapStatusCode`'a taşındı, controller'daki özel dal kaldırıldı; cevap gövdesi aynı.
+
+Testler: `CachingBehaviorFailureTests` 3, `CacheInvalidationRulesTests` 4, `ResultExtensionsAcademicSessionsTests` 2.
+⬜ **`TB-183` bu turda kapanmadı, ölçüldü:** tatil okuyucusu hâlâ `IMemoryCache` kullanıyor, yeni kapı Redis
+anahtarlarını düşürüyor — süreç içi önbelleğe dokunmuyor. Okuyucu `ICacheService`'e geçirilirse
+`CacheInvalidationRules`'a tek satır eklemek yetecek; iskelet buna hazır.
+⬜ **Göç ya da elle SQL bu kapıdan geçmez** — "veriyi göçle değiştiren turda anahtarı elle temizle" kuralı
+geçerliliğini koruyor (interceptor belgesinde yazılı).
+
+✅ **Canlı doğrulandı (2026-09-16).** Seed okulda ürünün kendi yollarıyla ölçüldü: anahtar `GET current` ile
+oluşuyor (tenant'ı kendisi taşıyor, TTL 3600); **sezon oluşturma** (eski listenin kaçırdığı birinci yol) anahtarı
+düşürdü, sonraki okuma taze değeri yazdı; **yeniden adlandırma** (dördüncü yol) yine düşürdü. Eski kodda bu anahtar
+bir saat yerinde kalırdı. Sezonsuz okulda (`PLT-DOGRULAMA`) iki `GET current` çağrısı yapıldı → **sıfır anahtar**,
+yani `CacheFailures=false` canlıda çalışıyor; 404 da artık **merkezî eşlemeden** geliyor. Elle SQL'in interceptor'ı
+tetiklemediği de canlı görüldü (belgelenmiş sınırın örneği). Altınay'a dokunulmadı.
+**Bilinçli yan etki:** kural "sezon/dönem satırına dokunan her yazma" olduğu için temizlik muhafazakâr — güncel
+olmayan bir sezon değişse de anahtar düşüyor. Bedeli bir fazladan okuma, kazancı "asla bayat cevap".
 
 ### `TB-184` · Entegrasyon testi paylaşılan DB'de küresel sayı bekliyor — takımla koşunca kırmızı ⚪
 
