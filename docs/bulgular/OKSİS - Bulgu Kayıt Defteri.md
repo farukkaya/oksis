@@ -18,7 +18,11 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-16 (Ayarlar ekran revizyonu) — `TB-199` (ikon adı tipi hiçbir şeyi
+> **Son ekleme:** 2026-09-16 (Altınay B4, kullanıcı ölçümü) — `TB-200` (branş ekranındaki "MEB'den Getir"
+> düğmesi hiçbir uç çağırmıyor, boş listede "hepsi zaten var" diyor 🟠), §12. Aynı turda kapatıldı (uç + kanca
+> + düğme); canlı doğrulama kullanıcıda. `TB-193`'ün kullanıcı kararı ancak bu düzeltmeyle uygulanabilir hâle
+> geldi. Defter **71**.
+> **Önceki:** 2026-09-16 (Ayarlar ekran revizyonu) — `TB-199` (ikon adı tipi hiçbir şeyi
 > korumuyor; olmayan ada sessizce boş ikon çiziliyor ⚪), §12. Bulgu, Akademik Yapı'nın katalog
 > sekme şeridinde `icon: "doc"` adının aylardır ikonsuz çizilmesiyle görüldü; o ayak aynı turda
 > düzeltildi, tipin kendisi açık kaldı. Defter **70**.
@@ -96,7 +100,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-200` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-201` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -1479,6 +1483,34 @@ içe aktar" düğmesini **ekrandan kendisi** kullanacak, Rehberlik'i de elle ekl
 gerçek kullanıcı yolunu ölçmek; veriyi arkadan doldurmak o ölçümü yok ederdi.
 ⬜ **Madde açık kalıyor:** açılış akışı hâlâ branşları tohumlamıyor, yani **bundan sonra açılan her okul** yine
 branşsız doğacak. Kalıcı düzeltme (açılışta tohum + mevcut boş okullara backfill) sıradaki turlarda yapılacak.
+⚠️ **Kararın dayandığı yol fiilen yoktu:** "kullanıcı düğmeye kendisi basacak" derken ekrandaki düğmenin hiçbir uç
+çağırmadığı görülmemişti — bkz. `TB-200`. Düğme aynı gün gerçek uca bağlandı; karar ancak bundan sonra
+uygulanabilir hâle geldi.
+
+### `TB-200` · Branş ekranındaki "MEB'den Getir" düğmesi hiçbir uç çağırmıyor; boş listede "hepsi zaten var" diyor 🟠
+
+Altınay B4 turunda **kullanıcı ölçtü** (2026-09-16): Altınay'da branş listesi boş, "MEB'den Getir"e basınca
+*"MEB branş listesi güncel — yeni kayıt bulunamadı"* çıkıyor; başka okullarda liste dolu görünüyor.
+
+Ölçüm: düğme hiçbir istek atmıyor — `subject-area-catalog.tsx` yalnız o toast'ı yazıyordu
+(`onClick={() => api.toast("MEB branş listesi güncel — yeni kayıt bulunamadı")}`). Sunucu tarafı **hazırdı**:
+`POST /api/v1/branches/import-meb` (`ImportMebBranchesCommand`, idempotent, `added`/`skipped` döner,
+izin `school-settings.update-academic-structure`) ve OpenAPI şemasında kayıtlı
+(`ApiResponseOfImportMebResult`). Web'in `packages/api/src/branches/endpoints.ts` dosyası bu ucu hiç
+bağlamamış; dosya başı yorumu da yalnız `GET/POST /branches + PUT /{id} + PUT /{id}/status` sayıyor.
+
+İki kat zarar: **(a)** ekran kullanıcıya yanlış bilgi veriyor — liste boşken "hepsi zaten var" diyor, yani boşluğun
+sebebi tohumlama eksikliği (`TB-193`) iken kullanıcı "içe aktarım çalıştı, MEB'de branş yok" sonucuna varıyor;
+**(b)** `TB-193`'ün kullanıcı kararı ("düğmeyi ekrandan kendim kullanacağım") uygulanamıyordu.
+
+Sınıf olarak bu, `eksik-ekran-eksik-yetkiyi-gizler` kalıbının tersi: uç yazılmış, ekran onu hiç çağırmamış ve
+**çağırmış gibi** cevap vermiş. Aynı dosyada ölçülen ikinci bir boşluk: `GET /api/v1/branches/meb` (MEB kataloğunu
+listeleyen uç) da web'de hiç kullanılmıyor.
+
+✅ **Kapatıldı — 2026-09-16.** `importMebBranches` ucu + `useImportMebBranches` kancası yazıldı, düğme gerçek
+mutasyona bağlandı ve toast artık sunucudan dönen sayıları söylüyor (ders kataloğunun `runImport` deseni). Boş
+liste metni de düzeltildi: "Henüz tanımlı branş yok" yerine ne yapılacağını söyleyen metin.
+⬜ **Canlı doğrulama kullanıcıda:** Altınay'da düğmeye basıp 15 branşın gelmesi görülecek.
 
 ### `TB-194` · Müfredat saat kataloğu okulun kademelerini yok sayıyor 🟡
 
