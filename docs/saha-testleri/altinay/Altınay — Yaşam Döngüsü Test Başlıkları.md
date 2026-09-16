@@ -126,17 +126,17 @@ Her başlıkta ortak denetim eksenleri:
 
 | ID | Başlık | Durum | Bulgu |
 |---|---|---|---|
-| B5.1 | Dersliklerin tanımlanması | ⬜ | |
-| B5.2 | 9 şubenin açılması ve ev derslikleri | ⬜ | |
+| B5.1 | Dersliklerin tanımlanması — Altınay'da bugün **0 derslik**; şube açmak için derslik **şart değil** (ev dersliği alanı boş bırakılabilir) | ⬜ | |
+| B5.2 | 9 şubenin açılması ve ev derslikleri — **ön koşul yok, bugün başlanabilir:** ders kataloğu, müfredat ve öğretmen hiçbiri denetlenmiyor. 2026-09-16 turunda iki denetim kusuru düzeltildi: şube açarken artık **okulun kendi kademe listesi** süzgeç (önce Anadolu Lisesi'nde "2-A" açılabiliyordu, `TB-196`) ve rehber öğretmen kontrolü gerçekten okulun öğretmenine bakıyor (önce sabit "var" diyordu, `TB-197`) | ⬜ | `TB-196` ✅ · `TB-197` ✅ |
 
 ### B6 · Kadro
 
 | ID | Başlık | Durum | Bulgu |
 |---|---|---|---|
-| B6.1 | 14 öğretmenin girilmesi — Excel aktarımı ile tek tek giriş farkı | ⬜ | |
-| B6.2 | Ana ve yan branş (bir öğretmen iki dile giriyor) | ⬜ | |
-| B6.3 | Öğretmen davetleri ve kabulleri | ⬜ | |
-| B6.4 | Müdür yardımcısı hem öğretmen hem idareci — ayrı rol yok, ürün nasıl karşılıyor? | ⬜ | |
+| B6.1 | 14 öğretmenin girilmesi — Excel aktarımı ile tek tek giriş farkı (toplu aktarım yolu **var**) | ⬜ | |
+| B6.2 | Ana ve yan branş (bir öğretmen iki dile giriyor) — **ön koşul:** Altınay'ın branş kataloğu **boş**; önce "MEB branşlarını içe aktar" çalıştırılmalı (15 satır tek işlemde), sonra **Rehberlik** elle eklenmeli — kadronun 13 branşından katalogda olmayan tek branş o | ⬜ | `TB-193` |
+| B6.3 | Öğretmen davetleri ve kabulleri — **davette branş zorunlu değil** ve kabulde de sorulmuyor; branşsız öğretmen sessizce girilebiliyor, duvar B9'da çıkıyor ("branşı olmayan öğretmene görevlendirme yapılamaz") | ⬜ | |
+| B6.4 | Müdür yardımcısı hem öğretmen hem idareci — **yapı destekliyor, rol kataloğu desteklemiyor.** Kişi birden çok profil ve çoklu aktif rol taşıyabiliyor; ama ara rol yok: idari yetki vermek **okulun tamamına erişim** vermek demek | ⬜ | `E-29` |
 | B6.5 | Soyadı yer tutucu olan iki öğretmen; soyadın sonradan düzeltilmesi | ⬜ | |
 
 ### B7 · Öğrenci kaydı

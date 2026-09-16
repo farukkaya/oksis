@@ -1488,6 +1488,13 @@ hepsi ortaokul satırları. Yani Ders Kataloğu ekranı lisede ortaokul saatleri
 ⬜ Kapatma yolu: katalog sorgusu okulun kademe listesiyle süzsün; kademe parametresi ya sözleşmeye girsin ya da
 kaldırılsın (bugün ikisi de değil).
 
+✅ **Kapandı — 2026-09-16 (commit edildi, `6cefeed8`).** Sorgu okulun aktif kademe listesiyle süzüyor;
+`TB-191`'in çeviri katmanı olduğu gibi kullanıldı, **ikinci bir çeviri yazılmadı**. Kademe parametresi
+**sözleşmeye alındı** (kaldırmak seçenek değildi: tanımlı değildi ama gönderilince sessizce yok sayılıyordu);
+artık gerçekten süzüyor ve okulun listesinde olmayan kod boş liste döndürüyor. 2 yeni test.
+➕ **Kusurun neden fark edilmediği kayda değer:** gösterilen sayılar "yanlış" değildi, **başka okul türünün doğru
+sayılarıydı** — lise ekranında ortaokul saatleri. Yanlış veri değil, yanlış bağlam.
+
 ### `TB-195` · Sınav türü kataloğu global ve okul tarafından değiştirilemiyor 🟠
 
 Altınay B4 ölçümünde çıktı (2026-09-16). `master.exam_types` 8 satır ve `ExamType : MasterEntity` — `school_id`
@@ -1501,6 +1508,22 @@ satır bugün **Altınay'da da duruyor**. Yani Altınay 2. dönemde üç yazıl�
 
 ⬜ Kapatma yolu: sınav türleri okul kapsamına taşınır (master çekirdek + okul eklemesi) ya da değiştirme yetkisi
 açıkça platforma verilir. Global tabloya elle satır eklemek bugün **bütün okulların** sınav yapısını değiştiriyor.
+
+✅ **Katalog ayağı kapandı — 2026-09-16 (commit edildi, `6cefeed8`).** `TB-191`'in deseni birebir uygulandı:
+çekirdek tablo, satırları ve kimlikleri **aynen** korundu; okul kapsamlı tablo geldi, benzersizlik okul içine
+indi, içe aktarım tek yerde ve açılışta tohumlanıyor (`TB-193` dersi: dev okulları ham SQL'le doğduğu için o yola
+da bağlandı). **Tip adı ve oluşturma imzası korunduğu için türü okuyan ~20 sorgu değişmeden** tenant süzgecine
+girdi.
+**Çeviri katmanı gerekmedi ve gerekçesi yazıldı:** türü anahtarlayan iki tablonun ikisi de tenant tablosu, göç
+onları okulun kimliklerine çevirdi — yani iki kimlik uzayı ürün kodunda bir arada yaşamıyor. Derste çeviri şarttı
+çünkü orada iki **platform** tablosu çekirdek kimlikte kalmıştı.
+Göç ölçümü: altı okulun her birinde **8 tür** (Altınay dâhil), çekirdek 8 satır kaldı, 4 sınav penceresi ve 18
+değerlendirme kendi okulunun satırına bağlandı, **çapraz tenant satır 0**.
+
+⬜ **Kalan ayak — kullanıcı kararı (2026-09-16): yönetim uçları yazılacak.** Okul kendi türünü ekleyip
+pasifleştirebilsin ve ekranda görebilsin. Bugün domainde `CreateCustom`/`Activate`/`Deactivate` **hazır** ama
+komut ve uç yok; pratik sonuç: Altınay'da başka okul için eklenmiş "3. Sınav" **hâlâ görünüyor** — fark şu ki
+artık yalnız Altınay'ın satırını düşürmek yetiyor ve bu başka okulu etkilemiyor. Uygulama sürüyor.
 
 ### `E-29` · İdareci / müdür yardımcısı rolü yok — idari yetki vermek tam yönetici yapmak demek 🟡
 
@@ -1529,6 +1552,12 @@ kodunu arıyor, master'da anaokulunun kodu `"0"` → **saf anaokulu açılışı
 ⬜ Kapatma yolu: şube oluşturma okulun kademe listesini süzgeç olarak kullansın; kademe kodu eşlemesi tek yerden
 okunsun.
 
+✅ **Kapandı — 2026-09-16 (commit edildi, `6cefeed8`).** Şube oluşturma artık okulun **aktif** kademe listesiyle
+süzüyor (açık `SchoolId`); pasifleştirilmiş kademe de dışarıda kalıyor, master yalnız kod için join'leniyor.
+İkinci ayak için **tek kaynak** çıkarıldı: okul türü → kademe kodu eşlemesi artık tek bir kuralda yaşıyor ve
+tohumlama handler'ındaki kopya kaldırıldı — yamalama değil merkezî çözüm, ikinci bir çağıran aynı yanlışı
+kopyalayamaz. 3 test: liste dışı kademe reddedilir, pasif kademe reddedilir, saf anaokulu açılışı kademesini alır.
+
 ### `TB-197` · Rehber öğretmen doğrulaması stub — daima "var" diyor 🟡
 
 Altınay B5 ön ölçümünde çıktı (2026-09-16). Şube oluşturmada rehber öğretmenin varlığını denetleyen
@@ -1539,6 +1568,14 @@ rehber olarak atanabilir; kusur ancak o öğretmenden veri okunmaya çalışıld
 kapattığı kalıp), ya da alan zorunlu değilse kontrol kaldırılıp beklenti belgeye yazılsın. Bugünkü hâli
 "kontrol var" yanılgısı üretiyor.
 
+✅ **Kapandı — 2026-09-16 (commit edildi, `6cefeed8`).** Kontrol artık okulun öğretmen profillerine **açık
+`SchoolId` yüklemiyle** bakıyor ve görevi sona ermiş öğretmeni reddediyor; ölçüt kardeş komutla (`SetHomeroom`)
+aynı. Alan zorunlu olmadığı için boş bırakmak geçerli kalıyor, yalnız **verilen** kimlik doğrulanıyor. Hata
+mesajı da gerçeği söyleyecek biçimde düzeltildi. 3 test: başka okulun öğretmeni reddedilir, ayrılmış öğretmen
+reddedilir, okulun aktif öğretmeni kabul edilir.
+➕ Test kurulumunda **`TB-190` dersi uygulandı**: sahte bağlamda tenant alanı yansımayla kuruldu — kurulmasaydı
+sorgu boş küme döner ve test iş kuralını değil kurulumun eksikliğini ölçerdi. Gerekçe test dosyasında yazılı.
+
 ### `TB-198` · `school_onboarding_status` ölü tablo — açılış ilerlemesi hiçbir yerde görünmüyor ⚪
 
 Altınay ölçümünde çıktı (2026-09-16). Tablo Altınay'da **6 satır** taşıyor, hepsi `Pending`. Satırları yaratan
@@ -1547,6 +1584,21 @@ de hiçbir zaman ilerliyor.
 
 ⬜ Kapatma yolu: ya tüketicisi yazılır (açılış kontrol listesi ekranı — yeni okulun ilk gününde işe yarar) ya da
 tablo ve onu yazan handler kaldırılır. Bugünkü hâli, var olmayan bir özelliğin veri izini biriktiriyor.
+
+➕ **İş büyüklüğü ölçüldü (2026-09-16):** *(A) tüketicisini yazmak* — okuma sorgusu + DTO, üç ilerletme komutu
+(domainde `MarkInProgress`/`MarkCompleted`/`Skip` **hazır**), uçlar, **yeni izin** (seed + göç + rol eşlemesi), bir
+de ekran. Ama asıl iş bunlar değil: **altı adımın "tamamlandı" ölçütü bir ürün kararıdır** — otomatik ilerleyecekse
+altı ayrı olay kancası gerekir, elle işaretlenecekse ekran + yetki kuralı. *(B) temizlik* — 5 dosya (192 satır) +
+iki bağlam satırı + bir göç; tüketici, izin, test ve arayüz referansı olmadığı için yayılım yok, 30-45 dakika.
+Bugünkü iz: dev veritabanında 12 satır, hepsi `Pending` (6'sı Altınay).
+
+⬜ **Karar (2026-09-16, kullanıcı): daha geniş çerçevede düşünülecek; madde açık iş olarak kalıyor.** Yani ne
+temizlenecek ne de bugünkü hâliyle tüketici yazılacak. Çerçeve sorusu şu: **okulun OKSİS'i teslim alma süreci
+ürün içinde görünür bir şey mi olmalı?** Altınay saha testi bunun canlı örneği — B1'den B10'a kadar giden sıra
+(ayarlar → sezon → katalog → şube → kadro → öğrenci) bugün yalnız bu belgede yaşıyor, üründe karşılığı yok.
+Karar verilirken birlikte düşünülmesi gerekenler: `TB-193` (yeni okul branşsız doğuyor), `TB-192` (lise kataloğu
+eksik), `E-24`'ün "seed gerçek yolu ölçmüyor" kalıbı ve bu turda ölçülen "yeni okulun ilk günü" kusurları
+(`TB-168`, `TB-173`, `TB-185`). Ölü tablo bu tartışmanın **sonucuna** göre ya doldurulur ya kaldırılır.
 
 ### `TB-190` · Sahte bağlamla yazılan testte tenant alanı boş kalıyor; okul süzen sorgular sessizce "hepsi reddedildi" ölçüyor 🟡
 
