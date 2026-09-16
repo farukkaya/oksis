@@ -92,7 +92,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-190` · `E-29` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-191` · `E-29` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -108,10 +108,10 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 13 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 41 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 18 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **75** | |
+| **Toplam** | **76** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 48 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
 
@@ -372,6 +372,41 @@ kapatma, iptal) bu boşluğu yönetsel olarak kapatıyor ama **öğretmen taraf�
 - Öğrenciye bildirim gitmeli mi, ödev listesi/panosu nasıl güncellenir — ürün kararı.
 - Aynı sınıfın kardeşi: vekâleten yayınlama (`:publish-for`) ve nöbet vekâleti; oradaki dil ve kalıp emsal alınmalı.
 - Öğretmen ayrılışının kendisi bir olay mı (toplu devir), yoksa ödev ödev mi yapılır — ölçülmeli.
+
+✅ **Tasarlandı ve kararları bağlandı — 2026-09-16.** Plan: [[2026-09-16-odev-devri-e28]]. Uygulama sürüyor.
+**Ölçümden iki dayanak:** (1) vekâleten yayın bugün sahibe **hiç dokunmuyor**, "kim yaptı" bilgisini denetim satırı
+taşıyor; ders vekâleti de devri ayrı bir kayıtta tutup öğretmeni devretmiyor — yani OKSİS'te "başkası adına iş"
+sahipliği ezerek değil **ikinci bir olgu eklenerek** taşınıyor. (2) **Öğretmen ayrılışının kodda olayı yok**
+(`Terminate` düz bir setter, olay yayınlamıyor), yani "ayrıldı → hepsini devret" otomatiği olmayan bir olayı icat
+etmeyi gerektirirdi → toplu devir kapsam dışı.
+**Kullanıcı kararları:** sorumlu ayrı nullable alan (`OwnerTeacherPersonId` dokunulmaz, `TB-109` ile çelişmez) ·
+devri yalnız idare yapar · **yeni sorumlu tam sahip yetkisi alır** (taslağı düzeltip kendi yayınlayabilir) ·
+yalnız `Draft`/`Published` · **gerekçe koşullu: ödevi yazan öğretmen hâlâ çalışıyorsa zorunlu, ayrılmışsa isteğe
+bağlı** (çalışan birinin ödevini elinden almak açıklama ister) · denetim kaydına **kimden/kime** kolonları + göç ·
+ders programı kontrolü zorunlu değil (yerine geçen öğretmen programa işlenmeden önce devri imkânsız kılardı) ·
+v1'de bildirim yok · **öğrenci ve veli ekranında yeni sorumlu görünür, ayrı bir alanla** (mevcut alanın anlamını
+değiştirmek `TB-188`'in "tek alanda iki politika" hatasının kardeşi olurdu) · geri alma aynı uçta `null` ile.
+
+✅ **Uygulandı ve kapandı — 2026-09-16 (commit edildi ve push edildi).** Sunucu ve yüzey **aynı turda**
+(`TB-188`'in dersi). Domain: nullable sorumlu alanı, etkin sorumlu türetmesi tek yerde; sahibine geri verme alanı
+**boşaltıyor** — "hiç devredilmemiş" ile "geri verilmiş" tek durum, ikinci gerçek doğmuyor.
+**Kaçınılmaz ikiz ve bekçisi:** EF-Ignore property sunucu sorgusuna konulamaz ama "Ödevlerim" soruyu veritabanına
+sormak zorunda; SQL yüklemi ayrı yazıldı ve ikisinin ayrışmasını bir test çarpım gezerek kilitliyor, ayrıca
+property EF-Ignore bekçisinin listesine eklendi — **bu bekçi ilk kez gerçek bir işte konuştu** (bkz. aşağıdaki
+yanlış pozitif notu).
+Kapı: üçüncü erişim kipi ve kip eşlemesi **birlikte** yazıldı; eşleme unutulsaydı detay ucu çalışma zamanında
+patlardı, iki bekçi testi bunu kilitliyor. Devirden sonra ödevi yazan artık sahip değil (testle kilitli).
+Gerekçe kuralı handler'da (öğretmenin çalışma durumu DB'den okunuyor), doğrulayıcı yalnız biçimi denetliyor;
+arayüzdeki koşullu alan **aynı kaynaktan** besleniyor ve sunucunun reddini olduğu gibi gösteriyor.
+Uç yanıtı bilinçli olarak detay DTO'su **değil**: uç taslakta da çalışıyor, oysa detay ucu taslağı idareye 404
+veriyor — detay dönseydi başarılı bir devir istemciye hata gibi görünürdü.
+Testler: Domain 121 · Application 363 · Api 44 (ödev süzgeçli) · `Oksis.Tests` 65/65 · core 46 · api-mocks 137.
+⬜ **Kalan iki ayak:** denetim kaydının "kimden/kime" alanları istemciye bağlanmadı — çünkü **ödev denetim izinin
+hiç tüketicisi yok** (`TB-112`'nin devamı); ve ödev yönetme izni olan biri ödevi kendi yazdıysa detay ekranında
+devir düğmesini görmüyor (idare listesinde görüyor) — yönü güvenli, kayıtlı.
+➕ **Yol boyunca iki kusur düzeltildi:** yeni test dosyası hiç derlenmediği için beş ölçümü bir kez bile
+koşmamıştı (`TB-190`), ve EF-Ignore bekçisi bir **yanlış pozitif** verdi — erişim sorguda değil, sorguyu açan
+`if` koşulundaydı; bekçiye muafiyet eklemek yerine erişim ayrı deyime alındı, yani bekçi delinmedi.
 
 ## 11. Bildirimler 🟠
 
@@ -1335,6 +1370,28 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
 2. **(c) iki gerçek sürüyor:** topbar dönemi tarih aralığından, sunucu `Status`'tan çözüyor. Bu düzeltme ikisini
    *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
    1. dönemi aktif görecek.
+
+### `TB-190` · Sahte bağlamla yazılan testte tenant alanı boş kalıyor; okul süzen sorgular sessizce "hepsi reddedildi" ölçüyor 🟡
+
+`E-28` uygulamasında ölçüldü (2026-09-16) ve **beş testi birden yanlış yoldan geçiriyordu**.
+
+`Profile.AssignTo` yalnız `PersonId` kuruyor; `SchoolId`'yi gerçek koşuda insert sırasında
+`TenantSaveChangesInterceptor` dolduruyor. Sahte `DbContext`'te interceptor **yok**, alan `Guid.Empty` kalıyor —
+dolayısıyla `pr.SchoolId == schoolId` süzen her sorgu **boş küme** döndürüyor. Test yazan kişi bunu görmez:
+handler beklenen hata mesajını verir, iddia geçer ya da "reddedildi" dalında doğrulanır; oysa ölçülen şey iş
+kuralı değil, **kurulumun eksikliğidir**.
+
+Somut belirti: ödev devri testlerinde her devir *"Yeni sorumlu, bu okulda görevi süren bir öğretmen olmalıdır."*
+ile reddediliyordu; kod doğruydu, kurulum yanlıştı. Dosya o güne dek hiç derlenmediği için bu beş ölçüm **bir kez
+bile koşmamıştı**, yani kusur ancak derleme düzelince görünür oldu.
+
+Sınıf olarak [[bellek-ici-test-db-kisitini-zorlamaz]] dersinin kardeşi: bellek içi bağlam yalnız DB kısıtlarını
+değil, **interceptor'ların doldurduğu alanları da** taklit etmiyor. `TB-184` ve `TB-187` ile birlikte aynı aile —
+test altyapısının sessiz yanlışları.
+
+⬜ Kapatma yolu: profil/kişi kuran **ortak bir test fixture'ı** tenant alanını da kursun (bugün her testte elle,
+yansımayla yapılıyor ve çoğu test hiç yapmıyor). Yamalama yerine merkezî çözüm: aynı kalıbın kullanıldığı diğer
+test dosyaları da ona bağlanmalı.
 
 ### `TB-189` · Seed sezon verisi ürünün üretebildiği durumları temsil etmiyor ⚪
 
