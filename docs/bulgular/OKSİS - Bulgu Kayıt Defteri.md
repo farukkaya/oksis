@@ -92,7 +92,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-185` · `E-28` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-187` · `E-28` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -108,10 +108,10 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
 | 🟠 Yüksek | 12 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 37 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 39 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 16 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **69** | |
+| **Toplam** | **71** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 48 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
 
@@ -525,6 +525,25 @@ uç `404`, benzeri `200` + boş DTO dönüyor. **En az dört durum var:** sezon 
 · sezon aktif ama dönem yok · sezon ve dönem aktif. `TB-173` ve `D-20`'nin "— Sezonu" başlığı bu kararla
 kapanır.
 
+✅ **İstemci ayağı uygulandı — 2026-09-16 (commit bekliyor).** Durum tek çözücüde:
+`packages/core/src/academic-sessions/season-state.ts` → `resolveSeasonState` (dört durum, testli) + kanca
+`useSeasonState`. **`setup` ile `noSeason` ayrımı yalnız sezon listesi ucundan çıkıyor** — `current` ucu `Setup`
+sezonu hiç döndürmüyor. Yüzey bileşeni `SeasonStateEmpty`: `EmptyState`i sarıyor, kendi markup'ını yazmıyor, yeni
+CSS yok; **"Tekrar dene" asla sunmuyor** (hiçbir zaman başarıya dönmeyecek bir eylemdi), gerçek ağ/500 hatası hâlâ
+hata olarak çiziliyor. Bağlanan yüzeyler: devamsızlık riski (asıl bulgu), canlı yoklama, bugünkü devam KPI, not
+girişi, sezon geri sayımı, topbar seçicisi, tatil ekranı başlığı, mobil başlık ve bağlam modalı.
+Topbar'da üç yeni davranış: **kurulumdaki sezon artık yöneticiye kilitli satır + "Kurulumda" rozetiyle listeleniyor**
+(eski "taslak yıl hiç listelenmez" kararı, müdürün sezonu açtığı hâlde "—" görmesinin sebebiydi), seçiciye
+"Sezon Aç / Aktifleştir" yolu eklendi (bugüne dek tek giriş panodaki geri sayım kartıydı), durum noktası renk taşıyor.
+Ayrıca `seasonHeaderLine` core'dan **silindi** — sezon yokken `null` döndürüyordu, mobil başlık satırının kaybolma
+sebebi oydu. core 628 test yeşil (yeni 13), typecheck ve lint 6 pakette temiz.
+
+⬜ **Sunucu hizalaması açık ve sıraya alındı.** Aynı kök durum için **altı farklı sözleşme** ölçüldü: `current` 404,
+sezon listesi 200+`[]`, dönem listesi 200+`[]`, `attendance/risk` 404, `grades/summary` 200+boş DTO, `attendance/board`
+200+bayrak; ayrıca sınıf listesi `warning` alanı, dosya yükleme 422, kullanıcı/duyuru 409. İstemci artık bu
+dağınıklığa **bağışık** (durumu cevabın şeklinden değil sezon verisinden türetiyor), yani hizalama istemciyi
+kırmaz. Ölçümden çıkan iki somut kusur ayrı madde oldu: `TB-185`, `TB-186`.
+
 ➕ **2026-09-15 · Altınay saha testi, pano kartı envanteri** (`oksis-ui` @ `1bf6a51`, sezonsuz
 PLT-DOGRULAMA ve seed `s1` müdürüyle canlı GET): panonun 11 kartından
 - **sezondan bağımsız 2:** öğrenci ve öğretmen KPI (`student-stats`/`teacher-stats`, gerçek sıfır),
@@ -652,6 +671,11 @@ Aynı sınıfın pano ayağı `TB-168`; ikisi aynı merkezi "sezonsuz" kuralıyl
 
 ✅ **Karar (2026-09-16, kullanıcı):** `TB-168` ile ortak — sezona bağlı bütün yüzeyler tek bir boş durum
 bileşenine bağlanır, dört durum ayrılır (yok · kurulumda · aktif-dönemsiz · aktif). İkisi tek turda kapanacak.
+
+✅ **İstemci ayağı uygulandı — 2026-09-16 (commit bekliyor).** Ayrıntı `TB-168` bloğunda. Bu maddenin tablosundaki
+altı yüzeyin hepsi kapandı: seçici kapalı hâli, yıl bölümü boş metni, dönem bölümünün "bu yıl" yanlışı, bilgi
+kutusunun durum körlüğü, **mobil başlığın tamamen kaybolması** ve mobil modalın boş durumu. Sezonu açma yolu da
+seçiciye eklendi.
 
 ➕ **2026-09-16 · ara durum ölçüldü:** Altınay'da sezon açıldı ama `Setup` (henüz aktifleştirilmedi). `academic-sessions/current`
 yalnız `Active` sezonu döndürdüğü için topbar seçicisi hâlâ **"—"**; Redis'te `current-session` `NO_ACTIVE_SESSION` önbellekte.
@@ -1227,6 +1251,37 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
 2. **(c) iki gerçek sürüyor:** topbar dönemi tarih aralığından, sunucu `Status`'tan çözüyor. Bu düzeltme ikisini
    *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
    1. dönemi aktif görecek.
+
+### `TB-186` · `isSchoolDay` sezonun durumuna bakmıyor — kurulumdaki sezonun günleri ders günü sayılabiliyor 🟡
+
+`TB-168` sunucu ölçümünde çıktı (2026-09-16). `SchoolCalendarService` (`:31-45`) bir günün ders günü olup olmadığını
+yalnız `AcademicTerm` **tarih aralığından** çözüyor; sezonun ya da dönemin **durumuna bakmıyor**. Sonuç: henüz
+aktifleştirilmemiş (`Setup`) bir sezonun dönemleri bugünü kapsıyorsa gün "okul günü" sayılır ve `SessionMaterializer`
+o gün için yoklama oturumu üretmeye çalışır.
+
+Aynı kalıp `TB-179`'un (c) ayağının kardeşi: **tarih ekseni ile durum ekseni iki ayrı gerçek üretiyor.**
+
+⬜ Kapatma yolu: ders günü çözümü sezon/dönem durumunu da okusun (tek kural, tek yer); `TB-179`'un dönem çözümüyle
+birlikte ele alınmalı. Önce ölçülmeli: `SessionMaterializer` dönem durumuna ayrıca bakıyor mu, yani belirti bugün
+gerçekten oluşuyor mu.
+
+### `TB-185` · Sezonsuzluk cevabı bir saat önbellekte yapışıyor; sezonu açan yollar anahtarı temizlemiyor 🟡
+
+`TB-168` sunucu ölçümünde çıktı (2026-09-16). `GetCurrentSession` sorgusu `[Cacheable]` ve **başarısız sonuç da
+önbelleğe yazılıyor** (`CachingBehavior`), yani `NO_ACTIVE_SESSION` 404'ü `tenant:{schoolId}:current-session`
+anahtarında **1 saat** duruyor. Anahtarı yalnız dört domain olayı temizliyor; **sezon oluşturma, taslaktan açma,
+kurulumu iptal ve yeniden adlandırma temizlemiyor.**
+
+Belirti: müdür sezonu açar, ekran bir saate kadar "sezon yok" demeye devam eder. Gece turunda iki kez ısırdı
+(bildirim göçünden sonra `notification-config`, tatil düzeltmesinden sonra `holidays:*` elle temizlenmek zorunda
+kaldı) — bu, `TB-183`'ün kardeşi ve aynı sınıfın üçüncü örneği.
+
+İkinci ayak: `/current` ucunun 404'ü controller'a gömülü özel bir dal; `NO_ACTIVE_SESSION` kodunu
+`ResultExtensions.MapStatusCode` **tanımıyor** — aynı kodu başka bir handler döndürürse 422 alır.
+
+⬜ Kapatma yolu: sezonun durumunu değiştiren **her** yol anahtarı düşürsün (tercihen tek bir yerden, olay
+listesine güvenmek yerine); başarısız sonucun önbelleğe yazılıp yazılmayacağı bilinçli bir kural olsun; hata kodu
+merkezî eşlemeye taşınsın.
 
 ### `TB-184` · Entegrasyon testi paylaşılan DB'de küresel sayı bekliyor — takımla koşunca kırmızı ⚪
 

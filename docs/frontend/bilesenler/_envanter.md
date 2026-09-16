@@ -21,6 +21,7 @@ the CLI).
 | `FormDialog` | ⬜ planned | roadmap — form modalları şimdilik `Dialog` + kendi gövdesi (emsal ayarların `AModal`'ı) |
 | `ConfirmDialog` | ✅ built | `components/shared/confirm-dialog.tsx` — `Dialog` üstünde onay akışı (`confirmLabel`, `confirmVariant: primary/danger`, `busy`). İlk tüketici Zil Programı "yeniden üret" (`D-19`) |
 | `EmptyState` | ✅ built | `components/shared/empty-state.tsx` — `D-10` "kayıt yok / eşleşme yok" ayrımı (`filtered`); stil `screens.css .att-state` (`page`) ve `.ayr-empty` (`compact`). Öğrenciler, Öğretmenler, Veliler, Kullanıcılar, Davetler, Etkinlikler, Dağıtım Kısıtları + ayarlar `AEmpty` sarmalayıcısı; bkz. 2026-09-15 turu |
+| `SeasonStateEmpty` | ✅ built | `components/shared/season-state-empty.tsx` — sezona bağlı boş durum (`TB-168`/`TB-173`); `EmptyState`i SARAR, kendi markup'ını yazmaz. Pano kartları (devamsızlık riski, canlı yoklama, not girişi); bkz. 2026-09-16 sezon durumu turu |
 | `StatusBadge` | ⬜ planned | roadmap |
 | `Pager` | ✅ built | `components/shared/pager.tsx` — kullanıcılar+öğrenciler paylaşır (stil `screens.css .usr-foot`) |
 | `SelectCheckbox` | ✅ built | `components/shared/select-checkbox.tsx` — tablo/kart satır seçimi (stil `.usr-cb`) |
@@ -306,6 +307,58 @@ kayıt hiç yokken de "Filtreleri Temizle" diyordu. Doğru ayrım yalnız ayarla
   `ScheduleNoResult`/`pr-empty` — farklı tasarım iskeleti; ikisi de D-10 ayrımını zaten
   yapıyor. Davet partisi/parti listesi ve hata durumları `DvtState`'te kaldı (filtre
   ayrımı yok).
+
+## 2026-09-16 — Sezon durumu: dört hâl tek çözücüde (`TB-168` + `TB-173` + `D-20` başlık ayağı)
+
+Kullanıcı kararının merkezi uygulaması: sezona bağlı BÜTÜN yüzeyler tek bir çözücüden
+beslenir. **Yeni paylaşılan bileşen AÇILDI:** `SeasonStateEmpty`
+(`apps/web/components/shared/season-state-empty.tsx`). **Yeni core modülü:**
+`packages/core/src/academic-sessions/season-state.ts` (+ `season-state.test.ts`, 13 test).
+**Yeni paylaşılan kanca:** `useSeasonState()` (`packages/api/src/academic-sessions/queries.ts`).
+
+- **Gerekçe:** aynı kök durum yüzey yüzey ayrı yazılmıştı — pano risk kartı sezon yokken
+  **hata** çiziyordu ("Devamsızlık riski yüklenemedi · Tekrar dene", oysa hata yok ve
+  "Tekrar dene" hiçbir zaman başarıya dönmez), yoklama kartları `isSchoolDay` bayrağına
+  bakıyordu ("Bugün ders günü değil" — doğru ama yanıltıcı), geri sayım sabit "—" yazıyordu,
+  topbar seçicisi ad zincirinin sonunda `"—"`e düşüyordu, mobil başlığın bağlam satırı
+  **tamamen kayboluyordu** (`seasonHeaderLine` → `null`). [[yamalama-kabul-degil]].
+- **Dört durum:** `noSeason` · `setup` (açılmış, aktifleştirilmemiş) · `noTerm` · `ready`.
+  `setup` ayrı bir hâldir çünkü sunucu ayrımı vermiyor: `academic-sessions/current` YALNIZ
+  `Active` sezonu döndürür (yoksa 404 `NO_ACTIVE_SESSION`), `Setup` sezon **yalnız liste
+  ucunda** görünür. Çözücü bu yüzden iki kaynağı birlikte okur; liste verilmezse `setup` ile
+  `noSeason` ayrılamaz ve sonuç `noSeason` olur (sessiz varsayım uydurulmadı).
+- **Çözücü API'si:** `resolveSeasonState({ session, sessions?, termLabel?, now? }) → SeasonState`
+  (`key`, `isReady`, `needsSeasonSetup`, `seasonName`, `seasonStatus`, `termId`, `termLabel`,
+  `headline`, `title`, `description`). Yanında `seasonStateDescription(state, subject)`,
+  `seasonScopedTitle(state, suffix, fallback)` ve `SEASON_TERM_EMPTY_TEXT` (web seçicisi +
+  mobil modal aynı metni paylaşır). `termId` de buradan gelir — risk kartındaki
+  `useCurrentSession + resolvePlanningTerm` kopyası kalktı.
+- **`EmptyState` GENİŞLETİLMEDİ, SARILDI (karar gerekçesi):** `EmptyState`in sözleşmesi
+  `D-10` ekseninde kurulu ve `filtered` prop'u zorunlu — sezon durumu o eksenin üstünde
+  değil, yanında duran ikinci bir eksendir (dört hâl, filtreyle ilgisi yok). Her çağrı
+  yerinde `filtered={false}` yazdırmak sözleşmeyi anlamsızlaştırırdı (SOLID-S). Ama MARKUP
+  tek sahipli kaldı: `SeasonStateEmpty` kendi iskeletini yazmaz, `EmptyState`i `compact`
+  varyantıyla çağırır. **Yeni CSS yok.**
+- **Hata ↔ boş durum ayrıldı:** `SeasonStateEmpty` "Tekrar dene" ASLA sunmaz; gerçek hata
+  (ağ/500) hâlâ `DshCardError` çizer.
+- **`seasonHeaderLine` SİLİNDİ** (core): sezon yokken `null` döndürüyordu. Karşılığı
+  `state.headline` — hiçbir durumda boş kalmaz ("Sezon yok" da bir bağlamdır).
+- **Dokunulan yüzeyler:** pano (`attendance-risk-card`, `live-attendance-card`,
+  `attendance-kpi-card`, `grade-entry-card`, `summary-kpis`), topbar `season-context-picker`,
+  ayarlar `holiday-tab` başlığı (`D-20` "— Sezonu Tatilleri"), mobil `use-portal-header` +
+  `use-season-context` + `season-context-modal`.
+- **Topbar iki yeni davranış:** (1) kurulumdaki sezon artık YÖNETİCİYE listelenir (kilitli
+  satır + "Kurulumda" rozeti) — eski "taslak yıl hiçbir rolde listelenmez" kararı müdürün
+  sezonu açtığı hâlde "—" görmesine yol açıyordu; (2) **sezonu açma yolu seçiciye eklendi**
+  ("Sezon Aç" / "Sezonu Aktifleştir" → `/academic-sessions`), bugüne dek tek giriş panodaki
+  geri sayım kartıydı. Durum noktası da artık renk taşıyor (`.dot.warn` / `.dot.off`,
+  `season-picker.css`'e 2 kural).
+- **`useSeasonState` liste isteğini `enabled` ile KAPATMAZ:** seçicideki eski
+  `enabled: canPickYear` gerekçesi "ihtiyaç yok"tu; artık her rolün sezonsuz hâli doğru
+  yazması gerekiyor. Aynı `queryKey` mobil bağlam modaliyle paylaşıldığı için önbellekten gelir.
+- **Sunucuda DEĞİŞİKLİK YOK** (eşzamanlı ajan): aynı kök durum için 6 ayrı sözleşme ölçüldü
+  (404 `NO_ACTIVE_SESSION` · 404 `Error.NotFound` · 200 + boş DTO · 200 + `[]` ·
+  200 + `warning` · 409/422). Hizalama ayrı işe bırakıldı.
 
 ## 2026-09-16 — Diyalog temeli + Enter ile ilerleme (`D-19`, `B-51`, `TB-174` ekran ayağı)
 

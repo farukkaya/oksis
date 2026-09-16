@@ -59,7 +59,7 @@
 ## 5. Ortak bileşenler
 
 - `packages/ui/src/components/`: `anchored-menu`, `avatar`, `badge`, `button`, `card`, `icon`, `logo-mark`.
-- `apps/web/components/shared/`: `confirm-dialog`, `dialog`, `empty-state`, `filter-dropdown`, `forbidden-screen`, `kpi-card`, `page-header`, `pager`, `planned-screen`, `select-checkbox`, `sortable-th`, `toast`, `toast-host`.
+- `apps/web/components/shared/`: `confirm-dialog`, `dialog`, `empty-state`, `filter-dropdown`, `forbidden-screen`, `kpi-card`, `page-header`, `pager`, `planned-screen`, `season-state-empty`, `select-checkbox`, `sortable-th`, `toast`, `toast-host`.
 - `packages/ui/src/hooks/`: `use-grid-enter-nav` (satır × sütun alanlarda Enter ile ilerleme, son hücrede yeni satır).
 - **Diyalog kuralı (2026-09-16, `D-19`):** yeni ortalanmış modal `Dialog`, onay akışı `ConfirmDialog` ile yazılır. Scrim, Esc, kapatma çarpısı ve `role="dialog"` feature içinde yeniden yazılmaz; yeni çarpı sınıfı açılmaz. Eski özel modallar dokunuldukça kademeli taşınır.
 - Kabuk: `components/app-shell.tsx`, `route-guard.tsx`, `season-context-picker.tsx`, `role-favicon.tsx`, `theme-provider.tsx` (next-themes).
@@ -83,6 +83,7 @@
 | Henüz yapılmamış modül | `PlannedScreen` |
 | Hata | Gerekçe hatanın kendisinden gelir (`apiErrorDesc` / `mutationErrorDesc`). Ağ suçlayan sabit metin yasaktır (ESLint `X-08`). |
 | Sahipsiz mutasyon hatası | `ToastHost` üzerinden global toast (X-13) |
+| Sezon/dönem yok | `SeasonStateEmpty` (**hata DEĞİL**). Durum `@workspace/core :: resolveSeasonState` ile tek yerde çözülür; ekran kendi `if`ini yazmaz, `useSeasonState()` kancasından okur. Dört hâl: `noSeason` · `setup` · `noTerm` · `ready`. Ayrıntı: 2026-09-16 turu, [[_envanter]] |
 
 - Ekranların `states` matrisi (loading/empty/error/readonly) hook'ların gerçek durumundan okunur, yerel bir mock bayrağından okunmaz.
 
