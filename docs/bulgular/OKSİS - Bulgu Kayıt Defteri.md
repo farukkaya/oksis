@@ -92,7 +92,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-188` · `E-29` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-189` · `E-29` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -107,11 +107,11 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 2 | Tenant izolasyonu / güvenlik (`TB-139`) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 12 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 13 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 17 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **73** | |
+| **Toplam** | **74** | |
 
 **Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 48 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
 
@@ -282,6 +282,18 @@ işlemi gerçekten yapanı (idareyi) yazıyor ve `GET homework/{id}/audit` orada
 3. **İdare ödeve başka bir öğretmen atayabilmeli** — ayrılan öğretmenin ödevi yeni bir sahibe geçebilsin.
    Bu ayrı bir özellik: `E-28`.
 
+✅ **Genişleyen kapsam da uygulandı — 2026-09-16 (commit bekliyor).** İptal `OwnerOrManager` oldu: vekâleten
+yayınlanmış ya da sahibi ayrılmış ödevde **yanlış verilmiş bir ödevi geri çekebilecek kimse kalmıyordu**,
+idarenin tek aracı kapatmaktı ve kapatma öğrenciye açıklama bırakmaz. İdari kapatma için yeni denetim türü
+`ClosedByManager` (enum **sonuna** eklendi; göç gerekmediği ölçüldü — kolon düz `int`, check constraint yok ve
+`TB-121` bekçisi değişiklikten sonra yeşil koştu). **Yalnız sahibi olmayan kapattığında** satır yazılıyor:
+sahibinin kapatmasında "kim" sorusunun cevabı zaten belli, her kapatmaya satır yazmak denetim ekranını bilgi
+taşımayan satırlarla doldurup `Cancelled`/`SubmissionRemoved` gibi gerçekten bakılması gereken satırları boğardı
+(emsal `PublishedOnBehalf`). Testler: Domain 108 · Application 302 · Api 42 (süzgeçli) yeşil.
+⬜ **Arayüz borcu:** denetim ekranı yeni `"closed-by-manager"` etiketini tanımıyorsa satırı ham gösterir; ayrıca
+idarenin **iptal düğmesini görüp görmediği** ölçülmedi — sunucu artık izin veriyor ama ekran düğmeyi sahip-only
+gizliyor olabilir.
+
 ### `TB-110` · İdari teslim kaldırma kapanmış ödevde 409 🟡
 
 Uç 23 (`AdminRemoveHomeworkSubmission`) Faz 3'ün `Homework.RemoveSubmission`
@@ -298,6 +310,13 @@ ve ödevi yeniden açmanın yolu da yok. Domain metoduna gerekçeli **idari kol*
 kol için atlanacak, öğretmenin kendi yolu değişmeyecek. Kaldırma zaten denetim izine yazılıyor (`TB-112`'nin ucu
 onu gösteriyor).
 
+✅ **Uygulandı — 2026-09-16 (commit bekliyor).** `Homework.RemoveSubmission` artık **varsayılanı olmayan zorunlu**
+bir `removal` parametresi alıyor (`Self` | `Administrative`) — `TB-109`'un kapı kalıbının aynısı; isteğe bağlı
+olsaydı yeni bir kaldırma yolu kapıyı sessizce atlayabilirdi. Durum kapısı **yalnız `Self`** kolunda uygulanıyor,
+yani öğrencinin kendi yolu kapanmış ödevde hâlâ reddediliyor. Gevşeyen tek şey durum kapısı: soft-delete, zorunlu
+gerekçe, ikinci kaldırmanın reddi, kapsam kapısı (başkasının satırında 404) ve denetim satırı aynen duruyor.
+Enum kalıcı değil — kolon değil, metot parametresi; ikinci bir gerçek üretilmedi. 11 test yeşil.
+
 ### `TB-111` · Son teslim tarihi ileri alınan ödev ikinci kez hatırlatılmaz 🟡
 
 `HomeworkTracking.DueReminderSentAt` satır başına idempotency damgası; `UpdateContent`
@@ -310,6 +329,16 @@ ileri alındıysa sıfırla" da mümkün.
 `DueReminderSentAt` damgası sıfırlanır ve yeni tarihin öncesinde hatırlatma yeniden gider. Eşik konmadı: kullanıcı
 öngörülebilirliği seçti, yani öğretmen saati düzeltse bile bildirim gider. **Ölçülecek yan etki:** aynı ödevde
 arka arkaya yapılan küçük düzeltmeler bildirim yığını üretebilir; sahada gözlenip gerekirse eşik sonradan eklenir.
+
+✅ **Uygulandı — 2026-09-16 (commit bekliyor).** Son teslim tarihi **değiştiyse** (ileri ya da geri) bütün takip
+satırlarının hatırlatma damgası sıfırlanıyor; tarih değişmediyse damga duruyor.
+**Besleyen yüzey ölçülüp düzeltildi** ([[besleyen-yuzey-olculmeden-kapanmaz]]): `UpdateHomework` kapıyı
+`includeTracking: false` ile açıyordu, yani koleksiyon yüklenmediği için sıfırlama boş liste üzerinde dönüp
+**sessizce hiç olmayacaktı**. Hatırlatmanın gerçekten yeniden gittiği üç kapıda ayrı ayrı ölçüldü: satır süzgeci
+(`Unmarked && DueReminderSentAt == null`), hatırlatma penceresinin yeni tarihe taşınması ve bildirim
+tekilleştirme anahtarının farklı güne düşmesi. Tamamlamış öğrenciye ikinci hatırlatma yine gitmiyor. 6 + 3 test.
+⬜ **Ölçüm borcu:** `includeTracking: true` değişikliği birim testiyle yakalanamıyor (mock agregatın koleksiyonu
+zaten dolu geliyor); gerçek koruma entegrasyon koşusu, o da bu makinede bellek yüzünden koşturulamadı.
 
 ### `TB-112` · Ödev denetim kaydı yazılıyor, okuyan uç yok ⚪
 
@@ -1295,6 +1324,53 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
 2. **(c) iki gerçek sürüyor:** topbar dönemi tarih aralığından, sunucu `Status`'tan çözüyor. Bu düzeltme ikisini
    *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
    1. dönemi aktif görecek.
+
+### `TB-188` · `canEdit` iki politikayı tek boolean'da topluyor — idarenin yeni yetkileri hiçbir ekranda görünmüyor 🟠
+
+`TB-109`/`TB-110` turunun hemen ardından ölçüldü (2026-09-16). Sunucu artık `homework.manage` taşıyan idarenin
+ödevi **iptal etmesine, kapatmasına ve işaretlemesine** izin veriyor. Ama okuma yüzü açılmadı:
+
+| Alan | Bugünkü hesap | Sonuç |
+|---|---|---|
+| `GetHomeworkQueryHandler:79` `canEdit` | `isOwner && status is Draft or Published` | idare için **hep `false`**, `readOnlyReason = "adminView"` |
+| `GetHomeworkQueryHandler:80` / `GetHomeworkTrackingQueryHandler:113` `canMark` | `isOwner` / `resolvedView == Owner` | idare ızgarayı işaretleyemiyor |
+
+Web (`homework-detail-screen.tsx:89`) ve mobil (`:389`) bütün eylem bloğunu `detail.canEdit` ile sarıyor;
+işaretleme `tracking.canMark`'a, toplu tamamlama `!readOnly`'ye bağlı. Yani **kural sunucuda var, yüzeyde yok** —
+`TB-32`'nin tersi. `TB-109`'un çözdüğü "ödev sonsuza dek kontrol bekliyor" durumu kullanıcı açısından **hâlâ
+duruyor**; düzeltmenin faydası hiçbir ekrana ulaşmıyor.
+
+**Dikkat — `canEdit`'i idareye açmak yanlış çözüm.** O alan iki ayrı politikayı tek boolean'da topluyor:
+düzenleme/yayın/silme (`OwnerOnly`) ile iptal/kapatma (`OwnerOrManager`); üstelik `isReadOnly = !canEdit` ondan
+türüyor. `true` yapmak idareye düzenleme ve yayın affordance'larını da açar ve salt-okunur bandını kaldırır.
+
+⬜ Kapatma yolu: yetenek alanları **politika başına** ayrılır ve **yazma kapısının kendisiyle aynı kaynaktan**
+türer (`HomeworkWriteGate`'in erişim kipi); `canMark` `OwnerOrManager`'a çekilir; `readOnlyReason`/`isReadOnly`
+yeni ayrıma göre gözden geçirilir (idare "salt-okunur" değil, **sınırlı yetkili**). İstemci mock'ları ve onları
+kilitleyen testler **aynı turda** güncellenmeli — yoksa mock'lu arayüzde görünen ama gerçek API'de görünmeyen
+düğme doğar.
+
+✅ **Kapandı — 2026-09-16 (commit bekliyor).** Tek kaynak: yeni `HomeworkCapabilities`; her alan **yazma kapısının
+kendi erişim kipinden** türüyor, yani okuma yüzü ile kapı aynı gerçeği söylüyor. `canEdit`'in **değeri değişmedi**,
+yalnız anlamı daraldı (sahip-only kol: düzenleme, yayın, taslak silme); `canCancel` ve `canClose` eklendi, `canMark`
+`OwnerOrManager`'a çekildi. `isReadOnly` artık `!canEdit` değil, **"hiçbir yazma yeteneği yok"**; `readOnlyReason`'a
+additive olarak `managerView` eklendi — idare yayındaki ödevde salt-okunur değil, **sınırlı yetkili**; kapanmış
+ödevde `adminView` almaya devam ediyor. Bir bekçi testi idareye düzenlemenin **hâlâ kapalı** olduğunu kilitliyor.
+**Asıl sürpriz yüzeyde çıktı:** web'de idare `activeRole === "admin"` ile **ayrı bir ekrana** gidiyor ve orada
+"Kapat" düğmesi **hiç yoktu**, "İptal et" ekranın kendi durum tahminine bağlıydı, takip ızgarası sabit
+salt-okunur bırakılmıştı. Yalnız sunucuyu düzeltmek hiçbir düğme üretmeyecekti. Mock'lar ve onları kilitleyen
+testler aynı turda hizalandı. Ölçümler: `dotnet build` 0, Homework süzgeçli 318 test, api-mocks 273, core 633,
+typecheck beş pakette temiz.
+⬜ **Kalan iki ayak:** mobilde "Kapat" eylemi sahip için de yok ve idarenin mobil ödev yüzeyi hiç bulunmuyor;
+ayrıca ödev ekranlarının hiç render testi yok, görünürlük yalnız alan düzeyinde kilitlendi.
+
+➕ **Aynı turda bulunan ikinci kusur (düzeltildi):** `packages/core/src/homework/types.ts` içindeki
+`HomeworkAuditKind` birleşimi, sözleşme yazılmadan önce **uydurulmuş** camelCase bir tahmindi
+(`statusMarked`, `exemptSet`, `recordAddedAfterPublish`…) ve sunucunun `ToWire` eşlemesindeki **hiçbir değerle
+eşleşmiyordu**; tüketicisi olmadığı için yıllarca sessizce yanlış kaldı ([[serilesmis-sekil-sozlesmedir]]).
+Değerler sunucuya birebir çekildi, bilinmeyen tür için "Diğer işlem" yedeği eklendi (satır gizlenmiyor, ham tel
+değeri basılmıyor). **Ödev denetim izinin kendisinin hâlâ hiçbir ekranı yok** — uç dün gece açıldı, tüketicisi
+yazılmadı (`TB-112`'nin devamı).
 
 ### `TB-187` · Mapster'ın paylaşılan yapılandırması paralel test koşumunda çöküyor ⚪
 
