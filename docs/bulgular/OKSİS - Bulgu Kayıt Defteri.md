@@ -263,6 +263,10 @@ devri demiyor, spec'e uyuldu — ama ayrılmış öğretmen bir daha giriş yapm
 da açar mı? İkincisi Kulüpler'deki "kendi kulübüne bakan müdür yardımcısı danışman
 görür" kalıbının kardeşidir.
 
+✅ **Karar (2026-09-16, kullanıcı): yönetme izni işaretleme kapısını da açar.** Sahiplik devredilmez — ödevi kimin
+yazdığı bilgisi bozulmadan kalır; ödev yönetme izni taşıyan idare, sahibi olmasa da işaretleme ve kapatma
+yapabilir. Kulüplerdeki danışman kalıbının kardeşi.
+
 ### `TB-110` · İdari teslim kaldırma kapanmış ödevde 409 🟡
 
 Uç 23 (`AdminRemoveHomeworkSubmission`) Faz 3'ün `Homework.RemoveSubmission`
@@ -514,6 +518,13 @@ Kanıt: `kanit/k27-mudur-ilk-ekran.png`.
 yok, sezon açıldığında risk burada görünür"). Kural tek kartın değil, sezona bağlı bütün pano
 kartlarının; [[yamalama-kabul-degil]] gereği sezon-yok durumu ortak bir bileşene çekilmeli.
 
+✅ **Karar (2026-09-16, kullanıcı): ortak boş durum bileşeni.** Sezona bağlı bütün yüzeyler tek bir
+"sezon yok / kurulumda" bileşenine bağlanacak — pano kartları, topbar seçicisi, mobil başlık ve tatil
+ekranı aynı dili konuşacak. Sunucu tarafındaki sözleşme çelişkisi de hizalanacak: aynı kök durum için bir
+uç `404`, benzeri `200` + boş DTO dönüyor. **En az dört durum var:** sezon yok · sezon kurulumda (`Setup`)
+· sezon aktif ama dönem yok · sezon ve dönem aktif. `TB-173` ve `D-20`'nin "— Sezonu" başlığı bu kararla
+kapanır.
+
 ➕ **2026-09-15 · Altınay saha testi, pano kartı envanteri** (`oksis-ui` @ `1bf6a51`, sezonsuz
 PLT-DOGRULAMA ve seed `s1` müdürüyle canlı GET): panonun 11 kartından
 - **sezondan bağımsız 2:** öğrenci ve öğretmen KPI (`student-stats`/`teacher-stats`, gerçek sıfır),
@@ -638,6 +649,9 @@ Aynı sınıfın pano ayağı `TB-168`; ikisi aynı merkezi "sezonsuz" kuralıyl
 ([[yamalama-kabul-degil]]).
 
 ⬜ Kapatma yolu: pano ve bağlam seçicisi için ortak sezonsuz durum kararı (ürün kararı bekliyor).
+
+✅ **Karar (2026-09-16, kullanıcı):** `TB-168` ile ortak — sezona bağlı bütün yüzeyler tek bir boş durum
+bileşenine bağlanır, dört durum ayrılır (yok · kurulumda · aktif-dönemsiz · aktif). İkisi tek turda kapanacak.
 
 ➕ **2026-09-16 · ara durum ölçüldü:** Altınay'da sezon açıldı ama `Setup` (henüz aktifleştirilmedi). `academic-sessions/current`
 yalnız `Active` sezonu döndürdüğü için topbar seçicisi hâlâ **"—"**; Redis'te `current-session` `NO_ACTIVE_SESSION` önbellekte.
@@ -851,6 +865,9 @@ lint temiz (codegen elle düzeltmeyle birebir aynı çıktı).
 açık, push açık, e-posta açık, **SMS kapalı** (`E-23`: uygulaması yok), geç gelme açık. Tersi seçilirse yalnız
 `src/Oksis.Domain/Modules/Schools/NotificationConfigDefaults.cs` değişir (tohum, backfill, okuma yüzü ve üç kanal
 aynı sabitleri okuyor) + bir düzeltme SQL'i.
+
+✅ **Karar (2026-09-16, kullanıcı):** varsayım **onaylandı** — okul açılışında ana anahtar açık, push açık,
+e-posta açık, SMS kapalı, geç gelme açık. Kodda uygulanan hâli geçerli.
 **Operasyonel not:** göç DB'ye doğrudan yazdığı için Redis `notification-config` anahtarı bayat kaldı; ekran ilk
 `PUT`'a kadar eski değeri gösterdi. Göçle veri değiştiren her turda ilgili önbellek anahtarı temizlenmeli.
 
@@ -931,6 +948,21 @@ Arayüzde `countHolidayDays` yarım günleri saymıyor, yeni `formatHolidayDurat
 (web + mobil); core 605 test yeşil, typecheck ve lint temiz.
 **Varsayım (onay bekliyor):** yan karttaki "Toplam N gün" *tam kapalı* gün sayısıdır, arife eklenmiyor (okul o gün
 açık). 0,5 saymak da savunulabilirdi.
+
+✅ **Karar (2026-09-16, kullanıcı) — varsayım DEĞİŞTİ:** yarım gün (arife) toplam süreye **0,5 gün** olarak
+girer: `Toplam gün = tam gün sayısı + (yarım gün sayısı × 0,5)`. Kullanıcının koyduğu ayrım da yüzeye taşınacak:
+**"kaç tarih tatil"** ile **"toplam tatil süresi"** aynı şey değildir (3 yarım gün = 3 kayıt ama 1,5 gün).
+Gösterim Türkçe ondalıkla ("11,5 gün"). Uygulama `oksis-ui`'de yapılıyor.
+
+✅ **Uygulandı — 2026-09-16 (commit bekliyor).** Çekirdek tek yerde: `holidayWeightsByDay()` takvim günü → ağırlık
+haritası kuruyor (yarım gün 0,5, tam gün 1); **çakışan günler iki kez sayılmıyor, en yüksek ağırlık kazanıyor** (arifenin
+üstüne okul tatili girilmişse o gün 1'dir, 1,5 değil). Dört soru dört ayrı alan oldu: kaç kayıt · kaç tarih · kaçı yarım
+gün · toplam kaç gün süre (`countHolidayDates` yeni). Biçimlendirme tek yerde (`formatDayCount`): "11,5 gün", tam sayıda
+",0" kuyruğu yok; `toLocaleString` kullanılmadı (core'un RN/Hermes gerekçeli mevcut kuralı). Yan kart artık "Tatil Günü
+13 tarih · Yarım Gün 3 tarih · Toplam Süre 11,5 gün" gösteriyor, aynı üç satır mobil ekrana da eklendi (orada daha önce
+hiç toplam yoktu). core 615 test yeşil (tatil mantığı 13 → 23), typecheck ve lint üç pakette temiz.
+**Varsayım:** `isHalfDay` kayıt düzeyinde tek bir bayrak olduğu için çok günlü bir yarım gün kaydında bütün günler 0,5
+sayılır; arife katalogda zaten kendi tek günlük kaydı olduğundan bu durum pratikte oluşmuyor.
 **Altınay ekranında yeniden ölçüm yapılmadı** — müdür parolası bilinmiyor; aynı katalog ve çözücü Altınay'a da
 uygulandığı için "Resmî 25 / Toplam 47 gün" sayaçlarının düzelmesi bekleniyor, uyanınca ekrandan teyit edilmeli.
 
@@ -1167,6 +1199,34 @@ aktivasyonu, başlangıç tarihi geçmiş dönemi etkinleştirmeyi ne öneriyor 
 ⬜ Kapatma yolu (ürün kararı): (a) sezon aktivasyonunda başlangıcı geçmiş dönem otomatik `Active` olur; (b) aktivasyon
 sonrası ve panoda "1. dönemi başlatın" uyarısı; (c) dönem çözümü tek kurala çekilir (topbar da `Status` okur ya da sunucu da
 tarih okur) — iki gerçek kalmamalı.
+
+✅ **Karar (2026-09-16, kullanıcı): (a) otomatik başlatma.** Sezon aktifleşirken başlangıç tarihi gelmiş dönem
+kendiliğinden `Active` olur; müdürün ek adımı kalmaz ve topbar ile sunucu aynı şeyi söyler. Elle etkinleştirme
+yolu duruyor (erken ya da geç başlatmak isteyen okul için). Kural `ActivateAcademicTerm`'ün iş kuralıyla ortak bir
+yere çekilecek, kopyalanmayacak; gün kararı okul yerel takviminden okunacak. Altınay'ın 1. dönemi sezon zaten
+`Active` olduğu için yeni kuralın dışında kalıyor, ayrıca onarılacak. Uygulama sürüyor.
+
+✅ **(a) uygulandı — 2026-09-16 (commit bekliyor).** Kural tek yerde: yeni `AcademicSessions/Shared/AcademicTermStarter.cs`
+(`SetupSeasonReverter` kalıbı; `SaveChanges` çağırmaz). **Elle etkinleştirme yolu da artık aynı çekirdeği çağırıyor**,
+yani ön koşullar, idempotanslık ve olay yayını tek yerde. Sezon aktifleşirken yalnız **bugünü kapsayan** dönem başlar;
+bitmiş dönem `NotStarted` bırakılır — `Close()` yalnız `Active` dönemde çalışıyor ve `AcademicTermClosedEvent` ile
+**otomatik karne üretimini** tetikliyor (BR-AS-009), yani hiç işlenmemiş dönemi kapatmak karne üretmek olurdu. Sezonda
+zaten aktif bir dönem varsa dokunulmaz; kapsayan dönem `Closed` ise aktivasyon hata vermez. Gün okul-yerel
+(`ISchoolCalendarService.GetLocalNowAsync`), sunucunun UTC günü değil. 13 yeni test (UTC'de hâlâ dünken okul gününde
+dönemin başladığı vakası dâhil); Application 2721 · Api 444 · Domain 1072 yeşil.
+
+**Altınay düzeltmesi:** 1. dönem zaten `Active` idi — SQL'de `updated_by` müdürün kimliği, damga 2026-09-15 21:58 UTC,
+yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da elle veri düzeltmesi gerekmedi; Redis
+`current-session` anahtarı yine de temizlendi.
+
+⬜ **Açık kalan iki ayak:**
+1. **2. dönem kendiliğinden başlamıyor.** Ölçüldü: Hangfire'daki 18 yinelenen işin hiçbiri sezon/dönem yaşam
+   döngüsüne dokunmuyor ve mevcut bir işe iliştirmek yanlış sahiplik olurdu (`ExamDailySweepJob` sınav modülünün işi).
+   Doğru çözüm aynı iskelette ~60 satırlık kardeş bir günlük süpürme işi; gövdesi yine `AcademicTermStarter`.
+   O gelene kadar 2. dönem elle başlatılır. Diğer okullarda da bayat dönem durumu var (`DEV-OKUL`, `ATA-AL`, `TST-AL`).
+2. **(c) iki gerçek sürüyor:** topbar dönemi tarih aralığından, sunucu `Status`'tan çözüyor. Bu düzeltme ikisini
+   *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
+   1. dönemi aktif görecek.
 
 ### `TB-184` · Entegrasyon testi paylaşılan DB'de küresel sayı bekliyor — takımla koşunca kırmızı ⚪
 
@@ -1678,6 +1738,10 @@ kanıtsız kalan `Down()` ve genel olarak model↔göç eşitliği.
 (b) tek bir "model ile göç eşit mi" bekçi testi — `dotnet ef migrations has-pending-model-changes`
 karşılığı, ucuz ama `Down()`'ı yine kapsamaz. **Tercih verilmeden başlamak yanlış.**
 
+✅ **Karar (2026-09-16, kullanıcı): (b) bekçi testi.** "Model ile göçler eşit mi" sorusunu soran ucuz bir bekçi
+eklenecek; 1400+ entegrasyon testinin kurulum süresi uzamayacak. `Down()` tarafının sınanmadığı **bilinçli olarak
+kabul edildi** ve bu maddenin açık ayağı olarak kalır.
+
 ---
 ### `TB-120` · Şubenin dersliği zorunlu değil, türetme yapan her yer boşa düşüyor ⚪
 
@@ -1800,6 +1864,11 @@ Neden kapatılmadı: 92 handler'a entegrasyon testi yazmak bir düzeltme değil,
 kalemi. Kapatma yolu da tek değil — her handler'a test mi, yoksa birim testleri gerçek
 sağlayıcıya çeviren ortak bir koşum mu? İkincisi tercih edilirse 92'nin tamamı tek hamlede
 kapanır. ⬜ **Bu tercihi vermeden başlamak yanlış.**
+
+✅ **Karar (2026-09-16, kullanıcı): ortak koşum.** Birim testleri gerçek SQL sağlayıcısına çeviren paylaşılan
+bir koşum yazılacak; borç tek hamlede kapanır ve bundan sonra yazılan her sorgu işleyicisi otomatik kapsanır.
+Çok günlük bir iş kalemi: önce koşum altyapısı + pilot bir modül, sonra kademeli geçiş. **Ölçüm güncellendi:**
+tarama sırasında sayı 150/92 idi, gece turunda 218 işleyicinin 132'si ölçüldü — oran sabit, mutlak borç büyüyor.
 
 ---
 
