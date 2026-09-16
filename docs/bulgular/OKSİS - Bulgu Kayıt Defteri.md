@@ -1521,6 +1521,29 @@ tatil göçünden sonra hem Redis hem süreç içi önbellek elle temizlenmek zo
 çok örnekli çalışmada süreç içi önbellek zaten yanlış cevap verir); anahtar adı tek yerde tanımlansın. Ayrıca
 veriyi göçle değiştiren her turda ilgili anahtarların temizlenmesi kural hâline gelmeli.
 
+✅ **Kapandı — 2026-09-16 (commit bekliyor), üstelik iki kusur daha çıktı ve aynı satırla kapandı.**
+Okuyucu `ICacheService`'e geçti, anahtar tek yerde tanımlandı (`tenant:{schoolId}:holidays:reader`, tenant'ı
+kendisi taşıyor). Temizleme `TB-185`'in interceptor iskeletine bağlandı — **anahtar değil önek ile**, çünkü
+tatilden beslenen ikinci tüketicinin anahtarı parametreli; tek tek saymak yine beyaz liste olurdu. Altı
+handler'daki elle silmeler kaldırıldı (iki mekanizma bırakmak yamalama olurdu) ve o adla hiçbir yere yazılmayan
+**hayalet silmeler** temizlendi.
+**Ölçümde çıkan iki kusur:**
+1. Ayar ekranının tatil listesi anahtarı (TTL **24 saat**) hiç düşürülmüyordu — müdürün eklediği tatil ayar
+   listesinde **bir güne kadar** görünmeyebiliyordu.
+2. Önbellek, **istenen aralığa göre çözülmüş** resmî tatilleri saklıyordu; başka aralıklı ikinci bir çağrı kendi
+   yılının resmî tatillerini göremiyordu (gizil kusur). Artık aralıktan bağımsız ham satırlar saklanıyor, çözüm
+   her çağrıda yapılıyor — bu şekil hatası yapısal olarak imkânsız.
+**TTL 5 dk → 1 saat:** 5 dakika bir *tutarlılık* mekanizmasıydı (bayatlığın üst sınırı); artık tutarlılığı yazma
+yolu sağlıyor, TTL yalnız emniyet ağı — resmî tatil kataloğu `MasterEntity` olduğu için interceptor'dan geçmiyor,
+göç ve elle SQL de geçmiyor.
+**Maliyet ölçüldü:** tüketiciler günü gün **döngüde** soruyor (bir rapor ucu 7–31 çağrı, günlük kapatma işi okul ×
+gün). Süreç içi önbelleği kaldırmak her çağrıyı ayrı Redis turuna çevirirdi; okuyucuya **istek ömürlü memo**
+kondu — iş birimi başına okul başına tek tur, iki istek arasında bayat cevap üretmiyor.
+**Canlı ölçüm** (seed okul): tatil eklenince anahtar düşüyor ve aynı uç **anında** yeni cevabı veriyor, silince de
+öyle; başka okulun anahtarı etkilenmiyor. 78 birim testi + 65 mimari bekçi yeşil.
+⬜ **Kalan:** resmî tatil kataloğunun kendisi hâlâ kapı dışında (emniyet ağı 1 saatlik TTL); entegrasyon takımı
+bellek kısıtı yüzünden koşulmadı, sadeleşen iki test ilk gerçek koşuda gözden geçirilmeli.
+
 ### `TB-182` · Entegrasyon fixture'ı `IPlatformContext`'i kaydetmiyor — 22 test kırmızı 🟠
 
 `TB-175` düzeltmesinin entegrasyon koşusunda ölçüldü (2026-09-16): **1453 testten 22'si kırmızı**, hepsi aynı
