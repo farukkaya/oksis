@@ -41,6 +41,7 @@
 | **K-28** | Kurum yetkilisi: kim sorar, kim düzenler? | ✅ Karara bağlandı · ⬜ uygulanmadı | 2026-09-15 | **(a)** Platform okul açılışında sorar · sonradan platform düzenler · müdür yalnız görür — `TB-165`/`TB-171` bu kararla kapanır |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
+| **Y-03** | Şube alanı (Sayısal / Eşit Ağırlık / Sözel / Yabancı Dil) nerede tutulur | ✅ Karara bağlandı · ✅ **uygulandı** (`oksis-api` `614a51b3` + `oksis-ui` `7fe92fc`) | 2026-09-17 | **(a) `ClassRoom.Track` + sabit enum.** Derse BAĞLANMADI (ders↔alan çoka-çok: "seçmeli matematik" dört alandan üçünde geçer) · öğrencinin alanı aktif şube atamasından türetilir, ayrıca tutulmaz · MEB'in 09/05/2025-05 çizelgesinde alan sütunu **yok**, yani bu okulun organizasyon ihtiyacı · enum çünkü listeyi okul düzenlemiyor — meslek lisesi kapsama girerse katalog tablosuna terfi eder |
 
 **Kritik yol:** ~~`K-02`~~ → ~~`K-01a/b/c`~~. **İkisi de çözüldü (2026-08-08)** — bildirim zinciri baştan sona karara bağlandı. Kalan açık kararlar `K-03`, `K-04` ve `K-05` birbirinden bağımsız; sıra artık **uygulamada**: [[K-02 - OS Push Altyapısı]] Parti 1 ile [[K-01 - Bildirim Matrisi]] §8 doğan işleri.
 
@@ -1167,6 +1168,80 @@ Kademe kaldırılacak, altyapı korunacak. **Uygulama yeri** `K-04`'te netleşme
 
 **Açık kalan**
 - [ ] Uygulama yeri → `K-04`
+
+--- end-multi-column
+
+---
+
+## Y-03 · Şube alanının (Sayısal / Eşit Ağırlık / Sözel / Yabancı Dil) yeri
+
+--- start-multi-column: Y-03
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Kaynak:** Altınay B4.2 turu — MEB Anadolu Lisesi çizelgesinin (TTK 09/05/2025-05) üründe tutulabilmesi
+tartışması. Kullanıcının ilk önerisi: "sabit 4 değerli bir liste, derse bağlı olmamalı."
+
+Ölçüm üç adayı ayırdı:
+- **Ders (`Subject`)** — reddedildi. Resmî çizelgede "seçmeli matematik" dört alandan üçünde geçiyor;
+  ilişki **çoka-çok**. Derse alan yazmak onu bire-bire indirger ve aynı dersi alan sayısı kadar
+  kopyalamaya zorlar. Ayrıca `Subject` `TB-191`'den beri okul kapsamlı, alan ise MEB tanımı — sahiplik
+  karışır.
+- **Öğrenci kaydı (`StudentEnrollment`)** — sezona bağlı, mantıklı ama **bugün ölü alan** olurdu:
+  öğrencinin seçmeli dersleri üründe hiç tutulmuyor, alanı okuyacak yüzey yok.
+- **Şube (`ClassRoom`)** — seçildi. Sezona bağlı, sınıf seviyesi taşıyor ve okullar şubeyi fiilen
+  alanla açıyor ("11-A Sayısal"). Ders programı şube bazlı olduğu için seçmeli dersler doğru şubeye
+  düşer.
+
+`StudentProfile` en baştan elendi: profil kalıcı kimlik, alan ise sezonluk ve değişebilir.
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ✅ Karara bağlandı · ✅ **uygulandı**
+**Tarih:** 2026-09-17 · commit'ler `oksis-api` `614a51b3`, `oksis-ui` `7fe92fc`
+
+**Karar**
+> **(a)** Alan `ClassRoom.Track` olarak şubede tutulur; liste domain enum'u (`Track`:
+> `Numerical`/`EqualWeight`/`Verbal`/`ForeignLanguage`). `null` = alan yok. Öğrencinin alanı ayrıca
+> tutulmaz, aktif şube atamasından **türetilir** — ikinci bir doğruluk kaynağı doğmaz.
+
+**Gerekçe**
+> Ders↔alan çoka-çok olduğu için alan derse yazılamaz. Enum seçildi çünkü dört değer MEB'in ulusal
+> tanımı ve okul onu düzenlemiyor: ders/sınav türü kataloglarını okula taşımamızın gerekçesi (okulun
+> kendi satırını ekleyebilmesi) burada yok.
+
+**Önemli sınır**
+> MEB'in **09/05/2025 tarihli ve 05 sayılı** kararıyla yürürlüğe giren çizelgede alan sütunu **YOKTUR**;
+> seçmeli dersler tek havuz ve öğrenci serbest seçiyor. Alan bu yüzden çizelgenin gereği değil,
+> **okulun organizasyon ihtiyacı** olarak girdi (şube adlandırma, yönlendirme, raporlama). İleride
+> "çizelge alanı zorunlu kılıyor" diye okunmamalı.
+
+**Uygulama künyesi**
+> Domain `Track` enum + `ClassRoom.Track`/`SetTrack` (null temizler) · EF kolonu metne çevrilir
+> (`Status` emsali) · göç **uygulandı** · uç `PUT /class-rooms/{id}/track` (kendi komutu: `UpdateClassRoom`
+> null'ı "dokunma" okuduğu için temizleme oraya sığmıyordu) · oluşturmada opsiyonel alan · iki DTO +
+> Mapster · 2 domain testi. Arayüzde: yeni şube formunda seçici, şube kartında etiket (yalnız
+> atanmışsa), detay panelinde satır içi değiştirme/temizleme. Toplu şube açmada alan **sorulmaz** —
+> aynı seviyenin şubeleri farklı alanlarda olur.
+>
+> **Turun iki dersi:** (1) sözleşmede enum kullanmak yanlıştı — `JsonStringEnumConverter` çalışma
+> zamanını düzeltiyor ama OpenAPI şeması enum'u `number` yayınlıyor, yani istemci enum SIRASINA
+> bağlanırdı; deponun `SetStatusBody(string)` emsali doğruymuş. (2) `class-rooms.errors.invalid-track`
+> hata kataloğuna eklenmemişti; `X-14` bekçisi yakaladı — kullanıcı gerekçe yerine nötr cümle görürdü.
+
+**Açık kalan**
+- [ ] Enum kararı **meslek liselerinde tutmaz** (54 alan + 200'ü aşkın dal, üstelik okul kendi alanını
+      seçer). `SchoolType` şu an alt tür taşımıyor; o kapsam gelirse liste çekirdek katalog tablosuna
+      ve okul kapsamına terfi eder.
+- [x] ~~Arayüz ayağı: şube oluşturma/düzenleme formunda alan seçicisi, listede etiket.~~ — yapıldı
+      (`oksis-ui` `7fe92fc`); **ekranda doğrulama kullanıcıda.**
 
 --- end-multi-column
 
