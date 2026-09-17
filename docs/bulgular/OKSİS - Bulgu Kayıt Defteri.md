@@ -18,7 +18,13 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-16 (Altınay B4, kullanıcı ölçümü) — `TB-200` (branş ekranındaki "MEB'den Getir"
+> **Son ekleme:** 2026-09-17 (MEB çizelge entegrasyonu ön değerlendirmesi, kod ölçümü) — `TB-201`
+> (müfredat saat sağlayıcısı sürümü süzmüyor; ikinci MEB sürümü yazıldığı an ders programı üretimi
+> `ArgumentException` ile durur 🟡) ve `TB-202` (MEB saat şablonu sezona bağlı değil; bir saat değişikliği
+> kapanmış sezonların gerekli saatini de geriye dönük değiştirir 🟡), ikisi de §12. İkisi birlikte
+> "MEB'den veri çek/güncelle" fikrinin **önkoşulu**: sürüm süzgeci ve sezon çivilemesi olmadan ilk
+> güncelleme yazması üretimi kırar. `E-16` bu iki maddeye bağlandı. Defter **73**.
+> **Önceki:** 2026-09-16 (Altınay B4, kullanıcı ölçümü) — `TB-200` (branş ekranındaki "MEB'den Getir"
 > düğmesi hiçbir uç çağırmıyor, boş listede "hepsi zaten var" diyor 🟠), §12. Aynı turda kapatıldı (uç + kanca
 > + düğme); canlı doğrulama kullanıcıda. `TB-193`'ün kullanıcı kararı ancak bu düzeltmeyle uygulanabilir hâle
 > geldi. Defter **71**.
@@ -2524,6 +2530,52 @@ geçerli — kalıbın kendisi açık.
 kaldırılsın) — `keyof typeof SHAPES` o zaman gerçek birleşim tipine çözülür; `OksisIconProps.name` de
 `OksisIconName` olsun. Depoda bilinmeyen adla çizilen başka ikon olup olmadığı **şu an bilinmiyor**; ancak bu
 değişiklikten sonra ölçülebilir.
+
+---
+
+### `TB-201` · Müfredat saat sağlayıcısı sürümü hiç süzmüyor — ikinci MEB sürümü yazıldığı an ders programı çöker 🟡
+
+MEB çizelge entegrasyonu değerlendirmesinde ölçüldü (2026-09-17, `oksis-api` @ `0b2b7502`).
+`master.curriculum_hour_templates` satırları `Version` taşır ve şablonu okuyan **dört**
+yerin üçü onu süzer — `RequiredHoursResolver.cs:31`, `GetCatalogWeeklyHoursQueryHandler.cs:56`,
+`GetSubjectWeeklyHoursQueryHandler.cs:53`, `SetSubjectWeeklyHoursCommandHandler.cs:74` —
+hepsi `t.Version == CurriculumVersions.Active` yazıyor. Ders programını besleyen
+`CurriculumWeeklyHourProvider.cs:78-84` ise **yazmıyor**: süzgeci yalnız
+`EducationLevel` + `GradeLevelCode` + ders kimliği.
+
+Bugün zararsız, çünkü tabloda tek sürüm var (`2025.04`). Tablonun ikinci bir sürümü
+gördüğü an aynı (seviye, sınıf, ders) üçlüsü **iki satır** döndürür ve bir satır aşağıdaki
+`template.ToDictionary(t => t.SubjectId, t => t.WeeklyHours)` (`:96`) `ArgumentException`
+ile patlar — ders programı üretimi ve saat uyarısı komple durur.
+
+Bu tam olarak "MEB'den güncelle" fikrinin ilk yazma işleminde olacak şey: yeni sürüm
+eskisini silmeden eklenirse üretim anında kırılır, silerek eklenirse geçmiş sezonların
+dayanağı yok olur (bkz. `TB-202`).
+
+⬜ Sağlayıcıya sürüm süzgeci eklenir. Asıl kapanış merkezî: sürüm çözümü tek bir yere
+(`ICurriculumVersionResolver` gibi) alınır, dört okuyucu da oradan geçer — yoksa beşinci
+okuyucu aynı şeyi yine unutur ([[yamalama-kabul-degil]]).
+
+### `TB-202` · MEB saat şablonu sezona bağlı değil — bir saat değişikliği kapanmış sezonları da geriye dönük değiştirir 🟡
+
+Aynı ölçümde görüldü. Okulun kendi saat kararı sezona bağlı
+(`SchoolWeeklyHourOverride.AcademicSessionId`, `:17`), MEB şablonu **değil**:
+`CurriculumHourTemplate`'in alanları `EducationLevel` · `GradeLevelCode` · `SubjectId` ·
+`WeeklyHours` · `MebDecision` · `Version` — sezon yok (`:17-23`).
+
+`RequiredHoursResolver` ikisini birleştirdiğinden (`:31-41`), şablon satırı değiştiğinde
+**bütün sezonların** gerekli toplam saati yeniden hesaplanır. Yani geçen yılın ders
+programı, bu yılın çizelgesine göre "eksik saat" damgası yer; kapanmış sezonun raporu
+ertesi gün başka sayı verir. Aynı sınıf: [[serilesmis-sekil-sozlesmedir]] — geçmişin
+dayanağı değişmemeli.
+
+`E-16` bunu ağırlaştırıyor: lise satırları zaten geçici damgalı
+(`CurriculumVersions.HighSchoolProvisionalDecision`), gerçek çizelge girildiğinde
+**mevcut** satırlar değişecek.
+
+⬜ Karar gerekiyor: şablon sürümü sezona çivilenir mi (sezon açılışında aktif sürüm
+kaydedilir, sezon o sürümü okur) yoksa şablon salt-ekleme mi olur (eski sürüm satırları
+hiç silinmez, sezon kendi sürümüne bakar)? İkisi de `TB-201`'in sürüm süzgecini şart koşar.
 
 ---
 
