@@ -1241,7 +1241,13 @@ tartışması. Kullanıcının ilk önerisi: "sabit 4 değerli bir liste, derse 
       seçer). `SchoolType` şu an alt tür taşımıyor; o kapsam gelirse liste çekirdek katalog tablosuna
       ve okul kapsamına terfi eder.
 - [x] ~~Arayüz ayağı: şube oluşturma/düzenleme formunda alan seçicisi, listede etiket.~~ — yapıldı
-      (`oksis-ui` `7fe92fc`); **ekranda doğrulama kullanıcıda.**
+      (`oksis-ui` `7fe92fc`) ve **2026-09-17'de tarayıcıda doğrulandı** (s2 Atatürk AL, gerçek veriye
+      dokunulmadı — Altınay'da 0 şube):
+      detayda atama → *"9-A alanı Sayısal olarak güncellendi"* + kartta etiket + kolon `Numerical`;
+      değiştirme → `EqualWeight`; **"Alan yok" → kartta etiket KAYBOLDU ve kolon `NULL`** (temizleme
+      gerçekten siliyor, ekran süslemesi değil); formda seçici varsayılan "Alan yok" + dört seçenek,
+      yeni şube `11-C` "Sözel" olarak doğdu (`Verbal`). **Komşu sekiz şube `NULL` kaldı** — alan
+      yazmak sızmıyor. Konsolda hata yok. Test şubesi silindi, `9-A` boşaltıldı.
 
 --- end-multi-column
 
