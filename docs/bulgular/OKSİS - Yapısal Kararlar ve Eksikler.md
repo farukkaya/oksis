@@ -1212,6 +1212,27 @@ tartışması. Kullanıcının ilk önerisi: "sabit 4 değerli bir liste, derse 
 > `Numerical`/`EqualWeight`/`Verbal`/`ForeignLanguage`). `null` = alan yok. Öğrencinin alanı ayrıca
 > tutulmaz, aktif şube atamasından **türetilir** — ikinci bir doğruluk kaynağı doğmaz.
 
+**Ek kural — 2026-09-17, aynı gün düzeltme (kullanıcı sorusu üzerine)**
+> Alan **yalnız 11 ve 12. sınıf** şubelerinde tanımlanır. Kapı domaindedir
+> (`ClassRoom.TrackEligibleGradeLevelCodes`, hata `ClassRoom.Track.NotEligibleGrade`); ekran
+> seçiciyi başka seviyelerde **hiç çizmez**. **Temizleme (`null`) her seviyede serbesttir** —
+> kural yürürlüğe girmeden önce yazılmış bir değer her yerde geri alınabilmeli.
+>
+> **Ölçüm:** TTK'nın 09/05/2025-05 çizelgesinde ortak ders saati 9'da 32, 10'da 33 iken **11'de
+> 19'a, 12'de 15'e** düşüyor; seçilebilecek saat 7/6'dan **20/24'e** çıkıyor. Yani öğrencinin yolu
+> 11. sınıfta ayrılıyor. Belgede MF/TM/Sözel/Dil anlamında "alan" kelimesi **hiç geçmiyor**
+> (tarandı) ve açıklamalar *"öğrenciler bir alt sınıfta okudukları seçmeli dersi ve/veya saatini
+> bir üst sınıfta değiştirebilirler"* diyor.
+>
+> **Karıştırılmaması gereken:** "alan seçimi 9. sınıfa alındı" haberleri **mesleki ve teknik
+> ortaöğretime** aittir (alan 9'un başında e-Okul'dan, dal 9'un sonunda). Anadolu Lisesi'nde
+> merkezî alan yerleştirmesi yoktur.
+>
+> **İlk sürümün hatası:** kapı yoktu ve gerekçesi *"kademe ile alanın tutarlılığı iş kuralı değil,
+> okulun organizasyon tercihidir"* diye yazılmıştı — ölçülmemiş bir cümleydi. Sonucu ortaokul,
+> hatta ilkokul şubesine alan atanabilmesiydi; ekran testinde 9-A'ya "Sayısal" atanabildiği
+> görüldü.
+
 **Gerekçe**
 > Ders↔alan çoka-çok olduğu için alan derse yazılamaz. Enum seçildi çünkü dört değer MEB'in ulusal
 > tanımı ve okul onu düzenlemiyor: ders/sınav türü kataloglarını okula taşımamızın gerekçesi (okulun
@@ -1230,6 +1251,19 @@ tartışması. Kullanıcının ilk önerisi: "sabit 4 değerli bir liste, derse 
 > Mapster · 2 domain testi. Arayüzde: yeni şube formunda seçici, şube kartında etiket (yalnız
 > atanmışsa), detay panelinde satır içi değiştirme/temizleme. Toplu şube açmada alan **sorulmaz** —
 > aynı seviyenin şubeleri farklı alanlarda olur.
+>
+> **Ekran testi — 2026-09-17, s2 Atatürk AL (gerçek veriye dokunulmadı; Altınay'da 0 şube).**
+> Kuralın altı ayağı ölçüldü: formda 11'de seçici **var**, 9'da **yok**; 11'de seçilen alan seviye
+> 9'a çevrilince **gönderilmiyor** (yeni şube `NULL` doğdu); detay panelinde 11-A'da alan satırı var,
+> 9-A'da yok; uç 9-A'ya yazmayı **422** ile reddetti (`ClassRoom.Track.NotEligibleGrade`, mesaj Türkçe
+> cümle); temizleme her seviyede kabul edildi; konsol temiz. Test şubesi silindi.
+>
+> ➕ **Testin yakaladığı GERÇEK kusur (`oksis-api` `0b2b7502`):** `PUT /class-rooms/{id}/track`
+> **204 dönüyor ama kolon NULL kalıyordu**. Handler şubeyi ve kademe kodunu tek projeksiyonda
+> çekiyordu (`join db.GradeLevels.AsNoTracking()`); `AsNoTracking` JOIN üzerinden sorgunun tamamına
+> yayıldığı için şube takip edilmiyor ve `SaveChanges` hiçbir şey yazmıyordu. Yorumda tam tersi
+> yazılıydı. **Bu sınıf birim testle yakalanamıyor** — handler testleri `MockQueryable` üzerinde
+> koşuyor ve tracking davranışını ölçmüyor (`X-06` alanı); yakalayan şey ekran testi oldu.
 >
 > **Turun iki dersi:** (1) sözleşmede enum kullanmak yanlıştı — `JsonStringEnumConverter` çalışma
 > zamanını düzeltiyor ama OpenAPI şeması enum'u `number` yayınlıyor, yani istemci enum SIRASINA
