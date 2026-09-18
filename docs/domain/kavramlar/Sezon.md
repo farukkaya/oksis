@@ -7,7 +7,7 @@ tags:
   - domain/academic
 table: academic_sessions
 status: active
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-09-18 (f33ea43a)
 cssclasses:
 ---
 
@@ -45,6 +45,7 @@ Sihirbazla açılan sezonun yapısı `Setup`'a geçerken, öğrenci ve görevlen
 - T1 ve T2 farklı dönem tiplerinde olmalıdır.
 - Sezon adı okul içinde tekildir (silinmiş sezonlar sayılmaz) ve 4–20 karakterdir. Kavramın kendisi adda kalıp aramaz; ancak doğrudan oluşturma ve yeniden adlandırma uçları `YYYY-YYYY` biçimini ister, taslaktan açma yolu bu kalıbı uygulamaz.
 - `Activate` ve `Archive` idempotenttir — hedef statüye ikinci çağrı hata değil, sessiz no-op.
+- Sezon açılırken müfredat taslağı kurulur; `Setup → Active` geçişinde taslak değişmez bir [[Sezon Müfredat Snapshotı]]'na dondurulur ve aktivasyonla aynı kayıtta yazılır. Snapshot üretilemezse önceki sezonun arşivlenmesi dahil aktivasyonun tamamı geri alınır. Sezon açılıştan geri alınırsa taslak da silinir.
 
 ## İlişkiler
 

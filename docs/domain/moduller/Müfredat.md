@@ -2,7 +2,7 @@
 aliases: [Academics, api/v1/academics, api/v1/curriculum-hours, Akademik Katalog]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-09-18 (f33ea43a)
 ---
 
 # Müfredat
@@ -21,7 +21,9 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 - [[Ders]] — müfredat dersi; kademe ve branş eşlemeleri çoka-çok
 - [[Sınıf Seviyesi]] — kademeler; okulun hangilerini sunduğu [[Okul Ayarları]]'nda
-- [[Haftalık Ders Saati]] — MEB çizelgesi ve okul override'ı
+- [[Haftalık Ders Saati]] — MEB satırı, okul kararı (override / ek ders) ve sezon snapshot'ı
+- [[Müfredat Sürümü]] — eğitim programı → sürüm → satır; değişmez yayın
+- [[Sezon Müfredat Snapshotı]] — sezon taslağı ve aktivasyonda dondurulan kayıt
 - [[Branş]] — öğretmen alanı; okula özel katalog
 - [[Not Ölçeği]] / [[Sınav Türü]] — notlandırma yapılandırması
 - [[Resmî Tatil]] — millî ve dini resmî tatiller
@@ -33,7 +35,7 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 2. **Branş kataloğu ve MEB içe aktarımı** — Okul kendi branş listesini tutar; ad okul içinde tekildir. Platform genelinde ayrı bir **MEB referans kataloğu** vardır; okul oradan toplu içe aktarma yapabilir. Aktarım idempotenttir — zaten aktarılmış kayıt atlanır. İçe aktarılan branşlar MEB kaynaklı işaretlenir ve düzenlenemez; okul yalnız kendi eklediklerinde serbesttir. Bir öğretmende kullanılan branş silinemez. Branş uyumu platform kataloğundaki ders↔branş eşlemesinden, kimlik üzerinden hesaplanır.
 
-3. **Haftalık ders saati** — MEB çizelgesi master şablon olarak durur ve sürüm etiketi taşır. Okul, sezonu için bir dersin saatini değiştirebilir; yazma uzlaştırmadır: MEB değerine eşit saat override'ı **siler**, farklı saat yazar ([[0005-haftalik-ders-saati-ders-kademe-kaydinda-tutulmaz]]). Çözüm katmanlıdır: **override varsa o, yoksa şablon.** Bir kademenin toplam hedef saati ve ders bazlı saatler ayrı uçlardan sorgulanır.
+3. **Haftalık ders saati** — MEB çizelgesi sürümlü olarak durur: eğitim programı → akademik yıla ait sürüm → satırlar ([[Müfredat Sürümü]]). Sezon açılırken okulun her açık kademesi için bir program bağı ve seviye başına bir **taslak** kurulur; taslak, yılı tam eşleşen yayımlı sürüme bağlanır, yoksa manuel açılır. Okul hazırlıktaki sezonun taslağına saat yazar: MEB satırı olan derste override (MEB'e eşitse silinir), olmayanda ek ders; üst sınır yoktur, 0 geçerlidir. Sezon başlarken taslak değişmez bir **snapshot**'a dondurulur ([[Sezon Müfredat Snapshotı]]); başlamış ve arşiv sezon yalnız snapshot okur, sonradan yayımlanan MEB sürümü onu değiştirmez ([[0021-aktif-sezon-mufredati-snapshottan-okur]]). Bir kademenin toplam hedef saati ve ders bazlı saatler ayrı uçlardan sorgulanır; ders programının saat talebi de aynı kaynaktan gelir.
 
 4. **Notlandırma yapılandırması** — Not ölçekleri ve sınav türleri listelenir. Okul varsayılan ölçeğini seçer, kademe bazında override verebilir. Tüketicisi [[Notlar]] modülüdür: sınav türleri defterin sütun kataloğunu, varsayılan ölçek not girişinin üst sınırını verir. Sınav türündeki ağırlık kolonu 2026-08-31'de kaldırıldı ([[0001-sinav-agirligi-okul-politikasinda]]).
 
@@ -47,7 +49,8 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 - **Not girişi ve hesaplama.** Bu modül ölçeği ve sınav türünü tanımlar; notu [[Notlar]] tutar.
 - **Okula özel ders tanımı.** Ders kataloğunun okula ait bir katmanı yoktur; açılan ders platform kataloğuna yazılır (bkz. [[Ders]] açık soruları).
-- **Müfredat sürümü seçimi.** Aktif MEB çizelge sürümü kodda sabittir; sürüm seçimi ileriye bırakılmış.
+- **MEB'den veri çekme ve sürüm yönetimi.** Çizelge keşfi, belge saklama, ayrıştırma, merkezin inceleme/onayı (Dilim 2–3) ve okulun program seçme, taslağı yeni sürüme taşıma, fark görme ekranları (Dilim 4) henüz yok. Bugünkü sürümler seed ve göçle gelir.
+- **Başlamış sezonun müfredatını düzeltme.** Snapshot değişmez; dönem içi düzeltme, bildirim ve erteleme bilinçli olarak kapsam dışı.
 - **MEB branş listesinin yeniden senkronu.** İçe aktarım tek yönlüdür; tekrar çalıştırılırsa yalnız eksikleri ekler, değişen MEB kaydını güncellemez.
 - **Görevlendirme akışları.** Öğretmen × ders yetkinliği bu modülün varlığıdır ama akışları [[Görevlendirmeler]]'de anlatılır.
 

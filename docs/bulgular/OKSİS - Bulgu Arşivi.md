@@ -7335,3 +7335,74 @@ Kanıt: `kanit/tb167-davet-kabul-400.png`.
 
 ✅ **Kapandı** (`oksis-ui` `47d6059`): gövde `buildConsentGrants({ kvkk, notifications, photo })`
 ile kuruluyor; reddedilen tercihler `granted: false` olarak kayda geçiyor.
+
+---
+
+## 50. MEB müfredatı Dilim 1 — sürümlü master ve sezon snapshot'ı (2026-09-18) ✅
+
+### `TB-201` · Müfredat saat sağlayıcısı sürümü hiç süzmüyor — ikinci MEB sürümü yazıldığı an ders programı çöker 🟡
+
+MEB çizelge entegrasyonu değerlendirmesinde ölçüldü (2026-09-17, `oksis-api` @ `0b2b7502`).
+`master.curriculum_hour_templates` satırları `Version` taşır ve şablonu okuyan **dört**
+yerin üçü onu süzer — `RequiredHoursResolver.cs:31`, `GetCatalogWeeklyHoursQueryHandler.cs:56`,
+`GetSubjectWeeklyHoursQueryHandler.cs:53`, `SetSubjectWeeklyHoursCommandHandler.cs:74` —
+hepsi `t.Version == CurriculumVersions.Active` yazıyor. Ders programını besleyen
+`CurriculumWeeklyHourProvider.cs:78-84` ise **yazmıyor**: süzgeci yalnız
+`EducationLevel` + `GradeLevelCode` + ders kimliği.
+
+Bugün zararsız, çünkü tabloda tek sürüm var (`2025.04`). Tablonun ikinci bir sürümü
+gördüğü an aynı (seviye, sınıf, ders) üçlüsü **iki satır** döndürür ve bir satır aşağıdaki
+`template.ToDictionary(t => t.SubjectId, t => t.WeeklyHours)` (`:96`) `ArgumentException`
+ile patlar — ders programı üretimi ve saat uyarısı komple durur.
+
+Bu tam olarak "MEB'den güncelle" fikrinin ilk yazma işleminde olacak şey: yeni sürüm
+eskisini silmeden eklenirse üretim anında kırılır, silerek eklenirse geçmiş sezonların
+dayanağı yok olur (bkz. `TB-202`).
+
+⬜ Sağlayıcıya sürüm süzgeci eklenir. Asıl kapanış merkezî: sürüm çözümü tek bir yere
+(`ICurriculumVersionResolver` gibi) alınır, dört okuyucu da oradan geçer — yoksa beşinci
+okuyucu aynı şeyi yine unutur ([[yamalama-kabul-degil]]).
+
+### `TB-202` · MEB saat şablonu sezona bağlı değil — bir saat değişikliği kapanmış sezonları da geriye dönük değiştirir 🟡
+
+Aynı ölçümde görüldü. Okulun kendi saat kararı sezona bağlı
+(`SchoolWeeklyHourOverride.AcademicSessionId`, `:17`), MEB şablonu **değil**:
+`CurriculumHourTemplate`'in alanları `EducationLevel` · `GradeLevelCode` · `SubjectId` ·
+`WeeklyHours` · `MebDecision` · `Version` — sezon yok (`:17-23`).
+
+`RequiredHoursResolver` ikisini birleştirdiğinden (`:31-41`), şablon satırı değiştiğinde
+**bütün sezonların** gerekli toplam saati yeniden hesaplanır. Yani geçen yılın ders
+programı, bu yılın çizelgesine göre "eksik saat" damgası yer; kapanmış sezonun raporu
+ertesi gün başka sayı verir. Aynı sınıf: [[serilesmis-sekil-sozlesmedir]] — geçmişin
+dayanağı değişmemeli.
+
+`E-16` bunu ağırlaştırıyor: lise satırları zaten geçici damgalı
+(`CurriculumVersions.HighSchoolProvisionalDecision`), gerçek çizelge girildiğinde
+**mevcut** satırlar değişecek.
+
+⬜ Karar gerekiyor: şablon sürümü sezona çivilenir mi (sezon açılışında aktif sürüm
+kaydedilir, sezon o sürümü okur) yoksa şablon salt-ekleme mi olur (eski sürüm satırları
+hiç silinmez, sezon kendi sürümüne bakar)? İkisi de `TB-201`'in sürüm süzgecini şart koşar.
+
+✅ **İkisi birlikte kapandı** (2026-09-18, `oksis-api` `feat/mufredat-surum-snapshot` dalı
+`aa6ba79d`…`f33ea43a`, **merge bekliyor**). Karar: [[0021-aktif-sezon-mufredati-snapshottan-okur]].
+MEB çizelgesi artık değişmez sürümlerdir (`master.curriculum_versions` / `curriculum_entries`);
+okulun kararı sezon taslağında yaşar; sezon başlarken taslak değişmez snapshot'a dondurulur.
+Ders programı sağlayıcısı ve gerekli toplam saat master tabloları **hiç okumaz**: başlamış sezonda
+snapshot, hazırlıktaki sezonda kendi sürümüne çivili taslak (`SessionCurriculum`). Eski
+`curriculum_hour_templates` ve `school_weekly_hour_overrides` cutover göçüyle taşınıp kaldırıldı.
+
+Kanıt (SQL Server, Testcontainers):
+- `TB-201` — `CurriculumSnapshotWeeklyHourProviderTests.Second_published_version_neither_crashes_nor_changes_hours`:
+  aynı program ve yıl için ikinci yayımlı sürüm varken sağlayıcı patlamıyor, dondurulmuş saati dönüyor.
+  Mimari bekçi `CurriculumRuntimeReadGuardTests`: sağlayıcı ve `RequiredHoursResolver` master sürüm/satır
+  ya da taslak tablosunu doğrudan okuyamaz.
+- `TB-202` — `CurriculumSnapshotActivationTests.Later_master_version_does_not_change_active_session`:
+  aktivasyondan sonra yayımlanan sürüm (+3 saat) başlamış sezonun okumasını değiştirmiyor.
+  `CurriculumSnapshotImmutabilityTests`: snapshot satırı güncellenemiyor/silinemiyor.
+- Göç: `CurriculumVersioningMigrationTests` (4 test) eski kararları gerçek göç zincirinde taşıyor;
+  denetim hatasında hem `MigrateAsync` hem idempotent betik yolu her şeyi geri alıyor.
+
+`E-16` (arşivde, kapalı) ile bağ: lise saatleri hâlâ resmî değil, ama artık yalnız
+`LEGACY-2025.04-HIGH` uyumluluk sürümüne izole ("Doğrulanmadı — MEB çizelgesi bekleniyor");
+gerçek çizelge yeni sürüm olarak gelecek, mevcut satırlar değişmeyecek.
