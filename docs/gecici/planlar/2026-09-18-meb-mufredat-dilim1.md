@@ -112,7 +112,7 @@ public sealed class SchoolCurriculumCustomCourse : TenantEntity
     public string? Reason { get; private set; }
 }
 
-public sealed class SchoolCurriculumSnapshot : TenantEntity
+public sealed class SchoolCurriculumSnapshot : PermanentTenantEntity
 {
     public Guid SchoolAcademicProgramId { get; private set; }
     public Guid GradeLevelId { get; private set; }
@@ -122,7 +122,7 @@ public sealed class SchoolCurriculumSnapshot : TenantEntity
     public Guid LockedBy { get; private set; }
 }
 
-public sealed class SchoolCurriculumSnapshotItem : TenantEntity
+public sealed class SchoolCurriculumSnapshotItem : PermanentTenantEntity
 {
     public Guid SchoolCurriculumSnapshotId { get; private set; }
     public Guid SubjectId { get; private set; }
@@ -454,7 +454,7 @@ git commit -m "feat(academics): okul müfredat taslağı ve snapshot modelini ek
 ## Task 3: EF modeli, tenant kısıtları ve deterministik master seed
 
 **Files:**
-- Create: dosya haritasındaki 8 configuration dosyası
+- Create: dosya haritasındaki 9 configuration dosyası
 - Create: `CurriculumProgramSeedData.cs`, `CurriculumVersionSeedData.cs`, `CurriculumEntrySeedData.cs`
 - Modify: `MasterSeedIds.cs`
 - Modify: `IApplicationDbContext.cs`, `OksisDbContext.cs`
@@ -489,7 +489,7 @@ DbSet<SchoolCurriculumSnapshotItem> SchoolCurriculumSnapshotItems { get; }
 | `school_curriculum_snapshots` | `academic` | `(school_id, school_academic_program_id, grade_level_id)` |
 | `school_curriculum_snapshot_items` | `academic` | `(school_id, school_curriculum_snapshot_id, subject_id)` |
 
-Tüm unique indeksler soft-delete filtresi taşır. Master FK'ler ve tenant aggregate-arası FK'ler `DeleteBehavior.Restrict`; snapshot item → snapshot `Cascade` değil `Restrict` olur, çünkü snapshot silinmez.
+Soft-delete destekleyen master/tenant entity'lerin unique indeksleri `is_deleted = 0` filtresi taşır. `PermanentTenantEntity` kullanan `SchoolCurriculumSnapshot` ve `SchoolCurriculumSnapshotItem` tablolarında `is_deleted` alanı bulunmaz; bu iki tablonun unique indeksleri filtresizdir. Master FK'ler ve tenant aggregate-arası FK'ler `DeleteBehavior.Restrict`; snapshot item → snapshot `Cascade` değil `Restrict` olur, çünkü snapshot silinmez.
 
 - [ ] **Step 1: Model guard testini kırmızı yaz**
 
@@ -497,7 +497,7 @@ Tüm unique indeksler soft-delete filtresi taşır. Master FK'ler ve tenant aggr
 
 - tenant tiplerin hepsi `IHasTenant`;
 - beklenen schema/table adı;
-- yukarıdaki unique index property sırası ve filtre;
+- yukarıdaki unique index property sırası; soft-delete entity'lerde filtre, kalıcı snapshot tablolarında filtresiz indeks;
 - snapshot item `FinalWeeklyHours` required;
 - `SchoolCurriculumDraft.BaseCurriculumVersionId` nullable;
 - `SchoolCurriculumSnapshot.CurriculumVersionId` nullable;
@@ -513,7 +513,7 @@ Expected: DbSet/configuration olmadığı için compile veya assertion failure.
 
 - [ ] **Step 2: Configuration ve DbSet'leri ekle**
 
-Audit, soft-delete, rowversion ve `DomainEvents` ignore kalıbını mevcut `SchoolWeeklyHourOverrideConfiguration` ve `CurriculumHourTemplateConfiguration` ile aynı kur. `builder.ToMasterTable(...)` / `builder.ToAcademicTable(...)` dışında `ToTable` kullanma.
+Audit ve rowversion ile `DomainEvents` ignore kalıbını mevcut configuration'larla aynı kur. Soft-delete alanlarını yalnız `ISoftDeletable` entity'lerde yapılandır; kalıcı snapshot tiplerine gölge `is_deleted` alanı ekleme. `builder.ToMasterTable(...)` / `builder.ToAcademicTable(...)` dışında `ToTable` kullanma.
 
 - [ ] **Step 3: Deterministik seed'i kur**
 
