@@ -373,7 +373,7 @@ git commit -m "feat(academics): sürümlü master müfredat modelini ekle"
 ## Task 2: Tenant taslak, override, ek ders ve değişmez snapshot domain modeli
 
 **Files:**
-- Create: tenant enum/entity dosyaları (kilitli veri sözleşmesindeki 7 entity + `CurriculumSourceType`)
+- Create: tenant enum/entity dosyaları (kilitli veri sözleşmesindeki 6 entity + `CurriculumSourceType`)
 - Test: `tests/Oksis.Domain.UnitTests/Modules/Academics/SchoolCurriculumDraftTests.cs`
 - Test: `tests/Oksis.Domain.UnitTests/Modules/Academics/SchoolCurriculumOverrideTests.cs`
 - Test: `tests/Oksis.Domain.UnitTests/Modules/Academics/SchoolCurriculumSnapshotTests.cs`
