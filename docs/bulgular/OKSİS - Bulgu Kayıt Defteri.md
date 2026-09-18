@@ -18,7 +18,12 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-17 (MEB çizelge entegrasyonu ön değerlendirmesi, kod ölçümü) — `TB-201`
+> **Son ekleme:** 2026-09-18 (MEB müfredatı Dilim 1 uygulaması, entegrasyon koşusu) — `TB-203`
+> (entegrasyon paketinin 676/1479'u master'da kırmızı; üç tenant'laştırma commit'i fixture'ları
+> güncellemedi, üretimde karşılığı yok 🟠) ve `TB-204` (davet süresi işinin testi koşu sırasına bağlı ⚪),
+> ikisi de §12. Sayaç düzeltildi: `TB-201`/`TB-202` kullanılmış ama "Sıradaki boş ID" güncellenmemişti.
+> Defter **75**.
+> **Önceki:** 2026-09-17 (MEB çizelge entegrasyonu ön değerlendirmesi, kod ölçümü) — `TB-201`
 > (müfredat saat sağlayıcısı sürümü süzmüyor; ikinci MEB sürümü yazıldığı an ders programı üretimi
 > `ArgumentException` ile durur 🟡) ve `TB-202` (MEB saat şablonu sezona bağlı değil; bir saat değişikliği
 > kapanmış sezonların gerekli saatini de geriye dönük değiştirir 🟡), ikisi de §12. İkisi birlikte
@@ -106,7 +111,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-201` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-205` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2576,6 +2581,42 @@ dayanağı değişmemeli.
 ⬜ Karar gerekiyor: şablon sürümü sezona çivilenir mi (sezon açılışında aktif sürüm
 kaydedilir, sezon o sürümü okur) yoksa şablon salt-ekleme mi olur (eski sürüm satırları
 hiç silinmez, sezon kendi sürümüne bakar)? İkisi de `TB-201`'in sürüm süzgecini şart koşar.
+
+### `TB-203` · Entegrasyon paketinin yarısı master'da kırmızı — üç tenant'laştırma commit'i test fixture'larını güncellemedi 🟠
+
+MEB müfredatı Dilim 1 uygulamasında ölçüldü (2026-09-18). `tests/Oksis.Infrastructure.IntegrationTests`
+tam koşusu `b7f8baaf` (master) üzerinde **676 / 1479** başarısız. Birleştirmenin ilk ebeveyni
+`60e65caf`'de aynı 79 testlik alt küme 79/79 yeşil, `b7f8baaf`'de 64'ü kırmızı. Kırmızıların kaynağı Altınay
+birleştirmesinin ikinci ebeveynindeki üç commit:
+
+| Sınıf | Adet | Commit | Neden |
+|---|---|---|---|
+| R1 | 338 | `7d9302b7` (TB-191) | `Subject` artık `TenantEntity`; fixture'lar okulu `School.Create` ile açıp ders kataloğunu içe aktarmıyor. 269 test `AnnouncementAudienceFixture.cs:310` `Subjects.FirstAsync`'te boş sonuç alıyor, 67'si "Cannot insert Subject without tenant context", 2'si dev seeder testi. |
+| R2 | 303 | `6cefeed8` (TB-195) | `ExamType` artık `TenantEntity`; sınav fixture'larında `ExamTypes…FirstAsync` boş (289 "Sequence contains no elements", 14 "Index out of range", `MergeExamSessions:694`). |
+| R3 | 34 | `15edc440` (TB-186) | `IsSchoolDay` sezonun `Active` olmasını istiyor (`AcademicCalendarRules.cs:61`); yoklama fixture'ları sezonu etkinleştirmiyor. |
+
+**Üretimde karşılığı yok:** gerçek okul açılışı iki kataloğu da içe aktarıyor
+(`CreateSchoolCommandHandler.cs:136/141`, dev seed `ClassRoomDevSeeder.cs:101/112`), TB-186 kuralı da
+bilinçli. Sorun yalnız test altyapısında. Ama bedeli ağır: push kapısı yalnız birim testleri koşturduğu
+için kırmızı fark edilmedi, ve paket bu hâldeyken **yeni bir entegrasyon kırmızısı gürültünün içinde
+kaybolur**. Müfredat dalı bunu yeni-eski başarısız test adı kümelerini `comm` ile karşılaştırarak aşıyor;
+bu bir geçici çözüm, kapanış değil.
+
+⬜ Merkezî düzeltme ([[yamalama-kabul-degil]]): fixture'ların okulu açtığı tek bir yardımcı, tenant
+bağlamında `SubjectCatalogImporter` + `ExamTypeCatalogImporter` çağırsın ve sezonu etkinleştirebilsin;
+ders yazan testler `CreateDbContext(schoolId)` kullansın; `MasterSeedIds.Subjects` ile karşılaştıran testler
+`MasterSubjectId` üzerinden çevrilsin (içe aktarılan ders yeni kimlik alıyor). Kapanış kanıtı: tam koşu
+yeşil. Teşhis raporu (fixture satırları ve komutlarla):
+[[2026-09-18 Entegrasyon Paketi Kırmızı Teşhisi]].
+
+### `TB-204` · `ExpireStaleInvitationsJobTests` koşu sırasına bağlı — iş paylaşılan DB'deki bütün okulların davetini sayıyor ⚪
+
+`TB-203` teşhisinde ayrı görüldü (2026-09-18). `ExpireStaleInvitationsJobTests.cs:85` 2 bekliyor, 5
+görüyor: iş paylaşılan fixture veritabanındaki **tüm** okulların süresi geçmiş davetlerini tarıyor, sonuç
+önceki testlerin bıraktığı davetlere bağlı. Birleştirmeyle ilgisi yok; üretim davranışı doğru (iş zaten
+tüm okulları taramalı).
+
+⬜ Test `expiredCount` toplamını değil, yalnız kendi oluşturduğu davetlerin durumunu doğrulasın.
 
 ---
 
