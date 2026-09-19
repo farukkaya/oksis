@@ -92,8 +92,9 @@ public sealed class MebSourceDocument : MasterEntity
     public DateTimeOffset RetrievedAt { get; private set; }
     public string? ETag { get; private set; }
     public DateTimeOffset? LastModified { get; private set; }
-    public VirusScanVerdict ScanVerdict { get; private set; }
     public Guid? SupersedesDocumentId { get; private set; } // aynı URL, farklı hash → revizyon
+    // Tarama alanı YOK: temiz olmayan dosya depoya yazılmaz, dolayısıyla kayıt hiç doğmaz.
+    // (Uygulama sırasında karar, 2026-09-20: "taranmadı" durumu taşımak yanlış güven verirdi.)
 }
 
 public sealed class MebDocumentSet : MasterEntity
@@ -301,13 +302,13 @@ Test: `tests/Oksis.Domain.UnitTests/Modules/Academics/MebSourceDocumentTests.cs`
 `MebDocumentSetTests.cs`.
 
 **Interfaces:**
-- `MebSourceDocument.CreateUploaded(Guid id, string sha256, string mimeType, long byteLength, string bucket, string key, string originalFileName, DateTimeOffset retrievedAt, VirusScanVerdict verdict, string? sourceUrl)`
+- `MebSourceDocument.CreateUploaded(Guid id, string sha256, string mimeType, long byteLength, string bucket, string key, string originalFileName, DateTimeOffset retrievedAt, string? sourceUrl)`
 - `MebSourceDocument.MarkRevisionOf(Guid previousDocumentId)` — aynı kaynak URL, farklı hash.
 - `MebDocumentSet.Create(Guid id, string title, string decisionNumber, DateOnly? decisionDate)`
 - `MebDocumentSetItem.Create(Guid id, Guid setId, Guid documentId, MebDocumentRole role, int displayOrder)`
 
-- [ ] **Step 1: Kırmızı testler** — hash/mime/boyut boş olamaz; `ByteLength > 0`; enfekte belge
-      (`VirusScanVerdict.Infected`) **oluşturulamaz** (istisna); karar numarası boş olamaz;
+- [ ] **Step 1: Kırmızı testler** — hash 64 onaltılık karakter; mime/dosya adı/adres boş olamaz;
+      `ByteLength > 0`; karar numarası boş olamaz;
       bir sette aynı belge iki kez yer alamaz (domain tarafında `DisplayOrder` tekilliği testte,
       veritabanı tekilliği Task 3'te); revizyon kendine bağlanamaz.
 - [ ] **Step 2: Minimum modeli uygula.**
