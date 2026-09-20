@@ -25,6 +25,7 @@ the CLI).
 | `StatusBadge` | ⬜ planned | roadmap |
 | `Pager` | ✅ built | `components/shared/pager.tsx` — kullanıcılar+öğrenciler paylaşır (stil `screens.css .usr-foot`) |
 | `SelectCheckbox` | ✅ built | `components/shared/select-checkbox.tsx` — tablo/kart satır seçimi (stil `.usr-cb`) |
+| `MultiSelect` | ✅ built | `components/shared/multi-select.tsx` — `FilterDropdown`'ın çok değerli yüzü (rozetli düğme + onay kutulu menü, `disabled` seçenek gerekçesiyle). `MultiChoiceChips` az/kısa seçenek içindir; bu bileşen ızgaranın dağıldığı yerde (12+ şube). Stil `screens.css .usr-msel-*`. İlk tüketici öğretmen Mesleki Bilgiler modalı (çoklu sınıf öğretmenliği) |
 | `Toast` | ✅ built | `components/shared/toast.tsx` — sağ-alt bildirim (stil `.stu-toast`); öğretmenler+ kullanır |
 | `KpiCard` / `KpiRow` | ✅ built | `components/shared/kpi-card.tsx` — KPI kart şeridi (stil `packages/ui/src/styles/kpi.css`); 7 ekran paylaşır, bkz. 2026-09-04 turu |
 
