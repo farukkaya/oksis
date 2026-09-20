@@ -35,7 +35,7 @@
 | `src/Oksis.Application/Common/Abstractions/IEmployeeNumberGenerator.cs` | **Yeni.** Üreteç sözleşmesi (Application birim testleri bunu taklit eder) |
 | `src/Oksis.Infrastructure/Persistence/Identity/EmployeeNumberGenerator.cs` | **Yeni.** Kilit + yıl + sıra; tek sorumluluk: bir sonraki numarayı üretmek |
 | `src/Oksis.Infrastructure/DependencyInjection.cs` | Kayıt satırı (`StudentNumberGenerator`ın yanına) |
-| `src/Oksis.Application/Modules/Users/Services/PersonUserCreationService.cs` | Öğretmen profili artık sicil no ile doğar; transaction burada açılır |
+| `src/Oksis.Application/Modules/Users/Services/PersonUserCreationService.cs` | Öğretmen profili artık sicil no ile doğar (transaction pipeline'dan gelir) |
 | `tests/Oksis.Infrastructure.IntegrationTests/Users/EmployeeNumberGeneratorTests.cs` | **Yeni.** Üretecin gerçek DB davranışı |
 | `tests/Oksis.Infrastructure.IntegrationTests/Users/PersonUserCreationEmployeeNumberTests.cs` | **Yeni.** Davetle doğan öğretmenin numarasının dolu olması + sıranın ilerlemesi (regresyon kilidi) |
 
@@ -415,7 +415,8 @@ EOF
 ### Task 2: Davette sicil no yazılması
 
 **Files:**
-- Modify: `src/Oksis.Application/Modules/Users/Services/PersonUserCreationService.cs:39-44` (ctor), `:126` (profil kurulumu), `:155` (SaveChanges)
+- Modify: `src/Oksis.Application/Modules/Users/Services/PersonUserCreationService.cs:39-44` (ctor), `:126` (profil kurulumu)
+- Modify: `tests/Oksis.Application.UnitTests/Modules/Users/Services/PersonUserCreationServiceTests.cs:54` (5. ctor argümanı)
 - Test: `tests/Oksis.Infrastructure.IntegrationTests/Users/PersonUserCreationEmployeeNumberTests.cs`
 
 > **Neden entegrasyon testi, birim testi değil:** `CreateAsync` altı DbSet'e
@@ -610,22 +611,25 @@ public sealed class PersonUserCreationService(
     : ICreateUserService
 ```
 
-Satır 126'daki profil kurulumunu değiştir. **Transaction yalnız öğretmende açılır** —
-diğer rollerde kilit gereksizdir ve bugünkü davranış korunur:
+Satır 126'daki profil kurulumunu değiştir. **Servis transaction AÇMAZ** — gerekçesi
+aşağıda:
 
 ```csharp
-        // Öğretmen sicil no ile DOĞAR. Numara üretimi ile aşağıdaki tek SaveChanges arası
-        // açık bir transaction'a alınır: üretecin sp_getapplock kilidi transaction sahipli
-        // ve commit'e kadar tutulmalı, yoksa iki eşzamanlı davet aynı numarayı okur.
+        // Öğretmen sicil no ile DOĞAR.
+        //
+        // Transaction BURADA açılmaz: `TransactionBehavior` MediatR pipeline'ı her komutu
+        // (`ICommand`/`ICommand<T>`) zaten bir transaction'a sarıyor ve bu servisin iki
+        // çağıranı da komut (`CreateUserCommand`, `ImportUsersCommand`). Üretecin
+        // `sp_getapplock` kilidi transaction sahipli olduğundan o pipeline commit'ine kadar
+        // tutulur — istenen tam olarak budur. İkinci bir iç transaction açmak yuvalanmış
+        // transaction olurdu ve kilidi ERKEN bırakırdı.
+        //
+        // Sözleşme sessiz varsayım değil: üreteç ambient transaction yoksa fırlatıyor,
+        // yani pipeline bir gün kalkarsa bu satır sessizce korumasız çalışmaz, patlar.
         //
         // Branş HÂLÂ sorulmuyor (bu yol ne komutta ne dosya şablonunda branş taşıyor);
         // branşsız doğan öğretmen sonradan profil ekranından branşlanır (B-05, TB-20).
-        var isTeacher = mapping.ProfileType == ProfileType.Teacher;
-        await using var transaction = isTeacher
-            ? await db.Database.BeginTransactionAsync(cancellationToken)
-            : null;
-
-        var employeeNumber = isTeacher
+        var employeeNumber = mapping.ProfileType == ProfileType.Teacher
             ? await employeeNumbers.NextAsync(schoolId, cancellationToken)
             : null;
 
@@ -634,19 +638,19 @@ diğer rollerde kilit gereksizdir ve bugünkü davranış korunur:
             teacherBranchId: null));
 ```
 
-Satır 155'teki `SaveChangesAsync`'ten hemen sonra commit ekle:
-
-```csharp
-        await db.SaveChangesAsync(cancellationToken);
-        if (transaction is not null)
-        {
-            await transaction.CommitAsync(cancellationToken);
-        }
-```
+Satır 155'teki `SaveChangesAsync` **olduğu gibi kalır** — commit pipeline'ın işi.
 
 > `ProfileRequest`in `EmployeeNumber` parametresi konumsal değil **adlandırılmış** verilir:
 > kayıt tipinin ara parametreleri (`StudentNumber`, `CurrentClassroomId`, `EnrolledAt`,
 > `Branch`) atlanıyor.
+>
+> **Mevcut birim testleri:** `tests/Oksis.Application.UnitTests/Modules/Users/Services/PersonUserCreationServiceTests.cs:54`
+> servisi 4 argümanla kuruyor (9 test). Beşinci argüman olarak
+> `Substitute.For<IEmployeeNumberGenerator>()` ekle. Öğretmen yolunu gezen testler
+> için üretecin bir değer döndürmesi gerekir:
+> `_employeeNumbers.NextAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>()).Returns("2026001");`
+> Servis `db.Database`e DOKUNMADIĞI için taklit edilmiş `IApplicationDbContext` sorun çıkarmaz —
+> transaction'ı açan tasarım bu testleri kıracaktı.
 
 - [ ] **Step 4: Testlerin geçtiğini gör**
 
