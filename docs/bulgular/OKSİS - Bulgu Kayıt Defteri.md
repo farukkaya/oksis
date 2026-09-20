@@ -18,7 +18,13 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-20 (MEB kaynaklı katalog tasarımı, kod + veri ölçümü) — `TB-218`
+> **Son ekleme:** 2026-09-20 (kullanıcı bulgusu turu — iki madde) — `B-53` (Kullanıcı Oluştur
+> ekranı rol sormuyordu, her hesap sessizce Yönetici doğuyordu 🟠) **aynı gün kapandı**;
+> `TB-120` (şubenin dersliği zorunlu değil) de **kapandı** — 2026-09-09 kullanıcı kararı bu
+> turda uygulandı. Ayrıca `TB-220` (ödev form testi sabit tarihle yazılmış, takvim geçince
+> kendiliğinden kırmızıya döndü ⚪) açıldı. Üçü de §12. Defter **92**.
+>
+> **Önceki ekleme:** 2026-09-20 (MEB kaynaklı katalog tasarımı, kod + veri ölçümü) — `TB-218`
 > (aynı kararın ikinci çizelgesi ara alana taşınamıyor; set benzersizliği kullanıcıyı uydurma
 > başlık yazmaya zorluyor 🟠) ve `TB-219` (ayrıştırıcı kategori bandını ders adına taşırıyor 🟡)
 > açıldı; `TB-219` **aynı gün kapandı** — plan yazılırken koda karşı ölçülünce `TB-217`'nin
@@ -125,7 +131,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-220` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-54` · `D-23` · `V-04` · `X-22` · `TB-221` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -144,7 +150,7 @@ sayaçlar üçü arasında ortak.
 | 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 29 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **90** | |
+| **Toplam** | **92** | |
 
 > **Sayaç düzeltmesi (2026-09-20):** tablo 74 diyordu, `grep '^### \`'` ile gerçek blok sayısı
 > **88**'di; bugünkü iki madde eklenince **90**. Defterin kendi kuralı işletilerek öncelik
@@ -580,6 +586,52 @@ kalır). Kapanış: merge + Altınay B6.3 öğretmen davetinde ekranda ölçüm.
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-220` · Ödev form testi sabit tarihle yazılmış; takvim geçince kendiliğinden kırmızıya döndü ⚪
+
+`packages/core/src/homework/schemas.test.ts` geçerli formu sabit `dueDate: "2026-09-18"` ile
+kuruyor. Şema teslim tarihinin **gelecekte** olmasını istediği için test 18 Eylül'den sonra
+kendiliğinden düşüyor: 2026-09-20 koşumunda `homeworkFormSchema > geçerli formu kabul eder`
+ve `tek şube ile seçili öğrenciyi kabul eder` kırmızı (core paketi 645/647).
+
+Kusur şemada değil testte: "gelecek tarih" kuralı **bugüne göreli** olmalı
+(`new Date()` + n gün), sabit bir güne çakılmamalı. Sabit tarihli her test bir zaman
+bombasıdır — düştüğü gün ilgisiz bir işin ortasında düşer ve o işin kırmızısı sanılır
+(bugün tam olarak böyle oldu: `B-53`/`TB-120` turunda çıktı).
+
+⬜ Kapatma yolu: `valid` kurgusundaki tarih bugüne göreli üretilir; aynı dosyadaki diğer
+sabit tarihler de taranır. Depodaki benzer kalıplar için tek geçiş yapılmalı.
+
+---
+
+### `B-53` · Kullanıcı Oluştur ekranı rol sormuyordu; her hesap sessizce Yönetici doğuyordu 🟠
+
+**Belirti (kullanıcı, 2026-09-20):** *"Kullanıcı Oluşturma ekranında Rol sorulmuyor ve
+oluşturulan kullanıcı otomatik Yönetici olarak oluşturuluyor."*
+
+**Kök neden — sunucu kusursuzdu, kural ekranda kayboluyordu.** `POST /api/v1/users` rolü
+zaten gövdede alıyor ve `PersonUserCreationService` dört rolü (SchoolAdmin/Teacher/Parent/
+Student) hedef sistem rolüne + minimal profile haritalıyor. Ekran tarafında ise
+`packages/core/src/users/constants.ts` içinde `CREATE_USER_ROLE = "SchoolAdmin"` **sabit**
+yazılıydı ve form şemasında rol alanı hiç yoktu — hangi hesap davet edilirse edilsin istek
+`SchoolAdmin` gönderiyordu. Ekranın kendi notu bunu "bu ekrandan yalnız yönetici davet edilir"
+diye bir tasarım kararı gibi anlatıyordu; kullanıcı için bu bir kısıt değil, **sessiz yetki
+yükseltmesiydi**: öğretmen davet ettiğini sanan yönetici, okulun tamamına yetkili bir hesap
+açıyordu.
+
+- ✅ **KAPANDI** *(`oksis-ui`, 2026-09-20)*: rol seçici zorunlu alan olarak eklendi,
+  **varsayılanı yok** (varsayılan vermek aynı kusurun tıklamayla atlanabilen hâli olurdu).
+  Liste keyfi değil, sunucunun gerçekten kurabildiği dört rol; Sekreter/Muhasebe bilinçli
+  olarak yok çünkü `SystemRole` seed'inde de yok (MVP 5 rol seti) — ekrana koymak sunucunun
+  reddedeceği seçenek sunmak olurdu. Öğretmen/veli/öğrenci seçilince hesabın hangi eksikle
+  doğacağı (branşsız / çocuk bağı yok / kaydı yok) ekranda yazıyor. Mock uç de artık rolü
+  gövdeden okuyor; sabit `SchoolAdmin` yazması, ekranın seçimi göndermeyi unutmasını mock'lu
+  koşumda görünmez kılıyordu.
+- ✅ **Canlı uçta ölçüldü** *(Altınay, `mudur` hesabı)*: ekrandan **Öğretmen** seçilerek davet
+  gönderildi; veritabanında kişi `TEACHER` sistem rolü + `Teacher` profiliyle doğdu (önceki
+  iki hesap `SCHOOL_ADMIN`). Bulgu bu koşumla kapandı.
+
+---
 
 ### `TB-164` · Ölü SQL seed'i okul-bağlı bir süper yönetici vadediyor ⚪
 
@@ -2428,6 +2480,38 @@ sınav takvimi modülünün içinde YAPILMAYACAK — modül bitince kendi turund
 `Timetable`) boş hâl dallarının kaldırılması. Kelebek oturumu bu kapanana kadar eksik
 derslik için yöneticiye elle ekleme sunar — geçici köprü, kalıcı çözüm değil.
 
+- 🔍 **Kullanıcı bulgusu turu (2026-09-20)**: *"Şube eklerken derslik sorulmuyor, sadece edit
+  panelde seçilebiliyor; ekleme sırasında seçilebilmeli hatta zorunlu olmalı."* Aynı bulgunun
+  ekran ayağı; kullanıcı kapsamı **tam TB-120** olarak onayladı.
+- 🔍 **Ölçüm bulgunun tahmininden ağırdı** *(dev DB, 2026-09-20)*: 96 şubenin **71'i**
+  dersliksizdi ve iki okulda atanacak oda bile yoktu (24 şube / **0** oda; 29 şube / 5 oda).
+  Yani "mevcut odalardan birini ata" diye bir göç yolu yoktu — göç odayı da üretmek zorundaydı.
+- ✅ **KAPANDI** *(`oksis-api` + `oksis-ui`, 2026-09-20)*:
+  - **Kural tipe taşındı:** `ClassRoom.RoomId` artık `Guid` (nullable değil), `Create` derslik
+    almadan çağrılamıyor, `RemoveRoom()` **silindi** (boşaltma yolu şubeyi geçersiz hâle
+    sokardı), kolon `NOT NULL`. Boşaltan uç (`DELETE /class-rooms/{id}/room`) ve
+    `RemoveClassRoomRoomCommand` kaldırıldı; `PUT .../room` artık "ata" değil "değiştir".
+  - **Göç veriyi de üretiyor:** dersliksiz her şube ETİKETİ için (okul + `full_name`) bir oda
+    açılır, aynı etiketi taşıyan bütün sezonların şubeleri o odaya bağlanır; aynı kodla oda
+    varsa yenisi üretilmez. EF'in yazdığı `defaultValue: Guid.Empty` **bilinçli kaldırıldı** —
+    sıfır GUID, FK'yi bozan ya da var olmayan dersliği gösteren "dolu" satır üretirdi.
+  - **Yazma yollarının tamamı kapandı:** `POST /class-rooms` artık `roomId` istiyor ve odayı
+    doğruluyor (bu okulun mu, aktif mi — `SetClassRoomRoom` ile aynı ölçüt); sezon devri hedef
+    şubenin dersliğini kaynak sezondan çözüyor (önce aynı ETİKET, sonra kaynak şubenin odası;
+    çözülemezse sezon açılmaz ve şube adıyla söylenir); dev seeder şube başına oda üretiyor.
+  - **Boş hâl dalları kalktı:** `ExamRoomDeriver.DerivationResult.ClassRoomsWithoutRoom`,
+    besteleme raporundaki karşılığı, "ev dersliği tanımlı olmayan şubeler…" uyarısı ve oturum
+    DTO'sundaki `classRoomsWithoutRoom` alanı (FE tipiyle birlikte) silindi. Elle derslik
+    ekleme **duruyor** — o kapasite içindir, dersliksiz şube köprüsü değildi.
+  - **Ekran:** Yeni Şube ve Toplu Şube Aç formlarında derslik seçici; toplu açmada derslik
+    şube BAŞINA sorulur (tek odayı hepsine dayatmak fiziksel olarak yanlış veri üretirdi).
+- 🔍 **Uygulama sırasında yakalanan tuzak (aynı gün):** sezon devrinde derslik, hedef şubenin
+  ETİKETİNDEN çözülüyor. İlk yazımda anahtar `ToUpperInvariant()` ile kuruluyordu; oysa
+  `ClassRoom.NormalizeSection` yalnız **tek harfli** adları büyütür, serbest adlar ("Papatya")
+  olduğu gibi saklanır. Kaçak veritabanında görünmezdi (collation harf duyarsız) — yalnız
+  bellekteki sözlükte olurdu ve serbest adlı şubesi olan okulda devir "dersliği çözülemedi"
+  diye dururdu. Anahtar iki tarafta da büyütülerek kapatıldı.
+
 ---
 ### `TB-163` · Biçim kapısı ~6000 adlandırma satırının altında boğuluyor ⚪
 
@@ -2596,6 +2680,15 @@ bilinçli. Sorun yalnız test altyapısında. Ama bedeli ağır: push kapısı y
 için kırmızı fark edilmedi, ve paket bu hâldeyken **yeni bir entegrasyon kırmızısı gürültünün içinde
 kaybolur**. Müfredat dalı bunu yeni-eski başarısız test adı kümelerini `comm` ile karşılaştırarak aşıyor;
 bu bir geçici çözüm, kapanış değil.
+
+- 🔁 **İkinci kez ölçüldü ve `comm` yöntemi ikinci kez işe yaradı** *(2026-09-20, `TB-120` turu)*:
+  `ClassRoom|OpenSeasonFromDraft|Exams` süzgeci taban (`f3488976`) üzerinde **304/397** kırmızı,
+  TB-120 değişiklikleriyle **301/393**. Kırmızı test ADI kümeleri karşılaştırıldığında
+  (`comm -13`) **yeni kırmızı sıfır**; üç fark, TB-120 ile artık üretilemeyen "dersliksiz şube"
+  hâlini ölçtüğü için silinen testler (üçü de tabanda da kırmızıydı). Hata imzaları R2 sınıfıyla
+  birebir örtüştü (289 "Sequence contains no elements" + 14 "Index out of range"). Bulgunun
+  "yeni bir entegrasyon kırmızısı gürültünün içinde kaybolur" uyarısı doğrulandı: değişikliğin
+  masumiyeti ancak taban çizgisi alınarak gösterilebildi ve bu tek başına ~12 dakika sürdü.
 
 ⬜ Merkezî düzeltme ([[yamalama-kabul-degil]]): fixture'ların okulu açtığı tek bir yardımcı, tenant
 bağlamında `SubjectCatalogImporter` + `ExamTypeCatalogImporter` çağırsın ve sezonu etkinleştirebilsin;

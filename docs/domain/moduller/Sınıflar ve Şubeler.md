@@ -2,7 +2,7 @@
 aliases: [ClassRooms, class-rooms, Sınıflar & Şubeler]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-09-20 (f3488976)
 ---
 
 # Sınıflar ve Şubeler
@@ -29,13 +29,13 @@ Tek bir kod modülü değildir — üç yere dağılmıştır: şube ve atama de
 
 ## Ana akışlar
 
-1. **Şube kurma** — Hedef sezon `Setup` veya `Active` olmalı; arşiv sezona şube açılmaz. Sınıf seviyesi master'dan doğrulanır ve kodu şube adının önekini üretir (`9` + `A` → `9-A`). Sunucu okulun sunduğu kademe listesine **bakmaz**; o süzgeç yalnız arayüzdedir. Aynı sezonda aynı (seviye, şube adı) ikilisi varsa erken reddedilir. Okul ayarı onay istiyorsa şube `PendingApproval`, istemiyorsa doğrudan `Active` doğar. Rehber öğretmen kuruluşta verilirse varlığı doğrulanır.
+1. **Şube kurma** — Hedef sezon `Setup` veya `Active` olmalı; arşiv sezona şube açılmaz. Sınıf seviyesi **okulun kendi kademe listesinden** doğrulanır (`TB-196`; master'ın 13 kademesinden değil — pasifleştirilmiş kademe de dışarıdadır) ve kodu şube adının önekini üretir (`9` + `A` → `9-A`). Aynı sezonda aynı (seviye, şube adı) ikilisi varsa erken reddedilir. Okul ayarı onay istiyorsa şube `PendingApproval`, istemiyorsa doğrudan `Active` doğar. **Derslik zorunludur** (`TB-120`): verilen oda okulun kendi kataloğunda ve aktif olmalıdır, değilse şube açılmaz. Rehber öğretmen kuruluşta verilirse varlığı doğrulanır (opsiyoneldir).
 
 2. **Onay** — `PendingApproval` veya `Draft` şube `Active`'e çekilir. Zaten aktifse işlem sessizce geçer (idempotent).
 
 3. **Taslağa çekme** — Aktif bir şube `Draft`'a geri çekilebilir. Bu "yumuşak" bir kapatmadır: **mevcut öğrenciler şubede kalır**, yalnız yeni atama engellenir. Şube statüsü, sezonun aksine tek yönlü değildir.
 
-4. **Rehber öğretmen ve derslik** — İkisi de atanır, değiştirilir, kaldırılır; aynı değerin tekrar atanması işlem üretmez. Şube rehbersiz kalabilir. Bir öğretmen birden çok şubenin rehberi olabilir; ayrılmış öğretmen rehber atanamaz. Bir derslik birden çok şubeye atanabilir — ikili öğretim gerçeği bilinçli olarak engellenmemiştir.
+4. **Rehber öğretmen ve derslik — ikisi aynı şey değildir.** Rehber **opsiyoneldir**: atanır, değiştirilir, kaldırılır; şube rehbersiz kalabilir. Bir öğretmen birden çok şubenin rehberi olabilir, ayrılmış öğretmen rehber atanamaz. **Derslik ise zorunludur** (`TB-120`, 2026-09-20): şube kurulurken sorulur, kaldırma yolu yoktur, yalnız başka bir derslikle değiştirilir. Aynı değerin tekrar atanması işlem üretmez. Bir derslik birden çok şubeye atanabilir — ikili öğretim gerçeği bilinçli olarak engellenmemiştir.
 
 5. **Öğrenci atama** — Yalnız `Active` şubeye yapılır. Bir öğrencinin okul genelinde **en fazla bir aktif ataması** olabilir; bu veritabanı seviyesinde filtreli unique index ile korunur, ihlal `STUDENT_ALREADY_ASSIGNED` döner. Atama sebebi elle girilmez: öğrencinin daha önce kapanmış bir kaydı varsa "yıl içi yeni kayıt", yoksa "ilk atama" olarak türetilir. Atamada kapasite aşımı engellenmez; **yeni öğrenci kaydında ise dolu şubeye kayıt reddedilir** (bkz. [[Öğrenci Kayıt Yönetimi]]).
 

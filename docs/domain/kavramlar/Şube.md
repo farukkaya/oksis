@@ -3,7 +3,7 @@ aliases: [ClassRoom, Branch (Timetable), BranchId (Timetable), Sınıf Şubesi]
 tags: [domain/academic]
 table: class_rooms
 status: active
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-09-20 (f3488976)
 ---
 
 # Şube
@@ -48,6 +48,7 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 - **Arşiv ile silme ayrı niyetlerdir.** Arşiv *geçmişi korur*: şube salt-okunur kalır ve (sezon, seviye, şube adı) slotunu **dolu tutar**. Silme *yanlış açılmış şubeyi kaldırır*: statü engel değildir, kayıt fiziksel silinmez (`is_deleted`) ve slot **serbest kalır** — aynı ad yeniden açılabilir.
 - Bir öğretmen **birden çok şubeye rehber** olabilir (2026-06-10'da tek şube sınırı kaldırıldı). Ayrılmış öğretmen rehber atanamaz; arşivlenmiş şubeye rehber atanamaz.
 - Şube adı 1-30 karakter.
+- **Şubenin ev dersliği ZORUNLUDUR** (`TB-120`, 2026-09-20). Dersliksiz şube kurulamaz: alan domainde `Guid`, kolonda `NOT NULL` ve [[Derslik]] kataloğuna FK'lıdır. Verilen derslik okulun kendi kataloğunda ve aktif olmalıdır. Dersliği **boşaltan** bir yol yoktur — yanlış atanan derslik başkasıyla değiştirilir. Gerekçe: dersliğinden türetme yapan yüzeyler (sınav oturumunun derslik kümesi, ders programı) alan isteğe bağlı kaldığı sürece "derslik yok" dalı taşımak zorunda kalıyordu.
 - Öğrenci [[Profil]]'indeki "güncel şube" alanı bu defterin **aynasıdır**, ayrı bir doğruluk kaynağı değil: defter her değiştiğinde aynı transaction içinde bir interceptor tarafından türetilir.
 - [[Öğrenci Kaydı]] da bir şube alanı taşır ve o da aynadır — ama **otomatik senkron değildir**: yalnız terfi akışında yazılır. Yıl içi transfer bu alana dokunmaz, dolayısıyla bayatlayabilir. Şube sorusunun tek güvenilir cevabı defterdir.
 
@@ -55,7 +56,7 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 
 - [[Sezon]] — ID referansı; şube bir sezona aittir
 - [[Sınıf Seviyesi]] — şubenin kademesi; şube adının öneki bu kaydın kodundan üretilir
-- [[Derslik]] — şubenin sabit ev odası (opsiyonel); bir oda birden çok şubeye atanabilir
+- [[Derslik]] — şubenin sabit ev odası (**zorunlu**); bir oda birden çok şubeye atanabilir
 - `ClassRoomStudent` — sahiplik (owned koleksiyon); öğrenci-şube atamasının tarihsel kaydı, ayrı not değil
 - `SourceClassRoomId` — kendine referans; şubenin hangi kaynak şubeden terfi/klonla üretildiği ("köken bağı"), sezon geçişinde öğrenci terfisi bunu izler
 - `HomeroomTeacherId` — rehber öğretmene ID-only referans; şube rehbersiz kalabilir, bir öğretmen birden çok şubenin rehberi olabilir
