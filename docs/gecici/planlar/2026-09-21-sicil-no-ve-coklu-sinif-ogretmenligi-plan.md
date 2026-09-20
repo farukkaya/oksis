@@ -49,7 +49,8 @@
 | `packages/core/src/teachers/logic.ts` | `availableTeacherActions` — `homeroom` push'u kalkar |
 | `packages/api/src/teachers/endpoints.ts` | `fetchHomeroomMap` çoğul; `toTeacher` `homerooms` yazar |
 | `apps/web/features/teachers/modals.tsx` | `TchHomeroomModal` silinir; `TchProfileModal` `MultiSelect` + küme farkı |
-| `apps/web/features/teachers/table.tsx` | İlk iki rozet + "+N" |
+| `apps/web/features/teachers/table.tsx` | Şube hücresini `TchHomeroomCell`e devreder |
+| `apps/web/features/teachers/parts.tsx` | **Yeni** `TchHomeroomCell` — ilk iki rozet + "+N" (diğer hücre bileşenleriyle aynı dosya) |
 | `apps/web/features/teachers/drawer.tsx` | `Fact` + `TabSinif` çoğul |
 | `apps/web/features/teachers/teacher-labels.ts` | `homeroom` etiketi ve menü grubundan çıkar |
 | `apps/web/features/teachers/teachers-page.tsx` | `homeroom` modal durumu ve iki handler'ı kalkar |
@@ -1041,20 +1042,26 @@ describe("availableTeacherActions — sınıf öğretmenliği satır menüsünde
   // menüsündeki ikinci kapı kaldırıldı (aynı kaydı iki yerden yazmak, profil
   // modalının kendi kuralının da ihlaliydi).
   it("aktif öğretmende homeroom döndürmez", () => {
-    const actions = availableTeacherActions({ ...baseTeacher, status: "active" })
+    const actions = teachersLogic.availableTeacherActions(
+      teacher({ id: "t1", status: "active" })
+    )
     expect(actions).not.toContain("homeroom")
   })
 
   it("detay ve kapasite hâlâ var", () => {
-    const actions = availableTeacherActions({ ...baseTeacher, status: "active" })
+    const actions = teachersLogic.availableTeacherActions(
+      teacher({ id: "t1", status: "active" })
+    )
     expect(actions).toContain("detail")
     expect(actions).toContain("capacity")
   })
 })
 ```
 
-> `baseTeacher` bu dosyada zaten tanımlı olan fixture'dır (satır ~10-40). Adı farklıysa
-> dosyadaki gerçek adı kullan.
+> Bu dosyanın fixture'ı bir SABİT değil, `teacher(partial)` FONKSİYONUDUR (satır 7) ve
+> `id` + `status` zorunlu alanlardır. `availableTeacherActions` dosyada ad ile import
+> EDİLMEMİŞTİR; `teachersLogic.*` ad alanı üzerinden çağrılır (satır 3). Yukarıdaki kod
+> ikisine de uyar — değiştirme.
 
 - [ ] **Step 2: Testin düştüğünü gör**
 
@@ -1144,7 +1151,8 @@ EOF
 - Modify: `packages/core/src/teachers/logic.test.ts` (fixture)
 - Modify: `packages/api/src/teachers/endpoints.ts:80-96,117-118`
 - Test: `packages/api/src/teachers/endpoints.test.ts`
-- Modify: `apps/web/features/teachers/table.tsx:228-235`
+- Modify: `apps/web/features/teachers/table.tsx:228-235` (+ `./parts` import listesi)
+- Modify: `apps/web/features/teachers/parts.tsx` (yeni `TchHomeroomCell`)
 - Modify: `apps/web/features/teachers/drawer.tsx:244-250,518-546`
 - Modify: `apps/web/features/teachers/modals.tsx` — `TchProfileModal` ve `TchCapacityModal:234`
 
@@ -1345,7 +1353,9 @@ biçimindedir; adını `homerooms` olarak okunur hâle getir, çağrı şekli de
                   </td>
 ```
 
-ve dosyanın altına, diğer hücre bileşenlerinin yanına:
+`TchHomeroomCell`i **`apps/web/features/teachers/parts.tsx`e** ekle (diğer hücre
+bileşenleri orada: `TchCapacityCell:155`, `TchBranchCell:167`, `TchLoadCell:186`) ve
+`table.tsx`in `./parts` import listesine adını yaz:
 
 ```tsx
 /** Satır yüksekliği sabit kalsın diye ilk iki şube rozet, kalanı "+N". */
