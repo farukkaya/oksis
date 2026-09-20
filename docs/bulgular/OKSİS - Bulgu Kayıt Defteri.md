@@ -20,8 +20,9 @@
 >
 > **Son ekleme:** 2026-09-20 (MEB kaynaklı katalog tasarımı, kod + veri ölçümü) — `TB-218`
 > (aynı kararın ikinci çizelgesi ara alana taşınamıyor; set benzersizliği kullanıcıyı uydurma
-> başlık yazmaya zorluyor 🟠) ve `TB-219` (ayrıştırıcı kategori bandını ders adına taşırıyor,
-> bozulan ad eşleme anahtarı 🟡), ikisi de §12. Sayaç düzeltildi: `TB-216`/`TB-217` kullanılmış
+> başlık yazmaya zorluyor 🟠) ve `TB-219` (ayrıştırıcı kategori bandını ders adına taşırıyor 🟡)
+> açıldı; `TB-219` **aynı gün kapandı** — plan yazılırken koda karşı ölçülünce `TB-217`'nin
+> zaten çözdüğü görüldü, bulgu bayat dev verisinden çıkarılmıştı. İkisi de §12. Sayaç düzeltildi: `TB-216`/`TB-217` kullanılmış
 > ama "Sıradaki boş ID" `TB-215`'te kalmıştı. Defter **90** (sayaç yeniden sayıldı).
 >
 > **Önceki ekleme:** 2026-09-20 (MEB müfredatı Dilim 2) — `TB-205` (indirme başlığı kontrol
@@ -2817,15 +2818,27 @@ Band adı iki satıra bölünmüş olarak yazıldığında (`KÜLTÜR, SANAT` / 
 sütun sınırı kayıyor ve bant metni ders hücresine sızıyor. `CategoryBands.cs`
 bandı çözüyor ama hücre okuması bandın kapladığı yatay alanı dışlamıyor.
 
-Zarar: bozulan ad, ders eşlemesinin **anahtarı**. Bu iki satır hiçbir zaman
-eşleşemez ve elle bağlansa bile yanlış adla kayıtlı kalır. Ara alandaki 66 farklı
-ders adının 59'u zaten çözülmemiş durumda; bunların ikisi gerçek ders değil, çöp.
-[[meb-kaynakli-katalog-tasarimi]] ile ders kataloğu belgeden doğacağı için bu çöp
-doğrudan kataloğa sızma riski taşıyor — tasarım bu yüzden ders satırlarını
-indirmede değil **yayımda** açıyor (§2.2).
+Zarar: bozulan ad, ders eşlemesinin **anahtarı**. Bu satırlar hiçbir zaman eşleşemez
+ve elle bağlansa bile yanlış adla kayıtlı kalır.
 
-⬜ Hücre okuması bant sütununu dışlamalı; iki satıra bölünmüş bant adları tek bant
-olarak birleştirilmeli. Gerçek PDF fixture'ıyla birim testi yazılır.
+✅ **2026-09-20 · aynı gün kapandı — aslında hiç açık değildi.** Plan yazılırken yeniden
+ölçüldü: kusuru `TB-217` çalışması (`CategoryBands`, henüz commit edilmemiş çalışma ağacında)
+zaten kapatmış. Kategori sütunu artık cetvel çizgisinden çözülüyor ve ayraç ders adının sol
+sınırını veriyor; sınıfın kendi belgesi bu hata sınıfını adıyla anıyor.
+
+Kanıt — `anadolu-2025-05.expected.json` golden çıktısı:
+
+| Ad | Golden'da geçiş |
+|---|---|
+| `KÜLTÜR, VE SPOR SANAT …` (çöp) | **0** |
+| `İNSAN, TOPLUM VE DEMOKRASİ …` (çöp) | **0** |
+| `TÜRK KÜLTÜR VE MEDENİYET TARİHİ` (doğru) | 6 |
+| `DEMOKRASİ VE İNSAN HAKLARI` (doğru) | 6 |
+
+Dev veritabanındaki bozuk satırlar `TB-217` öncesi koşulardan kalma **bayat veriydi**;
+ölçümü koda değil veriye dayandırmak yanılttı ([[karar-oncesi-yeniden-olcum]]). Veritabanı
+[[meb-kaynakli-katalog-tasarimi]] §8 ile zaten sıfırlanacak. ID iz bıraksın diye silinmedi;
+bir sonraki kapanış turunda arşive taşınır.
 
 ---
 
