@@ -18,7 +18,13 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-20 (MEB müfredatı Dilim 2) — `TB-205` (indirme başlığı kontrol
+> **Son ekleme:** 2026-09-20 (MEB kaynaklı katalog tasarımı, kod + veri ölçümü) — `TB-218`
+> (aynı kararın ikinci çizelgesi ara alana taşınamıyor; set benzersizliği kullanıcıyı uydurma
+> başlık yazmaya zorluyor 🟠) ve `TB-219` (ayrıştırıcı kategori bandını ders adına taşırıyor,
+> bozulan ad eşleme anahtarı 🟡), ikisi de §12. Sayaç düzeltildi: `TB-216`/`TB-217` kullanılmış
+> ama "Sıradaki boş ID" `TB-215`'te kalmıştı. Defter **90** (sayaç yeniden sayıldı).
+>
+> **Önceki ekleme:** 2026-09-20 (MEB müfredatı Dilim 2) — `TB-205` (indirme başlığı kontrol
 > karakterini süzmüyordu 🟠) açıldı ve **aynı gün kapandı**; kurucu okul dosyalarının indirme
 > yolunda da kullanılıyordu. Defter **73**.
 >
@@ -118,7 +124,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-215` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-220` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -133,12 +139,18 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu (`TB-139`, **`TB-191`**) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 13 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 39 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 19 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 18 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 29 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **74** | |
+| **Toplam** | **90** | |
 
+> **Sayaç düzeltmesi (2026-09-20):** tablo 74 diyordu, `grep '^### \`'` ile gerçek blok sayısı
+> **88**'di; bugünkü iki madde eklenince **90**. Defterin kendi kuralı işletilerek öncelik
+> dağılımı da yeniden sayıldı (🔴 3 · 🟠 18 · 🟡 40 · ⚪🟢 29). Sapmanın sebebi öncekiyle aynı:
+> gün içindeki eklemelerde sayaç elle güncelleniyor. Bu sayı "açık iş" değil, **defterdeki blok**
+> sayısıdır; kapanmış maddeler bir sonraki turda arşive taşınacak.
+>
 > **Sayaç düzeltmesi (2026-09-16):** tablo 76 diyordu, defterdeki gerçek blok sayısı **65**'ti — gün içindeki
 > hızlı eklemelerde sayaç elle artırıldığı için şişmişti. Sayılar `grep '^### \`'` ile **yeniden sayılarak**
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
@@ -2765,6 +2777,55 @@ derslerde ve seçmelilerin hiçbirinin katalogda karşılığı yok.
 ⬜ `TB-210` kararı verilmeden **yayım yapılmamalı**. Karar verilene kadar ekran bu riski
 gösteriyor ("146 satır atlandı") ama engellemiyor; engellemek gerekip gerekmediği de o kararın
 parçası.
+
+### `TB-218` · Aynı kararın ikinci çizelgesi ara alana taşınamıyor 🟠
+
+2026-09-20'de ölçüldü (`oksis-api` @ `f3488976`, `oksis-ui` merkez müfredat yüzeyi).
+"Ara alana taşı" dialogu **her çizelge için yeni bir belge seti açıyor**
+(`packages/api/src/platform-curriculum/queries.ts:117`). Set benzersizliği ise
+(karar numarası + başlık) ikilisinde (`CreateDocumentSetCommandHandler.cs:20`).
+
+Dialog set başlığını belge başlığıyla dolduruyor ve karar numarası da aynı — çünkü
+belgedeki bütün çizelgeler **tek karara** ait. Dolayısıyla ikinci çizelge
+`409 CURRICULUM_SOURCE_SET_DUPLICATE` alıyor. Arayüz bunu biliyor ve kullanıcıya
+"Farklı bir set başlığı verin" diyor (`start-import-dialog.tsx`, `describe()`).
+
+Ölçülen belgede (2025/05 sayılı karar, `20144001_202505.pdf`) sayfa 2–7 altı ayrı
+eğitim programının çizelgesi. Altısını da taşımak için kullanıcının **altı uydurma
+set başlığı** yazması gerekiyor.
+
+Zarar: tasarımın en temel kuralı deliniyor — bir kurul kararı tek hukuki kaynaktır
+(tasarım kararı 1). Altı sete bölünen karar, kaynak izini altı ayrı yere dağıtıyor ve
+uydurulan başlıklar kalıcı kayıt oluyor. Pratikte merkez kullanıcısı bir belgenin
+yalnız ilk çizelgesini taşıyabiliyor.
+
+⬜ Belge başına tek set; kapaktan okunan karar bilgisiyle açılır ve belgedeki bütün
+çizelgeler o setin altına girer. Modal tamamen kalkar. Tasarım:
+[[meb-kaynakli-katalog-tasarimi]] §6.2.
+
+### `TB-219` · Ayrıştırıcı kategori bandını ders adına taşırıyor 🟡
+
+Aynı ölçümde çıktı (dev veritabanı, `curriculum_import_entries`). Çizelgenin sol
+sütunundaki seçmeli ders bandı bazı satırlarda ders adının içine karışıyor:
+
+| Ara alanda kayıtlı ad | Olması gereken | Bandı |
+|---|---|---|
+| `KÜLTÜR, VE SPOR SANAT TÜRK KÜLTÜR VE MEDENİYET TARİHİ` | `TÜRK KÜLTÜR VE MEDENİYET TARİHİ` | KÜLTÜR, SANAT VE SPOR |
+| `İNSAN, TOPLUM VE DEMOKRASİ VE İNSAN HAKLARI` | `DEMOKRASİ VE İNSAN HAKLARI` | İNSAN, TOPLUM VE BİLİM |
+
+Band adı iki satıra bölünmüş olarak yazıldığında (`KÜLTÜR, SANAT` / `VE SPOR`)
+sütun sınırı kayıyor ve bant metni ders hücresine sızıyor. `CategoryBands.cs`
+bandı çözüyor ama hücre okuması bandın kapladığı yatay alanı dışlamıyor.
+
+Zarar: bozulan ad, ders eşlemesinin **anahtarı**. Bu iki satır hiçbir zaman
+eşleşemez ve elle bağlansa bile yanlış adla kayıtlı kalır. Ara alandaki 66 farklı
+ders adının 59'u zaten çözülmemiş durumda; bunların ikisi gerçek ders değil, çöp.
+[[meb-kaynakli-katalog-tasarimi]] ile ders kataloğu belgeden doğacağı için bu çöp
+doğrudan kataloğa sızma riski taşıyor — tasarım bu yüzden ders satırlarını
+indirmede değil **yayımda** açıyor (§2.2).
+
+⬜ Hücre okuması bant sütununu dışlamalı; iki satıra bölünmüş bant adları tek bant
+olarak birleştirilmeli. Gerçek PDF fixture'ıyla birim testi yazılır.
 
 ---
 
