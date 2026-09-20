@@ -118,22 +118,34 @@ public sealed class EmployeeNumberGeneratorTests(DatabaseFixture fixture) : IAsy
     public async Task InitializeAsync() => await fixture.EnsureDatabaseCreatedAsync();
     public Task DisposeAsync() => Task.CompletedTask;
 
-    private static AcademicSession SeedSession(Guid schoolId, int year) =>
-        AcademicSession.Create(
-            schoolId,
-            $"{year}-{year + 1}",
-            new DateOnly(year, 9, 1),
-            new DateOnly(year + 1, 6, 30));
+    /// <summary>
+    /// Aktif (IsCurrent) bir sezon kurar. Kalıp `ListTermsForPickerTests.SeedSessionAsync`:
+    /// `AcademicSession.Create` iki dönemi de ister ve `IsCurrent`i yazan tek yol
+    /// `Activate(...)`tır — `MarkCurrent` diye bir metot YOKTUR.
+    /// </summary>
+    private static async Task<AcademicSession> SeedCurrentSessionAsync(
+        DbContext db, Guid schoolId, int year)
+    {
+        var termTypeIds = await db.Set<AcademicTermType>().AsNoTracking()
+            .OrderBy(t => t.DisplayOrder).Take(2).Select(t => t.Id).ToListAsync();
+
+        var session = AcademicSession.Create(
+            schoolId, $"{year}-{year + 1}",
+            new DateOnly(year, 9, 1), new DateOnly(year + 1, 6, 30),
+            termTypeIds[0], new DateOnly(year, 9, 1), new DateOnly(year + 1, 1, 20),
+            termTypeIds[1], new DateOnly(year + 1, 2, 1), new DateOnly(year + 1, 6, 30));
+        session.Activate(DateTimeOffset.UtcNow, previousSessionId: null);
+        db.Set<AcademicSession>().Add(session);
+        await db.SaveChangesAsync();
+        return session;
+    }
 
     [Fact]
     public async Task Ilk_numara_sezon_yili_ve_001_olur()
     {
         var schoolId = Guid.NewGuid();
         await using var db = fixture.CreateDbContext(schoolId);
-        var session = SeedSession(schoolId, 2026);
-        session.MarkCurrent();
-        db.AcademicSessions.Add(session);
-        await db.SaveChangesAsync(default);
+        await SeedCurrentSessionAsync(db, schoolId, 2026);
 
         var gen = new EmployeeNumberGenerator(db);
         await using var tx = await db.Database.BeginTransactionAsync(default);
@@ -148,9 +160,7 @@ public sealed class EmployeeNumberGeneratorTests(DatabaseFixture fixture) : IAsy
     {
         var schoolId = Guid.NewGuid();
         await using var db = fixture.CreateDbContext(schoolId);
-        var session = SeedSession(schoolId, 2026);
-        session.MarkCurrent();
-        db.AcademicSessions.Add(session);
+        await SeedCurrentSessionAsync(db, schoolId, 2026);
         db.Persons.Add(MakeTeacher("2026001"));
         db.Persons.Add(MakeTeacher("2026002"));
         await db.SaveChangesAsync(default);
@@ -172,9 +182,7 @@ public sealed class EmployeeNumberGeneratorTests(DatabaseFixture fixture) : IAsy
     {
         var schoolId = Guid.NewGuid();
         await using var db = fixture.CreateDbContext(schoolId);
-        var session = SeedSession(schoolId, 2026);
-        session.MarkCurrent();
-        db.AcademicSessions.Add(session);
+        await SeedCurrentSessionAsync(db, schoolId, 2026);
         db.Persons.Add(MakeTeacher("2026999"));
         await db.SaveChangesAsync(default);
 
@@ -192,9 +200,7 @@ public sealed class EmployeeNumberGeneratorTests(DatabaseFixture fixture) : IAsy
     {
         var schoolId = Guid.NewGuid();
         await using var db = fixture.CreateDbContext(schoolId);
-        var session = SeedSession(schoolId, 2027);
-        session.MarkCurrent();
-        db.AcademicSessions.Add(session);
+        await SeedCurrentSessionAsync(db, schoolId, 2027);
         db.Persons.Add(MakeTeacher("2026042"));
         await db.SaveChangesAsync(default);
 
@@ -237,10 +243,12 @@ dotnet build tests/Oksis.Infrastructure.IntegrationTests/Oksis.Infrastructure.In
 ```
 Beklenen: **derleme hatası** — `EmployeeNumberGenerator` tipi yok.
 
-> `Person.Create` ve `AcademicSession.Create` imzaları ile `MarkCurrent`/`SetCurrent` adını
-> derleyici doğrular; imza tutmazsa test dosyasındaki çağrıyı gerçek imzaya uydur, üreteci
-> değiştirme. `fixture.CreateDbContext(schoolId)` `Person.Create`in `schoolId`'sini tenant
-> interceptor üzerinden yazar, bu yüzden `MakeTeacher` `Guid.Empty` geçebilir.
+> Gerekli `using`ler: `Oksis.Domain.Modules.Academics.Entities` (`AcademicTermType`) ve
+> `Microsoft.EntityFrameworkCore` (`DbContext`, `Set<T>()`). `AcademicTermType`in gerçek
+> namespace'ini derleyici doğrular.
+>
+> `fixture.CreateDbContext(schoolId)` `Person.Create`in `schoolId`'sini tenant interceptor
+> üzerinden yazar, bu yüzden `MakeTeacher` `Guid.Empty` geçebilir.
 
 - [ ] **Step 4: Üreteci yaz**
 
@@ -461,6 +469,27 @@ public sealed class PersonUserCreationEmployeeNumberTests(DatabaseFixture fixtur
         public DateOnly Today => DateOnly.FromDateTime(utcNow.UtcDateTime);
     }
 
+    /// <summary>
+    /// Aktif (IsCurrent) sezon kurar — kalıp `ListTermsForPickerTests.SeedSessionAsync`.
+    /// `IsCurrent`i yazan tek yol `Activate(...)`tır.
+    /// </summary>
+    private static async Task<AcademicSession> SeedCurrentSessionAsync(
+        DbContext db, Guid schoolId, int year)
+    {
+        var termTypeIds = await db.Set<AcademicTermType>().AsNoTracking()
+            .OrderBy(t => t.DisplayOrder).Take(2).Select(t => t.Id).ToListAsync();
+
+        var session = AcademicSession.Create(
+            schoolId, $"{year}-{year + 1}",
+            new DateOnly(year, 9, 1), new DateOnly(year + 1, 6, 30),
+            termTypeIds[0], new DateOnly(year, 9, 1), new DateOnly(year + 1, 1, 20),
+            termTypeIds[1], new DateOnly(year + 1, 2, 1), new DateOnly(year + 1, 6, 30));
+        session.Activate(DateTimeOffset.UtcNow, previousSessionId: null);
+        db.Set<AcademicSession>().Add(session);
+        await db.SaveChangesAsync();
+        return session;
+    }
+
     [Fact]
     public async Task Davetle_dogan_ogretmenin_sicil_nosu_dolu_olur()
     {
@@ -477,10 +506,7 @@ public sealed class PersonUserCreationEmployeeNumberTests(DatabaseFixture fixtur
                 Guid.NewGuid(), "v2026.05.01", "KVKK", "BUNDLE_HASH",
                 isCurrent: true, DateTimeOffset.UtcNow));
         }
-        var session = AcademicSession.Create(
-            schoolId, "2026-2027", new DateOnly(2026, 9, 1), new DateOnly(2027, 6, 30));
-        db.AcademicSessions.Add(session);
-        await db.SaveChangesAsync(default);
+        var session = await SeedCurrentSessionAsync(db, schoolId, 2026);
 
         var sessions = Substitute.For<ICurrentSessionProvider>();
         sessions.GetCurrentSessionIdOrNullAsync(Arg.Any<CancellationToken>())
@@ -525,10 +551,7 @@ public sealed class PersonUserCreationEmployeeNumberTests(DatabaseFixture fixtur
                 Guid.NewGuid(), "v2026.05.01", "KVKK", "BUNDLE_HASH",
                 isCurrent: true, DateTimeOffset.UtcNow));
         }
-        var session = AcademicSession.Create(
-            schoolId, "2026-2027", new DateOnly(2026, 9, 1), new DateOnly(2027, 6, 30));
-        db.AcademicSessions.Add(session);
-        await db.SaveChangesAsync(default);
+        var session = await SeedCurrentSessionAsync(db, schoolId, 2026);
 
         var sessions = Substitute.For<ICurrentSessionProvider>();
         sessions.GetCurrentSessionIdOrNullAsync(Arg.Any<CancellationToken>())
