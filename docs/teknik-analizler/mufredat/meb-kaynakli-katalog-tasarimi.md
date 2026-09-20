@@ -312,8 +312,13 @@ bağların taşınması gerekmez.
 
 ## 11. Açık noktalar
 
-- **Kapağın okunabilirliği henüz ölçülmedi.** Gömülü font nedeniyle düz metin
-  çıkarımı anlamsız sonuç verdi; PdfPig ile doğrulama uygulamanın ilk adımıdır.
-  Kapak beklenen alanları vermiyorsa §5.2 yeniden ele alınır.
+- ~~**Kapağın okunabilirliği henüz ölçülmedi.**~~ **Kapandı (2026-09-20, Dilim 6).**
+  Kapak hem kelime katmanı fixture'ında hem gerçek PDF'te okunuyor. Ölçülen:
+  `anadolu-2025-05` kapağında 257 kelime, 28 cetvel çizgisi; `Sayı`→`05`,
+  `Tarih`→`09/05/2025`, konu hücresi 320 karakter (gövde paragrafı ve sol sütun
+  etiketleri dışarıda), akademik yıl `2025-2026`. "Önceki Kararın Tarih ve Sayısı"
+  tuzağı, etiketin satırın en solunda olması şartıyla eleniyor. İkinci bir gerçek
+  belge (`ilkogretim-2025-04.pdf`) PdfPig ile uçtan uca aynı künyeyi veriyor.
+  §5.2 değişmedi.
 - **Kategorinin programa göre değişip değişmediği ölçülemedi:** `source_category`
   sütunu dolu satır bulunmuyor (özellik yeni). İlk gerçek koşuda doğrulanacak.

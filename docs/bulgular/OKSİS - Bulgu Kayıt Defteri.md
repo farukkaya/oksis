@@ -18,7 +18,12 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-20 (kullanıcı bulgusu turu — iki madde) — `B-53` (Kullanıcı Oluştur
+> **Son ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
+> ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
+> yöneticinin panosunu çiziyor, beş uç 403 🟠) ve `D-23` (Kullanıcılar ekranı `Staff` profilini
+> "—" gösteriyor ⚪) açıldı; ikisi de §12. Defter **94**.
+>
+> **Önceki ekleme:** 2026-09-20 (kullanıcı bulgusu turu — iki madde) — `B-53` (Kullanıcı Oluştur
 > ekranı rol sormuyordu, her hesap sessizce Yönetici doğuyordu 🟠) **aynı gün kapandı**;
 > `TB-120` (şubenin dersliği zorunlu değil) de **kapandı** — 2026-09-09 kullanıcı kararı bu
 > turda uygulandı. Ayrıca `TB-220` (ödev form testi sabit tarihle yazılmış, takvim geçince
@@ -131,7 +136,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-54` · `D-23` · `V-04` · `X-22` · `TB-221` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-221` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -146,11 +151,11 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu (`TB-139`, **`TB-191`**) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 18 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 19 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 29 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 30 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **92** | |
+| **Toplam** | **94** | |
 
 > **Sayaç düzeltmesi (2026-09-20):** tablo 74 diyordu, `grep '^### \`'` ile gerçek blok sayısı
 > **88**'di; bugünkü iki madde eklenince **90**. Defterin kendi kuralı işletilerek öncelik
@@ -163,7 +168,7 @@ sayaçlar üçü arasında ortak.
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
 > duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 48 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 50 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
 
 > **2026-09-16 gece düzeltme turu sürüyor.** Kodda düzeltilip **commit bekleyen** maddeler (dallar
 > `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`): `TB-174`, `D-19`,
@@ -2932,6 +2937,62 @@ Dev veritabanındaki bozuk satırlar `TB-217` öncesi koşulardan kalma **bayat 
 ölçümü koda değil veriye dayandırmak yanılttı ([[karar-oncesi-yeniden-olcum]]). Veritabanı
 [[meb-kaynakli-katalog-tasarimi]] §8 ile zaten sıfırlanacak. ID iz bıraksın diye silinmedi;
 bir sonraki kapanış turunda arşive taşınır.
+
+---
+
+### `B-54` · Öğretmen panosu yöneticinin panosunu çiziyor; beş uç 403 dönüyor 🟠
+
+**Ölçüm (Altınay saha testi, 2026-09-20, `B6.3` turu):** yeni kabul edilen öğretmen
+hesabıyla (`TEACHER` rolü, tek profil) giriş yapıldı. Kenar çubuğu doğru daraldı — Panel,
+Yoklama, Notlar, Ödevler, Ders Programı, Sınav Takvimi, Duyurular, Mesajlar, Kulüplerim.
+**Ama panonun gövdesi yöneticinin panosu:** "Okul geneline hızlı bakış", Öğrenci/Öğretmen
+sayaçları, "Kilitli hesap · Şifre sıfırlama bekliyor", "Yanıt bekleyen davet", Raporlar ve
+Davetler'e giden "Git" düğmeleri. Öğretmenin göremeyeceği veriyi isteyen beş uç arka arkaya
+**403** döndü:
+
+```
+GET /api/v1/users/persons/teacher-stats        403
+GET /api/v1/users/persons/student-stats        403
+GET /api/v1/attendance/board?date=…            403
+GET /api/v1/attendance/risk?termId=…           403
+GET /api/v1/grades/summary                     403
+```
+
+Ekranda karşılığı dört ayrı "… yüklenemedi · Tekrar dene" kutusu; öğretmen için bu, yetkisi
+olmadığı için değil **bozuk olduğu için** yüklenmemiş gibi görünüyor.
+
+**Kök neden:** `apps/web/features/dashboard/dashboard-page.tsx` (86 satır) içinde **tek bir
+rol dalı yok**; pano herkese aynı kart kümesini kuruyor. Kenar çubuğu rolü biliyor, pano
+bilmiyor — yetki kapısı yalnız gezinmede, içerikte değil.
+
+⬜ **Kapatma yolu:** panonun kart kümesi de portal/rol ile seçilmeli (öğretmen için: bugünkü
+dersleri, yoklama bekleyenleri, kendi ödev/not işleri). Kısa vadede en azından yetkisiz
+kartların hiç istenmemesi gerekir — 403'ü "Tekrar dene" ile göstermek kullanıcıyı boşa
+uğraştırıyor. `K-09` örnek veri kartları bu panoda öğretmene de görünüyor; sezonsuzluk
+kararıyla (`TB-168`/`TB-173`) aynı turda ele alınmalı.
+
+---
+
+### `D-23` · Kullanıcılar ekranı idari personelin bağlı profilini "—" gösteriyor ⚪
+
+**Ölçüm (Altınay, 2026-09-20):** 14 hesaplık listede müdür ve müdür yardımcısının **Bağlı
+Profil** sütunu "—", yani hiç profili yokmuş gibi. Oysa ikisinin de `identity.profiles`
+satırı var (`profile_type = Staff`) ve sunucu bunu **dosdoğru söylüyor**:
+
+```
+GET /api/v1/users → METİN KABACA   linkedProfileType: "Staff", linkedPersonId: VAR
+                    HİLAL KAHVECİOĞLU linkedProfileType: "Staff", linkedPersonId: VAR
+```
+
+**Kök neden:** `apps/web/features/users/users-labels.ts:41` içindeki
+`PROFILE_TYPE_LABEL: Record<UserProfileType, string>` yalnız `teacher` · `parent` · `student`
+taşıyor; istemci sözleşmesindeki `UserProfileType` de `staff`'ı hiç tanımıyor. Sunucunun
+öncelik listesi ise (`AccountUserProjection._primaryProfilePriority`) `Staff`'ı **en başa**
+koyuyor — yani idari personel için gelen tek değer, ekranın çeviremediği değer.
+
+⬜ **Kapatma yolu:** `staff` istemci tipine ve etiket tablosuna eklenmeli ("İdari Personel").
+Bugünkü hâliyle sütun, "profil bağlanmamış" ile "profili ekranın tanımadığı tipte" durumunu
+ayırt edilemez kılıyor — [[serilesmis-sekil-sozlesmedir]] ile aynı sınıftan bir sessiz kayıp.
 
 ---
 
