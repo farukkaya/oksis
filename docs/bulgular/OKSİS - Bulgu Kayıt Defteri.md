@@ -118,7 +118,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-207` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-208` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2614,6 +2614,22 @@ Infrastructure'daki tek adaptör değişir, çizelge ayrıştırıcısı saf ve 
 
 ⬜ Gerçek nuget.org beslemesinde PdfPig'in kararlı sürümü doğrulansın ve
 `src/Oksis.Infrastructure/Oksis.Infrastructure.csproj` ona sabitlensin.
+
+### `TB-207` · Rehberlik saati ortaöğretim çizelgesinde müfredat satırı olarak görünmüyor ⚪
+
+Müfredat Dilim 3 ayrıştırıcısı, MEB çizelgesinin "REHBERLİK VE YÖNLENDİRME" satırını iki
+çizelge ailesinde farklı sınıflandırıyor ve bu **kaynağın kendisinden** geliyor: ilköğretim
+çizelgesinde satır zorunlu ders bloğunun içinde (ders), ortaöğretimde toplam bloğunun bir
+bileşeni (beyan). Ayıran şey konum, ve ayrım doğru — ama sonucunda ortaöğretimde haftada
+1 saatlik rehberlik ara alana **satır olarak girmiyor**.
+
+Bugün bunun görünür bir zararı yok: sezon toplam saati snapshot'tan okunuyor ve okul o saati
+kendi ek dersi olarak yazabiliyor. Ama "MEB 40 saat diyor, bizde 39 görünüyor" sorusu er geç
+gelir.
+
+⬜ Ürün kararı: rehberlik saati bir müfredat satırı mı, yoksa ayrı bir kavram mı? Karar
+verildikten sonra ayrıştırıcı ya satırı üretsin ya da fark ekranı bu bir saati açıkça
+göstersin.
 
 ---
 
