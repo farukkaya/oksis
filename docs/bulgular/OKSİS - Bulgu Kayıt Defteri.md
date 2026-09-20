@@ -18,7 +18,11 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son kapanış:** 2026-09-18 — MEB müfredatı Dilim 1: `TB-201` ve `TB-202` kapandı
+> **Son ekleme:** 2026-09-20 (MEB müfredatı Dilim 2) — `TB-205` (indirme başlığı kontrol
+> karakterini süzmüyordu 🟠) açıldı ve **aynı gün kapandı**; kurucu okul dosyalarının indirme
+> yolunda da kullanılıyordu. Defter **73**.
+>
+> **Önceki kapanış:** 2026-09-18 — MEB müfredatı Dilim 1: `TB-201` ve `TB-202` kapandı
 > ([[OKSİS - Bulgu Arşivi]] §50; kod `feat/mufredat-surum-snapshot` dalında, merge bekliyor). Defter **73**.
 >
 > **Son ekleme:** 2026-09-18 (MEB müfredatı Dilim 1 uygulaması, entegrasyon koşusu) — `TB-203`
@@ -114,7 +118,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-205` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-206` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2540,6 +2544,25 @@ kaldırılsın) — `keyof typeof SHAPES` o zaman gerçek birleşim tipine çöz
 değişiklikten sonra ölçülebilir.
 
 ---
+
+### `TB-205` · İndirme başlığı kontrol karakterini süzmüyordu — dosya adı başlığı ikiye bölebiliyordu 🟠
+
+Müfredat Dilim 2'de merkez belgesinin imzalı indirme adresi üretilirken ölçüldü (2026-09-20).
+`ContentDispositionBuilder.BuildAttachment` ASCII yedeğini üretirken süzgeci `c < 128` idi;
+CR, LF ve NUL da ASCII olduğu için **geçiyordu**. `karar\r\nx-injected: 1.pdf` adlı bir dosya
+`Content-Disposition` başlığını ikiye bölebilir (header injection). Kurucu yalnız müfredatta
+değil, **okul dosyalarının indirme yolunda da** kullanılıyor
+(`GetFileDownloadUrlQueryHandler`, `S3CompatibleStorageService`).
+
+Ölçüm: aynı adla imzalı adres istendiğinde depo (Garage) isteği **400** ile reddetti — yani kırık
+başlık gerçekten dışarı çıkıyordu. Dosya adı kullanıcı girdisidir (yükleme sırasında serbest
+metin), dolayısıyla bu bir teorik risk değildi.
+
+✅ **Kapandı** (aynı gün, `oksis-api` `a6da46d5`, dal `feat/mufredat-belge-onay`). Süzgeç
+`c is >= ' ' and < (char)127` oldu; kontrol karakterleri `_` ile değişiyor. Kanıt:
+`ContentDispositionBuilderTests.Control_characters_never_reach_the_header` (CR/LF, NUL, DEL) ve
+`CurriculumSourceStorageTests.File_name_cannot_inject_headers` (gerçek Garage üzerinden).
+Türkçe ad yolu korunuyor: ASCII yedek + RFC 5987 `filename*=UTF-8''` birlikte veriliyor.
 
 ### `TB-203` · Entegrasyon paketinin yarısı master'da kırmızı — üç tenant'laştırma commit'i test fixture'larını güncellemedi 🟠
 
