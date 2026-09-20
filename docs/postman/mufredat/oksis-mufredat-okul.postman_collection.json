@@ -1,0 +1,318 @@
+{
+  "info": {
+    "name": "OKSİS — Müfredat Okul Yüzeyi (Dilim 4)",
+    "description": "Okulun sezon müfredatını yönettiği uçlar. OKUL token'ı ister (platform token'ı değil). Tek kural: hazırlıktaki (Setup) sezonda taslak okunur ve yazılır; başlamış sezonda yalnız dondurulmuş snapshot okunur. Fark bir uyarı değil bilgidir — MEB toplamına göre alt/üst sınır uygulanmaz.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1 · Program seçimi",
+      "item": [
+        {
+          "name": "Eğitim programlarını listele",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum/programs?sessionId={{sessionId}}",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum",
+                "programs"
+              ],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                }
+              ]
+            },
+            "description": "Kademe kademe seçenekler. Her seçenek, sezonun akademik yılı için yayımlanmış MEB sürümü olup olmadığını da söyler; yoksa program yine seçilebilir ama taslak Manual doğar."
+          },
+          "response": []
+        },
+        {
+          "name": "Programı seç / değiştir",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum/programs",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum",
+                "programs"
+              ]
+            },
+            "description": "Program değişirse taslaklar yeni programın yayımlı sürümüne taşınır ve okulun saat kararları yeniden tabanlamayla AYNI eşleme kuralından geçer. Aynı program yeniden seçilirse hiçbir şey yapılmaz.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"educationLevel\": \"High\",\n  \"educationProgramId\": \"{{educationProgramId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 · Fark ve saat",
+      "item": [
+        {
+          "name": "MEB–okul farkı",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum/diff?sessionId={{sessionId}}&gradeLevelCode=9",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum",
+                "diff"
+              ],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                },
+                {
+                  "key": "gradeLevelCode",
+                  "value": "9"
+                }
+              ]
+            },
+            "description": "MEB saati, okul saati ve fark yan yana. Özel derste mebHours ve difference BOŞTUR (sıfır yazmak 'fark yok' demek olurdu). Sıfır saatli ders listede kalır."
+          },
+          "response": []
+        },
+        {
+          "name": "Ders saatini yaz",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum-hours/subject/{{subjectId}}",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum-hours",
+                "subject",
+                "{{subjectId}}"
+              ]
+            },
+            "description": "MEB satırı olan derste override (MEB'e eşitse silinir), olmayanda ek ders (0 silinir). Üst sınır yoktur.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"items\": [\n    {\n      \"gradeLevelCode\": \"9\",\n      \"weeklyHours\": 8,\n      \"reason\": \"yoğun matematik\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Seviyeyi MEB'e döndür",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum/grades/9/reset?sessionId={{sessionId}}",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum",
+                "grades",
+                "9",
+                "reset"
+              ],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                }
+              ]
+            },
+            "description": "Seviyedeki bütün override'ları siler. Okulun kendi eklediği dersler SİLİNMEZ; kaç tanesinin durduğu yanıtta söylenir."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3 · Yeniden tabanlama",
+      "item": [
+        {
+          "name": "Önizle",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum/rebase/preview?sessionId={{sessionId}}",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum",
+                "rebase",
+                "preview"
+              ],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                }
+              ]
+            },
+            "description": "Taşımanın raporunu gösterir; HİÇBİR ŞEY YAZMAZ. Uygulamayla aynı hesaptan geçer."
+          },
+          "response": []
+        },
+        {
+          "name": "Uygula",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum/rebase",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum",
+                "rebase"
+              ]
+            },
+            "description": "Taslağı güncel MEB sürümüne taşır. Aynı dersin override'ı korunur, yeni ders MEB saatiyle gelir, kaldırılan ders SİLİNMEZ — removedForReview listesine düşer.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"gradeLevelCode\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "4 · Aktivasyon ve snapshot",
+      "item": [
+        {
+          "name": "Aktivasyon önizlemesi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum/activation-preview?sessionId={{sessionId}}",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum",
+                "activation-preview"
+              ],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                }
+              ]
+            },
+            "description": "Sezon başlatılırsa dondurulacak müfredat. Hiçbir şey yazmaz. canActivate=false ise blockers neyin eksik olduğunu söyler (ör. taslağı olmayan açık sınıf seviyesi)."
+          },
+          "response": []
+        },
+        {
+          "name": "Kilitli müfredat",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/curriculum/snapshot?sessionId={{sessionId}}&gradeLevelCode=9",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "curriculum",
+                "snapshot"
+              ],
+              "query": [
+                {
+                  "key": "sessionId",
+                  "value": "{{sessionId}}"
+                },
+                {
+                  "key": "gradeLevelCode",
+                  "value": "9"
+                }
+              ]
+            },
+            "description": "Başlamış/arşiv sezonun nihai müfredatı. Sonradan yayımlanan MEB sürümü bu yanıtı DEĞİŞTİRMEZ (karar 0021). Hazırlıktaki sezonda CURRICULUM_SNAPSHOT_NOT_FOUND döner."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "API_SERVICE",
+      "value": "https://localhost:5001/api/v1"
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "educationProgramId",
+      "value": ""
+    },
+    {
+      "key": "subjectId",
+      "value": ""
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  }
+}

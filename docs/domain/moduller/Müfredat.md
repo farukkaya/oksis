@@ -49,6 +49,8 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 8. **MEB keşfi ve çizelge ayrıştırma (platform)** — TTKB kategorisindeki belge adayları listelenir; keşif hiçbir şey indirmez ve yazmaz. İndirme yalnız izin verilen MEB alan adlarına çıkar ve elle yüklemeyle aynı koddan geçer. İndirilen PDF'in metin katmanından haftalık ders çizelgesi tablosu çözülür: sınıf sütunları, saat seçenekleri ve dipnotlar ayrılır. Ayrıştırma **salt okunurdur**; çizelgeyi ara alana taşımak ayrı bir komuttur ve 7. maddedeki onay kapısından geçer. Çizelgenin kendi toplam satırları sağlama olarak kullanılır — tutmazsa ya da hiç yoksa çizelge yayımlanabilir sayılmaz ([[Müfredat İçe Aktarma]]).
 
+9. **Okulun müfredat yönetimi** — Okul hazırlıktaki sezonda eğitim programını seçer (kurulum varsayılanı verir; Fen Lisesi ile Anadolu Lisesi arasında geçiş serbesttir), MEB saatleriyle kendi saatlerini yan yana görür, seviye bazında bütün kararlarını MEB'e döndürebilir ve taslağını güncel MEB sürümüne taşıyabilir. Taşıma okulun kararıdır — yeni sürüm yayımlanması taslağı kendiliğinden değiştirmez; önce önizlenir, önizleme ile uygulama **aynı hesaptan** geçer. Aynı dersin saat kararı korunur, yeni ders MEB saatiyle gelir, kaldırılan ders **silinmez** ve inceleme listesine düşer. Sezonu başlatmadan önce dondurulacak müfredat önizlenebilir; başlamış sezonun kilitli müfredatı ayrı bir uçtan okunur ve sonradan yayımlanan MEB sürümünden etkilenmez ([[Sezon Müfredat Snapshotı]]).
+
 **Yetki:** Ders, branş ve kademe yönetimi okul ayarlarının akademik yapı iznini kullanır (`school-settings.update-academic-structure`) — ayrı bir müfredat izin ailesi yoktur. Haftalık saat okuma `curriculum-hours.view`, override `curriculum-hours.override`. Görevlendirme tarafı kendi ailesindedir (`assignments.*`).
 
 ## Kapsam dışı
@@ -59,7 +61,7 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 - **DOCX/XLSX ayrıştırma.** Bu türler yüklenebilir ama çizelgeleri çözülmez.
 - **Dipnot metinlerinin anlamlandırılması.** İşaretler ham saklanır; kural çözümlemesi seçim kurallarıyla birlikte ertelendi.
 - **Tekrarlayan zamanlanmış MEB taraması.** Dönem içi senkronizasyon tasarım kararıyla yok; süpürme elle tetiklenir.
-- **Okul yönetim ekranları (Dilim 4).** Program seçme, taslağı yeni sürüme taşıma (rebase) ve MEB–okul fark görünümü henüz yok.
+- **Okul yönetim EKRANLARI.** Sözleşmeler hazır (program seçme, fark görünümü, rebase, aktivasyon önizlemesi, snapshot okuma); `oksis-ui` tarafı ayrı planlanır.
 - **Seçim kuralları.** Kategori asgarisi, önkoşul ve dışlama gibi MEB kuralları (`CurriculumSelectionRule`) ertelendi; gerçek dipnot metinleriyle birlikte tasarlanacak.
 - **Başlamış sezonun müfredatını düzeltme.** Snapshot değişmez; dönem içi düzeltme, bildirim ve erteleme bilinçli olarak kapsam dışı.
 - **MEB branş listesinin yeniden senkronu.** İçe aktarım tek yönlüdür; tekrar çalıştırılırsa yalnız eksikleri ekler, değişen MEB kaydını güncellemez.

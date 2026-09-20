@@ -3,7 +3,7 @@ aliases: [SchoolCurriculumSnapshot, SchoolCurriculumSnapshotItem, SchoolCurricul
 tags: [domain/academic]
 table: academic.school_curriculum_snapshots, academic.school_curriculum_drafts, academic.school_academic_programs
 status: active
-last-synced: 2026-09-18 (f33ea43a)
+last-synced: 2026-09-20 (736c6ba5)
 ---
 
 # Sezon Müfredat Snapshotı
@@ -18,11 +18,23 @@ Yapı: sezon × eğitim kademesi başına bir **okul akademik programı** (hangi
 
 ## Yaşam döngüsü
 
-1. **Hazırlık** — Sezon açılırken (doğrudan ya da sihirbazla) okulun açık kademeleri için program bağı ve seviye başına taslak kendiliğinden kurulur; eksik çekirdek dersler okul kataloğuna içe aktarılır. İşlem idempotenttir. Yılı tam eşleşen yayımlı sürüm yoksa taslak **manuel** açılır (sürümsüz, yalnız okulun ek dersleri) ve sezon açılışı bloklanmaz.
-2. **Aktivasyon** — `Setup → Active` geçişinde taslak çözülür ve snapshot yazılır; snapshot sezonun aktivasyonuyla **aynı kayıtta** yazılır. Bir hata olursa önceki sezonun arşivlenmesi dahil her şey geri alınır — okul yürürlükte sezonsuz kalmaz.
-3. **Başlamış / arşiv** — snapshot okunur, yazılmaz.
+1. **Hazırlık** — Sezon açılırken (doğrudan ya da sihirbazla) okulun açık kademeleri için program bağı ve seviye başına taslak kendiliğinden kurulur; eksik çekirdek dersler okul kataloğuna içe aktarılır. İşlem idempotenttir. Yılı tam eşleşen yayımlı sürüm yoksa taslak **manuel** açılır (sürümsüz, yalnız okulun ek dersleri) ve sezon açılışı bloklanmaz. Kurulum **varsayılan** programı verir; okul dilerse başka bir programa geçer (aşağıda).
+2. **Önizleme** — Sezonu başlatmak müfredatı geri alınamaz biçimde dondurur, bu yüzden aktivasyondan önce neyin dondurulacağı salt okunur biçimde görülebilir. Açık olduğu hâlde taslağı olmayan bir sınıf seviyesi burada **engel** olarak çıkar: sezon o hâliyle başlarsa o seviye yıl boyunca müfredatsız kalırdı.
+3. **Aktivasyon** — `Setup → Active` geçişinde taslak çözülür ve snapshot yazılır; snapshot sezonun aktivasyonuyla **aynı kayıtta** yazılır. Bir hata olursa önceki sezonun arşivlenmesi dahil her şey geri alınır — okul yürürlükte sezonsuz kalmaz.
+4. **Başlamış / arşiv** — snapshot okunur, yazılmaz.
 
 Sezon hazırlıktan geri alınırsa (taslağa dönüş, iptal) program, taslak ve okul kararları silinir.
+
+## Okulun karar yüzeyi
+
+Okul hazırlıktaki sezonda dört şey yapabilir:
+
+- **Eğitim programını seçmek.** Kurulum varsayılanı verir; okul Fen Lisesi ile Anadolu Lisesi arasında geçiş yapabilir. Program değişince taslaklar yeni programın yayımlı sürümüne taşınır ve okulun saat kararları **yeniden tabanlamayla aynı** kuraldan geçer — iki ayrı taşıma mantığı yoktur.
+- **Farkı görmek.** MEB saati, okul saati ve fark yan yana okunur. Fark bir uyarı değil bilgidir; sıfır saatli ders listede kalır çünkü "bu dersi okutmuyorum" bir karardır. Okulun kendi eklediği dersin MEB karşılığı ve farkı **boştur** — sıfır yazmak "fark yok" demek olurdu.
+- **Saat yazmak ve geri almak.** Seviye bazında bütün kararlar tek komutla MEB'e döndürülebilir; okulun kendi eklediği dersler bu işlemde **silinmez**.
+- **Güncel sürüme taşınmak (rebase).** Yeni bir MEB sürümü yayımlanması taslağı kendiliğinden değiştirmez; taşıma okulun kararıdır ve önce önizlenebilir. Önizleme ile uygulama aynı hesaptan geçer, tek fark uygulanıp uygulanmadığıdır.
+
+Başlamış sezonda bunların hiçbiri açık değildir; yalnız snapshot okunur.
 
 ## Kurallar
 
@@ -36,6 +48,10 @@ Sezon hazırlıktan geri alınırsa (taslağa dönüş, iptal) program, taslak v
 - Snapshot, MEB referans saatini ve hangi sürümden dondurulduğunu taşır; sonradan yayımlanan sürüm onu değiştirmez.
 - Ders programı saat sağlayıcısı ve gerekli toplam saat hesabı: başlamış sezonda snapshot, hazırlıktaki sezonda taslak okur; master sürüm tablolarını doğrudan okumaz (mimari bekçi).
 - Tenant izolasyonu: program, taslak, okul kararı ve snapshot okul kapsamlıdır.
+- Program seçimi, saat yazma, sıfırlama ve yeniden tabanlama yalnız **hazırlıktaki** sezonda çalışır.
+- Yeniden tabanlamada eşleme **çekirdek ders kimliği** üzerinden yapılır; okul kimliğiyle eşleştirmek sessizce "hiç eşleşme yok" üretir ve bütün kararları kaybettirirdi ([[Ders]] iki kimlik uzayı).
+- Yeni sürümde artık olmayan ders **sessizce silinmez**; inceleme listesine taşınır ve kararı okul verir.
+- Seçilen programda o yıl için yayımlı sürüm yoksa taslak manuel kalır; bu bir hata değildir.
 
 ## İlişkiler
 
