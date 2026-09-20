@@ -118,7 +118,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-212` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-214` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2709,6 +2709,39 @@ Doğrulandı: Fen Lisesi çizelgesi artık **163 satır, 0 hata** ile geçiyor.
 
 ⬜ Tasarım belgesindeki "Aynı seviye ve ders için iki satır olamaz" kuralı (§Dilim 2) gerçek
 veriyle çeliştiği için güncellenmeli.
+
+### `TB-212` · Kategori süpürme sessizce hiçbir şey indirmiyordu 🟢
+
+Ekran kontrolünde çıktı (2026-09-20). "Yeni belgeleri indir" düğmesi `202` dönüyor, ekran
+"Tarama başlatıldı" diyor ve kullanıcı bekliyor — ama **hiçbir belge inmiyordu**.
+
+Sebep: `MebCatalogSweepJob`, `FetchSourceDocumentCommand`'ı MediatR üzerinden çağırıyordu.
+Komut `[Tenancy(PlatformOnly)]` taşır ve arka plan işinin `HttpContext`'i, dolayısıyla
+platform kimliği yoktur. Her indirme `ForbiddenException` ile düşüyor, iş de tek tek hataları
+yutup "süpürme tamamlandı" diye kapanıyordu.
+
+Bu, defterdeki [[arka-plan-isinde-izin-kapisi]] dersinin birebir tekrarı: **izin/kapı taşıyan
+bir komut arka plan işinden çağrılamaz.** Ders kayıtlıydı ve yine de tekrar edildi — çünkü
+sweep işinin testi `ISender`'ı sahteliyordu ve sahte kapıyı hiç görmüyordu.
+
+✅ Kapı kullanıcı yüzeyinde bırakıldı; iş sistem aktörü olarak ortak `CurriculumSourceFetcher`
+servisini doğrudan çağırıyor (parmak izi/virüs/revizyon hâlâ tek nüsha). Testler artık gerçek
+servisle koşuyor (oksis-api `f3488976`). Doğrulandı: süpürme sonrası **30 belge / 24 MB**
+indirildi, önce 1 taneydi.
+
+### `TB-213` · `GetSchoolSettingsQueryHandlerTests` tam koşuda kararsız (Mapster genel yapılandırması) ⚪
+
+2026-09-20 tam koşusunda düştü, **tek başına 8/8 geçti**, ikinci tam koşuda yine yeşil geldi.
+Hata: `TypeAdapter.Adapt was already called, please clone or create new TypeAdapterConfig`
+(`SchoolSettingsMappings.Register`). Yani testler paylaşılan **global Mapster yapılandırmasını**
+kullanıyor ve başka bir test önce `Adapt` çağırdığında kayıt yapılamıyor — koşu sırasına /
+paralelliğe bağlı.
+
+Müfredat çalışmasıyla ilgisi yok (Schools modülü; dosyaya en son dokunan commit'ler bu
+oturumdan önce). Ama kararsız test, gerçek bir kırmızıyı gürültüye boğar.
+
+⬜ Test kendi `TypeAdapterConfig`'ini kursun (global olanı paylaşmasın) ya da kayıt idempotent
+olsun.
 
 ---
 
