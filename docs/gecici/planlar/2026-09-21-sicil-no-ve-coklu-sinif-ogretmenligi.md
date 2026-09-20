@@ -72,8 +72,8 @@
 NextAsync(schoolId, ct):
   1. sp_getapplock 'employee-number:{schoolId}'  Exclusive / Transaction / 5000 ms
   2. yıl  = AcademicSession.StartDate.Year   (IsCurrent olan sezon)
-  3. sıra = MAX( CAST(SUBSTRING(teacher_employee_number, 5, LEN(...)-4) AS int) )
-           WHERE teacher_employee_number LIKE '{yıl}[0-9]%'        → +1, yoksa 1
+  3. aday = TeacherProfile.EmployeeNumber StartsWith('{yıl}')     (LINQ, tenant filtreli)
+     sıra  = adayların sayısal kuyruklarının MAX'ı + 1, yoksa 1   (bellekte)
   4. return $"{yıl}{sıra:D3}"
 ```
 
@@ -82,6 +82,11 @@ NextAsync(schoolId, ct):
 - **Sıra SAYISAL karşılaştırılır, metin olarak değil.** `MAX` metin üzerinden alınsaydı 999'u
   aştığı anda bozulurdu: `'2026999' > '20261000'` metin sıralamasında doğrudur, yani 1000.
   öğretmenden sonra sayaç geri sayardı ve tekil indekse çarpardı.
+- **Karşılaştırma bellekte yapılır, SQL'de değil.** `CAST(SUBSTRING(...))` yazmak tablo/şema
+  adını ham SQL'e gömmeyi gerektirirdi; LINQ ile aday numaraları çekip bellekte karşılaştırmak
+  hem sağlayıcıdan bağımsız hem de global tenant filtresini olduğu gibi kullanır. Bir okulun
+  bir yıldaki öğretmen sayısı bu iş için önemsizdir. Ham SQL yalnız `sp_getapplock`ta kalır.
+- **Sayısal olmayan kuyruk yok sayılır:** elle girilmiş `2026-A` gibi bir numara sırayı bozmaz.
 - **`:D3` bir TAVAN değil MİNİMUM genişliktir** — sıra 999'u aşarsa numara dolgusuz büyür
   (`20261000`). `StudentNumberGenerator`'ın `length` alanıyla aynı sözleşme.
 - **Aktif sezon yoksa** `CreateAsync` zaten `NoActiveSeason` ile düşüyor (satır 103-106);
@@ -120,7 +125,7 @@ anlamı değişmez.
 (`.usr-fdd` kabuğu **yeniden tanımlanmadan**).
 
 ```tsx
-<MultiSelect<string>
+<MultiSelect
   icon="sinif"
   label="Şube"
   values={string[]}
@@ -156,7 +161,7 @@ anlamı değişmez.
 
 | Katman | Test |
 |---|---|
-| `Oksis.Application.UnitTests` | `PersonUserCreationService`: davetle doğan öğretmenin sicil no'su **dolu** (bugünkü kusurun regresyon kilidi) |
+| `Oksis.Infrastructure.IntegrationTests` | `PersonUserCreationService`: davetle doğan öğretmenin sicil no'su **dolu**, ikinci davet sırayı ilerletir (regresyon kilidi). Birim testi DEĞİL: altı DbSet + statik yardımcı taklidi kırılgan olurdu ve transaction/applock'u zaten kanıtlayamazdı |
 | `Oksis.Infrastructure.IntegrationTests` | `EmployeeNumberGenerator`: ilk numara `{yıl}001` · sıra artar · yıl bloğu değişince sıfırlanır · aynı okulda iki çağrı çakışmaz |
 | `packages/core` | `homerooms` üzerinden preset seçimi; `availableTeacherActions` artık `homeroom` döndürmez |
 | `packages/api` | `fetchHomeroomMap` aynı öğretmenin **iki şubesini de** taşır (bugün son kazanan siliyor) |
