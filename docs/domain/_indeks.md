@@ -37,6 +37,8 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[Ders]] — müfredat dersi; platform geneli master
 - [[Haftalık Ders Saati]] — MEB satırı + okul kararı (override / ek ders); hazırlıkta taslaktan, başlamış sezonda snapshot'tan okunur
 - [[Müfredat Sürümü]] — eğitim programı → akademik yıla ait değişmez MEB sürümü → satırlar
+- [[MEB Kaynak Belgesi]] — kararın ham dosyası, parmak izi ve hukuki kaynak seti
+- [[Müfredat İçe Aktarma]] — merkez ara alanı: doğrulama, ders eşleme önerisi ve onay
 - [[Sezon Müfredat Snapshotı]] — okulun sezon taslağı; aktivasyonda değişmez snapshot'a dondurulur
 - [[Not Ölçeği]] — 100'lük, 5'lik, harfli; okul seçer, tanımlamaz; kademe override'ını kimse okumuyor
 - [[Sınav Türü]] — not defteri sütununun türü (sınav/sözlü/performans); dönem sırası taşır, ağırlık taşımaz
@@ -134,6 +136,7 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[0008-super-yonetici-platform-roludur]] — süper yönetici okulun içini değil sistemdeki varlığını yönetir; iç veriye yalnız okul onayıyla erişir — uygulama bekliyor (TB-139)
 - [[0019-platform-rol-seti-uc-rol]] — platform üç rolle başlar: Yöneticisi, Okul Operasyonu, Destek (salt-okunur üstlenme); `SUPER_ADMIN` → `PLATFORM_ADMIN` — uygulama bekliyor (K-27)
 - [[0020-okul-yoneticisi-sezonsuz-atanir]] — okul yöneticisi okul düzeyinde (sezonsuz) atanır; sezon geçmişi atama tarihleri ile sezon tarihlerinin kesişiminden türer — uygulama bekliyor (K-27 ilk dilim)
+- [[0022-mufredat-yayimi-iki-kisi-kurali]] — master veri yalnız onaylanmış içe aktarmadan doğar; öneri onay değildir ve ara alanı düzelten onaylayamaz
 - [[0021-aktif-sezon-mufredati-snapshottan-okur]] — başlamış sezonun müfredatı değişmez snapshot'tan okunur; yeni MEB sürümü geçmişi değiştirmez, hazırlıktaki sezon kendi taslağını okur (TB-201/TB-202)
 - [[0009-tek-kimlik-modeli]] — eski `User` kaldırıldı; tek kimlik modeli Kişi, Profil, Hesap, Rol Ataması
 - [[0010-okul-basina-depolama-alani]] — her okulun dosyaları kendi depolama alanında; adı okul kimliğinden, ayrılışta tek silmeyle imha

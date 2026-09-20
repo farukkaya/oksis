@@ -2,7 +2,7 @@
 aliases: [Academics, api/v1/academics, api/v1/curriculum-hours, Akademik Katalog]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-09-18 (f33ea43a)
+last-synced: 2026-09-20 (445eaa6a)
 ---
 
 # Müfredat
@@ -22,6 +22,8 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 - [[Ders]] — müfredat dersi; kademe ve branş eşlemeleri çoka-çok
 - [[Sınıf Seviyesi]] — kademeler; okulun hangilerini sunduğu [[Okul Ayarları]]'nda
 - [[Haftalık Ders Saati]] — MEB satırı, okul kararı (override / ek ders) ve sezon snapshot'ı
+- [[MEB Kaynak Belgesi]] — kararın ham dosyası ve hukuki kaynak seti
+- [[Müfredat İçe Aktarma]] — merkez ara alanı, doğrulama ve onay
 - [[Müfredat Sürümü]] — eğitim programı → sürüm → satır; değişmez yayın
 - [[Sezon Müfredat Snapshotı]] — sezon taslağı ve aktivasyonda dondurulan kayıt
 - [[Branş]] — öğretmen alanı; okula özel katalog
@@ -43,13 +45,17 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 6. **Dönem tipleri** — Birinci ve ikinci dönem sabit lookup olarak durur; sezon kurulum sihirbazı tarih aralıklarını bu tiplere göre açar. Ayrı kavram notu yoktur.
 
+7. **Merkez belge ve onay hattı (platform)** — MEB kararının ham belgesi yüklenir ([[MEB Kaynak Belgesi]]), karar ve ekleri tek hukuki kaynak setinde toplanır, setten bir ara alan üretilir ([[Müfredat İçe Aktarma]]). Satırlar kaynaktaki ham hâliyle durur; ders eşlemeleri öneri olarak çıkar, merkez karara bağlar. Onaylanan çalışma değişmez bir [[Müfredat Sürümü]]'ne dönüşür. Kural: bilinmeyen ders master katalog açmaz, öneri onay yerine geçmez ve **ara alanı düzelten onaylayamaz** ([[0022-mufredat-yayimi-iki-kisi-kurali]]). Bu yüzey yalnız platform token'ıyla açılır; okul kullanıcısı erişemez.
+
 **Yetki:** Ders, branş ve kademe yönetimi okul ayarlarının akademik yapı iznini kullanır (`school-settings.update-academic-structure`) — ayrı bir müfredat izin ailesi yoktur. Haftalık saat okuma `curriculum-hours.view`, override `curriculum-hours.override`. Görevlendirme tarafı kendi ailesindedir (`assignments.*`).
 
 ## Kapsam dışı
 
 - **Not girişi ve hesaplama.** Bu modül ölçeği ve sınav türünü tanımlar; notu [[Notlar]] tutar.
 - **Okula özel ders tanımı.** Ders kataloğunun okula ait bir katmanı yoktur; açılan ders platform kataloğuna yazılır (bkz. [[Ders]] açık soruları).
-- **MEB'den veri çekme ve sürüm yönetimi.** Çizelge keşfi, belge saklama, ayrıştırma, merkezin inceleme/onayı (Dilim 2–3) ve okulun program seçme, taslağı yeni sürüme taşıma, fark görme ekranları (Dilim 4) henüz yok. Bugünkü sürümler seed ve göçle gelir.
+- **MEB sayfasından otomatik keşif ve PDF ayrıştırma (Dilim 3).** Belge bugün elle yüklenir, satırlar yapılandırılmış veriyle girilir; ayrıştırıcı aynı ara alanı dolduracak.
+- **Okul yönetim ekranları (Dilim 4).** Program seçme, taslağı yeni sürüme taşıma (rebase) ve MEB–okul fark görünümü henüz yok.
+- **Seçim kuralları.** Kategori asgarisi, önkoşul ve dışlama gibi MEB kuralları (`CurriculumSelectionRule`) ertelendi; gerçek dipnot metinleriyle birlikte tasarlanacak.
 - **Başlamış sezonun müfredatını düzeltme.** Snapshot değişmez; dönem içi düzeltme, bildirim ve erteleme bilinçli olarak kapsam dışı.
 - **MEB branş listesinin yeniden senkronu.** İçe aktarım tek yönlüdür; tekrar çalıştırılırsa yalnız eksikleri ekler, değişen MEB kaydını güncellemez.
 - **Görevlendirme akışları.** Öğretmen × ders yetkinliği bu modülün varlığıdır ama akışları [[Görevlendirmeler]]'de anlatılır.
