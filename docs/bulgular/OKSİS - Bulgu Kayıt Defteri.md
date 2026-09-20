@@ -2676,9 +2676,17 @@ ve `ForwardOnlyStream` ile bir birim testi eklendi (oksis-api `1f7966fe`).
 Davranış **tasarıma uygun**: bilinmeyen ders otomatik master ders açmaz, çalışma
 `NeedsReview`'e düşer. Ama pratik sonucu şu: ilk gerçek yayım 146 elle karar demek.
 
+**2026-09-20 · eşleme ekranıyla yeniden ölçüldü.** Karar yükü satır bazında değil **ders
+bazındadır**: 142 satır / 123 çözülmemiş satır, yalnız **52 ayrık ders / 45 çözülmemiş ders**.
+Ekran kararı ders bazında topluyor (aynı ham ad dört sınıfta dört satır üretiyor), yani 123
+değil 45 karar. Asıl darboğaz bu değil, **katalog**: çekirdekte **21 ders** var, karara
+bağlanacak **45**. Yani çoğunun bağlanacağı bir karşılık **yok**; operatörün elinde tek
+seçenek "kapsam dışı bırak" kalıyor ve bu, çizelgeyi budayarak yayımlamak demek.
+
 ⬜ Ürün kararı: çekirdek ders kataloğu MEB lise ders listesiyle önceden beslenecek mi, yoksa
 ilk içe aktarmada toplu "yeni ders aç" akışı mı eklenecek? İkincisi tasarımın "bilinmeyen ders
-otomatik açmaz" kuralını gevşetmeden, ayrı ve bilinçli bir komutla yapılabilir.
+otomatik açmaz" kuralını gevşetmeden, ayrı ve bilinçli bir komutla yapılabilir. **Bu karar
+verilmeden eşleme ekranı işlevsel olarak tamamlanamaz.**
 
 ### `TB-211` · Aynı ders aynı sınıfta hem ortak hem seçmeli olabiliyor; tekillik kuralımız bunu yasaklıyordu 🟢
 
