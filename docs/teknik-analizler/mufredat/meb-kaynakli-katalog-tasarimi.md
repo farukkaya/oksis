@@ -46,9 +46,11 @@ düğmeye inmesi.
 4. **Bir karar = bir belge seti.** Belge başına tek set açılır; belgedeki bütün
    çizelgeler o setin altına, programa bir çalışma olarak girer.
 5. **Kademe addan değil, sınıf sütunlarından türetilir.**
-6. **Kategori MEB'in kendi bandıdır.** `SubjectCategory` enum'u kaldırılır; MEB'in
-   seçmeli ders bandı ham metin olarak müfredat satırında kalır. Ortak derste
-   `null`'dır — uydurma varsayılan yazılmaz.
+6. **Kategori MEB'in kendi bandıdır.** `SubjectCategory` enum'u (Dil/Matematik/
+   Fen/Sosyal) kaldırılır; MEB'in seçmeli ders bandı ham metin olarak müfredat
+   **satırında** saklanır — ders kaydında değil. Ortak derste `null`'dır; uydurma
+   varsayılan yazılmaz. Enum'a bağlı vekâlet `Near` basamağı branş üzerinden
+   yeniden tanımlanır (§5.5).
 7. **Belge türü kapaktan tanınır**, kullanıcıya sorulmaz.
 8. **Kapsanmayan veri hata değildir.** Branşı bulunamayan ders, kaynağı
    bulunamayan alan kayıtlı birer durumdur; süreç durmaz.
@@ -65,6 +67,8 @@ düğmeye inmesi.
 - **Mezun olunan yükseköğretim programının modellenmesi.** Ham metin listesi
   olarak saklanır; üzerine ekran veya mantık kurulmaz.
 - **Veri göçü.** Dev veritabanı sıfırlanır; göç hiçbir taşıma mantığı içermez.
+- **Vekâlet sıralamasının yeniden tasarlanması.** `Near` yalnız yeniden tanımlanır
+  (§5.5); vekâlet ekranının geri kalanına dokunulmaz.
 
 ## 4. Neden seed bırakılmıyor
 
@@ -121,11 +125,28 @@ ayrıştırma yapılmaz.
 
 | Alan | Değişiklik |
 |---|---|
-| `Category` | **Kaldırılır.** MEB'in seçmeli ders bandı zaten müfredat satırında ham metin olarak saklanıyor (`SourceCategory`, `TB-217`) ve kategori dersin değil, dersin o programdaki yerinin özelliğidir |
+| `Category` | **Kaldırılır** — ama MEB kategorisi kaybolmaz, yeri değişmez: zaten satırda duruyor (aşağıya bakınız). Kaldırılan, bizim `SubjectCategory` enum'umuzdur (Dil / Matematik / Fen / Sosyal / Sanat) |
 | `Code` | Ders adından türetilir (program koduyla aynı kural) |
 | `Name` | Belgedeki ham ad, başlık düzenine çevrilmiş |
 | `IsElective` | Çizelgedeki ortak/seçmeli bandından (`CurriculumCourseType`) |
 | `SourceDocumentId`, `SourcePageNumber`, `SourceTitle` | **Yeni.** Programdakiyle aynı |
+
+#### MEB kategorisi nereye yazılır
+
+Çizelgenin sol sütunundaki bantlar — "AKADEMİK ÇALIŞMALAR", "İNSAN, TOPLUM VE
+BİLİM", "DİN, AHLAK VE DEĞER", "KÜLTÜR, SANAT VE SPOR" — **müfredat satırına**
+ham metin olarak yazılır ve sabit bir listeye eşlenmez:
+
+| Tablo | Sütun | Ne zaman |
+|---|---|---|
+| `curriculum_import_entries` | `source_category` `nvarchar(200)` | Ara alana taşınırken |
+| `curriculum_entries` | `source_category` `nvarchar(200)` | Yayımlanırken |
+
+**Neden derste değil satırda:** aynı ders programdan programa farklı banda düşer,
+ortak bantta ise hiç bandı yoktur. Sosyal Bilimler Lisesi çizelgesinde
+`TÜRK DİLİ VE EDEBİYATI` ortak bantta (kategorisiz), `SEÇMELİ TÜRK DİLİ VE
+EDEBİYATI` ise AKADEMİK ÇALIŞMALAR bandındadır. Kategori derste dursaydı biri
+ötekini ezerdi. Gruplama okuma tarafında yapılır (`TB-217`).
 
 > **`SEÇMELİ FİZİK` ayrı bir derstir.** MEB kendi tablosunda onu seçmeli bandında,
 > `FİZİK`'i ortak bandında ayrı satır olarak yazıyor; saatleri ve sınıfları da
@@ -140,6 +161,28 @@ ayrıştırma yapılmaz.
 | `Code` | Ad'dan türetilir |
 | `SourcePrograms` | **Yeni.** "MEZUN OLDUĞU YÜKSEKÖĞRETİM PROGRAMI/FAKÜLTE" sütunu, **ham metin listesi**. Modellenmez; ileride gerekirse diye saklanır |
 | `SubjectBranch` | "OKUTACAĞI DERSLER" sütunundan; çoka-çok (bir ders birden çok alanda okutulur) |
+
+### 5.5 Vekâlet `Near` basamağı
+
+`SubjectCategory` kalkınca `BranchFitResolver`'ın `Near` basamağı dayanaksız
+kalır — bugün "aday, boştaki dersle aynı kategoriden bir ders veriyor" demektir.
+Yeni tanım belgeden gelir:
+
+| Basamak | Yeni tanım |
+|---|---|
+| `Same` | Değişmiyor: aday zaten o dersi veriyor veya ana/yan branşı o dersi okutabiliyor |
+| `Near` | Aday, boştaki dersle **ortak bir alandan okutulabilen** bir ders veriyor |
+| `Different` | Örtüşme yok |
+
+"Fen Bilimleri hem Biyoloji hem Fizik alanından okutulur" gerçek bir yakınlıktır ve
+öğretmenlik alanları kararının kendi verisidir; "ikisi de Fen kategorisinde"
+uydurma bir eksendi. Vekâlet sorgusu artık ders ↔ branş bağını da okur.
+
+**Sıra bağımlılığı:** branş verisi yüklenene kadar `Near` hiç tetiklenmez ve
+vekâlet `Same`/`Different` ile çalışır. Bu, bozulma değil eksik veridir.
+
+**Okulun kendi açtığı ders** (`CreateSubject`) kategori sormaz; okul dersi de
+branşa bağlanır ve aynı kuralla değerlendirilir.
 
 ## 6. Ana akışlar
 
@@ -262,6 +305,10 @@ bağların taşınması gerekmez.
   onay → ders ve branş doğuşu zinciri. Bellek içi sağlayıcı benzersizlik
   kısıtlarını zorlamaz; bu testler DB'li koşmalıdır.
 - **İdempotentlik:** aynı belgeyi iki kez indirmek, aynı çizelgeyi iki kez taşımak.
+- **Vekâlet regresyonu:** `Near` basamağının yeni tanımı — ortak alandan okutulan
+  ders veren aday yakın sayılmalı; branş verisi yokken `Same`/`Different` ile
+  çalışmaya devam etmeli. Mevcut vekâlet entegrasyon testleri `SubjectCategory`
+  kurduğu için hepsi gözden geçirilir.
 
 ## 11. Açık noktalar
 
