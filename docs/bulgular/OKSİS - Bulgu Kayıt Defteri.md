@@ -118,7 +118,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-214` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-215` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2742,6 +2742,29 @@ oturumdan önce). Ama kararsız test, gerçek bir kırmızıyı gürültüye bo�
 
 ⬜ Test kendi `TypeAdapterConfig`'ini kursun (global olanı paylaşmasın) ya da kayıt idempotent
 olsun.
+
+### `TB-214` · Bugünkü katalogla yayım, müfredatı 44 satırdan 15 satıra düşürüyor 🟠
+
+Onay/yayım ekranı uçtan uca denendi (2026-09-20) ve `TB-210`'un bedeli **ölçülebilir** hâle
+geldi. Anadolu Lisesi çizelgesi (161 satır) ara alana alındı; çekirdek katalogda karşılığı
+olan **15** satır bağlandı, kalan **146** satır kapsam dışı bırakıldı (başka seçenek yoktu).
+Yayım sonucu:
+
+```text
+sürüm 2025-05 · 15 satır · 15 kaynak izi · 0 saat seçeneği
+LEGACY-2025.04-HIGH (44 satır) → Superseded
+```
+
+Yani yayım, lise programının **44 satırlık yer tutucu sürümünü 15 satırlık bir sürümle
+değiştirdi**. Hat teknik olarak doğru çalışıyor — sağlama tuttu, iki kişi kuralı işledi, izler
+yazıldı — ama sonuç, gerçek çizelgeden daha fakir bir müfredat.
+
+Saat seçeneğinin sıfır çıkması da aynı sebepten: seçenekli hücreler (`(1)(2)`) hep seçmeli
+derslerde ve seçmelilerin hiçbirinin katalogda karşılığı yok.
+
+⬜ `TB-210` kararı verilmeden **yayım yapılmamalı**. Karar verilene kadar ekran bu riski
+gösteriyor ("146 satır atlandı") ama engellemiyor; engellemek gerekip gerekmediği de o kararın
+parçası.
 
 ---
 
