@@ -118,7 +118,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-206` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-207` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2599,6 +2599,21 @@ görüyor: iş paylaşılan fixture veritabanındaki **tüm** okulların süresi
 tüm okulları taramalı).
 
 ⬜ Test `expiredCount` toplamını değil, yalnız kendi oluşturduğu davetlerin durumunu doğrulasın.
+
+### `TB-206` · PdfPig sürümü kanonik görünmüyor; kararlı sürüme sabitlenmeli ⚪
+
+Müfredat Dilim 3'te PDF metin çıkarımı için `UglyToad.PdfPig` eklendi (Apache-2.0). Ama bu
+makinedeki NuGet beslemesi paket için yalnız iki sürüm gösteriyor: `0.1.9-alpha001-patch1` ve
+`1.7.0-custom-5`. Kullanılan `1.7.0-custom-5`'in nuspec'inde `description` alanı "Package
+Description", lisans metadata'sı boş — **kanonik bir yayın etiketi gibi durmuyor**. Çalışıyor ve
+gerçek MEB PDF'lerinden Türkçe metni doğru çıkarıyor (testlerle ölçüldü), ama sürüm kimliği
+doğrulanmadı.
+
+Riski sınırlayan şey, kütüphanenin `IPdfTextExtractor` arkasında olması: değişirse yalnız
+Infrastructure'daki tek adaptör değişir, çizelge ayrıştırıcısı saf ve bağımsız kalır.
+
+⬜ Gerçek nuget.org beslemesinde PdfPig'in kararlı sürümü doğrulansın ve
+`src/Oksis.Infrastructure/Oksis.Infrastructure.csproj` ona sabitlensin.
 
 ---
 

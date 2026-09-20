@@ -60,6 +60,121 @@
   ],
   "item": [
     {
+      "name": "0 · MEB keşfi ve indirme (Dilim 3)",
+      "item": [
+        {
+          "name": "Kategoriyi keşfet",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-sources/discovery?category=7",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-sources",
+                "discovery"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "7"
+                }
+              ]
+            },
+            "description": "TTKB kategori listesini okur. Hiçbir şey indirmez ve yazmaz; bilinen adres knownDocumentId ile işaretlenir. 'Değişmiş' diye bir durum yoktur — içerik indirilmeden parmak izi bilinemez."
+          },
+          "response": []
+        },
+        {
+          "name": "Belgeyi MEB'den indir",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-sources/documents/fetch",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-sources",
+                "documents",
+                "fetch"
+              ]
+            },
+            "description": "Allowlist'ten (varsayılan: meb.gov.tr alt alan adları, yalnız HTTPS) geçen adresi indirir ve elle yüklemeyle AYNI yoldan depoya alır. Liste dışı adres için istek hiç yapılmaz: CURRICULUM_SOURCE_HOST_NOT_ALLOWED (400).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"sourceUrl\": \"https://ttkb.meb.gov.tr/meb_iys_dosyalar/2025_05/20144001_202505.pdf\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Kategoriyi süpür (arka plan)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-sources/discovery/sweep?category=7",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-sources",
+                "discovery",
+                "sweep"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "7"
+                }
+              ]
+            },
+            "description": "Yalnız YENİ adresleri arka planda indirir; 202 ve iş kimliği döner. Tekrarlayan zamanlama yoktur (MEB müfredatı dönem içinde senkronize edilmez). Tek belgenin hatası süpürmeyi durdurmaz."
+          },
+          "response": []
+        },
+        {
+          "name": "Belgeyi ayrıştır",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-sources/documents/{{documentId}}/parse",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-sources",
+                "documents",
+                "{{documentId}}",
+                "parse"
+              ]
+            },
+            "description": "Belgedeki bütün haftalık ders çizelgelerini çıkarır ve HİÇBİR ŞEY YAZMAZ. Tek PDF birden çok çizelge taşıyabilir. Yanıt, çizelgenin kendi toplam satırlarıyla yapılan sağlama karşılaştırmasını ve isPublishable bayrağını içerir."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "1 · Belgeler ve belge seti",
       "description": "Ham belge süresiz saklanır; silme ucu bilinçli olarak yoktur.",
       "item": [
@@ -222,6 +337,40 @@
             "body": {
               "mode": "raw",
               "raw": "{\n  \"documentSetId\": \"{{documentSetId}}\",\n  \"payload\": {\n    \"schemaVersion\": \"1.0\",\n    \"educationProgramCode\": \"MIDDLE-GENERAL\",\n    \"academicYearCode\": \"2027-2028\",\n    \"entries\": [\n      {\n        \"gradeLevelCode\": \"5\",\n        \"subjectName\": \"Matematik\",\n        \"subjectCode\": null,\n        \"courseType\": \"Common\",\n        \"weeklyHours\": 6,\n        \"hourOptions\": [],\n        \"pageNumber\": 3,\n        \"note\": null\n      },\n      {\n        \"gradeLevelCode\": \"5\",\n        \"subjectName\": \"Seçmeli Bilişim\",\n        \"subjectCode\": null,\n        \"courseType\": \"Elective\",\n        \"weeklyHours\": null,\n        \"hourOptions\": [\n          1,\n          2\n        ],\n        \"pageNumber\": 4,\n        \"note\": \"1 veya 2 saat\"\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "İçe aktarmayı ÇİZELGEDEN başlat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-imports/from-chart",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-imports",
+                "from-chart"
+              ]
+            },
+            "description": "Ayrıştırılmış çizelgeyi ara alana taşır. Buradan sonrası elle gönderilen içe aktarmayla birebir aynıdır: doğrulama, ders eşleme, iki kişi kuralı ve onay kapısı değişmez. Hangi sayfanın hangi eğitim programı olduğunu kullanıcı söyler; başlıktan tahmin edilmez.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentSetId\": \"{{documentSetId}}\",\n  \"documentId\": \"{{documentId}}\",\n  \"pageNumber\": 2,\n  \"educationProgramCode\": \"MIDDLE-GENERAL\",\n  \"academicYearCode\": \"2027-2028\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

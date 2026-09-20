@@ -3,7 +3,7 @@ aliases: [CurriculumImportRun, CurriculumImportEntry, CurriculumImportSubjectMat
 tags: [domain/academic]
 table: master.curriculum_import_runs, master.curriculum_import_entries, master.curriculum_import_subject_matches
 status: active
-last-synced: 2026-09-20 (445eaa6a)
+last-synced: 2026-09-20 (79636476)
 ---
 
 # Müfredat İçe Aktarma
@@ -36,6 +36,41 @@ Draft → Validated → Approved → Published
 
 Satırlar merkez tarafından düzeltilebilir (seviye, saat, ders türü) ve her satır bir **ders eşleme
 kararı** taşır.
+
+## Ara alan nasıl doldurulur
+
+İki yol vardır ve **ikisi de aynı sözleşmeyi** üretir: platform kullanıcısının yapılandırılmış
+veriyle (JSON) doldurması, ya da bir [[MEB Kaynak Belgesi]] PDF'inin ayrıştırılması.
+
+Ayrıştırma **salt okunur bir sorgudur**: belgedeki çizelgeleri çıkarır ve hiçbir şey yazmaz.
+Ara alana taşımak ayrı, bilinçli bir komuttur. Bu ayrım bir niyet değil yapısal bir kapıdır —
+ayrıştırıcının onay kapısını dolanması mümkün değildir, çünkü yazma yolu doğrulayıcıdan ve
+iki kişi kuralından geçer.
+
+Tek PDF birden çok çizelge taşıyabilir (2025/05 sayılı kararda sayfa 2-7 altı ayrı eğitim
+programıdır). **Hangi sayfanın hangi eğitim programına karşılık geldiğini merkez kullanıcısı
+söyler**; başlık metninden tahmin etmek sessizce yanlış programa müfredat yazmaya yol açardı.
+
+Ayrıştırıcının çıktısı ara alana çevrilirken: "okutulmaz" (tire) hücresi **satır üretmez** —
+olmayan bir dersi sıfır saatle yazmak müfredata hayalet ders eklerdi. Saat seçeneği taşıyan
+hücre (`(2)(4)`) doğrudan saat seçeneklerine düşer; dipnot işaretleri (`*`, `(2)`) ders adından
+ayrılır ama not olarak korunur.
+
+## Drift: ayrıştırıcı bozulursa nasıl anlaşılır
+
+MEB çizelgesi **kendi sağlamasını taşıyor**: her sınıf sütunu için beyan edilen toplamlar
+birbirini tutar (ortaöğretimde `ORTAK + SEÇİLEBİLECEK + REHBERLİK = TOPLAM`, ilköğretimde
+`ZORUNLU + SEÇMELİ + SERBEST = TOPLAM`). Ayrıca ortak ders satırlarının toplamı, beyan edilen
+ortak toplamı vermelidir.
+
+Bu yüzden "düzen değişti mi" sorusu tahmin değil **ölçümdür**. Satırlar kayarsa toplam tutmaz
+ve çizelge yayımlanabilir sayılmaz. Sağlaması hiç bulunamayan çizelge de yayımlanabilir
+sayılmaz: karşılaştıracak beyanı olmayan bir tablo, yanlış ayrıştırılmış olsa bile temiz
+görünürdü — sessiz geçmek en tehlikeli durumdur.
+
+Taranmış (metin katmanı olmayan) belge açık bir hatayla reddedilir ve elle giriş yoluna
+yönlendirilir. OCR bilinçli olarak kapsam dışıdır: yanlış okunan bir saat, sessizce yanlış bir
+müfredat yayımlamaya kadar gider.
 
 ## Kurallar
 
@@ -74,10 +109,20 @@ sürüm bu çalışmaya, çalışma da belge setine bağlıdır.
 
 ## Notlar
 
-Bugün ara alanı platform kullanıcısı yapılandırılmış veriyle (JSON) doldurur. Dilim 3'te PDF
-ayrıştırıcısı **aynı şekli** üretecek; bu yüzden ara alanda elle girişe özel hiçbir alan yoktur.
+Ara alanda elle girişe özel hiçbir alan yoktur: PDF ayrıştırıcısı da aynı şekli üretir.
+
+Ayrıştırıcı iki farklı çizelge ailesiyle doğrulandı — ortaöğretim (sınıf sütunlu, tek katman
+başlık) ve ilköğretim (İLKOKUL/ORTAOKUL üst başlığı altında 1-8 sınıf sütunları). Aynı satır
+iki çizelgede farklı şey olabiliyor: "Rehberlik ve Yönlendirme" ilköğretimde gerçek bir zorunlu
+ders, ortaöğretimde toplam bloğunun bir bileşenidir; ayıran şey konumdur.
 
 ## Açık Sorular
 
 - İçe aktarma tek platform hesabıyla uçtan uca denenemez (iki kişi kuralı ikinci hesap ister).
   İkinci platform hesabı açma yolu 0019 dilimine bağlı.
+- Ortaöğretim çizelgesindeki "Rehberlik ve Yönlendirme" saati bugün ara alana **satır olarak
+  girmiyor** (toplam bloğunun bileşeni sayılıyor). Bu saatin müfredat satırı mı yoksa ayrı bir
+  kavram mı olduğu ürün kararıdır; Dilim 4'te netleşmeli.
+- Dipnot metinlerinin (açıklama sayfaları) anlamlandırılması yapılmıyor; işaretler ham olarak
+  saklanıyor. Kural çözümlemesi `CurriculumSelectionRule` ile birlikte ertelendi.
+- DOCX/XLSX belgeler yüklenebiliyor ama ayrıştırılmıyor.

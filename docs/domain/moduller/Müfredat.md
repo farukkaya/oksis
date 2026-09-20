@@ -45,7 +45,9 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 6. **Dönem tipleri** — Birinci ve ikinci dönem sabit lookup olarak durur; sezon kurulum sihirbazı tarih aralıklarını bu tiplere göre açar. Ayrı kavram notu yoktur.
 
-7. **Merkez belge ve onay hattı (platform)** — MEB kararının ham belgesi yüklenir ([[MEB Kaynak Belgesi]]), karar ve ekleri tek hukuki kaynak setinde toplanır, setten bir ara alan üretilir ([[Müfredat İçe Aktarma]]). Satırlar kaynaktaki ham hâliyle durur; ders eşlemeleri öneri olarak çıkar, merkez karara bağlar. Onaylanan çalışma değişmez bir [[Müfredat Sürümü]]'ne dönüşür. Kural: bilinmeyen ders master katalog açmaz, öneri onay yerine geçmez ve **ara alanı düzelten onaylayamaz** ([[0022-mufredat-yayimi-iki-kisi-kurali]]). Bu yüzey yalnız platform token'ıyla açılır; okul kullanıcısı erişemez.
+7. **Merkez belge ve onay hattı (platform)** — MEB kararının ham belgesi yüklenir ya da MEB adresinden indirilir ([[MEB Kaynak Belgesi]]), karar ve ekleri tek hukuki kaynak setinde toplanır, setten bir ara alan üretilir ([[Müfredat İçe Aktarma]]). Satırlar kaynaktaki ham hâliyle durur; ders eşlemeleri öneri olarak çıkar, merkez karara bağlar. Onaylanan çalışma değişmez bir [[Müfredat Sürümü]]'ne dönüşür. Kural: bilinmeyen ders master katalog açmaz, öneri onay yerine geçmez ve **ara alanı düzelten onaylayamaz** ([[0022-mufredat-yayimi-iki-kisi-kurali]]). Bu yüzey yalnız platform token'ıyla açılır; okul kullanıcısı erişemez.
+
+8. **MEB keşfi ve çizelge ayrıştırma (platform)** — TTKB kategorisindeki belge adayları listelenir; keşif hiçbir şey indirmez ve yazmaz. İndirme yalnız izin verilen MEB alan adlarına çıkar ve elle yüklemeyle aynı koddan geçer. İndirilen PDF'in metin katmanından haftalık ders çizelgesi tablosu çözülür: sınıf sütunları, saat seçenekleri ve dipnotlar ayrılır. Ayrıştırma **salt okunurdur**; çizelgeyi ara alana taşımak ayrı bir komuttur ve 7. maddedeki onay kapısından geçer. Çizelgenin kendi toplam satırları sağlama olarak kullanılır — tutmazsa ya da hiç yoksa çizelge yayımlanabilir sayılmaz ([[Müfredat İçe Aktarma]]).
 
 **Yetki:** Ders, branş ve kademe yönetimi okul ayarlarının akademik yapı iznini kullanır (`school-settings.update-academic-structure`) — ayrı bir müfredat izin ailesi yoktur. Haftalık saat okuma `curriculum-hours.view`, override `curriculum-hours.override`. Görevlendirme tarafı kendi ailesindedir (`assignments.*`).
 
@@ -53,7 +55,10 @@ Bu ayrım bilinçli: MEB müfredatı okula göre değişmez, okulun uygulaması 
 
 - **Not girişi ve hesaplama.** Bu modül ölçeği ve sınav türünü tanımlar; notu [[Notlar]] tutar.
 - **Okula özel ders tanımı.** Ders kataloğunun okula ait bir katmanı yoktur; açılan ders platform kataloğuna yazılır (bkz. [[Ders]] açık soruları).
-- **MEB sayfasından otomatik keşif ve PDF ayrıştırma (Dilim 3).** Belge bugün elle yüklenir, satırlar yapılandırılmış veriyle girilir; ayrıştırıcı aynı ara alanı dolduracak.
+- **OCR.** Metin katmanı olmayan (taranmış) belge açık bir hatayla reddedilir ve elle giriş yoluna gider; yanlış okunan bir saat sessizce yanlış müfredat yayımlamaya kadar giderdi.
+- **DOCX/XLSX ayrıştırma.** Bu türler yüklenebilir ama çizelgeleri çözülmez.
+- **Dipnot metinlerinin anlamlandırılması.** İşaretler ham saklanır; kural çözümlemesi seçim kurallarıyla birlikte ertelendi.
+- **Tekrarlayan zamanlanmış MEB taraması.** Dönem içi senkronizasyon tasarım kararıyla yok; süpürme elle tetiklenir.
 - **Okul yönetim ekranları (Dilim 4).** Program seçme, taslağı yeni sürüme taşıma (rebase) ve MEB–okul fark görünümü henüz yok.
 - **Seçim kuralları.** Kategori asgarisi, önkoşul ve dışlama gibi MEB kuralları (`CurriculumSelectionRule`) ertelendi; gerçek dipnot metinleriyle birlikte tasarlanacak.
 - **Başlamış sezonun müfredatını düzeltme.** Snapshot değişmez; dönem içi düzeltme, bildirim ve erteleme bilinçli olarak kapsam dışı.

@@ -1,6 +1,7 @@
 # Müfredat Kaynak Hattı — curl referansı
 
-> MEB kararının ham belgesinden yayımlanmış müfredat sürümüne giden merkez yolu (müfredat Dilim 2).
+> MEB kararının ham belgesinden yayımlanmış müfredat sürümüne giden merkez yolu
+> (müfredat Dilim 2 + Dilim 3).
 > Kanonik koleksiyon: [`oksis-mufredat-kaynak.postman_collection.json`](./oksis-mufredat-kaynak.postman_collection.json).
 >
 > Uçlar: `src/Oksis.Api/Controllers/V1/PlatformCurriculumSourcesController.cs` ve
@@ -14,10 +15,15 @@
 ## Akışın sırası
 
 ```text
-belge yükle → belge seti aç → belgeyi sete bağla → içe aktarma başlat
+(A) elle:   belge yükle ─┐
+(B) MEB'den: keşfet → indir ─┴→ belge seti aç → belgeyi sete bağla
+    → içe aktarma başlat   (elle JSON ile, ya da belgeyi ayrıştırıp çizelgeden)
     → ders eşlemelerini karara bağla (+ gerekirse satır düzelt)
     → incele/onayla (BAŞKA bir platform hesabıyla) → yayımla
 ```
+
+İki giriş kapısı (elle yükleme ve MEB'den indirme) **aynı koddan** geçer: parmak izi,
+virüs taraması, tekilleştirme ve revizyon zinciri her ikisinde birebir aynıdır.
 
 **İki kişi kuralı:** ara alanı düzelten hesap aynı içe aktarmayı onaylayamaz. Eşleme kararı ya da
 satır düzeltmesi yaptıysanız onayı farklı bir platform hesabıyla verin.
@@ -44,10 +50,90 @@ satır düzeltmesi yaptıysanız onayı farklı bir platform hesabıyla verin.
 | `CURRICULUM_IMPORT_TERMINAL` | 409 | Terminal durumda düzeltme/geçiş |
 | `CURRICULUM_VERSION_CODE_TAKEN` | 409 | Bu karar numarası aynı program ve yıl için zaten yayımlanmış |
 | `CURRICULUM_VERSION_IMMUTABLE` | 409 | Yayımlanmış sürümü değiştirme denemesi |
+| `CURRICULUM_SOURCE_HOST_NOT_ALLOWED` | 400 | Adres izin verilen MEB alan adları dışında |
+| `CURRICULUM_SOURCE_FETCH_FAILED` | 502 | MEB'e ulaşılamadı ya da beklenmeyen yanıt |
+| `CURRICULUM_SOURCE_NO_TEXT_LAYER` | 422 | PDF taranmış; satırlar elle girilmeli |
+| `CURRICULUM_SOURCE_NOT_PARSABLE` | 422 | Belge PDF değil ya da çizelge içermiyor |
+| `CURRICULUM_IMPORT_CHART_NOT_FOUND` | 404 | İstenen sayfada çizelge yok |
 
 ---
 
-## 1. Belge yükle
+## 0. MEB'den keşif ve indirme (Dilim 3)
+
+Kategori listesi TTKB'den okunur; **hiçbir şey indirilmez ve yazılmaz**. Bilinen adres
+`knownDocumentId` ile işaretlenir. "Değişmiş" diye üçüncü bir durum yoktur: içerik
+indirilmeden parmak izi bilinemez, değişim revizyon kaydıyla belli olur.
+
+```bash
+curl -X GET "{{API_SERVICE}}/platform/curriculum-sources/discovery?category=7" \
+  -H "Authorization: Bearer {{platformAccessToken}}"
+```
+
+Tek belgeyi indir (allowlist dışı adres **istek bile yapılmadan** 400 alır):
+
+```bash
+curl -X POST "{{API_SERVICE}}/platform/curriculum-sources/documents/fetch" \
+  -H "Authorization: Bearer {{platformAccessToken}}" \
+  -H "Content-Type: application/json" \
+  -d '{ "sourceUrl": "https://ttkb.meb.gov.tr/meb_iys_dosyalar/2025_05/20144001_202505.pdf" }'
+```
+
+Kategoriyi tara ve yeni belgeleri arka planda indir (`202` + iş kimliği döner). Tekrarlayan
+zamanlama **yoktur**: MEB müfredatı dönem içinde senkronize edilmez.
+
+```bash
+curl -X POST "{{API_SERVICE}}/platform/curriculum-sources/discovery/sweep?category=7" \
+  -H "Authorization: Bearer {{platformAccessToken}}"
+```
+
+## 0.1 Belgeyi ayrıştır
+
+Belgedeki bütün haftalık ders çizelgelerini çıkarır. **Hiçbir şey yazmaz.** Tek PDF birden
+çok çizelge taşıyabilir (2025/05 sayılı kararda sayfa 2-7 altı ayrı eğitim programıdır).
+
+```bash
+curl -X GET "{{API_SERVICE}}/platform/curriculum-sources/documents/{{documentId}}/parse" \
+  -H "Authorization: Bearer {{platformAccessToken}}"
+```
+
+Yanıt her çizelge için sayfa numarası, başlık, sınıf sütunları, satırlar, **sağlama
+karşılaştırması** ve `isPublishable` bayrağı verir. Çizelge kendi toplamını taşıdığı için
+düzen değişikliği ölçülebilir: `ORTAK/ZORUNLU + SEÇMELİ + REHBERLİK/SERBEST = TOPLAM`
+tutmuyorsa `isPublishable: false` olur.
+
+| Uyarı kodu | Ne demek |
+|---|---|
+| `MEB_PARSER_NO_HEADER` | Sayfada çizelge tablosu bulunamadı |
+| `MEB_PARSER_NO_ROWS` | Başlık var, veri satırı yok |
+| `MEB_PARSER_UNREADABLE_CELL` | Hücre sayı/tire/parantez şekillerinden hiçbiri değil |
+| `MEB_PARSER_SUM_MISMATCH` | Beyan edilen toplam hesaplananla tutmuyor |
+| `MEB_PARSER_NO_TOTALS` | Karşılaştırılacak toplam satırı yok (drift) |
+
+## 0.2 Çizelgeden içe aktarma başlat
+
+Hangi çizelgenin hangi eğitim programına karşılık geldiğini **merkez kullanıcısı söyler**;
+başlıktan tahmin edilmez.
+
+```bash
+curl -X POST "{{API_SERVICE}}/platform/curriculum-imports/from-chart" \
+  -H "Authorization: Bearer {{platformAccessToken}}" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "documentSetId": "{{documentSetId}}",
+        "documentId": "{{documentId}}",
+        "pageNumber": 2,
+        "educationProgramCode": "HIGH-ANATOLIAN",
+        "academicYearCode": "2026-2027"
+      }'
+```
+
+Buradan sonrası aşağıdaki elle akışla **birebir aynıdır**: doğrulama, ders eşleme, iki kişi
+kuralı ve onay kapısı değişmez. Tire (`-`) hücresi satır üretmez; saat seçenekli hücre
+(`(2)(4)`) `hourOptions` olarak gelir.
+
+---
+
+## 1. Belge yükle (elle)
 
 Aynı içerik ikinci kez yüklenirse **yeni kayıt açılmaz**: `200` ile var olan belge döner
 (`alreadyExisted: true`). Yeni belge `201` verir. `sourceUrl` verilirse ve aynı adresin içeriği
