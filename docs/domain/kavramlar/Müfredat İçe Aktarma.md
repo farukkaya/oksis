@@ -78,7 +78,10 @@ müfredat yayımlamaya kadar gider.
   ikinci bir çalışma açmaz.
 - Satırın saati ya tek değerdir ya da **en az iki seçenek** ("1 veya 2 saat"); tek seçenek zaten
   tek değerdir. MEB saati sıfırdan büyüktür — 0 okulun kararıdır, çizelgenin değil.
-- Aynı seviye ve ders için iki satır olamaz.
+- Aynı seviye, ders **ve ders türü** için iki satır olamaz. Ders türü anahtarın parçasıdır:
+  gerçek MEB çizelgesinde aynı ders aynı sınıfta hem ortak hem seçmeli olarak geçebiliyor
+  (zorunlu saat + isteğe bağlı ek saat) — türü dışarıda bırakmak doğru bir çizelgeyi
+  hatalı ilan ederdi (`TB-211`).
 - Ders eşleme **önerisi** karar değildir: kod ya da ad birebir eşleşse bile satır `Suggested`
   doğar; `Confirmed` yalnız bir kullanıcının kararıyla olur.
 - Belirsiz eşleşme öneri üretmez (iki ders aynı normalize ada düşüyorsa).

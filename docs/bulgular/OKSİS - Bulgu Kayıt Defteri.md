@@ -118,7 +118,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-211` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-212` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2679,6 +2679,28 @@ Davranış **tasarıma uygun**: bilinmeyen ders otomatik master ders açmaz, ça
 ⬜ Ürün kararı: çekirdek ders kataloğu MEB lise ders listesiyle önceden beslenecek mi, yoksa
 ilk içe aktarmada toplu "yeni ders aç" akışı mı eklenecek? İkincisi tasarımın "bilinmeyen ders
 otomatik açmaz" kuralını gevşetmeden, ayrı ve bilinçli bir komutla yapılabilir.
+
+### `TB-211` · Aynı ders aynı sınıfta hem ortak hem seçmeli olabiliyor; tekillik kuralımız bunu yasaklıyordu 🟢
+
+Merkez müfredat ekranı gerçek belgeyle denenirken çıktı (2026-09-20). 2025/05 sayılı kararın
+**Fen Lisesi** çizelgesinde `BİLİŞİM TEKNOLOJİLERİ VE YAZILIM` 9 ve 10. sınıfta **iki kez**
+geçiyor: bir kez **ORTAK** ders olarak (2 saat), bir kez **SEÇMELİ** olarak (1/(1)(2)…).
+Belgenin görüntüsüyle doğrulandı — kaynak doğru, ikisi farklı şeydir: zorunlu saat ile
+isteğe bağlı ek saat.
+
+Bizim ara alan tekilliğimiz `(çalışma, seviye, ders adı)` idi; ders TÜRÜ anahtarın dışındaydı.
+Sonuç: bu çizelge ara alana **hiç giremiyor**, uç `500` veriyordu (`ux_curriculum_import_entries_source_row`
+ihlali). Ayrıştırıcı ve doğrulayıcı doğruydu; yanlış olan **varsayımdı**.
+
+Master tarafında da aynı kusur vardı (`ux_curriculum_entries_active`): ara alan düzeltilse
+bile YAYIM adımı aynı kısıtla patlardı.
+
+✅ İki tekil indeks de ders türünü içerecek şekilde düzeltildi, doğrulayıcı anahtarı
+güncellendi, göç yazıldı ve mimari bekçilerdeki beyan yenilendi (oksis-api `b6189c76`).
+Doğrulandı: Fen Lisesi çizelgesi artık **163 satır, 0 hata** ile geçiyor.
+
+⬜ Tasarım belgesindeki "Aynı seviye ve ders için iki satır olamaz" kuralı (§Dilim 2) gerçek
+veriyle çeliştiği için güncellenmeli.
 
 ---
 

@@ -449,6 +449,22 @@ Bu dilim manuel/seed master veriyle çalışır; scraper'a bağımlı değildir.
 - Yeniden tabanlama
 - Aktivasyon önizlemesi ve snapshot sorguları
 
+## 11.1 Gerçek veriyle düzeltilen varsayım (2026-09-20)
+
+Tasarım, bir dersin bir sınıf seviyesinde **tek** satırı olacağını varsayıyordu. Gerçek MEB
+çizelgesi bunu çürüttü: 2025/05 sayılı kararın Fen Lisesi çizelgesinde `BİLİŞİM TEKNOLOJİLERİ
+VE YAZILIM` 9 ve 10. sınıfta hem **ortak** (2 saat) hem **seçmeli** olarak yer alıyor. İkisi
+farklı şeydir — zorunlu saat ile isteğe bağlı ek saat.
+
+Bu yüzden hem ara alanın hem master satırın tekillik anahtarı **ders türünü içerir**:
+
+```text
+ara alan : (ImportRunId, GradeLevelCode, SourceSubjectName, CourseType)
+master   : (CurriculumVersionId, GradeLevelId, MasterSubjectId, CourseType)
+```
+
+Düzeltme öncesinde bu çizelge ara alana hiç giremiyordu (`500`); bkz. `TB-211`.
+
 ## 12. Başarı ölçütleri
 
 - Aynı MEB belgesini tekrar çekmek duplicate belge veya sürüm üretmez.
