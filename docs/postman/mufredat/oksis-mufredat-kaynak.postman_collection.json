@@ -1,0 +1,417 @@
+{
+  "info": {
+    "name": "OKSİS — Müfredat Kaynak Hattı (Platform)",
+    "description": "MEB kararının ham belgesinden yayımlanmış müfredat sürümüne giden merkez yolu (müfredat Dilim 2).\n\n**Sıra önemlidir:** belge yükle → belge seti aç → belgeyi sete bağla → içe aktarma başlat → ders eşlemelerini karara bağla → incele/onayla → yayımla.\n\n**Yetki:** bu uçların tamamı yalnız PLATFORM token'ı ile çalışır (`POST /platform/auth/login`). Okul token'ı 403 alır.\n\n**İki kişi kuralı:** ara alanı düzelten kullanıcı aynı içe aktarmayı onaylayamaz — eşleme kararı ya da satır düzeltmesi yapan hesaptan farklı bir platform hesabıyla onaylayın.\n\nKaynak: `src/Oksis.Api/Controllers/V1/PlatformCurriculumSourcesController.cs` ve `PlatformCurriculumImportsController.cs`.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{platformAccessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "API_SERVICE",
+      "value": "https://localhost:5001/api/v1",
+      "type": "string",
+      "description": "API kök URL'i (dev: https://localhost:5001/api/v1)."
+    },
+    {
+      "key": "platformAccessToken",
+      "value": "",
+      "type": "string",
+      "description": "Platform girişinden dönen access token (okul token'ı ile bu uçlar 403 verir)."
+    },
+    {
+      "key": "documentId",
+      "value": "",
+      "type": "string",
+      "description": "Yüklenen MEB belgesinin kimliği."
+    },
+    {
+      "key": "documentSetId",
+      "value": "",
+      "type": "string",
+      "description": "Hukuki kaynak setinin kimliği."
+    },
+    {
+      "key": "importRunId",
+      "value": "",
+      "type": "string",
+      "description": "İçe aktarma çalışmasının kimliği."
+    },
+    {
+      "key": "entryId",
+      "value": "",
+      "type": "string",
+      "description": "Ara alan satırının kimliği."
+    },
+    {
+      "key": "masterSubjectId",
+      "value": "",
+      "type": "string",
+      "description": "Çekirdek katalogdaki dersin kimliği."
+    }
+  ],
+  "item": [
+    {
+      "name": "1 · Belgeler ve belge seti",
+      "description": "Ham belge süresiz saklanır; silme ucu bilinçli olarak yoktur.",
+      "item": [
+        {
+          "name": "Belge yükle (multipart)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "PDF / DOCX / XLSX, en çok 25 MB."
+                },
+                {
+                  "key": "sourceUrl",
+                  "value": "",
+                  "type": "text",
+                  "description": "İsteğe bağlı. Elle yüklemede boş bırakılır; verilirse aynı adresin farklı içeriği revizyon olarak öncekine bağlanır."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-sources/documents",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-sources",
+                "documents"
+              ]
+            },
+            "description": "201 = yeni belge, 200 = aynı içerik zaten vardı (parmak izi kimliktir).\n422 `CURRICULUM_SOURCE_INFECTED` = virüs taraması temiz değil; dosya depoya YAZILMAZ.\n400 `CURRICULUM_SOURCE_UNSUPPORTED_TYPE` = tür ya da boyut sınır dışı."
+          },
+          "response": []
+        },
+        {
+          "name": "Belge indirme adresi",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-sources/documents/{{documentId}}/download",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-sources",
+                "documents",
+                "{{documentId}}",
+                "download"
+              ]
+            },
+            "description": "10 dakikalık imzalı adres döner; dosya özgün adıyla iner."
+          },
+          "response": []
+        },
+        {
+          "name": "Belge seti aç",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-sources/sets",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-sources",
+                "sets"
+              ]
+            },
+            "description": "Karar tarihi belgede yazmıyorsa null bırakın; uydurulmaz. 409 `CURRICULUM_SOURCE_SET_DUPLICATE` = aynı karar numarası ve başlık zaten var.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Ortaokul haftalık ders çizelgesi\",\n  \"decisionNumber\": \"2027/14\",\n  \"decisionDate\": \"2027-04-12\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Belgeyi sete bağla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-sources/sets/{{documentSetId}}/documents",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-sources",
+                "sets",
+                "{{documentSetId}}",
+                "documents"
+              ]
+            },
+            "description": "role: Decision | Annex | Correction. Aynı belgeyi ikinci kez bağlamak sessiz no-op'tur.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentId\": \"{{documentId}}\",\n  \"role\": \"Decision\",\n  \"displayOrder\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "2 · İçe aktarma ve ara alan",
+      "description": "Ara alan master veriye dokunmaz; yayım ayrı ve son adımdır.",
+      "item": [
+        {
+          "name": "İçe aktarma başlat",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-imports",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-imports"
+              ]
+            },
+            "description": "201 = yeni çalışma, 200 = aynı içerik zaten işlenmiş (idempotent).\nDurum: Validated (temiz) · NeedsReview (uyarı ya da çözülmemiş eşleme) · Quarantined (satır yok ya da hiçbir seviye tanınmadı).\nSaat ya tek değerdir ya da EN AZ İKİ seçenektir.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentSetId\": \"{{documentSetId}}\",\n  \"payload\": {\n    \"schemaVersion\": \"1.0\",\n    \"educationProgramCode\": \"MIDDLE-GENERAL\",\n    \"academicYearCode\": \"2027-2028\",\n    \"entries\": [\n      {\n        \"gradeLevelCode\": \"5\",\n        \"subjectName\": \"Matematik\",\n        \"subjectCode\": null,\n        \"courseType\": \"Common\",\n        \"weeklyHours\": 6,\n        \"hourOptions\": [],\n        \"pageNumber\": 3,\n        \"note\": null\n      },\n      {\n        \"gradeLevelCode\": \"5\",\n        \"subjectName\": \"Seçmeli Bilişim\",\n        \"subjectCode\": null,\n        \"courseType\": \"Elective\",\n        \"weeklyHours\": null,\n        \"hourOptions\": [\n          1,\n          2\n        ],\n        \"pageNumber\": 4,\n        \"note\": \"1 veya 2 saat\"\n      }\n    ]\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "İçe aktarmayı oku",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-imports/{{importRunId}}",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-imports",
+                "{{importRunId}}"
+              ]
+            },
+            "description": "Satırlar, ders eşleme kararları ve doğrulama özeti."
+          },
+          "response": []
+        },
+        {
+          "name": "İçe aktarmaları listele",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-imports?status=NeedsReview",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-imports"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "NeedsReview"
+                }
+              ]
+            },
+            "description": "status: Draft | Validated | NeedsReview | Approved | Published | Rejected | Quarantined"
+          },
+          "response": []
+        },
+        {
+          "name": "Satırı düzelt",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-imports/{{importRunId}}/entries/{{entryId}}",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-imports",
+                "{{importRunId}}",
+                "entries",
+                "{{entryId}}"
+              ]
+            },
+            "description": "Ham ders adı DEĞİŞMEZ — o kaynağın kendi ifadesidir. Seçeneklere çevirmek için weeklyHours null ve hourOptions en az iki değer olmalı.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gradeLevelCode\": \"6\",\n  \"courseType\": \"Common\",\n  \"weeklyHours\": 4,\n  \"hourOptions\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Ders eşlemesini karara bağla",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-imports/{{importRunId}}/entries/{{entryId}}/match",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-imports",
+                "{{importRunId}}",
+                "entries",
+                "{{entryId}}",
+                "match"
+              ]
+            },
+            "description": "Onay var olan bir çekirdek derse bağlar; içe aktarma YENİ DERS AÇMAZ. `reject: true` satırı kapsam dışı bırakır (yayımda atlanır).",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"masterSubjectId\": \"{{masterSubjectId}}\",\n  \"reject\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "3 · Onay ve yayım",
+      "description": "Master veri yalnız bu adımların sonunda doğar.",
+      "item": [
+        {
+          "name": "İncele (onay / ret / karantina)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-imports/{{importRunId}}/review",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-imports",
+                "{{importRunId}}",
+                "review"
+              ]
+            },
+            "description": "decision: Approve | Reject | Quarantine (son ikisi gerekçe ister).\n409 `CURRICULUM_IMPORT_UNRESOLVED_SUBJECT` = çözülmemiş ders eşlemesi var.\n409 `CURRICULUM_IMPORT_SAME_ACTOR` = ara alanı düzelten onaylayamaz.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"decision\": \"Approve\",\n  \"reason\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Yayımla",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{API_SERVICE}}/platform/curriculum-imports/{{importRunId}}/publish",
+              "host": [
+                "{{API_SERVICE}}"
+              ],
+              "path": [
+                "platform",
+                "curriculum-imports",
+                "{{importRunId}}",
+                "publish"
+              ]
+            },
+            "description": "Onaylanmış çalışmayı değişmez sürüme çevirir; aynı program ve yıl için önceki yayımlı sürüm Superseded olur. İkinci çağrı yeni sürüm üretmez.\n409 `CURRICULUM_IMPORT_NOT_APPROVED` · 409 `CURRICULUM_VERSION_CODE_TAKEN`."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
