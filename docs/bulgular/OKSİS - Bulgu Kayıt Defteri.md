@@ -118,7 +118,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-208` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-53` · `D-23` · `V-04` · `X-22` · `TB-211` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2630,6 +2630,55 @@ gelir.
 ⬜ Ürün kararı: rehberlik saati bir müfredat satırı mı, yoksa ayrı bir kavram mı? Karar
 verildikten sonra ayrıştırıcı ya satırı üretsin ya da fark ekranı bu bir saati açıkça
 göstersin.
+
+### `TB-208` · `IAuditLogger`'ın hiç uygulaması yoktu; API açılmıyordu 🟢
+
+Arayüz deponun **ilk commit'inden** beri `Oksis.Application/Common/Abstractions` altında
+duruyordu ama hiçbir uygulaması ve DI kaydı yoktu — kimse enjekte etmediği için fark
+edilmemişti. Müfredat Dilim 2 ilk tüketicisi oldu; `ValidateOnBuild` açılışta patladı ve
+**API hiç başlamadı**. Dilim 2, 3 ve 4'ün bütün handler'ları etkileniyordu.
+
+Birim testleri arayüzü mock'ladığı için sessizdi; entegrasyon testleri de kendi sahtesini
+veriyordu. Kusuru gösteren tek şey **uygulamayı ayağa kaldırmak** oldu. Bu, defterin
+"çağrılmayan uç arkasındaki kusuru saklar" dersinin bir üst basamağı: burada ekran da yoktu,
+uç da çağrılmamıştı, üstelik uygulama hiç çalıştırılmamıştı.
+
+Deponun denetim deseni modül bazlı ve **tenant kapsamlı** tablolardır (`GradeAuditEntry`,
+`HomeworkAuditEntry`, `AnnouncementAuditEntry`); müfredat kaynak hattı ise platform
+(tenant'sız) bir yüzeydir ve onlara yazamaz. Tasarım §9 kapsamı zaten **log** olarak
+tanımlıyor, §8 de operasyon loglarına 5 yıl saklama veriyor.
+
+✅ `StructuredAuditLogger` (Serilog, yapılandırılmış alanlar) yazıldı ve DI'a kaydedildi
+(oksis-api `1f7966fe`). Denetim izinin kalıcı bir tabloya taşınması gerekirse ayrı karar.
+
+### `TB-209` · Depodan gelen PDF ayrıştırılamıyordu; hata da sessizce yutuluyordu 🟢
+
+Obje deposu (S3/Garage) içeriği `Content-Length` ile birlikte **ileri-yönlü bir ağ akışı**
+olarak veriyor (`CanSeek = false`). PDF biçimi ise sondaki xref tablosundan başlayıp geriye
+atlıyor, yani rastgele erişim istiyor. Tamponlama olmadan PdfPig daha ilk adımda patlıyor ve
+uç `CURRICULUM_SOURCE_NOT_PARSABLE` diyordu — belge gayet ayrıştırılabilirken.
+
+İki kat sinsiydi: (1) birim testleri `MemoryStream` ile besliyordu, yani her zaman
+aranabilir; (2) çıkarıcı istisnayı sessizce yutuyordu, bu yüzden günlükte **hiçbir iz yoktu**.
+Gerçek sebebi bulmak için depo istemcisinin dönüş tipine bakmak gerekti.
+
+✅ Aranamayan akış belleğe alınıyor (boyut zaten 25 MB ile sınırlı), istisna günlüğe yazılıyor
+ve `ForwardOnlyStream` ile bir birim testi eklendi (oksis-api `1f7966fe`).
+
+### `TB-210` · Çekirdek ders kataloğu liseyi kapsamıyor: gerçek içe aktarmada 146 ders çözülmedi ⚪
+
+2026-09-20 uçtan uca koşusunda gerçek MEB belgesi (2025/05 sayılı karar, Anadolu Lisesi
+çizelgesi) ara alana alındı: **161 satır, 0 hata**, ama ders eşlemesi yalnız **15**'inde
+öneri üretti; **146'sı `Unresolved`** kaldı. Öneri üretenler dev seed'de var olan dersler
+(Tarih, Coğrafya, Matematik, Fizik, Kimya, Biyoloji, Felsefe); kalanlar lise seçmelileri
+(Seçmeli Türk Dili ve Edebiyatı, Astronomi ve Uzay Bilimleri, Kur'an-ı Kerim, Proje Tasarımı…).
+
+Davranış **tasarıma uygun**: bilinmeyen ders otomatik master ders açmaz, çalışma
+`NeedsReview`'e düşer. Ama pratik sonucu şu: ilk gerçek yayım 146 elle karar demek.
+
+⬜ Ürün kararı: çekirdek ders kataloğu MEB lise ders listesiyle önceden beslenecek mi, yoksa
+ilk içe aktarmada toplu "yeni ders aç" akışı mı eklenecek? İkincisi tasarımın "bilinmeyen ders
+otomatik açmaz" kuralını gevşetmeden, ayrı ve bilinçli bir komutla yapılabilir.
 
 ---
 
