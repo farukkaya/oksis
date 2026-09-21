@@ -162,10 +162,10 @@ anlamı değişmez.
 | Katman | Test |
 |---|---|
 | `Oksis.Infrastructure.IntegrationTests` | `PersonUserCreationService`: davetle doğan öğretmenin sicil no'su **dolu**, ikinci davet sırayı ilerletir (regresyon kilidi). Birim testi DEĞİL: altı DbSet + statik yardımcı taklidi kırılgan olurdu ve transaction/applock'u zaten kanıtlayamazdı |
-| `Oksis.Infrastructure.IntegrationTests` | `EmployeeNumberGenerator`: ilk numara `{yıl}001` · sıra artar · yıl bloğu değişince sıfırlanır · aynı okulda iki çağrı çakışmaz |
+| `Oksis.Infrastructure.IntegrationTests` | `EmployeeNumberGenerator`: ilk numara `{yıl}001` · sıra artar · yıl bloğu değişince sıfırlanır · 999 eşiğinde geri saymaz · transaction dışında çağrı hatadır. **Eşzamanlılık doğrudan test EDİLMEDİ** — korumanın kanıtı `sp_getapplock` + tekil indeks; iki gerçek eşzamanlı isteği kurgulayan bir test yazılmadı, kapsanmış gibi gösterilmemeli |
 | `packages/core` | `homerooms` üzerinden preset seçimi; `availableTeacherActions` artık `homeroom` döndürmez |
 | `packages/api` | `fetchHomeroomMap` aynı öğretmenin **iki şubesini de** taşır (bugün son kazanan siliyor) |
-| `packages/api` | Küme farkı: A→B devri `removeHomeroom(A)` **ve** `setHomeroom(B)` çağırır |
+| `packages/core` | Küme farkı (`diffHomerooms`): salt ekleme · salt çıkarma · A→B devri (aynı kayıtta ekle+çıkar) · değişiklik yok · hepsini temizleme |
 
 Doğrulama kullanıcı kararıyla **en sonda toplu**: `typecheck` + `lint` + core/api vitest +
 backend `dotnet test`, ardından tarayıcı doğrulaması ayrıca onaya bağlı.
