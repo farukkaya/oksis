@@ -22,7 +22,9 @@
 > (hazırlık saatleri sessizce yayımlanmıyor) ve `TB-223` (1-8 çizelgesi tek program üretiyor)
 > **kullanıcı kararıyla kapandı**, ikisi de arşive taşındı ([[OKSİS - Bulgu Arşivi]] §51).
 > Aynı koşuda `TB-224` (bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠)
-> açıldı. Defter **97** (🔴 3 · 🟠 22 · 🟡 40 · ⚪🟢 32).
+> açıldı. Ekran turunda ayrıca `TB-225` (karara bağlanmamış öneri satırları yayımda
+> atlanıyor 🟠 — ekran ayağı aynı gün kapandı) ve `TB-226` (ayrıştırıcı yalnız 2025 çizelge
+> düzenini tanıyor 🟠) açıldı. Defter **99** (🔴 3 · 🟠 24 · 🟡 40 · ⚪🟢 32).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -142,7 +144,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-225` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-227` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -3029,6 +3031,63 @@ tohumlama yoluna hiç girilmedi ve müfredat entegrasyon testlerinin 49/50'si ye
 
 ⬜ Test kendi öncülünü kurmalı: okulu açtıktan sonra `SubjectCatalogImporter` ile ders
 kataloğunu içe aktarmalı. Kusur üründe değil, testin öncülünde.
+
+### `TB-225` · Karara bağlanmamış öneri satırları yayımda atlanıyor 🟠
+
+2026-09-21'de ekran testinde ölçüldü. Yayım kapısı `Confirmed` ya da yayımda açılan
+(`Unresolved`) satırları alıyor; **`Suggested` ikisine de girmiyor** ve satır sessizce
+düşüyor.
+
+Ölçüm — 2025/24 sayılı kararın çizelgesi, ekrandan onaylanıp yayımlandı:
+
+| | Satır |
+|---|---|
+| Ara alana taşınan | 270 |
+| Yayımlanan | **168** |
+| `Suggested` (önerisi var, onaylanmamış) | **87** |
+| `Unresolved` + sınıfı çözülemeyen | 15 |
+
+Yani satırların **%32'si** yalnız "öneri" olduğu için yayıma girmedi. Davranışın kendisi
+savunulabilir — bir tahmin karar değildir ve onaysız yazmak yanlış müfredat üretirdi — ama
+iki şey yanlıştı:
+
+1. **Ekran onaydan önce söylemiyordu.** Üst şerit `Suggested`'ı "karara bağlandı" sayıyordu
+   (`decided = groups.length - unresolved`), yani kullanıcı 87 satırın düşeceğini
+   bilemiyordu.
+2. Yayım bildirimi "102 satır atlandı (kapsam dışı ya da eksik)" diyordu; gerekçe belirsizdi.
+
+✅ **Ekran ayağı kapandı** (2026-09-21, `oksis-ui`): üç hâl ayrıldı — `Unresolved` (yayımda
+açılacak), `Suggested` (yayımlanmayacak, turuncu uyarı), karara bağlanmış. Yayım bildiriminin
+gerekçesi de açıldı.
+
+⬜ **Açık kalan ürün kararı:** yüksek güvenli bir öneri yayıma girmeli mi? Şu an %95 güvenle
+eşleşmiş bir ders bile insan onayı olmadan düşüyor. Seçenekler: (a) olduğu gibi kalsın, ekran
+artık uyarıyor; (b) belirli bir güven eşiğinin üstü otomatik `Confirmed` sayılsın; (c) yayım
+bu satırları da açsın (öneriyi yok sayıp yeni ders açmak) — sonuncusu ikiz ders üretir,
+muhtemelen yanlış.
+
+### `TB-226` · Ayrıştırıcı yalnız 2025 çizelge düzenini tanıyor 🟠
+
+Aynı koşuda ölçüldü. Otuz belgenin tamamı indirilince, 2025 dışındaki düzenler üç ayrı
+biçimde bozuluyor:
+
+| Belge | Sonuç |
+|---|---|
+| `202235gslmuzik…` (2022/35), `2023-42_Spor_Liseleri` (2023/42) | Çalışmaların tamamı **karantinaya** düştü — "hiçbir seviye kodu tanınmadı" |
+| `05103529_202524` (2025/24) | 270 satırın 30'unda sınıf kodu **`DERS`** — tablo başlığı sınıf sütunu sanılmış |
+| `05103557_202525`, `05103624_202526` | Ara alana taşıma `Validation` hatasıyla düşüyor; gerekçe loglanmıyor |
+
+`DERS` satırlarının sınıfı çözülemediği için yayımda da atlanıyorlar; yani tek bir yanlış
+sütun başlığı otuz satırı götürüyor.
+
+Karantina davranışı **doğru** (tasarım §6.1: hiçbir seviye tanınmadıysa tek tek düzeltmek
+anlamsızdır) ama sonucu şu: katalog pratikte yalnız 2025 kararlarından besleniyor. Eski
+kararlar arşiv değil — okul hâlâ 2023 çizelgesine bağlı bir sezon açabilir.
+
+⬜ Üç ayrı iş: (a) `DERS` gibi sayısal olmayan ve hazırlık da olmayan sütun başlıkları sınıf
+sayılmamalı; (b) `Validation` hatasının gerekçesi kullanıcıya ve loga yazılmalı — şu an
+"neden taşınamadı" hiçbir yerde yok; (c) eski çizelge düzenlerinin desteklenip
+desteklenmeyeceği karara bağlanmalı. Ölçüm hazır: 28 çizelge belgesinin 3'ü sorunsuz taşındı.
 
 ### `TB-224` · Bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠
 

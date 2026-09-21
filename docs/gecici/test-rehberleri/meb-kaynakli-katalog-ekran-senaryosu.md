@@ -11,27 +11,19 @@ doğuyor, modal kalktı, hazırlık bir kademe oldu, kademeye yayılan çizelge 
 
 ## 1. ⚠️ ÖNCE BUNU OKU
 
-### 1.1 Bilinen tıkaç: ekrandan YAYIM YAPILAMIYOR
+### 1.1 Onay kapısı düzeltildi (21 Eylül)
 
-Senaryo **B4'te duruyor**. Sunucuda "çözülmemiş ders eşlemesi onayı engeller" kuralı
-bilinçli olarak **kaldırıldı** (tasarım §11: ders yayımda açılıyor, eski kural satırların
-%91'ini engelliyordu). Ekran bu kararın **gerisinde kaldı** ve `Onayla` düğmesini hâlâ
-kendisi kilitliyor:
+Ekran `Onayla` düğmesini kendisi kilitliyordu (`canApprove = unresolvedCount === 0`) ama
+sunucu o kapıyı **bilerek kaldırmıştı** (tasarım §11). Taze katalogda ekrandan hiçbir çizelge
+yayımlanamıyordu.
 
-| Yer | Satır | Ne diyor |
-|---|---|---|
-| `import-review-panel.tsx` | 133 | `const canApprove = unresolvedCount === 0` |
-| `import-review-panel.tsx` | 242 | `disabled={busy \|\| !canApprove}` |
-| `import-review-panel.tsx` | 166 | "Onay için N ders eşlemesi kaldı · Çözülmemiş eşleme varken çalışma onaylanamaz." |
-| `import-match-page.tsx` | 182 | "**İçe aktarma yeni ders açmaz.** Çözülmemiş eşleme kalırken çalışma onaylanamaz." |
-| `import-match-page.tsx` | 214 | "Çekirdek katalog bu çizelgeyi karşılamıyor … önce katalog beslenmeli" |
+Kilit kaldırıldı ve **ekrandan uçtan uca doğrulandı**: 2025/24 kararı ara alana taşındı
+(270 satır, 88 ayrık ders çözülmemiş) → `Onayla` → `Yayımla` → "Müfredat sürümü yayımlandı",
+168 satır yazıldı.
 
-Dördü de artık **yanlış**. Sunucu onayı veriyor (`POST …/review` → `204`), yayım eksik
-dersi kendisi açıyor. Yani bu bir metin tazeliği sorunu değil: **taze katalogda ekrandan
-tek bir çizelge bile yayımlanamaz**, çünkü ilk belgede her satır "çözülmemiş" gelir.
-
-> Bu senaryodaki mevcut veri API üzerinden yayımlandı; ekran yolu hiç koşmadı.
-> Düzeltme yapılmadan B4-B6 adımları **ölçülemez**. Düzeltildiğinde bu bölüm silinir.
+Aynı turda üç metin de düzeltildi: "İçe aktarma yeni ders açmaz", "Çekirdek katalog bu
+çizelgeyi karşılamıyor" ve liste sayfasının "ders eşlemeleri karara bağlanmadan çalışma
+onaylanamaz" açıklaması.
 
 ### 1.2 Bu tur yeni olan şeyler
 
@@ -166,9 +158,6 @@ ara alana taşınması.
 
 ## 3. Senaryo B — İçe aktarmalar ve yayım (`/platform/curriculum/imports`)
 
-> ⚠️ B4'ten itibaren §1.1'deki tıkaç yüzünden **ölçülemez**. Düzeltilene kadar B1-B3
-> koşulur, gerisi atlanır.
-
 ### B1 · Liste
 1. `İçe aktarmalar`.
 2. **Beklenen:** Sütunlar `Akademik yıl · Satır · Ders eşlemesi · Durum · Oluşturulma ·
@@ -198,17 +187,18 @@ ara alana taşınması.
      ya da satırlar kapsam dışı bırakılmalı." → Kullanıcıyı artık gereksiz bir işe
      yönlendiriyor.
 
-### B4 · Onay kapısı ⛔ TIKAÇ
-1. Çalışmada çözülmemiş eşleme varken `Onayla` düğmesine bak.
-2. **Şu an:** Düğme **pasif**, üstünde "Onay için N ders eşlemesi kaldı" uyarısı var.
-3. **Beklenen:** Düğme **etkin** olmalı. Çözülmemiş eşleme bir uyarıdır, kapı değil.
-4. Doğrulama (ekran düzelene kadar API'den):
-   ```bash
-   curl -s -X POST "http://localhost:5112/api/v1/platform/curriculum-imports/<runId>/review" \
-     -H "Authorization: Bearer <token>" -H 'Content-Type: application/json' \
-     -d '{"decision":"Approve","reason":null}' -o /dev/null -w '%{http_code}\n'
-   # beklenen: 204
-   ```
+### B4 · Onay paneli
+1. Çözülmemiş eşleme varken `Onayla` düğmesine bak.
+2. **Beklenen:** Düğme **etkin**. Çözülmemiş eşleme bir kapı değil, bir bildirimdir.
+3. **Beklenen — üç ayrı mesaj, üçü de doğru olmalı:**
+   - Turuncu uyarı: **"N ders yalnız öneri — yayımlanmayacak"**. Bu satırların önerisi var
+     ama onaylanmadı; onaylanmazsa yayıma **girmezler** (`TB-225`).
+   - Nötr bilgi: **"Yayımda M ders çekirdek katalogda açılacak"**. Bunların önerisi yok;
+     katalogda yeni ders olarak doğacaklar.
+   - Her hâlde: **"Onayı ara alanı düzelten kullanıcı veremez"** — tek gerçek kapı budur.
+4. Üst şeritte `N çözülmedi · M öneri bekliyor · K karara bağlandı` üç ayrı sayı olmalı.
+   **Öneri, "karara bağlandı" sayılmamalı** — eskiden sayılıyordu ve 87 satırın düşeceği
+   görünmüyordu.
 
 ### B5 · İki kişi kuralı
 1. Bir satırın eşlemesini elle düzelt.
@@ -220,8 +210,9 @@ ara alana taşınması.
 ### B6 · Yayım
 1. Onaylanmış çalışmada `Yayımla`.
 2. **Beklenen:** "Müfredat sürümü üretildi (…)" ve durum **Published**.
-3. **Kritik ölçüm:** Yanıttaki `skippedRowCount` **0** olmalı. Sıfır değilse satır sessizce
-   düşmüş demektir — `TB-222`'nin tam olarak kapattığı şey bu.
+3. **Kritik ölçüm:** Bildirimdeki "N satır atlandı" sayısı, B4'te uyarılan öneri sayısıyla
+   tutarlı olmalı. Sınıfı çözülemeyen satır yüzünden atlama olmamalı — `TB-222`'nin
+   kapattığı şey buydu; hazırlık artık çözülüyor.
 4. Aynı çalışmada ikinci kez `Yayımla`: yeni sürüm üretmemeli, var olanı dönmeli.
 
 ---
@@ -394,14 +385,15 @@ Her sapma için:
 
 **Bu senaryodan çıkması beklenen, hâlihazırda bilinen sapmalar:**
 
-| # | Sapma | Adım |
+| # | Bulgu | Adım |
 |---|---|---|
-| 1 | Ekran `Onayla`'yı kilitliyor; sunucu kuralı kaldırdı — **yayım ekrandan yapılamıyor** | B4 |
-| 2 | "İçe aktarma yeni ders açmaz" ve "önce katalog beslenmeli" metinleri geçersiz | B3 |
-| 3 | `TB-224` — bozuk metin katmanlı 2018 belgesi katalogta çöp program adı açtı | A6, D5 |
+| 1 | `TB-224` — bozuk metin katmanlı 2018 belgesi katalogta çöp program adı açtı | A6, D5 |
+| 2 | `TB-225` — karara bağlanmamış öneri satırları yayımda atlanıyor (ekran ayağı kapandı) | B4, B6 |
+| 3 | `TB-226` — ayrıştırıcı yalnız 2025 çizelge düzenini tanıyor; eskiler karantinaya düşüyor | B2 |
 
-İlk ikisi bu dalın kendi eksiği (ekran, sunucu kararının gerisinde kaldı); üçüncüsü
-defterde açık bulgu.
+Üçü de defterde açık bulgu.
 
-> **Kapandı (21 Eylül):** "Hazırlık, Lise kademesiyle birlikte otomatik açılıyor" sapması
-> düzeltildi — hazırlık artık programdan türetiliyor, kademe anahtarının dışında. E2'ye bakın.
+> **Kapandı (21 Eylül), bu senaryo yazılırken çıkmıştı:**
+> · Onay kapısının ekran ayağı ve üç eskimiş metin (§1.1).
+> · "Hazırlık, Lise kademesiyle birlikte otomatik açılıyor" — hazırlık artık programdan
+>   türetiliyor, kademe anahtarının dışında (E2).
