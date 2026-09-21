@@ -151,11 +151,11 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu (`TB-139`, **`TB-191`**) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 21 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 32 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 33 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **96** | |
+| **Toplam** | **98** | |
 
 > **Sayaç düzeltmesi (2026-09-20):** tablo 74 diyordu, `grep '^### \`'` ile gerçek blok sayısı
 > **88**'di; bugünkü iki madde eklenince **90**. Defterin kendi kuralı işletilerek öncelik
@@ -3023,6 +3023,43 @@ tohumlama yoluna hiç girilmedi ve müfredat entegrasyon testlerinin 49/50'si ye
 
 ⬜ Test kendi öncülünü kurmalı: okulu açtıktan sonra `SubjectCatalogImporter` ile ders
 kataloğunu içe aktarmalı. Kusur üründe değil, testin öncülünde.
+
+### `TB-222` · Hazırlık sınıfı saatleri sessizce yayımlanmıyor 🟠
+
+2026-09-21'de taze veritabanında gerçek MEB belgesiyle uçtan uca koşarken ölçüldü.
+Ayrıştırıcı hazırlık sütununu `HAZIRLIK` sınıf koduyla üretiyor; `master.grade_levels`
+katalogunda ise 0-12 var ve `0` **Anaokulu**. Karşılığı bulunamayan satırın
+`grade_level_id` alanı `null` kalıyor, yayım da sınıfsız satırı atlıyor.
+
+Ölçüm: 2025/05 sayılı kararın altı çizelgesinden 1138 satırın **33'ü** yayımlanmadı;
+hepsinin ham sınıf kodu `HAZIRLIK`. Bu satırların tamamı üç "Hazırlık Sınıfı Bulunan"
+programına ait.
+
+Zarar: hazırlık sınıfı bulunan liselerin müfredatı **hazırlık yılı olmadan** yayımlanıyor
+ve kimse uyarılmıyor. Ekran "6 çizelge taşındı · 33 ders eşlemesi çözülmedi" diyor ama
+sebebin sınıf kodu olduğunu söylemiyor; kullanıcı ders eşlemesi sanıyor.
+
+⬜ Hazırlık sınıfı kataloğa bir `GradeLevel` olarak eklenmeli (kademe: lise, sıralamada
+9'un öncesi). Alternatif olarak sınıfı çözülemeyen satır, ders eşlemesinden AYRI bir
+gerekçeyle raporlanmalı — iki farklı eksikliği tek sayıda toplamak yanıltıyor.
+
+### `TB-223` · 1-8 çizelgesi tek program üretiyor ve kademesi Middle çıkıyor ⚪
+
+Aynı koşuda ölçüldü. "İlköğretim Kurumları (İlkokul ve Ortaokul) Haftalık Ders Çizelgesi"
+tek çizelgedir ve 1-12 değil 1-8 sınıflarını kapsar. Program kademesi çizelgenin sınıf
+sütunlarından en büyüğüne göre türetildiği için (`max` = 8) program `Middle` sayılıyor.
+
+Sonuç: `Primary` kademesinde hiç program doğmuyor ve ilkokul açılamıyor. Dev seed'de
+birebir görüldü: "'Cumhuriyet İlkokulu' atlandı — Primary kademesinde etkin eğitim
+programı yok."
+
+Sebep model-belge uyumsuzluğu: MEB tek çizelgeyle iki kademeyi kapsıyor, `EducationProgram`
+ise tek kademe taşıyor. `min` almak da yanlış olurdu (lise çizelgeleri 9-12'de doğru
+çalışıyor).
+
+⬜ Ürün kararı gerekiyor: (a) çizelge birden çok kademeye yayılıyorsa kademe başına ayrı
+program açılsın, (b) `EducationProgram` birden çok kademe taşısın, ya da (c) ilkokul ve
+ortaokul için ayrı MEB belgeleri kullanılsın. Karar verilmeden kod değiştirilmemeli.
 
 ---
 
