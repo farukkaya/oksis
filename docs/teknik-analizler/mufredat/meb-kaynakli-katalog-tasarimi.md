@@ -322,7 +322,10 @@ gerekçesiyle yazılı.
 | "Adı boş satır" engeli | Konmadı | Domain zaten adsız ara alan satırı üretilmesine izin vermiyor; hiç doğru olamayacak bir dal canlı kod sanılmamalı |
 | Öğretmenlik alanları | Ara alan tablosu yerine **önizle + uygula** | Branşın sürümü, akademik yılı ve saat dağılımı yok; gözden geçirilecek şey tek bir liste. §7'nin "özetini görür" gereği karşılanıyor |
 | Seçmeli ikiz ders | Karardaki bir ad hem `FIZIK` hem `SECMELI-FIZIK` kodunu bağlar | Önek çizelge tarafında; yalnız birebir kodu bağlamak dokuz seçmeli dersi branşsız bırakırdı |
-| Dev veritabanı | **Sıfırlanmadı** | Altınay'ın izinli gerçek verisi orada; geri alınamaz silme kullanıcıya bırakıldı. Göç Testcontainers'ın taze veritabanında doğrulandı |
+| Dev veritabanı | Yedek alındıktan sonra **sıfırlandı** (2026-09-21 kullanıcı onayı) | Altınay'ın izinli gerçek verisi `oksis_dev_20260921.bak` içinde duruyor. Sıra baştan işletildi: göç → çizelge → yayım → okul |
+| Hazırlık sınıfı | Kataloğa **kademe olarak eklendi**; sıra numarası kendine ayrılmış `-1` | Kullanıcı kararı (2026-09-21). `TB-39` değişmezi 0..12 uzayında aynen korunuyor; negatif sayı hiçbir kademenin ardılı olamaz, 9'dan önce sıralanır ve öğrenci kaydında gerçek bir kademeyle karıştırılamaz. Ayrıntı: Bulgu Arşivi §51 |
+| Kademeye yayılan çizelge | **Kademe başına ayrı program** (`…-ILKOKUL` / `…-ORTAOKUL`) | Kullanıcı kararı (2026-09-21). Model zaten okul×kademe→program; programı çok kademeli yapmak okul açılışı, program seçimi ve doğrulamayı yeniden yazdırırdı. Kademe tekse kod ve ad değişmiyor |
+| Ders, branş, ders↔branş seed'i | **Silindi** (§12'de açık bırakılmıştı) | Önkoşul çözüldü: ders↔sınıf bağını artık yayım yazıyor (`LinkSubjectsToGradesAsync`), çünkü çizelge zaten sınıf × ders tablosudur. Belgede olmayanı okul kendi ekler |
 
 ## 12. Açık noktalar
 
@@ -334,12 +337,19 @@ gerekçesiyle yazılı.
   tuzağı, etiketin satırın en solunda olması şartıyla eleniyor. İkinci bir gerçek
   belge (`ilkogretim-2025-04.pdf`) PdfPig ile uçtan uca aynı künyeyi veriyor.
   §5.2 değişmedi.
-- **Ders, branş ve ders↔branş seed'leri henüz silinmedi** (§8 siliyor sayıyordu).
-  `SubjectSeedData`, `BranchSeedData` ve `SubjectBranchSeedData` duruyor. Sebep: silmenin
-  önkoşulu olan `SubjectGradeLevelSeedData` (hangi dersin hangi sınıfta sunulduğu) bu
-  tasarımda **kaynaksız** — çizelge bunu program bazında söylüyor, tablo ise okul kapsamlı
-  (`school.subject_grade_levels`, `TB-191`). Karşılığı tanımlanmadan silmek, okul ders
-  kataloğunu kaynaksız bırakırdı. Ayrı bir karar gerektiriyor.
+- ~~**Ders, branş ve ders↔branş seed'leri henüz silinmedi.**~~ **Kapandı (2026-09-21).**
+  Dördü de silindi. Önkoşul olan "hangi ders hangi sınıfta sunulur" bağını artık yayım
+  yazıyor: çizelge zaten sınıf × ders tablosu olduğu için kaynak ortada.
 
 - **Kategorinin programa göre değişip değişmediği ölçülemedi:** `source_category`
   sütunu dolu satır bulunmuyor (özellik yeni). İlk gerçek koşuda doğrulanacak.
+
+- **Program türetmesinin kalite kapısı yok** (`TB-224`, 2026-09-21'de açıldı). Katalog
+  satırı belge indirilir indirilmez başlıktan doğuyor ve başlık ne çıkarsa o yazılıyor.
+  Metin katmanı bozuk bir 2018 belgesi katalogta "Anadolu İmam Hatip **Lise6i**" gibi altı
+  satır açtı. Eşiğin ne olacağı karara bağlı; ölçüm hazır (otuz belgenin yalnız biri bozuk).
+
+- **Hazırlık sınıfı kademe olarak var ama ürün olarak yok.** Katalog satırı, müfredat
+  saatleri ve terfi aritmetiği hazır (Bulgu Arşivi §51). Hazırlık şubesi açmak, hazırlığa
+  öğrenci kaydetmek ve hazırlık yılını karneye yansıtmak ayrı bir iştir; bu tasarımın
+  kapsamında değil.

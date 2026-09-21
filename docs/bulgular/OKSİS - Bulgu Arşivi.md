@@ -7406,3 +7406,164 @@ Kanıt (SQL Server, Testcontainers):
 `E-16` (arşivde, kapalı) ile bağ: lise saatleri hâlâ resmî değil, ama artık yalnız
 `LEGACY-2025.04-HIGH` uyumluluk sürümüne izole ("Doğrulanmadı — MEB çizelgesi bekleniyor");
 gerçek çizelge yeni sürüm olarak gelecek, mevcut satırlar değişmeyecek.
+
+---
+
+## 51. MEB müfredatı — hazırlık sınıfı ve kademeye yayılan çizelge (2026-09-21) ✅
+
+İkisi de 2026-09-21'de taze veritabanında gerçek MEB belgeleriyle uçtan uca koşarken
+ölçüldü, aynı gün **kullanıcı kararıyla** kapandı. Ortak kök aynıydı: **çizelgenin sınıf
+ekseni ile katalogun kademe/sınıf modeli örtüşmüyordu.**
+
+Dal: `oksis-api` `feat/meb-kaynakli-katalog`. Göç: `20260921_preparatory_grade_level`.
+
+### `TB-222` · Hazırlık sınıfı saatleri sessizce yayımlanmıyor 🟠
+
+2026-09-21'de taze veritabanında gerçek MEB belgesiyle uçtan uca koşarken ölçüldü.
+Ayrıştırıcı hazırlık sütununu `HAZIRLIK` sınıf koduyla üretiyor; `master.grade_levels`
+katalogunda ise 0-12 var ve `0` **Anaokulu**. Karşılığı bulunamayan satırın
+`grade_level_id` alanı `null` kalıyor, yayım da sınıfsız satırı atlıyor.
+
+Ölçüm: 2025/05 sayılı kararın altı çizelgesinden 1138 satırın **33'ü** yayımlanmadı;
+hepsinin ham sınıf kodu `HAZIRLIK`. Bu satırların tamamı üç "Hazırlık Sınıfı Bulunan"
+programına ait.
+
+Zarar: hazırlık sınıfı bulunan liselerin müfredatı **hazırlık yılı olmadan** yayımlanıyor
+ve kimse uyarılmıyor. Ekran "6 çizelge taşındı · 33 ders eşlemesi çözülmedi" diyor ama
+sebebin sınıf kodu olduğunu söylemiyor; kullanıcı ders eşlemesi sanıyor.
+
+⬜ Hazırlık sınıfı kataloğa bir `GradeLevel` olarak eklenmeli (kademe: lise, sıralamada
+9'un öncesi). Alternatif olarak sınıfı çözülemeyen satır, ders eşlemesinden AYRI bir
+gerekçeyle raporlanmalı — iki farklı eksikliği tek sayıda toplamak yanıltıyor.
+
+### `TB-223` · 1-8 çizelgesi tek program üretiyor ve kademesi Middle çıkıyor ⚪
+
+Aynı koşuda ölçüldü. "İlköğretim Kurumları (İlkokul ve Ortaokul) Haftalık Ders Çizelgesi"
+tek çizelgedir ve 1-12 değil 1-8 sınıflarını kapsar. Program kademesi çizelgenin sınıf
+sütunlarından en büyüğüne göre türetildiği için (`max` = 8) program `Middle` sayılıyor.
+
+Sonuç: `Primary` kademesinde hiç program doğmuyor ve ilkokul açılamıyor. Dev seed'de
+birebir görüldü: "'Cumhuriyet İlkokulu' atlandı — Primary kademesinde etkin eğitim
+programı yok."
+
+Sebep model-belge uyumsuzluğu: MEB tek çizelgeyle iki kademeyi kapsıyor, `EducationProgram`
+ise tek kademe taşıyor. `min` almak da yanlış olurdu (lise çizelgeleri 9-12'de doğru
+çalışıyor).
+
+⬜ Ürün kararı gerekiyor: (a) çizelge birden çok kademeye yayılıyorsa kademe başına ayrı
+program açılsın, (b) `EducationProgram` birden çok kademe taşısın, ya da (c) ilkokul ve
+ortaokul için ayrı MEB belgeleri kullanılsın. Karar verilmeden kod değiştirilmemeli.
+
+### Kapanış — `TB-222`
+
+**Kullanıcı kararı (2026-09-21):** "Hazırlığı kademe olarak ekle". Karar öncesi ölçülen
+engel sunuldu: `TB-39` değişmezi (`GradeLevel.Create`) sayısal olmayan kodu reddediyordu ve
+bunu kilitleyen testin örneği birebir `"HAZIRLIK"`tı. Gerekçe sağlamdı —
+`StudentEnrollment.GradeLevel` bir FK değil **sayı**, terfi kararı ona `+1` uyguluyor.
+Kullanıcı kapsamı bilerek büyüttü.
+
+Uygulama, `TB-39`'un koruduğu şeyi bozmadan: 0..12 uzayına **hiç dokunulmadı**. Hazırlık
+kendine ayrılmış tek bir sıra numarasıyla eklendi — `GradeLevel.PreparatoryOrdinal = -1`.
+Negatif olması üç şeyi aynı anda sağlayan tek değer sınıfıydı:
+
+1. Gerçek bir kademenin `+1`'inden **asla üretilemez** (0..12 → 1..13); terfi aritmetiği bir
+   öğrenciyi kazara hazırlığa taşıyamaz.
+2. 9'dan **önce sıralanır** — hazırlık, hazırlıklı bir lisenin giriş kademesidir.
+3. `StudentEnrollment.GradeLevel` alanında gerçek bir kademeyle **karıştırılamaz**.
+
+**Neden 8 değil:** sıralama ve terfi açısından 8 kusursuz çalışırdı. Ama okul birden çok türü
+kapsayabiliyor (Ortaokul + Lise, Q6 2026-05-28); böyle bir okulda 8. sınıf ile hazırlık aynı
+listeye düşer ve sıra numarasına göre sözlük kuran `SeasonRolloverMapCalculator` **çift
+anahtarla çökerdi**.
+
+Negatif sayının açtığı üç deliğin üçü de kapatıldı, üçü de testli:
+- `EducationLevelClassifier.FromGradeNumber(-1)` → `High`. Satır `<= 0` kolundan **önce**
+  gelmek zorunda; yoksa hazırlık anaokulu sayılırdı. Sonucu yalnız etiket değil,
+  `IsSmallGrade` üzerinden **öğrenci hesabı açılıp açılmayacağı** da belirliyor (E2.6) —
+  hazırlık öğrencisi 14 yaşındadır, kendi hesabını alır.
+- `SeasonRolloverMapCalculator.NextOrdinal`: hazırlığın ardılı açıkça 9. Aritmetik
+  bırakılsaydı `-1 + 1 = 0` anaokulunu gösterir, hazırlık şubesi "terminal" sayılır ve
+  hazırlığı bitiren sınıfın tamamı **mezun ilan edilirdi**.
+- `GradeLevel.Create`: istisna bir kapı, delik değil — yalnız bu kodun, yalnız bu sıra
+  numarasıyla açılmasına izin var. Serbest metin hâlâ reddediliyor.
+
+Kanıt (taze DB, gerçek 2025/05 kararı, altı çizelge):
+
+| Ölçüm | Önce | Sonra |
+|---|---|---|
+| Ara alanda sınıfı çözülemeyen satır | 33 | **0** |
+| Yayımlanan satır / ara alan | 1105 / 1138 | **1138 / 1138** |
+| Yayımlanan hazırlık satırı | 0 | **33** |
+| `publish` yanıtındaki `skippedRowCount` | 33 | **0** (sekiz çalışmanın hepsinde) |
+
+Testler: `GradeLevelOrdinalTests` (hazırlık ödünç sıra numarasıyla açılamaz · kendi
+numarasıyla açılır ve 9'dan önce sıralanır · hiçbir kademenin ardılı değildir · seed
+kataloğu değişmeze uyuyor), `EducationLevelClassifierTests` (hazırlık → `High`,
+`IsSmallGrade` false), `SeasonRolloverPreviewTests.Rows_Preparatory_PromotesToNinthGradeAsync`
+(hazırlık şubesi 9'a **terfi** eder, mezun olmaz; aynı zamanda giriş kademesidir).
+
+**Kapsam dışı bırakılan, bilerek:** `SchoolTypeGradeLevels` listesine hazırlık EKLENMEDİ —
+her lisede hazırlık yoktur. Hazırlık sınıfı bulunan okul kademeyi akademik yapı ekranından
+kendisi açar.
+
+### Kapanış — `TB-223`
+
+**Kullanıcı kararı (2026-09-21):** "(a) kademe başına ayrı program". Karar, modelin zaten
+söylediğini izledi: `SchoolEducationProgram` okul×**kademe**→program anahtarlı ve
+`SelectAcademicProgram` `program.EducationLevel != request.EducationLevel` diye eşitlik
+kapısı koyuyor. Programı çok kademeli yapmak (seçenek b) bu kapıların hepsini,
+`ListEducationPrograms` süzgecini, okul açılış doğrulamasını (`TB-215`) ve UI rozetlerini
+yeniden yazdırırdı.
+
+`MebProgramIdentity.AllFrom` çizelgenin sınıf sütunlarındaki **farklı kademe sayısı** kadar
+kimlik üretiyor. Kademe tekse kod ve ad **aynen** kalıyor — lise çizelgelerinin davranışı
+değişmedi, bu ayrıca testle kilitlendi. Yalnız yayılan çizelgede kod ve ada kademe eki
+geliyor. `StartImportRunFromChartCommand.OnlyLevel` süzgeci de yalnız bölünmüş sayfada
+devreye giriyor: tek programlı sayfada tanınmayan bir sütun başlığı sessizce düşmesin diye.
+
+Hazırlık sütunu bu bölmeyi tetiklemiyor: `LevelOfGradeLabel("HAZIRLIK")` → `High`, yani
+hazırlıklı lise çizelgesi tek kademeli kalıyor.
+
+Kanıt (taze DB, gerçek 2025/04 kararı):
+
+| Ölçüm | Önce | Sonra |
+|---|---|---|
+| 1-8 çizelgesinden doğan program | 1 (`Middle`) | **2** (`Primary` + `Middle`) |
+| `Primary` kademesindeki program sayısı | 0 | **1** |
+| Tek sayfadan açılan çalışma | 1 × 174 satır | **2** (32 + 142) |
+| Dev seed'de `Cumhuriyet İlkokulu` | "atlandı — Primary kademesinde etkin program yok" | **açıldı**, İlkokul programına bağlandı |
+
+Satır dağılımı belgenin kendisiyle birebir: 1-4 = 32, 5-8 = 142.
+
+Testler: `MebProgramIdentityTests` (tek kademeli çizelge tek program üretir · hazırlık
+sütunu çizelgeyi bölmez · iki kademeye yayılan çizelge kademe başına program üretir ·
+gerçek 1-8 belgesinde iki program çıkar), `StartImportRunFromDocumentSplitTests` (bir sayfa
+iki programa taşınır ve her biri kendi kademesini alır · kademe süzgeci sınıf sütunlarını
+gerçekten ayırır: ilkokul yüküne 5-8, ortaokul yüküne 1-4 sızmıyor).
+
+### Aynı koşunun yan ürünleri
+
+Uçtan uca koşu üç şey daha gösterdi:
+
+- **`master.branches.name` taşması — düzeltildi.** Öğretmenlik alanları kararının gerçek
+  içe aktarması "String or binary data would be truncated" ile **tamamen** düşüyordu. Sebep
+  Müzik alanının hücresiydi: "Müzik/" satırının altında "- Bağlama (**)", "- Kanun (**)"
+  diye süren çalgı listesi ada katılıyor ve 100 karakteri aşıyordu. Altın dosya kararın
+  yalnız iki tablo sayfasını taşıdığı için birim testleri buna **yapısal olarak kördü**;
+  fixture'a gerçek 34. sayfa eklendi, `ReadFieldName` artık ayırıcı kısa çizgide duruyor ve
+  sondaki bölü işaretini atıyor. Bölü işareti adın İÇİNDE meşru kalıyor ("Büro Yönetimi /
+  Büro Yönetimi ve Yönetici Asistanlığı" kararın kendi yazımı). Sonuç: 107 alan, en uzun ad
+  62 karakter, 145 ders↔branş bağı.
+- **`CurriculumIntersectionTests` silindi.** Sınıfın tamamı silinmiş seed'i (`CurriculumProgramSeedData`,
+  `CurriculumEntrySeedData`) doğruluyordu; öncülü kalmadı. Koruduğu değişmez ("her müfredat
+  satırı o kademede sunulan bir dersi hedefler") artık **yapı gereği** sağlanıyor:
+  `PublishImportRunCommandHandler.LinkSubjectsToGradesAsync` ders↔sınıf bağını yayımlanan
+  satırlardan üretiyor, yani öksüz satır üretilemiyor.
+- **`TB-224` açıldı** — bozuk metin katmanlı bir belge kataloğa çöp program adı yazıyor;
+  defterde.
+
+`Oksis.Tests` takımı bu turda ilk kez koşturuldu ve yedi kırmızı çıktı: beşi yukarıdaki
+silinen sınıf, biri kaldırılmış `is_default` indeks sözleşmesi, biri de iki yeni
+PlatformOnly handler'ın çekirdek-uzay muafiyeti (`SubjectCatalogTranslationTests`). Hepsi
+kapatıldı. **Takım push kapısının içinde değil** (kapı Domain + Application + Api) — bu
+yüzden dalda sessizce kırmızı kalmıştı.

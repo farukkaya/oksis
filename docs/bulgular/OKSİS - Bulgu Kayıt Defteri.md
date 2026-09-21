@@ -18,7 +18,13 @@
 > ([[OKSİS - Bulgu Arşivi]] §47) — kapanmış maddenin açık listesinde durması, listeyi
 > okunmaz hâle getiriyordu. Defter **39**.
 >
-> **Son ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
+> **Son ekleme:** 2026-09-21 (MEB kaynaklı katalog — hazırlık ve kademe turu) — `TB-222`
+> (hazırlık saatleri sessizce yayımlanmıyor) ve `TB-223` (1-8 çizelgesi tek program üretiyor)
+> **kullanıcı kararıyla kapandı**, ikisi de arşive taşındı ([[OKSİS - Bulgu Arşivi]] §51).
+> Aynı koşuda `TB-224` (bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠)
+> açıldı. Defter **97** (🔴 3 · 🟠 22 · 🟡 40 · ⚪🟢 32).
+>
+> **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
 > yöneticinin panosunu çiziyor, beş uç 403 🟠) ve `D-23` (Kullanıcılar ekranı `Staff` profilini
 > "—" gösteriyor ⚪) açıldı; ikisi de §12. Defter **94**.
@@ -136,7 +142,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-221` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-225` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -3024,42 +3030,41 @@ tohumlama yoluna hiç girilmedi ve müfredat entegrasyon testlerinin 49/50'si ye
 ⬜ Test kendi öncülünü kurmalı: okulu açtıktan sonra `SubjectCatalogImporter` ile ders
 kataloğunu içe aktarmalı. Kusur üründe değil, testin öncülünde.
 
-### `TB-222` · Hazırlık sınıfı saatleri sessizce yayımlanmıyor 🟠
+### `TB-224` · Bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠
 
-2026-09-21'de taze veritabanında gerçek MEB belgesiyle uçtan uca koşarken ölçüldü.
-Ayrıştırıcı hazırlık sütununu `HAZIRLIK` sınıf koduyla üretiyor; `master.grade_levels`
-katalogunda ise 0-12 var ve `0` **Anaokulu**. Karşılığı bulunamayan satırın
-`grade_level_id` alanı `null` kalıyor, yayım da sınıfsız satırı atlıyor.
+2026-09-21'de taze veritabanında keşif süpürmesi otuz belgenin tamamını indirince ölçüldü.
+Program kataloğu belge indirilir indirilmez çizelge başlığından doğuyor (tasarım §2.2) ve
+**hiçbir kalite kapısı yok**: başlık ne çıkarsa katalog satırı o oluyor.
 
-Ölçüm: 2025/05 sayılı kararın altı çizelgesinden 1138 satırın **33'ü** yayımlanmadı;
-hepsinin ham sınıf kodu `HAZIRLIK`. Bu satırların tamamı üç "Hazırlık Sınıfı Bulunan"
-programına ait.
+`21173451_ort_ogrtm_hdc_2018.pdf` (2018 tarihli Ortaöğretim Kurumları HDÇ) belgesinin metin
+katmanı bozuk. Ondan doğan yedi programın altısı hatalı:
 
-Zarar: hazırlık sınıfı bulunan liselerin müfredatı **hazırlık yılı olmadan** yayımlanıyor
-ve kimse uyarılmıyor. Ekran "6 çizelge taşındı · 33 ders eşlemesi çözülmedi" diyor ama
-sebebin sınıf kodu olduğunu söylemiyor; kullanıcı ders eşlemesi sanıyor.
+| Katalogtaki ad | Olması gereken |
+|---|---|
+| Anadolu İmam Hatip **Lise6i** Seçmeli Dersleri (A Grubu) 10. 11. 12. | … Lisesi Seçmeli Dersleri (A Grubu) |
+| Uluslararası Anadolu İmam Hatip Lisesi Seçmeli **Derslerø** 11. 12. | … Seçmeli Dersleri |
+| T.C. Millî Eğitim **Baklanlığı** Anadolu İmam Hatip Lisesi | … Bakanlığı … |
+| Mesleki Ve Teknik Anadolu Lisesi Anadolu Meslek Programı **……………** | … Anadolu Meslek Programı |
 
-⬜ Hazırlık sınıfı kataloğa bir `GradeLevel` olarak eklenmeli (kademe: lise, sıralamada
-9'un öncesi). Alternatif olarak sınıfı çözülemeyen satır, ders eşlemesinden AYRI bir
-gerekçeyle raporlanmalı — iki farklı eksikliği tek sayıda toplamak yanıltıyor.
+İki ayrı kusur var ve ikisi de aynı kapısızlıktan besleniyor:
 
-### `TB-223` · 1-8 çizelgesi tek program üretiyor ve kademesi Middle çıkıyor ⚪
+1. **Harf bozulması** (`s`→`6`, `i`→`ø`, `Bakanlığı`→`Baklanlığı`) belgenin kendi gömülü
+   yazı tipinden geliyor; ayrıştırıcının düzeltebileceği bir şey değil, ama kataloğa
+   yazmadan önce **fark edilebilir**.
+2. **Sınıf etiketleri başlığa sızıyor** ("… (A Grubu) 10. 11. 12."). `StripSuffix` yalnız
+   "HAFTALIK DERS ÇİZELGESİ" ekini kesiyor; bu başlıklar o ekle bitmediği için ham hâliyle
+   ada dönüşüyor. Aynı sebeple "Uluslararası Bakalorya Programı-I **Haftalık Ders Çizelgesi**
+   (Kas…)" adında ek hiç kesilmemiş.
 
-Aynı koşuda ölçüldü. "İlköğretim Kurumları (İlkokul ve Ortaokul) Haftalık Ders Çizelgesi"
-tek çizelgedir ve 1-12 değil 1-8 sınıflarını kapsar. Program kademesi çizelgenin sınıf
-sütunlarından en büyüğüne göre türetildiği için (`max` = 8) program `Middle` sayılıyor.
+Zarar ölçüldü, kuramsal değil: dev seed'de iki okul (`OKSİS Dev Okulu`, `Atatürk Anadolu
+Lisesi`) bu bozuk programlardan birine bağlandı. Kullanıcı bunu ancak okul açılış ekranında
+gördüğünde anlar ve düzeltemez — katalog satırı belgeden doğar, elle düzenlenemez.
 
-Sonuç: `Primary` kademesinde hiç program doğmuyor ve ilkokul açılamıyor. Dev seed'de
-birebir görüldü: "'Cumhuriyet İlkokulu' atlandı — Primary kademesinde etkin eğitim
-programı yok."
-
-Sebep model-belge uyumsuzluğu: MEB tek çizelgeyle iki kademeyi kapsıyor, `EducationProgram`
-ise tek kademe taşıyor. `min` almak da yanlış olurdu (lise çizelgeleri 9-12'de doğru
-çalışıyor).
-
-⬜ Ürün kararı gerekiyor: (a) çizelge birden çok kademeye yayılıyorsa kademe başına ayrı
-program açılsın, (b) `EducationProgram` birden çok kademe taşısın, ya da (c) ilkokul ve
-ortaokul için ayrı MEB belgeleri kullanılsın. Karar verilmeden kod değiştirilmemeli.
+⬜ Türetmenin bir eşiği olmalı. Seçenekler: (a) başlıkta rakam/kontrol karakteri varsa
+program açılmaz, belge "başlık okunamadı" diye işaretlenir; (b) programlar da ders satırları
+gibi ara alandan geçer ve merkez onaylar; (c) çizelgenin sınıf etiketleri başlıktan çıkarılır
+ve sözlük dışı harf dizisi taşıyan başlık reddedilir. Ölçüm hazır: aynı belge otuzun içinde
+tek bozuk olan, yani eşik yirmi dokuz belgeyi geçirmeli.
 
 ---
 
