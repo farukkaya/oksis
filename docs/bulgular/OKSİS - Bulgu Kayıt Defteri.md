@@ -25,7 +25,8 @@
 > açıldı. Ekran turunda ayrıca `TB-225` (karara bağlanmamış öneri satırları yayımda
 > atlanıyor 🟠 — ekran ayağı aynı gün kapandı) ve `TB-226` (ayrıştırıcı yalnız 2025 çizelge
 > düzenini tanıyor 🟠) açıldı. Manuel ekran turunda ayrıca `TB-227` (içe aktarma ekranı
-> hangi programın müfredatı olduğunu söylemiyor 🟠). Defter **100** (🔴 3 · 🟠 25 · 🟡 40 · ⚪🟢 32).
+> hangi programın müfredatı olduğunu söylemiyor 🟠) ve `TB-228` (dipnot işareti saklanıyor,
+> açıklaması atılıyor 🟡). Defter **101** (🔴 3 · 🟠 25 · 🟡 41 · ⚪🟢 32).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -145,7 +146,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-228` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-229` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -3067,6 +3068,48 @@ denetleyemez.
 ⬜ Program adı iki DTO'ya da eklenmeli ve listede sütun olmalı. Çizelge sayfa numarası
 (`SourcePageNumber`) da yardımcı olur: kullanıcı MEB Kaynakları ekranında `s3` kartını
 görüp aynı numarayı burada arayabilir.
+
+### `TB-228` · Dipnot işareti saklanıyor, açıklaması atılıyor 🟡
+
+2026-09-21'de kullanıcı manuel ekran testinde sordu: "bazı derslerin yanında `*`, bazılarında
+`(2)`, `(3)` var, bunlar ne?"
+
+Bunlar MEB çizelgesinin **kendi dipnot işaretleri** ve ders adının yanında aynen korunuyor —
+bu doğru, kaynağın ifadesi değiştirilmiyor. Sorun, **işaretin gösterilip açıklamasının hiç
+okunmaması.**
+
+Ölçüm (2025/05 kararı, altı çizelge):
+
+| | |
+|---|---|
+| Ara alan satırı | 964 |
+| **Dipnot işareti taşıyan satır** | **701** (%73) |
+| Ayrık ders adı | 67 |
+| **Dipnot taşıyan ayrık ders** | **47** (%70) |
+
+Dağılım: `(1)` 305 satır · `(2)` 149 · `(4)` 133 · `(3)` 90 · `*` 24.
+
+**Açıklama metni belgede VAR ve okunabiliyor** — ayrıştırıcı o sayfalara hiç bakmıyor.
+Belge 10 sayfa; ayrıştırıcı 7'sini okuyup 3'ünü sessizce atıyor:
+
+| Sayfa | İçerik | Okunuyor mu |
+|---|---|---|
+| s1 | Karar kapağı (künye) | ✅ |
+| s2-s7 | Altı haftalık ders çizelgesi | ✅ |
+| **s8** | Çizelgelerin **dipnot açıklamaları** | ❌ |
+| **s9** | "Çizelgelerin uygulanması ile ilgili açıklamalar" | ❌ |
+| **s10** | "Okutulacak derslerde uygulanacak öğretim programları" | ❌ |
+
+Zarar: dipnotlar çoğu zaman **gerçek iş kuralı** taşıyor. s9'un ilk cümlesi bile öyle:
+"Öğrencilerin 9 ve 10. sınıf seviyelerinde 'insan, toplum ve bilim', 'din, ahlak ve değer'
+ile 'kültür, sanat ve spor' seçmeli ders gruplarından her bir gruptan en az birer ders…"
+— bu bir seçmeli ders seçim kısıtı ve OKSİS'te hiçbir yerde yok. Merkez kullanıcısı ekranda
+`(2)` görüyor, ne demek olduğunu öğrenmek için PDF'i açmak zorunda.
+
+⬜ Karar gerekiyor: (a) dipnot metinleri ayrıştırılıp işaretle eşleştirilsin ve ekranda
+üzerine gelince gösterilsin; (b) yalnız ham metin olarak belgeye bağlı saklansın, kullanıcı
+okusun; (c) kapsam dışı kalsın ve bu bilinçli olarak yazılsın. Seçmeli ders grubu kısıtının
+kendisi ayrı ve daha büyük bir iş — bu bulgu yalnız "açıklama hiç okunmuyor" kısmını kapsıyor.
 
 ### `TB-225` · Karara bağlanmamış öneri satırları yayımda atlanıyor 🟠
 
