@@ -151,11 +151,11 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu (`TB-139`, **`TB-191`**) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 19 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 21 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 30 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 32 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **94** | |
+| **Toplam** | **96** | |
 
 > **Sayaç düzeltmesi (2026-09-20):** tablo 74 diyordu, `grep '^### \`'` ile gerçek blok sayısı
 > **88**'di; bugünkü iki madde eklenince **90**. Defterin kendi kuralı işletilerek öncelik
@@ -2993,6 +2993,36 @@ koyuyor — yani idari personel için gelen tek değer, ekranın çeviremediği 
 ⬜ **Kapatma yolu:** `staff` istemci tipine ve etiket tablosuna eklenmeli ("İdari Personel").
 Bugünkü hâliyle sütun, "profil bağlanmamış" ile "profili ekranın tanımadığı tipte" durumunu
 ayırt edilemez kılıyor — [[serilesmis-sekil-sozlesmedir]] ile aynı sınıftan bir sessiz kayıp.
+
+### `TB-220` · Derslik hatalarının Türkçe karşılığı kataloğa yazılmamış 🟠
+
+2026-09-21'de ölçüldü. `de7ced5e` (derslik zorunlu hâle getirme) iki hata anahtarı ekledi
+ama `ErrorMessageCatalog.cs`'e cümlelerini yazmadı:
+`academic-sessions.errors.branch-room-unresolved` (`OpenSeasonFromDraftCommandHandler.cs:354`)
+ve `class-rooms.errors.invalid-room` (`CreateClassRoomCommandHandler.cs:118`).
+
+Zarar iki katlı: kullanıcı gerekçe yerine nötr bir cümle görüyordu (`X-14`), **ve**
+`ErrorMessageCatalogTests` kırmızıya düştüğü için **master'ın push kapısı kapalıydı** —
+`Oksis.Api.UnitTests` 462/463.
+
+✅ **2026-09-21 · kapandı** (`89c459b1`). İki cümle kataloğa yazıldı; 463/463 yeşil.
+
+### `TB-221` · Ders kataloğu okul kapsamına taşınınca dev seed testi kaldı ⚪
+
+Aynı turda ölçüldü. `TimetableDevSeederTests` → "K-10: dev seed yetkinlik üretir ve dersleri
+müfredattan türetir" kırmızı: `competencies` boş.
+
+Ölçülen sebep: `SubjectGradeLevel` bir **TenantEntity**'dir
+(`school.subject_grade_levels`, `TB-191` ile okul kapsamına taşındı), test okulu ise ham
+kayıtla doğuyor ve ders kataloğunu hiç içe aktarmıyor. `TimetableDevSeeder`
+`SchoolGradeLevels × SubjectGradeLevels` kesişimini boş buluyor ve erken dönüyor.
+
+Testi en son elleyen commit `de7ced5e`. Müfredat Dilim 7-10 çalışması bu dosyalara
+dokunmuyor: aynı turda program/ders/branş kataloğu değişti ama okulun ders kataloğu
+tohumlama yoluna hiç girilmedi ve müfredat entegrasyon testlerinin 49/50'si yeşil.
+
+⬜ Test kendi öncülünü kurmalı: okulu açtıktan sonra `SubjectCatalogImporter` ile ders
+kataloğunu içe aktarmalı. Kusur üründe değil, testin öncülünde.
 
 ---
 

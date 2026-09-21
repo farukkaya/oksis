@@ -310,7 +310,21 @@ bağların taşınması gerekmez.
   çalışmaya devam etmeli. Mevcut vekâlet entegrasyon testleri `SubjectCategory`
   kurduğu için hepsi gözden geçirilir.
 
-## 11. Açık noktalar
+## 11. Uygulamada alınan kararlar (2026-09-21)
+
+Dilim 6-10 uygulanırken spec'ten sapılan ya da spec'in söylemediği yerler. Hepsi kodda
+gerekçesiyle yazılı.
+
+| Konu | Karar | Neden |
+|---|---|---|
+| Uyumluluk müfredatı seed'i | `CurriculumVersionSeedData` + `CurriculumEntrySeedData` de silindi (§8 yalnız program seed'ini sayıyordu) | İkisi de silinen program kimliklerine bağlıydı; ayakta kalamazlardı. Zaten "resmî çizelgeden birebir kopya DEĞİLDİR" etiketliydiler. Test öncülü olarak fixture'a taşındı |
+| Onay kapısı | Çözülmemiş ders eşlemesi artık onayı **engellemiyor** | Ders yayımda açıldığı için "çözülmemiş" bir sorun değil. Eski kural satırların %91'ini engelliyordu |
+| "Adı boş satır" engeli | Konmadı | Domain zaten adsız ara alan satırı üretilmesine izin vermiyor; hiç doğru olamayacak bir dal canlı kod sanılmamalı |
+| Öğretmenlik alanları | Ara alan tablosu yerine **önizle + uygula** | Branşın sürümü, akademik yılı ve saat dağılımı yok; gözden geçirilecek şey tek bir liste. §7'nin "özetini görür" gereği karşılanıyor |
+| Seçmeli ikiz ders | Karardaki bir ad hem `FIZIK` hem `SECMELI-FIZIK` kodunu bağlar | Önek çizelge tarafında; yalnız birebir kodu bağlamak dokuz seçmeli dersi branşsız bırakırdı |
+| Dev veritabanı | **Sıfırlanmadı** | Altınay'ın izinli gerçek verisi orada; geri alınamaz silme kullanıcıya bırakıldı. Göç Testcontainers'ın taze veritabanında doğrulandı |
+
+## 12. Açık noktalar
 
 - ~~**Kapağın okunabilirliği henüz ölçülmedi.**~~ **Kapandı (2026-09-20, Dilim 6).**
   Kapak hem kelime katmanı fixture'ında hem gerçek PDF'te okunuyor. Ölçülen:
@@ -320,5 +334,12 @@ bağların taşınması gerekmez.
   tuzağı, etiketin satırın en solunda olması şartıyla eleniyor. İkinci bir gerçek
   belge (`ilkogretim-2025-04.pdf`) PdfPig ile uçtan uca aynı künyeyi veriyor.
   §5.2 değişmedi.
+- **Ders, branş ve ders↔branş seed'leri henüz silinmedi** (§8 siliyor sayıyordu).
+  `SubjectSeedData`, `BranchSeedData` ve `SubjectBranchSeedData` duruyor. Sebep: silmenin
+  önkoşulu olan `SubjectGradeLevelSeedData` (hangi dersin hangi sınıfta sunulduğu) bu
+  tasarımda **kaynaksız** — çizelge bunu program bazında söylüyor, tablo ise okul kapsamlı
+  (`school.subject_grade_levels`, `TB-191`). Karşılığı tanımlanmadan silmek, okul ders
+  kataloğunu kaynaksız bırakırdı. Ayrı bir karar gerektiriyor.
+
 - **Kategorinin programa göre değişip değişmediği ölçülemedi:** `source_category`
   sütunu dolu satır bulunmuyor (özellik yeni). İlk gerçek koşuda doğrulanacak.
