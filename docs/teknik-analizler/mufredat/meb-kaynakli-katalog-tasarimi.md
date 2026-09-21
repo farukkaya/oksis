@@ -324,6 +324,7 @@ gerekçesiyle yazılı.
 | Seçmeli ikiz ders | Karardaki bir ad hem `FIZIK` hem `SECMELI-FIZIK` kodunu bağlar | Önek çizelge tarafında; yalnız birebir kodu bağlamak dokuz seçmeli dersi branşsız bırakırdı |
 | Dev veritabanı | Yedek alındıktan sonra **sıfırlandı** (2026-09-21 kullanıcı onayı) | Altınay'ın izinli gerçek verisi `oksis_dev_20260921.bak` içinde duruyor. Sıra baştan işletildi: göç → çizelge → yayım → okul |
 | Hazırlık sınıfı | Kataloğa **kademe olarak eklendi**; sıra numarası kendine ayrılmış `-1` | Kullanıcı kararı (2026-09-21). `TB-39` değişmezi 0..12 uzayında aynen korunuyor; negatif sayı hiçbir kademenin ardılı olamaz, 9'dan önce sıralanır ve öğrenci kaydında gerçek bir kademeyle karıştırılamaz. Ayrıntı: Bulgu Arşivi §51 |
+| Hazırlığın açılması | Okul türünden değil **eğitim programından türetilir**; onay kutusu yok | Kullanıcı kararı (2026-09-21). MEB hazırlığı ayrı bir program olarak tanımlıyor ("Hazırlık Sınıfı Bulunan Fen Lisesi"), okul açılışta zaten seçiyor. Sormak hem gereksiz hem tehlikeli: hazırlığı olmayan programda açık hazırlık seviyesi = boş taslak = haftada 0 saat gerektiren şube |
 | Kademeye yayılan çizelge | **Kademe başına ayrı program** (`…-ILKOKUL` / `…-ORTAOKUL`) | Kullanıcı kararı (2026-09-21). Model zaten okul×kademe→program; programı çok kademeli yapmak okul açılışı, program seçimi ve doğrulamayı yeniden yazdırırdı. Kademe tekse kod ve ad değişmiyor |
 | Ders, branş, ders↔branş seed'i | **Silindi** (§12'de açık bırakılmıştı) | Önkoşul çözüldü: ders↔sınıf bağını artık yayım yazıyor (`LinkSubjectsToGradesAsync`), çünkü çizelge zaten sınıf × ders tablosudur. Belgede olmayanı okul kendi ekler |
 
@@ -349,7 +350,14 @@ gerekçesiyle yazılı.
   Metin katmanı bozuk bir 2018 belgesi katalogta "Anadolu İmam Hatip **Lise6i**" gibi altı
   satır açtı. Eşiğin ne olacağı karara bağlı; ölçüm hazır (otuz belgenin yalnız biri bozuk).
 
-- **Hazırlık sınıfı kademe olarak var ama ürün olarak yok.** Katalog satırı, müfredat
-  saatleri ve terfi aritmetiği hazır (Bulgu Arşivi §51). Hazırlık şubesi açmak, hazırlığa
-  öğrenci kaydetmek ve hazırlık yılını karneye yansıtmak ayrı bir iştir; bu tasarımın
-  kapsamında değil.
+- **Hazırlık sınıfı kademe olarak var, seviye kümesine de doğru giriyor; ürün desteği hâlâ
+  eksik.** Katalog satırı, müfredat saatleri, terfi aritmetiği ve okulun seviye kümesine
+  türetilerek eklenmesi hazır (Bulgu Arşivi §51). Hazırlığa öğrenci kaydetmek ve hazırlık
+  yılını karneye yansıtmak ayrı bir iştir; bu tasarımın kapsamında değil.
+
+- **Program tercihi değişirse hazırlık ne olacak?** Türetme okulun tercih satırını okuyor ve
+  tercih sezon açılışında değil okul kapsamında duruyor (`SchoolEducationProgram`); seviye
+  kümesi de sezon taşımıyor. Okul hazırlıklı programdan hazırlıksıza geçerse seviye bir
+  sonraki `PUT /grade-levels` çağrısında düşer — ama o sezonun hazırlık şubesi duruyorsa
+  kademe kilidi (`locked`) devreye girmez, çünkü kilit kademe bazlıdır. Hazırlık şubesi
+  gerçekten açılabilir hâle geldiğinde bu dikiş ölçülmeli.

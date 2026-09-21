@@ -39,7 +39,7 @@ tek bir çizelge bile yayımlanamaz**, çünkü ilk belgede her satır "çözül
 |---|---|
 | "Ara alana taşı" modalı kalktı, tek düğme kaldı | A4 |
 | Program kataloğu belgeden doğuyor, seed yok | A3, D2 |
-| Hazırlık bir `GradeLevel` (`HAZIRLIK`, sıra `-1`) | C3, E2 |
+| Hazırlık bir `GradeLevel` (`HAZIRLIK`, sıra `-1`), programdan türetiliyor | C3, E2 |
 | Kademeye yayılan çizelge kademe başına program üretiyor | A4, C2, D3 |
 | Ders/branş seed'leri silindi, katalog yayımdan doğuyor | C1 |
 | Öğretmenlik alanları kararı 107 branş yazıyor | — (ekranı yok, F1'de dolaylı) |
@@ -306,20 +306,38 @@ ara alana taşınması.
 1. `Ayarlar` → `Yapı` sekmesi → `Kademeler` kartı.
 2. **Beklenen:** Anaokulu / İlkokul / Ortaokul / Lise satırları; okulun açık kademesi işaretli.
 
-### E2 · ⚠️ Hazırlığın yan etkisi — ölçülmesi gereken
+### E2 · Hazırlık programdan geliyor (TB-222, ikinci ayak)
+Hazırlığın **anahtarı yoktur**. Kademeler kartında Lise satırı yalnız 9-12'yi açıp kapatır;
+hazırlık, okulun seçtiği eğitim programının müfredatında hazırlık satırı varsa açıktır.
+Kural sunucudadır (`PreparatoryGradeLevelResolver`), ekran yalnız gösterir.
+
+**Hazır test okulları (21 Eylül'de açıldı):**
+
+| Okul | Program | Beklenen seviyeler |
+|---|---|---|
+| `Hazirlikli Fen Lisesi` | Hazırlık Sınıfı Bulunan Fen Lisesi | `HAZIRLIK · 9 · 10 · 11 · 12` |
+| `Duz Fen Lisesi` | Fen Lisesi | `9 · 10 · 11 · 12` |
+
+İkisi de **aynı okul türüyle** (Lise), aynı formdan açıldı. Fark yalnız seçilen programdan
+geliyor ve kullanıcıya hazırlık **hiç sorulmadı**.
+
 1. Lise kademesini kapat, sonra yeniden aç.
-2. **Şu an olan:** `buildKademeStages` master seviyeleri `educationLevel`'a göre grupluyor
-   (`packages/core/src/academic-structure/kademe.ts`). Hazırlığın kademesi `High` olduğu için
-   **Lise kademesinin içine giriyor**: kademe açıldığında hazırlık da **otomatik aktif
-   oluyor**, hazırlık sınıfı olmayan liselerde bile.
-3. Ayrıca kartın alt yazısı hâlâ **"9.–12. sınıflar"** diyor (`kademe.ts:51`) — artık eksik.
-4. **Ölçüm:** Lise kademesi açıkken `Şubeler` ekranında şube oluştur; sınıf seviyesi
-   seçicisinde **"Hazırlık Sınıfı"** çıkıyor mu?
-   - Çıkıyorsa: hazırlık her liseye bulaşıyor → **yeni bulgu aç**.
-   - Çıkmıyorsa: seçici okulun açık seviyelerini başka bir yoldan süzüyor → nasıl
-     süzdüğünü not et.
-5. **Beklenen davranış (karar gerektirir):** Hazırlık kademe değil, kademenin **isteğe bağlı
-   bir seviyesi** olmalı; Lise açan okul onu ayrıca işaretlemeli.
+2. **Beklenen:** Hazırlık durumu **değişmez**. Lise'yi kapatmak hazırlığı düşürmez, açmak
+   hazırlığı getirmez.
+3. **Beklenen:** Hazırlığı olan okulda Lise satırının altında **"· hazırlık sınıfı dahil"**
+   yazar; olmayan okulda yazmaz.
+4. **Beklenen:** Lise satırının alt yazısı **"9.–12. sınıflar"** — artık doğru, çünkü hazırlık
+   o anahtarın parçası değil.
+5. **Sunucu kontrolü** (ekran eskirse diye kural sunucuda): hazırlığı olmayan okula hazırlık
+   dahil bir gövde gönder → sunucu **atmalı**.
+   ```bash
+   curl -X PUT http://localhost:5112/api/v1/school-settings/grade-levels \
+     -H "Authorization: Bearer <okul token>" -H 'Content-Type: application/json' \
+     -d '{"gradeLevelIds":["<hazırlık id>","<9 id>",…]}'
+   # 204 döner; GET'te hazırlık YOKTUR
+   ```
+   **Ölçtüğü:** `TB-32` — ekranın uyguladığı ama sunucunun bilmediği kural yok sayılır.
+   Burada tersi de geçerli: ekran göndermese bile sunucu hazırlığı ekler.
 
 ### E3 · Sıralama
 1. Şube oluşturma seçicisinde seviyelerin sırasına bak.
@@ -380,8 +398,10 @@ Her sapma için:
 |---|---|---|
 | 1 | Ekran `Onayla`'yı kilitliyor; sunucu kuralı kaldırdı — **yayım ekrandan yapılamıyor** | B4 |
 | 2 | "İçe aktarma yeni ders açmaz" ve "önce katalog beslenmeli" metinleri geçersiz | B3 |
-| 3 | Hazırlık, Lise kademesiyle birlikte otomatik açılıyor; kart alt yazısı "9.–12." | E2 |
-| 4 | `TB-224` — bozuk metin katmanlı 2018 belgesi katalogta çöp program adı açtı | A6, D5 |
+| 3 | `TB-224` — bozuk metin katmanlı 2018 belgesi katalogta çöp program adı açtı | A6, D5 |
 
-İlk üçü bu dalın kendi eksiği (ekran, sunucu kararının gerisinde kaldı); dördüncüsü
+İlk ikisi bu dalın kendi eksiği (ekran, sunucu kararının gerisinde kaldı); üçüncüsü
 defterde açık bulgu.
+
+> **Kapandı (21 Eylül):** "Hazırlık, Lise kademesiyle birlikte otomatik açılıyor" sapması
+> düzeltildi — hazırlık artık programdan türetiliyor, kademe anahtarının dışında. E2'ye bakın.
