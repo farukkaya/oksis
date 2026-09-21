@@ -26,7 +26,8 @@
 > atlanıyor 🟠 — ekran ayağı aynı gün kapandı) ve `TB-226` (ayrıştırıcı yalnız 2025 çizelge
 > düzenini tanıyor 🟠) açıldı. Manuel ekran turunda ayrıca `TB-227` (içe aktarma ekranı
 > hangi programın müfredatı olduğunu söylemiyor 🟠) ve `TB-228` (dipnot işareti saklanıyor,
-> açıklaması atılıyor 🟡). Defter **101** (🔴 3 · 🟠 25 · 🟡 41 · ⚪🟢 32).
+> açıklaması atılıyor 🟡) ve `TB-229` (reddedilen çizelge bir daha içe aktarılamıyor 🔴).
+> Defter **102** (🔴 4 · 🟠 25 · 🟡 41 · ⚪🟢 32).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -146,7 +147,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-229` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-230` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -3110,6 +3111,41 @@ ile 'kültür, sanat ve spor' seçmeli ders gruplarından her bir gruptan en az 
 üzerine gelince gösterilsin; (b) yalnız ham metin olarak belgeye bağlı saklansın, kullanıcı
 okusun; (c) kapsam dışı kalsın ve bu bilinçli olarak yazılsın. Seçmeli ders grubu kısıtının
 kendisi ayrı ve daha büyük bir iş — bu bulgu yalnız "açıklama hiç okunmuyor" kısmını kapsıyor.
+
+### `TB-229` · Reddedilen çizelge bir daha içe aktarılamıyor 🔴
+
+2026-09-21'de kullanıcı manuel ekran testinde "Reddet'e basarsam ne olur?" diye sorunca
+koddan izlendi. Cevap: **o çizelge kalıcı olarak kilitlenir.**
+
+Zincir üç halkadan oluşuyor ve üçü birlikte çıkmaz üretiyor:
+
+1. `Reject` ve `Quarantine` çalışmayı **terminal** duruma alıyor
+   (`CurriculumImportRun.IsTerminal` → `Published | Rejected | Quarantined`). Sonraki her
+   çağrı `EnsureOpen()` ile `CurriculumImportRun.Terminal` istisnasına çarpıyor.
+2. Kullanıcı aynı belgeyi yeniden "Ara alana taşı" derse, `StartImportRunCommandHandler`
+   var olan çalışmayı `(MebDocumentSetId, EducationProgramId, AcademicYearCode,
+   PayloadSha256)` anahtarıyla buluyor ve **durumu süzmüyor**. Reddedilmiş çalışmayı
+   `AlreadyExisted: true` ile geri döndürüyor; **yeni çalışma açılmıyor.**
+3. Geri alma yolu **yok**: `PlatformCurriculumImportsController` üzerinde silme, sıfırlama
+   ya da yeniden açma ucu bulunmuyor. Belge seti de belge başına tek
+   (`EnsureDocumentSetAsync`), yani ikinci bir set açarak kaçılamıyor.
+
+Sonuç: PDF'in içeriği değişmediği sürece (hash aynı kaldığı sürece) o çizelge o program ve
+akademik yıl için **bir daha asla** yayımlanamaz. Tek çıkış veritabanına elle müdahale.
+
+Ret geri alınamaz bir karardır ve bu doğrudur; yanlış olan, **yanlışlıkla basılan bir retten
+sonra doğru yolun kapanması.** Ekran "bu karar terminaldir; geri alınamaz" diyor ama
+"bu çizelgeyi bir daha içe aktaramazsın" demiyor — kullanıcı "reddederim, düzeltip yeniden
+taşırım" diye düşünüyor.
+
+⚠️ Ölçüm **koddan** yapıldı, canlı denenmedi: denemek kullanıcının açık çalışmalarından
+birini kalıcı olarak kilitlerdi.
+
+⬜ Seçenekler: (a) tekilleştirme sorgusu terminal çalışmaları dışlasın — reddedilen çizelge
+yeniden taşınabilsin, yeni bir çalışma açılsın (eski ret denetim izinde kalır); (b) ret
+kararına "yeniden taşımaya izin ver" seçeneği eklensin; (c) en azından ekran, ret onayında
+sonucun ne olduğunu açıkça yazsın. (a) en doğrusu gibi: ret "bu içe aktarma yanlıştı"
+demektir, "bu çizelge sonsuza dek yasak" demek değil.
 
 ### `TB-225` · Karara bağlanmamış öneri satırları yayımda atlanıyor 🟠
 
