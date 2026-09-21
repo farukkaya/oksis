@@ -24,7 +24,8 @@
 > Aynı koşuda `TB-224` (bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠)
 > açıldı. Ekran turunda ayrıca `TB-225` (karara bağlanmamış öneri satırları yayımda
 > atlanıyor 🟠 — ekran ayağı aynı gün kapandı) ve `TB-226` (ayrıştırıcı yalnız 2025 çizelge
-> düzenini tanıyor 🟠) açıldı. Defter **99** (🔴 3 · 🟠 24 · 🟡 40 · ⚪🟢 32).
+> düzenini tanıyor 🟠) açıldı. Manuel ekran turunda ayrıca `TB-227` (içe aktarma ekranı
+> hangi programın müfredatı olduğunu söylemiyor 🟠). Defter **100** (🔴 3 · 🟠 25 · 🟡 40 · ⚪🟢 32).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -144,7 +145,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-227` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-228` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-29` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -3031,6 +3032,41 @@ tohumlama yoluna hiç girilmedi ve müfredat entegrasyon testlerinin 49/50'si ye
 
 ⬜ Test kendi öncülünü kurmalı: okulu açtıktan sonra `SubjectCatalogImporter` ile ders
 kataloğunu içe aktarmalı. Kusur üründe değil, testin öncülünde.
+
+### `TB-227` · İçe aktarma ekranı hangi programın müfredatı olduğunu söylemiyor 🟠
+
+2026-09-21'de kullanıcı manuel ekran testi yaparken sordu: "hangisi hazırlık sınıfı
+içeriyor, nasıl anlayacağım?" Cevap: **anlaşılmıyor.**
+
+`İçe aktarmalar` listesinin sütunları `Akademik yıl · Durum · Satır · Oluşturulma · İşlem`.
+**Program sütunu yok.** 2025/05 kararının altı çalışması ekranda şöyle görünüyor:
+
+| Akademik yıl | Durum | Satır |
+|---|---|---|
+| 2025-2026 | İnceleme bekliyor | 162 |
+| 2025-2026 | İnceleme bekliyor | 142 |
+| 2025-2026 | İnceleme bekliyor | **168** |
+| 2025-2026 | İnceleme bekliyor | 163 |
+| 2025-2026 | İnceleme bekliyor | **168** |
+| 2025-2026 | İnceleme bekliyor | 161 |
+
+Altı satırı ayıran tek şey satır sayısı — ve **ikisi aynı** (Hazırlık Sınıfı Bulunan Anadolu
+Lisesi ile Hazırlık Sınıfı Bulunan Fen Lisesi, ikisi de 168). Yani geçici çözüm bile
+çalışmıyor.
+
+Detay ekranı da söylemiyor: `ImportRunDetailDto` ve `ImportRunListItemDto`
+`EducationProgramId` taşıyor ama **yalnız Guid**; program adı hiçbir DTO'da yok ve ekran
+Guid'i de basmıyor.
+
+Zarar: onay iki kişi kuralına bağlı gerçek bir kapıdır ve merkez kullanıcısı **hangi
+programın müfredatını onayladığını bilmeden** onaylıyor. Yanlış çalışmayı onaylamak sessiz
+bir hata üretir — yayımlanan sürüm doğru programa gider (bağ sunucuda kurulu), ama insan
+"Fen Lisesi'ni onaylıyorum" sanıp Anadolu'yu onaylamış olabilir ve ne onayladığını
+denetleyemez.
+
+⬜ Program adı iki DTO'ya da eklenmeli ve listede sütun olmalı. Çizelge sayfa numarası
+(`SourcePageNumber`) da yardımcı olur: kullanıcı MEB Kaynakları ekranında `s3` kartını
+görüp aynı numarayı burada arayabilir.
 
 ### `TB-225` · Karara bağlanmamış öneri satırları yayımda atlanıyor 🟠
 
