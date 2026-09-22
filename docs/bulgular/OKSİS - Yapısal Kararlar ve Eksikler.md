@@ -40,7 +40,7 @@
 | **K-27** | Platform kimliği: süper yönetici okulsuz platform hesabı mı, "OKSİS Merkez" iç okulu mu? | ✅ Karara bağlandı · ✅ ilk dilim uygulandı | 2026-09-15 | **(a) Ayrı platform hesabı** + üç platform rolü ([[0019-platform-rol-seti-uc-rol]]: `PLATFORM_ADMIN` / `PLATFORM_OPERATIONS` / `PLATFORM_SUPPORT`, destek salt-okunur) · izler kazındı: [[super-admin-izleri-envanteri]] · ilk hesap `PlatformBootstrap` ayarından tek seferlik · ilk dilim `oksis-api` `e91711bd`…`74427aa3`, `oksis-ui` `bd8d0f6`/`47d6059` · `E-24`/`TB-162` kapandı |
 | **K-28** | Kurum yetkilisi: kim sorar, kim düzenler? | ✅ Karara bağlandı · ✅ **uygulandı** (2026-09-22) | 2026-09-15 | **(a)** Platform okul açılışında sorar · sonradan platform düzenler · müdür yalnız görür — `TB-165`/`TB-171`/`TB-172` kapandı ([[OKSİS - Bulgu Arşivi]] §52); artakalan boşluk `TB-230` |
 | **K-29** | Dersin kod alanı: kalsın mı, tekillik neye bağlansın? | ✅ Karara bağlandı · ⬜ uygulanmadı | 2026-09-22 | **Kod alanı KALKAR** (`master.subjects.code` + `school.subjects.code`), tekillik görünmez türetilmiş `name_key` kolonuna geçer. Gerekçe: MEB ders kodu vermiyor (964/964 içe aktarma satırında `source_subject_code = NULL`) — kod bizim icadımızdı |
-| **K-30** | Okulun türünü kim değiştirir, program değişince saat kararları ne olur? | ✅ Karara bağlandı · 🟡 yarısı uygulandı | 2026-09-22 | **Tür değişimi platformun işi**, müdür yalnız sezonu çizelgeye bağlar (⬜ uygulanmadı). **Program değişince saat kararları silinir**, müfredat MEB'den geldiği gibi iner (✅ uygulandı); okulun kendi dersleri kalır |
+| **K-30** | Okulun türünü kim değiştirir, program değişince saat kararları ne olur? | ✅ Karara bağlandı · ✅ uygulandı | 2026-09-22 | **Tür değişimi platformun işi**: künyeye program alanı eklendi, müdürün yazma ucu silindi, penceresi salt-okunur. **Program değişince saat kararları silinir**, müfredat MEB'den geldiği gibi iner; okulun kendi dersleri kalır |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 | **Y-03** | Şube alanı (Sayısal / Eşit Ağırlık / Sözel / Yabancı Dil) nerede tutulur | ✅ Karara bağlandı · ✅ **uygulandı** (`oksis-api` `614a51b3` + `oksis-ui` `7fe92fc`) | 2026-09-17 | **(a) `ClassRoom.Track` + sabit enum.** Derse BAĞLANMADI (ders↔alan çoka-çok: "seçmeli matematik" dört alandan üçünde geçer) · öğrencinin alanı aktif şube atamasından türetilir, ayrıca tutulmaz · MEB'in 09/05/2025-05 çizelgesinde alan sütunu **yok**, yani bu okulun organizasyon ihtiyacı · enum çünkü listeyi okul düzenlemiyor — meslek lisesi kapsama girerse katalog tablosuna terfi eder |
@@ -1207,7 +1207,7 @@ border: off
 
 ### 📄 Bağlam
 
-**Durum:** ✅ Karara bağlandı (2026-09-22) · 🟡 saat ayağı uygulandı, yetki ayağı uygulanmadı
+**Durum:** ✅ Karara bağlandı ve **uygulandı** (2026-09-22)
 **Kaynak:** kullanıcının yeni Müfredat ekranı üzerindeki sorusu — *"Eğitim programı düğmesine
 basıp Anadolu Lisesi'ni seçersem ne olur?"* ve ardından *"okulun eğitim programını değiştirmesi
 sezona mı bağlı?"*
@@ -1252,9 +1252,23 @@ kuruluş yılıyla aynı aileden (`K-28`). Müdür kendi okulunu bir sabah Fen L
 | Platform | "Bu okul artık Fen Lisesi" — kalıcı kayıt | okul künyesi (`K-28` yüzeyi) |
 | Okul müdürü | "Bu sezonu hangi çizelgeye bağlıyorum" | Akademik › Müfredat |
 
-⬜ **Uygulanmadı.** Gerekenler: platform okul künyesine eğitim programı alanı (`K-28`'in
-`SchoolProfileInput`'una kademe×program), onu yazan uç, ve değişimin gelecek sezonlara
-inmesi. Geçmiş sezonlar snapshot'ıyla kalır — model bunu zaten destekliyor.
+✅ **Uygulandı (2026-09-22).** Kullanıcı sorusu bunu hızlandırdı: *"platform değiştirmediyse
+müdür kırmızı düğmeye basınca ne olur?"* — cevabı "olur, hem de yıkıcı biçimde"ydi ve karar
+henüz kâğıt üzerindeydi.
+
+- `SchoolProgramChangeService` (yeni) tek yol: kalıcı tercihi yazar, **hazırlıktaki**
+  sezonların bağını ona eşitler, saat kararlarını siler, taslağı yeniden tabanlar. Başlamış
+  ve arşiv sezonlara dokunmaz (karar 0021).
+- `PUT platform/schools/{id}` künyesine `educationProgramId` eklendi; platform okul
+  düzenleme formunda program artık açık.
+- Müdürün `PUT curriculum/programs` ucu ve `SelectAcademicProgramCommand` **silindi**.
+  Müfredat ekranındaki pencere salt-okunur: programı ve bağlı çizelgeyi gösterir,
+  "Okulun türünü OKSİS platformu değiştirir" der.
+- Aynı program gönderilirse kısa devre — künye formu alanı her kaydedişte gönderiyor ve
+  dokunulmamış bir alan okulun saat kararlarını silmemeli.
+
+**Bunun yan etkisi:** `TB-235`'in her iki belirtisi de kapandı — değişim artık gelecek
+sezona iniyor ve kalıcı tercihin düzenleme yüzeyi var.
 
 **Karar 2 — program değişince saat kararları silinir**
 > **Eğitim programı değişirse saat kararları baştan verilir; müfredat MEB'den geldiği gibi

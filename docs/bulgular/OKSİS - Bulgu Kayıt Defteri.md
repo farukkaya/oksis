@@ -43,10 +43,11 @@
 > haftalık saat yüzeyi hiç yok — 13 uç, sıfır çağıran) → §54: Akademik › Müfredat ekranı
 > yazıldı, 13 ucun tamamı çağıran kazandı, canlı veride 162 satır doğrulandı.
 > Açık kalan: `TB-234` (müfredatı boş doğan sezondan çıkış yolu 🟠) — hazırlıktaki sezon
-> ayağı `TB-232` ile kurtarıldı, **başlamış sezonunki açık**. Yeni ekranın ilk kullanıcı
-> sorusu bir madde daha açtı: `TB-235` (program değişimi okul kapsamlı tercihi bırakıyor;
-> hazırlık açık ama müfredatsız kalıyor 🟠).
-> Defter **103** (🔴 4 · 🟠 28 · 🟡 40 · ⚪🟢 31).
+> ayağı `TB-232` ile kurtarıldı, **başlamış sezonunki açık**. Yeni ekranın kullanıcı soruları
+> `TB-235`'i açtı (program değişimi okul kapsamlı tercihi bırakıyor: hazırlık müfredatsız
+> kalıyor, değişim gelecek sezon geri alınıyor 🟠) ve **aynı gün kapattı** —
+> [[OKSİS - Bulgu Arşivi]] §55, `K-30` ile birlikte.
+> Defter **102** (🔴 4 · 🟠 27 · 🟡 40 · ⚪🟢 31).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -728,70 +729,6 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
-
-### `TB-235` · Program değişimi okul kapsamlı tercihi bırakıyor: hazırlık müfredatsız kalıyor, değişiklik gelecek sezon geri alınıyor 🟠
-
-`TB-232` ekranı yazıldıktan sonra kullanıcının sorusuyla ortaya çıktı: *"Eğitim programı
-düğmesine basıp Anadolu Lisesi'ni seçersem ne olur?"*
-
-**İki ayrı tablo var ve uç yalnız birini yazıyor:**
-
-| Tablo | Kapsam | Neyi belirler | `PUT curriculum/programs` yazar mı |
-|---|---|---|---|
-| `academic.school_academic_programs` | **sezon** | taslakların bağlandığı müfredat sürümü | ✅ evet |
-| `academic.school_education_programs` | **okul** | hazırlık seviyesinin açık olup olmadığı | ❌ hayır |
-
-Hazırlık seviyesi `PreparatoryGradeLevelResolver` ile okul kapsamlı tercihten türetilir
-(`TB-222`). Sezon kapsamlı programı hazırlıksız bir programa çevirmek, okul kapsamlı satıra
-dokunmaz — seviye açık kalır, ama yeni programın çizelgesinde o seviyeye ait satır yoktur.
-
-**Altınay üzerinde ölçüldü** (2026-2027 hazırlıktaki sezon). Anadolu Lisesi seçilseydi:
-
-```
-HAZIRLIK  19 ders / 51 saat  →   0 ders / 0 saat   ← seviye açık kalır
-9         29 / 53            →  32 / 57
-10        37 / 62            →  39 / 65
-11        42 / 67            →  48 / 91
-12        35 / 65            →  42 / 86
-```
-
-Bu tam olarak `PreparatoryGradeLevelResolver`'ın kendi doc yorumunun tehlikeli dediği hâl:
-*"hazırlık şubesi haftada sıfır saat gerektiren bir şube olur ve ders programı ekranı onu
-eksiksiz sayar. Hata vermez; yalnız yanlış olur."* Kural yazılmış, ama yalnız seviye kümesi
-güncellenirken çağrılıyor; program sezon üzerinden değişince çağrılmıyor.
-
-**Geri alınabilir ama pencere açık:** override'lar silinmediği için eski program yeniden
-seçilirse saatler geri gelir. Sezon arada aktifleştirilirse boş hazırlık **kalıcı olarak**
-snapshot'a donar — aktivasyon tek yönlüdür.
-
-**İkinci belirti — değişiklik gelecek sezon sessizce geri alınır.** Kullanıcı sorusuyla
-ölçüldü: *"okulun eğitim programını değiştirmesi sezona mı bağlı?"* Hayır, tasarıma göre
-program okulun **kalıcı** niteliğidir (`SchoolEducationProgram` doc'u: *"bu okul bir Fen
-Lisesi'dir"*; tasarım §6.2 adım 1: *"Okulun tek lise eğitim programı seçilir"*). Sezon
-kapsamlı satır, sezonun dayanağı yeniden üretilebilsin diye var — okul açılırken henüz
-sezon yoktur, başlamış sezonun dayanağı da korunmalıdır (karar 0021).
-
-Ama `CurriculumDraftBootstrapper` yeni sezonun bağını **okul kapsamlı tercihten** kurar
-(`:86`, yalnız eksik kademeler için). Yani bu düğmeyle yapılan değişiklik yalnız içinde
-bulunulan sezonu etkiler ve **gelecek sezon eski programa döner**. Kullanıcı "okulumu
-Anadolu Lisesi yaptım" sanır; ertesi yıl okul yeniden Sosyal Bilimler Lisesi doğar.
-
-**Üçüncüsü: kalıcı tercihin hiç düzenleme yüzeyi yok.** `SchoolEducationPrograms`'ı yazan
-tek yer `CreateSchoolCommandHandler:157` (bir de dev seeder). Okul açılışında bir kez
-yazılıyor, sonrasında onu değiştiren uç **yok**. Oysa gerçek hayatta MEB bir okulu
-dönüştürebiliyor; model bunu zaten destekliyor (geçmiş sezonlar snapshot'ıyla kalır,
-gelecek sezonlar yeni tercihi alır) — eksik olan yalnız yüzey.
-
-⬜ **Kararı gerektiren sorular:**
-1. Bu düğme neyi değiştirmeli — yalnız sezonu mu, yoksa kalıcı tercihi de mi? (Bugünkü
-   davranış "yalnız sezon" ama bu bilinçli bir karar değil, tercihe hiç dokunmamanın
-   yan etkisi.)
-2. Okulun kalıcı türünü değiştirmek kimin işi — platformun (okul künyesi, `K-28` ile aynı
-   yer) mi, okulun mu?
-3. Hazırlığı olan bir okula hazırlıksız program hiç sunulmalı mı?
-
-Ek olarak uç, program seçeneği başına **seviye kapsamını** dönmüyor; ekran bu yüzden
-"hazırlık boşalacak" uyarısını veremiyor, yalnız genel uyarı yazabiliyor.
 
 ### `TB-234` · Müfredatı boş doğan sezondan ürün içinde çıkış yolu yok 🟠
 

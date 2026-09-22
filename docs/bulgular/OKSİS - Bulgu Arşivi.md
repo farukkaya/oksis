@@ -7862,3 +7862,61 @@ sezonun ürün içindeki tek çıkış yolu buydu (`TB-234`).
 **Kalan:** kilitli (başlamış/arşiv) sezon yolu birim testlidir ve tamamen sunucunun
 `isLocked` yanıtına bağlıdır, ama canlı bir `Active` sezona karşı henüz koşturulmadı —
 Altınay'ın sezonu hâlâ hazırlıkta.
+
+---
+
+## 55. `TB-235` · Okulun türünü kim değiştirir (2026-09-22) ✅
+
+**Bulgu.** Yeni Müfredat ekranı yazıldıktan sonra kullanıcının sorusuyla çıktı:
+*"Eğitim programı düğmesine basıp Anadolu Lisesi'ni seçersem ne olur?"*
+
+Program **iki ayrı yerde** duruyordu ve uç yalnız birini yazıyordu:
+
+| Kayıt | Kapsam | Ne der | Uç yazar mı |
+|---|---|---|---|
+| `SchoolEducationProgram` | okul | "bu okul bir Fen Lisesi'dir" | ❌ |
+| `SchoolAcademicProgram` | sezon | "bu sezon şu çizelgeye bağlı" | ✅ |
+
+**Üç belirti:**
+1. Hazırlıksız bir program seçilince hazırlık seviyesi **açık ama müfredatsız** kalıyordu —
+   `PreparatoryGradeLevelResolver`'ın kendi doc'unun tehlikeli dediği hâl: *"hazırlık şubesi
+   haftada sıfır saat gerektiren bir şube olur ve ders programı ekranı onu eksiksiz sayar."*
+2. Değişiklik **ertesi yıl sessizce geri alınıyordu**: `CurriculumDraftBootstrapper` yeni
+   sezonun bağını okul kapsamlı kayıttan kuruyor.
+3. Okul kapsamlı kaydı değiştiren **hiçbir uç yoktu** — `CreateSchoolCommandHandler` bir kez
+   yazıyor, sonra kilitleniyordu. Oysa MEB gerçekten okul dönüştürüyor.
+
+Altınay üzerinde ölçüldü: Anadolu Lisesi seçilseydi HAZIRLIK 19 ders/51 saat → **0**, 9-12
+ise Anadolu çizelgesine geçerdi (32/57, 39/65, 48/91, 42/86).
+
+Ayrıca yetki tarafı ölçüsüzdü: uç `curriculum-hours.override` ile korunuyordu — **bir
+Matematik saatini değiştirmeye yeten izinle okulun türü değiştirilebiliyordu.**
+
+✅ **2026-09-22 · kapandı** (`K-30` kararıyla birlikte; `oksis-api` `ed0ca83b`,
+`oksis-ui` `28e1463`).
+
+Kullanıcı kararı: **okulun türünü değiştirmek platformun işidir, müdür yalnız sezonu
+çizelgeye bağlar.** Gerekçe: okul türü MEB'in verdiği bir kimliktir, kurum kodu ve kuruluş
+yılıyla aynı aileden (`K-28`).
+
+Uygulanan:
+- `SchoolProgramChangeService` (yeni) **tek yol**: kalıcı tercihi yazar, hazırlıktaki
+  sezonların bağını eşitler, saat kararlarını siler, taslağı yeniden tabanlar. Başlamış ve
+  arşiv sezonlara dokunmaz (karar 0021).
+- `PUT platform/schools/{id}` künyesine `educationProgramId`; platform formunda program açık.
+- Müdürün `PUT curriculum/programs` ucu ve `SelectAcademicProgramCommand` **silindi**;
+  penceresi salt-okunur.
+- Aynı program gönderilirse kısa devre — form alanı her kaydedişte gidiyor.
+
+**Yol boyunca düzeltilen ikinci şey** (`K-30` karar 2): program değişiminde saat kararları
+**korunuyordu**. Kullanıcı düzeltti: *"Eğer bir eğitim programı değişiyorsa saat kararları
+baştan verilmeli, ilk açılışta MEB'den geldiği gibi uygulanmalı."* Saat kararı boşlukta
+değil, bir çizelgeye göre verilir. Okulun kendi eklediği dersler silinmez — onlar çizelge
+kararı değildir. "Güncel müfredatı getir" (aynı program, yeni sürüm) kararları korumaya
+devam eder; ayrım bilinçli.
+
+**Beş entegrasyon testi kuralı kilitliyor:** program değişince kalıcı tercih yazılır +
+saat kararları silinir + okul dersleri kalır; aynı program gönderilirse hiçbir şeye
+dokunulmaz; başlamış sezon programını korur ama kalıcı tercih yine de değişir; platform
+künyesinden program değişir ve geri okunur; program gönderilmeyen güncelleme programa
+dokunmaz.
