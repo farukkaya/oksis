@@ -7747,3 +7747,66 @@ sarıldı ve aynı `PLATFORM_SCHOOL_CODE_DUPLICATE` koduna (409) eşlendi. Yarı
 `SaveChanges` interceptor'ı ön denetimle kaydetme arasındaki pencerenin ortasında rakip satırı yazıyor, handler
 500 değil 409 dönüyor.
 
+---
+
+## 53. `TB-233` · Yürürlükteki müfredat kuralı (2026-09-22) ✅
+
+**Nasıl bulundu:** Aşama 8 manuel turunda, gerçek veride. Kullanıcı okulu açtı, sezonu
+oluşturdu ve müfredatı görmek istedi — ekran olmadığı için (`TB-232`) taslağa veritabanından
+bakıldı ve boş olduğu görüldü.
+
+**Kullanıcı düzeltmesi, kararın kendisi:**
+> *"MEB her sezon yeni bir müfredat-çizelge yayınlamayabilir. Yayınlanmış son müfredat-çizelge
+> yürürlükte olan müfredat olarak kabul edilir. 2026-2027 sezonuna ait bir müfredat olmadığı
+> için yürürlükteki son müfredat olan 2025-2026 geçerli olup bu yıl ve sonrasında oluşan tüm
+> okullara inmeli."*
+
+Kod tam eşleşme (`==`) arıyordu; doğru kural **"sezon yılından büyük olmayan en yeni yayımlı
+sürüm"**. Bu bir kodlama hatası değil, **yanlış modellenmiş bir iş kuralıydı** — üç ayrı yere
+kopyalanmıştı.
+
+**Kapanış:** kural `InForceCurriculumVersion`'da tek kaynağa alındı; üç çağrı yeri
+(`CurriculumDraftBootstrapper`, `CurriculumRebaseService`, `ListEducationProgramsQueryHandler`)
+ona bağlandı. Push kapısı yeşil (1227 · 3133 · 463 · 109), `CurriculumDraftBootstrapperTests`
+11/11.
+
+**Ders:** eksik ekran, arkasındaki kusuru gerçekten sakladı. Müfredat yüzeyi yazılmış olsaydı
+bu hata ilk okulda görülürdü; yüzey olmadığı için MEB kaynaklı katalog dalı boyunca hiç
+görülmedi ([[eksik-ekran-eksik-yetkiyi-gizler]]).
+
+### `TB-233` · Yürürlükteki müfredat yanlış seçiliyordu: sezon yılıyla TAM eşleşme aranıyor, çizelge sessizce inmiyordu 🔴
+
+Aşama 8'de gerçek veride bulundu. Kullanıcı okulu açtı, sezonu oluşturdu; taslak kuruldu ama
+**boş**:
+
+```
+HAZIRLIK | source_type=Manual | base_curriculum_version_id=NULL
+9 · 10 · 11 · 12 | aynı
+```
+
+Yayımlanmış altı çizelgenin hepsi `2025-2026`; açılan sezon `2026-2027`.
+`CurriculumDraftBootstrapper` sürümü `v.AcademicYearCode == academicYearCode` ile arıyordu →
+eşleşme yok → `matches.Count == 1 ? matches[0].Id : null` → `null` → taslak `Manual` →
+**`Result.Success()`**. Hata yok, uyarı yok, ekranda tek kelime yok. 162 satırlık çizelge
+yayımda dururken okul bomboş müfredatla doğuyordu.
+
+**Kural yanlıştı** (kullanıcı düzeltmesi 2026-09-22): *MEB her sezon yeni çizelge yayımlamaz;
+yayımlanmış en son çizelge, yenisi çıkana kadar yürürlüktedir.* Doğru seçim, akademik yılı
+sezonunkinden **büyük olmayan** yayımlı sürümlerin **en yenisidir**.
+
+Aynı yanlış kural **üç yerdeydi** — üçü de aynı satırı kopyalamıştı:
+`CurriculumDraftBootstrapper`, `CurriculumRebaseService.ResolveTargetsAsync` ve
+`ListEducationProgramsQueryHandler`. Sonuncusu ayrıca yalancıydı: yürürlükte çizelge varken
+program seçeneğine "müfredatı yayımlanmadı" yazıyordu.
+
+✅ **2026-09-22 · kapandı.** Kural tek kaynağa alındı: yeni `InForceCurriculumVersion`
+(`Application/Modules/Academics/Curriculum/`). Üç çağrı yeri de ona bağlandı. İki sınır
+durumu kilitlendi: ileri tarihli sürüm inmez (yürürlük geriye işler) ve belirsizlik yalnız en
+yeni yıl içinde aranır (eski yıllarda birden çok sürüm artık hata değil). Sıralama
+`YYYY-YYYY` sıfır dolgulu olduğu için sözlük sırası = kronolojik sıra; bu bağımlılık kodda
+yazılı.
+
+Bir test **eski kuralı savunuyordu** ("Eşleşen Published sürüm yoksa taslak Manual doğar",
+2030 sezonuyla). İkiye bölündü: gerçekten hiç çizelge olmayan durum (2020 sezonu) ve yeni
+kural (2030 sezonu → 2025-2026 sürümüne bağlanır). `CurriculumDraftBootstrapperTests` 11/11.
+

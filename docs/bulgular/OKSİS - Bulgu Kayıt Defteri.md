@@ -37,6 +37,13 @@
 > kırmızı, push kapısının dışında 🟠) açıldı. Aynı turda `K-29` karara bağlandı: dersin kod
 > alanı kalkar, tekillik türetilmiş ad anahtarına geçer. Defter **101** (🔴 4 · 🟠 26 · 🟡 40 · ⚪🟢 31).
 >
+> **Aşama 8 manuel turu (2026-09-22):** kullanıcının *"böyle bir ekran yok"* sorusu üç madde
+> açtı. `TB-233` 🔴 (yürürlükteki müfredat yanlış seçiliyor, çizelge sessizce inmiyor) **aynı
+> gün kapandı** ve arşive taşındı ([[OKSİS - Bulgu Arşivi]] §53). Açık kalanlar: `TB-232`
+> (okulun müfredat/haftalık saat yüzeyi hiç yok — 13 uç, sıfır çağıran 🟠) ve `TB-234`
+> (müfredatı boş doğan sezondan ürün içinde çıkış yolu yok 🟠).
+> Defter **103** (🔴 4 · 🟠 28 · 🟡 40 · ⚪🟢 31).
+>
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
 > yöneticinin panosunu çiziyor, beş uç 403 🟠) ve `D-23` (Kullanıcılar ekranı `Staff` profilini
@@ -155,7 +162,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-232` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-235` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -717,6 +724,48 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
+
+### `TB-232` · Okulun müfredat/haftalık saat yüzeyi hiç yok — 13 uç, sıfır çağıran 🟠
+
+Aşama 8 manuel turunda kullanıcının sorusuyla ortaya çıktı: *"Böyle bir ekran yok şu an,
+varsa da path'ini bilmiyorum çünkü menüde görünmüyor."* Ölçüm onu doğruladı — ekran
+**yapılmamış**.
+
+| Uç | Durum |
+|---|---|
+| `api/v1/curriculum-hours/*` (4 uç: `required-total`, `subject/{id}` GET+PUT, `catalog`) | var · **0 çağıran** |
+| `api/v1/curriculum/*` (9 uç: `programs` GET+PUT, `diff`, `rebase/preview`, `rebase`, `grades/{code}/reset`, `activation-preview`, `snapshot`) | var · **0 çağıran** |
+
+`oksis-ui`'da `curriculum-hours` yalnız üç yerde geçiyor: bir izin mock'u, bir izin etiketi ve
+`course-catalog.tsx:459`'daki yorum — *"editörü sonraki teslimde eklenecek (ayrı
+curriculum-hours modülü)"*. Erteleme bilinçli ama hiçbir yere kaydedilmemiş; bu yüzden MEB
+kaynaklı katalog dalı boyunca kimse fark etmedi.
+
+**Zarar üç katmanlı:**
+1. Okul, MEB çizelgesinden gelen haftalık saatleri **göremiyor**. İçe aktarma → eşleme →
+   yayım zincirinin bütün amacı bu saatlerdi; okul tarafında görünmüyorlar.
+2. Okul saatleri **değiştiremiyor**. `PUT curriculum-hours/subject/{id}` var, çağıran yok.
+3. Çağrılmayan uç, arkasındaki kusurları da sakladı — nitekim `TB-233` tam da bu yüzden
+   bugüne kadar görülmedi ([[eksik-ekran-eksik-yetkiyi-gizler]]).
+
+⬜ Ekran yazılır. Kapsam en az: seviye × ders saat tablosu, MEB/okul ayrımı, sezon
+hazırlıktayken düzenleme, aktifken kilit + gerekçe.
+
+### `TB-234` · Müfredatı boş doğan sezondan ürün içinde çıkış yolu yok 🟠
+
+`TB-233` düzeltilirken görüldü: düzeltme **açılış anına** etki ediyor, bootstrapper idempotent
+olduğu için var olan taslağı yeniden bağlamıyor. Zaten açılmış sezonun boş müfredatını
+kurtaracak bir yol ürün içinde yok:
+
+- `AcademicSessionsController`'da **silme ucu yok** — hazırlık (`Setup`) aşamasındaki sezon
+  bile silinemiyor. Domain'de yalnız `Setup → Active → Archived` var, geri dönüş yok.
+- `POST curriculum/rebase` tam bu iş için var **ama ekranı yok** (`TB-232`).
+
+Sonuç: müfredatı boş doğan okulun tek çıkışı okulu yeniden açmak. Kullanıcı testinde
+fiilen bu yaşandı.
+
+⬜ `TB-232` ekranı rebase düğmesini de taşımalı. Ayrıca hazırlık aşamasındaki sezonun
+silinebilmesi ayrı bir soru — karar gerektirir.
 
 ### `TB-230` · İzin çözücü `Platform` portalını tanımıyor; platform rolü hiçbir izin taşıyamaz 🟡
 
