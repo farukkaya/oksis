@@ -7567,3 +7567,183 @@ silinen sınıf, biri kaldırılmış `is_default` indeks sözleşmesi, biri de 
 PlatformOnly handler'ın çekirdek-uzay muafiyeti (`SubjectCatalogTranslationTests`). Hepsi
 kapatıldı. **Takım push kapısının içinde değil** (kapı Domain + Application + Api) — bu
 yüzden dalda sessizce kırmızı kalmıştı.
+
+---
+
+## 52. `K-28` Kurum Yetkilisi — platform sorar, platform düzenler (2026-09-22) ✅
+
+**Karar:** `K-28 (a)` (2026-09-15) — *kurum yetkilisini platform açılışta sorar, sonradan
+platform düzenler, müdür yalnız görür.* Uygulama planı
+[[2026-09-16-kurum-yetkilisi-k28]] (Adım 1–8); Adım 1 ve 2 2026-09-16'da, kalanı bu turda.
+
+**Tetikleyen:** kullanıcının okul açma ekranı üzerindeki talebi — *"Kurum Kimliği, İletişim
+Bilgileri kartlarındaki bilgileri okul kaydında kullanıcıya soralım… Ek olarak Kurum Yetkilisi
+bilgisini de bu forma ekleyelim… ve her okul satırında bir düzenle butonu olsun."*
+Talep, `K-28`'in bekleyen üç adımıyla birebir örtüştü.
+
+### Kullanıcı kararları (2026-09-22)
+
+| # | Soru | Karar |
+|---|---|---|
+| 1 | Hangi künye alanları okul açmayı engellesin | **"DB'de zorunlu alanlar formda da zorunlu olsun"** |
+| 2 | Satırdaki "Düzenle" neye dokunsun | **Ad ve iletişim bilgileri** (kod/tür/program kilitli) |
+| 3 | Emeklilik ayağı bu turda mı | **Evet** — uç ve izin silinir |
+
+**1. kararın ölçülmüş sonucu:** `oksis_dev` · `INFORMATION_SCHEMA.COLUMNS` taramasında
+`official_name`, `meb_code`, `display_name`, `ownership_type`, `founding_year`,
+`contact_info_*`, `address_*` ve `authority_*` — **hepsi `IS_NULLABLE = YES`**. Yani kuralın
+doğal sonucu: *hiçbir yeni alan zorunlu değil.* Zorunlular `school.schools` tarafındaki
+`name`/`code`/`type` ile programda ve müdür alanlarında kaldı. Plan yetkiliyi zorunlu
+varsaymıştı; **kullanıcı kuralı planın varsayımını geçersiz kıldı** ve kural uygulandı.
+
+### Yapılanlar
+
+**Ortak künye şekli (yeni).** `SchoolProfileInput` + `SchoolProfileApplier` +
+`SchoolProfileInputValidator` (`Modules/Platform/Common/`). Açma ve düzenleme AYNI kayıttan ve
+AYNI uygulayıcıdan geçiyor. Gerekçe doğrudan `TB-171`'in kendisi: iki yol ayrı ayrı yazsaydı
+biri büyüdüğünde öteki sessizce geride kalır ve "açılışta sorulan ama düzenlenemeyen alan"
+sınıfı yeniden doğardı. Doğrulayıcıdaki uzunluklar kolonlardan birebir alındı — kullanıcı 422
+görsün diye, "String or binary data would be truncated" 500'ü değil.
+
+**Adım 3 — açılış formu sorar.** `CreateSchoolCommand` + `Profile` (opsiyonel); handler künyeyi
+`UpdateBasicInfo`/`UpdateContactInfo`/`UpdateAddress`/`UpdateAuthority` ile yazıyor. Göç
+gerekmedi: kolonlar zaten vardı ve nullable.
+
+**Adım 4 — platform düzenleme ucu.** `UpdateSchoolProfileCommand` (`PlatformOnly`) →
+`PUT platform/schools/{id}`, ve formu dolduran `GetSchoolProfileQuery` →
+`GET platform/schools/{id}`. Handler okul satırını doğrudan okuyor, ayarlara dokunmadan önce
+`SetForLoginFlow` ile kurulum bağlamı kuruyor (planın uyardığı tuzak: `IgnoreQueryFilters` ile
+güncelleme, yazma denetçisine ve yanlış önbellek önekine yol açardı) ve sonunda
+`school-settings` önbelleğini temizliyor.
+
+**Adım 5 — K5 ucu ve izni emekli.** Silindi: `PUT school-settings/authority` aksiyonu,
+`Modules/Schools/Commands/UpdateSchoolAuthority/` (komut + doğrulayıcı + handler), birim testi,
+`PermissionSeedData` satırı, `MasterSeedIds` GUID'i, `RolePermissionSeedData` eşlemesi. Göç
+`20260921220731_20260922_retire_manage_authority_permission` iki satırı düşürüyor
+(`role_permissions` `516b702a-…`, `permissions` `a0e409f4-…`); `Down()` ikisini de geri yazıyor.
+Dev DB'ye uygulandı. Tombstone (410/403) **yazılmadı** — depo emsali silme yönünde ve
+`TB-165` ucun zaten çağrılamadığını ölçmüştü.
+
+**Adım 6 — platform ekranı.** Sayfadaki sabit "Yeni okul" kartı kalktı; sağ üstte **Okul ekle**,
+liste tam genişlikte, her satırda **Düzenle**. Yeni `school-wizard.tsx` üç adımlı sihirbazı
+açma ve düzenleme kipiyle birlikte taşıyor (kimlik → iletişim & adres → yetkili [+ müdür]).
+Düzenleme kipinde kod, tür ve MEB programı kilitli ve **neden kilitli olduğu ipucunda yazıyor**;
+boş bırakılmıyor, çünkü boş alan "doldurulabilir" demektir.
+
+**Adım 7 — ölü sözleşme.** Tip sistemi kendiliğinden yakaladı: codegen sonrası
+`packages/api` `updateAuthority` uç fonksiyonu derlenmedi. Onunla birlikte `useUpdateAuthority`
+kancası ve `packages/core` `UpdateAuthorityInput` tipi silindi (çağıranı yoktu).
+Kilit ipucu web'de **"Kurum yetkilisini OKSİS platformu düzenler"** oldu ve rozet **koşulsuz**
+gösteriliyor — eskiden `!sup` koşuluna bağlıydı, oysa artık okul içinde kimse düzenleyemiyor.
+Mobilde (`school-identity-screen`) aynı cümle.
+
+### Kapanan maddeler
+
+`TB-171` · `TB-165` · `TB-172` — blokları aşağıda.
+
+`TB-165` **ortadan kalktığı için** kapandı, erişim açıldığı için değil: izin de onu isteyen
+komut da silindi, yetenek platform yüzeyine taşındı ve orada izin çözümü hiç kullanılmıyor.
+`MasterRoleSeedTests`'teki `superAdminOnlyCodes` istisnası da temizlendi — bırakılsaydı bekçi
+artık var olmayan bir kuralı savunuyor gibi okunurdu. `SchoolSettingsControllerTests` uç sayımı
+**42 → 41**.
+
+⚠️ **Boşluk yok olmadı, ERTELENDİ:** `AccountPermissionResolver.MapProfileToPortal` hâlâ
+`Platform` portalını hiçbir profile eşlemiyor. Bu turda DEĞİŞMEDİ ve değişmemeliydi — platform
+isteği bu çözücüden geçmiyor. Ama `0019`'un üç platform rolü gerçek izin denetimi isteyince
+platform tarafına ayrı bir izin çözücü gerekecek. Bu yüzden `TB-165` kapanırken portal
+süzgecinin `Platform` körlüğü defterde **ayrı bir satır** olarak yaşatıldı.
+
+### `TB-165` · K5 Kurum Yetkilisi ucu üründe erişilemez — izin atanmamış bir rolde 🟡
+
+Aynı kazımada ölçüldü ([[super-admin-izleri-envanteri]] §3). `UpdateSchoolAuthorityCommand`
+`school-settings.manage-authority` istiyor; seed bu izni **yalnız `SUPER_ADMIN`**'e veriyor
+(`RolePermissionSeedData.cs:111`, `MasterSeedIds.cs:129`). `SUPER_ADMIN` rolünü hiçbir seed
+hiçbir kişiye atamıyor ve üründe rol atayacak yol da yok (`ListAssignableRoles` seviye
+süzgeci onu okul yöneticisinden gizler). Dolayısıyla `PUT school-settings/authority` bugün
+**kimse tarafından çağrılamaz**; web ve mobil kart bu yüzden salt-okunur
+(`general-tab.tsx:491`, `school-identity-screen.tsx:234`).
+
+İkinci katman: rol elle bir kişiye atansa bile `AccountPermissionResolver.MapProfileToPortal`
+(`:72-90`) `Platform` portalını hiçbir profile eşlemiyor; aktif profil varken **portal
+süzgeci `Platform` rolünün bütün izinlerini eler**. Yani platform rolü bugünkü izin çözümü
+üzerinden hiçbir izin taşıyamaz — `K-27 (a)`'nın "ayrı izin çözümü" gereksiniminin ölçümü.
+
+Alternatif yol var (kurum yetkilisi seed'de/DB'de elle yazılabilir), bu yüzden 🟡.
+
+⬜ Kapanış `K-27 (a)` platform yüzeyiyle gelir: kurum yetkilisi düzenleme platform izin
+modülüne taşınır; portal süzgeci platform token'ı için ayrı ele alınır.
+
+➕ **2026-09-15 · `K-27` ilk dilim sonrası:** platform yüzeyi geldi (`/platform/schools`,
+`oksis-api` `e91711bd`…`74427aa3`), ancak K5 düzenleme ucu hâlâ `SUPER_ADMIN` izninde ve platform token'ı
+okul komutlarına giremiyor (`TenancyMode.Required`). Madde açık kalır. `0019` uygulanınca
+K5 düzenlemesi Okul Operasyonu rolünün platform komutuna taşınır.
+
+➕ **2026-09-15 · `K-28` (a):** yetkiliyi platform açılışta sorar ve sonradan platform düzenler;
+okul tarafındaki uç ve `school-settings.manage-authority` emekli olur, kart salt-okunur kalır.
+Madde `K-28` uygulamasıyla kapanır, `0019`'u beklemez.
+
+
+### `TB-171` · Platformdan açılan okulda görünen ad ve kurum yetkilisi boş kalıyor 🟡
+
+Altınay saha testinde (B2.1, 2026-09-15) ölçüldü. `CreateSchoolCommandHandler`
+`SchoolSettings.CreateDefault(school.Id)` ile ayar satırı açıyor. `official_name` okul adıyla
+doluyor, ama `display_name` ile `authority_full_name`/`authority_title`/`authority_email` **NULL**
+kalıyor. `CreateSchoolCommand` bu alanları sormuyor bile (yalnız ad, kod, tür, saat dilimi ve müdür).
+
+- **Görünen ad:** Ayarlar → Genel Bilgiler önizlemesi `values.displayName || "—"` okuduğu için
+  (`general-tab.tsx:204`) yeni okul "?" rozeti ve "—" adıyla açılıyor. Müdürün ilk işi, okulun
+  adını ikinci kez yazmak oluyor.
+- **Kurum yetkilisi:** Kart boş ve kilitli. Düzenleme ucu (`PUT school-settings/authority`) hâlâ
+  `SUPER_ADMIN` izninde, platform token'ı okul komutuna giremiyor (`TB-165`). Platformda da okul
+  düzenleme ucu yok (`PlatformSchoolsController`: yalnız liste + oluştur). Sonuç: taze okulun
+  kurum yetkilisi **hiçbir yoldan** doldurulamıyor.
+
+⬜ Kapatma yolu **`K-28` (a)** ile bağlandı (2026-09-15): platform açılışta sorar, sonradan
+platform düzenler, müdür yalnız görür. Görünen adın okul adından tohumlanması K-28'in açık
+sorusu olarak uygulama planında sorulacak.
+
+➕ **2026-09-16 · görünen ad ayağı kapandı (gece turu, commit bekliyor).** `CreateSchoolCommandHandler` artık
+`displayName: school.Name` geçiyor (NULL bırakan tek satır oydu) ve veri göçü
+`20260916042550_20260916_school_settings_display_name_backfill` mevcut NULL satırları okul adıyla dolduruyor —
+müdürün yazdığı ad **ezilmiyor** (`display_name IS NULL` süzgeci). Dev DB ölçümü: NULL sayısı **1 → 0**; tek
+dokunulan satır `PLT-DOGRULAMA` oldu. **Altınay'ın görünen adı zaten doluydu**, yani saha testindeki "—" rozeti
+kurulumun ilk anına aitti.
+⬜ **Kurum yetkilisi ayağı açık ve kullanıcı kararı bekliyor:** platformun açılışta sorması, sonradan düzenleme
+ucu ve K5 ucunun emekliliği **sözleşme değiştiriyor**. Uygulama planı hazır:
+[[2026-09-16-kurum-yetkilisi-k28]] (Adım 3–8). Altınay'ın yetkilisi hâlâ boş; plan gereği platform ekranından
+elle doldurulacak.
+
+
+### `TB-172` · Okul kodunun tekilliği yalnız uygulama katmanında; DB'de tekil indeks yok ⚪
+
+Altınay saha testinde (B1.2, 2026-09-15) ölçüldü. `CreateSchoolCommandHandler:40-45` kodu kırpıp
+büyük harfe çeviriyor ve `AnyAsync(s => s.Code == code)` ile arıyor; canlı denemede `altinay-al`
+**409** `PLATFORM_SCHOOL_CODE_DUPLICATE` aldı, satır yazılmadı. Ama `school.schools` tablosunda
+yalnız `pk_schools` var; EF model snapshot'ında da `School.Code` için `HasIndex` **tanımlı değil**
+(eksik göç değil, hiç modellenmemiş kısıt).
+
+Sonuçları:
+- **Yarış:** Aynı kodla eşzamanlı iki açılış, ikisi de `AnyAsync`'ten boş dönüp iki satır yazabilir.
+- **Kod okulu çözmek için kullanılıyor:** Giriş öncesi marka sorgusu (`GetPublicSchoolBrandingQueryHandler:49-51`)
+  `Where(Code == code).FirstOrDefault` ile okul seçiyor; ikinci satır sessizce görünmez olur.
+- **Elle DB müdahalesi** (saha testinde kod `ALTNY-TEST` → `ALTINAY-AL` elle değiştirildi) hiçbir
+  kısıta takılmıyor.
+
+Bugün tek platform hesabı olduğu için eşzamanlı açılış pratikte yok → ⚪.
+⬜ Kapatma yolu: `SchoolConfiguration`'a `HasIndex(s => s.Code).IsUnique()` + göç; handler'daki ön
+denetim kullanıcıya okunur hata için kalır, DB ihlali (`2601`) aynı `SCHOOL_CODE_DUPLICATE`'e
+eşlenir. `0019` rolleriyle platform hesap sayısı artmadan yapılmalı.
+
+✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** Ölçümde planlanandan bir adım fazlası çıktı:
+`School.Code` **`nvarchar(max)`** idi ve SQL Server bunun üstüne tekil indeks kuramıyor. Göç
+`20260916041531_20260916_school_code_unique_index` önce iki **savunma sorgusu** koşuyor (50'den uzun ya da
+yinelenen kod varsa `RAISERROR` ile durur — ayrı `Sql()` komutları olduğu için şema değişmeden durulur), sonra
+`AlterColumn` (max → 50), sonra süzgeçsiz `CreateIndex` (tabloda `is_deleted` yok). Dev DB'de uygulandı ve
+doğrulandı: `code` artık `nvarchar(50)`, `ux_schools_code` `is_unique=1`. `School` için ayrı yapılandırma dosyası
+olmadığından kayıt `OksisDbContext`'teki satır içi bloğa yazıldı.
+İhlal eşlemesi bu gecenin `BellScheduleIndex` kalıbıyla aynı: yeni `SchoolCodeIndex` ihlali **indeks adından**
+tanıyor, SQL hata numarasından değil. Ön denetim okunur hata için duruyor; **yalnız ilk** `SaveChangesAsync`
+sarıldı ve aynı `PLATFORM_SCHOOL_CODE_DUPLICATE` koduna (409) eşlendi. Yarış kolu gerçekten ölçüldü: bir
+`SaveChanges` interceptor'ı ön denetimle kaydetme arasındaki pencerenin ortasında rakip satırı yazıyor, handler
+500 değil 409 dönüyor.
+

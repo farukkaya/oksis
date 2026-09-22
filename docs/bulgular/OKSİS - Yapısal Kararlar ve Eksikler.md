@@ -38,7 +38,8 @@
 | **K-14** | Üretim dağıtım kısıtı (pinleme) | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Sabitle + hariç tut MVP · ihlal uyarı · gerekçe yalnız alan-dışında zorunlu · devirde kopyalanmaz — BE `0cd40654` + web `oksis-ui` @ `3b14a36` |
 | **K-15** | Ders dışı yük görünürlüğü | ✅ Karara bağlandı · **uygulandı** | 2026-09-01 | Nöbet + kulüp · katsayı okul ayarı (vars. 2/2) · kapasiteye GİRMEZ — BE `225f7623` + web `oksis-ui` @ `3cc904e` |
 | **K-27** | Platform kimliği: süper yönetici okulsuz platform hesabı mı, "OKSİS Merkez" iç okulu mu? | ✅ Karara bağlandı · ✅ ilk dilim uygulandı | 2026-09-15 | **(a) Ayrı platform hesabı** + üç platform rolü ([[0019-platform-rol-seti-uc-rol]]: `PLATFORM_ADMIN` / `PLATFORM_OPERATIONS` / `PLATFORM_SUPPORT`, destek salt-okunur) · izler kazındı: [[super-admin-izleri-envanteri]] · ilk hesap `PlatformBootstrap` ayarından tek seferlik · ilk dilim `oksis-api` `e91711bd`…`74427aa3`, `oksis-ui` `bd8d0f6`/`47d6059` · `E-24`/`TB-162` kapandı |
-| **K-28** | Kurum yetkilisi: kim sorar, kim düzenler? | ✅ Karara bağlandı · ⬜ uygulanmadı | 2026-09-15 | **(a)** Platform okul açılışında sorar · sonradan platform düzenler · müdür yalnız görür — `TB-165`/`TB-171` bu kararla kapanır |
+| **K-28** | Kurum yetkilisi: kim sorar, kim düzenler? | ✅ Karara bağlandı · ✅ **uygulandı** (2026-09-22) | 2026-09-15 | **(a)** Platform okul açılışında sorar · sonradan platform düzenler · müdür yalnız görür — `TB-165`/`TB-171`/`TB-172` kapandı ([[OKSİS - Bulgu Arşivi]] §52); artakalan boşluk `TB-230` |
+| **K-29** | Dersin kod alanı: kalsın mı, tekillik neye bağlansın? | ✅ Karara bağlandı · ⬜ uygulanmadı | 2026-09-22 | **Kod alanı KALKAR** (`master.subjects.code` + `school.subjects.code`), tekillik görünmez türetilmiş `name_key` kolonuna geçer. Gerekçe: MEB ders kodu vermiyor (964/964 içe aktarma satırında `source_subject_code = NULL`) — kod bizim icadımızdı |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 | **Y-03** | Şube alanı (Sayısal / Eşit Ağırlık / Sözel / Yabancı Dil) nerede tutulur | ✅ Karara bağlandı · ✅ **uygulandı** (`oksis-api` `614a51b3` + `oksis-ui` `7fe92fc`) | 2026-09-17 | **(a) `ClassRoom.Track` + sabit enum.** Derse BAĞLANMADI (ders↔alan çoka-çok: "seçmeli matematik" dört alandan üçünde geçer) · öğrencinin alanı aktif şube atamasından türetilir, ayrıca tutulmaz · MEB'in 09/05/2025-05 çizelgesinde alan sütunu **yok**, yani bu okulun organizasyon ihtiyacı · enum çünkü listeyi okul düzenlemiyor — meslek lisesi kapsama girerse katalog tablosuna terfi eder |
@@ -1046,7 +1047,7 @@ border: off
 
 ### 📄 Bağlam
 
-**Durum:** ✅ Karara bağlandı (2026-09-15, seçenek **a**) · ⬜ uygulanmadı · **Kaynak:** Altınay saha testi B2.1 (`saha-testleri/altinay/`)
+**Durum:** ✅ Karara bağlandı (2026-09-15, seçenek **a**) · ✅ **uygulandı** (2026-09-22) · **Kaynak:** Altınay saha testi B2.1 (`saha-testleri/altinay/`)
 
 Platformdan açılan Altınay'da Ayarlar → Genel Bilgiler'deki **Kurum Yetkilisi** kartı boş ve
 kilitli geldi. Ölçüm (`oksis-api` @ `60e65caf`, `TB-171`):
@@ -1087,9 +1088,108 @@ okul içinden değiştirmek olur.
   izni emekli olur; web/mobil kart salt-okunur kalır, kilit ipucu "platform düzenler" der.
 
 **Açık kalan (kararın parçası değil, uygulama planında sorulacak)**
-- [ ] Formda "müdürle aynı kişi" kısayolu olacak mı?
-- [ ] Görünen ad açılışta okul adından tohumlansın mı (`TB-171`'in ikinci ayağı)?
-- [ ] Altınay'ın boş yetkilisi uygulama gelince platformdan doldurulur.
+- [x] Formda "müdürle aynı kişi" kısayolu olacak mı? → **Hayır** (yetkili müdür değildir;
+  kısayol yanlış veriyi kolaylaştırırdı).
+- [x] Görünen ad açılışta okul adından tohumlansın mı? → **Evet** (2026-09-16); düzenlemede
+  tohum YOK, boş bırakmak "boşalt" demektir.
+- [ ] Altınay'ın boş yetkilisi platform ekranından doldurulacak (ekran hazır, veri girilmedi).
+
+**Uygulama (2026-09-22) — kullanıcı kararları**
+- Zorunluluk kuralı: *"DB'de zorunlu alanlar formda da zorunlu olsun."* Ölçüm künye
+  kolonlarının **hepsinin nullable** olduğunu gösterdi → hiçbir yeni alan zorunlu değil.
+  Bu, planın "yetkili ad + e-posta zorunlu" varsayımını **geçersiz kıldı**.
+- Düzenleme kapsamı: ad ve iletişim bilgileri (+ kimlik bloğunun kod/tür/program dışı
+  alanları ve kurum yetkilisi). **Kod, okul türü ve MEB programı kilitli** — üçü de üzerine
+  veri yazılmış bir yapıyı belirliyor.
+- Emeklilik ayağı aynı turda yapıldı.
+
+Ayrıntı ve kanıt: [[OKSİS - Bulgu Arşivi]] §52.
+
+--- end-multi-column
+
+---
+
+## K-29 · Dersin kod alanı: kalsın mı, tekillik neye bağlansın?
+
+--- start-multi-column: K-29
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ✅ Karara bağlandı (2026-09-22) · ⬜ uygulanmadı · **Kaynak:** kullanıcının ders
+kataloğu ekranı üzerindeki talebi (Aşama 7 manuel turu)
+
+Ders kataloğunda ders adının önünde kod rozeti duruyordu
+(`TURK-KULTUR-VE-MEDENIYET-TARIHI`). Kullanıcı önce rozetin kaldırılmasını, ardından
+**alanın tamamen kalkmasını** istedi: *"MEB bize ders için bir kod alanı vermiyor, biz de
+eklemeyelim."*
+
+**Ölçüm (2026-09-22, `oksis_dev`) iddiayı doğruladı:**
+
+| Tablo | Satır | Kodsuz |
+|---|---|---|
+| `master.curriculum_import_entries` | 964 | **964** (`source_subject_code` tamamen NULL) |
+| `master.subjects` | 67 | 0 — hepsini BİZ türettik |
+| `school.subjects` | 201 | 0 — hepsi master'dan kopya |
+
+MEB hiçbir çizelgede ders kodu vermiyor; `StartImportRunFromChartCommandHandler` zaten
+`SubjectCode: null` geçiyor. Kod alanı baştan sona bizim icadımız.
+
+**Ama kod süs değil:** `MasterSubject.Code` yayım hattının **tekilleştirme anahtarı**.
+`MasterSubjectCode.From` ile adın saf fonksiyonu olarak üretiliyor (Türkçe harfler katlanır,
+harf/rakam dışı her şey tireye döner). Aynı ders altı ayrı çizelgede geçtiğinde ikinci kez
+açılmamasını bu sağlıyor.
+
+**Düz `name` tekil indeksi yetmez:** veritabanı harmanlaması
+`SQL_Latin1_General_CP1_CI_AS` — büyük/küçük harfe duyarsız ama **aksana duyarlı** ve
+Latin1. `Türk` ile `Turk` farklı sayılır, `İ`/`ı` ayrımı yanlış yapılır.
+
+**Bağlı:** `TB-191` · `TB-32` (kural ekranda değil sunucuda)
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ✅ Karara bağlandı · ⬜ uygulanmadı
+**Tarih:** 2026-09-22
+**Karar veren:** Kullanıcı
+
+**Karar**
+> **Kod alanı kalkar; tekillik görünmez, türetilmiş bir ad anahtarına geçer.**
+
+- `master.subjects.code` ve `school.subjects.code` **düşer**.
+- Yerine `name_key`: bugünkü kodu üreten AYNI fonksiyon (`MasterSubjectCode.From`) addan
+  hesaplar. Kullanıcı görmez, yazmaz, düzenlemez; ad değişince kendiliğinden güncellenir.
+- Tekil indeksler `(school_id, name_key)` ve `(name_key)` olur.
+- Yayım hattının tekilleştirme davranışı **birebir korunur** — anahtar aynı fonksiyondan
+  geldiği için bugün yakalanan hiçbir çakışma elden kaçmaz.
+- Ekranda ve formda yalnız **ders adı** kalır.
+
+**Neden türetilmiş kolon, neden Türkçe harmanlama değil:** harmanlama büyük/küçük ve aksan
+farkını yakalar ama **noktalamayı** yakalamaz — `T.C. İnkılap Tarihi` ile `TC İnkılap Tarihi`
+iki ayrı ders olurdu. Slug ikisini de katlıyor.
+
+**Uygulamada gerekenler (ölçülmüş kapsam: ~25 API dosyası, 3 depo, M–L)**
+- Domain: `Subject`, `MasterSubject` — `Code` düşer, `NameKey` türetilir.
+- EF: iki yapılandırma + göç (2 kolon düşer, 2 tekil indeks taşınır, `name_key` doldurulur).
+- Komutlar: `CreateSubject` / `UpdateSubject` + doğrulayıcıları (kod alanı gövdeden çıkar).
+- Sorgular/DTO: `GetSubjects`, `ListSubjects`, `ListMasterSubjects`, `GetCourseAssignments`,
+  `GetTeacherDuties`, `SubjectDto`, `SubjectLookupDto`, `MasterSubjectDto`.
+- Hat: `SubjectCatalogImporter`, `SubjectMatchSuggester`, `PublishImportRunCommandHandler`,
+  `ImportTeachingFieldsCommandHandler` — hepsi `name_key` üzerinden anahtarlanır.
+- Ölü alanlar: `CurriculumImportPayload.SubjectCode` ve
+  `CurriculumImportEntry.SourceSubjectCode` — **964/964 NULL**, birlikte kalkar.
+- UI: `course-catalog.tsx` form alanı ve tipler; codegen; mobil.
+
+**Zamanlama:** kullanıcı manuel testini (Aşama 7–8) bitirdikten sonra başlanacak —
+değişiklik tam da test edilen ders kataloğuna dokunuyor.
+
+**Ara adım (2026-09-22'de yapıldı):** kod rozeti listeden kaldırıldı (`oksis-ui`).
+Alanın kendisi duruyor; arama hâlâ kodla eşleşiyor ve düzenleme penceresinde görünüyor.
 
 --- end-multi-column
 

@@ -3,7 +3,18 @@
 > **Ne bu dosya:** `K-28 (a)` kararının uygulama planı. 2026-09-16 gece düzeltme turunda
 > **salt okuma** ölçümüyle çıkarıldı; kod yazılmadı. Kapattığı maddeler: `TB-171`, `TB-165`, `TB-172`.
 > Karar metni: [[OKSİS - Yapısal Kararlar ve Eksikler]] `K-28`.
-> **Durum:** ⬜ uygulanmadı. Adım 1 ve 2 tek başına merge edilebilir.
+> **Durum:** ✅ **TAMAMLANDI.** Adım 1–2 2026-09-16'da, Adım 3–8 2026-09-22'de uygulandı.
+> Kapanış kanıtı: [[OKSİS - Bulgu Arşivi]] §52. Plan artık tarihsel kayıttır.
+>
+> **Planın iki varsayımı uygulamada değişti:**
+> 1. *Yetkili ad + e-posta zorunlu* → kullanıcı kuralı **"DB'de zorunlu alanlar formda da
+>    zorunlu olsun"**; ölçüm künye kolonlarının hepsinin nullable olduğunu gösterdi, bu yüzden
+>    **hiçbir yeni alan zorunlu değil**.
+> 2. *Liste DTO'su + satır içi düzenleme* → yerine ayrı `GET platform/schools/{id}` künye ucu
+>    ve üç adımlı sihirbaz. Gerekçe: alan sayısı 16'ya çıkınca satır içi düzenleme okunmaz olurdu.
+>
+> Ayrıca kapsam kullanıcı talebiyle büyüdü: yalnız yetkili değil, **kurum kimliği ve iletişim
+> bilgileri de** açılışta soruluyor.
 
 ## Karar
 
