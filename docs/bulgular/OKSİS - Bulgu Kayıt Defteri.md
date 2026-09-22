@@ -52,7 +52,9 @@
 > ölçülünce dördünün hâlâ çağıransız olduğu görüldü → `TB-236` 🟡.
 > Aşama 10 öncesi kullanıcı sorusu `TB-237` 🔴'ı açtı (branş kataloğu boş: seed silindi,
 > yerine geçecek yüzey yazılmadı) — merkez ayağı aynı gün kapandı.
-> Defter **103** (🔴 5 · 🟠 26 · 🟡 41 · ⚪🟢 31).
+> Ardından `TB-238` 🔴 (ayrıştırıcı bir sayfayı sessizce düşürüyor, bir adı ikiye bölüyor)
+> açıldı ve **aynı gün kapandı**.
+> Defter **104** (🔴 6 · 🟠 26 · 🟡 41 · ⚪🟢 31).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -172,7 +174,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-238` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-239` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -791,6 +793,64 @@ tohumu + mevcut boş okullara backfill) hâlâ açık ve ancak `master.branches`
 
 ⬜ Merkez ekranı görsel olarak doğrulanmadı: platform ayrı hesap ve kullanıcının okul
 oturumunu düşürme riski vardı. HTTP zinciri ve tip/lint kapısı yeşil.
+
+### `TB-238` · Öğretmenlik alanları ayrıştırıcısı bir sayfayı sessizce düşürüyor, bir adı ikiye bölüyor 🔴
+
+`TB-237` kapandıktan sonra kullanıcı sordu: *"bu branşa sahip öğretmenlerin hangi derslere
+girebileceği bilgisi PDF'de var mıydı?"* Var — kararın dördüncü sütunu tam olarak o. Ama
+kontrol edilince okulun **çekirdek dersi "Türk Dili ve Edebiyatı" branşsızdı**; sebebi
+aranınca ayrıştırıcıda iki ayrı kusur çıktı.
+
+**Kusur 1 · Mükerrer sütun çizgisi bütün sayfayı düşürüyor.** `ColumnsOf` dikey çizgileri
+0,1'e yuvarlayıp `Distinct()` ediyor ve sütunları **sıraya göre** okuyor (`xs[1..3]`).
+
+```
+s42/43/45 :  43,3 · 75,7 · 176,4 · 367,7 · 367,8 · 578,6        → 6 değer, doğru
+s44       :  43,3 · 75,7 · 176,2 · 176,4 · 367,7 · 367,8 · 578,6 → 7 değer, hepsi kayıyor
+```
+
+Aynı sınır 0,2 punto kayma ile iki kez çizilmiş. Ders sütununun solu `367,7` yerine `176,4`
+okunuyor, satırlar çözülemiyor ve **sayfanın tamamı düşüyor**. Hata yok, uyarı yok — belge
+bütün hâlde ayrıştırılınca öteki sayfalar iş gördüğü için sonuç "0 uyarı" görünüyor.
+[[eksik-ekran-eksik-yetkiyi-gizler]] ile aynı sınıf: sessiz eksik.
+
+Kayıp: 49 sayfanın 1'i (s44) ve içindeki dört alan — **Türkçe (83), Türk Dili ve Edebiyatı
+(84)**, Uçak Elektroniği, Uçak Bakım.
+
+**Kusur 2 · Hücre içi ayraç satırı ikiye bölüyor.** Satır ayıracı sütun başına ayrı parçalar
+hâlinde çiziliyor. s14'te `y=485,4`'teki çizgi yalnız program ve ders sütunlarını kat ediyor,
+ALAN sütununda parçası yok — yani satır sınırı değil, hücre içi ayraç. `BandsOf` ayrım
+yapmadığı için "Din Kültürü ve Ahlâk Bilgisi" satırı ortadan kesiliyordu:
+
+- katalogda **"Bilgisi"** adlı çöp branş açılıyor (15 ders bağıyla),
+- gerçek branş **"Din Kültürü ve Ahlâk"** diye eksik adla açılıyor.
+
+**Neden fixture yakalamadı:** golden dosya 2014 kararıydı; iki düzen de yalnız 2025
+belgesinde var. `TB-226`'nın haber verdiği risk sınıfı, bu kez öğretmenlik alanları
+tarafında gerçekleşti.
+
+✅ **2026-09-22 · kapandı.**
+- `ColumnsOf` artık yakın çizgileri **kümeliyor** (2 punto eşik) — yuvarlayıp saymıyor.
+  `367,7/367,8` çiftinin gizli kırılganlığı da böylece kapandı; bugüne kadar şans eseri
+  doğru yere düşüyordu.
+- Bant sınırı olmak için çizginin **ALAN sütununu kat etmesi** şart. Satır ayıracı her zaman
+  eder (ad o sütunda yazılı), hücre içi ayraç etmez.
+- 2025 kararının s14 + s44'ü golden fixture oldu
+  (`ogretmenlik-alanlari-2025-129.words.json`); üç test kuralı kilitliyor.
+
+**Ölçülen sonuç:** 107 → **110 alan**. "Türkçe" 14 ders, "Türk Dili ve Edebiyatı" 16 ders,
+"Din Kültürü ve Ahlâk Bilgisi" 16 ders; "Bilgisi" ve kesik "Din Kültürü ve Ahlâk" yok oldu.
+2014 fixture'ı bozulmadı (40/40).
+
+⬜ **Canlı veri bayat:** kullanıcı düzeltmeden ÖNCE içe aktardı; `master.branches` hâlâ 107
+satır ve içinde "Bilgisi" ile kesik "Din Kültürü ve Ahlâk" var, üç gerçek branş eksik.
+Yeniden işlemek eksikleri ekler ama **çöp satırları silmez** — içe aktarma idempotent ekleme
+yapar, temizlik yapmaz. Bayat satırların ne olacağı karar ister.
+
+⬜ **Ayrı kalan:** ad eşleştirme kuralları (`TB-239` değil, bu maddenin dışında). Okulun 24
+branşsız dersinin bir kısmı bu kusurdan değil: çizelge birleşik hücre ("Beden Eğitimi ve
+Spor/Görsel Sanatlar/Müzik"), seviye öneki ("Hazırlık Sınıfı Matematik") ve genel ad
+("Birinci Yabancı Dil") kullanıyor; karar bunları ayrı/düz/somut adlarla sayıyor.
 
 ### `TB-236` · Dört müfredat saati ucu hâlâ çağıransız 🟡
 
