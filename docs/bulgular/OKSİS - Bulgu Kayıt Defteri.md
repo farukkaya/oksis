@@ -47,7 +47,9 @@
 > `TB-235`'i açtı (program değişimi okul kapsamlı tercihi bırakıyor: hazırlık müfredatsız
 > kalıyor, değişim gelecek sezon geri alınıyor 🟠) ve **aynı gün kapattı** —
 > [[OKSİS - Bulgu Arşivi]] §55, `K-30` ile birlikte.
-> Defter **102** (🔴 4 · 🟠 27 · 🟡 40 · ⚪🟢 31).
+> Sayım düzeltmesi: `TB-232`'nin kapanış notu "13 ucun tamamı çağıran kazandı" diyordu,
+> ölçülünce dördünün hâlâ çağıransız olduğu görüldü → `TB-236` 🟡.
+> Defter **103** (🔴 4 · 🟠 27 · 🟡 41 · ⚪🟢 31).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -167,7 +169,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-236` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-237` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -729,6 +731,27 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
+
+### `TB-236` · Dört müfredat saati ucu hâlâ çağıransız 🟡
+
+`TB-232` kapanırken sayım yapıldı ve kapanış notundaki *"13 ucun tamamı çağıran kazandı"*
+iddiası **yanlış çıktı**. Müfredat ekranı 7 uca çağıran getirdi, biri `K-30` ile silindi;
+**dördü hâlâ çağıransız**:
+
+| Uç | Nereye ait | Neden bu ekranda değil |
+|---|---|---|
+| `curriculum-hours/required-total` | Ders Programı | Şubenin haftalık yükünün tamam olup olmadığını çizelge ekranı sorar |
+| `curriculum-hours/subject/{id}` GET | Ders Kataloğu | Ders bazlı saat çekmecesi — müfredat ekranı seviye×ders hücresinden düzenliyor |
+| `curriculum-hours/catalog` | Ders Kataloğu | Liste için ders başına min–max saat sütunu |
+| `curriculum/snapshot` | — | `diff` kilitli sezonda zaten snapshot'tan okuyor; bu uç `LockedAt` ve seviye başına dondurulan sürümü ek olarak veriyor |
+
+Üçü **henüz yazılmamış ekran yüzeylerine** ait, dolayısıyla bu bir gecikme; ama aynı sınıfın
+kusuru `TB-232` ve `TB-233`'te iki kez ısırdı: [[eksik-ekran-eksik-yetkiyi-gizler]] —
+çağrılmayan uç arkasındaki kusurları da saklar. Bu yüzden sohbette bırakılmıyor.
+
+⬜ Ders Programı ve Ders Kataloğu yüzeyleri yazılırken bu üçü bağlanır. `snapshot`'ın
+gerçekten gerekli olup olmadığı ayrıca kararlaştırılır — gereksizse silinmesi, çağrılmayan
+uç olarak durmasından iyidir.
 
 ### `TB-234` · Müfredatı boş doğan sezondan ürün içinde çıkış yolu yok 🟠
 

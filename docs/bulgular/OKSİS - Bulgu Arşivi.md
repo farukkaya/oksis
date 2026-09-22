@@ -7838,10 +7838,22 @@ ekranın tamamını besliyor. Hazırlıktaki sezonda taslaktan, başlamış sezo
 snapshot'tan okuyor ve hangisi olduğunu `isLocked` ile kendisi söylüyor. Kilit ve
 sezon seçimi kararları bu yüzden ekranda **yeniden türetilmedi** (`TB-32`).
 
-Kapsam — 13 ucun tamamı çağıran kazandı: seviye sekmeleri, MEB/okul/fark tablosu,
-seviye künyesi (sürüm · kurul kararı · toplamlar), hücre içi saat düzenleme,
-seviyeyi MEB saatlerine döndürme, eğitim programı seçimi, güncel sürüme taşıma,
-aktivasyon önizlemesi, kilit + gerekçe.
+Kapsam: seviye sekmeleri, MEB/okul/fark tablosu, seviye künyesi (sürüm · kurul
+kararı · toplamlar), hücre içi saat düzenleme, seviyeyi MEB saatlerine döndürme,
+eğitim programı görünümü, güncel sürüme taşıma, aktivasyon önizlemesi, kilit +
+gerekçe. Bulgunun yazılı kapsamı (*"seviye × ders saat tablosu, MEB/okul ayrımı,
+sezon hazırlıktayken düzenleme, aktifken kilit + gerekçe"*) karşılandı.
+
+**Düzeltme (aynı gün, ölçümle):** kapanış notunda önce *"13 ucun tamamı çağıran
+kazandı"* yazılmıştı — **yanlıştı**. Gerçek sayım:
+
+| Durum | Uç |
+|---|---|
+| Çağıranı var (7) | `diff` · `programs` GET · `rebase/preview` · `rebase` · `grades/{kod}/reset` · `activation-preview` · `subject/{id}` PUT |
+| Silindi (1) | `programs` PUT — `K-30`, arşiv §55 |
+| **Çağıransız (4)** | `required-total` · `subject/{id}` GET · `catalog` · `snapshot` |
+
+Kalan dördü bu ekranın işi değil; `TB-236` olarak ayrıldı.
 
 **Canlı doğrulama** (Altınay, 2026-2027 hazırlıktaki sezon): tablo 162 satırı
 sabahki SQL ölçümüyle birebir çizdi (19/29/37/42/35). Matematik 3 → 5 yazıldı:
