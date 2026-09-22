@@ -729,7 +729,7 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
 
-### `TB-235` · Program değişimi okul kapsamlı tercihi bırakıyor; hazırlık açık ama müfredatsız kalıyor 🟠
+### `TB-235` · Program değişimi okul kapsamlı tercihi bırakıyor: hazırlık müfredatsız kalıyor, değişiklik gelecek sezon geri alınıyor 🟠
 
 `TB-232` ekranı yazıldıktan sonra kullanıcının sorusuyla ortaya çıktı: *"Eğitim programı
 düğmesine basıp Anadolu Lisesi'ni seçersem ne olur?"*
@@ -764,8 +764,32 @@ güncellenirken çağrılıyor; program sezon üzerinden değişince çağrılm�
 seçilirse saatler geri gelir. Sezon arada aktifleştirilirse boş hazırlık **kalıcı olarak**
 snapshot'a donar — aktivasyon tek yönlüdür.
 
-⬜ Kararı gerektiren asıl soru: sezon kapsamlı program değişimi okul kapsamlı tercihi de
-güncellemeli mi, yoksa hazırlığı olan bir okula hazırlıksız program hiç sunulmamalı mı?
+**İkinci belirti — değişiklik gelecek sezon sessizce geri alınır.** Kullanıcı sorusuyla
+ölçüldü: *"okulun eğitim programını değiştirmesi sezona mı bağlı?"* Hayır, tasarıma göre
+program okulun **kalıcı** niteliğidir (`SchoolEducationProgram` doc'u: *"bu okul bir Fen
+Lisesi'dir"*; tasarım §6.2 adım 1: *"Okulun tek lise eğitim programı seçilir"*). Sezon
+kapsamlı satır, sezonun dayanağı yeniden üretilebilsin diye var — okul açılırken henüz
+sezon yoktur, başlamış sezonun dayanağı da korunmalıdır (karar 0021).
+
+Ama `CurriculumDraftBootstrapper` yeni sezonun bağını **okul kapsamlı tercihten** kurar
+(`:86`, yalnız eksik kademeler için). Yani bu düğmeyle yapılan değişiklik yalnız içinde
+bulunulan sezonu etkiler ve **gelecek sezon eski programa döner**. Kullanıcı "okulumu
+Anadolu Lisesi yaptım" sanır; ertesi yıl okul yeniden Sosyal Bilimler Lisesi doğar.
+
+**Üçüncüsü: kalıcı tercihin hiç düzenleme yüzeyi yok.** `SchoolEducationPrograms`'ı yazan
+tek yer `CreateSchoolCommandHandler:157` (bir de dev seeder). Okul açılışında bir kez
+yazılıyor, sonrasında onu değiştiren uç **yok**. Oysa gerçek hayatta MEB bir okulu
+dönüştürebiliyor; model bunu zaten destekliyor (geçmiş sezonlar snapshot'ıyla kalır,
+gelecek sezonlar yeni tercihi alır) — eksik olan yalnız yüzey.
+
+⬜ **Kararı gerektiren sorular:**
+1. Bu düğme neyi değiştirmeli — yalnız sezonu mu, yoksa kalıcı tercihi de mi? (Bugünkü
+   davranış "yalnız sezon" ama bu bilinçli bir karar değil, tercihe hiç dokunmamanın
+   yan etkisi.)
+2. Okulun kalıcı türünü değiştirmek kimin işi — platformun (okul künyesi, `K-28` ile aynı
+   yer) mi, okulun mu?
+3. Hazırlığı olan bir okula hazırlıksız program hiç sunulmalı mı?
+
 Ek olarak uç, program seçeneği başına **seviye kapsamını** dönmüyor; ekran bu yüzden
 "hazırlık boşalacak" uyarısını veremiyor, yalnız genel uyarı yazabiliyor.
 
