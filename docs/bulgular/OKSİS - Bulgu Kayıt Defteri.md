@@ -50,7 +50,9 @@
 > [[OKSİS - Bulgu Arşivi]] §55, `K-30` ile birlikte.
 > Sayım düzeltmesi: `TB-232`'nin kapanış notu "13 ucun tamamı çağıran kazandı" diyordu,
 > ölçülünce dördünün hâlâ çağıransız olduğu görüldü → `TB-236` 🟡.
-> Defter **102** (🔴 4 · 🟠 26 · 🟡 41 · ⚪🟢 31).
+> Aşama 10 öncesi kullanıcı sorusu `TB-237` 🔴'ı açtı (branş kataloğu boş: seed silindi,
+> yerine geçecek yüzey yazılmadı) — merkez ayağı aynı gün kapandı.
+> Defter **103** (🔴 5 · 🟠 26 · 🟡 41 · ⚪🟢 31).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -170,7 +172,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-237` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-238` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -732,6 +734,63 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
+
+### `TB-237` · Branş kataloğu boş: seed silindi, yerine geçecek yüzey yazılmadı 🔴
+
+Kullanıcı sordu (2026-09-22): *"Merkez platform sadece dersleri getirmez, branşları getirmek
+için de bir altyapı kurulmuş olması lazım. Bunu ne merkez platformunda ne de okul
+platformunda görüntüleyemiyorum."* Ölçüm onu doğruladı.
+
+**Kök neden bir regresyon:** `d30d2bb7` (2026-09-21) *"ders, branş ve ders↔branş seed'leri
+silindi"*. Gerekçesi: *"branş ve bağ öğretmenlik alanları kararı işlenince [doğar]"*. Ders
+tarafında bu gerçekleşti (çizelge yayımlanınca 67 ders geldi); **branş tarafında hiç
+gerçekleşmedi**, çünkü kararı işleyecek yüzey yazılmamıştı. Seed, yerine geçeni hazır
+olmadan silinmiş.
+
+| Halka | Durum (ölçüm) |
+|---|---|
+| Kapak tanıyıcı `MebCoverParser` | ✅ `TeachingFields` türünü tanıyor |
+| Ayrıştırıcı `MebTeachingFieldsParser` | ✅ var, birim testli (2014 fixture'ı) |
+| `POST .../documents/{id}/teaching-fields` | ✅ var (`apply` önizle/uygula) · ❌ **0 çağıran** |
+| Keşif | ⚠️ yalnız TTKB **kategori 7**; karar kategori listesinde DEĞİL |
+| `master.branches` · `master.subject_branches` | ❌ **0 · 0** |
+| `school.branches` (tüm okullar) | ❌ **0** — seed okulları dâhil |
+| Okul ekranı Ayarlar › Branş Kataloğu | ✅ var, düğme gerçek uca bağlı (`TB-200`) |
+
+**Zarar `TB-193`'ün ölçtüğü zincirin aynısı, bir kat daha derini:** branş yok → öğretmene
+branş atanamaz → görevlendirme yapılamaz (`assignments.teacher-no-branch`) → ders programı
+üretilemez. Kadro/sınıf turu (Aşama 10) bu yüzden ilk adımda tıkanırdı.
+
+Sinsi tarafı: okulun "MEB'den Getir" düğmesi **çalışıyor**, yalnız boş kaynaktan boş
+getiriyor. `TB-200` tam bu yanlış-güven sorununu kapatmıştı; şimdi bir katman yukarıda
+yeniden oluştu.
+
+**Karar belgesinin yeri ölçüldü:** TTKB'de bir kategori listesinde değil, kendi içerik
+sayfasında — `/www/ogretmenlik-alanlari-atama-ve-ders-okutma-esaslari/icerik/807`. Güncel PDF
+`2025_12/23100922_9_cizelgeveesaslar.pdf` (49 sayfa). Yani keşif oraya **hiç ulaşamaz**;
+mekanizma kategori ajax'ı üzerine kurulu.
+
+**Ayrıştırıcı canlı belgede denendi** (fixture 2014 kararı, canlı belge Aralık 2025 —
+`TB-226` sınıfı bir risk vardı): kapak `TeachingFields` tanındı, 49 sayfa, **107 alan, 0
+uyarı**. Düzen değişmemiş.
+
+✅ **Merkez ayağı kapandı (2026-09-22).**
+- `SourceDocumentDto`'ya `Kind` eklendi — ekran indirdiği belgeye hangi işlemi sunacağını
+  bilemiyordu.
+- MEB Kaynakları ekranına **adresten getir** kutusu: keşfin ulaşamadığı belgeler için.
+- Belge `TeachingFields` ise **Öğretmenlik alanları** paneli: önizle → branş kataloğuna işle.
+  Önizlemeden uygulanamaz (düğme kilitli).
+- Uçtan uca gerçek API ile doğrulandı: getir → `kind=TeachingFields` → önizleme
+  **107 branş · 93 ders-branş bağı · 137 eşleşmeyen ders**; `master.branches` önizlemeden
+  sonra hâlâ 0 (yazmadı).
+
+⬜ **Açık kalan:** uygulama düğmesine **kullanıcı basacak** — `TB-193`'ün 2026-09-16
+kararının aynısı: *"saha testinin amacı gerçek kullanıcı yolunu ölçmek; veriyi arkadan
+doldurmak o ölçümü yok ederdi."* Ayrıca `TB-193`'ün kalıcı ayağı (okul açılışında branş
+tohumu + mevcut boş okullara backfill) hâlâ açık ve ancak `master.branches` dolunca anlamlı.
+
+⬜ Merkez ekranı görsel olarak doğrulanmadı: platform ayrı hesap ve kullanıcının okul
+oturumunu düşürme riski vardı. HTTP zinciri ve tip/lint kapısı yeşil.
 
 ### `TB-236` · Dört müfredat saati ucu hâlâ çağıransız 🟡
 
