@@ -7932,3 +7932,36 @@ saat kararları silinir + okul dersleri kalır; aynı program gönderilirse hiç
 dokunulmaz; başlamış sezon programını korur ama kalıcı tercih yine de değişir; platform
 künyesinden program değişir ve geri okunur; program gönderilmeyen güncelleme programa
 dokunmaz.
+
+---
+
+## 56. `TB-234` · Ölçüm hatası — hazırlıktaki sezonun çıkış yolu zaten vardı (2026-09-22) ✅
+
+**İddia edilen:** *"Müfredatı boş doğan sezondan ürün içinde çıkış yolu yok.
+`AcademicSessionsController`'da silme ucu yok — hazırlık (`Setup`) aşamasındaki sezon bile
+silinemiyor. Domain'de yalnız `Setup → Active → Archived` var, geri dönüş yok."*
+
+**Yanlıştı.** `TB-232` kapandıktan sonra Aşama 9 için Setup'a bağlı yazma yolları taranırken
+`SetupSeasonReverter` görüldü ve ölçüm iddiayı çürüttü:
+
+| Uç | Ne yapar |
+|---|---|
+| `POST academic-sessions/{id}/reopen-to-draft` | Sezonu taslağa geri alır |
+| `POST academic-sessions/{id}/cancel-setup` | Sezonu iptal eder |
+
+İkisi de `SetupSeasonReverter`'ı kullanıyor ve doc'u ne sildiğini açıkça yazıyor: *"şubeler +
+sezona bağlı tatiller + **müfredat taslağı** + sezon soft-delete edilir"*. İkisinin de
+ekranı var — Sezon Yönetimi'nde `SznReopenModal` ve `SznDeleteSetupModal`, istemcide
+`useReopenSeasonToDraft` ve `useCancelSeasonSetup`.
+
+Yani müfredatı boş doğan sezonun çıkışı hep vardı: taslağa geri al → sezonu yeniden aç →
+bootstrapper yeniden koşar. `TB-233` düzeltildikten sonra bu ikinci koşu doğru sürüme bağlar.
+
+**Hatanın kaynağı:** bulgu, controller'da `[HttpDelete]` aranarak yazılmıştı. Silme burada
+`POST .../cancel-setup` adıyla duruyor — fiil aranmış, iş aranmamıştı.
+[[karar-oncesi-yeniden-olcum]]'un aynısı: bayat/eksik ölçüm yanlış bir eksiklik iddiası
+üretti ve bir tur boyunca doğru sanıldı (bu oturumda üç kez tekrarlandı).
+
+**Doğru kalan tek şey:** `Active → Setup` dönüşü gerçekten yok. Aktivasyon tek yönlüdür ve
+başlamış sezonun boş snapshot'ı hâlâ kurtarılamaz. Ama bu, bulgunun iddia ettiği şey değildi
+ve zaten karar 0021'in bilinçli sonucu.

@@ -42,14 +42,15 @@
 > çizelge sessizce inmiyor) → [[OKSİS - Bulgu Arşivi]] §53. `TB-232` 🟠 (okulun müfredat/
 > haftalık saat yüzeyi hiç yok — 13 uç, sıfır çağıran) → §54: Akademik › Müfredat ekranı
 > yazıldı, 13 ucun tamamı çağıran kazandı, canlı veride 162 satır doğrulandı.
-> Açık kalan: `TB-234` (müfredatı boş doğan sezondan çıkış yolu 🟠) — hazırlıktaki sezon
-> ayağı `TB-232` ile kurtarıldı, **başlamış sezonunki açık**. Yeni ekranın kullanıcı soruları
+> `TB-234` (müfredatı boş doğan sezondan çıkış yolu yok 🟠) **ölçüm hatası çıktı ve kapandı**
+> — `reopen-to-draft` ve `cancel-setup` uçları vardı, ikisi de Sezon Yönetimi ekranında
+> (arşiv §56). Yeni ekranın kullanıcı soruları
 > `TB-235`'i açtı (program değişimi okul kapsamlı tercihi bırakıyor: hazırlık müfredatsız
 > kalıyor, değişim gelecek sezon geri alınıyor 🟠) ve **aynı gün kapattı** —
 > [[OKSİS - Bulgu Arşivi]] §55, `K-30` ile birlikte.
 > Sayım düzeltmesi: `TB-232`'nin kapanış notu "13 ucun tamamı çağıran kazandı" diyordu,
 > ölçülünce dördünün hâlâ çağıransız olduğu görüldü → `TB-236` 🟡.
-> Defter **103** (🔴 4 · 🟠 27 · 🟡 41 · ⚪🟢 31).
+> Defter **102** (🔴 4 · 🟠 26 · 🟡 41 · ⚪🟢 31).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -731,6 +732,27 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
+
+### `TB-236` · Dört müfredat saati ucu hâlâ çağıransız 🟡
+
+`TB-232` kapanırken sayım yapıldı ve kapanış notundaki *"13 ucun tamamı çağıran kazandı"*
+iddiası **yanlış çıktı**. Müfredat ekranı 7 uca çağıran getirdi, biri `K-30` ile silindi;
+**dördü hâlâ çağıransız**:
+
+| Uç | Nereye ait | Neden bu ekranda değil |
+|---|---|---|
+| `curriculum-hours/required-total` | Ders Programı | Şubenin haftalık yükünün tamam olup olmadığını çizelge ekranı sorar |
+| `curriculum-hours/subject/{id}` GET | Ders Kataloğu | Ders bazlı saat çekmecesi — müfredat ekranı seviye×ders hücresinden düzenliyor |
+| `curriculum-hours/catalog` | Ders Kataloğu | Liste için ders başına min–max saat sütunu |
+| `curriculum/snapshot` | — | `diff` kilitli sezonda zaten snapshot'tan okuyor; bu uç `LockedAt` ve seviye başına dondurulan sürümü ek olarak veriyor |
+
+Üçü **henüz yazılmamış ekran yüzeylerine** ait, dolayısıyla bu bir gecikme; ama aynı sınıfın
+kusuru `TB-232` ve `TB-233`'te iki kez ısırdı: [[eksik-ekran-eksik-yetkiyi-gizler]] —
+çağrılmayan uç arkasındaki kusurları da saklar. Bu yüzden sohbette bırakılmıyor.
+
+⬜ Ders Programı ve Ders Kataloğu yüzeyleri yazılırken bu üçü bağlanır. `snapshot`'ın
+gerçekten gerekli olup olmadığı ayrıca kararlaştırılır — gereksizse silinmesi, çağrılmayan
+uç olarak durmasından iyidir.
 
 ### `TB-236` · Dört müfredat saati ucu hâlâ çağıransız 🟡
 
