@@ -7810,3 +7810,55 @@ Bir test **eski kuralı savunuyordu** ("Eşleşen Published sürüm yoksa taslak
 2030 sezonuyla). İkiye bölündü: gerçekten hiç çizelge olmayan durum (2020 sezonu) ve yeni
 kural (2030 sezonu → 2025-2026 sürümüne bağlanır). `CurriculumDraftBootstrapperTests` 11/11.
 
+---
+
+## 54. `TB-232` · Okulun müfredat ve haftalık saat ekranı (2026-09-22) ✅
+
+**Bulgu.** Backend'in 13 müfredat ucu yazılmıştı; **hiçbirinin çağıranı yoktu.**
+
+| Uç | Durum |
+|---|---|
+| `api/v1/curriculum-hours/*` (4 uç) | var · 0 çağıran |
+| `api/v1/curriculum/*` (9 uç) | var · 0 çağıran |
+
+Zarar üç katmanlıydı: okul MEB çizelgesinden inen saatleri **göremiyordu**
+(içe aktarma → eşleme → yayım zincirinin bütün amacı oydu), **değiştiremiyordu**,
+ve çağrılmayan uç arkasındaki kusurları da saklıyordu — `TB-233` tam bu yüzden
+aylarca görülmedi ([[eksik-ekran-eksik-yetkiyi-gizler]]).
+
+Erteleme bilinçliydi ama hiçbir yere kaydedilmemişti: tek izi
+`course-catalog.tsx:459`'daki *"editörü sonraki teslimde eklenecek"* yorumuydu.
+Bu yüzden MEB kaynaklı katalog dalı boyunca kimse fark etmedi.
+
+✅ **2026-09-22 · kapandı.** Akademik › Müfredat (`/curriculum`, `oksis-ui` `2b3bb4a`),
+Ders Programı'nın üstünde — haftalık saat programın girdisidir.
+
+**Ölçüm gösterdi ki bu saf bir yüzey boşluğuydu:** tek uç, `GET curriculum/diff`,
+ekranın tamamını besliyor. Hazırlıktaki sezonda taslaktan, başlamış sezonda
+snapshot'tan okuyor ve hangisi olduğunu `isLocked` ile kendisi söylüyor. Kilit ve
+sezon seçimi kararları bu yüzden ekranda **yeniden türetilmedi** (`TB-32`).
+
+Kapsam — 13 ucun tamamı çağıran kazandı: seviye sekmeleri, MEB/okul/fark tablosu,
+seviye künyesi (sürüm · kurul kararı · toplamlar), hücre içi saat düzenleme,
+seviyeyi MEB saatlerine döndürme, eğitim programı seçimi, güncel sürüme taşıma,
+aktivasyon önizlemesi, kilit + gerekçe.
+
+**Canlı doğrulama** (Altınay, 2026-2027 hazırlıktaki sezon): tablo 162 satırı
+sabahki SQL ölçümüyle birebir çizdi (19/29/37/42/35). Matematik 3 → 5 yazıldı:
+fark `+2`, rozet, toplam ve sıfırlama düğmesi tepki verdi; sıfırlama gerçek veriyi
+ilk hâline döndürdü (override satırı soft-delete edildi, canlı override 0).
+Aktivasyon önizlemesi "5 seviye · 162 ders satırı" dedi, engel yok.
+
+Turda iki **dil/gösterim kusuru** yakalandı ve düzeltildi: sezon durumu "Hazırlık"
+yazıyordu ve okulun "Hazırlık Sınıfı" kademesiyle çakışıyordu (üst çubukla aynı
+sözcüğe, "Kurulumda"ya çevrildi); taşıma raporu yalnız seviye KODU taşıdığı için
+"HAZIRLIK. seviye" cümleleri üretiyordu (ad tablodan çözülüyor). Ayrıca taşımanın
+hiçbir şeyi değiştirmediği durum, beş blok sıfır yerine tek cümleye indirildi
+(`rebaseChangesNothing`).
+
+**Yan kapanış:** `POST curriculum/rebase` düğmesine kavuştu — müfredatı boş doğan
+sezonun ürün içindeki tek çıkış yolu buydu (`TB-234`).
+
+**Kalan:** kilitli (başlamış/arşiv) sezon yolu birim testlidir ve tamamen sunucunun
+`isLocked` yanıtına bağlıdır, ama canlı bir `Active` sezona karşı henüz koşturulmadı —
+Altınay'ın sezonu hâlâ hazırlıkta.

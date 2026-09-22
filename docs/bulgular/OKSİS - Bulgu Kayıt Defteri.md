@@ -38,11 +38,13 @@
 > alanı kalkar, tekillik türetilmiş ad anahtarına geçer. Defter **101** (🔴 4 · 🟠 26 · 🟡 40 · ⚪🟢 31).
 >
 > **Aşama 8 manuel turu (2026-09-22):** kullanıcının *"böyle bir ekran yok"* sorusu üç madde
-> açtı. `TB-233` 🔴 (yürürlükteki müfredat yanlış seçiliyor, çizelge sessizce inmiyor) **aynı
-> gün kapandı** ve arşive taşındı ([[OKSİS - Bulgu Arşivi]] §53). Açık kalanlar: `TB-232`
-> (okulun müfredat/haftalık saat yüzeyi hiç yok — 13 uç, sıfır çağıran 🟠) ve `TB-234`
-> (müfredatı boş doğan sezondan ürün içinde çıkış yolu yok 🟠).
-> Defter **103** (🔴 4 · 🟠 28 · 🟡 40 · ⚪🟢 31).
+> açtı ve **ikisi aynı gün kapandı**. `TB-233` 🔴 (yürürlükteki müfredat yanlış seçiliyor,
+> çizelge sessizce inmiyor) → [[OKSİS - Bulgu Arşivi]] §53. `TB-232` 🟠 (okulun müfredat/
+> haftalık saat yüzeyi hiç yok — 13 uç, sıfır çağıran) → §54: Akademik › Müfredat ekranı
+> yazıldı, 13 ucun tamamı çağıran kazandı, canlı veride 162 satır doğrulandı.
+> Açık kalan: `TB-234` (müfredatı boş doğan sezondan çıkış yolu 🟠) — hazırlıktaki sezon
+> ayağı `TB-232` ile kurtarıldı, **başlamış sezonunki açık**.
+> Defter **102** (🔴 4 · 🟠 27 · 🟡 40 · ⚪🟢 31).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -725,32 +727,6 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
 
-### `TB-232` · Okulun müfredat/haftalık saat yüzeyi hiç yok — 13 uç, sıfır çağıran 🟠
-
-Aşama 8 manuel turunda kullanıcının sorusuyla ortaya çıktı: *"Böyle bir ekran yok şu an,
-varsa da path'ini bilmiyorum çünkü menüde görünmüyor."* Ölçüm onu doğruladı — ekran
-**yapılmamış**.
-
-| Uç | Durum |
-|---|---|
-| `api/v1/curriculum-hours/*` (4 uç: `required-total`, `subject/{id}` GET+PUT, `catalog`) | var · **0 çağıran** |
-| `api/v1/curriculum/*` (9 uç: `programs` GET+PUT, `diff`, `rebase/preview`, `rebase`, `grades/{code}/reset`, `activation-preview`, `snapshot`) | var · **0 çağıran** |
-
-`oksis-ui`'da `curriculum-hours` yalnız üç yerde geçiyor: bir izin mock'u, bir izin etiketi ve
-`course-catalog.tsx:459`'daki yorum — *"editörü sonraki teslimde eklenecek (ayrı
-curriculum-hours modülü)"*. Erteleme bilinçli ama hiçbir yere kaydedilmemiş; bu yüzden MEB
-kaynaklı katalog dalı boyunca kimse fark etmedi.
-
-**Zarar üç katmanlı:**
-1. Okul, MEB çizelgesinden gelen haftalık saatleri **göremiyor**. İçe aktarma → eşleme →
-   yayım zincirinin bütün amacı bu saatlerdi; okul tarafında görünmüyorlar.
-2. Okul saatleri **değiştiremiyor**. `PUT curriculum-hours/subject/{id}` var, çağıran yok.
-3. Çağrılmayan uç, arkasındaki kusurları da sakladı — nitekim `TB-233` tam da bu yüzden
-   bugüne kadar görülmedi ([[eksik-ekran-eksik-yetkiyi-gizler]]).
-
-⬜ Ekran yazılır. Kapsam en az: seviye × ders saat tablosu, MEB/okul ayrımı, sezon
-hazırlıktayken düzenleme, aktifken kilit + gerekçe.
-
 ### `TB-234` · Müfredatı boş doğan sezondan ürün içinde çıkış yolu yok 🟠
 
 `TB-233` düzeltilirken görüldü: düzeltme **açılış anına** etki ediyor, bootstrapper idempotent
@@ -759,13 +735,23 @@ kurtaracak bir yol ürün içinde yok:
 
 - `AcademicSessionsController`'da **silme ucu yok** — hazırlık (`Setup`) aşamasındaki sezon
   bile silinemiyor. Domain'de yalnız `Setup → Active → Archived` var, geri dönüş yok.
-- `POST curriculum/rebase` tam bu iş için var **ama ekranı yok** (`TB-232`).
+- `POST curriculum/rebase` tam bu iş için vardı **ama ekranı yoktu** (`TB-232`).
+  `TB-232` 2026-09-22'de kapandı ve düğme Akademik › Müfredat ekranına geldi; artık
+  hazırlıktaki sezon ürün içinde kurtarılabiliyor. **Açık kalan:** taşıma yalnız
+  hazırlıktaki sezona yazar — zaten başlamış bir sezonun boş snapshot'ı hâlâ
+  kurtarılamıyor ve `Setup`'a dönüş yok.
 
 Sonuç: müfredatı boş doğan okulun tek çıkışı okulu yeniden açmak. Kullanıcı testinde
 fiilen bu yaşandı.
 
-⬜ `TB-232` ekranı rebase düğmesini de taşımalı. Ayrıca hazırlık aşamasındaki sezonun
-silinebilmesi ayrı bir soru — karar gerektirir.
+✅ **Yarısı kapandı (2026-09-22).** `TB-232` ekranı yazıldı ve rebase düğmesini taşıyor
+([[OKSİS - Bulgu Arşivi]] §54): **hazırlıktaki** sezon artık ürün içinde kurtarılabiliyor.
+
+⬜ **Açık kalan iki ayak:**
+1. Başlamış sezonun boş snapshot'ı hâlâ kurtarılamıyor — rebase yalnız `Setup` sezona
+   yazar, `Active → Setup` dönüşü yok. Bu okul için ekranın söyleyebileceği tek şey
+   "sezon başladığında müfredatınız boştu".
+2. Hazırlık aşamasındaki sezonun silinebilmesi ayrı bir soru — karar gerektirir.
 
 ### `TB-230` · İzin çözücü `Platform` portalını tanımıyor; platform rolü hiçbir izin taşıyamaz 🟡
 
