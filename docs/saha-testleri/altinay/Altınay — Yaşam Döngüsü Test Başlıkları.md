@@ -163,7 +163,7 @@ Her başlıkta ortak denetim eksenleri:
 | B9.1 | Sınıf (rehber) öğretmenleri — 8 kişi, biri iki şubede | ⬜ | |
 | B9.2 | Ders görevlendirmeleri (öğretmen × ders yetkinliği) **2026-09-23:** görevlendirmeleri kullanıcı yaptı: 13 öğretmen, 50 ders, 65 aktif görev, 15 ders atanmamış, 6 alan-dışı (üç öğretmende: 4 + 1 + 1 — ad eşleşmesi kaynaklı, `TB-240`, kullanıcı kararıyla ertelendi). Genel kontrol: sayaçlar tutarlı; varsayılan eksen *Öğretmenlere göre* yapıldı ve seçicide sola alındı. Bulgular: hiçbir ders seçmeli değil (`B-64`), kopyalama kaynağı (`B-65`), görevi kapat onaysız (`D-26`), çekmece hatada kapanıyor (`D-27`), arşivde gezinme menüsü gizli (`D-28`). | 🔄 | `TB-240` · ~~`B-64`~~ ✅ · `B-65` · `D-26` · `D-27` · `D-28` · `D-29` |
 | B9.3 | Öğretmen müsaitlikleri | ⬜ | |
-| B9.4 | Ders programının oluşturulması (otomatik ve elle), çakışma denetimi | ⬜ | |
+| B9.4 | Ders programının oluşturulması (otomatik ve elle), çakışma denetimi **2026-09-23 ölçüm (9-A, uygulanmadan):** üretim çalışıyor (`Done`, 3 aday) ama program kullanılamaz: seçmeli havuzun tamamı zorunlu sayıldığı için (57 saat talep, haftada 40 saat) seçmelilerden 15 saat yerleşiyor, ortak derslerden 7 saat dışarıda kalıyor. **Engel `TB-239` — karar bekliyor.** Öğretmensiz dersler talepten sessizce düşüyor, gösterge "eksik 5" diyor, gerçek 17 (`B-66`). Veri tarafı: 9. sınıfta 9 dersin (12 saat) görevlendirmesi yok, biri ortak (Görsel Sanatlar/Müzik). | ⏸️ | **`TB-239`** · `B-66` |
 | B9.5 | Programın yayını; öğretmen ve öğrencinin kendi programını görmesi | ⬜ | |
 
 ### B10 · Açılış kapısı

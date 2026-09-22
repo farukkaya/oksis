@@ -207,7 +207,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-66` · `D-30` · `V-05` · `X-22` · `TB-245` · `E-31` · `ENG-04`
+**Sıradaki boş ID:** `B-67` · `D-30` · `V-05` · `X-22` · `TB-245` · `E-31` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -809,6 +809,15 @@ seçmeli kotası olarak hesaplanır, havuz ayrıca tutulur. Hangisi seçilirse s
 **Altınay'ın kilitli snapshot'ı için ayrıca bir yol** gerekir (backfill ya da aktif sezonda
 seçmeli saatini düzenleme).
 
+
+➕ **Üretimle ölçüldü — B9.4'ün engeli bu (2026-09-23).** 9-A için otomatik üretim uygulanmadan
+çalıştırıldı (`POST timetable/auto-generate`, tek şube): iş `Done`, 3 aday, önerilen aday "skor 96,
+eksik 5 saat". Hafta 40 ders saati (5 gün × 8, zil çizelgesi). Müfredatın 9. sınıf talebi 57 saat
+(32 ortak + 25 seçmeli). Üretici seçmelilerden **15 saat** yerleştirdi, **ortak derslerden 7 saati
+dışarıda bıraktı**: Birinci Yabancı Dil 4/0, Görsel Sanatlar/Müzik 2/0, Matematik 6/5. Yani program
+ortak dersi eksik, seçmeliyi fazla veren bir hafta; okul için kullanılamaz. MEB'e göre gerçek yük
+32 + 7 = 39 saat ve 40 saate sığıyor — engel yalnız bu kusur. Karar hâlâ bekliyor; ders programı
+turu (B9.4) bu karar uygulanmadan ilerleyemez.
 ### `TB-240` · Anadolu Lisesi'nin dört ortak dersi branşsız; atama alan dışı sayılıyor 🟠
 
 Altınay B4.3 ölçümünde çıktı (2026-09-22). `TB-238`'in "ayrı kalan" notuna ID verildi.
@@ -1124,6 +1133,19 @@ bilmeden isteği atıyor. Zararsız ama gerçek hataları konsolda gürültüye 
 
 ⬜ Kapatma yolu: okul ayarı logo yokken URL üretmez (istemci yer tutucuya düşer) ya da uç 204
 döner.
+
+### `B-66` · Ders programı üretimi öğretmensiz dersi talepten sessizce düşürüyor; "eksik saat" göstergesi yanıltıcı 🟠
+
+Altınay B9.4 ölçümü (2026-09-23). 9-A için otomatik üretimde önerilen aday "eksik **5** saat, skor 96,
+Önerilen" diyor; `hints` ve `failureReason` boş. Müfredatla karşılaştırınca gerçek eksik **17** saat:
+göstergeye yalnız görevlendirmesi olan derslerin açığı giriyor. Görevlendirmesi olmayan dokuz ders
+(9. sınıfta 12 saat; aralarında **ortak** ders Görsel Sanatlar/Müzik) talebe hiç girmiyor, yani
+programda yokluğu hiçbir yerde söylenmiyor. İdareci "5 saat eksik" görüp uygulayabilir; ortak bir
+dersin haftada hiç okutulmadığı ancak derslik/öğrenci şikâyetiyle fark edilir.
+
+⬜ Kapatma yolu: öğretmensiz ders talepte kalır ve "yerleştirilemedi — öğretmen atanmamış" olarak
+ayrı raporlanır. Gösterge müfredata karşı toplam açığı verir. Ortak derste öğretmen yoksa aday
+"önerilen" olarak işaretlenmez ya da üretim başlamadan ön denetim uyarır.
 
 ### `D-29` · Katalog satırındaki simge düğmelerinin adı yok; pasife alma tek tık ve onaysız 🟡
 
