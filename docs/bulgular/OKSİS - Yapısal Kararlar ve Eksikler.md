@@ -40,6 +40,7 @@
 | **K-27** | Platform kimliği: süper yönetici okulsuz platform hesabı mı, "OKSİS Merkez" iç okulu mu? | ✅ Karara bağlandı · ✅ ilk dilim uygulandı | 2026-09-15 | **(a) Ayrı platform hesabı** + üç platform rolü ([[0019-platform-rol-seti-uc-rol]]: `PLATFORM_ADMIN` / `PLATFORM_OPERATIONS` / `PLATFORM_SUPPORT`, destek salt-okunur) · izler kazındı: [[super-admin-izleri-envanteri]] · ilk hesap `PlatformBootstrap` ayarından tek seferlik · ilk dilim `oksis-api` `e91711bd`…`74427aa3`, `oksis-ui` `bd8d0f6`/`47d6059` · `E-24`/`TB-162` kapandı |
 | **K-28** | Kurum yetkilisi: kim sorar, kim düzenler? | ✅ Karara bağlandı · ✅ **uygulandı** (2026-09-22) | 2026-09-15 | **(a)** Platform okul açılışında sorar · sonradan platform düzenler · müdür yalnız görür — `TB-165`/`TB-171`/`TB-172` kapandı ([[OKSİS - Bulgu Arşivi]] §52); artakalan boşluk `TB-230` |
 | **K-29** | Dersin kod alanı: kalsın mı, tekillik neye bağlansın? | ✅ Karara bağlandı · ⬜ uygulanmadı | 2026-09-22 | **Kod alanı KALKAR** (`master.subjects.code` + `school.subjects.code`), tekillik görünmez türetilmiş `name_key` kolonuna geçer. Gerekçe: MEB ders kodu vermiyor (964/964 içe aktarma satırında `source_subject_code = NULL`) — kod bizim icadımızdı |
+| **K-30** | Okulun türünü kim değiştirir, program değişince saat kararları ne olur? | ✅ Karara bağlandı · 🟡 yarısı uygulandı | 2026-09-22 | **Tür değişimi platformun işi**, müdür yalnız sezonu çizelgeye bağlar (⬜ uygulanmadı). **Program değişince saat kararları silinir**, müfredat MEB'den geldiği gibi iner (✅ uygulandı); okulun kendi dersleri kalır |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 | **Y-03** | Şube alanı (Sayısal / Eşit Ağırlık / Sözel / Yabancı Dil) nerede tutulur | ✅ Karara bağlandı · ✅ **uygulandı** (`oksis-api` `614a51b3` + `oksis-ui` `7fe92fc`) | 2026-09-17 | **(a) `ClassRoom.Track` + sabit enum.** Derse BAĞLANMADI (ders↔alan çoka-çok: "seçmeli matematik" dört alandan üçünde geçer) · öğrencinin alanı aktif şube atamasından türetilir, ayrıca tutulmaz · MEB'in 09/05/2025-05 çizelgesinde alan sütunu **yok**, yani bu okulun organizasyon ihtiyacı · enum çünkü listeyi okul düzenlemiyor — meslek lisesi kapsama girerse katalog tablosuna terfi eder |
@@ -1190,6 +1191,90 @@ değişiklik tam da test edilen ders kataloğuna dokunuyor.
 
 **Ara adım (2026-09-22'de yapıldı):** kod rozeti listeden kaldırıldı (`oksis-ui`).
 Alanın kendisi duruyor; arama hâlâ kodla eşleşiyor ve düzenleme penceresinde görünüyor.
+
+--- end-multi-column
+
+---
+
+## K-30 · Okulun türünü kim değiştirir, program değişince saat kararları ne olur?
+
+--- start-multi-column: K-30
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ✅ Karara bağlandı (2026-09-22) · 🟡 saat ayağı uygulandı, yetki ayağı uygulanmadı
+**Kaynak:** kullanıcının yeni Müfredat ekranı üzerindeki sorusu — *"Eğitim programı düğmesine
+basıp Anadolu Lisesi'ni seçersem ne olur?"* ve ardından *"okulun eğitim programını değiştirmesi
+sezona mı bağlı?"*
+
+Okulun eğitim programı **iki ayrı yerde** duruyor:
+
+| Kayıt | Kapsam | Ne der | Kim yazar |
+|---|---|---|---|
+| `SchoolEducationProgram` | okul | "bu okul bir Fen Lisesi'dir" | yalnız okul açılışı |
+| `SchoolAcademicProgram` | sezon | "bu sezon şu çizelgeye bağlı" | `PUT curriculum/programs` |
+
+Tasarım (§6.2 adım 1: *"Okulun tek lise eğitim programı seçilir"*) programı okulun **kalıcı**
+niteliği sayıyor. Sezon kaydı, sezonun dayanağı yeniden üretilebilsin diye var: okul
+açılırken henüz sezon yoktur ve başlamış sezonun dayanağı korunmalıdır (karar 0021).
+
+**Ölçülen iki kusur** (`TB-235`):
+1. Müdürün düğmesi yalnız sezon kaydını yazıyor; `CurriculumDraftBootstrapper` gelecek sezonun
+   bağını okul kaydından kurduğu için değişiklik **ertesi yıl sessizce geri alınıyor**.
+2. Okul kaydını değiştiren **hiçbir uç yok** — `CreateSchoolCommandHandler` bir kez yazıyor,
+   sonra kilitleniyor. Oysa MEB gerçekten okul dönüştürüyor.
+
+Ayrıca program değişiminde rebase okulun saat kararlarını **koruyordu**.
+
+**Bağlı:** `TB-235` · `TB-232` · `K-28` (kurum kimliği platformda) · karar 0021
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-09-22
+**Karar veren:** Kullanıcı
+
+**Karar 1 — yetki bölünmesi**
+> **Okulun türünü değiştirmek platformun işidir. Okul müdürü yalnız sezonu çizelgeye bağlar.**
+
+Gerekçe: okul türü MEB'in verdiği bir kimliktir, okulun kendi tercihi değil — kurum kodu ve
+kuruluş yılıyla aynı aileden (`K-28`). Müdür kendi okulunu bir sabah Fen Lisesi yapamamalı.
+
+| Kim | Ne yapar | Nerede |
+|---|---|---|
+| Platform | "Bu okul artık Fen Lisesi" — kalıcı kayıt | okul künyesi (`K-28` yüzeyi) |
+| Okul müdürü | "Bu sezonu hangi çizelgeye bağlıyorum" | Akademik › Müfredat |
+
+⬜ **Uygulanmadı.** Gerekenler: platform okul künyesine eğitim programı alanı (`K-28`'in
+`SchoolProfileInput`'una kademe×program), onu yazan uç, ve değişimin gelecek sezonlara
+inmesi. Geçmiş sezonlar snapshot'ıyla kalır — model bunu zaten destekliyor.
+
+**Karar 2 — program değişince saat kararları silinir**
+> **Eğitim programı değişirse saat kararları baştan verilir; müfredat MEB'den geldiği gibi
+> uygulanır.**
+
+Kullanıcının gerekçesi: saat kararı boşlukta değil, **bir çizelgeye göre** verilir. Sosyal
+Bilimler Lisesi'nin çizelgesine bakarak "Matematik 5 olsun" diyen okul, Anadolu Lisesi'ne
+geçtiğinde aynı cümleyi kurmuş sayılamaz; o programın Matematik'i başka bir toplam içinde
+durur. Kararı taşımak, okulun vermediği bir kararı ona mal etmekti.
+
+✅ **Uygulandı** (`SelectAcademicProgramCommandHandler`): program değişiminde o kademenin
+override'ları silinir, taslak yeni sürüme master saatleriyle iner.
+
+**Okulun kendi eklediği dersler SİLİNMEZ** — onlar bir çizelgeye göre verilmiş karar değil,
+okulun kendi dersidir. Aynı ayrım `ResetGradeLevelToMebCommand`'da da var; iki yol aynı
+cümleyi kurar.
+
+**Ayrım korunur:** "Güncel müfredatı getir" (aynı program, yeni MEB sürümü) saat kararlarını
+**korumaya devam eder**. Orada okul aynı çizelgenin yeni basımına geçiyor; kararı taşımak
+doğru.
 
 --- end-multi-column
 
