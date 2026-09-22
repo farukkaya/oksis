@@ -56,6 +56,38 @@
 > açıldı ve **aynı gün kapandı**.
 > Defter **104** (🔴 6 · 🟠 26 · 🟡 41 · ⚪🟢 31).
 >
+> **Altınay B4.2/B4.3 yeniden ölçümü (2026-09-22):** katalog MEB kaynaklı hâliyle ölçüldü.
+> `TB-192`'nin eksik dersleri geldi, `TB-194`'ün kademe süzgeci canlıda doğrulandı. Altınay'da
+> 110 branş var, Rehberlik dahil. Üç madde açıldı: `TB-239` 🟠 (seçmeli havuzun tamamı
+> zorunlu yük sayılıyor, 9. sınıf 57 saat), `TB-240` 🟠 (dört ortak ders branşsız),
+> `TB-241` ⚪ (kesme sonrası büyük harf). Defter **107** (🔴 6 · 🟠 28 · 🟡 41 · ⚪🟢 32).
+>
+> **Altınay B6 kadro turu (2026-09-23):** 13 öğretmen ürün yolundan davet edilip kabul edildi.
+> Davet sihirbazı artık öğretmenin branşını soruyor (kural sunucuda). `fix/polish` dalları
+> birleştirildi, sicil numaraları backfill'le 2026001–2026013 dağıtıldı. Üç madde açıldı:
+> `TB-242` 🟡 (kapasite sütunu yükü olmayan öğretmende kişisel değeri göstermiyor; toplu
+> varsayılan yok), `B-55` 🟠 (mobil davette branş adımı yok), `D-24` ⚪ (davet okulun resmî
+> adını gösteriyor). Aynı gün kullanıcı kararıyla kapasite varsayılanı koddan 30 → 40 yapıldı ve
+> kalıcı çözüm `TB-243` 🟠 olarak açıldı (okul ayarından, sınıf/branş öğretmeni için ayrı varsayılan).
+> Defter **111** (🔴 6 · 🟠 30 · 🟡 42 · ⚪🟢 33).
+>
+> **Altınay B7 öğrenci kaydı turu (2026-09-23):** 85 öğrenci ve 135 veli *Öğrenciler › Yeni
+> Öğrenci* sihirbazıyla kaydedildi; veliler Mailpit'teki davetle, öğrenciler ilk girişte
+> parolasını `Oksis1234!` yaptı. On madde açıldı, altısı aynı gün kapandı: `B-56` 🔴 (nakil
+> kaydı imkânsız), `B-58` 🔴 (veliler davet alamıyor), `B-61` 🔴 (zorunlu parola ekranı yer
+> tutucu), `B-57`, `B-59`, `B-60`. Açık kalanlar: `V-04` 🟠 (içe aktarmada numara/sayaç),
+> `B-62` 🟡 (nakil devamsızlığı), `B-63` 🟠 (birincil veli), `D-25` 🟡 (ilk giriş KVKK metni),
+> `E-30` 🟡 (pansiyon alanı yok). Defter **124** blok (`grep '^### \`'` ile sayıldı; aynı gün
+> kapanan altı madde arşive taşınmadı, commit sonrası taşınacak).
+>
+> **Altınay B9.2 Görevlendirmeler genel kontrolü (2026-09-23):** varsayılan eksen kullanıcı
+> kararıyla *Öğretmenlere göre* yapıldı ve seçicide sola alındı. Sayaçlar tutarlı (6 alan-dışı =
+> detay toplamı). Altı madde açıldı: `B-64` 🟠 (hiçbir ders seçmeli değil), `B-65` 🟡 (kopyalama
+> kaynağı), `D-26` 🟡 (görevi kapat onaysız), `D-27` 🟡 (çekmece hatada kapanıyor), `D-28` ⚪,
+> `TB-244` ⚪. Bilinen alan-dışı eşleşme kusurları (`TB-240`) kullanıcı kararıyla bu turda ele
+> alınmadı. Aynı gün `B-64` kullanıcı onayıyla kapatıldı (tür sezonun müfredatından); ölçüm
+> sırasında `D-29` 🟡 (katalogda adsız, onaysız satır düğmeleri) açıldı.
+>
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
 > yöneticinin panosunu çiziyor, beş uç 403 🟠) ve `D-23` (Kullanıcılar ekranı `Staff` profilini
@@ -173,8 +205,9 @@
 - `X-##` → Çapraz kesen iş
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
+- Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-239` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-66` · `D-30` · `V-05` · `X-22` · `TB-245` · `E-31` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -737,6 +770,426 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
 
+### `TB-239` · Seçmeli ders havuzunun tamamı şubenin zorunlu haftalık yükü sayılıyor 🟠
+
+Altınay B4.2 yeniden ölçümünde çıktı (2026-09-22). Okulun kilitli müfredatı (TTK 2025/05
+Anadolu Lisesi, 4 kademe) çizelgedeki **her seçmeli dersi MEB varsayılan saatiyle** taşıyor.
+Ölçülen değerler şöyle:
+
+| Kademe | Ortak | Seçmeli satır | Snapshot toplamı | `required-total` (canlı) |
+|---|---|---|---|---|
+| 9 | 12 ders · 32 saat | 20 | 57 | **57** |
+| 10 | 12 · 33 | 27 | 65 | **65** |
+| 11 | 7 · 19 | 41 | 91 | **91** |
+| 12 | 5 · 15 | 37 | 86 | **86** |
+
+`Y-03` ölçümüne göre çizelgede seçilecek saat 9'da 7, 10'da 6, 11'de 20, 12'de 24. Yani
+şubenin gerçek yükü **her kademede 39 saat** olmalı. Ürün 57–91 arası diyor.
+
+Toplamı okuyan iki yer var:
+- `RequiredHoursResolver` → `GET curriculum-hours/required-total`. Bugün çağıranı yok
+  (`TB-236`), yani kusur ekranda henüz görünmüyor.
+- `CurriculumWeeklyHourProvider`, yani **ders programı üreticisinin tek saat kaynağı**
+  (`K-10`). Yalnız saati 0 olan satırı eliyor. Böylece her 9. sınıf şubesi için 20 seçmeli
+  dersin hepsi talep olarak üretilir: 57 saatlik bir hafta. `B9.4` bu hâliyle üretilemez.
+
+Okulun elinde çıkış yolu yok. Saat 0 kararı ("bu yıl okutulmuyor") yalnız `Setup`
+sezonda yazılabiliyor (`SessionCurriculum.ResolveForWriteAsync`). Altınay'ın sezonu
+2026-09-22'de 18:53:44'te açılıp 18:54:34'te aktifleştirildi, yani hazırlıkta 50 saniye
+kaldı; snapshot kilitli. Hazırlıkta kalınsaydı bile okul kademe başına 20–40 seçmeliyi
+tek tek sıfırlamak zorunda kalırdı. Varsayılan yön ters: çizelge seçmelileri **seçenek**
+olarak sayıyor, ürün **zorunlu** sayıyor.
+
+Sınıf: `TB-234` ile aynı. Kilitli snapshot'ı düzeltmenin ürün içi yolu yok.
+
+⬜ Karar gerekiyor. (a) Seçmeli satırlar snapshot'a 0 saatle girer ve okul hazırlıkta
+okutacaklarını açar. (b) Seçmeliler "okulun sunduğu havuz" olarak ayrı tutulur, şubeye
+atanınca yüke girer (Y-03'ün şube alanıyla birlikte). (c) Toplam, ortak ders + çizelgenin
+seçmeli kotası olarak hesaplanır, havuz ayrıca tutulur. Hangisi seçilirse seçilsin,
+**Altınay'ın kilitli snapshot'ı için ayrıca bir yol** gerekir (backfill ya da aktif sezonda
+seçmeli saatini düzenleme).
+
+### `TB-240` · Anadolu Lisesi'nin dört ortak dersi branşsız; atama alan dışı sayılıyor 🟠
+
+Altınay B4.3 ölçümünde çıktı (2026-09-22). `TB-238`'in "ayrı kalan" notuna ID verildi.
+Anadolu Lisesi çizelgesinde **15 ortak dersin 4'ünün**, **45 seçmelinin 12'sinin**
+`master.subject_branches`'te hiç bağı yok:
+
+- Ortak: **Birinci Yabancı Dil**, **Görsel Sanatlar/Müzik**, **T.C. İnkılap Tarihi ve
+  Atatürkçülük**, **Beden Eğitimi ve Spor/Görsel Sanatlar/Müzik**
+- Seçmeli: Seçmeli Birinci / İkinci Yabancı Dil, Kur'an-ı Kerim (+ Anlam Dünyası),
+  Peygamberimizin Hayatı, Temel Dinî Bilgiler, Klasik Ahlak Metinleri, Adabımuaşeret,
+  Proje Tasarımı ve Uygulamaları, Sanat Eğitimi, Spor Eğitimi, Hedef Temelli Destek Eğitimi
+
+Sebep ad eşleştirmesi: çizelge genel ad ("Birinci Yabancı Dil") ve birleşik hücre
+("Görsel Sanatlar/Müzik") kullanıyor, öğretmenlik alanları kararı somut adlar ("İngilizce",
+"Müzik", "Görsel Sanatlar") sayıyor. Branşların kendisi okulda var: Altınay'da 110 branş,
+İngilizce, Almanca, Müzik, Görsel Sanatlar, Tarih ve Rehberlik dahil.
+
+Zarar: `LoadSubjectBranchesAsync` bağsız dersi boş kümeyle döndürüyor. Bu yüzden İngilizce
+öğretmeni "Birinci Yabancı Dil"e, tarih öğretmeni İnkılap Tarihi'ne atanırken
+`SubjectBranchMatch` **OutOfField** diyor ve her atama gerekçe istiyor. Vekâlet önerisi de
+(`GetAvailableSubstitutes`) aynı dersler için alan içi aday bulamıyor. Engel değil ama her
+okulun her dil ve sanat dersinde yanlış uyarı üretir.
+
+⬜ Kapatma yolu: çizelge adı → karar adı eşleme tablosu (genel ad → somut diller, birleşik
+hücre → bileşen branşlar) içe aktarmada uygulanır. Karar gerekir: birleşik hücre
+"Görsel Sanatlar/Müzik" tek ders mi kalır, yoksa iki branşa birden mi bağlanır?
+
+### `TB-241` · Katalog ders adlarında kesme işaretinden sonra büyük harf: "Kur’An-I Kerim" ⚪
+
+Altınay B4.2 ölçümünde görüldü (2026-09-22). `master.subjects`'te iki satır bozuk:
+`Kur’An-I Kerim` ve `Kur’An-I Kerim’İn Anlam Dünyası`. Sebep:
+`MasterSubjectCode.cs:36` adı `TextInfo.ToTitleCase` ile yeniden yazıyor. Tipografik
+kesme (’) ve kısa çizgi kelime ayırıcı sayılıyor, ekler büyüyor (`-ı` → `-I`, `’in` → `’İn`).
+Aynı çağrı `MebProgramIdentity.ToTitleCase`'te de var. Ad, okulun ekranına ve karneye
+böyle iner. Branş eşleşmesini de zorlaştırması olası (`TB-240`; eşleşme adla yapılıyor).
+
+⬜ Kapatma yolu: kesme işareti ve kısa çizgiden sonra gelen eki küçük bırakan bir başlık
+dönüştürücü; mevcut iki satır için düzeltme.
+
+### `TB-242` · Kapasite sütunu, yükü olmayan öğretmende kişisel kapasiteyi göstermiyor 🟡
+
+Altınay B6 turunda kullanıcı sordu (2026-09-23): *"kapasite varsayılanı tek noktadan
+toplu değiştirilebiliyor mu, değilse sütun nereden besleniyor?"* Zincir ölçüldü:
+
+- **Varsayılan kodda sabit, iki kopya halinde:** sunucuda `TeacherWorkloadDefaults.WeeklyCapacity = 30`,
+  istemcide ayrıca `TEACHER_DEFAULT_CAPACITY = 30` (`packages/core/src/teachers/constants.ts`).
+  Okul ayarı yok, toplu uç yok. Tek yazma yolu öğretmen başına *Haftalık Kapasite* modalı
+  (`PUT persons/{id}/profiles/Teacher`, `weeklyCapacityHours`, 0 = varsayılana dön).
+  Varsayılanı değiştirmek dağıtım demek ve **bütün okulları** birden değiştirir.
+- **Sütunun kaynağı** `GET teachers/workload`: satır kapasitesi = profildeki özel değer ?? 30.
+  İstemci (`packages/api/src/teachers/endpoints.ts` `toTeacher`) `weeklyCapacity`'yi
+  **yalnız bu listeden** okuyor.
+
+**Kusur:** yük listesi yalnız yükü olan öğretmenleri taşıyor (`teachingByTeacher ∪ nonTeaching`).
+Yerleşimi, nöbeti ve kulübü olmayan öğretmen listede yok. İstemci ona `weeklyCapacity = null`
+veriyor, hücre de istemci sabitine düşüp **"30 · Vars."** yazıyor (2026-09-23'ten beri "40 · Vars.", `TB-243`). Profilde 20 saat özel
+kapasite girilmiş olsa bile ekran onu göstermiyor. Modal da aynı `null`'dan başladığı için
+"Özel" seçimini kaybediyor. Altınay'da bugün 13 öğretmenin hepsi bu durumda (sezon başı,
+program yok): idare kapasiteleri girse ekranda hiçbirini göremez.
+
+İkinci kopya da risk taşıyor: sunucu varsayılanı değişirse istemci sabiti eski değeri
+göstermeye devam eder. Özet DTO zaten `capacity` (varsayılan) taşıyor; istemci onu
+`defaultCapacity` olarak okuyor ama hücre ve yük çubuğu sabiti kullanıyor.
+
+⬜ Kapatma yolu: kişisel kapasite, yükten bağımsız olarak öğretmen satırına girsin. İki seçenek:
+yük listesi bütün kadroyu taşır, ya da kapasite kişi DTO'sundan okunur (`ProfileDto` onu
+zaten taşıyor). Hücre de sabite değil, özetin varsayılanına düşsün.
+**Karar gerekiyor:** okul düzeyinde bir kapasite varsayılanı (okul ayarı) istenirse bu ayrı bir
+iş olur → `TB-243`. Bugün "tek noktadan toplu değiştirme" üründe yok.
+
+### `B-55` · Mobil davet kabulünde öğretmen branş adımı yok 🟠
+
+2026-09-23'te davet kabulüne öğretmen branşı eklendi (web, oksis-api + oksis-ui, commit
+bekliyor). Kural sunucuda: branşsız öğretmen profili taşıyan davet branş seçilmeden kabul
+edilmiyor (`USERS_INVITATION_TEACHER_BRANCH_REQUIRED`, 400). Mobil kabul ekranı
+(`apps/mobile/src/features/invitations/components/invite-accept-screen.tsx`) bu adımı
+**taşımıyor** ve `teacherBranchId` göndermiyor. Öğretmen davetini mobilden kabul eden
+herkes genel hata kartına düşer. Veli, öğrenci ve personel davetleri etkilenmiyor.
+
+⬜ Kapatma yolu: web'deki `BranchPicker`'ın mobil karşılığı: 1. adımda aranabilir liste,
+önizlemedeki `requiresTeacherBranch` ve `branchOptions` alanlarıyla.
+
+### `D-24` · Davet ekranı okulun resmî adını gösteriyor, görünen adını değil ⚪
+
+Altınay B6 turunda görüldü (2026-09-23). Davet önizlemesinde "Okul" satırı **"Altınay Eğitim
+Kurumları"** diyor (`School.Name`). Okulun kendi paneli, sidebar ve künye ise görünen adı
+**"Özel Altınay Anadolu Lisesi"** kullanıyor. `GetInvitationByTokenQueryHandler` ayarlardaki
+`DisplayName`'i okumuyor. Aynı kurum adı altında iki okul olan Altınay'da davetli, hangi okula
+katıldığını bu satırdan ayırt edemiyor (`ALTINAY-SBL` da "Altınay Eğitim Kurumları").
+
+⬜ Kapatma yolu: önizleme görünen adı döner (boşsa resmî ada düşer). Logo sorgusu aynı
+ayar satırını zaten okuyor.
+
+### `B-56` · Kayıt sihirbazında "Nakil Gelen" kaydı hiç yapılamıyordu 🔴
+
+Altınay B7 turunda ölçüldü (2026-09-23). Ekran kayıt türünü `"Transfer"` gönderiyordu, backend
+enum'u ise `EnrollmentType.TransferIn`. Gövde çözümlemesinde 400 dönüyordu (`$.type` çevrilemedi),
+yani ekrandan yapılan **hiçbir nakil kaydı** sunucuya ulaşmıyordu. Canlı istekle ölçüldü.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** `packages/api/src/students/endpoints.ts` eşlemesi
+`TransferIn` oldu; gövde testi kilitliyor. Altınay'da 5 nakil kaydı ekrandan yapıldı, geldiği okul
+yazıldı.
+
+### `B-57` · Kayıt sihirbazı öğrenci e-postası sormuyor; gövdeye sabit `null` gidiyordu 🟠
+
+Altınay B7 (2026-09-23). `EnrollStudentCommand.Email` backend'de vardı ve kişiye yazılıyordu;
+ekranda alan yoktu ve istemci `email: null` gönderiyordu. Öğrenci yalnız öğrenci numarasıyla
+giriş yapabiliyordu.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** 2. adımda isteğe bağlı *E-posta* alanı (biçim
+denetimi `isValidOptionalEmail`, sunucu da `Email.Create` ile denetliyor), özette görünüyor,
+gövdeye gidiyor. 85 öğrenci `ad.soyad@altinay.test` ile kaydedildi ve bu adresle giriş yaptı.
+
+### `V-04` · Öğrenci numarası: öneksiz okulda elle girişte "en az 100" şartı; sayaç elle girilen numarayı atlamıyor 🟠
+
+Altınay B7 (2026-09-23). Rapor e-Okul numarasıyla (1–222) girişi öneriyordu; numarası 100'ün
+altında olan ilk öğrenci `students.errors.student-number-invalid-format` ile reddedildi.
+`StudentNumberValidator`: ön ek yoksa değer ≥ 100. Gerekçe belgelenmemiş; domain notu yalnız
+kuralı söylüyor (sayacın 100'den başlamasının yansıması gibi).
+İkinci ve daha sinsi kusur: `StudentNumberGenerator` sayacı 100'den artırıyor ve **elle
+girilmiş numaraları atlamıyor**. Elle 102 girilmiş bir okulda sayaç 102'ye geldiğinde kayıt
+tekillik indeksine çarpar ve `duplicate-enrollment` ile düşer. Yani kural ters korumadır: güvenli
+olan <100 numaraları reddediyor, sayaçla çakışabilecek ≥100 numaraları kabul ediyor.
+
+**Kullanıcı kararı (2026-09-23):** öğrenci numarası **her zaman otomatik** üretilir; sihirbaz
+numara **sormaz**. Uygulandı: alan formdan kalktı, gövde `studentNumber: null` gönderiyor (test).
+Altınay'ın 85 öğrencisi 100–184 aralığında numara aldı; e-Okul numarası OKSİS'te tutulmuyor.
+⬜ **Açık kalan:** Excel içe aktarma (`ImportColumns` `OgrenciNo`) elle numara yolunu hâlâ açık
+tutuyor ve sayaç çakışması orada yaşıyor. Karar gerekiyor: içe aktarmada da numara kalkar mı,
+yoksa sayaç dolu numarayı atlar mı? Domain notu (`Öğrenci Numarası.md`) karara göre güncellenmeli.
+
+### `B-58` · Kayıt sihirbazıyla eklenen veliler hiç davet alamıyordu 🔴
+
+Altınay B7 (2026-09-23). Ekran "Davetli" gösterdi ama Mailpit'e e-posta gelmedi, davet tablosunda
+satır yoktu. API günlüğü: `Veli daveti oluşturulamadı … USERS_INVITATION_PERSON_INVALID_STATE`.
+Kök neden: `EnrollStudentCommandHandler` yeni veliyi `Activate()` ile **Active** doğuruyordu;
+`InvitationCreationHelper` yalnız `Draft/Invited/Suspended` kişiyi davet edebiliyor. Sonuç:
+sihirbazla kaydedilen **hiçbir veli** davet almıyor, hesap açamıyor, velinin uygulaması hiç
+kullanılamıyordu. Kabul akışı da (`person.Activate()` yalnız Draft/Invited'dan) aynı veliyi
+kabul edemezdi.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** Yeni veli Draft doğuyor, davet `Invited`'e, kabul
+`Active`'e taşıyor (Kullanıcılar modülüyle aynı yaşam döngüsü). Entegrasyon testi gerçek SQL'de
+zinciri kilitliyor (`Enroll_creates_new_guardian_as_draft_so_it_can_be_invited`).
+Altınay'da ilk öğrencinin eski hatayla Active doğan iki velisi SQL ile Draft'a çekilip ürünün
+davet ucuyla davet edildi. Sonrasında **135 velinin 135'i** davet aldı ve Mailpit'teki
+bağlantıdan kabul etti.
+⬜ Başka okullarda eski hatayla Active doğmuş hesapsız veliler varsa onarım gerekir (seed okulları
+ölçülmedi).
+
+### `B-59` · Kişi aramasında ad-soyad birlikte yazılınca sonuç boş dönüyordu 🟠
+
+Altınay B7 (2026-09-23). Kardeş kaydında velinin tam adıyla ("Ad Soyad") arama yapılınca veli bulunamadı.
+`ListPersonsQueryHandler` adı ve soyadı **ayrı ayrı** eşliyordu: yalnız ad ya da yalnız soyad buluyor,
+tam ad hiçbir kolonda geçmediği için boş dönüyordu. Bu uç Kullanıcılar, Öğrenciler,
+Veliler listelerini ve sihirbazın veli havuzunu besliyor; yani ad-soyadla her arama boştu.
+Veli adıyla öğrenci bulma alt sorgusu da aynı kusuru taşıyordu.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** Birleşik ad eşlemesi eklendi (iki yerde); gerçek
+SQL entegrasyon testi (`Search_MatchesFullName_AndParentFullName_OnRealSqlServerAsync`).
+Altı kardeş ailesinin ikinci çocuğu mevcut veliye aramayla bağlandı.
+
+### `B-60` · Kayıt sihirbazında "Anneanne" ve "Babaanne" seçilince kayıt 400 alıyordu 🟠
+
+Altınay B7 (2026-09-23). Sihirbaz iki seçeneği `Grandparent` diye gönderiyordu. Backend
+`RelationType` enum'unda bu üye yok (Mother/Father/Guardian/Other, DB CHECK kısıtı da bu dördü).
+Gövde çözümlemesi 400 veriyordu. Veliler modülü aynı konuyu zaten karara bağlamıştı:
+"Grandparent gerçek değil, Other'a katlanır" (`parents/constants.ts`).
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** İki seçenek `Other`'a gidiyor; her seçeneğin gerçek
+bir backend üyesine eşlendiğini kilitleyen test (`students/constants.test.ts`).
+⚪ Not: büyükanne "Diğer" olarak saklanıyor; ayrım gerekirse enum + göç gerekir (karar).
+
+### `B-61` · İlk girişte zorunlu parola değişimi yer tutucuydu: parola değişmiyor, herkes yönetici paneline gidiyordu 🔴
+
+Altınay B7 (2026-09-23). Giriş ekranındaki `ForcePasswordView` hiçbir uç çağırmıyordu:
+`window.setTimeout(onDone, 800)`. Sonra `setRedirectRole("admin")` ile herkesi yönetici rotasına
+yönlendiriyordu. Etkisi: kayıtla açılan her öğrenci hesabı geçici parolada kalıyor, her girişte
+aynı ekranı görüyor ve parolasını değiştirdiğini sanıyor; üstelik öğrenci yönetici paneline
+yönleniyordu. Backend ucu (`POST /auth/account/change-password`) hazırdı ve bağlanmamıştı.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** Görünüm uca bağlandı (`changeAccountPassword`,
+`useChangeAccountPassword`); sunucu refresh token'ları iptal ettiği için yeni parolayla yeniden
+giriş yapılıyor ve yönlendirme o girişin gerçek profilinden çözülüyor; hata bandı eklendi.
+Canlı ölçüm: yeni parolayla giriş `requirePasswordChange=false`, profil `Student`; eski geçici
+parola `invalid-credentials`.
+
+### `B-62` · Nakil öğrencinin devreden devamsızlığı hiçbir yere yazılmıyor 🟡
+
+Altınay B7 (2026-09-23). Sihirbaz nakil kaydında *Özürsüz/Özürlü Gün Sayısı* soruyor ve özette
+gösteriyor, ama değerler gövdeye **hiç konmuyor**. Altınay'daki 5 nakil kaydından sonra
+`academic.absence_carry_overs` = 0 satır. Backend'de ayrı bir devir ucu var
+(`POST attendance/carry-overs`, `attendance.manage`) ve kendi yorumu "kayıt akışına henüz
+bağlanmadı" diyor.
+Model de uyuşmuyor: sihirbaz **özürsüz/özürlü gün**, devir kaydı **devamsızlık + geç kalma
+sayısı** tutuyor.
+
+⬜ Karar gerekiyor: (a) sihirbaz alanları devir ucuna bağlanır (model uyumu kararıyla birlikte);
+(b) alanlar kaldırılır ve devir ayrı ekrandan girilir. Bugün kullanıcıya veri alıyormuş gibi
+görünüp sessizce atıyor.
+
+### `B-63` · Sihirbazdaki "Birincil veli mi?" seçimi sunucuya gitmiyor 🟠
+
+Altınay B7 (2026-09-23). Veli adımında iki ayrı kavram var: *Birincil veli mi? (Evet/Hayır)* ve
+yetki olarak *Birincil İletişim*. `toGuardianInput` yalnız yetkiyi (`isPrimaryContact`)
+gönderiyor; "Birincil veli" seçimi yalnız ekranda yaşıyor (rozet ve özet). Sonuç ölçüldü: 85
+öğrencinin **33'ünde** birincil iletişim ya **0** ya **2** (21 kayıtta Birincil seçilen veli
+yetkiyi taşımıyor, 26 kayıtta iki velinin ikisi de taşıyor). Listedeki "birincil veli" sütunu bu
+yetkiden besleniyor.
+
+⬜ Kapatma yolu: iki kavram birleşir. "Birincil veli" seçimi `isPrimaryContact`'i belirler ve
+öğrenci başına tekillik sunucuda uygulanır. Ya da biri kaldırılır (karar).
+
+### `D-25` · Öğrencinin ilk girişi "KVKK onayınız geri çekilmiş, yönetime başvurun" diyor 🟡
+
+Altınay B7 (2026-09-23). Kayıt komutu öğrenci için rıza kaydı açmıyor. Öğrenci ilk girişte
+rıza ekranına düşüyor ve ekran *"onay geri çekilmiş ya da metin güncellenmiş; okul yönetimine
+başvurun"* diyor. Oysa öğrenci hiç onay vermedi ve aynı ekrandaki *"Okudum, kabul ediyorum"*
+düğmesi sorunu kendisi çözüyor; 85 öğrencinin hepsi bu yoldan geçti.
+Ürün sorusu da var: reşit olmayan öğrencinin KVKK rızasını kim verir (veli mi, öğrenci mi)?
+
+⬜ Kapatma yolu: ilk onay ile geri çekilmiş onay ayrı metinle anlatılır; rızanın sahibi kararı.
+
+### `B-64` · Görevlendirmeler: hiçbir ders seçmeli değil — "Seçmeli" süzgeci hep boş, seçmeliler "Zorunlu" rozetiyle 🟠
+
+Altınay B9.2 genel kontrolü (2026-09-23). *Derslere göre* görünümde 65 dersin **hepsi**
+"ZORUNLU" grubunda; *Seçmeli Birinci Yabancı Dil*, *Kur'an-ı Kerim*, *Proje Tasarımı ve
+Uygulamaları* gibi seçmeliler de "Zorunlu" rozeti taşıyor ve *Seçmeli* süzgeci boş dönüyor.
+Ölçüm: `school.subjects.is_elective` Altınay'ın 67 dersinin hepsinde 0, `master.subjects`'te de
+0. MEB kaynaklı katalog seçmeliliği dersin kendisine değil **çizelge satırına** yazıyor
+(`curriculum_entries.course_type` Common/Elective; `TB-211` gereği aynı ders bir sınıfta ortak,
+başka sınıfta seçmeli olabiliyor). Görevlendirme uçları (`assignments/courses`, `by-teacher`)
+ise dersin `IsElective` bayrağını okuyor.
+
+⬜ Kapatma yolu: ortak/seçmeli bilgisi sezonun müfredatından türetilir (kademeye göre; iki türde
+de geçen ders ikisini de gösterir). Dersin `IsElective` bayrağı MEB kataloğunda anlamını
+yitirdi — kaldırılması ya da türetilmesi kararı.
+
+✅ **Kapandı — 2026-09-23 (kullanıcı onayı, B yolu; commit bekliyor).**
+- **Tek çözücü** `SessionCourseTypes` (Application › Curriculum): sezonun müfredat satırlarından
+  (`SessionCurriculum.LoadItemsAsync` — hazırlıkta taslak, başlamış sezonda snapshot) ve satırın
+  kaynak çizelge türünden ders başına **Common / Elective / Both** üretir. Saati 0 olan satır da
+  türünü taşır. Okulun kataloğunda duran ama sezonun müfredatında olmayan MEB dersi türünü
+  **yayımlanmış** çizelgelerin tamamından alır (ortak çeviri yardımcısıyla, `TB-191`). Yalnız
+  okulun kendi eklediği ders dersin bayrağına düşer.
+- **Sözleşme:** görevlendirme DTO'larında `bool IsElective` → `string CourseType`
+  (`CourseCoverageDto`, `CourseAssignmentsDto`, `TaughtCourseCardDto`); `SubjectDto`'ya
+  `CourseType` eklendi. Aday listesinin alt satırı da çözücüden ("Zorunlu + Seçmeli" dahil).
+- **Ekran:** Görevlendirmeler'de gruplama/rozet/süzgeç `courseType` okuyor. "İkisi" olan ders
+  ayrı grupta ve **iki süzgeçte de** görünüyor. Ders Kataloğu'nda rozet türden geliyor; çekirdek
+  derste kilitli anahtar yerine salt okunur tür rozeti (kullanıcı kararı: anahtar yalnız okulun
+  kendi dersinde; domain kilidi `Subject.MasterSourced.Immutable` zaten vardı).
+- **Ölçüm (Altınay, canlı):** 65 ders → 48 seçmeli, 17 ortak (önce 65'i de "Zorunlu"). "Seçmeli"
+  süzgeci 48, "Zorunlu" 17 getiriyor. İngilizce öğretmeninin kartları "Birinci Yabancı Dil · Zorunlu",
+  "Seçmeli Birinci Yabancı Dil · Seçmeli". Katalogda 48 "Seçmeli" rozeti.
+- **Testler:** `SessionCourseTypesTests` 4 senaryo (ortak/seçmeli/ikisi, saat 0, kendi ders
+  bayrağı, müfredat dışı MEB dersi yayımlanmış çizelgeden; taslak sürüm yok sayılır). Core
+  `logic.test.ts` (gruplama, "ikisi" iki süzgeçte). Birim takımlarının tamamı ve bekçiler 53/53
+  yeşil. `SubjectTeacherAssignmentTests`'in 17 kırmızısı HEAD'de de aynı 17 (ayrı çalışma
+  kopyasında ölçüldü) — `TB-231` ailesi, bu değişiklikten değil.
+➕ Mimari bekçi (`SubjectCatalogTranslationTests`) ilk sürümü yakaladı: çizelge satırı kimliğiyle
+okuma çevirisiz görünüyordu. İkinci kaynak eklenince dosya ortak çeviri yardımcısını kullanır hâle
+geldi ve muafiyet gerekmedi.
+
+### `B-65` · "Önceki Sezondan Kopyala" kaynak sezonu yanlış seçebilir (gizli) 🟡
+
+Altınay B9.2 kod kontrolü (2026-09-23). `teacher-assignments-page.tsx`:
+`prevSeason = seasons.find(s => s.id !== current && !s.isArchived)`. Kaynak "arşivlenmemiş
+başka **herhangi bir** sezon"; tarih sırası ya da durum denetlenmiyor. Bugün Altınay'da tek sezon
+olduğu için düğme görünmüyor. Ama gelecek yılın **taslak** (Setup) sezonu açıldığı an, aktif
+sezondayken "önceki sezondan kopyala" **gelecek sezonu** kaynak alır ve boş ya da yarım taslağı
+aktif sezona kopyalamayı önerir. Ters yönde de, taslak sezonda bakarken aktif sezonun yerine
+başka bir taslak seçilebilir.
+
+⬜ Kapatma yolu: kaynak, hedeften önce başlayan en yakın sezon olarak (başlangıç tarihine göre)
+seçilir; tercihen sunucu belirler.
+
+### `D-26` · "Görevi kapat (devret)" onay istemiyor ve gerekçeyi sabit metinle yazıyor 🟡
+
+Altınay B9.2 (2026-09-23). Satır menüsündeki kırmızı *Görevi kapat (devret)* tek tıkla
+çalışıyor: onay penceresi yok, kapatma gerekçesi her zaman sabit metin (*"Yıl içi kapatıldı —
+görev devredilebilir."*). Kapatılan görev iz kaydına düşüyor ve geri açma yolu yok. Yanlış
+satıra basan idareci görevi geri alamıyor, iz kaydında da gerçek sebep yazmıyor.
+
+⬜ Kapatma yolu: onay penceresi + gerekçe alanı (sabit metin öneri olarak kalabilir).
+
+### `D-27` · Görevlendirme çekmecesi kayıt hatasında kapanıyor, hata başarı bildirimi gibi görünüyor 🟡
+
+Altınay B9.2 kod kontrolü (2026-09-23). `drawer.tsx` `save()` hata kolunda `onSaved(mutationErrorDesc(err))`
+çağırıyor. Sayfa bu çağrıda çekmeceyi kapatıp mesajı başarı bildirimiyle aynı yerde gösteriyor.
+Kullanıcı seçimini ve yazdığı gerekçeyi kaybediyor, hatayı başarı sanabiliyor.
+Kardeşi `CopyModal`: hata kolu sunucunun gerekçesini yutup sabit *"Kopyalama başarısız oldu."*
+yazıyor (`X-01` kalıbı).
+
+⬜ Kapatma yolu: hata çekmecenin içinde gösterilir, çekmece açık kalır; kopyalamada sunucu cümlesi
+geçirilir.
+
+### `D-28` · Arşiv sezonda Görevlendirmeler'de satır menüsü tamamen gizleniyor ⚪
+
+Altınay B9.2 kod kontrolü (2026-09-23). `detail.tsx`'te `RowMenu` bütünüyle `h.canWrite` koşuluna
+bağlı. Arşiv sezonda salt-okur ekranda yalnız *Görevi kapat* değil, **gezinme** öğeleri de
+(*Öğretmen profilini aç*, *Dersi aç*) kayboluyor. Okuma yetkisi olan kullanıcı eksenler arası
+geçiş yapamıyor.
+
+⬜ Kapatma yolu: yalnız yazma öğesi koşula bağlanır.
+
+### `TB-244` · Logosu olmayan okulda her sayfa açılışında logo ucu 404 dönüyor ⚪
+
+Altınay B7–B9 turlarında her sayfada ölçüldü (2026-09-23): `GET /api/v1/public/schools/{id}/logo` →
+404, konsolda *Failed to load resource*. Altınay'ın logosu yok; istemci logonun varlığını
+bilmeden isteği atıyor. Zararsız ama gerçek hataları konsolda gürültüye gömüyor (B7 turunda
+403'ler ayıklanırken bu satır da her seferinde çıktı).
+
+⬜ Kapatma yolu: okul ayarı logo yokken URL üretmez (istemci yer tutucuya düşer) ya da uç 204
+döner.
+
+### `D-29` · Katalog satırındaki simge düğmelerinin adı yok; pasife alma tek tık ve onaysız 🟡
+
+Altınay `B-64` ekran ölçümünde yaşandı (2026-09-23). *Ayarlar › Akademik Yapı › Ders Kataloğu*
+satırında iki simge düğmesi var (kalem = düzenle, güç = aktif/pasif). İkisinin de erişilebilir adı
+(`aria-label`/`title`) yok; ad yalnız fareyle üzerine gelince çıkan ipucunda. Pasife alma da onay
+istemiyor. Otomasyon "satırın son düğmesi = düzenle" varsayımıyla bastı ve **Kur'an-ı Kerim**
+dersini pasife aldı. Aynı düğmeyle hemen geri alındı; dersin görevlendirmesi yoktu, başka veri
+etkilenmedi (DB ile doğrulandı). Ekran okuyucu kullanıcısı iki düğmeyi ayırt edemez; fareyle yanlış
+tıklayan idareci ise dersi uyarısız pasife alır.
+Aynı kalıp muhtemelen Branş ve Sınav Türü kataloglarında da var (ölçülmedi).
+
+⬜ Kapatma yolu: simge düğmelerine ad; pasife alma için onay (dersin görevlendirme/program
+kullanımı varsa onu da söyleyerek).
+
+### `E-30` · Öğrencinin pansiyon (yatılı) durumu üründe tutulmuyor 🟡
+
+Altınay B7 (2026-09-23). e-Okul listesinde 12/A'daki bir öğrenci **Yatılı** işaretli. OKSİS'te
+bu bilginin karşılığı yok: sihirbazda alan yok, öğrenci profilinde ve kayıtta kolon yok, kodda
+"pansiyon/yatılı/boarding" kavramı hiç geçmiyor. Öğrenci pansiyon bilgisi olmadan kaydedildi.
+
+⬜ Karar gerekiyor: kapsam içi mi? İçindeyse öğrenci kaydında (sezonluk) bir alan olur; yoklama,
+nöbet ve veli bildirimleri ileride bunu okuyabilir.
+
+### `TB-243` · Varsayılan haftalık kapasite koda gömülü; okul ayarından, sınıf ve branş öğretmeni için ayrı girilmeli 🟠
+
+`TB-242` ölçümünden doğdu, kullanıcı kararı (2026-09-23): *"varsayılan kapasite ayarlardan
+girilmeli; öğretmen bazlı güncelleme mevcuttaki gibi devam etmeli; ayarlarda sınıf öğretmeni
+ve branş öğretmeni için farklı değer girilebilmeli."*
+
+**Bugün:** varsayılan iki sabitte duruyor. Sunucuda `TeacherWorkloadDefaults.WeeklyCapacity`
+(yük yüzdesinin paydası, üretimin yumuşak kısıtı `CompetencyAssignmentSource`, yayın
+önizlemesindeki aşım uyarısı `PublishReadiness`), istemcide `TEACHER_DEFAULT_CAPACITY`.
+Değiştirmek dağıtım gerektiriyor ve **bütün okulları** birden etkiliyor. Okul kendi
+varsayılanını belirleyemiyor.
+
+**Geçici adım (2026-09-23, kullanıcı kararı):** iki sabit **30 → 40** yapıldı (oksis-api +
+oksis-ui, commit bekliyor). 40, domain'in üst sınırı (`MaxWeeklyCapacityHours`) ile aynı.
+Bu yüzden özel değer girilmemiş hiçbir öğretmen artık "aşırı yüklü" işaretlenemez: uyarı
+ancak 40'ı geçen yükte çıkar. Kapasite modalındaki MEB hazır değerleri 30'da kalıyor
+(sınıf öğretmeni 18 + 12, branş öğretmeni 15 + 15), yani varsayılan artık MEB hazır
+değerlerinden yüksek.
+Etkilenen testler 40 tabanına çevrildi. Yüzdeler korunacak şekilde saatler ölçeklendi,
+dağıtım testi varsayılanın yarısından türetildi.
+
+**İstenen:**
+1. Okul ayarlarında (*Ayarlar › Akademik Yapı* ya da öğretmen ayarları) **iki** varsayılan
+   alan: **sınıf öğretmeni** ve **branş öğretmeni** haftalık kapasitesi.
+2. Öğretmen başına özel kapasite (`TeacherProfile.WeeklyCapacityHours`, *Haftalık Kapasite*
+   modalı) **olduğu gibi** kalır ve varsayılanı ezer. Özel değeri olmayan öğretmen
+   türüne göre okulun varsayılanını alır.
+3. Üç tüketici (yük, üretim, yayın önizlemesi) ve istemci aynı çözücüden okur. İstemcinin
+   ayrı sabiti kalkar ya da yalnız sunucu cevabı gelmeden önceki yer tutucu olur (`TB-242`'nin
+   ikinci ayağı).
+
+**Karar gerekiyor:**
+- **"Sınıf öğretmeni" hangi anlamda?** (a) MEB'in *sınıf öğretmeni* **branşı**
+  (ilkokul, modaldaki hazır değerle aynı anlam) ya da (b) şubenin **rehber/sınıf
+  öğretmenliği görevi** (lisede bir şubenin sınıf öğretmeni gibi). Altınay
+  bir lise, orada ilkokul anlamında sınıf öğretmeni yok. (b) seçilirse varsayılan sezona
+  ve homeroom atamasına bağlı olur ve atama değişince öğretmenin kapasitesi de değişir.
+- Varsayılanlar sezon bazlı mı, okul bazlı kalıcı mı?
+
+**Bağlı:** `TB-242` (sütun kişisel kapasiteyi yükü olmayan öğretmende göstermiyor) · `K-13`
+(kişisel kapasite kararı).
+
 ### `TB-237` · Branş kataloğu boş: seed silindi, yerine geçecek yüzey yazılmadı 🔴
 
 Kullanıcı sordu (2026-09-22): *"Merkez platform sadece dersleri getirmez, branşları getirmek
@@ -847,7 +1300,7 @@ satır ve içinde "Bilgisi" ile kesik "Din Kültürü ve Ahlâk" var, üç gerç
 Yeniden işlemek eksikleri ekler ama **çöp satırları silmez** — içe aktarma idempotent ekleme
 yapar, temizlik yapmaz. Bayat satırların ne olacağı karar ister.
 
-⬜ **Ayrı kalan:** ad eşleştirme kuralları (`TB-239` değil, bu maddenin dışında). Okulun 24
+⬜ **Ayrı kalan:** ad eşleştirme kuralları (`TB-240`, bu maddenin dışında). Okulun 24
 branşsız dersinin bir kısmı bu kusurdan değil: çizelge birleşik hücre ("Beden Eğitimi ve
 Spor/Görsel Sanatlar/Müzik"), seviye öneki ("Hazırlık Sınıfı Matematik") ve genel ad
 ("Birinci Yabancı Dil") kullanıyor; karar bunları ayrı/düz/somut adlarla sayıyor.
@@ -3161,6 +3614,30 @@ kararıyla (`TB-168`/`TB-173`) aynı turda ele alınmalı.
 
 ---
 
+
+➕ **Genişleme — öğrenci ve veli de aynı panoya düşüyor (Altınay B7, 2026-09-23).** Kullanıcı
+öğrenci girişinde *"Bu işlem için yetkiniz yok"* uyarısını ekran görüntüsüyle bildirdi. Ağ
+trafiği kaydedilerek üç rolle ölçüldü (Playwright, `/login` → yönlendirme):
+
+| Rol | Vardığı adres | 403 dönen uçlar |
+|---|---|---|
+| Öğrenci | `/` (yönetici panosu) | `academic-sessions/current`, `academic-sessions`, `academic-sessions/terms`, `users/persons/student-stats`, `users/persons/teacher-stats`, `grades/summary`, `attendance/board` |
+| Veli | `/` | `student-stats`, `teacher-stats`, `grades/summary`, `attendance/board`, `attendance/risk` |
+| Öğretmen | `/` | aynı beş uç (ilk ölçümle aynı) |
+
+İki yeni ayak:
+- **Öğrenci aktif sezonu bile okuyamıyor:** `academic-sessions/current` öğrenciye 403. Üst
+  çubuğun sezon seçicisi ve sezona bağlı her ekran öğrencide boş kalır. Uyarıyı büyük olasılıkla
+  bu üretiyor (yalnız öğrencide görülüyor).
+- **Giriş ekranı rolü söylüyor ama yönlendirmiyor:** `RedirectView` her rolü `router.push("/")`
+  ile aynı yere gönderiyor; ekranda ise *"Öğrenci portalına yönlendiriliyorsunuz"* yazıyor. Web'de
+  öğrenci ve veli portalı yok (uygulama gruplarında yalnız `(dashboard)`, `(auth)`, `(platform)`).
+
+Etki: 85 öğrenci ve 135 velinin her biri ilk girişte yönetici panosunu ve yetki hatalarını
+görüyor. Öncelik bu yüzden 🟠'de kalıyor ama kapsamı öğretmenden **üç role** çıktı.
+⬜ Karar gerekiyor: web'de öğrenci/veli yüzeyi olacak mı (yoksa bu roller yalnız mobil mi
+kullanılacak ve web girişi onları mobil uygulamaya yönlendirecek mi)? Pano rol dalı ve
+öğrencinin sezon okuma izni bu karara bağlı.
 ### `D-23` · Kullanıcılar ekranı idari personelin bağlı profilini "—" gösteriyor ⚪
 
 **Ölçüm (Altınay, 2026-09-20):** 14 hesaplık listede müdür ve müdür yardımcısının **Bağlı
