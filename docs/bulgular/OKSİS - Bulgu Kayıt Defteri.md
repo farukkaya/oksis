@@ -43,8 +43,10 @@
 > haftalık saat yüzeyi hiç yok — 13 uç, sıfır çağıran) → §54: Akademik › Müfredat ekranı
 > yazıldı, 13 ucun tamamı çağıran kazandı, canlı veride 162 satır doğrulandı.
 > Açık kalan: `TB-234` (müfredatı boş doğan sezondan çıkış yolu 🟠) — hazırlıktaki sezon
-> ayağı `TB-232` ile kurtarıldı, **başlamış sezonunki açık**.
-> Defter **102** (🔴 4 · 🟠 27 · 🟡 40 · ⚪🟢 31).
+> ayağı `TB-232` ile kurtarıldı, **başlamış sezonunki açık**. Yeni ekranın ilk kullanıcı
+> sorusu bir madde daha açtı: `TB-235` (program değişimi okul kapsamlı tercihi bırakıyor;
+> hazırlık açık ama müfredatsız kalıyor 🟠).
+> Defter **103** (🔴 4 · 🟠 28 · 🟡 40 · ⚪🟢 31).
 >
 > **Önceki ekleme:** 2026-09-20 (Altınay `B6` kadro turu — iki madde) — 11 öğretmen ürün
 > ekranlarından davet edilip kabul edildi; kadro 14'e tamamlandı. `B-54` (öğretmen panosu
@@ -164,7 +166,7 @@
 - `TB-##` → Teknik borç (kod taramasından)
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 
-**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-235` · `E-30` · `ENG-04`
+**Sıradaki boş ID:** `B-55` · `D-24` · `V-04` · `X-22` · `TB-236` · `E-30` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -726,6 +728,46 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
+
+### `TB-235` · Program değişimi okul kapsamlı tercihi bırakıyor; hazırlık açık ama müfredatsız kalıyor 🟠
+
+`TB-232` ekranı yazıldıktan sonra kullanıcının sorusuyla ortaya çıktı: *"Eğitim programı
+düğmesine basıp Anadolu Lisesi'ni seçersem ne olur?"*
+
+**İki ayrı tablo var ve uç yalnız birini yazıyor:**
+
+| Tablo | Kapsam | Neyi belirler | `PUT curriculum/programs` yazar mı |
+|---|---|---|---|
+| `academic.school_academic_programs` | **sezon** | taslakların bağlandığı müfredat sürümü | ✅ evet |
+| `academic.school_education_programs` | **okul** | hazırlık seviyesinin açık olup olmadığı | ❌ hayır |
+
+Hazırlık seviyesi `PreparatoryGradeLevelResolver` ile okul kapsamlı tercihten türetilir
+(`TB-222`). Sezon kapsamlı programı hazırlıksız bir programa çevirmek, okul kapsamlı satıra
+dokunmaz — seviye açık kalır, ama yeni programın çizelgesinde o seviyeye ait satır yoktur.
+
+**Altınay üzerinde ölçüldü** (2026-2027 hazırlıktaki sezon). Anadolu Lisesi seçilseydi:
+
+```
+HAZIRLIK  19 ders / 51 saat  →   0 ders / 0 saat   ← seviye açık kalır
+9         29 / 53            →  32 / 57
+10        37 / 62            →  39 / 65
+11        42 / 67            →  48 / 91
+12        35 / 65            →  42 / 86
+```
+
+Bu tam olarak `PreparatoryGradeLevelResolver`'ın kendi doc yorumunun tehlikeli dediği hâl:
+*"hazırlık şubesi haftada sıfır saat gerektiren bir şube olur ve ders programı ekranı onu
+eksiksiz sayar. Hata vermez; yalnız yanlış olur."* Kural yazılmış, ama yalnız seviye kümesi
+güncellenirken çağrılıyor; program sezon üzerinden değişince çağrılmıyor.
+
+**Geri alınabilir ama pencere açık:** override'lar silinmediği için eski program yeniden
+seçilirse saatler geri gelir. Sezon arada aktifleştirilirse boş hazırlık **kalıcı olarak**
+snapshot'a donar — aktivasyon tek yönlüdür.
+
+⬜ Kararı gerektiren asıl soru: sezon kapsamlı program değişimi okul kapsamlı tercihi de
+güncellemeli mi, yoksa hazırlığı olan bir okula hazırlıksız program hiç sunulmamalı mı?
+Ek olarak uç, program seçeneği başına **seviye kapsamını** dönmüyor; ekran bu yüzden
+"hazırlık boşalacak" uyarısını veremiyor, yalnız genel uyarı yazabiliyor.
 
 ### `TB-234` · Müfredatı boş doğan sezondan ürün içinde çıkış yolu yok 🟠
 
