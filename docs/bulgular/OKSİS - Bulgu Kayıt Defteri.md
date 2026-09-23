@@ -82,6 +82,10 @@
 > **Altınay B6.2 sorusu (2026-09-23):** yan branşı yazan hiçbir yol yok, okuyan dört özellik boş
 > veriyle çalışıyor → `TB-245` 🟠 açıldı.
 >
+> **Branş–ders uygunluğu (2026-09-23):** eğitimci geri bildirimiyle yan branş kavramı **kaldırıldı**
+> (`TB-245` bu yolla kapandı, arşiv §59). Okul MEB eşleşmesinin üstüne kalıcı branş–ders kuralı
+> ekleyebiliyor; vekil önerisi iki etiketli (Uyumlu/Uyumsuz Branş). `TB-240`'a okul tarafı çıkış yolu notu düşüldü.
+>
 > **Altınay B7 öğrenci kaydı turu (2026-09-23):** 85 öğrenci ve 135 veli *Öğrenciler › Yeni
 > Öğrenci* sihirbazıyla kaydedildi; veliler Mailpit'teki davetle, öğrenciler ilk girişte
 > parolasını `Oksis1234!` yaptı. On madde açıldı, altısı aynı gün kapandı: `B-56` 🔴 (nakil
@@ -856,6 +860,13 @@ okulun her dil ve sanat dersinde yanlış uyarı üretir.
 hücre → bileşen branşlar) içe aktarmada uygulanır. Karar gerekir: birleşik hücre
 "Görsel Sanatlar/Müzik" tek ders mi kalır, yoksa iki branşa birden mi bağlanır?
 
+
+➕ **2026-09-23 · okul tarafı çıkış yolu açıldı:** okul artık MEB eşleşmesinin üstüne kalıcı branş–ders
+kuralı ekleyebiliyor (*Ayarlar › Akademik Yapı › Branş–Ders Uygunluğu*, yalnız SchoolAdmin;
+`oksis-api` `d9cbc041`/`52aae106`, `oksis-ui` `a745c33`). Altınay'da ekranda ölçüldü: İngilizce →
+Birinci Yabancı Dil kuralı eklenince Bahadır Baba'nın görevi "Uyumlu"ya döndü, geri alınınca yeniden
+alan dışı oldu (kural geri alındı, veri test öncesi hâlinde). **Kök neden (platform içe aktarımında ad
+eşleşmesi) açık kalıyor** — madde bu yüzden kapanmıyor.
 ### `TB-241` · Katalog ders adlarında kesme işaretinden sonra büyük harf: "Kur’An-I Kerim" ⚪
 
 Altınay B4.2 ölçümünde görüldü (2026-09-22). `master.subjects`'te iki satır bozuk:
@@ -1091,30 +1102,6 @@ bağlı. Arşiv sezonda salt-okur ekranda yalnız *Görevi kapat* değil, **gezi
 geçiş yapamıyor.
 
 ⬜ Kapatma yolu: yalnız yazma öğesi koşula bağlanır.
-
-### `TB-245` · Yan branşı yazan hiçbir yol yok; okuyan dört özellik hep boş veriyle çalışıyor 🟠
-
-Altınay B6.2 sorusunda ölçüldü (2026-09-23, kullanıcı: *"yan branşa neden ihtiyaç var, nerede
-kullanıyoruz?"*). `TeacherProfile.SecondaryBranchIds` alanı ve `SetSecondaryBranchIds` metodu var,
-ama metodun **ürün kodunda tek çağıranı yok**. `UpdateProfileCommand`'da yan branş alanı yok, Excel
-içe aktarma yazmıyor, davet sormuyor, web ve mobilde onu düzenleyen ekran yok, dev seed de yazmıyor.
-Alan her öğretmende boş.
-
-**Okuyan yerler (hepsi boş veriyle çalışıyor):**
-- **Görevlendirme uyumu** (`SubjectBranchMatch`): ders öğretmenin yan branşındaysa atama "yan branş",
-  değilse "alan dışı" sayılır. Yan branş girilemediği için ikinci alanında ders veren öğretmen
-  (Altınay'da Almanca, Rehberlik, Türkçe okutan üç öğretmen) **alan dışı** rozeti alır. B9.2'deki
-  6 alan-dışı görevin bir kısmı buradan olabilir (ölçülmedi, `TB-240` ad eşleşmesiyle karışık).
-- **Görevlendirme ekranı:** öğretmen kartındaki yan branş listesi ve "n yan branş" sayacı hep boş/0.
-- **Vekil öğretmen önerisi** (`BranchFitResolver`): yan branşı derse uyan aday üste çıkarılır; bu
-  sıralama hiç devreye girmiyor.
-- **Branş silme kapısı** (`DeleteBranchCommandHandler`): yan branş olarak kullanılan branşın
-  silinmesini engelliyor; alan hep boş olduğu için kapı hiç kapanmıyor.
-
-⬜ Kapatma yolu: öğretmen profilinde (Öğretmenler › çekmece) yan branş seçimi; `UpdateProfileCommand`'a
-yan branş alanı (null = değiştirme, boş liste = temizle) ve ana branşla aynı katalog doğrulaması
-(var, okula ait, aktif). İsteğe bağlı: Excel içe aktarma sütunu. [[eksik-ekran-eksik-yetkiyi-gizler]]
-kalıbı: çağrılmayan yazma yolu, okuyan dört özelliği sessizce etkisiz bırakıyor.
 
 ### `TB-244` · Logosu olmayan okulda her sayfa açılışında logo ucu 404 dönüyor ⚪
 

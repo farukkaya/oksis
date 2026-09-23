@@ -8103,3 +8103,48 @@ iş olur → `TB-243`. Bugün "tek noktadan toplu değiştirme" üründe yok.
   hiçbiri kapasite koduna değmiyor.
 - ⚠️ Bilinen sınır: ilkokul kademesinin açılıp kapanması yük önbelleğini temizlemez (120 sn TTL).
   Sınıf Öğretmenliği tanıması ada bağlı; MEB adı değişirse çözücüdeki tek sabit güncellenir.
+
+## 59. `TB-245` · Yan branş kavramı kaldırıldı (2026-09-23) ✅
+
+### `TB-245` · Yan branşı yazan hiçbir yol yok; okuyan dört özellik hep boş veriyle çalışıyor 🟠 *(kapandı — 2026-09-23, kavram kaldırılarak)*
+
+Altınay B6.2 sorusunda ölçüldü (2026-09-23, kullanıcı: *"yan branşa neden ihtiyaç var, nerede
+kullanıyoruz?"*). `TeacherProfile.SecondaryBranchIds` alanı ve `SetSecondaryBranchIds` metodu var,
+ama metodun **ürün kodunda tek çağıranı yok**. `UpdateProfileCommand`'da yan branş alanı yok, Excel
+içe aktarma yazmıyor, davet sormuyor, web ve mobilde onu düzenleyen ekran yok, dev seed de yazmıyor.
+Alan her öğretmende boş.
+
+**Okuyan yerler (hepsi boş veriyle çalışıyor):**
+- **Görevlendirme uyumu** (`SubjectBranchMatch`): ders öğretmenin yan branşındaysa atama "yan branş",
+  değilse "alan dışı" sayılır. Yan branş girilemediği için ikinci alanında ders veren öğretmen
+  (Altınay'da Almanca, Rehberlik, Türkçe okutan üç öğretmen) **alan dışı** rozeti alır. B9.2'deki
+  6 alan-dışı görevin bir kısmı buradan olabilir (ölçülmedi, `TB-240` ad eşleşmesiyle karışık).
+- **Görevlendirme ekranı:** öğretmen kartındaki yan branş listesi ve "n yan branş" sayacı hep boş/0.
+- **Vekil öğretmen önerisi** (`BranchFitResolver`): yan branşı derse uyan aday üste çıkarılır; bu
+  sıralama hiç devreye girmiyor.
+- **Branş silme kapısı** (`DeleteBranchCommandHandler`): yan branş olarak kullanılan branşın
+  silinmesini engelliyor; alan hep boş olduğu için kapı hiç kapanmıyor.
+
+~~Kapatma yolu:~~ uygulanmadı — öğretmen profilinde (Öğretmenler › çekmece) yan branş seçimi; `UpdateProfileCommand`'a
+yan branş alanı (null = değiştirme, boş liste = temizle) ve ana branşla aynı katalog doğrulaması
+(var, okula ait, aktif). İsteğe bağlı: Excel içe aktarma sütunu. [[eksik-ekran-eksik-yetkiyi-gizler]]
+kalıbı: çağrılmayan yazma yolu, okuyan dört özelliği sessizce etkisiz bırakıyor.
+
+✅ **Kapanış:** önerilen kapatma yolu (yan branş yazma ekranı) **uygulanmadı**. Eğitimci geri bildirimiyle
+kullanıcı kararı: "yan branş" diye bir kavram yok. Kavram sistemden kaldırıldı; ihtiyacın asıl karşılığı
+okul düzeyi branş–ders uygunluk kuralı oldu. Tasarım: `gecici/planlar/2026-09-23-brans-ders-uygunlugu.md`.
+- `oksis-api` `919d22b3` (yan branş kalktı; `BranchMatchKind`/`BranchFit` iki değerli; kolon göçle düştü —
+  göç önce dolu satır sayar, ölçüm: 632 satırın 0'ı dolu) · `d9cbc041` (`school.subject_branch_rules` +
+  tek merkez `SubjectBranchEligibility`, karşılaştırma okul branş uzayında) · `52aae106` (uçlar, izin
+  `assignments.manage-branch-rules` yalnız SCHOOL_ADMIN, denetim kaydı) · `61ef8653` + `cb4cc959` (testler).
+- `oksis-ui` `a745c33`: yan branş gösterimi kalktı; vekil etiketleri "Uyumlu Branş"/"Uyumsuz Branş";
+  Ayarlar › Akademik Yapı › Branş–Ders Uygunluğu sekmesi; görevlendirme çekmecesinde iki seçenekli
+  alan-dışı bloğu (zorunlu açıklama + onay penceresi).
+- **Ekran ölçümü (Altınay, canlı):** kural ekle → Bahadır Baba'nın Birinci Yabancı Dil görevi Uyumlu,
+  özet "1 uyumlu · 3 alan-dışı"; çekmecede iki seçenek, açıklamasız Görevlendir kapalı, onay metni doğru
+  (Vazgeç ile çıkıldı, kayıt yok); kural geri alınınca görev yeniden alan dışı. Altınay test öncesi hâlinde.
+- **Testler:** Domain 1235 · Application 3188 · Api 474 · mimari 53 yeşil. Entegrasyon 689/1548 kırmızı
+  (taban 698: ClamAV 10 + `TB-231`); yeni `SubjectBranchRuleTests` ve güncellenen fikstürler yeşil,
+  `TB-231` kaynaklı "Subject without tenant" kırmızısı 67 → 54. `CurriculumPublishTests` 5 test tam
+  koşuda kırmızı, tek başına 5/5 yeşil — koşu sırasına bağlı (`TB-184` sınıfı), bu değişiklikten bağımsız.
+- Web istemcisi core'da yalnız bilinen `TB-220` kırmızısı; api paketi 340/340.
