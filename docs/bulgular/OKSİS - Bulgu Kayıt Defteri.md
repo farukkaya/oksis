@@ -74,6 +74,11 @@
 > **B-55 kapandı (2026-09-23):** mobil davet kabulüne branş adımı eklendi (`oksis-ui` `8870969`),
 > blok arşive taşındı ([[OKSİS - Bulgu Arşivi]] §57).
 >
+> **TB-243 ve TB-242 kapandı (2026-09-23):** kapasite varsayılanları okul ayarında (branş öğretmeni;
+> ilkokul açıksa Sınıf Öğretmenliği branşı için ayrı değer), tek çözücüden okunuyor. Yük özeti
+> kadronun tamamının kapasitesini taşıdığı için `TB-242` de kapandı (`oksis-api` `ee2ee4a9`,
+> `oksis-ui` `228db6e`). İkisi arşive taşındı ([[OKSİS - Bulgu Arşivi]] §58).
+>
 > **Altınay B7 öğrenci kaydı turu (2026-09-23):** 85 öğrenci ve 135 veli *Öğrenciler › Yeni
 > Öğrenci* sihirbazıyla kaydedildi; veliler Mailpit'teki davetle, öğrenciler ilk girişte
 > parolasını `Oksis1234!` yaptı. On madde açıldı, altısı aynı gün kapandı: `B-56` 🔴 (nakil
@@ -860,37 +865,6 @@ böyle iner. Branş eşleşmesini de zorlaştırması olası (`TB-240`; eşleşm
 ⬜ Kapatma yolu: kesme işareti ve kısa çizgiden sonra gelen eki küçük bırakan bir başlık
 dönüştürücü; mevcut iki satır için düzeltme.
 
-### `TB-242` · Kapasite sütunu, yükü olmayan öğretmende kişisel kapasiteyi göstermiyor 🟡
-
-Altınay B6 turunda kullanıcı sordu (2026-09-23): *"kapasite varsayılanı tek noktadan
-toplu değiştirilebiliyor mu, değilse sütun nereden besleniyor?"* Zincir ölçüldü:
-
-- **Varsayılan kodda sabit, iki kopya halinde:** sunucuda `TeacherWorkloadDefaults.WeeklyCapacity = 30`,
-  istemcide ayrıca `TEACHER_DEFAULT_CAPACITY = 30` (`packages/core/src/teachers/constants.ts`).
-  Okul ayarı yok, toplu uç yok. Tek yazma yolu öğretmen başına *Haftalık Kapasite* modalı
-  (`PUT persons/{id}/profiles/Teacher`, `weeklyCapacityHours`, 0 = varsayılana dön).
-  Varsayılanı değiştirmek dağıtım demek ve **bütün okulları** birden değiştirir.
-- **Sütunun kaynağı** `GET teachers/workload`: satır kapasitesi = profildeki özel değer ?? 30.
-  İstemci (`packages/api/src/teachers/endpoints.ts` `toTeacher`) `weeklyCapacity`'yi
-  **yalnız bu listeden** okuyor.
-
-**Kusur:** yük listesi yalnız yükü olan öğretmenleri taşıyor (`teachingByTeacher ∪ nonTeaching`).
-Yerleşimi, nöbeti ve kulübü olmayan öğretmen listede yok. İstemci ona `weeklyCapacity = null`
-veriyor, hücre de istemci sabitine düşüp **"30 · Vars."** yazıyor (2026-09-23'ten beri "40 · Vars.", `TB-243`). Profilde 20 saat özel
-kapasite girilmiş olsa bile ekran onu göstermiyor. Modal da aynı `null`'dan başladığı için
-"Özel" seçimini kaybediyor. Altınay'da bugün 13 öğretmenin hepsi bu durumda (sezon başı,
-program yok): idare kapasiteleri girse ekranda hiçbirini göremez.
-
-İkinci kopya da risk taşıyor: sunucu varsayılanı değişirse istemci sabiti eski değeri
-göstermeye devam eder. Özet DTO zaten `capacity` (varsayılan) taşıyor; istemci onu
-`defaultCapacity` olarak okuyor ama hücre ve yük çubuğu sabiti kullanıyor.
-
-⬜ Kapatma yolu: kişisel kapasite, yükten bağımsız olarak öğretmen satırına girsin. İki seçenek:
-yük listesi bütün kadroyu taşır, ya da kapasite kişi DTO'sundan okunur (`ProfileDto` onu
-zaten taşıyor). Hücre de sabite değil, özetin varsayılanına düşsün.
-**Karar gerekiyor:** okul düzeyinde bir kapasite varsayılanı (okul ayarı) istenirse bu ayrı bir
-iş olur → `TB-243`. Bugün "tek noktadan toplu değiştirme" üründe yok.
-
 ### `D-24` · Davet ekranı okulun resmî adını gösteriyor, görünen adını değil ⚪
 
 Altınay B6 turunda görüldü (2026-09-23). Davet önizlemesinde "Okul" satırı **"Altınay Eğitim
@@ -1160,48 +1134,6 @@ bu bilginin karşılığı yok: sihirbazda alan yok, öğrenci profilinde ve kay
 
 ⬜ Karar gerekiyor: kapsam içi mi? İçindeyse öğrenci kaydında (sezonluk) bir alan olur; yoklama,
 nöbet ve veli bildirimleri ileride bunu okuyabilir.
-
-### `TB-243` · Varsayılan haftalık kapasite koda gömülü; okul ayarından, sınıf ve branş öğretmeni için ayrı girilmeli 🟠
-
-`TB-242` ölçümünden doğdu, kullanıcı kararı (2026-09-23): *"varsayılan kapasite ayarlardan
-girilmeli; öğretmen bazlı güncelleme mevcuttaki gibi devam etmeli; ayarlarda sınıf öğretmeni
-ve branş öğretmeni için farklı değer girilebilmeli."*
-
-**Bugün:** varsayılan iki sabitte duruyor. Sunucuda `TeacherWorkloadDefaults.WeeklyCapacity`
-(yük yüzdesinin paydası, üretimin yumuşak kısıtı `CompetencyAssignmentSource`, yayın
-önizlemesindeki aşım uyarısı `PublishReadiness`), istemcide `TEACHER_DEFAULT_CAPACITY`.
-Değiştirmek dağıtım gerektiriyor ve **bütün okulları** birden etkiliyor. Okul kendi
-varsayılanını belirleyemiyor.
-
-**Geçici adım (2026-09-23, kullanıcı kararı):** iki sabit **30 → 40** yapıldı (oksis-api +
-oksis-ui, commit bekliyor). 40, domain'in üst sınırı (`MaxWeeklyCapacityHours`) ile aynı.
-Bu yüzden özel değer girilmemiş hiçbir öğretmen artık "aşırı yüklü" işaretlenemez: uyarı
-ancak 40'ı geçen yükte çıkar. Kapasite modalındaki MEB hazır değerleri 30'da kalıyor
-(sınıf öğretmeni 18 + 12, branş öğretmeni 15 + 15), yani varsayılan artık MEB hazır
-değerlerinden yüksek.
-Etkilenen testler 40 tabanına çevrildi. Yüzdeler korunacak şekilde saatler ölçeklendi,
-dağıtım testi varsayılanın yarısından türetildi.
-
-**İstenen:**
-1. Okul ayarlarında (*Ayarlar › Akademik Yapı* ya da öğretmen ayarları) **iki** varsayılan
-   alan: **sınıf öğretmeni** ve **branş öğretmeni** haftalık kapasitesi.
-2. Öğretmen başına özel kapasite (`TeacherProfile.WeeklyCapacityHours`, *Haftalık Kapasite*
-   modalı) **olduğu gibi** kalır ve varsayılanı ezer. Özel değeri olmayan öğretmen
-   türüne göre okulun varsayılanını alır.
-3. Üç tüketici (yük, üretim, yayın önizlemesi) ve istemci aynı çözücüden okur. İstemcinin
-   ayrı sabiti kalkar ya da yalnız sunucu cevabı gelmeden önceki yer tutucu olur (`TB-242`'nin
-   ikinci ayağı).
-
-**Karar gerekiyor:**
-- **"Sınıf öğretmeni" hangi anlamda?** (a) MEB'in *sınıf öğretmeni* **branşı**
-  (ilkokul, modaldaki hazır değerle aynı anlam) ya da (b) şubenin **rehber/sınıf
-  öğretmenliği görevi** (lisede bir şubenin sınıf öğretmeni gibi). Altınay
-  bir lise, orada ilkokul anlamında sınıf öğretmeni yok. (b) seçilirse varsayılan sezona
-  ve homeroom atamasına bağlı olur ve atama değişince öğretmenin kapasitesi de değişir.
-- Varsayılanlar sezon bazlı mı, okul bazlı kalıcı mı?
-
-**Bağlı:** `TB-242` (sütun kişisel kapasiteyi yükü olmayan öğretmende göstermiyor) · `K-13`
-(kişisel kapasite kararı).
 
 ### `TB-237` · Branş kataloğu boş: seed silindi, yerine geçecek yüzey yazılmadı 🔴
 
