@@ -71,6 +71,9 @@
 > kalıcı çözüm `TB-243` 🟠 olarak açıldı (okul ayarından, sınıf/branş öğretmeni için ayrı varsayılan).
 > Defter **111** (🔴 6 · 🟠 30 · 🟡 42 · ⚪🟢 33).
 >
+> **B-55 kapandı (2026-09-23):** mobil davet kabulüne branş adımı eklendi (`oksis-ui` `8870969`),
+> blok arşive taşındı ([[OKSİS - Bulgu Arşivi]] §57).
+>
 > **Altınay B7 öğrenci kaydı turu (2026-09-23):** 85 öğrenci ve 135 veli *Öğrenciler › Yeni
 > Öğrenci* sihirbazıyla kaydedildi; veliler Mailpit'teki davetle, öğrenciler ilk girişte
 > parolasını `Oksis1234!` yaptı. On madde açıldı, altısı aynı gün kapandı: `B-56` 🔴 (nakil
@@ -887,18 +890,6 @@ yük listesi bütün kadroyu taşır, ya da kapasite kişi DTO'sundan okunur (`P
 zaten taşıyor). Hücre de sabite değil, özetin varsayılanına düşsün.
 **Karar gerekiyor:** okul düzeyinde bir kapasite varsayılanı (okul ayarı) istenirse bu ayrı bir
 iş olur → `TB-243`. Bugün "tek noktadan toplu değiştirme" üründe yok.
-
-### `B-55` · Mobil davet kabulünde öğretmen branş adımı yok 🟠
-
-2026-09-23'te davet kabulüne öğretmen branşı eklendi (web, oksis-api + oksis-ui, commit
-bekliyor). Kural sunucuda: branşsız öğretmen profili taşıyan davet branş seçilmeden kabul
-edilmiyor (`USERS_INVITATION_TEACHER_BRANCH_REQUIRED`, 400). Mobil kabul ekranı
-(`apps/mobile/src/features/invitations/components/invite-accept-screen.tsx`) bu adımı
-**taşımıyor** ve `teacherBranchId` göndermiyor. Öğretmen davetini mobilden kabul eden
-herkes genel hata kartına düşer. Veli, öğrenci ve personel davetleri etkilenmiyor.
-
-⬜ Kapatma yolu: web'deki `BranchPicker`'ın mobil karşılığı: 1. adımda aranabilir liste,
-önizlemedeki `requiresTeacherBranch` ve `branchOptions` alanlarıyla.
 
 ### `D-24` · Davet ekranı okulun resmî adını gösteriyor, görünen adını değil ⚪
 

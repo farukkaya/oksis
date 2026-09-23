@@ -7965,3 +7965,33 @@ bootstrapper yeniden koşar. `TB-233` düzeltildikten sonra bu ikinci koşu doğ
 **Doğru kalan tek şey:** `Active → Setup` dönüşü gerçekten yok. Aktivasyon tek yönlüdür ve
 başlamış sezonun boş snapshot'ı hâlâ kurtarılamaz. Ama bu, bulgunun iddia ettiği şey değildi
 ve zaten karar 0021'in bilinçli sonucu.
+
+## 57. `B-55` · Mobil davet kabulünde öğretmen branş adımı (2026-09-23) ✅
+
+### `B-55` · Mobil davet kabulünde öğretmen branş adımı yok 🟠 *(kapandı — 2026-09-23)*
+
+2026-09-23'te davet kabulüne öğretmen branşı eklendi (web, oksis-api + oksis-ui, commit
+bekliyor). Kural sunucuda: branşsız öğretmen profili taşıyan davet branş seçilmeden kabul
+edilmiyor (`USERS_INVITATION_TEACHER_BRANCH_REQUIRED`, 400). Mobil kabul ekranı
+(`apps/mobile/src/features/invitations/components/invite-accept-screen.tsx`) bu adımı
+**taşımıyor** ve `teacherBranchId` göndermiyor. Öğretmen davetini mobilden kabul eden
+herkes genel hata kartına düşer. Veli, öğrenci ve personel davetleri etkilenmiyor.
+
+~~Kapatma yolu:~~ uygulandı — web'deki `BranchPicker`'ın mobil karşılığı: 1. adımda aranabilir liste,
+önizlemedeki `requiresTeacherBranch` ve `branchOptions` alanlarıyla.
+
+✅ **Kapanış (`oksis-ui` `8870969`):**
+- Mobilde `invitations/components/branch-picker.tsx`: arama alanı + sabit yükseklikte kayan
+  liste (`radiogroup`/`radio` rolleri), seçilen branş etiket satırında; katalog boşsa uyarı bandı.
+- `invite-accept-screen.tsx`: `requiresTeacherBranch` doğruysa 1. adımda seçici görünür, seçim
+  yapılmadan "Devam et" kilitli; gövdeye `teacherBranchId` gider (değilse `null`).
+- Sıralama + Türkçe katlamalı arama `@workspace/core` `searchBranchOptions`'ta tek tanım
+  (3 birim testi); web `BranchPicker` kendi kopyasını bırakıp buna bağlandı.
+- **Ekran ölçümü (Expo web, 390×844, önizleme/kabul uçları Playwright ile taklit edildi —
+  gerçek okul verisine dokunulmadı):** öğretmen davetinde "Devam et" seçimden önce kilitli;
+  "ingilizce" araması yalnız "İngilizce"yi bıraktı; boş aramada liste Türkçe alfabe sırasında;
+  akış sonunda kabul gövdesi `"teacherBranchId":"b2"`. Veli davetinde seçici yok, gövdede
+  `teacherBranchId: null`. Boş katalogda uyarı bandı çıktı, ilerleme kilitli kaldı.
+- Denetimler: mobil + web `tsc` temiz, eslint temiz. Core vitest'te yalnız bilinen `TB-220`
+  (ödev formu sabit tarih) kırmızı, bu değişiklikten bağımsız.
+- ⚠️ Gerçek cihazda ve gerçek API'ye karşı ölçülmedi.
