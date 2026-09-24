@@ -3857,6 +3857,43 @@ tek bozuk olan, yani eşik yirmi dokuz belgeyi geçirmeli.
 
 ---
 
+### `TB-247` · Müfredat seçmeli dersleri seçtirmiyor; sezon, MEB toplamını tutmayan müfredatla açılabiliyor 🔴
+
+2026-09-24'te kullanıcı Altınay müfredat ekranında buldu. Gerçek hayatta okul, sezona başlarken
+MEB'in (ttkb.meb.gov.tr) seçmeli dersler bölümünden kendine uygun dersleri **seçer**; yalnız
+seçtikleri kataloğa girer. Ekran ise ortak ve seçmeli dersleri **kategorisiz, karışık** ve MEB
+saatleriyle listeliyor. Müdür seçmediği her dersin okul saatini sezon açılmadan önce tek tek
+sıfıra çekmek zorunda. Unutursa sistem 9. sınıfın 59 saat okutulacağını varsayar ve bütün
+derslere görevlendirme bekler.
+
+Ölçüm (koddan + dev DB):
+
+1. Veri **var**: her satırın türü (`course_type` Common/Elective) ve MEB kategorisi
+   (`source_category`: Din, Ahlak ve Değer · İnsan, Toplum ve Bilim · Kültür, Sanat ve Spor ·
+   Akademik Çalışmalar) saklanıyor. Akademik Çalışmalar yalnız 11–12. sınıf satırlarında.
+2. MEB'in çizelgede **beyan ettiği toplamlar saklanmıyor**. Çizelge sınıf başına
+   `ORTAK + SEÇİLEBİLECEK + REHBERLİK = TOPLAM` (9. sınıf 32+7+1=40) diyor; ayrıştırıcı bunu
+   yalnız sağlama için kullanıp atıyor (`MebChartChecksums`). Ekranın "MEB toplamı" bu yüzden
+   bütün satırların toplamı (9. sınıf 59) — MEB'in beyanı değil.
+3. Aktifleştirmede **hiçbir toplam denetimi yok**; "Sezon başlarsa ne donacak?" önizlemesi
+   9. sınıf için 32 saati uyarısız donduruyor.
+4. Yan etki (2026-09-24 bölme kararı): "Görsel Sanatlar/Müzik" ayrı derslere bölününce okulun
+   ortak toplamı MEB beyanını aşıyor (9: 34/32, 10: 35/33, 11: 21/19, 12: 19/15). Toplam
+   denetimi gelirse hiçbir okul bu dersler arasından seçim yapmadan sezon açamaz.
+
+İstek: tablo en üstte ortak dersler, altında seçmeli dersler (kategori başına grup, seçilebilir);
+MEB PDF'indeki gibi dip toplamlar (Ortak Ders Toplamı, Seçilen Seçmeli Ders Toplamı…);
+aktifleştirmede herhangi bir seviyede fark varsa uyarı ve **engel**.
+
+🟢 **Uygulandı (2026-09-24), kullanıcı ekran doğrulaması bekliyor.** Tasarım ve kararlar:
+`gecici/planlar/2026-09-24-mufredat-secmeli-ve-sezon-acilis-kontrol-listesi.md`.
+- MEB beyan toplamları saklanıyor (`master.curriculum_grade_totals`; 6 sürüm saklı PDF'ten dolduruldu).
+- Seçmeli dersler varsayılan seçilmemiş; "Birini seçin" grupları; sınıf başına iki açık onay (satır değişince düşer).
+- Tablo MEB PDF düzeninde, dip toplamlar beyana göre.
+- Sezon Açılış Kontrol Listesi tek değerlendiriciden; engel varsa sunucu aktifleştirmeyi reddeder (önceki sezonun arşivi dahil hiçbir şey yazılmaz).
+- Görevlendirme kapsamı sezon müfredatından (saat > 0).
+- Commit'ler: oksis-api `9cdd1645`, `12ced2f0` · oksis-ui `0451028`.
+
 ## Not
 
 `TB-##` maddeleri **kod taramasından** çıktı; bir kısmının kullanıcıya görünen belirtisi
