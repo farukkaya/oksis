@@ -44,6 +44,7 @@
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 | **Y-03** | Şube alanı (Sayısal / Eşit Ağırlık / Sözel / Yabancı Dil) nerede tutulur | ✅ Karara bağlandı · ✅ **uygulandı** (`oksis-api` `614a51b3` + `oksis-ui` `7fe92fc`) | 2026-09-17 | **(a) `ClassRoom.Track` + sabit enum.** Derse BAĞLANMADI (ders↔alan çoka-çok: "seçmeli matematik" dört alandan üçünde geçer) · öğrencinin alanı aktif şube atamasından türetilir, ayrıca tutulmaz · MEB'in 09/05/2025-05 çizelgesinde alan sütunu **yok**, yani bu okulun organizasyon ihtiyacı · enum çünkü listeyi okul düzenlemiyor — meslek lisesi kapsama girerse katalog tablosuna terfi eder |
+| **Y-04** | Müfredat alan bazlı mı tutulur; ortak derste MEB'den sapma nasıl kabul edilir | ✅ Karara bağlandı · 🟡 backend + ekran uygulandı (iki depoda dal `feat/alan-bazli-mufredat-profili`, commit yok) | 2026-09-24 | **Tam profil:** müfredat `(seviye, alan)` başına; alan profili ortak + seçmeli + okul dersini taşır, seviye profilinden kopyayla doğar, miras yok · ortak sapma seçmelideki gibi **bilerek onayla** — tasarım [[alan-bazli-mufredat-profili-tasarimi]] |
 
 **Kritik yol:** ~~`K-02`~~ → ~~`K-01a/b/c`~~. **İkisi de çözüldü (2026-08-08)** — bildirim zinciri baştan sona karara bağlandı. Kalan açık kararlar `K-03`, `K-04` ve `K-05` birbirinden bağımsız; sıra artık **uygulamada**: [[K-02 - OS Push Altyapısı]] Parti 1 ile [[K-01 - Bildirim Matrisi]] §8 doğan işleri.
 
@@ -1481,6 +1482,56 @@ tartışması. Kullanıcının ilk önerisi: "sabit 4 değerli bir liste, derse 
       gerçekten siliyor, ekran süslemesi değil); formda seçici varsayılan "Alan yok" + dört seçenek,
       yeni şube `11-C` "Sözel" olarak doğdu (`Verbal`). **Komşu sekiz şube `NULL` kaldı** — alan
       yazmak sızmıyor. Konsolda hata yok. Test şubesi silindi, `9-A` boşaltıldı.
+
+--- end-multi-column
+
+## Y-04 · Müfredatın alan bazlı profili ve ortak derste MEB'den sapma
+
+--- start-multi-column: Y-04
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Kaynak:** Altınay AL ders programı raporu (aSc çıktısı, 13.09.2026) + kullanıcı, 2026-09-24.
+
+11. sınıftan sonra okullar şubeleri alana göre açar (Sayısal / EA / Sözel / Dil). Bir seviyede
+tek alan da olabilir, birkaç alan da. Her alanın seçmeli seti farklıdır: Altınay'da 11 Sayısal
+Seç. Fizik/Kimya/Biyoloji, 11 EA Seç. Tarih/Coğrafya + TDE alıyor. MEB çizelgesinde alan kelimesi
+geçmediği için müfredat tasarımı bunu kaçırdı. Müfredat **seviye** başına tutuluyor, `ClassRoom.Track`
+(`Y-03`) okunmuyor. Sonuç: bir seviyenin tek seçmeli kararı bütün şubelerine uygulanıyor.
+
+Kullanıcı ayrıca şunu belirtti: müdür ortak dersleri de MEB'den farklı kabul edebilir (Müzik MEB 2 →
+okul 1). Bugün ortak toplam MEB'den farklıysa onay reddediliyor ve açılış kilitleniyor (`M4`).
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ✅ Karara bağlandı · 🟡 backend + ekran uygulandı (commit yok)
+**Tarih:** 2026-09-24
+
+**Karar**
+> 1. Müfredat profili **`(seviye, alan?)`** başına tutulur. Alan boşsa profil seviye profilidir.
+>    Alan profili yalnız 11–12'de açılır.
+> 2. **Tam profil:** alan profili ortak + seçmeli + okul dersi satırlarının tamamını taşır. Seviye
+>    profilinden kopyalanarak doğar, sonra bağımsız yaşar; miras yoktur. Alanlı şubenin profili
+>    yoksa seviye profiline **geri düşülmez**; açılış kontrol listesi engeller.
+> 3. Ortak derste MEB'den sapma (satır bazında) **bilerek onayla** kabul edilir, seçmeli sapma
+>    onayının kardeşi olarak. Onaylanmış sapmada `M4` engel değil uyarıdır.
+
+**Gerekçe**
+> Override, okul dersi, onaylar, sapma onayı ve kontrol listesi zaten taslak başına çalışıyor.
+> Anahtar genişleyince hepsi değişmeden işler. Kullanıcı "yalnız seçmeli alan bazlı" seçeneğini
+> reddetti, çünkü Altınay'da ortak dersler de alana göre değişiyor (TDE).
+
+**Kapsam dışı:** şube içi alt gruplar (Altınay 11 DİL / 12 DİL → ayrı ders grubu kararı) · aynı
+alanda farklı müfredat (12-B / 12-C, okula soruluyor).
+
+**Tasarım:** [[alan-bazli-mufredat-profili-tasarimi]] (`oksis/docs/teknik-analizler/mufredat/`)
 
 --- end-multi-column
 

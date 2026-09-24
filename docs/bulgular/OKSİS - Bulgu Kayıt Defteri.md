@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-68` · `D-30` · `V-05` · `X-23` · `TB-252` · `E-32` · `ENG-04`
+**Sıradaki boş ID:** `B-69` · `D-30` · `V-05` · `X-23` · `TB-253` · `E-32` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -4000,6 +4000,57 @@ farklı yedeklere düşüyor:
 Öneri: okuma ekranları en son kapanan dönemi, planlama ekranları başlamamış ilk dönemi
 varsayılan alır; kural core'da tek fonksiyon olur. Backend okuma uçlarının id'siz davranışı
 karar bekliyor.
+
+### `B-68` · Katalogda açılan okul dersinin haftalık saatini girecek yer yok 🟠
+
+Altınay'da 2026-09-24'te çıktı (kullanıcı sorusu). Ayarlar › Akademik Yapı › Dersler'de 11 ve 12. sınıfa
+bağlanan altı okul dersi (TYT Türkçe, Coğrafya, Kimya, Biyoloji, Matematik, Fizik) hiçbir ekranda saat
+alamıyordu. Katalog formu "seviye bazlı haftalık saat Akademik › Müfredat'ta düzenlenir" diyor; Müfredat ise
+yalnız müfredatta **satırı olan** dersi çiziyordu. MEB karşılığı olmayan ders, saati girilene kadar satırsız
+kaldığı için tabloda hiç görünmüyordu. Döngü kapalıydı: satır yok, saat yok. Sunucunun saat yazma ucu okul
+dersini müfredata eklemeyi zaten destekliyordu; eksik olan ekrandaki giriş noktasıydı.
+
+🟡 **Kodda düzeltildi, commit bekliyor** (`oksis-api` + `oksis-ui` dal `feat/alan-bazli-mufredat-profili`).
+Hazırlıktaki sezonda, katalogda seviyeye bağlı okul dersleri o seviyenin **her profilinde** "Okul Dersleri"
+bölümüne 0 saatle eklenir (`CurriculumGradeStates`; yalnız görünüm, çözücüye/snapshot'a/ders programına
+girmez). Satır soluk ve "saat girilmedi" etiketli; saat yazılınca gerçek müfredat satırı olur. 0 saatlik satır
+"okul dersi" sayacına ve "MEB saatlerine dön" koşuluna girmez (`core` `isTaughtCustomCourse`). Canlı API'de
+ölçüldü: altı ders dört profilde de 0 saatle döndü. Birim testleri yeşil.
+
+➕ **Aynı gün ikinci ayak (kullanıcı bulgusu):** ilk düzeltme yalnız okulun kendi dersini (MEB karşılığı yok)
+kapsıyordu. MEB'den gelen Felsefe (çizelgede 10–11) katalogda 12'ye de bağlanmıştı ama 12'de görünmüyordu.
+Kural katalogda seviyeye bağlı **her derse** genişletildi: MEB satırı olmayan seviyede ders okul dersi olarak
+0 saatle gelir; MEB satırı olan seviyede çift çıkmaz (testli). Canlı API'de ölçüldü: 12'nin dört profilinde
+Felsefe `Custom`, 0 saat.
+
+➕ **Üçüncü ayak — kök neden (2026-09-24/25):** ikinci ayak katalogdaki bütün MEB bağlarını ekrana açınca
+eski içe aktarma artıkları (bölünmeden önceki birleşik "Görsel Sanatlar/Müzik", Fen Lisesi eşlemesinden gelen
+"Fizik/Kimya/Biyoloji/Coğrafya/Matematik 11–12" vb.) bütün sınıflarda "Okul" dersi olarak sızdı. Kök neden:
+`SubjectCatalogImporter` okul açılışında (sezon/sürüm yokken) seviye bağlarını platformun **bütün programlarının
+birleşik** eşlemesinden (`master.subject_grade_levels`) kopyalıyor. Düzeltme: bağ artık kaynağını taşır
+(`school.subject_grade_levels.source`: `School`/`Import`, göç `20260924_subject_grade_link_source` mevcut satırları
+"dersle aynı anda ya da sistem yazdıysa içe aktarma" kuralıyla sınıflandırdı); sezon müfredatı kurulurken ve
+yeniden tabanlamada `SyncImportedGradeLinksAsync` içe aktarma bağlarını okulun programının güncel sürümüne
+eşitler — okulun formda düzenlediği derse ve saat girdiği seviyeye dokunmaz. Müfredat görünümü de kaynağa bakar:
+okul bağı her zaman, içe aktarma bağı yalnız güncel çizelgede varsa görünür. Altınay'da kullanıcı onayıyla
+eşitleme çalıştırıldı: tam onaylanan liste, **50 bağ** (21'i 9–12'de, 29'u Hazırlık) yumuşak silindi; hiçbir
+profilde saat ya da toplam değişmedi, okutulan ders düşmedi. Okulun beyanı olan "İkinci Yabancı Dil (Almanca)"
+(güncel adı "Seçmeli İkinci Yabancı Dil (Almanca)") 9–12'de okul dersi olarak görünür; pasife almak okulun kararı.
+Ders: [[genisletilen-kural-tum-veride-olculur]] — ikinci ayak tek örnekle genişletilmiş, yalnız hedef satırda doğrulanmıştı.
+
+### `TB-252` · Müfredat entegrasyon testi paylaşılan veritabanındaki yayımlanmış sürüme bağlı — çalışma sırasına göre kırmızı ⚪
+
+`Y-04` (alan bazlı müfredat profili) doğrulamasında çıktı (2026-09-24, `oksis-api` `cc4a2aa3` tabanı).
+`CurriculumSnapshotActivationTests.Manual_draft_yields_empty_snapshot`, 2033 yılında MEB master'ı **olmadığını**
+varsayıyor ve snapshot'ın `Manual` olmasını bekliyor. Aynı paylaşılan test veritabanına
+`CurriculumPublishTests` "2033-2034" sürümünü yayımlıyor ve silmiyor. O test daha önce koştuysa taslak
+`Master` kaynaklı doğuyor ve test kırmızıya düşüyor (`Expected Manual, found Master`). Tek başına koşuda da
+kırmızı çünkü satır veritabanında kalıcı. Ürün kodu doğru; test ortam durumuna bağlı. `Y-04` değişikliğiyle
+ilgisi yok: snapshot kaynak türünü taslaktan alıyor, o yol değişmedi.
+
+⬜ Kapatma yolu: "master'ı olmayan yıl"ı test içinde garanti et (ör. hiçbir testin yayımlamadığı ve
+çalışma anında boş olduğu doğrulanan bir yıl) ya da `CurriculumPublishTests` kendi yayımladığı sürümü
+temizlesin. `TB-184` ailesi: paylaşılan veritabanında küresel duruma bakan test.
 
 ## Not
 
