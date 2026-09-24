@@ -3942,6 +3942,25 @@ Sonuç: sezon geçişinde (eski sezon aktif) bu ekranlar **eski** sezona yazıyo
 hiçbiri kurulumdaki sezonla çalışmıyor. Müfredat ekranı doğru emsaldir: `sessionId`
 verilmediğinde sunucu kurulumdaki sezonu kullanır (`curriculum-page.tsx:45-51`).
 
+
+🔎 **Altınay'da ölçüldü (2026-09-24, kullanıcı ekran görüntüsüyle bildirdi):** Görevlendirmeler "Aramaya uyan öğretmen
+yok" gösteriyor, sayaçlar 0/0/0. Üst çubuk "2026-2027 · Kurulumda" diyor ama müdürün oturum bağlamında
+`activeSeasonId = null` (`auth/me/context`). Sayfa sezonsuz istek atıyor, sunucu `IsCurrent` sezona düşüyor, Altınay'ın
+tek sezonu `Setup`/`is_current=0` olduğu için liste boş dönüyor. Aynı uç (`GET assignments/teachers`):
+**sezonsuz 0 öğretmen, `sessionId=42C3DFCF…` ile 13 öğretmen.** Etki: Altınay B6.2'nin son ölçümü ve B9 görevlendirme
+turu bu ekrandan yapılamıyor.
+
+🔄 **Kısmi karar ve uygulama (2026-09-24, kullanıcı):** Görevlendirmeler ve yöneticinin Ders Programı aktif sezon yokken
+**menüde ve rotada kilitli** (`oksis-ui` `a5f719c` + `47dff02`, master'da `5a37114`; `nav-config.ts` `requiresActiveSeason`).
+Programın gerekçesi: program görevlendirmelerden üretiliyor. Altınay'da ölçüldü: menüde soluk; doğrudan adres
+"Sezon kurulumda" ekranını ve "Sezonu Aktifleştir" düğmesini gösteriyor. Core nav testleri 40/40.
+**Nöbet (aynı gün, ikinci karar):** Nöbet & Vekâlet de kilitli. Sezondan bağımsız kısmı (bölgeler, politika,
+muafiyet) **Ayarlar › Nöbet Bölge Ayarları** sekmesine taşındı (`DutyZonesSettings`). Nöbet ekranı iki sekmeye indi,
+boş bölge durumu Ayarlar'a yönlendiriyor. Altınay'da ölçüldü: kurulumdaki sezonda sekme çiziliyor, menüde üç öğe de
+devre dışı. Core nav testleri yeşil.
+⬜ **Açık kalan:** Sınıflar & Şubeler hâlâ açık ve kurulumdaki sezonu hedefleyemiyor. Aynı karar mı uygulanacak,
+yoksa ekran sezon seçebilir mi olacak? Karar bekliyor. Ek olarak kilit, okulun sezonu açmadan
+görevlendirme planlamasını engelliyor. Bilinçli bir sıra kısıtı: önce sezon aktifleştirilir.
 ### `X-22` · İlk sezonda kullanıcı oluşturma, dosya yükleme ve öğrenci kaydı aktif sezon istiyor 🟠
 
 2026-09-24 sezon–menü ön incelemesinde ölçüldü

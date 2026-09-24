@@ -103,8 +103,17 @@ fazla" satırları `/exams`, `/schedule` (öğretmen, öğrenci), `activities`, 
 
 ### 3.2 Açık — sezon kurulumunun kendisi için gerekli
 
-Sezon Yönetimi, Müfredat, Sınıflar & Şubeler, Görevlendirmeler, Ders Programı (yönetici), Nöbet
-& Vekâlet, Ayarlar (tatil, derslik, zil, yapı), Davetler, Roller ve İzinler.
+Sezon Yönetimi, Müfredat, Sınıflar & Şubeler, Ayarlar (tatil, derslik, zil, yapı, **nöbet bölgeleri**),
+Davetler, Roller ve İzinler.
+
+> **2026-09-24 kullanıcı kararı:** Görevlendirmeler ve yöneticinin Ders Programı bu listeden çıkarıldı. Aktif sezon
+> yokken ikisi de **kilitli** (`requiresActiveSeason`; `oksis-ui` `fix/gorevlendirme-sezon-kilidi`). Gerekçe: iki ekran
+> da kurulumdaki sezonu hedefleyemiyor (`B-67`). Altınay'da Görevlendirmeler "öğretmen yok" gösterdi: sezonsuz istek
+> 0, sezon kimliğiyle 13 öğretmen. Program görevlendirmelerden üretildiği için onsuz kurulamaz.
+>
+> **Aynı gün, ikinci karar:** Nöbet & Vekâlet de aktif sezon yokken kilitli. Sezondan bağımsız kısmı (bölgeler,
+> dağıtım politikası, muafiyetler) Nöbet ekranından **Ayarlar › Nöbet Bölge Ayarları** sekmesine taşındı. Böylece
+> okul kurulumda bölgelerini tanımlayabiliyor; çizelge ve vekâlet ise dönem istediği için sezon aktifleşince açılıyor.
 
 Backend bunları kurulumdaki sezonda kabul ediyor: şube ve nöbet yalnız arşivi reddeder
 (`CreateClassRoomCommandHandler.cs:46-49`, `SaveDutyRosterDraftCommandHandler.cs:21-34`);
