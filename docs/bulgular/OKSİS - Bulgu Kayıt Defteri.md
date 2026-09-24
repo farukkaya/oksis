@@ -5,7 +5,9 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son kapanış turu:** 2026-09-15 — sınav takvimi kapanış turu: **10 madde kapandı**
+> **Son kapanış:** 2026-09-24 — `E-29` + `TB-249` + `TB-250` kapandı, Altınay B6.4 ✅ ([[OKSİS - Bulgu Arşivi]] §60).
+>
+> **Önceki kapanış turu:** 2026-09-15 — sınav takvimi kapanış turu: **10 madde kapandı**
 > ([[OKSİS - Bulgu Arşivi]] §48). Altı ürün kararı bağlandı. İkisi (`TB-124`, `TB-129`'un bir
 > ayağı) kod yazılmadan, ÖLÇÜLEREK kapandı. `TB-152` de aynı gün tamamlandı (eleme `EX-S09`
 > ile görünür + sihirbazda dipnot) — **11 madde**. Defter **30**.
@@ -222,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-68` · `D-30` · `V-05` · `X-23` · `TB-249` · `E-31` · `ENG-04`
+**Sıradaki boş ID:** `B-68` · `D-30` · `V-05` · `X-23` · `TB-252` · `E-31` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -236,12 +238,16 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 3 | Tenant izolasyonu (`TB-139`, **`TB-191`**) · uygulama geneli çıktı kaybı (`TB-150`) |
-| 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 33 | Kozmetik, temizlik, adlandırma |
+| 🔴 Kritik | 10 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🟠 Yüksek | 38 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 49 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 36 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **98** | |
+| **Toplam** | **133** | |
+
+> **Sayaç düzeltmesi (2026-09-24):** tablo 98 diyordu; `grep '^### \`'` ile yeniden sayıldı: **133** blok
+> (`E-29`, `TB-249`, `TB-250` arşive taşındıktan sonra). Sapmanın sebebi değişmedi: eklemelerde sayaç elle
+> güncellenmiyor.
 
 > **Sayaç düzeltmesi (2026-09-20):** tablo 74 diyordu, `grep '^### \`'` ile gerçek blok sayısı
 > **88**'di; bugünkü iki madde eklenince **90**. Defterin kendi kuralı işletilerek öncelik
@@ -549,6 +555,16 @@ devir düğmesini görmüyor (idare listesinde görüyor) — yönü güvenli, k
 koşmamıştı (`TB-190`), ve EF-Ignore bekçisi bir **yanlış pozitif** verdi — erişim sorguda değil, sorguyu açan
 `if` koşulundaydı; bekçiye muafiyet eklemek yerine erişim ayrı deyime alındı, yani bekçi delinmedi.
 
+### `TB-251` · Ödev şeması testi sabit teslim tarihine bağlı — tarih geçince kırmızıya düştü ⚪
+
+`E-29` doğrulamasında çıktı (2026-09-24). `packages/core/src/homework/schemas.test.ts` geçerli formu
+`dueDate: "2026-09-18"` ile kuruyor. Şema geçmiş teslim tarihini reddettiği için tarih geçince iki test kırmızıya düştü
+("geçerli formu kabul eder", "tek şube ile seçili öğrenciyi kabul eder"). Değişikliksiz tabanda da kırmızı (ölçüldü).
+Ürün kodu doğru, test zamana bağlı.
+
+⬜ Kapatma yolu: tarihi test anına göre üret (ör. bugün + 7 gün) ya da şemaya saat enjekte et. Aynı sabit tarih
+kalıbı başka şema testlerinde de var mı, taranmalı.
+
 ## 11. Bildirimler 🟠
 
 Kaynak: `oksis-api` @ `61808d25` bildirim altyapısı taraması (2026-09-10). Zincirin
@@ -824,7 +840,6 @@ seçmeli kotası olarak hesaplanır, havuz ayrıca tutulur. Hangisi seçilirse s
 **Altınay'ın kilitli snapshot'ı için ayrıca bir yol** gerekir (backfill ya da aktif sezonda
 seçmeli saatini düzenleme).
 
-
 ➕ **Üretimle ölçüldü — B9.4'ün engeli bu (2026-09-23).** 9-A için otomatik üretim uygulanmadan
 çalıştırıldı (`POST timetable/auto-generate`, tek şube): iş `Done`, 3 aday, önerilen aday "skor 96,
 eksik 5 saat". Hafta 40 ders saati (5 gün × 8, zil çizelgesi). Müfredatın 9. sınıf talebi 57 saat
@@ -859,7 +874,6 @@ okulun her dil ve sanat dersinde yanlış uyarı üretir.
 ⬜ Kapatma yolu: çizelge adı → karar adı eşleme tablosu (genel ad → somut diller, birleşik
 hücre → bileşen branşlar) içe aktarmada uygulanır. Karar gerekir: birleşik hücre
 "Görsel Sanatlar/Müzik" tek ders mi kalır, yoksa iki branşa birden mi bağlanır?
-
 
 ➕ **2026-09-23 · okul tarafı çıkış yolu açıldı:** okul artık MEB eşleşmesinin üstüne kalıcı branş–ders
 kuralı ekleyebiliyor (*Ayarlar › Akademik Yapı › Branş–Ders Uygunluğu*, yalnız SchoolAdmin;
@@ -2266,37 +2280,6 @@ ve onları kilitleyen testler aynı turda (`TB-188` dersi).
 ⬜ **Doğrulanmamış ürün farkı:** yönetim uçları `ExamsController`'da olduğu için `active-season-write` politikasına
 tabi — **arşiv sezonda katalog yazılamıyor**, oysa ders kataloğu (`AcademicsController`) bu kısıta tabi değil.
 
-### `E-29` · İdareci / müdür yardımcısı rolü yok — idari yetki vermek tam yönetici yapmak demek 🟡
-
-Altınay B6 ön ölçümünde çıktı (2026-09-16). Yapı çoklu profili destekliyor (`Person` birden çok `Profile` taşıyor,
-`RoleAssignment` çoklu aktif rol destekliyor, profil değiştirme komutu var) — yani "hem öğretmen hem idareci"
-teknik olarak mümkün. **Ama rol kataloğunda ara rol yok:** yalnız `SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`,
-`PARENT`, `STUDENT`. Müdür yardımcısına idari yetki vermek = ona **okulun tamamına erişim** vermek.
-`StaffProfile.Position` serbest metin ve yetkiyle ilişkili değil.
-
-Altınay'da somut: kadroda müdür yardımcısı var ve hem ders veriyor hem idari iş yapıyor.
-
-⬜ Ürün kararı: (a) `VICE_PRINCIPAL` rolü açılır ve izin kümesi tanımlanır (Issue #1'de "MVP sonrasına ertelendi"
-notu var, yani yol açık) · (b) `SCHOOL_ADMIN` verilir ve fark kabul edilir · (c) izinler rolden ayrılıp kişiye
-verilebilir hâle gelir (büyük iş).
-
-🔎 **Yeniden ölçüm — 2026-09-24 (B6.4 incelemesi).** "Yapı destekliyor" iddiası yarı doğru; (b) seçeneği de bugün
-ürün içinden **uygulanamıyor**:
-- **İzin aktif profile göre süzülüyor** (`AccountPermissionResolver`): `Teacher` profili yalnız `Teacher` portallı
-  rollerin, `Staff` profili yalnız `Admin` portallı rollerin iznini alır. Yani "hem öğretmen hem idareci" aynı anda
-  değil, **şapka değiştirerek** yaşanır (profil değiştirme ucu + web kabuğundaki seçici var). `Staff` profili olmayan
-  bir öğretmene `SCHOOL_ADMIN` rolü verilse **hiçbir idari izin gelmez**.
-- **Müdür, müdür yardımcısını yönetici yapamaz:** atama kuralı "yalnız kendinden kesin düşük seviye" (`SCHOOL_ADMIN`
-  = 80, hedef 80 → `RoleLevelTooHigh`); atanabilir roller listesinde de çıkmaz. Yalnız platform yapabilir.
-- **Ekran yok:** `POST persons/{id}/profiles` (ikinci profil) ve `POST role-assignments` uçları var, web'de ikisini
-  çağıran hiçbir ekran yok (`../oksis-ui` taraması). Okul, mevcut bir öğretmene ikinci profil/rol veremiyor.
-- **Altınay bugün:** yalnız müdürde `Staff` + `SCHOOL_ADMIN` var; müdür yardımcısı yalnız `Teacher` profilli düz
-  öğretmen (09-23 yeniden kurulumu).
-
-Sonuç: karar (a)/(b)/(c) hangisi olursa olsun, önce **"mevcut kişiye idari profil + rol ekleme"** yolu (ekran +
-seviye kuralı) gerekiyor; (b) için ayrıca müdürün eşit seviye atayabilmesi ya da atamanın platformdan yapılması
-kararı.
-
 ### `TB-196` · Şube açarken okulun kendi kademe listesi denetlenmiyor 🟡
 
 Altınay B4/B5 ölçümünde çıktı (2026-09-16). `CreateClassRoomCommandHandler` `GradeLevelId`'yi **master'daki 13
@@ -3319,6 +3302,14 @@ ders yazan testler `CreateDbContext(schoolId)` kullansın; `MasterSeedIds.Subjec
 yeşil. Teşhis raporu (fixture satırları ve komutlarla):
 [[2026-09-18 Entegrasyon Paketi Kırmızı Teşhisi]].
 
+🔎 **Yeniden ölçüm — 2026-09-24 (`E-29` dalı, taban `f07eb5ea`, Docker açık).** Takım **1545 testin 724'ü
+kırmızı**. Dal ile taban karşılaştırıldı: kırmızı kümesi birebir aynı, dal 4 testi fazladan yeşile çeviriyor
+(yeni testler), **yeni kırmızı 0**. Mesaj dağılımı: 555 "Sequence contains no elements" (en çok sınav oturumu,
+aday, yerleşim ve duyuru sınıfları; sınav türü tohumu `TB-195` sonrası boş), 54 "Cannot insert Subject without
+tenant context", 47 Garage ve 4 ClamAV konteyneri ayakta değil, 14 "Index out of range", 12 "Middle kademesi
+için eğitim programı tercihi tanımlı değil". Karşılaştırmalı ölçüm olmadan bu takımda "yeşil mi?" sorusunun
+cevabı hâlâ yok.
+
 ### `TB-204` · `ExpireStaleInvitationsJobTests` koşu sırasına bağlı — iş paylaşılan DB'deki bütün okulların davetini sayıyor ⚪
 
 `TB-203` teşhisinde ayrı görüldü (2026-09-18). `ExpireStaleInvitationsJobTests.cs:85` 2 bekliyor, 5
@@ -3589,7 +3580,6 @@ uğraştırıyor. `K-09` örnek veri kartları bu panoda öğretmene de görün�
 kararıyla (`TB-168`/`TB-173`) aynı turda ele alınmalı.
 
 ---
-
 
 ➕ **Genişleme — öğrenci ve veli de aynı panoya düşüyor (Altınay B7, 2026-09-23).** Kullanıcı
 öğrenci girişinde *"Bu işlem için yetkiniz yok"* uyarısını ekran görüntüsüyle bildirdi. Ağ

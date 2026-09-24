@@ -8148,3 +8148,131 @@ okul düzeyi branş–ders uygunluk kuralı oldu. Tasarım: `gecici/planlar/2026
   `TB-231` kaynaklı "Subject without tenant" kırmızısı 67 → 54. `CurriculumPublishTests` 5 test tam
   koşuda kırmızı, tek başına 5/5 yeşil — koşu sırasına bağlı (`TB-184` sınıfı), bu değişiklikten bağımsız.
 - Web istemcisi core'da yalnız bilinen `TB-220` kırmızısı; api paketi 340/340.
+
+## 60. `E-29` + `TB-249` + `TB-250` · Müdür yardımcısı — öğretmen, profil değiştirerek idareci (2026-09-24) ✅
+
+Altınay B6.4'ten çıktı. Kullanıcının tarifi (2026-09-24): müdür herhangi bir öğretmeni müdür yardımcısı
+belirler. Kişi öğretmen işlerini sürdürür, müdürle aynı yetkilere sahip olur ve iki görev arasında profil
+değiştirerek geçer. Tasarım: [[mudur-yardimcisi-tasarimi]]. Ekran kararı: belirleme hem Ayarlar › İdari Kadro
+kartında hem öğretmen çekmecesinde. Tasarım sırasında iki ön koşul bulgu çıktı (`TB-249`, `TB-250`) ve
+özellikten önce kapatıldı.
+
+✅ **Kapanış:**
+- `oksis-api` (`feat/mudur-yardimcisi`):
+  - `ccd1d073`: `TB-249`, atama ve iptal ortak `RoleAssignmentGuard`'dan geçiyor.
+  - `8e673238`: `TB-250`, idare alıcıları sezonsuz atamayı görüyor. Sınav görüşü bildirimi de düzeldi.
+  - `cc4a2aa3`: `E-29`. `VICE_PRINCIPAL` rolü (seviye 70, `Admin` portalı, sezonsuz), izinleri
+    `SCHOOL_ADMIN`'den kodla aynalanıyor. Göç `20260924_vice_principal_role` (1 rol + 124 izin). Uçlar
+    `api/v1/school-administration`. Ayrılmış idari profil seçiciden düşüyor, yeniden belirlemede aynı satır
+    canlanıyor.
+- `oksis-ui` `c065220` (`feat/mudur-yardimcisi`): İdari Kadro kartı, çekmece durum kartı, rozetler,
+  Kullanıcılar'da "Müdür Yardımcısı" etiketi, MSW mock'u, api ve core testleri.
+- **Testler:** Domain 1245 · Application 3230 · Api 474 · Oksis.Tests 111 yeşil. Entegrasyonda 3 yeni gerçek SQL
+  testi ve `TB-250` testi yeşil. Taban karşılaştırmasında yeni kırmızı 0 (bkz. `TB-203` 2026-09-24 ölçümü).
+  Arayüz: api 343/343, web ve mobil tip denetimi ile lint temiz.
+- **Ekran ölçümü, dev s1 (Claude, Playwright, gerçek API):**
+  - Belirleme çalıştı.
+  - Öğretmen profilinde yönetici uçları 403 döndü, yönetici profiline geçiş çalıştı.
+  - Yardımcının kendini görevden alması ve başka bir yardımcı ataması sunucuda reddedildi.
+  - Müdür gerekçeyle görevden aldı. Yeniden giriş profil seçimsiz, yalnız öğretmen olarak açıldı.
+- **Saha ölçümü, Altınay `ALTINAY-AL` (kullanıcı, 2026-09-24):** müdür Metin Kabaca gerçek müdür yardımcısını
+  belirledi. Uçtan uca "sorunsuz çalıştı". **B6.4 ✅**.
+
+Kalan, bu kapanıştan bağımsız: profil seçicide yardımcının idari profili "Okul Yöneticisi" etiketiyle görünüyor
+(mevcut `ROLE_TITLE`). Ayrı bir etiket istenirse küçük iş.
+
+#### `E-29` · İdareci / müdür yardımcısı rolü yok — idari yetki vermek tam yönetici yapmak demek 🟡
+
+Altınay B6 ön ölçümünde çıktı (2026-09-16). Yapı çoklu profili destekliyor (`Person` birden çok `Profile` taşıyor,
+`RoleAssignment` çoklu aktif rol destekliyor, profil değiştirme komutu var) — yani "hem öğretmen hem idareci"
+teknik olarak mümkün. **Ama rol kataloğunda ara rol yok:** yalnız `SUPER_ADMIN`, `SCHOOL_ADMIN`, `TEACHER`,
+`PARENT`, `STUDENT`. Müdür yardımcısına idari yetki vermek = ona **okulun tamamına erişim** vermek.
+`StaffProfile.Position` serbest metin ve yetkiyle ilişkili değil.
+
+Altınay'da somut: kadroda müdür yardımcısı var ve hem ders veriyor hem idari iş yapıyor.
+
+⬜ Ürün kararı: (a) `VICE_PRINCIPAL` rolü açılır ve izin kümesi tanımlanır (Issue #1'de "MVP sonrasına ertelendi"
+notu var, yani yol açık) · (b) `SCHOOL_ADMIN` verilir ve fark kabul edilir · (c) izinler rolden ayrılıp kişiye
+verilebilir hâle gelir (büyük iş).
+
+🔎 **Yeniden ölçüm — 2026-09-24 (B6.4 incelemesi).** "Yapı destekliyor" iddiası yarı doğru; (b) seçeneği de bugün
+ürün içinden **uygulanamıyor**:
+- **İzin aktif profile göre süzülüyor** (`AccountPermissionResolver`): `Teacher` profili yalnız `Teacher` portallı
+  rollerin, `Staff` profili yalnız `Admin` portallı rollerin iznini alır. Yani "hem öğretmen hem idareci" aynı anda
+  değil, **şapka değiştirerek** yaşanır (profil değiştirme ucu + web kabuğundaki seçici var). `Staff` profili olmayan
+  bir öğretmene `SCHOOL_ADMIN` rolü verilse **hiçbir idari izin gelmez**.
+- **Müdür, müdür yardımcısını yönetici yapamaz:** atama kuralı "yalnız kendinden kesin düşük seviye" (`SCHOOL_ADMIN`
+  = 80, hedef 80 → `RoleLevelTooHigh`); atanabilir roller listesinde de çıkmaz. Yalnız platform yapabilir.
+- **Ekran yok:** `POST persons/{id}/profiles` (ikinci profil) ve `POST role-assignments` uçları var, web'de ikisini
+  çağıran hiçbir ekran yok (`../oksis-ui` taraması). Okul, mevcut bir öğretmene ikinci profil/rol veremiyor.
+- **Altınay bugün:** yalnız müdürde `Staff` + `SCHOOL_ADMIN` var; müdür yardımcısı yalnız `Teacher` profilli düz
+  öğretmen (09-23 yeniden kurulumu).
+
+Sonuç: karar (a)/(b)/(c) hangisi olursa olsun, önce **"mevcut kişiye idari profil + rol ekleme"** yolu (ekran +
+seviye kuralı) gerekiyor; (b) için ayrıca müdürün eşit seviye atayabilmesi ya da atamanın platformdan yapılması
+kararı.
+
+✅ **Ürün kararı — 2026-09-24 (kullanıcı tarifi).** Müdür herhangi bir öğretmeni **müdür yardımcısı** olarak
+belirler. Kişi öğretmen işlerini yapmaya devam eder ve müdürün yaptığı her işi de yapar. Şimdilik kısıt yok, ileride
+daraltılabilir. Geçiş **profil değiştirerek** yapılır; öğretmen ve idareci yetkileri tek oturumda birleşmez.
+Tasarımda karşılığı (a): ayrı `VICE_PRINCIPAL` rolü (seviye 70, `Admin` portalı, sezonsuz). İzin kümesi `SCHOOL_ADMIN`'den
+**kodla aynalanır**. Kişiye `Staff` profili eklenir. Belirleme ve kaldırma amaca özel tek komutla yapılır.
+Tasarım: [[mudur-yardimcisi-tasarimi]].
+Ön koşullar: `TB-249` (iptal ucunda seviye kapısı) · `TB-250` (idare bildirimi sezonsuz atamayı görmüyor).
+✅ Ekran kararı — 2026-09-24: **ikisi birlikte**, iki yüzeyde de belirleme ve görevden alma var: Ayarlar › Okul › İdari Kadro kartı + öğretmen çekmecesinin Hesap sekmesi (tasarım §6).
+🔄 **Kodda uygulandı, commit bekliyor (2026-09-24):** `oksis-api` dalı `feat/mudur-yardimcisi` + `oksis-ui` `master`
+(commit edilmedi). Backend: `VICE_PRINCIPAL` rolü (seviye 70, `Admin` portalı, sezonsuz) ve göç
+`20260924_vice_principal_role` (1 rol + 124 izin; dev DB'ye uygulandı, müdürle 124/124 aynı). İzinler
+`RolePermissionSeedData.MirrorVicePrincipal` ile aynalanıyor, bekçisi `MasterRoleSeedTests`. Uçlar:
+`GET/POST api/v1/school-administration[/vice-principals]` ve `…/{personId}/revoke`. Ayrılmış idari profil seçiciden
+düşüyor (`Person.SelectableProfileTypes`). Arayüz: Ayarlar › Genel Bilgiler › İdari Kadro kartı, öğretmen
+çekmecesinin Hesap sekmesinde durum kartı, listede ve çekmece başlığında rozet, Kullanıcılar'da "Müdür Yardımcısı"
+etiketi, MSW mock'u.
+**Ölçüm:** birim takımları yeşil (Domain 1245 · Application 3230 · Api 474 · Oksis.Tests 111). Entegrasyonda 3 yeni
+gerçek SQL testi yeşil; takımın geri kalanında yeni kırmızı yok (bkz. `TB-203` yeniden ölçümü). Uçtan uca gerçek
+API'ye karşı Playwright ile gezildi (s1):
+- Müdür Kerem Acar'ı Ayarlar'dan belirledi.
+- Kerem girişte profil seçti, Öğretmen profilinde yönetici uçları 403 döndü, menüden "Okul Yöneticisi"ne geçip
+  Ayarlar'ı açtı.
+- Kerem kendini görevden alamadı ("Kendi rol atamanızı iptal edemezsiniz.") ve başka bir öğretmeni yardımcı
+  yapamadı (seviye reddi).
+- Müdür, Kerem'i öğretmen çekmecesinden gerekçeyle görevden aldı. Kerem'in yeniden girişi profil seçimsiz,
+  yalnız öğretmen olarak açıldı.
+Kapanış: commit + Altınay'da gerçek müdür yardımcısıyla ölçüm (B6.4).
+
+#### `TB-249` · Rol iptal ucunda seviye kapısı yok — eşit ya da üst rol, hatta kendi rolü iptal edilebiliyor 🟠
+
+`E-29` tasarımında çıktı (2026-09-24, koddan okundu). `CreateRoleAssignmentCommandHandler` üç kapıdan geçiyor:
+kendine atama yok, yalnız kendinden kesin düşük seviye, alt küme. `RevokeRoleAssignmentCommandHandler` ise yalnız
+`roles.assign` iznine bakıyor. Yani izni taşıyan kişi **eşit ya da yüksek seviyedeki** bir atamayı ve **kendi**
+atamasını iptal edebiliyor. Bugün izni yalnız müdürler taşıdığı için bir müdür diğerini görevden alabiliyor. Müdürle
+aynı izinlere sahip müdür yardımcısı gelince yardımcı, müdürün `SCHOOL_ADMIN` atamasını iptal edebilir.
+
+⬜ Kapatma yolu: atama ile aynı kapılar ortak bir koruyucuya (`RoleAssignmentGuard`) çıkarılır, iptal de oradan
+geçer: kendi atamasını iptal edemez, iptal edilen rolün seviyesi aktörünkünden kesin düşük olmalı. Platform muaf.
+Reddedilen her deneme atamadaki gibi loglanır.
+
+🔄 **Kodda kapandı, commit bekliyor (2026-09-24, `feat/mudur-yardimcisi`):** kapılar `RoleAssignmentGuard`'a çıktı
+(`CheckAssignAsync` / `CheckRevokeAsync`). Genel iptal ucu ve müdür yardımcısını görevden alma ikisi de oradan geçiyor.
+4 yeni birim testi var: eşit seviye reddi, kendi ataması reddi, rolsüz aktör reddi, platform muafiyeti. Ekranda da
+ölçüldü: yardımcı kendini görevden alamadı.
+
+#### `TB-250` · Devamsızlık eşiği bildirimi idareye gitmiyor — sezon süzgeci sezonsuz müdür atamasını eliyor 🟠
+
+`E-29` tasarımında çıktı (2026-09-24). `NotificationRecipientResolver.ResolveSchoolAdminAccountsAsync`, okulun
+güncel sezonu varsa `r.SeasonId == currentSeasonId` ile süzüyor. Karar 0020'den beri müdür ataması **okul
+düzeyinde** (`SeasonId = null`) yapılıyor (`SchoolLevelRoles`, `IdentityDevSeeder`). `null == sezon` hiçbir zaman
+doğru olmadığından, güncel sezonu olan her okulda liste **boş** dönüyor. `AbsenceThresholdReachedNotificationHandler`
+idareye ayrı gönderdiği bildirimi kimseye göndermiyor ve bunu sessizce yapıyor. Veliye giden bildirim etkilenmiyor.
+**Koddan okundu, gerçek koşuda ölçülmedi.**
+
+⬜ Kapatma yolu: süzgeç `AccountPermissionResolver` ile aynı kurala getirilir
+(`SeasonId == current || SeasonId == null`). Test sezonsuz atamalı bir müdürle yazılır; bugünkü testler büyük
+ihtimalle sezonlu atama tohumluyor, ölçülecek. `E-29` bu metodu `VICE_PRINCIPAL`'a genişletecek, bu yüzden önce bu
+kapanmalı.
+
+🔄 **Kodda kapandı, commit bekliyor (2026-09-24, `feat/mudur-yardimcisi`):** süzgeç `SeasonId == null`'ı da kabul
+ediyor, alıcı kümesi `{SCHOOL_ADMIN, VICE_PRINCIPAL}` oldu. Kusur kesinleşti: mevcut testler müdürü **sezonlu**
+tohumladığı için görünmüyordu. Gerçek SQL'e karşı yeni test `ResolveSchoolAdminAccountsAsync_IncludesSchoolLevelAdmin`
+yeşil. Aynı metodu **sınav görüşü bildirimi** (`ExamReviewCommentAddedNotificationHandler`) de kullanıyor, o da
+düzeldi.
