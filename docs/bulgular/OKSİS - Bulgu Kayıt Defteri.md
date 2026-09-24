@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-71` · `D-30` · `V-05` · `X-23` · `TB-253` · `E-32` · `ENG-04`
+**Sıradaki boş ID:** `B-73` · `D-30` · `V-05` · `X-23` · `TB-253` · `E-32` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -4037,6 +4037,52 @@ eşitleme çalıştırıldı: tam onaylanan liste, **50 bağ** (21'i 9–12'de, 
 profilde saat ya da toplam değişmedi, okutulan ders düşmedi. Okulun beyanı olan "İkinci Yabancı Dil (Almanca)"
 (güncel adı "Seçmeli İkinci Yabancı Dil (Almanca)") 9–12'de okul dersi olarak görünür; pasife almak okulun kararı.
 Ders: [[genisletilen-kural-tum-veride-olculur]] — ikinci ayak tek örnekle genişletilmiş, yalnız hedef satırda doğrulanmıştı.
+
+### `B-72` · Kurulumdaki sezonda duyuru yazılamıyor — hedef havuzu ve oluşturma "Aktif sezon bulunamadı" 🟠
+
+Altınay'da 2026-09-25'te incelendi (kullanıcı sorusu; salt okunur ajan incelemesi, kök neden elle doğrulandı).
+`AnnouncementCallerResolver.ResolveActiveSessionIdAsync` yalnız `Status == Active` sezonu kabul ediyor
+(`Announcements/Common/AnnouncementCallerResolver.cs:80-85`). İki çağıran: `GetAudiencePoolQueryHandler` ve
+`CreateAnnouncementCommandHandler` → `Announcements.Session.NotFound`. Ölçüldü: `GET announcements/audience?scope=school`
+→ **409** "Aktif sezon bulunamadı." Aktif sezonu olmayan okul hiç duyuru oluşturamıyor.
+
+Yan etkiler (ekran): havuz hatası compose'a iletilmiyor, hedef ızgarası sessizce boş, yalnız "Henüz hedef seçilmedi"
+yazıyor (`announcements-page.tsx:310,745`, `compose.tsx:535,560`; öğretmen sayfası `:208`). KVKK ad taraması
+parametresiz `useStudents()` ile aktif sezona düşüyor, kurulumda 0 öğrenci (ölçüldü; sezonla 101) — metinde öğrenci
+adı geçse uyarı çıkmaz (`announcements-page.tsx:328`, `teacher-announcements-page.tsx:210`). Liste süzgeci
+`activeSeasonId` null olduğundan süzgeçsiz gidiyor (`:252`).
+
+Engel olmayanlar (kanıtlı): hedef kitle çözücüsü verilen sezonla çalışıyor ve kurulum sezonunda doluyor (101 öğrenci,
+163 veli bağı, 13 öğretmen); yayın/zamanlama/onay duyurunun kendi sezon kimliğini kullanıyor (Setup → Active'de
+kimlik aynı); bildirim zinciri sezon istemiyor; müdürün yetkisi sezonsuz. Öğretmen havuzu yayınlanmış ders programı
+ister (K-10), kurulumda boş kalır — ürün kararı.
+
+⬜ Kapatma yolu (öneri): sunucuda tek "çalışma sezonu" kuralı (aktif varsa o, yoksa kurulumdaki, arşiv asla) —
+B-70'in `workingSeasonId`'sinin sunucu karşılığı; duyuru çözücüsü ve aynı `Status == Active` kalıbını taşıyan diğer
+okuyucular (ListStudents varsayılanı, GetStudentDetail, ClubReader, HomeworkAdminReader vb.) buna devreder. Ekranda
+havuz hatası kullanıcıya söylenir. Kurulumdaki okulun veli/öğrenciye duyuru göndermesinin istenip istenmediği ürün kararı.
+
+✅ **Karar (2026-09-25, kullanıcı): yalnız duyurular için uygula.** Diğer okuyucular aktif sezonda kalır.
+🟡 **Kodda düzeltildi, commit bekliyor.** `oksis-api`: `AnnouncementCallerResolver.ResolveWorkingSessionIdAsync` —
+aktif sezon, yoksa kurulumdaki (en erken başlayan), arşiv asla; hata mesajı "Okulun aktif ya da kurulumdaki sezonu
+yok." (kod aynı). Üç birim testi (kurulum, aktif öncelikli, arşiv null). `oksis-ui`: duyuru sayfası sezonu ve KVKK
+öğrenci listesini `useWorkingSeason`'dan alır; havuz hatası compose'da "Hedef listesi yüklenemedi: …" olarak
+gösterilir (yönetici ve öğretmen sayfası). Ölçüldü: `GET announcements/audience?scope=school` 409 → 200, Tüm okul
+265 (151 veli, 13 öğretmen, 101 öğrenci; 11 şube); Yeni duyuru ekranında "Tüm okul — 265 kişi" görünüyor
+(yayın yapılmadı). Öğretmen sayfasının KVKK listesi değişmedi (öğretmende sezon listesi yetkisi ölçülmedi).
+Duyuru entegrasyon testleri ölçülemedi: 287'den 241'i fikstürde, duyuru koduna varmadan test veritabanında ders
+kaydı olmadığı için düşüyor (`AnnouncementAudienceFixture.cs:310`, tohum eksiği; TB-252 ailesi).
+
+### `B-71` · Kişi güncelleme ucu cinsiyeti zorunlu tutuyor; sihirbazın cinsiyetsiz açtığı veli güncellenemiyor 🟡
+
+Altınay'da 2026-09-25'te çıktı (Dil şubelerinin 16 velisine e-posta yazılırken). Kayıt sihirbazı veliyi
+cinsiyet sormadan açıyor (`persons.gender` NULL). `PUT users/persons/{id}` gövdesi `UpdatePersonBody.Gender`
+**non-nullable** (`PersonsController.cs:286`), oysa komut `UpdatePersonCommand.Gender` nullable. Cinsiyeti boş
+kişinin e-postasını ya da telefonunu değiştirmek için cinsiyet uydurmak gerekiyor; boş gönderilince 400
+(`$.gender` çevrilemedi). Ölçüldü: 16 velinin 16'sı 400; öğrencilerde (cinsiyet dolu) 204.
+Altınay'da cinsiyet, seçilen ilişkiden verildi (Anne → Kadın, Baba → Erkek).
+
+⬜ Kapatma yolu: gövdede `Gender?` (komutla aynı); ya da sihirbaz veliden cinsiyet istesin. Karar bekliyor.
 
 ### `B-70` · Kurulumdaki sezona ekrandan şube ya da öğrenci eklenemiyor 🟠
 
