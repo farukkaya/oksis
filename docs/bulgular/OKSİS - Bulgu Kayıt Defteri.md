@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-69` · `D-30` · `V-05` · `X-23` · `TB-253` · `E-32` · `ENG-04`
+**Sıradaki boş ID:** `B-70` · `D-30` · `V-05` · `X-23` · `TB-253` · `E-32` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -4037,6 +4037,18 @@ eşitleme çalıştırıldı: tam onaylanan liste, **50 bağ** (21'i 9–12'de, 
 profilde saat ya da toplam değişmedi, okutulan ders düşmedi. Okulun beyanı olan "İkinci Yabancı Dil (Almanca)"
 (güncel adı "Seçmeli İkinci Yabancı Dil (Almanca)") 9–12'de okul dersi olarak görünür; pasife almak okulun kararı.
 Ders: [[genisletilen-kural-tum-veride-olculur]] — ikinci ayak tek örnekle genişletilmiş, yalnız hedef satırda doğrulanmıştı.
+
+### `B-69` · Kural değişince eski müfredat onayı sapmayı kapsamadığı hâlde "onaylandı" görünüyordu 🟡
+
+Altınay'da 2026-09-25'te çıktı (kullanıcı ekranı). 9. sınıfta okul zorunlu dersi "Deneme" 2 saat. Okul
+dersleri kotaya sayılınca (Y-04, aynı gün kararı) ortak toplam 34 oldu, MEB 32 istiyor. 9'un ortak onayı
+24 Eylül'de, eski kurala göre (sapma yokken) verilmişti; "bilerek onay" kaydı yoktu. Kontrol listesi engel
+verdi ama tablo onayı "verildi" gösterdiği için müdür yeniden onaylayıp sapmayı kabul edemiyordu: çıkışsız engel.
+
+🟡 **Kodda düzeltildi, commit bekliyor** (`oksis-api` dal `feat/alan-bazli-mufredat-profili`).
+`CurriculumGradeStates`: bugün sapma var ama onay onu bilerek kabul etmemişse onay geçersiz sayılır (ortak ve
+seçmeli için ayrı). Tablo onay düğmesini yeniden gösterir, müdür sapma penceresiyle onaylar. Altınay'da
+önce/sonra ölçüldü: 10 profilden yalnız 9. sınıfın ortak onayı düştü, diğer kalemler değişmedi.
 
 ### `TB-252` · Müfredat entegrasyon testi paylaşılan veritabanındaki yayımlanmış sürüme bağlı — çalışma sırasına göre kırmızı ⚪
 

@@ -214,11 +214,15 @@ Ayrı "Okul Dersleri" bölümü kalktı. Okulun **zorunlu** dersi (katalogda se�
 **Ortak Dersler** bölümünde, okulun **seçmeli** dersi Seçmeli Dersler altında **"Okul Seçmelileri"**
 kategorisinde durur. Her satırda kaynak etiketi var: **MEB** ya da **Okul**. Sunucu satıra
 `isSchoolElective`'i (katalogdaki seçmeli işareti) taşır. Bölüm dip toplamı MEB satırları ile o bölümdeki okul
-derslerinin toplamıdır; okul payı "Okul dersleri dahil: N saat" ipucuyla ayrıca yazılır.
+derslerinin toplamıdır; okul payı "N okul dersiyle X saat dolduruldu" ipucuyla ayrıca yazılır.
 
-⚠️ **Açık soru:** MEB sapma hesabı (ortak toplam, seçmeli "seçilebilecek" toplamı, `M3`/`M4`) hâlâ
-**yalnız MEB satırlarını** sayıyor; ekrandaki dip toplam ise okul derslerini de içeriyor. Okul seçmelisi
-MEB'in seçmeli kotasını doldurur mu, karar gerekiyor.
+✅ **Karar (2026-09-25, kullanıcı): okul dersleri kotalara sayılır, bu belirtilir.** Okulun zorunlu
+dersi ortak kotaya, okul seçmelisi seçmeli ("seçilebilecek") kotaya sayılır; yalnız okutulan (saati > 0)
+dersler girer. Sunucuda tek hesap: `GradeCurriculumState.CommonQuotaHours` / `ElectiveQuotaHours`;
+`CommonTotalDiffers`, `ElectiveTotalDiffers`, onay komutları ve kontrol listesi (`M3`/`M4`) bunlara
+bakar. Kontrol listesi mesajı payı söyler ("… toplamı 20 (3 okul dersiyle 6 saat dahil), MEB 20 …").
+Tablo dip toplamı ve onay pencereleri sunucunun `commonQuotaHours`/`electiveQuotaHours` ve
+`school{Compulsory,Elective}Course{Count,Hours}` alanlarını okur, kendi toplamını hesaplamaz.
 
 ## 9. Ekran (oksis-ui)
 
@@ -301,6 +305,11 @@ nedeniyle `--integration` ile de koşar ([[bellek-ici-test-db-kisitini-zorlamaz]
   kopyalamıyor, alan profilleri de kopyalanmaz. Tutarlı; ayrı bir iş olarak açılabilir.
 
 ## 13. Açık sorular
+
+- ~~Temel profil 11–12'de hiç gösterilmesin mi?~~ **Kapandı (2026-09-25, kullanıcı):** olduğu gibi
+  kalır (alansız şubenin müfredatı ve yeni alan profilinin kopya kaynağı).
+- ~~Eski "İkinci Yabancı Dil (Almanca)" pasife alınsın mı?~~ **Kapandı (2026-09-25, kullanıcı):** eski
+  değil, aktif ders; dil bölümlerinde okutulacak.
 
 - ~~Alan profili alan dışı seçmelileri gizlesin mi?~~ **Kapandı (2026-09-24, kullanıcı):**
   gizlenmez. Sayısal profilinde Seç. Tarih de seçilebilir; hangi alanın hangi dersi alacağını okul
