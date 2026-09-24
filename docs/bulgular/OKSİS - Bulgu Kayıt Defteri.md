@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-68` · `D-30` · `V-05` · `X-23` · `TB-252` · `E-31` · `ENG-04`
+**Sıradaki boş ID:** `B-68` · `D-30` · `V-05` · `X-23` · `TB-252` · `E-32` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2279,6 +2279,27 @@ ve onları kilitleyen testler aynı turda (`TB-188` dersi).
 `db.ExamTypes` üzerinden gidiyor ama bellek içi test DB kısıtını zorlamaz; (b) ekran tarayıcıda gezilmedi.
 ⬜ **Doğrulanmamış ürün farkı:** yönetim uçları `ExamsController`'da olduğu için `active-season-write` politikasına
 tabi — **arşiv sezonda katalog yazılamıyor**, oysa ders kataloğu (`AcademicsController`) bu kısıta tabi değil.
+
+### `E-31` · Kişinin adı ve soyadı hesap açıldıktan sonra düzeltilemiyor — uç var, ekran yok 🟡
+
+Altınay B6.5 ölçümünde çıktı (2026-09-24). Ad ve soyadı değiştirebilen **tek yüzey davet kabul ekranı**
+(`invite-screen.tsx`). Salih'in "Soyad" yer tutucusu oradan "Demir" olarak düzeltilmiş: kişi kaydının güncellenme
+zamanı oluşturulmasından 2 saniye sonra, yani kabul anı. Kabulden sonra hiçbir yol yok:
+- `PUT api/v1/users/persons/{id}` (`UpdatePersonCommand`, ad + soyad + cinsiyet + doğum tarihi + iletişim,
+  `users.update`) sunucuda var ama **hiçbir istemci çağırmıyor**. `packages/api`'de karşılığı yok.
+- Web'de ad alanı yalnız Kullanıcı Oluştur ve öğrenci kayıt sihirbazında var. İkisi de oluşturma ekranı.
+- `UpdateMyProfileCommand` yalnız e-posta ve telefon alıyor, kişi kendi adını da değiştiremiyor.
+
+Altınay'da somut: Hale Kübra'nın soyadı "Soyad" olarak kalmıştı ve ekrandan düzeltilemiyordu. 2026-09-24'te kullanıcının
+verdiği gerçek adlar (Hale Kübra **Öztürk**, Salih **Demirci**) ve yeni e-postalar, ekran olmadığı için **doğrudan uca**
+(`PUT users/persons/{id}`, müdür yetkisiyle) gönderildi. Uç çalıştı: 204, yeni e-postayla giriş 200, eski adres 401.
+Bu B6.5'i kapattı; madde ekran eksiği olarak açık kalıyor. İkincil etki: Salih'in giriş e-postası
+`salih.soyad@altinay.test` olarak kaldı. Bu kendi başına kusur değil, e-posta ayrı bir alan; ama ad değişince
+e-postanın değişmediği bilinmeli.
+
+⬜ Kapatma yolu: Öğretmenler (ve Kullanıcılar) çekmecesinde ad/soyad düzenleme, mevcut uca bağlanır. Aynı ekran
+öğrenci ve veliyi de kapsamalı. [[eksik-ekran-eksik-yetkiyi-gizler]] kalıbı: çağrılmayan uçta izin ve doğrulama
+da ölçülmemiş durumda.
 
 ### `TB-196` · Şube açarken okulun kendi kademe listesi denetlenmiyor 🟡
 
