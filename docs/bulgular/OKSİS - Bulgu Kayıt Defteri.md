@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-70` · `D-30` · `V-05` · `X-23` · `TB-253` · `E-32` · `ENG-04`
+**Sıradaki boş ID:** `B-71` · `D-30` · `V-05` · `X-23` · `TB-253` · `E-32` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -4037,6 +4037,30 @@ eşitleme çalıştırıldı: tam onaylanan liste, **50 bağ** (21'i 9–12'de, 
 profilde saat ya da toplam değişmedi, okutulan ders düşmedi. Okulun beyanı olan "İkinci Yabancı Dil (Almanca)"
 (güncel adı "Seçmeli İkinci Yabancı Dil (Almanca)") 9–12'de okul dersi olarak görünür; pasife almak okulun kararı.
 Ders: [[genisletilen-kural-tum-veride-olculur]] — ikinci ayak tek örnekle genişletilmiş, yalnız hedef satırda doğrulanmıştı.
+
+### `B-70` · Kurulumdaki sezona ekrandan şube ya da öğrenci eklenemiyor 🟠
+
+Altınay'da 2026-09-25'te çıktı (kullanıcı isteği: aktifleştirmeden önce 11 ve 12 Yabancı Dil şubesi aç,
+öğrenci kaydet). Sınıflar & Şubeler (`sections-page.tsx`, `myContext.activeSeasonId`) ve Öğrenci Kayıt
+Sihirbazı (`useCurrentSession`) yalnız **aktif** sezonla çalışıyor; aktif sezon yokken ikisi de boş açılıyor.
+Kurulumdaki sezona şube eklemenin tek ekran yolu Sezon Yönetimi › "Düzenle": sezonu sihirbaza geri alıyor ve
+açılışta oluşturulan şubeleri siliyor (Altınay'da 9 şube, 85 öğrenci). Sunucu ucu (`CreateClassRoom`, sezon
+kimliğiyle) kurulumda şube açmayı destekliyor; eksik olan ekran. `B-67` ailesi: kurulum aracı sezonu oturum
+bağlamından okuyor.
+
+✅ **Karar (2026-09-25, kullanıcı):** şubeler kurulumdaki sezonla da oluşturulabilmeli.
+🟡 **Şube ekranı kodda düzeltildi, commit bekliyor** (`oksis-ui`): `core` `sectionsSeasonId` — oturumun baktığı
+sezon yoksa kurulumdaki sezon; başlık "Kurulumdaki 2026-2027 sezonu…" der, yeni şube penceresinin "Aktif
+sezona" ifadesi kaldırıldı. Playwright ile ölçüldü: 9 şube / 85 öğrenci listelendi, yeni şube penceresinde
+Yabancı Dil alanı seçilebiliyor (kayıt yapılmadı).
+🟡 **Kayıt sihirbazı da düzeltildi (aynı gün, kullanıcı onayı):** sunucuda `EnrollStudent` yalnız arşiv sezonu
+reddeder (E11.6 kuralı "aktif değilse ret"ten "arşivse ret"e gevşedi; entegrasyon testi kurulumdaki sezona
+kaydı ölçer). Ekranda sihirbaz sezonu ve şube listesini `useWorkingSeason` (web) → `workingSeasonId` (core)
+üzerinden alır; "kurulumdaki sezon" etiketi gösterilir. Playwright ile ölçüldü: 11. sınıfta 11-A/11-B
+listelendi (kayıt yapılmadı, öğrenci sayısı 85'te kaldı).
+🟡 **Öğrenciler listesi de bağlandı (aynı gün):** `useStudents(seasonId)` sunucunun var olan `SeasonId`
+parametresini geçer; Öğrenciler ekranı `useWorkingSeason` kullanır. Diğer ekranlar (devamsızlık, duyuru,
+etkinlik) parametresiz çağırır, davranışları değişmedi. Playwright ile ölçüldü: liste 0 yerine 85 öğrenci.
 
 ### `B-69` · Kural değişince eski müfredat onayı sapmayı kapsamadığı hâlde "onaylandı" görünüyordu 🟡
 
