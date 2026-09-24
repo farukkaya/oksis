@@ -222,7 +222,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-67` · `D-30` · `V-05` · `X-22` · `TB-246` · `E-31` · `ENG-04`
+**Sıradaki boş ID:** `B-68` · `D-30` · `V-05` · `X-23` · `TB-249` · `E-31` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2280,6 +2280,23 @@ Altınay'da somut: kadroda müdür yardımcısı var ve hem ders veriyor hem ida
 notu var, yani yol açık) · (b) `SCHOOL_ADMIN` verilir ve fark kabul edilir · (c) izinler rolden ayrılıp kişiye
 verilebilir hâle gelir (büyük iş).
 
+🔎 **Yeniden ölçüm — 2026-09-24 (B6.4 incelemesi).** "Yapı destekliyor" iddiası yarı doğru; (b) seçeneği de bugün
+ürün içinden **uygulanamıyor**:
+- **İzin aktif profile göre süzülüyor** (`AccountPermissionResolver`): `Teacher` profili yalnız `Teacher` portallı
+  rollerin, `Staff` profili yalnız `Admin` portallı rollerin iznini alır. Yani "hem öğretmen hem idareci" aynı anda
+  değil, **şapka değiştirerek** yaşanır (profil değiştirme ucu + web kabuğundaki seçici var). `Staff` profili olmayan
+  bir öğretmene `SCHOOL_ADMIN` rolü verilse **hiçbir idari izin gelmez**.
+- **Müdür, müdür yardımcısını yönetici yapamaz:** atama kuralı "yalnız kendinden kesin düşük seviye" (`SCHOOL_ADMIN`
+  = 80, hedef 80 → `RoleLevelTooHigh`); atanabilir roller listesinde de çıkmaz. Yalnız platform yapabilir.
+- **Ekran yok:** `POST persons/{id}/profiles` (ikinci profil) ve `POST role-assignments` uçları var, web'de ikisini
+  çağıran hiçbir ekran yok (`../oksis-ui` taraması). Okul, mevcut bir öğretmene ikinci profil/rol veremiyor.
+- **Altınay bugün:** yalnız müdürde `Staff` + `SCHOOL_ADMIN` var; müdür yardımcısı yalnız `Teacher` profilli düz
+  öğretmen (09-23 yeniden kurulumu).
+
+Sonuç: karar (a)/(b)/(c) hangisi olursa olsun, önce **"mevcut kişiye idari profil + rol ekleme"** yolu (ekran +
+seviye kuralı) gerekiyor; (b) için ayrıca müdürün eşit seviye atayabilmesi ya da atamanın platformdan yapılması
+kararı.
+
 ### `TB-196` · Şube açarken okulun kendi kademe listesi denetlenmiyor 🟡
 
 Altınay B4/B5 ölçümünde çıktı (2026-09-16). `CreateClassRoomCommandHandler` `GradeLevelId`'yi **master'daki 13
@@ -3893,6 +3910,66 @@ aktifleştirmede herhangi bir seviyede fark varsa uyarı ve **engel**.
 - Sezon Açılış Kontrol Listesi tek değerlendiriciden; engel varsa sunucu aktifleştirmeyi reddeder (önceki sezonun arşivi dahil hiçbir şey yazılmaz).
 - Görevlendirme kapsamı sezon müfredatından (saat > 0).
 - Commit'ler: oksis-api `9cdd1645`, `12ced2f0` · oksis-ui `0451028`.
+
+### `B-67` · Ders Programı, Nöbet, Şubeler ve Görevlendirmeler web ekranları kurulumdaki sezonu hedeflemiyor 🟠
+
+2026-09-24 sezon–menü ön incelemesinde ölçüldü
+([[sezon-durumuna-gore-menu-erisimi]] §3.2). Bu dört ekran sezon **kurulumunun** araçlarıdır ve
+backend kurulumdaki sezonu kabul ediyor: şube ve nöbet yalnız arşivi reddeder
+(`CreateClassRoomCommandHandler.cs:46-49`, `SaveDutyRosterDraftCommandHandler.cs:21-34`),
+program ve görevlendirme sezon id'sini açıkça alır. Web tarafı ise:
+
+1. `schedule-page.tsx:63-72` dönemi `useCurrentSession()`'dan alıyor; bu yalnız **aktif**
+   sezonu döndürür. İlk sezonda dönem `null`, program listesi sorgusu çalışmıyor, "Yeni" ile
+   program `academicTermId: ""` gönderilerek oluşturuluyor (:133). Aynı kalıp
+   `availability-page.tsx:58-69`, `editor-page.tsx:160-191`, `duty-page.tsx:69-84`.
+2. Şubeler (`sections-page.tsx:56-62`) ve Görevlendirmeler (`teacher-assignments-page.tsx:56-65`)
+   `myContext.activeSeasonId`'yi kullanıyor. Kurulumdaki sezon seçilemediği için
+   (`season-context-picker.tsx:325-327`) bu ekranlar onu hiç gösteremiyor.
+
+Sonuç: sezon geçişinde (eski sezon aktif) bu ekranlar **eski** sezona yazıyor; ilk sezonda
+hiçbiri kurulumdaki sezonla çalışmıyor. Müfredat ekranı doğru emsaldir: `sessionId`
+verilmediğinde sunucu kurulumdaki sezonu kullanır (`curriculum-page.tsx:45-51`).
+
+### `X-22` · İlk sezonda kullanıcı oluşturma, dosya yükleme ve öğrenci kaydı aktif sezon istiyor 🟠
+
+2026-09-24 sezon–menü ön incelemesinde ölçüldü
+([[sezon-durumuna-gore-menu-erisimi]] §3.3). Okulun ilk sezonu kurulumdayken aktif sezon
+yoktur; şu yazma yolları bu yüzden düşüyor:
+
+- Kullanıcı oluşturma/içe aktarma: `identity.errors.no-active-season` (409),
+  `PersonUserCreationService.cs:104-107`, `UserErrors.cs:91-93`.
+- Dosya ve okul logosu yükleme: `FILES_NO_ACTIVE_SESSION`,
+  `InitiateFileUploadCommandHandler.cs:84-88`, `UploadFileCommandHandler.cs:77-81`,
+  `UploadSchoolLogoCommandHandler.cs:44`.
+- Öğrenci kaydı: `students.errors.session-not-active`, `EnrollStudentCommandHandler.cs:67-74`.
+
+İlk sezonunu kuran okul öğretmen hesabı açamıyor, logosunu yükleyemiyor, öğrenci
+kaydedemiyor; oysa bunlar sezon açılmadan yapılması beklenen işler. Davet yolu kurulumdaki
+sezonla çalışıyor (`SeasonScopeRule.cs:13-25`) — kullanıcı oluşturmanın farklı davranması
+tutarsız. Karar gerekiyor: bu yollar kurulumdaki sezonu mu hedeflemeli, sezonsuz mu
+çalışmalı? Sezon geçişinde aynı yollar eski (aktif) sezona yazar; o da ayrıca ölçülmeli.
+
+### `TB-248` · Aktif sezonda dönem yokken ekranlar varsayılan dönemi üç ayrı kuralla seçiyor 🟡
+
+2026-09-24 sezon–menü ön incelemesinde ölçüldü
+([[sezon-durumuna-gore-menu-erisimi]] §3.4). Yarıyılda (1. dönem kapandı, 2. başlamadı) ve sezon
+sonunda (son dönem kapandı, sezon arşivlenmedi) aktif dönem yoktur; dönemin `isCurrent` bayrağı
+yalnız `Active` dönemde doğrudur (`ListTermsForPickerQueryHandler.cs:71`). Ekranlar bu durumda
+farklı yedeklere düşüyor:
+
+1. Web sezon bağlamı (`season-context.tsx:142-145`) → `terms[0]`. Notlar, Sınav Takvimi,
+   Devamsızlık Karnesi yarıyılda 1. dönemi gösteriyor (doğru), sezon sonunda da 1. dönemi
+   (son dönem olmalı).
+2. `resolvePlanningTerm` (`packages/core/src/academic-sessions/logic.ts:68-84`) → tarihi
+   gelmemiş ilk dönem. Raporlar yarıyılda başlamamış 2. dönemin devamsızlık raporunu, yani boş
+   tabloyu gösteriyor (`attendance-reports.tsx:88-104`).
+3. Backend `AttendanceTermResolver.cs:79-96` → yalnız `Active` dönem; dönem id'si verilmezse
+   devamsızlık özeti ve riski boş.
+
+Öneri: okuma ekranları en son kapanan dönemi, planlama ekranları başlamamış ilk dönemi
+varsayılan alır; kural core'da tek fonksiyon olur. Backend okuma uçlarının id'siz davranışı
+karar bekliyor.
 
 ## Not
 

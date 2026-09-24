@@ -21,6 +21,7 @@ the CLI).
 | `FormDialog` | ⬜ planned | roadmap — form modalları şimdilik `Dialog` + kendi gövdesi (emsal ayarların `AModal`'ı) |
 | `ConfirmDialog` | ✅ built | `components/shared/confirm-dialog.tsx` — `Dialog` üstünde onay akışı (`confirmLabel`, `confirmVariant: primary/danger`, `busy`). İlk tüketici Zil Programı "yeniden üret" (`D-19`) |
 | `EmptyState` | ✅ built | `components/shared/empty-state.tsx` — `D-10` "kayıt yok / eşleşme yok" ayrımı (`filtered`); stil `screens.css .att-state` (`page`) ve `.ayr-empty` (`compact`). Öğrenciler, Öğretmenler, Veliler, Kullanıcılar, Davetler, Etkinlikler, Dağıtım Kısıtları + ayarlar `AEmpty` sarmalayıcısı; bkz. 2026-09-15 turu |
+| `Note` | ✅ built | `components/shared/note.tsx` — satır içi bilgi/uyarı şeridi, `.att-note` kalıbının tek React karşılığı: ikon (15px, `OksisIcon`) + metin. `tone` (info/warn/success/danger → `att-note` / `.amber` / `.green` / `.red`), tonun varsayılan ikonu `icon` ile ezilir; `style`/`className` iletilir. Web'deki 80 elle yazılmış kullanım taşındı; bkz. 2026-09-24 turu |
 | `SeasonStateEmpty` | ✅ built | `components/shared/season-state-empty.tsx` — sezona bağlı boş durum (`TB-168`/`TB-173`); `EmptyState`i SARAR, kendi markup'ını yazmaz. Pano kartları (devamsızlık riski, canlı yoklama, not girişi); bkz. 2026-09-16 sezon durumu turu |
 | `StatusBadge` | ⬜ planned | roadmap |
 | `Pager` | ✅ built | `components/shared/pager.tsx` — kullanıcılar+öğrenciler paylaşır (stil `screens.css .usr-foot`) |
@@ -394,3 +395,32 @@ beslenir. **Yeni paylaşılan bileşen AÇILDI:** `SeasonStateEmpty`
   canlı veriyle tarayıcıda ölçülemeden taşımak güvenli değildi.
 - **Mobil:** zil ekranı salt okunur; `D-19`/`B-51` kusurlarını taşımıyor. `TB-174` uyarısı
   core'daki ortak cümleyle (`lessonlessDayWarning`) mobile de eklendi (`Note tone="warning"`).
+
+## 2026-09-24 — Satır içi not şeridi (`Note`) terfisi
+
+**Yeni paylaşılan bileşen AÇILDI:** `Note` (`apps/web/components/shared/note.tsx`).
+Emsal `EmptyState` (2026-09-15) ve `Dialog` (2026-09-16) terfileri.
+
+- **Gerekçe:** `.att-note` şeridi (ikon + `span` içinde metin) web'de 80 yerde elle
+  yazılmıştı: 12 özellik, 34 dosya. Görünüm ortak CSS sınıfı sayesinde tutarlıydı ama markup
+  kaymıştı. İkon boyutu 14/15 arasında değişiyordu, ikon seti de
+  `OksisIcon`/`GradeIcon`/`ActIcon`/`SrIcon` arasında dağınıktı. `att-note red` sınıfı
+  kullanılıyordu ama **hiç CSS kuralı yoktu**, şerit nötr gri görünüyordu.
+- **Sözleşme:** `tone` (`info` vars. / `warn` / `success` / `danger`), `icon?`
+  (`OksisIconName`; verilmezse tonun varsayılanı: info→`info`, warn→`alert`,
+  success→`checkC`, danger→`alert`), `children`. `HTMLAttributes<HTMLDivElement>` geçer:
+  boşluk ayarı çağıran yerde `style`/`className` ile yapılır, bileşen margin bilmez.
+  Ton → sınıf/ikon eşlemesi `Record<NoteTone, …>` tablosunda.
+- **Kabuk yeniden tanımlanmadı:** screens.css'teki `.att-note` / `.amber` / `.green`
+  kullanılır. Yalnız eksik olan `.att-note.red` eklendi (`--danger` %8 zemin, ikon `--danger`).
+- **Taşınan:** web'deki 80 kullanımın tamamı. Artık feature'larda `className="att-note"`
+  yazılmaz. Ton ve ikon her yerde korundu (ör. amber zeminde `info` ikonu → `tone="warn" icon="info"`).
+- **Görsel sapmalar (bilinçli):** ikon boyutu her yerde 15px (Şubeler modallarında 14'tü).
+  Etkinlikler `ActIcon`, oturum dökümü `SrIcon` ve Not `GradeIcon` glifleri `OksisIcon`
+  karşılıklarına döndü. Sınav oturumundan son şubeyi çıkarma uyarısı artık kırmızı zeminli
+  (önceden kuralsız `red` yüzünden griydi).
+- **Mobil ile ton adı farkı (açık):** mobilin `apps/mobile/src/components/note.tsx`
+  bileşeni `warning` diyor, web `warn` diyor. Web adı `Dialog`'un `tone`'uyla aynı
+  seçildi. Platformlar arası tek ad istenirse ya iki web bileşeni (`Dialog` + `Note`)
+  `warning`'e geçer ya da mobil `warn`'a geçer; henüz karar verilmedi. Mobilde
+  `school-settings/components/school-parts.tsx` içinde ayrıca yerel bir `Note` daha var.
