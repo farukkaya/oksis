@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-78` · `D-34` · `V-05` · `X-23` · `TB-256` · `E-34` · `ENG-04`
+**Sıradaki boş ID:** `B-78` · `D-35` · `V-05` · `X-23` · `TB-256` · `E-34` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -4186,6 +4186,18 @@ eklendi. Sabit kural formu (ders aramalı, gün, başlangıç) ve editörün ö�
 Ekranda ölçüldü: kutu kap genişliğine eşit (251/251), "rehb" → Rehberlik, "turk dılı" → 3 ders, eşleşme yoksa "Sonuç yok",
 Enter tek sonucu seçer, gün menüsünde arama yok.
 ⬜ Kalan: diğer ~65 native select'in `SelectBox`'a taşınması ve bir eslint kuralı (JSX `select` yasağı) ile kalıcı kapı.
+
+### `D-34` · Ders programı listesi bozuk: seçim sütunu eklenince "İşlem" alt satıra kaydı — stil iki dosyada kopya 🟠
+
+2026-09-25 kullanıcı bulgusu (E-33 sonrası, master'da `89efad2`). E-33 `schedule.css`'teki `.pr-thead, .pr-trow` şablonunu 11 sütuna çıkardı;
+ama `screens.css`'te ders programı stillerinin eski bir kopyası (90 `.pr-*` kuralı, 72'si birebir aynı, 2'si farklı, 16'sı yalnız orada)
+duruyordu ve CSS paketlemesi aynı seçicileri birleştirirken eski 10 sütunlu kuralı tuttu (tarayıcıya giden CSS'te yalnız eski kural
+vardı, ölçüldü). Sonuç: seçim kutusu geniş ilk sütuna düştü, "İşlem" alt satıra taştı. Aynı kopya `--grid-line` belirtecini de
+eziyordu. R12 ("bir liste iki yerde tanımlanmaz") ihlalinin stil karşılığı.
+
+🟡 **Kodda düzeltildi, commit bekliyor:** `screens.css`'teki ders programı bloğu kaldırıldı; yalnız orada olan 16 kural (`.pr-summary`,
+`.pr-sum*`) `schedule.css`'e taşındı; ders programı stilleri tek dosyada. Ekranda ölçüldü: şablon 11 sütun, satır tek satır,
+editör ızgarası değişmedi.
 
 ### `D-30` · Ders düzenleme penceresi sunucu hatasını göstermiyor 🟡
 
