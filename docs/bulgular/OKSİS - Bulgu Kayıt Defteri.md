@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-73` · `D-30` · `V-05` · `X-23` · `TB-253` · `E-32` · `ENG-04`
+**Sıradaki boş ID:** `B-78` · `D-34` · `V-05` · `X-23` · `TB-256` · `E-34` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2280,6 +2280,47 @@ ve onları kilitleyen testler aynı turda (`TB-188` dersi).
 ⬜ **Doğrulanmamış ürün farkı:** yönetim uçları `ExamsController`'da olduğu için `active-season-write` politikasına
 tabi — **arşiv sezonda katalog yazılamıyor**, oysa ders kataloğu (`AcademicsController`) bu kısıta tabi değil.
 
+### `E-33` · Ders programı ekranında seçilenleri yayınla / sil yok 🟠
+
+2026-09-25 kullanıcı isteği (Altınay B9.4). Liste ekranı programları tek tek yayınlatıyor/sildiriyor; 11 şubede toplu üretimden sonra
+her birini ayrı açmak gerekiyor. Varsayılanlar (kullanıcıya bildirildi): toplu silme **yalnız taslak**; toplu yayın **ya hep ya hiç**
+(seçilenler yayındakilerle ve birbirleriyle çakışma denetiminden geçer; biri takılırsa hiçbiri yayınlanmaz, neden gösterilir);
+eksik saat tek onayla kabul edilir (`B-77`); taslak silme bildirim üretmez (`B-76`).
+
+🟡 **Kodda yapıldı, commit bekliyor** (dal `feat/sinif-rehberligi-dersleri`): uçlar `GET timetable/programs/bulk-publish-preview`,
+`POST …/bulk-publish` (tek transaction, ya hep ya hiç; engelde 409 `bulk-publish-blocked`), `POST …/bulk-delete` (yalnız taslak,
+aksi 409 `bulk-delete-drafts-only`); yabancı/silinmiş kimlik 400 `bulk-unknown-programs`. Çakışma denetimi tek yerde
+(`PublishConflictDetector`: yayındakiler + seçilenler arası, seçilen şubenin kendi canlısı hariç); yayın/silme adımları
+`ProgramPublisher`/`ProgramDeletion`'a taşındı, tekli handler'lar da onları kullanıyor. Ekran: satır seçimi, eylem çubuğu,
+toplu önizleme penceresi (durum, engel, seçilenler arası çakışma, eksik saat onayı, bildirim/not), toplu silme onayı.
+21 birim testi; ATA-AL'de uç + ekran ölçüldü, temizlendi. **Yan etki (düzeltme):** master'da `PublishReadiness.ConflictCount`
+sabit `0`'dı — tekli yayın yayındaki programla çakışmayı HİÇ engellemiyordu; artık gerçek değer, çakışan yayın 409 `publish-conflicts`.
+
+### `E-32` · "Şubenin sınıf rehber öğretmeni girer" diye bir ders kuralı yok (Deneme, Koçluk, Rehberlik) 🟠
+
+Altınay'da 2026-09-25'te soruldu (kullanıcı: deneme saati, koçluk ve rehberliğe ilgili şubenin rehber öğretmeni girer).
+Koddan ölçüldü:
+- Görevlendirme **yetkinliktir** (öğretmen × ders, sezon; `SubjectTeacherAssignment`), şubeye bağlı değil. Şubedeki
+  öğretmeni ders programı üreticisi kapasite ağırlıklı dağıtımla seçer (`CompetencyAssignmentSource`).
+  `ClassRoom.HomeroomTeacherId` bu seçimde hiç kullanılmıyor.
+- Bugünkü tek yol elle: her rehber öğretmene Deneme/Koçluk yetkinliği (alan dışıysa gerekçe) + her şube×ders için
+  K-14 **Pin** (alan dışı pin'de ≥15 karakter gerekçe). Altınay'da 11 şube × 2–3 ders ≈ 30 pin; sınıf öğretmeni
+  değişince pin eski öğretmende kalır.
+- Rehberlik MEB çizelgesinde ders satırı değil, toplam beyanıdır (`MebGuidanceHours`); müfredat satırı olmadığı için
+  ders programı talebine girmiyor (koddan; üretici çalıştırılarak ölçülmedi).
+- Altınay verisi: Deneme 2 saat (9–12, her profil), Koçluk 1 saat (9–10) okul dersi; üçüne de görevlendirme yok.
+
+⬜ Öneri (karar bekliyor): katalogdaki derse "sınıf rehber öğretmeni okutur" niteliği; üretici o dersin şube saatlerini
+`HomeroomTeacherId`'ye verir (yetkinlik ve pin gerekmez, öğretmen değişince kendiliğinden izler). Rehberlik saati aynı
+nitelikle programa girer; Cuma son saat sabit yerleşimi (`B9.4` notu) ayrı konu. Deneme'nin ders olarak
+modellenmesi doğru; açık soru: bu derslerin not/karne ve yoklama davranışı.
+
+✅ **Kararlar (2026-09-25, kullanıcı):** (1) Deneme, Koçluk, Rehberlik **not almaz**, not ve karne ekranlarında
+görünmez; **yoklaması tutulur**. (2) Rehberlik saati **MEB'in beyan ettiği saattir** (`MebGuidanceHours`), okul
+dersi olarak eklenmez. Ek istek: hücre menüsünden bu dersler elle yerleştirilebilsin; otomatik yerleştirmede
+ders → gün + saat sabit kuralı (ör. Rehberlik her Cuma son saat, Koçluk Cuma 7. saat, Deneme Salı son iki saat
+blok) tanımlanabilsin.
+
 ### `E-31` · Kişinin adı ve soyadı hesap açıldıktan sonra düzeltilemiyor — uç var, ekran yok 🟡
 
 Altınay B6.5 ölçümünde çıktı (2026-09-24). Ad ve soyadı değiştirebilen **tek yüzey davet kabul ekranı**
@@ -4038,6 +4079,123 @@ profilde saat ya da toplam değişmedi, okutulan ders düşmedi. Okulun beyanı 
 (güncel adı "Seçmeli İkinci Yabancı Dil (Almanca)") 9–12'de okul dersi olarak görünür; pasife almak okulun kararı.
 Ders: [[genisletilen-kural-tum-veride-olculur]] — ikinci ayak tek örnekle genişletilmiş, yalnız hedef satırda doğrulanmıştı.
 
+### `B-74` · Şube şube otomatik üretim diğer şubelerin taslaklarını görmüyor — aynı öğretmen aynı saatte iki şubede 🔴
+
+2026-09-25 Altınay B9.4 testinde çıktı (kullanıcı ekran bulgusundan ölçüldü). 9-A, 9-B, 10-A, 10-B ayrı üretimlerle (her biri
+kendi `generation_job`) kuruldu. Üretici dış meşguliyeti yalnız **canlı** programlardan topluyor
+(`AutoGenerateScheduleJob.GatherExternalOccupancyAsync`, K12 `owner != demand.ClassRoomId`); aynı dönemin diğer
+**taslakları** dolu sayılmıyor. Ölçüldü: Eylem Adıgüzel Pazartesi 5–6'da hem 10-A hem 10-B'de, Salı 5–6'da hem 9-A hem 9-B'de
+Tarih'te. Programların `conflict_count` değeri 0 — çakışma sessiz. "Şube üretiminde boşluk kalmıyor" görüntüsünün sebebi bu.
+
+### `B-75` · Toplu üretim (seviye/tümü) sıkışınca onarmıyor — boş hücre varken ders yerleşmemiş kalıyor 🟠
+
+Aynı testte: 11-A, 11-B, 11-C tek üretimde (`A7249FB4…`) kuruldu, çakışma yok ama 11-B'de 2 saat eksik (Eylem Adıgüzel'in
+Tarih ve Seçmeli Tarih'i). 11-B'nin boş hücreleri (Çarşamba 7, Cuma 7) Eylem'in 11-A (Tarih) ve 9-A (Koçluk) saatleri;
+Eylem'in boş olduğu saatlerde 11-B dolu. Açgözlü çözücü (`GreedySolver`) yerleşimi geri almıyor/takas etmiyor; tek bir
+takas (11-B'deki başka dersi boş hücreye kaydırıp açılan saate Tarih) eksiği kapatırdı. Izgara 40/40 dolu okulda sık görülür.
+
+⬜ Kapatma yolu (kullanıcı onayı 2026-09-25, "düzeltmeye geç"): (1) şube üretimi aynı dönemin diğer şube taslaklarını dolu
+sayar; önizleme taslaklar arası çakışmayı gösterir; (2) çözücüye yerleşmemiş ders için takas/onarım adımı; bulunamazsa
+gerekçeli yerleşmemiş.
+
+🧪 **Aday çözüm denendi, kararı bekliyor (2026-09-25):** kullanıcı önce görmek, sonra başka bir çözümü konuşmak istedi. Uygulanan
+aday (çalışma kopyasında, commit yok; geri alma yaması `scratchpad/b74-b75-oksis-{api,ui}.patch`, geri alınabilirlik doğrulandı):
+`CurrentProgramOccupancy` (şubenin canlısı varsa o, yoksa en son taslağı) üretimde, sayaçta, önizlemede, editörde dolu sayılır;
+taslaklar arası çakışma yayını engellemeyen uyarı, canlıyla çakışma engel; `GreedyRepair` (boş hücre → tek takas → derinlik 2
+zincir, aynı şube, sabit kural hücresi ve blok korunur, deterministik) + gerekçeli yerleşmemiş. Ölçüm: ATA-AL şube şube üretimde
+çakışan hücre 81 → 0; Altınay 11-A/B/C verisiyle çevrimdışı 5 sıralamada eksik saat 1,2,4,1,0 → 0,0,0,0,0. Ayrıca
+`ScheduleProgramStatsRecomputer` Cuma'yı saymıyordu (`(int)Day is 0..4`, günler 1–5) → dolu ızgarada `missing_hours` hep 8;
+bu düzeltme de aynı yamada. Açık: saklı `missing_hours` ızgara boşluğunu, önizleme müfredat eksiğini sayıyor (iki tanım).
+
+✅ **Karar (2026-09-25, kullanıcı):** yalnız **yayındaki** programlar dış çakışma denetimine girer — bu doğru davranış, bozulmaz;
+başka şubelerin taslakları dolu sayılmaz, tekil üretim değişmez. **Toplu üretimde** o an üretilen şubeler (yayındakilerin yanı sıra)
+kendi içinde çakışmasız olur — Altınay 11-A/B/C tek işte 0 çakışma, yani mevcut kod bunu zaten yapıyor. Bu yüzden **B-74 hata
+değil, tasarım gereği** (tek tek üretilen taslaklar arası çakışma yayın kapısında yakalanır). Aday çözümün taslak doluluğu kısmı
+geri alındı (arşiv `~/oksis-yedek/yamalar/b74-b75-aday-cozum-*.patch`); **tutulanlar:** B-75 onarım adımı, `missing_hours`
+Cuma düzeltmesi, üretim ekranında eksik saat + gerekçe. Yayın önizlemesine taslak çakışması bilgisi eklenmez.
+
+🟡 **B-75 kodda düzeltildi, commit bekliyor** (dal `feat/sinif-rehberligi-dersleri`): `GreedyRepair` (boş hücre → aynı şubede
+tek takas → derinlik ≤2 zincir; sabit kural hücresi ve blok korunur; her adım `SlotFeasibility.CanPlace`: yayındakiler + aynı
+üretimin kardeşleri) + gerekçeli yerleşmemiş (`UnplacedReasonText`, üretim ekranında "N saat eksik" + satırlar); `missing_hours`
+Cuma düzeltmesi. Taslaklar dolu sayılmıyor (entegrasyon testiyle kilitli). Birim 3370 yeşil; `AutoGenerateScheduleJobTests` 7/7
+(dosyanın tohumundaki kiracısız `Subject` eklemesi de düzeltildi). Altınay 11-A/B/C çevrimdışı: eksik 1,2,4,1,0 → 0; rastgele
+40 toplu girdide toplam eksik 281 → 110. Açık: sabit kuralın basılamayan saati eksiğe sayılıyor ama gerekçe satırı üretmiyor
+(ATA-AL 9-B: etiket 20, satırlar 18) — Y-05 kapsamında.
+
+### `B-77` · Eksik saatli ders programı ekrandan yayınlanamıyor — onay seçeneği yok 🟠
+
+2026-09-25 Y-05 ekran testinde (ATA-AL 9-A). Sunucu eksik saat varsa `requiresAllowMissingHours=true` döner ve yayını
+`allowMissingHours` onayıyla kabul eder; önizleme `canPublish=false` der (`GetPublishPreviewQueryHandler:41`). Yayın ekranı
+(`publish-drawer.tsx`) "Yayınla"yı `canPublish` ile kapatıyor ve onay kutusu göstermiyor; gönderdiği `allowMissingHours`
+hiç ulaşılamıyor. Sonuç: tek bir saati eksik (ör. sabit kural çakışmasıyla boş kalan hücre) program ekrandan yayınlanamaz.
+Uçtan (`allowMissingHours: true`) 200 döndüğü ölçüldü. Master'da da aynı.
+
+⬜ Kapatma yolu: eksik saatte "N saat eksik; bilerek yayınla" onay kutusu, işaretlenince "Yayınla" açılır (çakışma ve boş program
+engel kalır).
+🟡 **Kodda düzeltildi, commit bekliyor:** tekli yayın penceresinde onay kutusu (kapı mantığı `core/schedule/bulk.ts`), toplu yayında
+tek onay. Ekranda ölçüldü.
+
+### `D-32` · Ders programı kartında "BLOK" ve "KURAL" rozetleri ders adının üstüne biniyor 🟡
+
+Aynı testte 9-A Salı 7–8: "Proje Tasarımı ve Uygulamaları" adı rozetlerin altında kalıp kesiliyor. ⬜ Rozetler başlıkla aynı
+akışta (sağda, sarmadan) ya da başlığın altında yer almalı.
+
+### `D-33` · Üretim önizlemesinde yerleşmeyen ders satırı: başlık ve gerekçe bitişikti, liste çok uzundu 🟡
+
+Aynı testte: `UnplacedReasons` `pr-issue-row` stilini kullanıyordu, `.t`/`.s` satır içi olduğu için "…yerleşmedişubenin haftalık…"
+bitişik; şube başına 17–20 kart açık geliyordu. 🟡 **Kodda düzeltildi:** `.pr-issue-row .it .t/.s` blok (yayın ekranı da
+düzelir); liste kapalı özet ("17 ders · 26 saat yerleşmedi") + açılınca sıkı satırlar. Ekranda ölçüldü.
+Ayrıca yayın önizlemesinde 15 kez aynı "Eksik ders saati var" başlığı → sunucu başlığı ders, saat ve öğretmenle kuruyor
+("Tarih — 2 saat eksik (Melike Şen)"; çözülemeyen satırda gerekçe sona eklenir). Ekranda ölçüldü.
+
+### `B-76` · Hiç yayınlanmamış taslak program silinince öğrenci ve velilere "Ders programı kaldırıldı" bildirimi gidiyor 🟠
+
+2026-09-25'te ölçüldü. Altınay'da 11 taslak ürün ucuyla (`DELETE timetable/programs/{id}`) silinince 262 uygulama içi
+"📅 Ders programı kaldırıldı" bildirimi üretildi (okunmamış; push ve e-posta yok, okulda kayıtlı cihaz yok). ATA-AL'de 12 taslak
+silinince 184 bildirim. Taslak öğrenci/veliye hiç görünmediği için "kaldırıldı" haberi yanlış ve gürültü. Ayrıca üretim işlerini
+(`schedule_generation_jobs`) silen ürün ucu yok.
+
+⬜ Kapatma yolu: bildirim yalnız canlı (yayınlanmış) program kaldırılınca üretilsin; taslak silme sessiz.
+🟡 **Kodda düzeltildi, commit bekliyor:** `ScheduleProgramDeletedEvent.WasLive`; handler canlı olmayanda bildirim üretmez (tekli ve
+toplu silme aynı yoldan). ATA-AL'de ölçüldü: taslak toplu silmede 0, canlı tekli silmede 16 bildirim.
+
+### `B-73` · MEB'den aktarılan uzun kodlu dersler düzenlenemiyor — doğrulayıcı 20, kolon 120 🟠
+
+2026-09-25 Y-05 ekran testinde çıktı (ATA-AL, "Proje Tasarımı ve Uygulamaları"ı sınıf rehberliği dersi yaparken).
+İçe aktarım dersin kodunu adından türetiyor (`PROJE-TASARIMI-VE-UYGULAMALARI`, 30 karakter); kolon 120 alıyor ama
+`CreateSubject`/`UpdateSubject` doğrulayıcıları `MaximumLength(20)`. Düzenleme formu kodu değiştirmese de gönderdiği
+için her kayıt 400 ("'Code', 20 karakterden küçük veya eşit olmalıdır. 30 karakter girdiniz"). Ölçüldü: Altınay'da 79
+dersin **33**'ü (en uzun `BEDEN-EGITIMI-VE-SPOR-GORSEL-SANATLAR-MUZIK` 43); ATA-AL, DEV-OKUL, OKSOSYAL'de 33, ALTINAY-SBL'de 30.
+Y-05'in yeni `REHBERLIK-VE-YONLENDIRME` kodu da 24. Sonuç: okul bu derslerin türünü, seviyesini, adını, durumunu değiştiremiyor.
+
+🟡 **Kodda düzeltildi, commit bekliyor** (dal `feat/sinif-rehberligi-dersleri`): sınır tek sabit `Subject.CodeMaxLength = 120`;
+kolon yapılandırması ve iki doğrulayıcı onu okuyor (şema değişmedi). Birim testi: 30 karakterlik aktarılmış kod
+kabul, 121 red.
+
+### `D-31` · Native `<select>` yasağı delinmiş: web uygulamasında ~69 native seçim kutusu 🟠
+
+2026-09-25'te kullanıcı bulgusu (Y-05 sabit kural formu native select ile yazılmıştı). Kural `FilterDropdown`
+dosya başında ve kullanıcı bulgularında yazılı: native `<select>` kullanılmaz, form alanında `SelectBox`. Ölçüldü
+(`grep -rn "<select" apps/web`): 69 satır, birkaçı yorum. En çok: `sections/modals.tsx` 6, `homework-admin-screen.tsx` 6,
+`platform/school-wizard.tsx` 5, `settings/classroom-tab.tsx` 4, `schedule/constraints-page.tsx` 4, `settings/general-tab.tsx` 3.
+Yasak yalnız yorumda; makine zorlaması (lint) yok, bu yüzden her yeni ekranda yeniden deliniyor.
+
+🟡 **Kısmen (commit bekliyor, dal `feat/sinif-rehberligi-dersleri`):** `FilterDropdown`'a `searchable` (varsayılan kapalı,
+Türkçe katlamalı arama; ortak `core` `foldTurkish`) ve `block` (form alanında tam genişlik; `SelectBox`'ta varsayılan açık)
+eklendi. Sabit kural formu (ders aramalı, gün, başlangıç) ve editörün öğretmen görünümü seçimi (aramalı) `SelectBox`'a geçti.
+Ekranda ölçüldü: kutu kap genişliğine eşit (251/251), "rehb" → Rehberlik, "turk dılı" → 3 ders, eşleşme yoksa "Sonuç yok",
+Enter tek sonucu seçer, gün menüsünde arama yok.
+⬜ Kalan: diğer ~65 native select'in `SelectBox`'a taşınması ve bir eslint kuralı (JSX `select` yasağı) ile kalıcı kapı.
+
+### `D-30` · Ders düzenleme penceresi sunucu hatasını göstermiyor 🟡
+
+Aynı ölçümde: `PUT academics/subjects/{id}` 400 döndü, pencere hiçbir mesaj göstermeden açık kaldı (`B-73`'ün
+kullanıcıya görünmemesinin sebebi). Kullanıcı "Kaydet"e basar, hiçbir şey olmaz. `apiErrorDesc` sözleşmesinin
+("dönüş asla boş değildir") burada kullanılmadığı görülüyor.
+
+🟡 **Pencere kısmı kodda düzeltildi, commit bekliyor:** kaydetme hatası pencerede `mutationErrorDesc` ile gösteriliyor. ⬜ Katalog satırındaki simge düğmelerinin
+erişilebilir adı da yok (`aria-label` boş) — aynı turda.
+
 ### `B-72` · Kurulumdaki sezonda duyuru yazılamıyor — hedef havuzu ve oluşturma "Aktif sezon bulunamadı" 🟠
 
 Altınay'da 2026-09-25'te incelendi (kullanıcı sorusu; salt okunur ajan incelemesi, kök neden elle doğrulandı).
@@ -4119,6 +4277,46 @@ verdi ama tablo onayı "verildi" gösterdiği için müdür yeniden onaylayıp s
 `CurriculumGradeStates`: bugün sapma var ama onay onu bilerek kabul etmemişse onay geçersiz sayılır (ortak ve
 seçmeli için ayrı). Tablo onay düğmesini yeniden gösterir, müdür sapma penceresiyle onaylar. Altınay'da
 önce/sonra ölçüldü: 10 profilden yalnız 9. sınıfın ortak onayı düştü, diğer kalemler değişmedi.
+
+### `TB-255` · Veri yazan göç Redis önbelleğini düşürmüyor — yeni ders 24 saat listede görünmüyor ⚪
+
+2026-09-25 Altınay testinde çıktı (kullanıcı: "rehberlik dersi sabit kural modalında ders listesinde yok").
+`ListSubjectsQuery` `[Cacheable(86_400, "academics:subjects")]` (okul başına anahtar). Y-05 göçü
+`20260925_guidance_master_subject` rehberlik dersini SQL ile okul kataloglarına yazdı; önbellek düşürme yalnız komut
+hattında (`CacheInvalidationRules`) çalıştığı için göç atlandı. Ölçüldü: Altınay ucu 77 ders döndü, rehberlik yok; ATA-AL'da
+bir ders düzenlendiği için anahtar düşmüş, orada görünüyordu. Üç okulun `tenant:*:academics:subjects` anahtarı elle silindi
+→ Altınay 78 ders, rehberlik listede.
+
+⬜ Kapatma yolu: veri yazan göçten sonra ilgili önbellek anahtarları düşmeli — ör. API açılışında uygulanan göç varsa
+etkilenen önbellek önekleri temizlenir, ya da önbellek anahtarı şema/göç sürümünü taşır. Tek seferlik elle silme kalıcı çözüm değil.
+
+### `TB-254` · `CurriculumVersioningMigrationTests.Cutover_…` kırmızı: eski göç noktasında güncel model `track` kolonunu okuyor ⚪
+
+2026-09-25'te Y-05 doğrulamasında çıktı (ajan ölçümü). Test göçleri eski bir noktaya kadar kurup veriyi güncel
+kodla okuyor; `SessionCurriculum.LoadItemsAsync` Y-04'ün `track` kolonunu seçtiği için `Invalid column name 'track'`.
+Y-04 (`14b1f130`, master) ile başladı; Y-05 değişikliğiyle ilgisi yok. Ürün kodu doğru; test, ara göç şemasında
+güncel sorguyu çalıştırıyor.
+
+⬜ Kapatma yolu: testin okuma adımı hedef göç noktasının şemasıyla uyumlu kalsın (ham SQL) ya da test kesme noktasını
+güncel göçe taşısın. `TB-252` ailesi (entegrasyon testi ortam varsayımı).
+
+### `TB-253` · Ders programında elle yerleştirme ve öğretmen değiştirme ders/yetkinlik denetlemiyor ⚪
+
+2026-09-25 ders programı keşfinde çıktı (E-32 bağlamı; salt okunur inceleme, iddia elle doğrulandı).
+`PlaceLessonCommandHandler` ve `AssignTeacherCommandHandler` yalnız müsaitlik (Unavailable → `timetable.override`)
+ve slot/öğretmen/derslik çakışmasına bakıyor; dersin o şubenin müfredatında olup olmadığı ve öğretmenin o derse
+yetkin olup olmadığı sunucuda denetlenmiyor (`ScheduleProgram.Place` yalnız slot tekilliği). Tek kapı ekranın
+veri kaynağı: yan panel `CompetencyAssignmentSource`'tan besleniyor. Ama "öğretmeni değiştir" listesi
+(`GetAvailableTeachersQueryHandler.cs:44-65`) yetkinliğe bakmadan her aktif öğretmeni gösteriyor. Alan dışı
+atama meşru olabilir (K-14 gerekçe ister); burada gerekçesiz ve izsiz geçiyor. [[kural-ekranda-degil-sunucuda]]
+
+⬜ Kapatma yolu: E-32 tasarımıyla birlikte ele alınmalı (sınıf rehber öğretmeni dersleri yetkinlik istemeyecek);
+elle yerleştirmede "müfredatta yok" reddi, alan dışında gerekçe.
+
+🟡 **Kodda düzeltildi, commit bekliyor** (dal `feat/sinif-rehberligi-dersleri`, Y-05 dilim 4): `PlaceLesson` ve
+`AssignTeacher` müfredatta olmayan dersi reddeder, alan dışı öğretmende ≥15 karakter gerekçe ister ve yerleşime yazar;
+öğretmen listesi sunucuda `recommended` / `in-field` / `out-of-field` işaretli. Tohum okulunda uçla ölçüldü (422, 422,
+gerekçeyle 201). Kapanış için ekranda gerçek yerleştirmeyle ölçülecek.
 
 ### `TB-252` · Müfredat entegrasyon testi paylaşılan veritabanındaki yayımlanmış sürüme bağlı — çalışma sırasına göre kırmızı ⚪
 
