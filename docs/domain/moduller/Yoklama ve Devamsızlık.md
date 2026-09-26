@@ -55,6 +55,11 @@ Modülün taşıyıcı fikri **dondurma**: bir yoklama oturumu programdan doğar
 
 **Yetki:** Okuma `attendance.read`, yoklama girme `attendance.write`, idare işlemleri (karar, retro, hatırlatma, etkinlik yönetimi) `attendance.manage`, raporlar `attendance.report`.
 
+### Kulüp saati (`Y-06`, 2026-09-26)
+
+- Kulüp saati hücresi **şube yoklamasına girmez** (maddileştirici öğretmensiz ve kulüp türündeki hücreyi atlar); öğrenci o saatte kulübündedir, yoklamayı danışman kulüp saati etkinliğinde alır.
+- Kulüp yoklamasındaki "gelmedi"nin devamsızlık sayacına yazılması henüz yok — gün eşdeğeri, mazeret ve düzeltme penceresi kararı bekliyor (`E-34`).
+
 ## Kapsam dışı
 
 - **Kendi dosya deposu.** Mazeret belgeleri Documents modülünde saklanır; bu modül yalnız referans taşır.

@@ -62,6 +62,14 @@ Handler içindeki ikinci katman "hangi kulüp" sorusunu sorar ve sırası sabitt
 
 **Hata sözleşmesi.** Kodlar `Clubs.` önekiyle gelir ve HTTP durumu önekten çözülür: doğrulama 400 (bozuk süzgeç, tanınmayan kategori, kadroda olmayan danışman, durum değiştirmede taslak hedefi, roster'da üye olmayan öğrenci); durum makinesi ihlali, kontenjan dolu, eşzamanlı karar, sezon yok ve aynı adda kulüp 409; kapsam dışı, başka sezonun kulübü ve okuma yolunda sezonsuz okul 404. 409 ölçütü: "gövde kusursuz, kaydın hâli uygun değil" — aynı istek koşul değişince aynen geçer. Domain istisnasının Türkçe mesajı korunur ve doğrudan kullanıcıya gösterilir. Ad tekilliği iki katmandır: ön kontrol hatayı anlaşılır yapar, indeks son savunmadır ve ihlal indeks adından tanınır.
 
+### Kulüp saati (`Y-06`, 2026-09-26)
+
+- Kulübün **kulüp saati yeri** okulun derslik kataloğundan seçilir (isteğe bağlı; boşsa "Belirtilmedi"). Kulüpte kullanılan derslik silinemez.
+- **Tek aktif danışmanlık:** öğretmen bir sezonda yalnız bir aktif kulübün danışmanı olur (oluşturma, danışman değişimi, yeniden aktifleştirme). Pasif kulüp sayılmaz.
+- **Tek üyelik:** öğrencinin bir sezonda tek canlı (bekleyen/aktif/askıda) üyeliği olur; keşifte öteki kulüpler "kapalı" ve gerekçeli, katılma ve onay uçları reddeder.
+- **Başvuru kapsamı:** okul kulüp saatini programa koyduysa sınıfında kulüp saati olmayan öğrenci kulüpleri görmez, başvuramaz.
+- **Kulüp saati etkinliği:** programda kulüp saati olan her hafta her aktif kulübe sistem açar (tür `clubHour`); aktif üyeler kayıtlı doğar, öğrenci geri çekemez, kontenjan kapısı işlemez, elle iptal edilemez, tatilde açılmaz. Yoklamayı danışman alır. Devamsızlığa yansıması ürün kararı bekliyor (`E-34`).
+
 ## Kapsam dışı
 
 - **Ayrı "başvur" ucu.** Sözleşmede vardı, ekranda ölüydü; tek katılma komutu iki modu karşılar.

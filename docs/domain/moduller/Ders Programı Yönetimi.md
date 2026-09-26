@@ -72,6 +72,13 @@ Modülün taşıyıcı fikri **rezervasyon**: bir yerleşim ancak programı canl
 
 **Yetki:** Düzenlemenin tamamı `timetable.manage` — dağıtım kısıtı yazma dahil; kısıt listesi `timetable.view-all`. Yayın `timetable.publish`, silme `timetable.delete`, tüm sınıfları görme `timetable.view-all` ile ayrılmış. Yerleştirme, taşıma, öğretmen atama ve istisna işlemleri ayrıca `timetable.override` tanır — sert kısıtın (öğretmen "müsait değil" demiş) yönetici tarafından bilerek aşılabilmesi için. Derslik kataloğu bu modülde yaşar ama izni [[Sınıflar ve Şubeler]] ailesindedir (`class-rooms.manage`).
 
+### Kulüp saati (`Y-06`, 2026-09-26)
+
+- Katalogda **kulüp saati** türündeki ders şubede **öğretmensiz ve yersiz** hücre olarak yerleşir ("Kulüp Saati"), eksik sayılmaz; yeri yalnız sabit yerleşim kuralından gelir (kuralsız saat eksik kalır, çözücüye gitmez).
+- **Danışman meşguliyeti:** kulüp saati diliminde aktif kulübü olan danışman kapsam dışı şubeye ders almaz — üretimde, editörde (yerleştir/taşı/öğretmen ata), vekil seçiminde aynı kural.
+- Görünümler: şube "Kulüp Saati"; öğretmen "Kulüp · {ad}" + yer; öğrenci/veli üye olduğu kulüp + danışman + yer, üyelik yoksa "Kulüp seçilmedi".
+- Yayın kapısı: kapsamdaki şubelerde farklı dilim ve danışmanın kulüp saatine ders alması **engel**; kulüpsüz öğrenci, kapsam dışı üyelik, danışmansız/yersiz kulüp, aynı derslikte iki kulüp **uyarı**.
+
 ## Kapsam dışı
 
 - **Saat değişikliği istisnası.** Zaman programın değil [[Zil Çizelgesi]]'nin işi olduğu için böyle bir istisna türü yok.
