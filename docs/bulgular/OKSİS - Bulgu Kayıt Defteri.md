@@ -1146,6 +1146,16 @@ dersin haftada hiç okutulmadığı ancak derslik/öğrenci şikâyetiyle fark e
 ayrı raporlanır. Gösterge müfredata karşı toplam açığı verir. Ortak derste öğretmen yoksa aday
 "önerilen" olarak işaretlenmez ya da üretim başlamadan ön denetim uyarır.
 
+✅ **Kodda düzeltildi, master'da (2026-09-26, oksis-api `8f74dc73` merge `563d9c6b`, oksis-ui `1453579` merge `04c41e1`).** `CompetencyAssignmentSource` yetkin
+öğretmeni olmayan dersi artık düşürmüyor: satır öğretmensiz ve gerekçeli gelir (`AssignmentDemand.NoCompetentTeacher`, Y-05'in
+`UnassignedReason` deseni). Böylece yayın önizlemesi ve yerleşmemiş dersler listesi bu dersi eksik sayar. Üretim işi çözücüye
+girmeyen satırları (`SolveInput.UnassignedByClassRoom`) her adayın eksik saatine ve şube kırılımına ekler, yerleşmemiş derslerde
+`Unassigned` gerekçesiyle gösterir. Sözleşme: `AutoGenUnplacedDto.SubjectId/TeacherId` nullable (codegen yenilendi).
+Testler: birim 3404 yeşil (yeni: talep kaynağı, çözücü), entegrasyon `AutoGenerateScheduleJobTests` + yeni B-66 senaryosu yeşil.
+⬜ Canlı Altınay üretiminde ölçülmedi (5112'deki API aynı Hangfire kuyruğunu dinliyor). "Ortak ders öğretmensizse önerilmez"
+ayağı uygulanmadı: eksik artık görünür, tüm adaylara eşit eklendiği için sıralamayı değiştirmez. Strict modda öğretmensiz ders
+"çözüm yok" üretir; gevşetme önerileri buna uygun değil.
+
 ### `D-29` · Katalog satırındaki simge düğmelerinin adı yok; pasife alma tek tık ve onaysız 🟡
 
 Altınay `B-64` ekran ölçümünde yaşandı (2026-09-23). *Ayarlar › Akademik Yapı › Ders Kataloğu*
@@ -3631,6 +3641,14 @@ görüyor. Öncelik bu yüzden 🟠'de kalıyor ama kapsamı öğretmenden **ü�
 ⬜ Karar gerekiyor: web'de öğrenci/veli yüzeyi olacak mı (yoksa bu roller yalnız mobil mi
 kullanılacak ve web girişi onları mobil uygulamaya yönlendirecek mi)? Pano rol dalı ve
 öğrencinin sezon okuma izni bu karara bağlı.
+
+🟡 **Öğretmen ayağı kapandı, master'da (2026-09-26, oksis-ui `9500b25`, merge `04c41e1`).** Pano kartları artık çağırdıkları
+ucun sunucu izniyle kapılı (`packages/core/src/dashboard/widgets.ts` · `DASHBOARD_WIDGET_RULES`, izinler `[RequirePermission]`'dan:
+`users.view`, `season.current.read`, `attendance.manage`, `attendance.report`, `grades.report`). İzni olmayan kart mount edilmez,
+sorgusu atılmaz; "Git" düğmeleri `canAccessRoute` ile kapılı. Öğretmene yeni "Bugünkü Derslerim" kartı (`attendance/sessions/my`,
+yeni uç yok). Canlı ölçüm (Playwright, Altınay, worktree web 3005 + API 5113; 3000'deki master'da önce ölçülmemişti, kullanıcı fark etti): öğretmende 403 yok (yalnız bilinen logo 404'ü, `TB-244`), müdür panosu değişmedi.
+⬜ Açık: öğrenci/veli web yüzeyi kararı ve öğrencinin `academic-sessions/current` 403'ü (canlı ölçülmedi); K-09 örnek kartları.
+
 ### `D-23` · Kullanıcılar ekranı idari personelin bağlı profilini "—" gösteriyor ⚪
 
 **Ölçüm (Altınay, 2026-09-20):** 14 hesaplık listede müdür ve müdür yardımcısının **Bağlı
@@ -4111,6 +4129,11 @@ dersliği göstermeye devam eder, sorgu süzgeci dersliği gizler; yayındaki pr
 
 ⬜ Kapatma yolu: silme, derslik canlı ya da taslak bir programın yerleşiminde veya bir sınav salonunda kullanılıyorsa reddedilsin
 (`rooms.errors.in-use`, gerekçe metniyle: "N ders yerleşiminde kullanılıyor"). Pasife alma yolu açık kalır.
+
+✅ **Kodda düzeltildi, master'da (2026-09-26, oksis-api `9320cb84`, merge `563d9c6b`).** `DeleteRoomCommandHandler` aktif yerleşimi olan
+(silinmemiş programda) dersliği `rooms.errors.in-use-placements`, sınav salonu olan dersliği `rooms.errors.in-use-exams` ile reddeder;
+pasif (kaldırılmış) yerleşim engel değildir. Birim 3 + entegrasyon 2 test (gerçek SQL). Canlı ölçülmedi: Altınay'da yerleşimdeki
+her derslik aynı zamanda ev dersliği, eski şube kapısı zaten yakalıyor.
 
 ### `D-32` · Ders programı kartında "BLOK" ve "KURAL" rozetleri ders adının üstüne biniyor 🟡
 
