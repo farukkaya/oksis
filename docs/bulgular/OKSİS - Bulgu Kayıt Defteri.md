@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-80` · `D-36` · `V-05` · `X-24` · `TB-257` · `E-36` · `ENG-04`
+**Sıradaki boş ID:** `B-82` · `D-36` · `V-05` · `X-24` · `TB-259` · `E-36` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -239,11 +239,16 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 12 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 41 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 55 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 42 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 54 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 41 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **148** | |
+| **Toplam** | **149** | |
+
+> **Arşiv turu (2026-09-27):** ders programının master'da doğrulanan 3 maddesi arşive taşındı (Arşiv §62: `B-66`, `B-78`,
+> `TB-123`). `TB-236` defterde birebir iki kez yazılmıştı; kopya silindi. Sayılar `grep '^### \`'` ile yeniden sayıldı: **149**
+> blok. Tablo önceki turda 148 diyordu ama gerçek sayı 153'tü (sonradan eklenen `B-80`, `B-81`, `TB-258` vb. sayaca işlenmemişti).
+> **Açık sorun:** `TB-220` iki farklı maddeye verilmiş (§10 Ödevler ve §12 derslik hataları); yeniden numaralandırılmadı.
 
 > **Arşiv turu (2026-09-26):** master'a merge edilen 13 madde arşive taşındı (Arşiv §61: `B-68`, `B-69`, `B-70`,
 > `B-72`, `B-73`, `B-75`, `B-76`, `B-77`, `D-30`, `D-33`, `D-34`, `E-32`, `E-33`). Sayılar `grep '^### \`'` ile yeniden
@@ -266,7 +271,7 @@ sayaçlar üçü arasında ortak.
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
 > duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
-**Modül dağılımı:** Notlar 5 · Ödevler 4 · Bildirimler 6 · Nöbet 1 · Çapraz kesen 50 (sınav, okul açılışı ve platform kimliği maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 131 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
 
 > **2026-09-16 gece düzeltme turu sürüyor.** Kodda düzeltilip **commit bekleyen** maddeler (dallar
 > `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`): `TB-174`, `D-19`,
@@ -570,6 +575,16 @@ koşmamıştı (`TB-190`), ve EF-Ignore bekçisi bir **yanlış pozitif** verdi 
 
 ⬜ Kapatma yolu: tarihi test anına göre üret (ör. bugün + 7 gün) ya da şemaya saat enjekte et. Aynı sabit tarih
 kalıbı başka şema testlerinde de var mı, taranmalı.
+
+### `TB-258` · Ödev form şeması testi sabit tarihe bağlı; tarih geçince kırmızıya döndü 🟡
+
+2026-09-27'de `oksis-ui` `packages/core` tam koşusunda ölçüldü, `master`'da da aynı (değişiklik kenara alınarak
+doğrulandı). `src/homework/schemas.test.ts` içindeki "geçerli form" örneği teslim tarihini sabit `2026-09-18` veriyor.
+Şema geçmiş tarihi reddettiği için o günden beri iki test düşüyor ("geçerli formu kabul eder", "tek şube ile seçili
+öğrenciyi kabul eder"). Kod doğru; test takvime bağlı. Kırmızı takım gerçek bir kırılmayı gizler.
+
+⬜ Kapatma yolu: testte saati sabitle (`vi.useFakeTimers()` + `vi.setSystemTime`) ya da teslim tarihini "bugün + N gün"
+diye üret. Aynı desen başka tarih doğrulamalı testlerde de aranmalı.
 
 ## 11. Bildirimler 🟠
 
@@ -1133,33 +1148,6 @@ bilmeden isteği atıyor. Zararsız ama gerçek hataları konsolda gürültüye 
 ⬜ Kapatma yolu: okul ayarı logo yokken URL üretmez (istemci yer tutucuya düşer) ya da uç 204
 döner.
 
-### `B-66` · Ders programı üretimi öğretmensiz dersi talepten sessizce düşürüyor; "eksik saat" göstergesi yanıltıcı 🟠
-
-Altınay B9.4 ölçümü (2026-09-23). 9-A için otomatik üretimde önerilen aday "eksik **5** saat, skor 96,
-Önerilen" diyor; `hints` ve `failureReason` boş. Müfredatla karşılaştırınca gerçek eksik **17** saat:
-göstergeye yalnız görevlendirmesi olan derslerin açığı giriyor. Görevlendirmesi olmayan dokuz ders
-(9. sınıfta 12 saat; aralarında **ortak** ders Görsel Sanatlar/Müzik) talebe hiç girmiyor, yani
-programda yokluğu hiçbir yerde söylenmiyor. İdareci "5 saat eksik" görüp uygulayabilir; ortak bir
-dersin haftada hiç okutulmadığı ancak derslik/öğrenci şikâyetiyle fark edilir.
-
-⬜ Kapatma yolu: öğretmensiz ders talepte kalır ve "yerleştirilemedi — öğretmen atanmamış" olarak
-ayrı raporlanır. Gösterge müfredata karşı toplam açığı verir. Ortak derste öğretmen yoksa aday
-"önerilen" olarak işaretlenmez ya da üretim başlamadan ön denetim uyarır.
-
-✅ **Kodda düzeltildi, master'da (2026-09-26, oksis-api `8f74dc73` merge `563d9c6b`, oksis-ui `1453579` merge `04c41e1`).** `CompetencyAssignmentSource` yetkin
-öğretmeni olmayan dersi artık düşürmüyor: satır öğretmensiz ve gerekçeli gelir (`AssignmentDemand.NoCompetentTeacher`, Y-05'in
-`UnassignedReason` deseni). Böylece yayın önizlemesi ve yerleşmemiş dersler listesi bu dersi eksik sayar. Üretim işi çözücüye
-girmeyen satırları (`SolveInput.UnassignedByClassRoom`) her adayın eksik saatine ve şube kırılımına ekler, yerleşmemiş derslerde
-`Unassigned` gerekçesiyle gösterir. Sözleşme: `AutoGenUnplacedDto.SubjectId/TeacherId` nullable (codegen yenilendi).
-Testler: birim 3404 yeşil (yeni: talep kaynağı, çözücü), entegrasyon `AutoGenerateScheduleJobTests` + yeni B-66 senaryosu yeşil.
-✅ **Canlı doğrulandı (2026-09-27, Altınay 9-A, 5112 master).** Kadro tamamlandığı için 9-A'da öğretmensiz ders kalmamıştı
-(üretim 40/40, eksik 0). Müzik'in tek görevlendirmesi (`84B5D29F…`) kullanıcı onayıyla DB'de geçici `Closed` yapıldı: yerleşmemiş
-dersler ucu Müzik'i "Bu derse görevlendirilmiş öğretmen yok" gerekçesiyle, öğretmensiz döndü; üretim işi (`5bdc2780…`) üç adayda da
-38 yerleşim, eksik 2 (şube kırılımı 2), yerleşmemiş satırı `Unassigned` · Müzik · 2 saat · öğretmen boş. Görevlendirme `Active`'e
-birebir geri alındı. DEV-OKUL'da ayrıca 8 şubenin rehber öğretmensiz Rehberlik saati artık üretimin eksiğinde görünüyor. "Ortak ders öğretmensizse önerilmez"
-ayağı uygulanmadı: eksik artık görünür, tüm adaylara eşit eklendiği için sıralamayı değiştirmez. Strict modda öğretmensiz ders
-"çözüm yok" üretir; gevşetme önerileri buna uygun değil.
-
 ### `D-29` · Katalog satırındaki simge düğmelerinin adı yok; pasife alma tek tık ve onaysız 🟡
 
 Altınay `B-64` ekran ölçümünde yaşandı (2026-09-23). *Ayarlar › Akademik Yapı › Ders Kataloğu*
@@ -1297,27 +1285,6 @@ yapar, temizlik yapmaz. Bayat satırların ne olacağı karar ister.
 branşsız dersinin bir kısmı bu kusurdan değil: çizelge birleşik hücre ("Beden Eğitimi ve
 Spor/Görsel Sanatlar/Müzik"), seviye öneki ("Hazırlık Sınıfı Matematik") ve genel ad
 ("Birinci Yabancı Dil") kullanıyor; karar bunları ayrı/düz/somut adlarla sayıyor.
-
-### `TB-236` · Dört müfredat saati ucu hâlâ çağıransız 🟡
-
-`TB-232` kapanırken sayım yapıldı ve kapanış notundaki *"13 ucun tamamı çağıran kazandı"*
-iddiası **yanlış çıktı**. Müfredat ekranı 7 uca çağıran getirdi, biri `K-30` ile silindi;
-**dördü hâlâ çağıransız**:
-
-| Uç | Nereye ait | Neden bu ekranda değil |
-|---|---|---|
-| `curriculum-hours/required-total` | Ders Programı | Şubenin haftalık yükünün tamam olup olmadığını çizelge ekranı sorar |
-| `curriculum-hours/subject/{id}` GET | Ders Kataloğu | Ders bazlı saat çekmecesi — müfredat ekranı seviye×ders hücresinden düzenliyor |
-| `curriculum-hours/catalog` | Ders Kataloğu | Liste için ders başına min–max saat sütunu |
-| `curriculum/snapshot` | — | `diff` kilitli sezonda zaten snapshot'tan okuyor; bu uç `LockedAt` ve seviye başına dondurulan sürümü ek olarak veriyor |
-
-Üçü **henüz yazılmamış ekran yüzeylerine** ait, dolayısıyla bu bir gecikme; ama aynı sınıfın
-kusuru `TB-232` ve `TB-233`'te iki kez ısırdı: [[eksik-ekran-eksik-yetkiyi-gizler]] —
-çağrılmayan uç arkasındaki kusurları da saklar. Bu yüzden sohbette bırakılmıyor.
-
-⬜ Ders Programı ve Ders Kataloğu yüzeyleri yazılırken bu üçü bağlanır. `snapshot`'ın
-gerçekten gerekli olup olmadığı ayrıca kararlaştırılır — gereksizse silinmesi, çağrılmayan
-uç olarak durmasından iyidir.
 
 ### `TB-236` · Dört müfredat saati ucu hâlâ çağıransız 🟡
 
@@ -3016,37 +2983,6 @@ taşıyor ama hiçbir ekran doldurmuyor — uç açıldığında tek yerden bağ
 bir `previous` alanı yeter; sparkline ayrı bir zaman serisi ucu ister). Oran çubuğu için
 payda gerekiyor — "hedef" kavramı finans dışında tanımlı değil.
 
-### `TB-123` · "Canlı program" yüklemi depoda on yerde elle yazılı 🟡
-
-"Bu yerleşim geçerli mi" sorusunun cevabı — `IsActive && IsReserving` — kod tabanında **on
-ayrı yerde** elle yazılıyor. Ortak bir yüklem, uzantı metodu ya da okuyucu yok.
-
-Semantik bugün her yerde doğru; bulgu davranış değil **dayanıklılık**. Yükleme üçüncü bir
-koşul eklendiğinde (ör. taslak program sürümü, geçici değişiklik penceresi) on çağrı yerinin
-onunu da bulmak gerekiyor ve biri atlanırsa sessizce yanlış sonuç doğar — hata değil,
-**eksik satır**.
-
-Sınıfı tanıdık: `TB-119` aynı şeydi. Orada "hangi şube hangi dersi alıyor" iki yerde ayrı
-tanımlanmıştı; sayaçlar çatallandı ve boş bir sınav penceresi yayın kapısından geçti. Bu
-madde 2026-09-09'da Faz 2a Görev 2.4'ün gözden geçirmesinde sayıldı — o görev yüklemi
-`ExamExpectationReader`'dan birebir aldığı için **on birinci kopya açılmadı**.
-
-⬜ Kapatma yolu: yüklemi tek bir yere çıkarmak (`LessonPlacement` üzerinde bir `static
-Expression<Func<LessonPlacement, bool>> IsLive` ya da paylaşılan bir uzantı) ve on çağrı
-yerini ona bağlamak. Mekanik ama geniş; ayrı bir tur ister. Ara koruma olarak, ham
-`IsReserving` kullanımını sayan bir mimari bekçi testi ucuz olur.
-
-✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** `LessonPlacement` üzerinde EF'in çevirebildiği
-`static Expression<Func<LessonPlacement,bool>> IsLive` + **aynı ifadeden derlenen** `IsLiveNow(...)` (bellekteki
-koleksiyonlar için; yüklem ikinci kez yazılmıyor). **Site sayısı defterdekinden fazla çıktı: 10 değil 15** —
-`TeachingSlotReader` tek başına dört sorgu taşıyor ve `AutoGenerateScheduleJob` hiç sayılmamıştı; 15'in 15'i
-bağlandı. Dokunulmayan tek yer `ExamExpectationReader.ReadExcludedAsync`: orası yüklemin **negatifi** ve ayrım
-bilinçli olarak bellekte yapılıyor — bekçide gerekçeli muafiyet. Ara koruma da yazıldı: `LivePlacementPredicateTests`
-ham `IsReserving` kullanımını üç muaf dosya dışında yasaklıyor. `X-06` dersine karşılık, ifadenin gerçekten SQL'e
-indiği **gerçek sağlayıcı** testiyle ölçüldü (`ScheduleProgramStatsRecomputer`'daki riskli `AsQueryable().Where(...)`
-çevirisi dâhil yeşil).
-
----
 ### `TB-122` · "Aktif mevcut" yüklemi iki yerde ayrı yazılı, ortak bir okuyucu yok 🟡
 
 "Bu şubede şu an kim var" sorusunun cevabı iki yerde bağımsız tanımlanıyor:
@@ -4095,6 +4031,18 @@ Y-03'te şube içi alt gruplar bilerek kapsam dışı bırakılmıştı; bu öl�
 gruplara bölünmesi) ders programı, yoklama, not ve öğretmen yükü modeline girsin mi. Kadro raporu: `raporlar/Altınay AL/`
 (git dışı) — birleştirme olsa bile TDE ve Almanca için alım gerekiyor.
 
+### `TB-257` · Domain notu öğretmen varsayılan kapasitesini 30 yazıyor, kod ve okul ayarı 40 ⚪
+
+2026-09-26 Altınay kadro/program optimizasyon raporunda ölçüldü. `domain/kavramlar/Ders Görevlendirmesi.md` ("Programı nasıl
+besliyor"): *"Boşsa okul varsayılanı (30) geçerlidir … (`K-13/3`)"*. Kodda `SchoolSettings.InitialTeacherWeeklyCapacity = 40`
+(`SchoolSettings.cs:207`, `:440-441`) ve Altınay'ın `school.school_settings.branch_teacher_default_weekly_capacity = 40`.
+`TeacherCapacityResolver` profildeki özel değer yoksa bu 40'ı okuyor. Belge ile kod arasındaki fark, kapasite uyarısının
+hangi eşikte çıkacağını yanlış anlatıyor (30 sanan yönetici 31–40 saatte uyarı bekler, çıkmaz). Aynı raporda kullanılan
+diğer semantik: kapasite yumuşak kısıt (aşım yalnız önizleme uyarısı), öğretmen için günlük azami saat kısıtı yok.
+
+⬜ Düzeltme: domain notunu 40'a çek (ya da `K-13/3` kararı 30 ise okul ayarı tohumunu 30'a indir — kullanıcı kararı); rapor:
+`raporlar/Altınay AL/OKSİS — Altınay Anadolu Lisesi Kadro ve Program Optimizasyon Raporu.md` §2.2 V10 (klasör git dışı).
+
 ### `B-79` · Kayıt sihirbazıyla açılan öğrenci hesabı rolsüz — öğrenci giriş yapıyor ama her ekranda 403 🔴
 
 > ⛔ **ÇÖZÜLDÜ — dokunma (2026-09-26):** kod düzeltmesi yazıldı ve testli (29/29), `oksis-api` `feat/kulup-saati` çalışma ağacında commit bekliyor (6 dosya: `StudentAccountProvisioner`, `IStudentAccountProvisioner`, `EnrollStudentCommandHandler` + 3 test). Altınay verisi düzeltildi. Commit + merge sonrası arşive taşınacak.
@@ -4121,23 +4069,58 @@ rolünü yazar; sistem rolü yoksa hesap da açılmaz. Testler: `StudentAccountP
 yazıldı (`assigned_by`/`created_by` = müdür hesabı `F50D5B60…`, geri almak için bu işaret) + izin önbelleği temizlendi. Ölçüldü:
 34 öğrenci kulübe başvurdu (hepsi 200), danışmanlar onayladı; 6 kulüpte 34 aktif üyelik.
 
-### `B-78` · Derslik silme yalnız şube bağını kontrol ediyor; ders programı yerleşimlerindeki derslik sessizce boşalır 🟠
+### `B-80` · Otomatik üretimde "kapasiteye göre dengeli" öğretmen seçimi her kademe × ders için sıfırdan başlıyor; yük okul çapında dengelenmiyor 🟠
 
-2026-09-25 Altınay derslik hazırlığında (Y-06). `DeleteRoomCommandHandler` yalnız `ClassRooms.RoomId` bağına bakıyor.
-`lesson_placements.room_id` ve `exam_rooms.room_id` kontrol edilmiyor. Silme yumuşak silme olduğu için yerleşim satırı silinmiş
-dersliği göstermeye devam eder, sorgu süzgeci dersliği gizler; yayındaki programda derslik bilgisi boşalır. Altınay'da o an
-874 yerleşim 12 dersliğe bağlıydı. Kullanıcı kararıyla derslikler silinmedi, yeniden adlandırıldı; yerleşimi olmayan A-103 silindi.
+Altınay ölçümü (2026-09-27). Kadroya 1 Matematik, 1 TDE, 1 Tarih öğretmeni eklendi, bütün programlar silindi ve 11 şube
+kısıtsız, "Tümü" kapsamıyla birlikte üretildi. Matematik havuzu 70 saat, üç öğretmenin kapasitesi eşit (40). Önerilen adayda
+yükler **32 / 31 / 10** çıktı. Tarihte iki öğretmen **26 / 16**. En yüklü matematikçide 4 saat yerleşemedi ("öğretmen başka
+şubede"), en az yüklü olan ise haftada 10 ders saatinde kaldı. Toplam eksik 12 saatin en az 5'i doğrudan bu dengesizlikten.
 
-🟡 **Kısmen (2026-09-26, `Y-06`):** kulüp saati yeri olarak kullanılan derslik de artık silinemiyor (arşivli kulüp hariç;
-`DeleteRoomCommandHandler`, mesaj güncellendi). Yerleşim ve sınav salonu ayağı açık.
+Kök neden (`CompetencyAssignmentSource.PickTeacher`, K-13/2): simülasyon yalnız **aynı kademede, aynı dersin** 0..index
+şubelerini sayar. Her (kademe × ders) çifti için sayaç sıfırdan başlar ve eşitlikte kimlik sırası kazanır. Bu yüzden:
+- Kimliği en küçük aday **her kademede her dersin ilk şubesini** alır (9-A, 10-A, 11-A, 12-A matematikleri aynı kişide).
+- İkinci aday her yerde ikinci şubeyi alır. Üçüncü aday yalnız 3+ şubeli kademelerde ders görür.
+- Öğretmenin başka derslerden, başka kademelerden ve rehberlikten gelen yükü hesaba girmez.
+Sonuç, kapasiteler eşitken bile "round-robin" değil, sistematik olarak aynı kişiye yığılma. Kod yorumundaki
+"Kapasiteler eşitken dizi round-robin ile birebir aynıdır" cümlesi yalnız tek bir kademe × ders için doğru.
 
-⬜ Kapatma yolu: silme, derslik canlı ya da taslak bir programın yerleşiminde veya bir sınav salonunda kullanılıyorsa reddedilsin
-(`rooms.errors.in-use`, gerekçe metniyle: "N ders yerleşiminde kullanılıyor"). Pasife alma yolu açık kalır.
+Neden önemli: idareci "kısıt koymazsam üretim yükü dengeler" diye bekliyor (domain notu da öyle anlatıyor). Yeni öğretmen
+alan okulda yeni gelen neredeyse boş kalıyor ya da tersine aşırı yükleniyor. Tek düzeltme yolu şu an elle dağıtım kısıtı.
 
-✅ **Kodda düzeltildi, master'da (2026-09-26, oksis-api `9320cb84`, merge `563d9c6b`).** `DeleteRoomCommandHandler` aktif yerleşimi olan
-(silinmemiş programda) dersliği `rooms.errors.in-use-placements`, sınav salonu olan dersliği `rooms.errors.in-use-exams` ile reddeder;
-pasif (kaldırılmış) yerleşim engel değildir. Birim 3 + entegrasyon 2 test (gerçek SQL). Canlı ölçülmedi: Altınay'da yerleşimdeki
-her derslik aynı zamanda ev dersliği, eski şube kapısı zaten yakalıyor.
+⬜ Kapatma yolu: seçim kapsamdaki **bütün** talep satırları üzerinde tek birikimli yük tablosuyla yapılsın. Kademe × ders
+sınırı kalksın, öğretmenin rehberlik ve diğer ders yükü de sayılsın, eşitlik kimlik yerine mevcut yüke göre bozulsun.
+Kapsam dışındaki canlı programların yükü başlangıç yükü olarak girsin. `CompetencyAssignmentDistributionTests` bu
+davranışı kilitlediği için testler de yeniden yazılmalı. Domain notu ([[Ders Programı Yönetimi]] §6) ve kod yorumu düzeltilmeli.
+
+### `B-81` · Yayınlanmış program editörde düzenlenemiyor; "Yerleştirilmemiş Dersler" kartı orada işlevsiz 🟠
+
+2026-09-27, Altınay'da 11 program yayınlandıktan sonra koddan ölçüldü (`oksis-ui` `editor-page.tsx`).
+Editör `editable = status !== "Published"` diyor: yayındaki programda hücreler, yerleştirilmemiş ders çipleri ve Blok
+Modu kapalı. Editör menüsü (Geçici Değişiklikler, Sürüm Geçmişi, Programı Sil) ve hub satır menüsü (Aç, Yayınla — yayında
+pasif, Sürüm Geçmişi, Sil) yayındaki programı düzenlemeye açan bir eylem sunmuyor. Oysa sunucu buna izin veriyor: domain
+notuna göre yayındaki programa ilk düzenleme kaydedildiğinde program kendiliğinden **Revize**'ye geçer, eski sürüm
+tüketicide kalır. Arayüzden tek dolaylı yol eski bir sürüme dönmek (Revize'ye düşürür) ya da programı silip yeniden kurmak.
+
+Aynı sebeple **"Yerleştirilmemiş Dersler" kartı yayındaki programda işlevsiz**:
+- Program eksiksizse (olağan durum; eksik saatle yayın ayrıca onay istiyor) panel kapalı açılıyor, düğme açınca yalnız
+  "Tüm dersler yerleşti" yazıyor. Aynı bilgi ızgaranın üstündeki ipucu satırında zaten var.
+- Program eksik saatle yayınlandıysa eksik dersleri listeliyor ama çipler sürüklenemiyor. Liste bilgi veriyor, eylem
+  sunmuyor, eylemin yolu da yok.
+
+⬜ Kapatma yolu (karar gerekir): (a) yayındaki programa "Düzenlemeye aç" eylemi — ilk kayıtta Revize'ye geçer, tüketici
+yayındaki sürümü görmeye devam eder, yeniden yayınla bildirim gider; ya da (b) yayında düzenleme bilerek kapalıysa domain
+notu ve sunucu kuralı buna göre daraltılsın. Her iki durumda da yayındaki programda kart gizlensin; eksik saat varsa
+ipucu satırı "N saat eksik yayınlandı" desin.
+
+🟡 **Karar (a) uygulandı, kodda — commit yok (2026-09-27, `oksis-ui` `feat/ders-programi-hub-filtreleri`).**
+`editor-page.tsx`: yayındaki program salt okunur açılır, başlıkta **Düzenlemeye Aç** düğmesi var. Kilit program
+sürümüne bağlı (yeniden yayın sürümü artırır → editör kendiliğinden kilitlenir). Açıkken ve Revize'deyken turuncu
+şerit "öğrenci ve öğretmenler yeniden yayınlayana kadar vN sürümünü görür" diyor. Kilitliyken "Yerleştirilmemiş Dersler"
+kartı ve yan panel çizilmiyor. Eksik saatle yayınlanmışsa ipucu "N ders saati eksik yayınlandı. Tamamlamak için
+Düzenlemeye Aç." diyor. Sunucu değişmedi (zaten `EnterRevisionIfPublished`). Altınay 9-A'da ölçüldü: kilitliyken 0
+sürüklenebilir ders / kart yok; açınca 40 ders sürüklenebilir, kart ve Kaydet görünür; açmak sunucuya hiçbir istek
+göndermedi. ⬜ İlk kaydın Revize'ye geçişi ekranda uçtan uca ölçülmedi (yürürlükteki dönemde yayında program yalnız
+Altınay'da; ölçmek yeniden yayın bildirimi gerektirir).
 
 ### `D-32` · Ders programı kartında "BLOK" ve "KURAL" rozetleri ders adının üstüne biniyor 🟡
 

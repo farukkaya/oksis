@@ -8570,3 +8570,88 @@ seçmeli için ayrı). Tablo onay düğmesini yeniden gösterir, müdür sapma p
 önce/sonra ölçüldü: 10 profilden yalnız 9. sınıfın ortak onayı düştü, diğer kalemler değişmedi.
 
 ✅ **KAPANDI (2026-09-26 arşiv turu):** master'a merge edildi — `oksis-api` `a2ab39b6`, merge `14b1f130`. Ölçüm blokta.
+
+## 62. Ders programı — master'da doğrulanıp kapanan 3 madde (2026-09-27) ✅
+
+> Üçü de master'da; kapanış ölçümü blokta. Ders programında defterde açık kalanlar: `B-74`, `B-80`, `B-81` (commit bekliyor), `B-67` (kısmi), `D-32`, `TB-253` (yalnız ekran ölçümü), `E-34`, `E-35`.
+
+### `B-66` · Ders programı üretimi öğretmensiz dersi talepten sessizce düşürüyor; "eksik saat" göstergesi yanıltıcı 🟠
+
+Altınay B9.4 ölçümü (2026-09-23). 9-A için otomatik üretimde önerilen aday "eksik **5** saat, skor 96,
+Önerilen" diyor; `hints` ve `failureReason` boş. Müfredatla karşılaştırınca gerçek eksik **17** saat:
+göstergeye yalnız görevlendirmesi olan derslerin açığı giriyor. Görevlendirmesi olmayan dokuz ders
+(9. sınıfta 12 saat; aralarında **ortak** ders Görsel Sanatlar/Müzik) talebe hiç girmiyor, yani
+programda yokluğu hiçbir yerde söylenmiyor. İdareci "5 saat eksik" görüp uygulayabilir; ortak bir
+dersin haftada hiç okutulmadığı ancak derslik/öğrenci şikâyetiyle fark edilir.
+
+⬜ Kapatma yolu: öğretmensiz ders talepte kalır ve "yerleştirilemedi — öğretmen atanmamış" olarak
+ayrı raporlanır. Gösterge müfredata karşı toplam açığı verir. Ortak derste öğretmen yoksa aday
+"önerilen" olarak işaretlenmez ya da üretim başlamadan ön denetim uyarır.
+
+✅ **Kodda düzeltildi, master'da (2026-09-26, oksis-api `8f74dc73` merge `563d9c6b`, oksis-ui `1453579` merge `04c41e1`).** `CompetencyAssignmentSource` yetkin
+öğretmeni olmayan dersi artık düşürmüyor: satır öğretmensiz ve gerekçeli gelir (`AssignmentDemand.NoCompetentTeacher`, Y-05'in
+`UnassignedReason` deseni). Böylece yayın önizlemesi ve yerleşmemiş dersler listesi bu dersi eksik sayar. Üretim işi çözücüye
+girmeyen satırları (`SolveInput.UnassignedByClassRoom`) her adayın eksik saatine ve şube kırılımına ekler, yerleşmemiş derslerde
+`Unassigned` gerekçesiyle gösterir. Sözleşme: `AutoGenUnplacedDto.SubjectId/TeacherId` nullable (codegen yenilendi).
+Testler: birim 3404 yeşil (yeni: talep kaynağı, çözücü), entegrasyon `AutoGenerateScheduleJobTests` + yeni B-66 senaryosu yeşil.
+✅ **Canlı doğrulandı (2026-09-27, Altınay 9-A, 5112 master).** Kadro tamamlandığı için 9-A'da öğretmensiz ders kalmamıştı
+(üretim 40/40, eksik 0). Müzik'in tek görevlendirmesi (`84B5D29F…`) kullanıcı onayıyla DB'de geçici `Closed` yapıldı: yerleşmemiş
+dersler ucu Müzik'i "Bu derse görevlendirilmiş öğretmen yok" gerekçesiyle, öğretmensiz döndü; üretim işi (`5bdc2780…`) üç adayda da
+38 yerleşim, eksik 2 (şube kırılımı 2), yerleşmemiş satırı `Unassigned` · Müzik · 2 saat · öğretmen boş. Görevlendirme `Active`'e
+birebir geri alındı. DEV-OKUL'da ayrıca 8 şubenin rehber öğretmensiz Rehberlik saati artık üretimin eksiğinde görünüyor. "Ortak ders öğretmensizse önerilmez"
+ayağı uygulanmadı: eksik artık görünür, tüm adaylara eşit eklendiği için sıralamayı değiştirmez. Strict modda öğretmensiz ders
+"çözüm yok" üretir; gevşetme önerileri buna uygun değil.
+
+✅ **KAPANDI (2026-09-27 arşiv turu):** master'da (`oksis-api` `8f74dc73`, merge `563d9c6b`; `oksis-ui` `1453579`, merge `04c41e1`), Altınay 9-A'da canlı ölçüldü (blokta).
+
+### `B-78` · Derslik silme yalnız şube bağını kontrol ediyor; ders programı yerleşimlerindeki derslik sessizce boşalır 🟠
+
+2026-09-25 Altınay derslik hazırlığında (Y-06). `DeleteRoomCommandHandler` yalnız `ClassRooms.RoomId` bağına bakıyor.
+`lesson_placements.room_id` ve `exam_rooms.room_id` kontrol edilmiyor. Silme yumuşak silme olduğu için yerleşim satırı silinmiş
+dersliği göstermeye devam eder, sorgu süzgeci dersliği gizler; yayındaki programda derslik bilgisi boşalır. Altınay'da o an
+874 yerleşim 12 dersliğe bağlıydı. Kullanıcı kararıyla derslikler silinmedi, yeniden adlandırıldı; yerleşimi olmayan A-103 silindi.
+
+🟡 **Kısmen (2026-09-26, `Y-06`):** kulüp saati yeri olarak kullanılan derslik de artık silinemiyor (arşivli kulüp hariç;
+`DeleteRoomCommandHandler`, mesaj güncellendi). Yerleşim ve sınav salonu ayağı açık.
+
+⬜ Kapatma yolu: silme, derslik canlı ya da taslak bir programın yerleşiminde veya bir sınav salonunda kullanılıyorsa reddedilsin
+(`rooms.errors.in-use`, gerekçe metniyle: "N ders yerleşiminde kullanılıyor"). Pasife alma yolu açık kalır.
+
+✅ **Kodda düzeltildi, master'da (2026-09-26, oksis-api `9320cb84`, merge `563d9c6b`).** `DeleteRoomCommandHandler` aktif yerleşimi olan
+(silinmemiş programda) dersliği `rooms.errors.in-use-placements`, sınav salonu olan dersliği `rooms.errors.in-use-exams` ile reddeder;
+pasif (kaldırılmış) yerleşim engel değildir. Birim 3 + entegrasyon 2 test (gerçek SQL). Canlı ölçülmedi: Altınay'da yerleşimdeki
+her derslik aynı zamanda ev dersliği, eski şube kapısı zaten yakalıyor.
+
+✅ **KAPANDI (2026-09-27 arşiv turu):** master'da (`oksis-api` `9320cb84`, merge `563d9c6b`); birim + gerçek SQL entegrasyon testi yeşil.
+
+### `TB-123` · "Canlı program" yüklemi depoda on yerde elle yazılı 🟡
+
+"Bu yerleşim geçerli mi" sorusunun cevabı — `IsActive && IsReserving` — kod tabanında **on
+ayrı yerde** elle yazılıyor. Ortak bir yüklem, uzantı metodu ya da okuyucu yok.
+
+Semantik bugün her yerde doğru; bulgu davranış değil **dayanıklılık**. Yükleme üçüncü bir
+koşul eklendiğinde (ör. taslak program sürümü, geçici değişiklik penceresi) on çağrı yerinin
+onunu da bulmak gerekiyor ve biri atlanırsa sessizce yanlış sonuç doğar — hata değil,
+**eksik satır**.
+
+Sınıfı tanıdık: `TB-119` aynı şeydi. Orada "hangi şube hangi dersi alıyor" iki yerde ayrı
+tanımlanmıştı; sayaçlar çatallandı ve boş bir sınav penceresi yayın kapısından geçti. Bu
+madde 2026-09-09'da Faz 2a Görev 2.4'ün gözden geçirmesinde sayıldı — o görev yüklemi
+`ExamExpectationReader`'dan birebir aldığı için **on birinci kopya açılmadı**.
+
+⬜ Kapatma yolu: yüklemi tek bir yere çıkarmak (`LessonPlacement` üzerinde bir `static
+Expression<Func<LessonPlacement, bool>> IsLive` ya da paylaşılan bir uzantı) ve on çağrı
+yerini ona bağlamak. Mekanik ama geniş; ayrı bir tur ister. Ara koruma olarak, ham
+`IsReserving` kullanımını sayan bir mimari bekçi testi ucuz olur.
+
+✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** `LessonPlacement` üzerinde EF'in çevirebildiği
+`static Expression<Func<LessonPlacement,bool>> IsLive` + **aynı ifadeden derlenen** `IsLiveNow(...)` (bellekteki
+koleksiyonlar için; yüklem ikinci kez yazılmıyor). **Site sayısı defterdekinden fazla çıktı: 10 değil 15** —
+`TeachingSlotReader` tek başına dört sorgu taşıyor ve `AutoGenerateScheduleJob` hiç sayılmamıştı; 15'in 15'i
+bağlandı. Dokunulmayan tek yer `ExamExpectationReader.ReadExcludedAsync`: orası yüklemin **negatifi** ve ayrım
+bilinçli olarak bellekte yapılıyor — bekçide gerekçeli muafiyet. Ara koruma da yazıldı: `LivePlacementPredicateTests`
+ham `IsReserving` kullanımını üç muaf dosya dışında yasaklıyor. `X-06` dersine karşılık, ifadenin gerçekten SQL'e
+indiği **gerçek sağlayıcı** testiyle ölçüldü (`ScheduleProgramStatsRecomputer`'daki riskli `AsQueryable().Where(...)`
+çevirisi dâhil yeşil).
+
+✅ **KAPANDI (2026-09-27 arşiv turu):** master'da doğrulandı — `LessonPlacement.IsLive` (`src/Oksis.Domain/Modules/Timetable/Entities/LessonPlacement.cs:94`).
