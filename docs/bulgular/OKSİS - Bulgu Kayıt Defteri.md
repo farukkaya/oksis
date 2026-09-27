@@ -368,6 +368,8 @@ değişiklik varken yayın ya engellensin ya da "önce kaydet" adımı zorunlu o
 hatasında yerel taslak geri alınabilsin ("değişiklikleri at"); (d) 409 mesajı rolü doğru anlatsın ("X o gün bu bölgede yancı").
 Test: yancı ile aynı güne nöbetçi seçimi → rozet; kirli taslakla yayın → engel/uyarı.
 
+✅ **2026-09-28 · (d) sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `8b81acdb`):** o gün yancı olanı nöbetçi seçmek artık ayrı anahtarla reddediliyor — `duties.errors.duty-teacher-is-reliever-same-day`: "Nöbetçi seçilen öğretmen o gün yancı olarak da görevli; bir öğretmen aynı gün hem nöbetçi hem yancı olamaz. Önce o günkü yancılığını değiştirin." Çift yancılık `reliever-already-busy`'de kaldı, cümlesi yalnız onu anlatıyor; kural gevşemedi. Altınay senaryosu entegrasyon testinde yeşil.
+
 ### `D-39` · Nöbet çizelgesi ve Yük Raporu'nda "2026-2027" seçicisi işlevsiz ⚪
 
 Altınay saha testi (C2.1, 2026-09-27). Çizelge araç çubuğunda takvim simgesi + sezon adı + aşağı ok taşıyan bir düğme
@@ -430,6 +432,8 @@ nöbeti sayıyor, yancıyı saymıyor — ekran "dengeli" derken Yük & Adalet s
 ⬜ Kapatma yolu: yancı seçiminde birincil ölçüt toplam görev (nöbet + yancı), ikincil yancı sayısı; adalet metriği yancılık
 açıkken toplam görevi ölçsün. Test: 18 öğretmen × 20 hücre senaryosunda toplam yük aralığı ≤ 1.
 
+✅ **2026-09-28 · kodda düzeltildi (gece turu, `oksis-api` `fix/gece-defter-turu` `ab467c95`, merge bekliyor):** `DutySolver.AssignRelievers` yancı adayını üç ölçütle sıralıyor — toplam görev (nöbet + yancı) → yancı sayısı → döner sıra (GUID'e dizilmiş havuzda son seçilenden sonraki; deterministik, eşitlik hep aynı öğretmene düşmüyor). `DutyFairnessScorer` yancılık açıkken nöbet + yancıyı, kapalıyken yalnız nöbeti ölçüyor. 6 yeni test (18 öğretmen × 20 hücrede toplam yük 2–3; öğle meşguliyetli varyantı; iki nöbetliye yancılık verilmez; metrik = gerçek yük), eski kodda 5'i kırmızı. ⬜ Altınay önizlemesinde yeniden ölçülmedi; ekrandaki "Denge x–y" etiketi artık toplam görevi gösterecek.
+
 ### `B-88` · Nöbet yayın bildirimi: "etkilenen" = yeni çizelgedeki bütün nöbetçiler — değişmeyene gidiyor, yalnız yancıya ve görevden çıkarılana gitmiyor 🟡
 
 Altınay saha testi (C2.1, 2026-09-27). v1 → v2'de görevi (nöbet ya da yancılık) değişen öğretmen **6**, "📋 Nöbet çizelgesi
@@ -440,6 +444,8 @@ kaldırılan öğretmen haber almıyor. Yayın penceresi "Etkilenen öğretmenle
 Ayrıca: teslim yalnız `in-app` (36/36); okulun e-posta/push anahtarları açık ama bu olay için o kanallarda kayıt yok —
 tasarım mı eksik mi ölçülmedi.
 ⬜ Kapatma yolu: önceki canlı sürümle (nöbetçi + yancı) fark alınıp yalnız değişenlere; ilk yayında nöbetçi ∪ yancı.
+
+✅ **2026-09-28 · kodda düzeltildi (gece turu, `oksis-api` `fix/gece-defter-turu` `da83b009`, merge bekliyor):** `DutyRoster.Publish(…, previousLive)` önceki canlı sürümle öğretmen başına (gün, bölge, nöbetçi/yancı) görev kümesi farkını alıyor: eklenen, çıkarılan ya da kümesi değişen öğretmen etkilenir; ilk yayında nöbetçi ∪ yancı; kimsenin görevi değişmediyse bildirim gitmez. 6 domain + 1 entegrasyon testi (eski kodda kırmızı). ⬜ E-posta/push kanalında kayıt olmaması sorusu ölçülmedi, açık.
 
 ### `D-38` · Bölge penceresinde "Simge" seçicisi "Tür"ün kopyası; stepper ve tür çiplerinin erişilebilir adı/durumu yok; şablon hiç sunulmuyor 🟡
 
