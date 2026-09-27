@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-84` · `D-37` · `V-05` · `X-24` · `TB-259` · `E-36` · `ENG-04`
+**Sıradaki boş ID:** `B-84` · `D-38` · `V-05` · `X-24` · `TB-260` · `E-36` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -238,18 +238,20 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 11 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 39 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🔴 Kritik | 10 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🟠 Yüksek | 36 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 55 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **143** | |
+| **Toplam** | **141** | |
 
 > **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
 > yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. `D-32` (kart rozetlerinin ders adına binmesi)
 > kullanıcı kararıyla kabul edilen durum sayıldı ve defterden silindi; ID yeniden kullanılmaz. `B-67` kuruluma geçiş kararıyla
 > kapandı (Arşiv §64). `B-80` okul çapında yük dengesiyle kapandı (Arşiv §65).
-> `B-74` kullanıcı kararıyla tasarım gereği kapandı (Arşiv §66). Yeniden sayım: **143** blok.
+> `B-74` kullanıcı kararıyla tasarım gereği kapandı (Arşiv §66). `E-35` (şube alt grubu) kullanıcı kararıyla MVP dışı
+> bırakıldı (Arşiv §67). `E-34` kullanıcı kararlarıyla uygulandı (Arşiv §68); kalan sınırı `TB-259` olarak açıldı.
+> Ekran ölçümünde `D-37` açıldı. `TB-239` ve `TB-247` ölçülerek kapandı (Arşiv §69). Yeniden sayım: **141** blok.
 >
 > **Arşiv turu (2026-09-27):** ders programının master'da doğrulanan 3 maddesi arşive taşındı (Arşiv §62: `B-66`, `B-78`,
 > `TB-123`). `TB-236` defterde birebir iki kez yazılmıştı; kopya silindi. Sayılar `grep '^### \`'` ile yeniden sayıldı: **149**
@@ -277,7 +279,7 @@ sayaçlar üçü arasında ortak.
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
 > duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
-**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 125 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 124 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
 
 > **2026-09-16 gece düzeltme turu sürüyor.** Kodda düzeltilip **commit bekleyen** maddeler (dallar
 > `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`): `TB-174`, `D-19`,
@@ -828,53 +830,6 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
 
-### `TB-239` · Seçmeli ders havuzunun tamamı şubenin zorunlu haftalık yükü sayılıyor 🟠
-
-Altınay B4.2 yeniden ölçümünde çıktı (2026-09-22). Okulun kilitli müfredatı (TTK 2025/05
-Anadolu Lisesi, 4 kademe) çizelgedeki **her seçmeli dersi MEB varsayılan saatiyle** taşıyor.
-Ölçülen değerler şöyle:
-
-| Kademe | Ortak | Seçmeli satır | Snapshot toplamı | `required-total` (canlı) |
-|---|---|---|---|---|
-| 9 | 12 ders · 32 saat | 20 | 57 | **57** |
-| 10 | 12 · 33 | 27 | 65 | **65** |
-| 11 | 7 · 19 | 41 | 91 | **91** |
-| 12 | 5 · 15 | 37 | 86 | **86** |
-
-`Y-03` ölçümüne göre çizelgede seçilecek saat 9'da 7, 10'da 6, 11'de 20, 12'de 24. Yani
-şubenin gerçek yükü **her kademede 39 saat** olmalı. Ürün 57–91 arası diyor.
-
-Toplamı okuyan iki yer var:
-- `RequiredHoursResolver` → `GET curriculum-hours/required-total`. Bugün çağıranı yok
-  (`TB-236`), yani kusur ekranda henüz görünmüyor.
-- `CurriculumWeeklyHourProvider`, yani **ders programı üreticisinin tek saat kaynağı**
-  (`K-10`). Yalnız saati 0 olan satırı eliyor. Böylece her 9. sınıf şubesi için 20 seçmeli
-  dersin hepsi talep olarak üretilir: 57 saatlik bir hafta. `B9.4` bu hâliyle üretilemez.
-
-Okulun elinde çıkış yolu yok. Saat 0 kararı ("bu yıl okutulmuyor") yalnız `Setup`
-sezonda yazılabiliyor (`SessionCurriculum.ResolveForWriteAsync`). Altınay'ın sezonu
-2026-09-22'de 18:53:44'te açılıp 18:54:34'te aktifleştirildi, yani hazırlıkta 50 saniye
-kaldı; snapshot kilitli. Hazırlıkta kalınsaydı bile okul kademe başına 20–40 seçmeliyi
-tek tek sıfırlamak zorunda kalırdı. Varsayılan yön ters: çizelge seçmelileri **seçenek**
-olarak sayıyor, ürün **zorunlu** sayıyor.
-
-Sınıf: `TB-234` ile aynı. Kilitli snapshot'ı düzeltmenin ürün içi yolu yok.
-
-⬜ Karar gerekiyor. (a) Seçmeli satırlar snapshot'a 0 saatle girer ve okul hazırlıkta
-okutacaklarını açar. (b) Seçmeliler "okulun sunduğu havuz" olarak ayrı tutulur, şubeye
-atanınca yüke girer (Y-03'ün şube alanıyla birlikte). (c) Toplam, ortak ders + çizelgenin
-seçmeli kotası olarak hesaplanır, havuz ayrıca tutulur. Hangisi seçilirse seçilsin,
-**Altınay'ın kilitli snapshot'ı için ayrıca bir yol** gerekir (backfill ya da aktif sezonda
-seçmeli saatini düzenleme).
-
-➕ **Üretimle ölçüldü — B9.4'ün engeli bu (2026-09-23).** 9-A için otomatik üretim uygulanmadan
-çalıştırıldı (`POST timetable/auto-generate`, tek şube): iş `Done`, 3 aday, önerilen aday "skor 96,
-eksik 5 saat". Hafta 40 ders saati (5 gün × 8, zil çizelgesi). Müfredatın 9. sınıf talebi 57 saat
-(32 ortak + 25 seçmeli). Üretici seçmelilerden **15 saat** yerleştirdi, **ortak derslerden 7 saati
-dışarıda bıraktı**: Birinci Yabancı Dil 4/0, Görsel Sanatlar/Müzik 2/0, Matematik 6/5. Yani program
-ortak dersi eksik, seçmeliyi fazla veren bir hafta; okul için kullanılamaz. MEB'e göre gerçek yük
-32 + 7 = 39 saat ve 40 saate sığıyor — engel yalnız bu kusur. Karar hâlâ bekliyor; ders programı
-turu (B9.4) bu karar uygulanmadan ilerleyemez.
 ### `TB-240` · Anadolu Lisesi'nin dört ortak dersi branşsız; atama alan dışı sayılıyor 🟠
 
 Altınay B4.3 ölçümünde çıktı (2026-09-22). `TB-238`'in "ayrı kalan" notuna ID verildi.
@@ -1308,6 +1263,11 @@ iddiası **yanlış çıktı**. Müfredat ekranı 7 uca çağıran getirdi, biri
 Üçü **henüz yazılmamış ekran yüzeylerine** ait, dolayısıyla bu bir gecikme; ama aynı sınıfın
 kusuru `TB-232` ve `TB-233`'te iki kez ısırdı: [[eksik-ekran-eksik-yetkiyi-gizler]] —
 çağrılmayan uç arkasındaki kusurları da saklar. Bu yüzden sohbette bırakılmıyor.
+
+➕ **2026-09-27 (TB-239 kapanış ölçümü):** `required-total` yalnız `gradeLevelCode` alıyor, şubenin alanını (profil) almıyor.
+Altınay'da 9 → 39, 10 → 39 doğru; 11 → 21, 12 → 23 dönüyor çünkü alansız "Genel" profili okunuyor (alanlı şubelerin gerçek
+yükü 39; Genel profili kullanan şube yok). Uç bağlanırken şube ya da alan parametresi eklenmeli; üretici
+(`CurriculumWeeklyHourProvider`) zaten şubenin alanını okuyor.
 
 ⬜ Ders Programı ve Ders Kataloğu yüzeyleri yazılırken bu üçü bağlanır. `snapshot`'ın
 gerçekten gerekli olup olmadığı ayrıca kararlaştırılır — gereksizse silinmesi, çağrılmayan
@@ -3855,43 +3815,6 @@ tek bozuk olan, yani eşik yirmi dokuz belgeyi geçirmeli.
 
 ---
 
-### `TB-247` · Müfredat seçmeli dersleri seçtirmiyor; sezon, MEB toplamını tutmayan müfredatla açılabiliyor 🔴
-
-2026-09-24'te kullanıcı Altınay müfredat ekranında buldu. Gerçek hayatta okul, sezona başlarken
-MEB'in (ttkb.meb.gov.tr) seçmeli dersler bölümünden kendine uygun dersleri **seçer**; yalnız
-seçtikleri kataloğa girer. Ekran ise ortak ve seçmeli dersleri **kategorisiz, karışık** ve MEB
-saatleriyle listeliyor. Müdür seçmediği her dersin okul saatini sezon açılmadan önce tek tek
-sıfıra çekmek zorunda. Unutursa sistem 9. sınıfın 59 saat okutulacağını varsayar ve bütün
-derslere görevlendirme bekler.
-
-Ölçüm (koddan + dev DB):
-
-1. Veri **var**: her satırın türü (`course_type` Common/Elective) ve MEB kategorisi
-   (`source_category`: Din, Ahlak ve Değer · İnsan, Toplum ve Bilim · Kültür, Sanat ve Spor ·
-   Akademik Çalışmalar) saklanıyor. Akademik Çalışmalar yalnız 11–12. sınıf satırlarında.
-2. MEB'in çizelgede **beyan ettiği toplamlar saklanmıyor**. Çizelge sınıf başına
-   `ORTAK + SEÇİLEBİLECEK + REHBERLİK = TOPLAM` (9. sınıf 32+7+1=40) diyor; ayrıştırıcı bunu
-   yalnız sağlama için kullanıp atıyor (`MebChartChecksums`). Ekranın "MEB toplamı" bu yüzden
-   bütün satırların toplamı (9. sınıf 59) — MEB'in beyanı değil.
-3. Aktifleştirmede **hiçbir toplam denetimi yok**; "Sezon başlarsa ne donacak?" önizlemesi
-   9. sınıf için 32 saati uyarısız donduruyor.
-4. Yan etki (2026-09-24 bölme kararı): "Görsel Sanatlar/Müzik" ayrı derslere bölününce okulun
-   ortak toplamı MEB beyanını aşıyor (9: 34/32, 10: 35/33, 11: 21/19, 12: 19/15). Toplam
-   denetimi gelirse hiçbir okul bu dersler arasından seçim yapmadan sezon açamaz.
-
-İstek: tablo en üstte ortak dersler, altında seçmeli dersler (kategori başına grup, seçilebilir);
-MEB PDF'indeki gibi dip toplamlar (Ortak Ders Toplamı, Seçilen Seçmeli Ders Toplamı…);
-aktifleştirmede herhangi bir seviyede fark varsa uyarı ve **engel**.
-
-🟢 **Uygulandı (2026-09-24), kullanıcı ekran doğrulaması bekliyor.** Tasarım ve kararlar:
-`gecici/planlar/2026-09-24-mufredat-secmeli-ve-sezon-acilis-kontrol-listesi.md`.
-- MEB beyan toplamları saklanıyor (`master.curriculum_grade_totals`; 6 sürüm saklı PDF'ten dolduruldu).
-- Seçmeli dersler varsayılan seçilmemiş; "Birini seçin" grupları; sınıf başına iki açık onay (satır değişince düşer).
-- Tablo MEB PDF düzeninde, dip toplamlar beyana göre.
-- Sezon Açılış Kontrol Listesi tek değerlendiriciden; engel varsa sunucu aktifleştirmeyi reddeder (önceki sezonun arşivi dahil hiçbir şey yazılmaz).
-- Görevlendirme kapsamı sezon müfredatından (saat > 0).
-- Commit'ler: oksis-api `9cdd1645`, `12ced2f0` · oksis-ui `0451028`.
-
 ### `X-22` · İlk sezonda kullanıcı oluşturma, dosya yükleme ve öğrenci kaydı aktif sezon istiyor 🟠
 
 2026-09-24 sezon–menü ön incelemesinde ölçüldü
@@ -3932,34 +3855,18 @@ farklı yedeklere düşüyor:
 varsayılan alır; kural core'da tek fonksiyon olur. Backend okuma uçlarının id'siz davranışı
 karar bekliyor.
 
-### `E-34` · Kulüp saati yoklamasındaki "gelmedi" işareti öğrencinin devamsızlığına yazılmıyor — ürün kararı bekliyor 🟠
-
-2026-09-26, `Y-06` dilim 6 (kulüp saati yoklaması). Karar 9 "kulüp saati yoklaması devamsızlığa yansır, şube yoklamasıyla aynı
-sayacı besler" diyor; bağın nasıl kurulacağı uygulamaya bırakılmıştı. Yoklama modülü ölçüldü: devamsızlığın **tek kaynağı**
-`AttendanceSession` + `AttendanceRecord`'dır (`AbsenceSummaryRecalculator`, gün eşdeğeri yükleyicileri, eşik motoru, raporlar,
-öğrenci/veli özeti hepsi yalnız tamamlanmış oturumları sayar). Oturum şubeye, yerleşime ve beklenen öğretmene bağlıdır; kulüp
-saati ise şubeler arası karışık bir üye listesidir. Başka modülden devamsızlık yazan bir olay ya da ortak kayıt **yok**.
-
-Teknik bağ kurulabilir, ama sonucu belirleyen üç kural tasarımda yazılı değil ve tahminle kurulmadı:
-1. **Gün eşdeğeri (MEB yarım/tam gün):** kulüp saati o günün ders sayısına (paydaya) girer mi? Girerse öğrenci yalnız kulüp
-   saatine gelmediğinde gün eşdeğeri değişir; girmezse "gelmedi" yalnız saat sayacına yazılır.
-2. **Mazeret:** veli mazereti/rapor o günü kapsıyorsa kulüp saatindeki "gelmedi" mazeretli mi sayılır (şube yoklamasında öyle)?
-   Kulüp yoklamasında "geç" ve "mazeretli" durumu yok, yalnız katıldı/katılmadı var.
-3. **Düzeltme penceresi ve iz:** şube yoklamasının düzeltme penceresi ve değişiklik geçmişi var; kulüp etkinliği yoklaması
-   danışman tarafından her zaman değiştirilebiliyor. Devamsızlığa yansıyınca bu kapı aynı mı olmalı? Veliye "derse gelmedi"
-   bildirimi kulüp saati için de gitmeli mi?
-
-✅ Dilim 6'nın geri kalanı uygulandı (haftalık kulüp saati etkinliği, üyeler kayıtlı, geri çekilemez, iptal edilemez, tatilde
-açılmaz, şube yoklamasında görünmez). ⬜ Bu üç karar verilince bağ: kulüp saati etkinliği için şube başına değil öğrenci başına
-bir "kulüp saati oturumu" kaydı ya da yoklama modülüne özel kaynak türü (tasarım [[kulup-saati]] §7).
-
 ### `TB-256` · Yoklama maddileştirme ve pano entegrasyon testlerinin 17'si master'da kırmızı (ders kataloğu hatasından ayrı) 🟡
 
 2026-09-26, `Y-06` entegrasyon koşusunda ölçüldü. `SessionMaterializerTests` + `AttendanceBoardAndJobsTests`: **17 kırmızı / 27**.
 Aynı iki sınıf `HEAD` (`d6598101`) üzerinde ayrı bir worktree'de koşturuldu: **yine 17 / 27** — dal getirmedi. Hata `TB-231`'in
 "Cannot insert Subject" hatası değil: oturum hiç üretilmiyor ("Expected sessions to contain 1 item(s), but found 0"),
 `board.IsSchoolDay` false, `Open` NotFound. Tarih/okul günü çözümüne bağlı görünüyor (ölçüm günü Cumartesi; testlerin bir kısmı
-"bugün"e bakıyor). ⬜ Kök neden ölçülmedi; `TB-231` ile birlikte ele alınmalı.
+"bugün"e bakıyor). 
+**2026-09-27 ölçümü (E-34 dalı):** `FullyQualifiedName~Attendance` süzgeciyle master'da **40 kırmızı / 155**, dal aynı 40'ı
+veriyor (liste birebir aynı). Kökler iki: (1) **`TB-186`** okul gününü yalnız AKTİF sezonun öğretim döneminde sayıyor, test
+tohumları `AcademicSession.Create` sonrası `Activate` çağırmıyor → `IsSchoolDayAsync` false, oturum üretilmiyor, `Open` NotFound,
+pano `IsSchoolDay` false. Yeni `ClubHourAttendanceTests` tohumunda sezon aktifleştirilince aynı zincir yeşil koştu. (2) 5 test
+`TB-231`'in "Cannot insert Subject without tenant context" hatası. ⬜ Kapatma yolu: yoklama test tohumlarında sezonu aktifleştirmek.
 
 ### `X-23` · `Oksis.Infrastructure` derlemesi 5–6 dakika: 227 göç Designer dosyası (≈3,4 milyon satır) her derlemede analiz ediliyor 🟡
 
@@ -3977,18 +3884,30 @@ boş dize anahtarlı seçenek seçilince değişiklik sessizce düşüyordu. Kul
 kök merkezi olarak düzeltildi: yalnız `null` ("Tümü") iletilmez (`filter-dropdown.tsx`). Başka kullanımda boş anahtar yok
 (ölçüldü). 🟡 Kodda düzeltildi, commit bekliyor (`oksis-ui` `feat/kulup-saati`).
 
-### `E-35` · Şube alt grubu / birleştirilmiş ders yok — dil grupları ayrı şube sayılıyor, talep 56 öğretmen-saati şişiyor 🟠
+### `D-37` · Mazeret Kaydı penceresi açıklamayı "isteğe bağlı" gösteriyor, sunucu zorunlu tutuyor; red sessizce yutuluyor 🟡
 
-2026-09-26 Altınay kadro analizinde ölçüldü. Okulun gerçek (aSc) programında 11 DİL, 11-A'nın; 12 DİL, 12-C'nin alt grubu:
-30 saat aynı saatte, aynı öğretmenle ortak işleniyor, yalnız dil saatleri ayrılıyor. OKSİS'te dil grupları (11-C, 12-D) ayrı
-40 saatlik şube; her ortak ders ikinci kez öğretmen saati istiyor. OKSİS verisiyle ölçülen ortak saat: 11-A↔11-C **30**,
-12-C↔12-D **26** → **56 öğretmen-saati** fazladan talep. Aynı raporda 9–10 İngilizcenin 2 saati ikinci ("native") öğretmende —
-bölünmüş ders de modellenemiyor. Sonuç: 12'ler çakışmasız kurulamıyor; kadro analizinde yükü 40'ı aşan üç öğretmen var.
-Y-03'te şube içi alt gruplar bilerek kapsam dışı bırakılmıştı; bu ölçüm kararın maliyetini gösteriyor.
+2026-09-27, `E-34` ekran ölçümünde (Altınay'ın veritabanı kopyasında, müdür hesabı) görüldü. *Devamsızlık › Mazeret Kaydı*
+penceresinde "Açıklama · ops." yazıyor; açıklamasız "Kaydet ve Onayla" `POST attendance/excuses` 400 dönüyor
+(`CreateExcuseCommandValidator`: `Description` `NotEmpty` → `attendance.errors.reason-required`). Pencere hiçbir cümle
+göstermiyor: `create-excuse-modal.tsx` `createExcuse.mutate(…, { onSuccess })` çağırıyor, hata kolu yok; kullanıcı düğmeye
+bastığında hiçbir şey olmuyor sanıyor. Aynı pencerede "Raporlu" seçilince belge zorunluluğu istemci doğrulamasıyla görünüyor
+(o kol çalışıyor).
 
-⬜ Karar gerekiyor (`K-##` adayı): şube alt grubu / ders grubu (birden çok şubeden öğrenci alan ders; şubenin bir saatinin
-gruplara bölünmesi) ders programı, yoklama, not ve öğretmen yükü modeline girsin mi. Kadro raporu: `raporlar/Altınay AL/`
-(git dışı) — birleştirme olsa bile TDE ve Almanca için alım gerekiyor.
+⬜ Kapatma yolu: kural tek yerde — ya açıklama gerçekten isteğe bağlı olur (sunucu gevşer) ya da alan zorunlu işaretlenir ve
+istemci şeması aynı kuralı uygular; her iki durumda da pencere sunucu hatasını (`mutationErrorDesc`) göstermeli.
+
+### `TB-259` · Kulüp saati yoklaması: alınmayan kulüp saati hiçbir listeye düşmüyor; idarenin düzeltmesi kulüp listesine yansımıyor 🟡
+
+2026-09-27, `E-34` uygulanırken ölçüldü. Kulüp saati oturumu danışmanın yoklamasından doğar (şube × kulüp, tamamlanmış). İki sınır kaldı:
+
+1. **Alınmayan kulüp saati görünmüyor.** Şube dersinde oturum sabah üretilir; alınmazsa gün sonunda "alınmadı"ya düşer, hatırlatma ve
+   idare listesi (`ListUnrecordedSessions`) onu gösterir. Kulüp saatinde danışman hiç işaretlemezse oturum hiç doğmaz: ne hatırlatma
+   gider ne idare görür, o saat öğrencinin günlük paydasına da girmez.
+2. **İki yönlü eşitleme yok.** İdare kaydı yoklama tarafında düzeltirse (ör. mazeretli) kulübün katılım ekranı eski işareti gösterir.
+   Devamsızlık kaydı esastır ve danışman aynı işareti yeniden kaydettiğinde idarenin düzeltmesi ezilmez (yalnız değişen işaret gider).
+
+⬜ Kapatma yolu: kulüp saati etkinliği için "yoklama alınmadı" sinyali (etkinlik bitiminde işaretsiz üye kalan kulübü idare panosuna
+ve danışman hatırlatmasına bağlamak); katılım ekranında devamsızlık kaydının güncel durumunu göstermek.
 
 ### `TB-257` · Domain notu öğretmen varsayılan kapasitesini 30 yazıyor, kod ve okul ayarı 40 ⚪
 

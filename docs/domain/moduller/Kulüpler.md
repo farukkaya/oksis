@@ -68,7 +68,7 @@ Handler içindeki ikinci katman "hangi kulüp" sorusunu sorar ve sırası sabitt
 - **Tek aktif danışmanlık:** öğretmen bir sezonda yalnız bir aktif kulübün danışmanı olur (oluşturma, danışman değişimi, yeniden aktifleştirme). Pasif kulüp sayılmaz.
 - **Tek üyelik:** öğrencinin bir sezonda tek canlı (bekleyen/aktif/askıda) üyeliği olur; keşifte öteki kulüpler "kapalı" ve gerekçeli, katılma ve onay uçları reddeder.
 - **Başvuru kapsamı:** okul kulüp saatini programa koyduysa sınıfında kulüp saati olmayan öğrenci kulüpleri görmez, başvuramaz.
-- **Kulüp saati etkinliği:** programda kulüp saati olan her hafta her aktif kulübe sistem açar (tür `clubHour`); aktif üyeler kayıtlı doğar, öğrenci geri çekemez, kontenjan kapısı işlemez, elle iptal edilemez, tatilde açılmaz. Yoklamayı danışman alır. Devamsızlığa yansıması ürün kararı bekliyor (`E-34`).
+- **Kulüp saati etkinliği:** programda kulüp saati olan her hafta her aktif kulübe sistem açar (tür `clubHour`); aktif üyeler kayıtlı doğar, öğrenci geri çekemez, kontenjan kapısı işlemez, elle iptal edilemez, tatilde açılmaz. Yoklamayı danışman alır; işaret öğrencinin devamsızlığına yazılır (`E-34`, bkz. [[Yoklama ve Devamsızlık]] · Kulüp saati): mazeret kapsar, düzeltme penceresi işler, işaretlenmiş yoklama "kayıtlı"ya geri alınamaz.
 
 ## Kapsam dışı
 

@@ -1,7 +1,7 @@
 ---
 tags: [teknik-analiz, ders-programi, kulupler]
 tarih: 2026-09-25
-durum: uygulandı (2026-09-26, dal feat/kulup-saati, commit bekliyor) — açık: E-34 (devamsızlığa yansıma, ürün kararı)
+durum: uygulandı (2026-09-26; E-34 devamsızlık bağı 2026-09-27, dal feat/kulup-saati-devamsizlik)
 karar: Y-06
 ---
 
@@ -143,9 +143,11 @@ raporlanır.
 - Etkinliği kim açar: arka plan işi. Kural `arka-plan-isinde-izin-kapisi` notundaki gibi, izin
   kapılı kullanıcı komutu yerine sistem komutu ikizi yazılır.
 - Tatil ve iptal günlerinde etkinlik açılmaz (okul takvimi).
-- **Devamsızlığa yansır (karar 9):** "gelmedi" işareti öğrencinin devamsızlık kaydına o ders saati
-  için yazılır. Şube yoklamasıyla aynı devamsızlık sayacını besler. Bağın nasıl kurulacağı (yoklama
-  modülüne olay mı, ortak kayıt mı) uygulama diliminde yoklama modülü okunarak belirlenir.
+- **Devamsızlığa yansır (karar 9, `E-34` 2026-09-27):** "gelmedi" işareti öğrencinin devamsızlık kaydına o ders saati
+  için yazılır ve şube yoklamasıyla aynı sayacı besler. **Bağ ortak kayıttır:** öğrencinin şubesindeki kulüp saati
+  yerleşimine bağlı, kulübü taşıyan bir yoklama oturumu (şube × kulüp × ders saati, `AttendanceSession.ClubId`).
+  Kullanıcı kararları: kulüp saati günün ders sayısına girer; mazeret (ve etkinlik görevi, gün içi izin) kapsar;
+  düzeltme penceresi, değişiklik geçmişi ve veli bildirimi şube yoklamasıyla aynıdır. Ayrıntı §11 dilim 6.
 
 ## 8. Hazırlık kontrolleri (yayın ve sezon)
 
@@ -162,8 +164,8 @@ raporlanır.
 ## 9. Açık kararlar
 
 1. ~~§3.3 yer alanının derslik kataloğuna bağlanması~~ — onaylandı (2026-09-25, "Uygula") ve uygulandı.
-2. **`E-34`** · Kulüp saati "gelmedi" işaretinin devamsızlığa nasıl yazılacağı (gün eşdeğeri paydası, mazeret, düzeltme
-   penceresi, veli bildirimi) — ürün kararı bekliyor; §11 dilim 6.
+2. ~~**`E-34`** · Kulüp saati "gelmedi" işaretinin devamsızlığa nasıl yazılacağı~~ — karar verildi ve uygulandı
+   (2026-09-27): paydaya girer, mazeret kapsar, pencere/geçmiş/bildirim aynen işler; §7 ve §11 dilim 6.
 
 ## 10. Uygulama dilimleri (öneri)
 
@@ -224,7 +226,19 @@ okul başına tenant): bugünden cumaya, okul günü olan ve zil şablonunda der
 yayında doğan, kontenjansız etkinlik; ardışık saatler tek etkinlik; aktif üyeler kayıtlı, başlamamış etkinlikte üye listesi
 izlenir. Öğrenci kaydı geri çekemez ve ayrıca kayıt olamaz; danışman "kayıt iptali" işaretleyemez; etkinlik elle iptal
 edilemez (domain). Şube yoklaması (`SessionMaterializer`) öğretmensiz ve kulüp türündeki hücreleri maddileştirmez.
-**Açık: `E-34`** — "gelmedi"nin devamsızlığa yazılması ürün kararı bekliyor (üç soru orada).
+**`E-34` (2026-09-27) · Devamsızlık bağı — uygulandı.** Roster ucu (`UpdateClubActivityRosterCommandHandler`) kulüp
+saatinde yalnız DEĞİŞEN katıldı/katılmadı işaretlerini `IClubHourAttendanceRecorder`'a verir; katılım ve devamsızlık TEK
+`SaveChanges` ile yazılır (biri reddedilirse ikisi de yazılmaz). Kaydedici öğrencinin şubesini (şubeden ayrılmamış, kaydı
+aktif) ve şubenin en güncel yayın sürümündeki kulüp saati yerleşimlerini, zili etkinlik aralığına düşenlerle bulur; şube ×
+kulüp × yerleşim × gün başına `AttendanceSession.CreateClubHour` (tamamlanmış doğar, beklenen öğretmen danışman) açar,
+yeni öğrenciyi `RecordClubHour` (gönderim olayı → veli bildirimi yolu), kaydı olanı `AmendRecord` (pencere) ile yazar,
+her yazımı geçmişe "Kulüp saati yoklaması" notuyla düşer; kayıttan sonra dönem özeti ve eşik motoru koşar. "Katılmadı",
+onaylı mazeret > etkinlik görevi > gün içi izin önceliğiyle mazeretli yazılır. Danışman ilk yoklamayı etkinlik günü girer
+(sonrası `attendance.manage` retro), pencere kapanınca yalnız idare değiştirir. Göç `20260927_club_hour_attendance`:
+`attendance_sessions.club_id` + tekil dizin `(school_id, placement_id, date, club_id)`. Şube yoklaması yüzleri
+(maddileştirici, pano, `AmendRecord`'da danışman) kulüp oturumunu dışlar. İşaretlenmiş kulüp saati yoklaması "kayıtlı"ya
+geri alınamaz. **Bilinen sınır:** idarenin yoklama tarafındaki düzeltmesi kulübün katılım listesine geri yazılmaz
+(devamsızlık kaydı esastır); danışmanın hiç almadığı kulüp saati "alınmadı" listesine düşmez.
 
 **Dilim 7 · Hazırlık kontrolleri — uygulandı** (`ClubHourReadiness`, yayın önizlemesi, tekli ve toplu yayın). Engeller çakışma
 olarak döner ve yayını durdurur: kapsamdaki şubelerde farklı dilim; danışmanın kulüp saati dilimine başka şubeden ders. Uyarılar:

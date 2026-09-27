@@ -58,7 +58,12 @@ Modülün taşıyıcı fikri **dondurma**: bir yoklama oturumu programdan doğar
 ### Kulüp saati (`Y-06`, 2026-09-26)
 
 - Kulüp saati hücresi **şube yoklamasına girmez** (maddileştirici öğretmensiz ve kulüp türündeki hücreyi atlar); öğrenci o saatte kulübündedir, yoklamayı danışman kulüp saati etkinliğinde alır.
-- Kulüp yoklamasındaki "gelmedi"nin devamsızlık sayacına yazılması henüz yok — gün eşdeğeri, mazeret ve düzeltme penceresi kararı bekliyor (`E-34`).
+- **Kulüp saati yoklaması devamsızlığa yazılır** (`E-34`, 2026-09-27 kararı). Danışmanın katıldı/katılmadı işareti, öğrencinin kendi şubesindeki kulüp saati yerleşimine bağlı bir **kulüp saati oturumuna** kaydolur (şube × kulüp × ders saati; oturum kulübü taşır, beklenen öğretmeni danışmandır). Devamsızlığın tek kaynağı değişmez; bu yüzden:
+  - kulüp saati **günün ders sayısına girer** (gün eşdeğerinin paydası); blok kulüp saati iki ders saatidir;
+  - onaylı mazeret, etkinlik görevi ve o saati kapsayan gün içi izin kulüp saatini de kapsar — "katılmadı" mazeretli yazılır; sonradan onaylanan mazeret de bu kayıtlara uygulanır;
+  - şube yoklamasının **düzeltme penceresi ve değişiklik geçmişi** aynen işler: pencere ilk yoklama anından sayılır, kapanınca yalnız idare değiştirir; danışman ilk yoklamayı etkinlik günü girer, sonrası idarenin geriye dönük girişidir; kayıtlar "Kulüp saati yoklaması" notuyla geçmişe düşer;
+  - **veli bildirimi** şube yoklamasıyla aynı kuraldır (ilk ders anlık, diğerleri gün sonu özetinde; geriye dönük girişte anlık bildirim gitmez).
+- Kulüp saati oturumu şube yoklaması ekranlarına (öğretmenin günü, öğrencinin günü, canlı pano, alınmadı listesi, hatırlatmalar) girmez; danışman düzeltmeyi kulübün katılım ekranından yapar, idare yoklama tarafından da düzeltebilir. Kulüp ekranında işaretlenmiş yoklama "kayıtlı"ya geri alınamaz.
 
 ## Kapsam dışı
 
