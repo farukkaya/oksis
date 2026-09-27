@@ -1152,7 +1152,11 @@ ayrı raporlanır. Gösterge müfredata karşı toplam açığı verir. Ortak de
 girmeyen satırları (`SolveInput.UnassignedByClassRoom`) her adayın eksik saatine ve şube kırılımına ekler, yerleşmemiş derslerde
 `Unassigned` gerekçesiyle gösterir. Sözleşme: `AutoGenUnplacedDto.SubjectId/TeacherId` nullable (codegen yenilendi).
 Testler: birim 3404 yeşil (yeni: talep kaynağı, çözücü), entegrasyon `AutoGenerateScheduleJobTests` + yeni B-66 senaryosu yeşil.
-⬜ Canlı Altınay üretiminde ölçülmedi (5112'deki API aynı Hangfire kuyruğunu dinliyor). "Ortak ders öğretmensizse önerilmez"
+✅ **Canlı doğrulandı (2026-09-27, Altınay 9-A, 5112 master).** Kadro tamamlandığı için 9-A'da öğretmensiz ders kalmamıştı
+(üretim 40/40, eksik 0). Müzik'in tek görevlendirmesi (`84B5D29F…`) kullanıcı onayıyla DB'de geçici `Closed` yapıldı: yerleşmemiş
+dersler ucu Müzik'i "Bu derse görevlendirilmiş öğretmen yok" gerekçesiyle, öğretmensiz döndü; üretim işi (`5bdc2780…`) üç adayda da
+38 yerleşim, eksik 2 (şube kırılımı 2), yerleşmemiş satırı `Unassigned` · Müzik · 2 saat · öğretmen boş. Görevlendirme `Active`'e
+birebir geri alındı. DEV-OKUL'da ayrıca 8 şubenin rehber öğretmensiz Rehberlik saati artık üretimin eksiğinde görünüyor. "Ortak ders öğretmensizse önerilmez"
 ayağı uygulanmadı: eksik artık görünür, tüm adaylara eşit eklendiği için sıralamayı değiştirmez. Strict modda öğretmensiz ders
 "çözüm yok" üretir; gevşetme önerileri buna uygun değil.
 
