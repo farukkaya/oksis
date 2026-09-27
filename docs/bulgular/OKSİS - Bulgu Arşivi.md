@@ -8655,3 +8655,84 @@ indiği **gerçek sağlayıcı** testiyle ölçüldü (`ScheduleProgramStatsReco
 çevirisi dâhil yeşil).
 
 ✅ **KAPANDI (2026-09-27 arşiv turu):** master'da doğrulandı — `LessonPlacement.IsLive` (`src/Oksis.Domain/Modules/Timetable/Entities/LessonPlacement.cs:94`).
+
+## 63. Ders programı — ekranda uçtan uca ölçülerek kapanan 3 madde (2026-09-27) ✅
+
+> İkisinin kodu master'da. Kapanış ölçümü Altınay 10-A'da yapıldı (kullanıcı onayıyla; içerik birebir geri alındı, bildirimsiz v2). Ölçümde açılanlar: `B-82` (aynı gün düzeltildi, burada), `B-83` ve `D-36` (defterde).
+
+### `B-81` · Yayınlanmış program editörde düzenlenemiyor; "Yerleştirilmemiş Dersler" kartı orada işlevsiz 🟠
+
+2026-09-27, Altınay'da 11 program yayınlandıktan sonra koddan ölçüldü (`oksis-ui` `editor-page.tsx`).
+Editör `editable = status !== "Published"` diyor: yayındaki programda hücreler, yerleştirilmemiş ders çipleri ve Blok
+Modu kapalı. Editör menüsü (Geçici Değişiklikler, Sürüm Geçmişi, Programı Sil) ve hub satır menüsü (Aç, Yayınla — yayında
+pasif, Sürüm Geçmişi, Sil) yayındaki programı düzenlemeye açan bir eylem sunmuyor. Oysa sunucu buna izin veriyor: domain
+notuna göre yayındaki programa ilk düzenleme kaydedildiğinde program kendiliğinden **Revize**'ye geçer, eski sürüm
+tüketicide kalır. Arayüzden tek dolaylı yol eski bir sürüme dönmek (Revize'ye düşürür) ya da programı silip yeniden kurmak.
+
+Aynı sebeple **"Yerleştirilmemiş Dersler" kartı yayındaki programda işlevsiz**:
+- Program eksiksizse (olağan durum; eksik saatle yayın ayrıca onay istiyor) panel kapalı açılıyor, düğme açınca yalnız
+  "Tüm dersler yerleşti" yazıyor. Aynı bilgi ızgaranın üstündeki ipucu satırında zaten var.
+- Program eksik saatle yayınlandıysa eksik dersleri listeliyor ama çipler sürüklenemiyor. Liste bilgi veriyor, eylem
+  sunmuyor, eylemin yolu da yok.
+
+⬜ Kapatma yolu (karar gerekir): (a) yayındaki programa "Düzenlemeye aç" eylemi — ilk kayıtta Revize'ye geçer, tüketici
+yayındaki sürümü görmeye devam eder, yeniden yayınla bildirim gider; ya da (b) yayında düzenleme bilerek kapalıysa domain
+notu ve sunucu kuralı buna göre daraltılsın. Her iki durumda da yayındaki programda kart gizlensin; eksik saat varsa
+ipucu satırı "N saat eksik yayınlandı" desin.
+
+🟡 **Karar (a) uygulandı, master'da (2026-09-27, `oksis-ui` `8e0c1c6`, merge `762d42b`).**
+`editor-page.tsx`: yayındaki program salt okunur açılır, başlıkta **Düzenlemeye Aç** düğmesi var. Kilit program
+sürümüne bağlı (yeniden yayın sürümü artırır → editör kendiliğinden kilitlenir). Açıkken ve Revize'deyken turuncu
+şerit "öğrenci ve öğretmenler yeniden yayınlayana kadar vN sürümünü görür" diyor. Kilitliyken "Yerleştirilmemiş Dersler"
+kartı ve yan panel çizilmiyor. Eksik saatle yayınlanmışsa ipucu "N ders saati eksik yayınlandı. Tamamlamak için
+Düzenlemeye Aç." diyor. Sunucu değişmedi (zaten `EnterRevisionIfPublished`). Altınay 9-A'da ölçüldü: kilitliyken 0
+sürüklenebilir ders / kart yok; açınca 40 ders sürüklenebilir, kart ve Kaydet görünür; açmak sunucuya hiçbir istek
+göndermedi. ⬜ İlk kaydın Revize'ye geçişi ekranda uçtan uca ölçülmedi (yürürlükteki dönemde yayında program yalnız
+Altınay'da; ölçmek yeniden yayın bildirimi gerektirir).
+
+✅ **KAPANDI (2026-09-27, ekranda uçtan uca ölçüldü, Altınay 10-A, kullanıcı onayıyla).** Yayındaki 10-A (v1) editörde salt okunur
+açıldı; **Düzenlemeye Aç** → şerit "Düzenlemeye açık", Kaydet ve kart göründü, sunucuya istek gitmedi. İlk değişiklik (öğretmen
+değiştirme) kaydedilince program sunucuda `Revising` oldu. Ekranda rozet "Revize Ediliyor v1", şerit "Revize ediliyor…", **Yayınla**
+göründü. Sayfa yenilenince editör açık kaldı (Revize kilitlenmez). Değişiklikler geri alındı (40/40 hücre ilk kayıtla birebir). Bildirim
+anahtarı kapatılıp yeniden yayınlandı → `Published` **v2**, bildirim sayısı değişmedi (1340). Yayından hemen sonra ve yenilemeden sonra
+editör kendiliğinden kilitlendi ("Yayın v2", Düzenlemeye Aç, sürüklenebilir hücre 0). Ölçüm sırasında çıkan ayrı kusurlar: `B-82`, `B-83`, `D-36`.
+
+### `TB-253` · Ders programında elle yerleştirme ve öğretmen değiştirme ders/yetkinlik denetlemiyor ⚪
+
+2026-09-25 ders programı keşfinde çıktı (E-32 bağlamı; salt okunur inceleme, iddia elle doğrulandı).
+`PlaceLessonCommandHandler` ve `AssignTeacherCommandHandler` yalnız müsaitlik (Unavailable → `timetable.override`)
+ve slot/öğretmen/derslik çakışmasına bakıyor; dersin o şubenin müfredatında olup olmadığı ve öğretmenin o derse
+yetkin olup olmadığı sunucuda denetlenmiyor (`ScheduleProgram.Place` yalnız slot tekilliği). Tek kapı ekranın
+veri kaynağı: yan panel `CompetencyAssignmentSource`'tan besleniyor. Ama "öğretmeni değiştir" listesi
+(`GetAvailableTeachersQueryHandler.cs:44-65`) yetkinliğe bakmadan her aktif öğretmeni gösteriyor. Alan dışı
+atama meşru olabilir (K-14 gerekçe ister); burada gerekçesiz ve izsiz geçiyor. [[kural-ekranda-degil-sunucuda]]
+
+⬜ Kapatma yolu: E-32 tasarımıyla birlikte ele alınmalı (sınıf rehber öğretmeni dersleri yetkinlik istemeyecek);
+elle yerleştirmede "müfredatta yok" reddi, alan dışında gerekçe.
+
+🟡 **Kodda düzeltildi, commit bekliyor** (dal `feat/sinif-rehberligi-dersleri`, Y-05 dilim 4): `PlaceLesson` ve
+`AssignTeacher` müfredatta olmayan dersi reddeder, alan dışı öğretmende ≥15 karakter gerekçe ister ve yerleşime yazar;
+öğretmen listesi sunucuda `recommended` / `in-field` / `out-of-field` işaretli. Tohum okulunda uçla ölçüldü (422, 422,
+gerekçeyle 201). Kapanış için ekranda gerçek yerleştirmeyle ölçülecek.
+🔄 **2026-09-26:** kod master'da (`oksis-api` `49a0185e`, merge `d6598101`). Açık kalan tek ayak ekranda gerçek elle yerleştirme ölçümü; kod işi yok.
+
+✅ **KAPANDI (2026-09-27, ekranda ölçüldü, Altınay 10-A).** Öğretmen Değiştir listesi "Önerilen" (alan içi) ve "Alan dışı · gerekçe ister"
+gruplarını gösteriyor. Alan dışı öğretmen (Coğrafya öğretmeni → Felsefe) seçilince "Alan dışı öğretmen" penceresi açıldı. 4 karakterde
+**Ata** pasif ("en az 15 karakter"), geçerli gerekçeyle atadı; gerekçe `lesson_placements.out_of_field_reason`'a yazıldı. Alan içi öğretmene
+dönünce gerekçe `NULL` oldu. Elle yerleştirme: boş hücreye tıklayınca yalnız müfredattan gelen eksik ders önerildi ("Felsefe · kalan 1"),
+yerleştirme 201. Müfredatta olmayan ders ekrandan seçilemiyor; sunucu reddi daha önce uçla ölçülmüştü (422).
+
+### `B-82` · Öğretmen Değiştir, yerleşimin kendi dersliğiyle çakışıp "Derslik o saatte dolu" diyor 🟠
+
+2026-09-27, B-81 ekran ölçümünde (Altınay 10-A) çıktı. Pazartesi 1'deki Felsefe'nin öğretmeni değiştirildi (geçti). Aynı hücrede
+eski öğretmene dönülünce ekran **"Derslik o saatte dolu."** dedi. Kök neden: `AssignTeacherCommandHandler` doluluk ön denetimine
+(`IOccupancyIndex.CheckAsync`) yeni öğretmenle birlikte hücrenin **değişmeyen** dersliğini de soruyor. Redis'te o dersliğin o slottaki
+kaydı yerleşimin kendisine ait, yani hücre kendisiyle çakışıyor. Kod yorumu "self-conflict yok" diyordu, bu yalnız öğretmen için
+doğruydu. İlk atamanın geçme sebebi, o hücrenin derslik anahtarının Redis'te olmaması (önceki doğrudan DB işlemlerinden sonra önbellek
+temizlenmişti). Atama `ReserveAsync` ile anahtarı yeniden yazınca ikinci atama takıldı. **Etki:** ısınmış önbellekte (olağan durum) her
+dolu hücrede öğretmen değiştirme reddedilir. `AssignRoomCommandHandler` aynı tuzağı bilerek aşıyor (denetimden önce kendi rezervasyonunu
+bırakıyor).
+
+✅ **KAPANDI (2026-09-27):** master'da (`oksis-api` `e9517eb4`, merge `46d4aa4b`). Derslik değişmediği için denetime
+derslik sorulmuyor (`roomId: null`). Yeni birim testi düzeltme olmadan kırmızı, düzeltmeyle yeşil (`EditPlacementCommandHandlerTests` 11/11).
+Canlıda ölçüldü: API yeniden başlatıldıktan sonra aynı geri dönüş ekranda geçti.

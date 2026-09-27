@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-82` · `D-36` · `V-05` · `X-24` · `TB-259` · `E-36` · `ENG-04`
+**Sıradaki boş ID:** `B-84` · `D-37` · `V-05` · `X-24` · `TB-259` · `E-36` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -239,12 +239,15 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 12 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 42 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 54 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 41 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 41 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 56 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
 | **Toplam** | **149** | |
 
+> **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
+> yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82` aynı gün master'a merge edilip arşive taşındı. Yeniden sayım: **149** blok.
+>
 > **Arşiv turu (2026-09-27):** ders programının master'da doğrulanan 3 maddesi arşive taşındı (Arşiv §62: `B-66`, `B-78`,
 > `TB-123`). `TB-236` defterde birebir iki kez yazılmıştı; kopya silindi. Sayılar `grep '^### \`'` ile yeniden sayıldı: **149**
 > blok. Tablo önceki turda 148 diyordu ama gerçek sayı 153'tü (sonradan eklenen `B-80`, `B-81`, `TB-258` vb. sayaca işlenmemişti).
@@ -4092,35 +4095,23 @@ sınırı kalksın, öğretmenin rehberlik ve diğer ders yükü de sayılsın, 
 Kapsam dışındaki canlı programların yükü başlangıç yükü olarak girsin. `CompetencyAssignmentDistributionTests` bu
 davranışı kilitlediği için testler de yeniden yazılmalı. Domain notu ([[Ders Programı Yönetimi]] §6) ve kod yorumu düzeltilmeli.
 
-### `B-81` · Yayınlanmış program editörde düzenlenemiyor; "Yerleştirilmemiş Dersler" kartı orada işlevsiz 🟠
+### `B-83` · Editörde elle yerleştirilen ders dersliksiz yazılıyor; otomatik üretim şubenin dersliğini koyuyor 🟡
 
-2026-09-27, Altınay'da 11 program yayınlandıktan sonra koddan ölçüldü (`oksis-ui` `editor-page.tsx`).
-Editör `editable = status !== "Published"` diyor: yayındaki programda hücreler, yerleştirilmemiş ders çipleri ve Blok
-Modu kapalı. Editör menüsü (Geçici Değişiklikler, Sürüm Geçmişi, Programı Sil) ve hub satır menüsü (Aç, Yayınla — yayında
-pasif, Sürüm Geçmişi, Sil) yayındaki programı düzenlemeye açan bir eylem sunmuyor. Oysa sunucu buna izin veriyor: domain
-notuna göre yayındaki programa ilk düzenleme kaydedildiğinde program kendiliğinden **Revize**'ye geçer, eski sürüm
-tüketicide kalır. Arayüzden tek dolaylı yol eski bir sürüme dönmek (Revize'ye düşürür) ya da programı silip yeniden kurmak.
+2026-09-27, TB-253 ekran ölçümünde (Altınay 10-A). Boş hücreye tıklanıp ders seçilince yerleşim `room_id = NULL` yazıldı. Hücrede
+"10A" etiketi kayboldu. Editör `placeMut`'a her zaman `roomId: null` gönderiyor (`editor-page.tsx`), sunucu (`PlaceLessonCommandHandler`)
+da şubenin varsayılan dersliğine düşmüyor. Oysa otomatik üretim ve sabit yerleşim planlayıcısı şubenin dersliğini yazıyor. Sonuç:
+elle yerleştirilen saatte derslik çakışması denetlenmiyor ve öğrenci/öğretmen programında derslik boş görünüyor. Tek yol, ardından
+"Derslik Değiştir" ile elle seçmek; ölçümde bu yolla geri alındı.
 
-Aynı sebeple **"Yerleştirilmemiş Dersler" kartı yayındaki programda işlevsiz**:
-- Program eksiksizse (olağan durum; eksik saatle yayın ayrıca onay istiyor) panel kapalı açılıyor, düğme açınca yalnız
-  "Tüm dersler yerleşti" yazıyor. Aynı bilgi ızgaranın üstündeki ipucu satırında zaten var.
-- Program eksik saatle yayınlandıysa eksik dersleri listeliyor ama çipler sürüklenemiyor. Liste bilgi veriyor, eylem
-  sunmuyor, eylemin yolu da yok.
+⬜ Kapatma yolu: istek derslik taşımıyorsa sunucu şubenin dersliğini (`ClassRoom.RoomId`) kullansın. Sunucu tarafı olmalı ki API'yi
+doğrudan çağıran yollar da aynı sonucu versin. Derslik tanımsız şubede bugünkü davranış kalır (`TB-120`).
 
-⬜ Kapatma yolu (karar gerekir): (a) yayındaki programa "Düzenlemeye aç" eylemi — ilk kayıtta Revize'ye geçer, tüketici
-yayındaki sürümü görmeye devam eder, yeniden yayınla bildirim gider; ya da (b) yayında düzenleme bilerek kapalıysa domain
-notu ve sunucu kuralı buna göre daraltılsın. Her iki durumda da yayındaki programda kart gizlensin; eksik saat varsa
-ipucu satırı "N saat eksik yayınlandı" desin.
+### `D-36` · Yeniden yayın penceresi "v1 → v1" ve "İlk yayın — karşılaştırılacak önceki sürüm yok" diyor 🟡
 
-🟡 **Karar (a) uygulandı, master'da (2026-09-27, `oksis-ui` `8e0c1c6`, merge `762d42b`).**
-`editor-page.tsx`: yayındaki program salt okunur açılır, başlıkta **Düzenlemeye Aç** düğmesi var. Kilit program
-sürümüne bağlı (yeniden yayın sürümü artırır → editör kendiliğinden kilitlenir). Açıkken ve Revize'deyken turuncu
-şerit "öğrenci ve öğretmenler yeniden yayınlayana kadar vN sürümünü görür" diyor. Kilitliyken "Yerleştirilmemiş Dersler"
-kartı ve yan panel çizilmiyor. Eksik saatle yayınlanmışsa ipucu "N ders saati eksik yayınlandı. Tamamlamak için
-Düzenlemeye Aç." diyor. Sunucu değişmedi (zaten `EnterRevisionIfPublished`). Altınay 9-A'da ölçüldü: kilitliyken 0
-sürüklenebilir ders / kart yok; açınca 40 ders sürüklenebilir, kart ve Kaydet görünür; açmak sunucuya hiçbir istek
-göndermedi. ⬜ İlk kaydın Revize'ye geçişi ekranda uçtan uca ölçülmedi (yürürlükteki dönemde yayında program yalnız
-Altınay'da; ölçmek yeniden yayın bildirimi gerektirir).
+2026-09-27, B-81 ölçümünde (Altınay 10-A, Revize'deki v1'in yeniden yayını). Yayın penceresinin başlığı "Programı Yayınla v1 → v1",
+onay adımı "Sürüm v1 → v1" diyor. Yayın sonrası program **v2** oldu. "v1'e göre değişenler" bölümü "İlk yayın — karşılaştırılacak önceki
+sürüm yok" yazıyor. Oysa yayındaki bir v1 var ve karşılaştırılabilir. İdareci neyin değiştiğini göremeden onaylıyor. ⬜ Ölçülmedi: pencere
+sürümü mü yanlış hesaplıyor, önizleme ucu mu yanlış dönüyor.
 
 ### `D-32` · Ders programı kartında "BLOK" ve "KURAL" rozetleri ders adının üstüne biniyor 🟡
 
@@ -4174,25 +4165,6 @@ güncel sorguyu çalıştırıyor.
 
 ⬜ Kapatma yolu: testin okuma adımı hedef göç noktasının şemasıyla uyumlu kalsın (ham SQL) ya da test kesme noktasını
 güncel göçe taşısın. `TB-252` ailesi (entegrasyon testi ortam varsayımı).
-
-### `TB-253` · Ders programında elle yerleştirme ve öğretmen değiştirme ders/yetkinlik denetlemiyor ⚪
-
-2026-09-25 ders programı keşfinde çıktı (E-32 bağlamı; salt okunur inceleme, iddia elle doğrulandı).
-`PlaceLessonCommandHandler` ve `AssignTeacherCommandHandler` yalnız müsaitlik (Unavailable → `timetable.override`)
-ve slot/öğretmen/derslik çakışmasına bakıyor; dersin o şubenin müfredatında olup olmadığı ve öğretmenin o derse
-yetkin olup olmadığı sunucuda denetlenmiyor (`ScheduleProgram.Place` yalnız slot tekilliği). Tek kapı ekranın
-veri kaynağı: yan panel `CompetencyAssignmentSource`'tan besleniyor. Ama "öğretmeni değiştir" listesi
-(`GetAvailableTeachersQueryHandler.cs:44-65`) yetkinliğe bakmadan her aktif öğretmeni gösteriyor. Alan dışı
-atama meşru olabilir (K-14 gerekçe ister); burada gerekçesiz ve izsiz geçiyor. [[kural-ekranda-degil-sunucuda]]
-
-⬜ Kapatma yolu: E-32 tasarımıyla birlikte ele alınmalı (sınıf rehber öğretmeni dersleri yetkinlik istemeyecek);
-elle yerleştirmede "müfredatta yok" reddi, alan dışında gerekçe.
-
-🟡 **Kodda düzeltildi, commit bekliyor** (dal `feat/sinif-rehberligi-dersleri`, Y-05 dilim 4): `PlaceLesson` ve
-`AssignTeacher` müfredatta olmayan dersi reddeder, alan dışı öğretmende ≥15 karakter gerekçe ister ve yerleşime yazar;
-öğretmen listesi sunucuda `recommended` / `in-field` / `out-of-field` işaretli. Tohum okulunda uçla ölçüldü (422, 422,
-gerekçeyle 201). Kapanış için ekranda gerçek yerleştirmeyle ölçülecek.
-🔄 **2026-09-26:** kod master'da (`oksis-api` `49a0185e`, merge `d6598101`). Açık kalan tek ayak ekranda gerçek elle yerleştirme ölçümü; kod işi yok.
 
 ### `TB-252` · Müfredat entegrasyon testi paylaşılan veritabanındaki yayımlanmış sürüme bağlı — çalışma sırasına göre kırmızı ⚪
 
