@@ -8898,3 +8898,21 @@ davranışı kilitlediği için testler de yeniden yazılmalı. Domain notu ([[D
 | Tarih + TYT Coğrafya | 30 / 20 | 26 / 26 |
 
 ⬜ Canlı üretimle ölçülmedi: aynı derse birden çok öğretmeni olan tek okul Altınay, orada 66 pin planı belirliyor.
+
+## 66. Ders programı — tasarım gereği kapanan madde (2026-09-27) ✅
+
+> 2026-09-25 kullanıcı kararı yeniden teyit edildi: taslaklar birbirini dolu saymaz.
+
+### `B-74` · Şube şube otomatik üretim diğer şubelerin taslaklarını görmüyor — aynı öğretmen aynı saatte iki şubede 🔴
+
+2026-09-25 Altınay B9.4 testinde çıktı (kullanıcı ekran bulgusundan ölçüldü). 9-A, 9-B, 10-A, 10-B ayrı üretimlerle (her biri
+kendi `generation_job`) kuruldu. Üretici dış meşguliyeti yalnız **canlı** programlardan topluyor
+(`AutoGenerateScheduleJob.GatherExternalOccupancyAsync`, K12 `owner != demand.ClassRoomId`); aynı dönemin diğer
+**taslakları** dolu sayılmıyor. Ölçüldü: Bir Tarih öğretmeni Pazartesi 5–6'da hem 10-A hem 10-B'de, Salı 5–6'da hem 9-A hem 9-B'de
+Tarih'te. Programların `conflict_count` değeri 0 — çakışma sessiz. "Şube üretiminde boşluk kalmıyor" görüntüsünün sebebi bu.
+
+✅ **KAPANDI — tasarım gereği (2026-09-27, kullanıcı kararı).** 2026-09-25 kararı geçerli: dış çakışma denetimine yalnız yayındaki
+programlar girer, başka şubelerin taslakları dolu sayılmaz; tek tek üretilen taslaklar arası çakışma yayın kapısında yakalanır, toplu
+üretimde şubeler kendi içinde çakışmasız çıkar. Karar arşivdeki aday çözüm bloğunda kayıtlıydı ama madde defterde açık kalmıştı;
+2026-09-27'de taslak doluluğu yeniden yazıldı, kararla çeliştiği görülünce commit edilmeden geri alındı. Kilit:
+`AutoGenerateScheduleJobTests` "başka şubenin TASLAĞI dış doluluk sayılmaz".

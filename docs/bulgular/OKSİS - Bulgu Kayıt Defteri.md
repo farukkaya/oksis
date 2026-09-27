@@ -238,17 +238,18 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 12 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🔴 Kritik | 11 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 39 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **144** | |
+| **Toplam** | **143** | |
 
 > **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
 > yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. `D-32` (kart rozetlerinin ders adına binmesi)
 > kullanıcı kararıyla kabul edilen durum sayıldı ve defterden silindi; ID yeniden kullanılmaz. `B-67` kuruluma geçiş kararıyla
-> kapandı (Arşiv §64). `B-80` okul çapında yük dengesiyle kapandı (Arşiv §65). Yeniden sayım: **144** blok.
+> kapandı (Arşiv §64). `B-80` okul çapında yük dengesiyle kapandı (Arşiv §65).
+> `B-74` kullanıcı kararıyla tasarım gereği kapandı (Arşiv §66). Yeniden sayım: **143** blok.
 >
 > **Arşiv turu (2026-09-27):** ders programının master'da doğrulanan 3 maddesi arşive taşındı (Arşiv §62: `B-66`, `B-78`,
 > `TB-123`). `TB-236` defterde birebir iki kez yazılmıştı; kopya silindi. Sayılar `grep '^### \`'` ile yeniden sayıldı: **149**
@@ -276,7 +277,7 @@ sayaçlar üçü arasında ortak.
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
 > duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
-**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 126 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 125 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
 
 > **2026-09-16 gece düzeltme turu sürüyor.** Kodda düzeltilip **commit bekleyen** maddeler (dallar
 > `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`): `TB-174`, `D-19`,
@@ -3930,14 +3931,6 @@ farklı yedeklere düşüyor:
 Öneri: okuma ekranları en son kapanan dönemi, planlama ekranları başlamamış ilk dönemi
 varsayılan alır; kural core'da tek fonksiyon olur. Backend okuma uçlarının id'siz davranışı
 karar bekliyor.
-
-### `B-74` · Şube şube otomatik üretim diğer şubelerin taslaklarını görmüyor — aynı öğretmen aynı saatte iki şubede 🔴
-
-2026-09-25 Altınay B9.4 testinde çıktı (kullanıcı ekran bulgusundan ölçüldü). 9-A, 9-B, 10-A, 10-B ayrı üretimlerle (her biri
-kendi `generation_job`) kuruldu. Üretici dış meşguliyeti yalnız **canlı** programlardan topluyor
-(`AutoGenerateScheduleJob.GatherExternalOccupancyAsync`, K12 `owner != demand.ClassRoomId`); aynı dönemin diğer
-**taslakları** dolu sayılmıyor. Ölçüldü: Eylem Adıgüzel Pazartesi 5–6'da hem 10-A hem 10-B'de, Salı 5–6'da hem 9-A hem 9-B'de
-Tarih'te. Programların `conflict_count` değeri 0 — çakışma sessiz. "Şube üretiminde boşluk kalmıyor" görüntüsünün sebebi bu.
 
 ### `E-34` · Kulüp saati yoklamasındaki "gelmedi" işareti öğrencinin devamsızlığına yazılmıyor — ürün kararı bekliyor 🟠
 
