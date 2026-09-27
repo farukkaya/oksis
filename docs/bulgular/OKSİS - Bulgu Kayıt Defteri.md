@@ -4112,7 +4112,7 @@ yayındaki sürümü görmeye devam eder, yeniden yayınla bildirim gider; ya da
 notu ve sunucu kuralı buna göre daraltılsın. Her iki durumda da yayındaki programda kart gizlensin; eksik saat varsa
 ipucu satırı "N saat eksik yayınlandı" desin.
 
-🟡 **Karar (a) uygulandı, kodda — commit yok (2026-09-27, `oksis-ui` `feat/ders-programi-hub-filtreleri`).**
+🟡 **Karar (a) uygulandı, master'da (2026-09-27, `oksis-ui` `8e0c1c6`, merge `762d42b`).**
 `editor-page.tsx`: yayındaki program salt okunur açılır, başlıkta **Düzenlemeye Aç** düğmesi var. Kilit program
 sürümüne bağlı (yeniden yayın sürümü artırır → editör kendiliğinden kilitlenir). Açıkken ve Revize'deyken turuncu
 şerit "öğrenci ve öğretmenler yeniden yayınlayana kadar vN sürümünü görür" diyor. Kilitliyken "Yerleştirilmemiş Dersler"
