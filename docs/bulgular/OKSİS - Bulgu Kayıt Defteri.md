@@ -427,6 +427,15 @@ yayın bildirimine tıklayınca "Yetkiniz yok" yerine Nöbetlerim açılıyor; m
 var, istemci kancası yok); muaf öğretmene "muafsın" demek yerine genel boş durum gösteriliyor (uç muafiyet bilgisi taşımıyor);
 panodaki `K-09` örnek nöbet kartı.
 
+✅ **2026-09-28 pano kartı gerçek veriye bağlandı (`oksis-ui` `feat/pano-bugunku-nobet`, commit bekliyor, kullanıcı isteği):**
+"Bugünkü Nöbet" `K-09` örnek kartı (uydurma adlar) silindi; yerine `today-duty-card.tsx` → `GET duties/on-duty?date=bugün` (`TB-19`
+ucunun ilk tüketicisi): bölge, o gün fiilen bakan öğretmen, yancı; muafiyet varsa "X muaf · yerine bakıyor", kimse yoksa "Açık nöbet"
+ve başlıkta açık sayısı; okul günü değil / yürürlükte çizelge yok / atama yok boş durumları. Kapı `DASHBOARD_WIDGET_RULES.todayDuty`
+(`duties.view` + `/duty` erişimi) → yönetici ve öğretmen görür, öğrenci/veli görmez. Kart sağ sütunun başına, "Bekleyen İşlemler"in
+üstüne alındı. Ekranda ölçüldü (28.09 Pzt): beş nöbetçi ve yancıları v2 ile birebir; öğretmende düğme "Nöbetlerim". Muaf/açık
+nöbet satırı canlı veride yok, ekranda ölçülmedi. Panonun diğer `K-09` kartları (Bekleyen İşlemler'deki "Boşta kalan nöbet
+bölgesi" dahil) hâlâ örnek veri.
+
 ### `B-87` · Yancı "öğle arasında meşgul" kontrolü öğle arası satır sırasını ders saati sanıyor — Altınay'da her gün 11 öğretmen yanlışlıkla eleniyor 🟠
 
 Altınay saha testi (C2.1, 2026-09-27). Otomatik dağıtımda yancı yükü bir öğretmene yığıldı (1 nöbet + 3 yancı); kök neden ölçüldü.
