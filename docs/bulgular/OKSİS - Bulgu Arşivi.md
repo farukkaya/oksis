@@ -9083,3 +9083,1731 @@ gruplu ve seçim sayısıyla; dip toplamlar (Ortak 32/36, Seçilen Seçmeli 7/3,
 `CurriculumSnapshotActivationTests` "Kontrol listesinde engel varken aktivasyon reddedilir…" (gerçek MSSQL) ve
 `ActivateAcademicSessionCommandHandlerTests`/`CurriculumSelectionAndReadinessTests` (38) yeşil. Aynı sınıftaki
 `Manual_draft_yields_empty_snapshot` kırmızısı bilinen `TB-252` (paylaşılan DB'de kalan 2033 sürümü), bu maddeyle ilgisiz.
+
+## 70. Gece turu öncesi temizlik — master'da doğrulanan eski kapanışlar (2026-09-28) ✅
+
+> Gece turu öncesi temizlik (2026-09-28). Blokları "kodda düzeltildi / commit bekliyor" diyen ama dalları çoktan
+> master'a girmiş maddeler: `oksis-api` ve `oksis-ui`'de master'a girmemiş dal kalmadığı (`git branch --no-merged master`
+> boş) ve her maddenin anahtar sembolünün master'da durduğu tek tek ölçüldü (ör. `NotificationEventKeyMap`,
+> `HolidaySeasonResolver`, `CacheInvalidationInterceptor`, `HomeworkCapabilities`, `resolveSeasonState`, `ConfirmDialog`).
+> Açık ayağı kalan maddeler (`TB-141`, `TB-163`, `TB-169`, `TB-174`, `TB-177`, `TB-179`, `TB-180`, `TB-195`) defterde
+> bırakıldı. `B-58`, `TB-211`, `TB-218` ve `TB-257`'nin son ayakları bu turda ölçülerek kapandı (bloklarında).
+
+### `B-84` · Nöbet bölgesi silinemiyor: her silme 500 (çevrilemeyen LINQ) 🟠
+
+Altınay saha testi (C2.1, 2026-09-27). Kullanıcı 9 bölgeden 5'ini silmek istedi; *Ayarlar › Nöbet Bölge Ayarları › Sil*
+her denemede **500** döndü (kullanıcının kendi denemesi dahil, çizelge yokken). Günlük:
+`InvalidOperationException: The LINQ expression 'r => r.Assignments' could not be translated`.
+
+**Kök neden:** `DeleteDutyLocationCommandHandler` `TB-16` kullanım kapısını `DutyRosters.SelectMany(r => r.Assignments)`
+ile kuruyordu; `Assignments` EF'te `Ignore`'lu sarmalayıcı (`DutyRosterConfiguration.cs:40`), gerçek koleksiyon owned
+`_assignments` alanı. Diğer bütün nöbet sorguları `"_assignments"` adını kullanıyor, bu işleyici kullanmıyordu. İşleyicinin
+hiç testi yoktu → kapı 2026-08-17'den (`e2447923`) beri **bütün okullarda** silmeyi kapatıyordu. Ekran hatayı uyarı
+kutucuğuyla gösteriyor, pencere bilerek açık kalıyor (istemci kusuru yok).
+
+✅ **2026-09-27 kodda düzeltildi (`oksis-api` `fix/b84-nobet-yeri-silme`, commit bekliyor):** `EF.Property<List<DutyAssignment>>(r,
+"_assignments")`. Gerçek SQL'de 3 entegrasyon testi (`DeleteDutyLocationTests`: çizelgesiz silinir · yayındakinde kullanılan
+409 · yalnız taslakta kullanılan silinir); düzeltmesiz koşuda ikisi aynı çeviri hatasıyla kırmızı, düzeltmeyle 3/3 yeşil.
+Altınay'da 5 bölge ekrandan silindi (5 × 204), kalan 4 bölge doğru listeleniyor.
+
+### `B-87` · Yancı "öğle arasında meşgul" kontrolü öğle arası satır sırasını ders saati sanıyor — Altınay'da her gün 11 öğretmen yanlışlıkla eleniyor 🟠
+
+Altınay saha testi (C2.1, 2026-09-27). Otomatik dağıtımda yancı yükü bir öğretmene yığıldı (1 nöbet + 3 yancı); kök neden ölçüldü.
+
+`AutoDistributeDutyJob.BuildRelieverBusyDaysAsync` ve `GetAvailableRelieversQueryHandler` (AS-2a-2) zil çizelgesindeki
+`LunchBreak` satırının `LessonOrder`'ını **ders yerleşiminin `Period`'u** ile eşliyor. Koddaki not bunu "belgelenmiş
+basitleştirme" sayıyor, ama iki alan aynı sayı uzayında değil: `lesson_placements.period` = ders numarası (1–8),
+`LessonOrder` = satır sırası.
+- **Altınay** (zil ekrandan girildi, satırlar 1–15 sıralı): öğle arası `LessonOrder=8` → **8. ders (15:10–15:50)** dersi
+  olanlar "öğlede meşgul" sayılıyor. Yayındaki programlarda gün başına 11 öğretmen (Perşembe 7) — 18 kişilik havuzun
+  yarısından fazlası yancı adaylığından düşüyor. 8. dersi hiç olmayan öğretmen her gün aday → yük ona yığılıyor.
+- **Seed okullar** (ders satırları 1–8, aralar 9–11): öğle arası `LessonOrder=10` → 10. ders yok → **kimse meşgul sayılmıyor**.
+
+Tek öğle arası olan okulda o saatte kimsenin dersi olmaz; doğru sonuç "herkes boş". Kontrolün anlamlı olduğu tek durum kademeli
+öğle arası (bazı şubeler derste, bazıları yemekte) — onu da bu eşleme ölçmüyor.
+⬜ Kapatma yolu: öğle penceresi **saat aralığı** olarak alınsın ve yerleşimin ders saatinin (zil satırından çözülen başlangıç–bitiş)
+bu aralıkla kesişip kesişmediğine bakılsın (`AttendanceDayLessons`'daki `TB-174` ordinal eşlemesi emsal); iki tüketici tek
+yardımcıya bağlansın. Test: Altınay tipi (sıralı) ve seed tipi (ayrık) zil çizelgesiyle iki senaryo.
+
+✅ **2026-09-27 kodda düzeltildi (`oksis-api` `fix/b87-yanci-ogle-penceresi`, commit bekliyor):** tek kaynak
+`BellDayTemplates.LunchPeriodsAsync` — şablonun öğle arasıyla **saatçe kesişen** derslerin ordinal numaraları (yarı açık
+aralık); `GetAvailableRelieversQueryHandler` ve `AutoDistributeDutyJob.BuildRelieverBusyDaysAsync` buna bağlandı, AS-2a-2
+notu kaldırıldı. Testler: saf çekirdek birim testi (sınırda kesişmez / kademeli öğle / iki derse taşan pencere); yeni
+entegrasyon testi Altınay'ın zil biçimiyle (8 ders, aralar sıra tüketir, öğle 8. satır) — **düzeltmesiz kodda kırmızı**
+(8. dersi olan öğretmen yancı listesinden düşüyordu), düzeltmeyle yeşil. `GetAvailableRelieversTests` ve TB-174'ün iki
+öğle testi eski varsayımı kodluyordu (yalnız öğle satırı, ders zili yok / öğle hiçbir dersle kesişmiyor); kademeli öğle
+senaryosuna çevrildi, TB-174'ün "şablon başına öğle" iddiası korundu. İlgili 19 entegrasyon testi yeşil.
+✅ **2026-09-28 Altınay'da ölçüldü** (API yeni kodla, otomatik dağıtım önizlemesi, uygulanmadı — yayındaki v2 değişmedi):
+aynı politika (1 gün/hafta, yancılık açık), 20 nöbet / 20 yancı / 0 eksik. Düzeltme öncesi ilk dağıtım: kişi başı yancı
+**0–3**, toplam yük **1–4** (bir öğretmen 1+3). Düzeltme sonrası: yancı **0–2**, toplam yük **1–3**; en yüklü öğretmen
+4'ten 3'e indi. Kalan dengesizlik ayrı kusur: `B-89`.
+
+### `TB-107` · Not yayın bildirimi kademe kapısını şubenin ilk öğrencisinden okuyor ⚪
+
+`AssessmentPublishedNotificationHandler` "öğrenciye bildirim gitsin mi" sorusunu
+`students[0].GradeLevel` ile tek kez cevaplıyor. Şube tek kademeli olduğu sürece doğru;
+karma kademeli şube modelde yasak değil. Bugün belirti üretmez, varsayım koda yazılmamış.
+
+✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** Politika `GradeVisibilityResolver.ReadPolicyAsync` ile
+**tek sorguda** okunuyor, eleme bellekte **öğrenci başına** yapılıyor (öğrenci başına sorgu atan yol seçilmedi,
+N+1 olurdu). Üç test: karma şube iki sırayla (`InlineData` — "ilk öğrenci" kusurunun şansa geçmemesi için) ve
+tüm kademeler gizliyken öğrenci çözümünün hiç çağrılmaması.
+
+### `TB-113` · Not modülü "bugün"ü sunucu saatinden okuyor, okul takviminden değil ⚪
+
+Gecikme rozeti (`GradeMath.IsOverdue`) ve yazma sonrası DTO'daki tarih
+`DateTimeOffset.Now.LocalDateTime` ile hesaplanıyor (`ListMyGradeBooksQueryHandler` ve
+altı yer daha). Ödev modülü aynı hesabı `ISchoolCalendarService.GetLocalNowAsync` ile
+yapıyor ve kendi ARCHITECTURE notunda bunu "Grades'te bilinen sapma" diye işaretlemiş
+ki "diğer modül böyle yapıyor" gerekçesiyle geri alınmasın. Bugün UTC+3'te tek okul
+varken belirti üretmez; sunucu UTC'de koşarsa gece 00:00–03:00 arasında sütunlar bir
+gün erken/geç "gecikmiş" görünür. ⬜ Yedi çağrı yeri tek servise bağlanır.
+
+---
+
+✅ **`TB-113` · 2026-09-16 kapandı (gece turu, commit bekliyor).** Notlar modülünün gün kararı artık okul
+takviminden geliyor: yeni `Grades/Internal/GradeCalendar.SchoolTodayAsync` (Ödevler'deki kardeşinin birebir
+eşi), **8 çağrı yeri** bağlandı. Bunlardan biri defterde sayılmamıştı ama taşınması zorunluydu:
+`SendGradeEntryReminders` `clock.Today` kullanıyordu ve pano "bugün hatırlatıldı" rozetini `SentOn == today` ile
+okuyor — yalnız panoyu çevirmek, yazan uçla okuyan ucun farklı gün kullanmasına ve düğmenin gece yarısından
+sonra bir gün yanlış durumda kalmasına yol açardı ([[besleyen-yuzey-olculmeden-kapanmaz]]). UTC damgalar
+(`PublishedAt`, denetim izi, göreli etiket) bilinçli olarak UTC kaldı: **gün kararı yerel, mutlak an mutlak.**
+Test saat dilimi farkını gerçekten ölçüyor (aynı an, okul UTC+3'te ertesi güne geçmiş → gecikme eşiği aşılıyor).
+
+### `TB-109` · Vekâleten yayınlanan ödevin sahibi ayrılmış öğretmen kalıyor 🟡
+
+Uç 4 (`:publish-for`) ayrılmış öğretmenin taslağını idare adına yayınlıyor ama
+`OwnerTeacherPersonId`'yi değiştirmiyor. Takip ızgarasını işaretleme ve toplu tamamlama
+`HomeworkWriteGate`'ten (sahip-only) geçtiği için **idare kendi yayınladığı ödevin
+ızgarasını işaretleyemez**; kapatma ve iptal de sahibinindir. Teknik analiz §3 sahiplik
+devri demiyor, spec'e uyuldu — ama ayrılmış öğretmen bir daha giriş yapmayacağı için o
+ödev sonsuza dek "işaretlenmemiş" kalır ve kontrol bekleyenler panosunda yaşar.
+⬜ Ürün kararı: sahiplik idareye mi devredilir, yoksa yönetme izni işaretleme kapısını
+da açar mı? İkincisi Kulüpler'deki "kendi kulübüne bakan müdür yardımcısı danışman
+görür" kalıbının kardeşidir.
+
+✅ **Karar (2026-09-16, kullanıcı): yönetme izni işaretleme kapısını da açar.** Sahiplik devredilmez — ödevi kimin
+yazdığı bilgisi bozulmadan kalır; ödev yönetme izni taşıyan idare, sahibi olmasa da işaretleme ve kapatma
+yapabilir. Kulüplerdeki danışman kalıbının kardeşi.
+
+✅ **Uygulandı — 2026-09-16 (doğrulama sürüyor, commit bekliyor).** Kapı tek yerde: `HomeworkWriteGate.OpenAsync`
+artık **varsayılanı olmayan zorunlu** bir erişim kipi parametresi alıyor (`OwnerOnly` / `OwnerOrManager`) — isteğe
+bağlı olsaydı yeni bir yazma ucu hiçbir şey yazmadan kapıyı sessizce gevşetebilirdi; zorunlu olması yedi çağrı
+noktasının hepsini yüzeye çıkardı ve politika tek `grep`'le denetlenebilir hâle geldi. İdare kolu
+`homework.manage` ile açılıyor; sıra "önce sahiplik", kapsam dışı hâlâ 404. **Sahiplik devredilmiyor**, denetim izi
+işlemi gerçekten yapanı (idareyi) yazıyor ve `GET homework/{id}/audit` orada gösteriyor.
+
+➕ **Karar (2026-09-16, kullanıcı) — kapsam genişledi:**
+1. **İptal de idareye açılır** (`OwnerOnly` → `OwnerOrManager`); bulgu metni zaten "kapatma ve iptal de
+   sahibinindir" diye şikâyet ediyordu.
+2. **İdari kapatma denetim izine yazılır** — bugün kapatma hiçbir yerde iz bırakmıyor; yeni bir denetim türü
+   değeri gerekiyor (enum sonuna eklenir, göç gerekmez).
+3. **İdare ödeve başka bir öğretmen atayabilmeli** — ayrılan öğretmenin ödevi yeni bir sahibe geçebilsin.
+   Bu ayrı bir özellik: `E-28`.
+
+✅ **Genişleyen kapsam da uygulandı — 2026-09-16 (commit bekliyor).** İptal `OwnerOrManager` oldu: vekâleten
+yayınlanmış ya da sahibi ayrılmış ödevde **yanlış verilmiş bir ödevi geri çekebilecek kimse kalmıyordu**,
+idarenin tek aracı kapatmaktı ve kapatma öğrenciye açıklama bırakmaz. İdari kapatma için yeni denetim türü
+`ClosedByManager` (enum **sonuna** eklendi; göç gerekmediği ölçüldü — kolon düz `int`, check constraint yok ve
+`TB-121` bekçisi değişiklikten sonra yeşil koştu). **Yalnız sahibi olmayan kapattığında** satır yazılıyor:
+sahibinin kapatmasında "kim" sorusunun cevabı zaten belli, her kapatmaya satır yazmak denetim ekranını bilgi
+taşımayan satırlarla doldurup `Cancelled`/`SubmissionRemoved` gibi gerçekten bakılması gereken satırları boğardı
+(emsal `PublishedOnBehalf`). Testler: Domain 108 · Application 302 · Api 42 (süzgeçli) yeşil.
+⬜ **Arayüz borcu:** denetim ekranı yeni `"closed-by-manager"` etiketini tanımıyorsa satırı ham gösterir; ayrıca
+idarenin **iptal düğmesini görüp görmediği** ölçülmedi — sunucu artık izin veriyor ama ekran düğmeyi sahip-only
+gizliyor olabilir.
+
+### `TB-110` · İdari teslim kaldırma kapanmış ödevde 409 🟡
+
+Uç 23 (`AdminRemoveHomeworkSubmission`) Faz 3'ün `Homework.RemoveSubmission`
+sarmalayıcısından geçiyor ve o, ödev `Published` değilken `SubmissionClosedException`
+atıyor. Sonuç: idare kapanmış ya da iptal edilmiş ödevin yanlış yüklenmiş (KVKK'ya
+aykırı, başkasına ait) dosyasını kaldıramaz; tek yol ödevi yeniden açmak, o da yok.
+Kural bilinçli olarak gevşetilmedi — ikinci bir kaldırma yolu aynı kuralı iki yerde
+ayrıştırırdı. ⬜ Domain metoduna "idari" kolu eklenir (gerekçeli kaldırma durum kapısını
+atlar) ya da kapanmış ödevde kaldırma ürün olarak kabul edilir.
+
+✅ **Karar (2026-09-16, kullanıcı): idari kaldırma açılır.** Kapanmış ödevde de ödev yönetme izni taşıyan idare
+teslim dosyasını kaldırabilir. Gerekçe KVKK: başkasına ait ya da yanlış yüklenmiş bir dosya bugün kalıcı kalıyor
+ve ödevi yeniden açmanın yolu da yok. Domain metoduna gerekçeli **idari kol** eklenecek; durum kapısı yalnız bu
+kol için atlanacak, öğretmenin kendi yolu değişmeyecek. Kaldırma zaten denetim izine yazılıyor (`TB-112`'nin ucu
+onu gösteriyor).
+
+✅ **Uygulandı — 2026-09-16 (commit bekliyor).** `Homework.RemoveSubmission` artık **varsayılanı olmayan zorunlu**
+bir `removal` parametresi alıyor (`Self` | `Administrative`) — `TB-109`'un kapı kalıbının aynısı; isteğe bağlı
+olsaydı yeni bir kaldırma yolu kapıyı sessizce atlayabilirdi. Durum kapısı **yalnız `Self`** kolunda uygulanıyor,
+yani öğrencinin kendi yolu kapanmış ödevde hâlâ reddediliyor. Gevşeyen tek şey durum kapısı: soft-delete, zorunlu
+gerekçe, ikinci kaldırmanın reddi, kapsam kapısı (başkasının satırında 404) ve denetim satırı aynen duruyor.
+Enum kalıcı değil — kolon değil, metot parametresi; ikinci bir gerçek üretilmedi. 11 test yeşil.
+
+### `TB-111` · Son teslim tarihi ileri alınan ödev ikinci kez hatırlatılmaz 🟡
+
+`HomeworkTracking.DueReminderSentAt` satır başına idempotency damgası; `UpdateContent`
+`DueDate`'i değiştirse bile sıfırlanmıyor. Öğretmen teslimi bir hafta ertelerse yeni
+tarihin öncesinde hatırlatma gitmez. Sıfırlamak tersini yapardı: tarih bir gün
+kaydırılınca herkese ikinci bildirim. ⬜ Ürün kararı; orta yol "tarih en az N gün
+ileri alındıysa sıfırla" da mümkün.
+
+✅ **`TB-111` karar (2026-09-16, kullanıcı): her erteleme yeniden hatırlatsın.** Son teslim tarihi değiştiğinde
+`DueReminderSentAt` damgası sıfırlanır ve yeni tarihin öncesinde hatırlatma yeniden gider. Eşik konmadı: kullanıcı
+öngörülebilirliği seçti, yani öğretmen saati düzeltse bile bildirim gider. **Ölçülecek yan etki:** aynı ödevde
+arka arkaya yapılan küçük düzeltmeler bildirim yığını üretebilir; sahada gözlenip gerekirse eşik sonradan eklenir.
+
+✅ **Uygulandı — 2026-09-16 (commit bekliyor).** Son teslim tarihi **değiştiyse** (ileri ya da geri) bütün takip
+satırlarının hatırlatma damgası sıfırlanıyor; tarih değişmediyse damga duruyor.
+**Besleyen yüzey ölçülüp düzeltildi** ([[besleyen-yuzey-olculmeden-kapanmaz]]): `UpdateHomework` kapıyı
+`includeTracking: false` ile açıyordu, yani koleksiyon yüklenmediği için sıfırlama boş liste üzerinde dönüp
+**sessizce hiç olmayacaktı**. Hatırlatmanın gerçekten yeniden gittiği üç kapıda ayrı ayrı ölçüldü: satır süzgeci
+(`Unmarked && DueReminderSentAt == null`), hatırlatma penceresinin yeni tarihe taşınması ve bildirim
+tekilleştirme anahtarının farklı güne düşmesi. Tamamlamış öğrenciye ikinci hatırlatma yine gitmiyor. 6 + 3 test.
+⬜ **Ölçüm borcu:** `includeTracking: true` değişikliği birim testiyle yakalanamıyor (mock agregatın koleksiyonu
+zaten dolu geliyor); gerçek koruma entegrasyon koşusu, o da bu makinede bellek yüzünden koşturulamadı.
+
+### `TB-112` · Ödev denetim kaydı yazılıyor, okuyan uç yok ⚪
+
+`HomeworkAuditEntry` beş olay tipiyle yazılıyor (yayın, adına yayın, iptal, toplu
+tamamlama, idari kaldırma); sözleşmede `/homework/{id}/audit` bildirilmediği için hiçbir
+ekranda görünmüyor. Not modülünün denetim ucu emsal (`grades.manage`). Çağrılmayan uç
+arkasındaki kusuru da saklar — ucu yazmadan satırların şekli doğrulanamaz.
+
+---
+
+✅ **`TB-112` · 2026-09-16 kapandı (gece turu, commit bekliyor).** Notlar'daki `GetGradeBookAudit` kalıbı birebir
+Homework'e taşındı: yeni `Homework/Queries/GetHomeworkAudit/` + `GET homework/{id}/audit`, izin **mevcut**
+`homework.manage` (yeni izin açılmadı, göç gerekmedi), okul süzgeci açıkça yazılı, başka okulun ödevi 404.
+Dört test: sıralama ve alan eşlemesi, **başka okulun satırının sızmaması**, yabancı ödevde 404, okul bağlamı
+yokken 403.
+
+### `E-28` · Ayrılan öğretmenin ödevi başka bir öğretmene atanamıyor 🟡
+
+Kullanıcı isteği (2026-09-16, `TB-109` karar turunda): *"İdare, denetim yetkisiyle birlikte ayrılan öğretmenin
+yerine başka bir öğretmen de atayabilsin."*
+
+`TB-109` sahipliğin **devredilmemesine** karar verdi — "kim yazdı" bilgisi bozulmasın diye. Ama okul gerçeğinde
+öğretmen ayrıldığında ödevin bir sahibi olmalı: bugün ödev, artık okulda olmayan bir kişinin üstünde kalıyor ve
+yeni öğretmen onu kendi listesinde görmüyor. `TB-109`'un açtığı idari kapı (`homework.manage` ile işaretleme,
+kapatma, iptal) bu boşluğu yönetsel olarak kapatıyor ama **öğretmen tarafını** kapatmıyor.
+
+⬜ Tasarlanacak: ödevin sorumlu öğretmenini idarenin değiştirebildiği bir yol.
+- Sahiplik geçmişi korunmalı: "kim yazdı" ile "kim sorumlu" ayrı iki bilgi olabilir (`TB-109`'un kararıyla
+  çelişmemeli).
+- Denetim izine yazılmalı (kim, ne zaman, kimden kime).
+- Öğrenciye bildirim gitmeli mi, ödev listesi/panosu nasıl güncellenir — ürün kararı.
+- Aynı sınıfın kardeşi: vekâleten yayınlama (`:publish-for`) ve nöbet vekâleti; oradaki dil ve kalıp emsal alınmalı.
+- Öğretmen ayrılışının kendisi bir olay mı (toplu devir), yoksa ödev ödev mi yapılır — ölçülmeli.
+
+✅ **Tasarlandı ve kararları bağlandı — 2026-09-16.** Plan: [[2026-09-16-odev-devri-e28]]. Uygulama sürüyor.
+**Ölçümden iki dayanak:** (1) vekâleten yayın bugün sahibe **hiç dokunmuyor**, "kim yaptı" bilgisini denetim satırı
+taşıyor; ders vekâleti de devri ayrı bir kayıtta tutup öğretmeni devretmiyor — yani OKSİS'te "başkası adına iş"
+sahipliği ezerek değil **ikinci bir olgu eklenerek** taşınıyor. (2) **Öğretmen ayrılışının kodda olayı yok**
+(`Terminate` düz bir setter, olay yayınlamıyor), yani "ayrıldı → hepsini devret" otomatiği olmayan bir olayı icat
+etmeyi gerektirirdi → toplu devir kapsam dışı.
+**Kullanıcı kararları:** sorumlu ayrı nullable alan (`OwnerTeacherPersonId` dokunulmaz, `TB-109` ile çelişmez) ·
+devri yalnız idare yapar · **yeni sorumlu tam sahip yetkisi alır** (taslağı düzeltip kendi yayınlayabilir) ·
+yalnız `Draft`/`Published` · **gerekçe koşullu: ödevi yazan öğretmen hâlâ çalışıyorsa zorunlu, ayrılmışsa isteğe
+bağlı** (çalışan birinin ödevini elinden almak açıklama ister) · denetim kaydına **kimden/kime** kolonları + göç ·
+ders programı kontrolü zorunlu değil (yerine geçen öğretmen programa işlenmeden önce devri imkânsız kılardı) ·
+v1'de bildirim yok · **öğrenci ve veli ekranında yeni sorumlu görünür, ayrı bir alanla** (mevcut alanın anlamını
+değiştirmek `TB-188`'in "tek alanda iki politika" hatasının kardeşi olurdu) · geri alma aynı uçta `null` ile.
+
+✅ **Uygulandı ve kapandı — 2026-09-16 (commit edildi ve push edildi).** Sunucu ve yüzey **aynı turda**
+(`TB-188`'in dersi). Domain: nullable sorumlu alanı, etkin sorumlu türetmesi tek yerde; sahibine geri verme alanı
+**boşaltıyor** — "hiç devredilmemiş" ile "geri verilmiş" tek durum, ikinci gerçek doğmuyor.
+**Kaçınılmaz ikiz ve bekçisi:** EF-Ignore property sunucu sorgusuna konulamaz ama "Ödevlerim" soruyu veritabanına
+sormak zorunda; SQL yüklemi ayrı yazıldı ve ikisinin ayrışmasını bir test çarpım gezerek kilitliyor, ayrıca
+property EF-Ignore bekçisinin listesine eklendi — **bu bekçi ilk kez gerçek bir işte konuştu** (bkz. aşağıdaki
+yanlış pozitif notu).
+Kapı: üçüncü erişim kipi ve kip eşlemesi **birlikte** yazıldı; eşleme unutulsaydı detay ucu çalışma zamanında
+patlardı, iki bekçi testi bunu kilitliyor. Devirden sonra ödevi yazan artık sahip değil (testle kilitli).
+Gerekçe kuralı handler'da (öğretmenin çalışma durumu DB'den okunuyor), doğrulayıcı yalnız biçimi denetliyor;
+arayüzdeki koşullu alan **aynı kaynaktan** besleniyor ve sunucunun reddini olduğu gibi gösteriyor.
+Uç yanıtı bilinçli olarak detay DTO'su **değil**: uç taslakta da çalışıyor, oysa detay ucu taslağı idareye 404
+veriyor — detay dönseydi başarılı bir devir istemciye hata gibi görünürdü.
+Testler: Domain 121 · Application 363 · Api 44 (ödev süzgeçli) · `Oksis.Tests` 65/65 · core 46 · api-mocks 137.
+⬜ **Kalan iki ayak:** denetim kaydının "kimden/kime" alanları istemciye bağlanmadı — çünkü **ödev denetim izinin
+hiç tüketicisi yok** (`TB-112`'nin devamı); ve ödev yönetme izni olan biri ödevi kendi yazdıysa detay ekranında
+devir düğmesini görmüyor (idare listesinde görüyor) — yönü güvenli, kayıtlı.
+➕ **Yol boyunca iki kusur düzeltildi:** yeni test dosyası hiç derlenmediği için beş ölçümü bir kez bile
+koşmamıştı (`TB-190`), ve EF-Ignore bekçisi bir **yanlış pozitif** verdi — erişim sorguda değil, sorguyu açan
+`if` koşulundaydı; bekçiye muafiyet eklemek yerine erişim ayrı deyime alındı, yani bekçi delinmedi.
+
+### `TB-125` · Okulun bildirim ana anahtarı ve Portal kararı, kapsam eşlemesi dışındaki tiplerde hiç uygulanmıyor 🟠
+
+`InAppNotificationChannel` iki kapısını da (`NotificationConfig.IsEnabled` ana anahtarı
+ve `NotificationRuleConfig.PortalEnabled`) `PushEventKeyMap.TryGetEventKey` **başarılı
+olursa** çalıştırıyor; eşlemede karşılığı olmayan tip `if` bloğunu atlıyor ve satır
+koşulsuz yazılıyor. Eşlemede bugün 14 tip var, `NotificationKind` 39 değer taşıyor.
+
+Kodun gerekçesi "eşlemede olmayan tipin matriste satırı da yoktur" — **bu artık doğru
+değil.** Katalogda satırı olan ve gerçekten bildirim üreten beş olay eşlemenin dışında:
+`ATT_THRESHOLD`, `ATT_DAILY_SUMMARY`, `ANNOUNCEMENT`, `HOMEWORK_MISSING`,
+`EXAM_WINDOW_PUBLISHED`. Yönetici bu beşinin Portal sütununu kapatıyor, bildirim yine
+düşüyor. Aynı sebeple **"bildirimleri tümden kapat" düğmesi** bu tipler ve eşleme dışı
+kalan 20 tip (ders programı, nöbet, mazeret, düzeltme, izin, duyurunun sekiz hâli,
+kayıt yenileme) için de çalışmıyor — kapının tek durağı in-app kanalıydı.
+
+⬜ Kapı eşlemeden bağımsızlaştırılmalı: ana anahtar her tipte, Portal kararı ise
+katalogda satırı olan her olayda uygulanmalı. `PushEventKeyMap` push kapsamının kaynağı
+olarak kalır; matris kapısının kaynağı olmaktan çıkar.
+
+✅ **2026-09-16 · `TB-175` ile birlikte kapandı (gece turu, commit bekliyor).** Ana anahtar kapısı
+`TryGetEventKey` bloğunun dışına alındı — eşlemede olmayan ~25 tip de kapıya uyuyor. Portal kararının
+kaynağı yeni `NotificationEventKeyMap` (katalogda satırı olan 22 tip), `PushEventKeyMap` yalnız push
+kapsamı olarak kaldı; e-posta ve push kanallarına da ana anahtar kapısı eklendi ve `config is null` dalı
+"kapalı" yerine varsayılana düşüyor. Uygulama içi kanal dış kanal anahtarlarına bakmıyor. Ölçüm ve
+varsayımlar `TB-175` bloğunda. `TB-126` bilinçli olarak kapsam dışı: e-posta kanalının kapsam kapısını
+`NotificationEventKeyMap`'e çevirmek bazı olaylarda **gerçekten e-posta göndermeye başlamak** demek —
+teslimat davranışı değişikliği, ayrı ürün kararı.
+
+### `TB-127` · Kulübün dört katalog satırı hâlâ `delivered: false`, üreticileri var ⚪ *(kapandı — 2026-09-16)*
+
+`NotificationEventTypeSeedData` dört `CLUB_*` satırını `delivered: false` ile yazıyor ve
+yorumu "handler'lar Faz 5'te yazıldığında bayrak kendi migration'ıyla `true`'ya çevrilir"
+diyor. Faz 5 geldi: dört bildirim handler'ı da (`ClubActivityPublished`,
+`ClubActivityCancelled`, `ClubAnnouncementPublished`, `ClubApplicationDecided`) yazılı ve
+`PushEventKeyMap` kapısı da açık. Bayrağı çeviren migration yazılmamış — model
+snapshot'ta dördü hâlâ `IsDelivered = false`.
+
+Zararı `TB-24`'ün tersi yönde: ekran çalışan bir bildirimi "henüz teslim edilmiyor" diye
+gösteriyor. ⬜ Tek satırlık seed düzeltmesi + migration (emsal: `20260828130231`).
+
+✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** Önce açık olduğu ölçüldü (dev DB'de dördü de
+`is_delivered = 0`, buna karşılık dört üretici de yazılı ve `PushEventKeyMap`'te dört anahtar da açık), sonra seed
+bayrağı çevrildi ve göç `20260916051021_20260916_club_event_types_delivered` dev DB'ye uygulandı (`Up()` yalnız
+dört `UpdateData`, şema komutu sıfır — sızıntı iki eksende kontrol edildi). `default_push_enabled` değişmedi,
+yalnız teslim bayrağı çevrildi. **Bekçi ters yöndeydi:** `NotificationMatrixPushTests` dördünün teslim
+edilmediğini zorluyordu; iddia tersine çevrildi ve komşu testin bayat docblock'u düzeltildi. Sözleşme
+değişmediği için arayüzde "henüz teslim edilmiyor" rozeti kendiliğinden düşecek.
+
+### `TB-170` · Davet kabulündeki "Duyuru bildirimleri" ve "Fotoğraf kullanım izni" anahtarları hiçbir şeye bağlı değil 🟡
+
+Altınay saha testinde (B1.3, müdür davet kabulü, 2026-09-15) soruldu, `oksis-api` @ `60e65caf`
+ve `oksis-ui` @ `1bf6a51` üzerinde ölçüldü. Onay adımı iki isteğe bağlı anahtarı **rolden
+bağımsız** herkese gösteriyor (`invite-screen.tsx:415-450`, mobil `invite-accept-screen.tsx:180-186`)
+ve `buildConsentGrants` bunları rıza kaydına çeviriyor:
+
+| Anahtar | Yazılan kayıt | Okuyan kod |
+|---|---|---|
+| Duyuru bildirimleri | `ConsentRecord` · `Marketing` | **Yok** |
+| Fotoğraf kullanım izni | `ConsentRecord` · `PhotoUsage` | **Yok** |
+
+API'de `ConsentRecords`'u okuyan her yol yalnız `DataProcessing`'e bakıyor (`ConsentGate`,
+giriş akışı) ya da kaydı listeliyor (`GetMyConsents`/`GetPersonConsents`). Sonuç:
+
+- **Duyuru anahtarı kapatılsa da duyuru bildirimi düşer.** Duyurunun teslimatı rızaya değil
+  bildirim zincirine bağlı; kişi bazlı tercihin gerçek yeri `NotificationPreference` ve o
+  yalnız push için, yalnız `PushEventKeyMap` anahtarlarında okunuyor
+  (`PushNotificationChannel.cs:172`) — `ANNOUNCEMENT` eşlemede yok, duyuru bugün yalnız in-app.
+- **Eşleme anlamca yanlış.** `Marketing` ticari elektronik ileti rızasıdır; kurumsal duyuru
+  rıza konusu değil tercih konusudur. İstemci kodunun kendi yorumu da "ayrı rıza tipi yok, en
+  yakını budur" diyor (`packages/core/src/invitations/logic.ts:254`).
+- **Açıklama olmayan kanal vaat ediyor:** "e-posta/SMS bildirimleri" — SMS kanalı yok (`E-23`).
+- **Fotoğraf rızası ölü veri.** "Hayır" kayda geçiyor ama ürünün hiçbir yüzeyi ona bakmıyor;
+  öğrenci için rızayı kimin vereceği (veli) de tanımlı değil.
+
+`TB-43`/`TB-44`'ün kapattığı sahte toggle sınıfının davet ekranındaki hâli.
+✅ **Karar (2026-09-15, kullanıcı):** iki anahtar da davetten **kaldırılır**. Bir rıza tipi
+ancak onu okuyan bir tüketiciyle birlikte geri gelir.
+
+🔄 **Kodda kaldırıldı, commit bekliyor:** `oksis-ui` dalı `fix/davet-olu-riza-anahtarlari`.
+`buildConsentGrants` yalnız `DataProcessing` gönderiyor; web `invite-screen.tsx` ve mobil
+`invite-accept-screen.tsx` iki satırı kaybetti, `preference-row.tsx` silindi, şemalar ve iki dilin
+sözlüğü temizlendi, 2. adım başlığı "Onaylar". Web + core + mobil typecheck, üç lint ve core
+testleri (551) geçti. Backend'e dokunulmadı (`ConsentType` enum'u rıza kaydının sözleşmesi olarak
+kalır). Kapanış: merge + Altınay B6.3 öğretmen davetinde ekranda ölçüm.
+
+### `B-53` · Kullanıcı Oluştur ekranı rol sormuyordu; her hesap sessizce Yönetici doğuyordu 🟠
+
+**Belirti (kullanıcı, 2026-09-20):** *"Kullanıcı Oluşturma ekranında Rol sorulmuyor ve
+oluşturulan kullanıcı otomatik Yönetici olarak oluşturuluyor."*
+
+**Kök neden — sunucu kusursuzdu, kural ekranda kayboluyordu.** `POST /api/v1/users` rolü
+zaten gövdede alıyor ve `PersonUserCreationService` dört rolü (SchoolAdmin/Teacher/Parent/
+Student) hedef sistem rolüne + minimal profile haritalıyor. Ekran tarafında ise
+`packages/core/src/users/constants.ts` içinde `CREATE_USER_ROLE = "SchoolAdmin"` **sabit**
+yazılıydı ve form şemasında rol alanı hiç yoktu — hangi hesap davet edilirse edilsin istek
+`SchoolAdmin` gönderiyordu. Ekranın kendi notu bunu "bu ekrandan yalnız yönetici davet edilir"
+diye bir tasarım kararı gibi anlatıyordu; kullanıcı için bu bir kısıt değil, **sessiz yetki
+yükseltmesiydi**: öğretmen davet ettiğini sanan yönetici, okulun tamamına yetkili bir hesap
+açıyordu.
+
+- ✅ **KAPANDI** *(`oksis-ui`, 2026-09-20)*: rol seçici zorunlu alan olarak eklendi,
+  **varsayılanı yok** (varsayılan vermek aynı kusurun tıklamayla atlanabilen hâli olurdu).
+  Liste keyfi değil, sunucunun gerçekten kurabildiği dört rol; Sekreter/Muhasebe bilinçli
+  olarak yok çünkü `SystemRole` seed'inde de yok (MVP 5 rol seti) — ekrana koymak sunucunun
+  reddedeceği seçenek sunmak olurdu. Öğretmen/veli/öğrenci seçilince hesabın hangi eksikle
+  doğacağı (branşsız / çocuk bağı yok / kaydı yok) ekranda yazıyor. Mock uç de artık rolü
+  gövdeden okuyor; sabit `SchoolAdmin` yazması, ekranın seçimi göndermeyi unutmasını mock'lu
+  koşumda görünmez kılıyordu.
+- ✅ **Canlı uçta ölçüldü** *(Altınay, `mudur` hesabı)*: ekrandan **Öğretmen** seçilerek davet
+  gönderildi; veritabanında kişi `TEACHER` sistem rolü + `Teacher` profiliyle doğdu (önceki
+  iki hesap `SCHOOL_ADMIN`). Bulgu bu koşumla kapandı.
+
+### `TB-164` · Ölü SQL seed'i okul-bağlı bir süper yönetici vadediyor ⚪
+
+`K-27` ön kazımasında ölçüldü (2026-09-15, `oksis-api` @ `4fb82833`;
+[[super-admin-izleri-envanteri]] §2.2). `infra/scripts/identity-dev-seed.sql` var olmayan
+`users` tablosuna (`OksisDbContextModelSnapshot`'ta sıfır geçiş) `school_id = @SchoolId` ile
+`superadmin@oksis.local` yazıyor — süper yöneticinin **bir okulun kullanıcısı** olduğu eski
+tanımın en saf hâli. Dosya başlığı "tercih edilen yol `IdentityDevSeeder`" diyor; o seeder
+ise süper yönetici hesabı hiç üretmiyor (başlığı: müdür, müdür yardımcısı, öğretmen,
+öğrenci, veli). Buna rağmen `Program.cs:305` ve `DependencyInjection.cs:464` yorumları
+hâlâ "1 SuperAdmin + 2 SchoolAdmin + …" vadediyor.
+
+Zarar: yeni gelen "süper yönetici seed'i var" sanıp bulamıyor ya da SQL dosyasını
+çalıştırıp tablo-yok hatasıyla karşılaşıyor.
+
+⬜ SQL dosyası silinir, iki yorum `IdentityDevSeeder`'ın gerçek kadrosuna göre düzeltilir.
+`K-27 (a)` uygulamasında platform hesabının dev seed'i ayrıca tasarlanır.
+
+✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** `infra/scripts/identity-dev-seed.sql` silindi;
+`Program.cs` ve `DependencyInjection.cs` yorumları `IdentityDevSeeder`'ın gerçek kadrosuna göre yazıldı
+(okul başına müdür + müdür yardımcısı, 15 öğretmen — 5'i aynı zamanda veli —, 60 öğrenci, 50 veli; süper
+yönetici ya da platform hesabı **seed edilmez**). Belgedeki atıflar da düzeltildi
+(`teknik/ortamlar/seed-runbook.md`). Kalan iki atıf tarihsel kayıt niteliğinde
+(`super-admin-izleri-envanteri`, `gecici/planlar/2026-09-15-…`), dokunulmadı.
+
+### `B-56` · Kayıt sihirbazında "Nakil Gelen" kaydı hiç yapılamıyordu 🔴
+
+Altınay B7 turunda ölçüldü (2026-09-23). Ekran kayıt türünü `"Transfer"` gönderiyordu, backend
+enum'u ise `EnrollmentType.TransferIn`. Gövde çözümlemesinde 400 dönüyordu (`$.type` çevrilemedi),
+yani ekrandan yapılan **hiçbir nakil kaydı** sunucuya ulaşmıyordu. Canlı istekle ölçüldü.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** `packages/api/src/students/endpoints.ts` eşlemesi
+`TransferIn` oldu; gövde testi kilitliyor. Altınay'da 5 nakil kaydı ekrandan yapıldı, geldiği okul
+yazıldı.
+
+### `B-57` · Kayıt sihirbazı öğrenci e-postası sormuyor; gövdeye sabit `null` gidiyordu 🟠
+
+Altınay B7 (2026-09-23). `EnrollStudentCommand.Email` backend'de vardı ve kişiye yazılıyordu;
+ekranda alan yoktu ve istemci `email: null` gönderiyordu. Öğrenci yalnız öğrenci numarasıyla
+giriş yapabiliyordu.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** 2. adımda isteğe bağlı *E-posta* alanı (biçim
+denetimi `isValidOptionalEmail`, sunucu da `Email.Create` ile denetliyor), özette görünüyor,
+gövdeye gidiyor. 85 öğrenci `ad.soyad@altinay.test` ile kaydedildi ve bu adresle giriş yaptı.
+
+### `B-58` · Kayıt sihirbazıyla eklenen veliler hiç davet alamıyordu 🔴
+
+Altınay B7 (2026-09-23). Ekran "Davetli" gösterdi ama Mailpit'e e-posta gelmedi, davet tablosunda
+satır yoktu. API günlüğü: `Veli daveti oluşturulamadı … USERS_INVITATION_PERSON_INVALID_STATE`.
+Kök neden: `EnrollStudentCommandHandler` yeni veliyi `Activate()` ile **Active** doğuruyordu;
+`InvitationCreationHelper` yalnız `Draft/Invited/Suspended` kişiyi davet edebiliyor. Sonuç:
+sihirbazla kaydedilen **hiçbir veli** davet almıyor, hesap açamıyor, velinin uygulaması hiç
+kullanılamıyordu. Kabul akışı da (`person.Activate()` yalnız Draft/Invited'dan) aynı veliyi
+kabul edemezdi.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** Yeni veli Draft doğuyor, davet `Invited`'e, kabul
+`Active`'e taşıyor (Kullanıcılar modülüyle aynı yaşam döngüsü). Entegrasyon testi gerçek SQL'de
+zinciri kilitliyor (`Enroll_creates_new_guardian_as_draft_so_it_can_be_invited`).
+Altınay'da ilk öğrencinin eski hatayla Active doğan iki velisi SQL ile Draft'a çekilip ürünün
+davet ucuyla davet edildi. Sonrasında **135 velinin 135'i** davet aldı ve Mailpit'teki
+bağlantıdan kabul etti.
+⬜ Başka okullarda eski hatayla Active doğmuş hesapsız veliler varsa onarım gerekir (seed okulları
+ölçülmedi).
+
+✅ **2026-09-28 · açık ayak ölçüldü:** dev DB'de dört okulun (Altınay, ATA-AL, DEV-OKUL, TST-AL) 316 velisinin tamamı `Active` + hesaplı; eski hatayla hesapsız `Active` kalmış veli **0**. Onarım gerekmiyor.
+
+### `B-59` · Kişi aramasında ad-soyad birlikte yazılınca sonuç boş dönüyordu 🟠
+
+Altınay B7 (2026-09-23). Kardeş kaydında velinin tam adıyla ("Ad Soyad") arama yapılınca veli bulunamadı.
+`ListPersonsQueryHandler` adı ve soyadı **ayrı ayrı** eşliyordu: yalnız ad ya da yalnız soyad buluyor,
+tam ad hiçbir kolonda geçmediği için boş dönüyordu. Bu uç Kullanıcılar, Öğrenciler,
+Veliler listelerini ve sihirbazın veli havuzunu besliyor; yani ad-soyadla her arama boştu.
+Veli adıyla öğrenci bulma alt sorgusu da aynı kusuru taşıyordu.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** Birleşik ad eşlemesi eklendi (iki yerde); gerçek
+SQL entegrasyon testi (`Search_MatchesFullName_AndParentFullName_OnRealSqlServerAsync`).
+Altı kardeş ailesinin ikinci çocuğu mevcut veliye aramayla bağlandı.
+
+### `B-60` · Kayıt sihirbazında "Anneanne" ve "Babaanne" seçilince kayıt 400 alıyordu 🟠
+
+Altınay B7 (2026-09-23). Sihirbaz iki seçeneği `Grandparent` diye gönderiyordu. Backend
+`RelationType` enum'unda bu üye yok (Mother/Father/Guardian/Other, DB CHECK kısıtı da bu dördü).
+Gövde çözümlemesi 400 veriyordu. Veliler modülü aynı konuyu zaten karara bağlamıştı:
+"Grandparent gerçek değil, Other'a katlanır" (`parents/constants.ts`).
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** İki seçenek `Other`'a gidiyor; her seçeneğin gerçek
+bir backend üyesine eşlendiğini kilitleyen test (`students/constants.test.ts`).
+⚪ Not: büyükanne "Diğer" olarak saklanıyor; ayrım gerekirse enum + göç gerekir (karar).
+
+### `B-61` · İlk girişte zorunlu parola değişimi yer tutucuydu: parola değişmiyor, herkes yönetici paneline gidiyordu 🔴
+
+Altınay B7 (2026-09-23). Giriş ekranındaki `ForcePasswordView` hiçbir uç çağırmıyordu:
+`window.setTimeout(onDone, 800)`. Sonra `setRedirectRole("admin")` ile herkesi yönetici rotasına
+yönlendiriyordu. Etkisi: kayıtla açılan her öğrenci hesabı geçici parolada kalıyor, her girişte
+aynı ekranı görüyor ve parolasını değiştirdiğini sanıyor; üstelik öğrenci yönetici paneline
+yönleniyordu. Backend ucu (`POST /auth/account/change-password`) hazırdı ve bağlanmamıştı.
+
+✅ **Kapandı (2026-09-23, commit bekliyor).** Görünüm uca bağlandı (`changeAccountPassword`,
+`useChangeAccountPassword`); sunucu refresh token'ları iptal ettiği için yeni parolayla yeniden
+giriş yapılıyor ve yönlendirme o girişin gerçek profilinden çözülüyor; hata bandı eklendi.
+Canlı ölçüm: yeni parolayla giriş `requirePasswordChange=false`, profil `Student`; eski geçici
+parola `invalid-credentials`.
+
+### `B-64` · Görevlendirmeler: hiçbir ders seçmeli değil — "Seçmeli" süzgeci hep boş, seçmeliler "Zorunlu" rozetiyle 🟠
+
+Altınay B9.2 genel kontrolü (2026-09-23). *Derslere göre* görünümde 65 dersin **hepsi**
+"ZORUNLU" grubunda; *Seçmeli Birinci Yabancı Dil*, *Kur'an-ı Kerim*, *Proje Tasarımı ve
+Uygulamaları* gibi seçmeliler de "Zorunlu" rozeti taşıyor ve *Seçmeli* süzgeci boş dönüyor.
+Ölçüm: `school.subjects.is_elective` Altınay'ın 67 dersinin hepsinde 0, `master.subjects`'te de
+0. MEB kaynaklı katalog seçmeliliği dersin kendisine değil **çizelge satırına** yazıyor
+(`curriculum_entries.course_type` Common/Elective; `TB-211` gereği aynı ders bir sınıfta ortak,
+başka sınıfta seçmeli olabiliyor). Görevlendirme uçları (`assignments/courses`, `by-teacher`)
+ise dersin `IsElective` bayrağını okuyor.
+
+⬜ Kapatma yolu: ortak/seçmeli bilgisi sezonun müfredatından türetilir (kademeye göre; iki türde
+de geçen ders ikisini de gösterir). Dersin `IsElective` bayrağı MEB kataloğunda anlamını
+yitirdi — kaldırılması ya da türetilmesi kararı.
+
+✅ **Kapandı — 2026-09-23 (kullanıcı onayı, B yolu; commit bekliyor).**
+- **Tek çözücü** `SessionCourseTypes` (Application › Curriculum): sezonun müfredat satırlarından
+  (`SessionCurriculum.LoadItemsAsync` — hazırlıkta taslak, başlamış sezonda snapshot) ve satırın
+  kaynak çizelge türünden ders başına **Common / Elective / Both** üretir. Saati 0 olan satır da
+  türünü taşır. Okulun kataloğunda duran ama sezonun müfredatında olmayan MEB dersi türünü
+  **yayımlanmış** çizelgelerin tamamından alır (ortak çeviri yardımcısıyla, `TB-191`). Yalnız
+  okulun kendi eklediği ders dersin bayrağına düşer.
+- **Sözleşme:** görevlendirme DTO'larında `bool IsElective` → `string CourseType`
+  (`CourseCoverageDto`, `CourseAssignmentsDto`, `TaughtCourseCardDto`); `SubjectDto`'ya
+  `CourseType` eklendi. Aday listesinin alt satırı da çözücüden ("Zorunlu + Seçmeli" dahil).
+- **Ekran:** Görevlendirmeler'de gruplama/rozet/süzgeç `courseType` okuyor. "İkisi" olan ders
+  ayrı grupta ve **iki süzgeçte de** görünüyor. Ders Kataloğu'nda rozet türden geliyor; çekirdek
+  derste kilitli anahtar yerine salt okunur tür rozeti (kullanıcı kararı: anahtar yalnız okulun
+  kendi dersinde; domain kilidi `Subject.MasterSourced.Immutable` zaten vardı).
+- **Ölçüm (Altınay, canlı):** 65 ders → 48 seçmeli, 17 ortak (önce 65'i de "Zorunlu"). "Seçmeli"
+  süzgeci 48, "Zorunlu" 17 getiriyor. İngilizce öğretmeninin kartları "Birinci Yabancı Dil · Zorunlu",
+  "Seçmeli Birinci Yabancı Dil · Seçmeli". Katalogda 48 "Seçmeli" rozeti.
+- **Testler:** `SessionCourseTypesTests` 4 senaryo (ortak/seçmeli/ikisi, saat 0, kendi ders
+  bayrağı, müfredat dışı MEB dersi yayımlanmış çizelgeden; taslak sürüm yok sayılır). Core
+  `logic.test.ts` (gruplama, "ikisi" iki süzgeçte). Birim takımlarının tamamı ve bekçiler 53/53
+  yeşil. `SubjectTeacherAssignmentTests`'in 17 kırmızısı HEAD'de de aynı 17 (ayrı çalışma
+  kopyasında ölçüldü) — `TB-231` ailesi, bu değişiklikten değil.
+➕ Mimari bekçi (`SubjectCatalogTranslationTests`) ilk sürümü yakaladı: çizelge satırı kimliğiyle
+okuma çevirisiz görünüyordu. İkinci kaynak eklenince dosya ortak çeviri yardımcısını kullanır hâle
+geldi ve muafiyet gerekmedi.
+
+### `TB-166` · Web MSW mock'u süper yönetici rolünü dört alanda yanlış tanımlıyor ⚪
+
+`oksis-ui/apps/web/mocks/permissions-handlers.ts:12-31` rolü `code: "SuperAdmin"`,
+`displayName: "Kurum Yetkilisi"`, `level: 0`, `portalType: "Super"` diye veriyor. Backend:
+`SUPER_ADMIN` / "Süper Admin" / **100** / `Platform` (`SystemRoleSeedData.cs:11`). Dosya
+başlığı "portalType değerleri gerçek backend'inkilerle aynı" diyor — değil. "Kurum
+Yetkilisi" K5'in adıdır, rolün değil; mock'la geliştiren biri iki kavramı karıştırır.
+Seviye 0 ise "en yetkisiz" demek (yüksek = yetkili).
+
+⬜ `K-27 (a)` web kabuğu yazılırken mock backend satırına eşitlenir; o güne kadar en azından
+seviye ve kod düzeltilir.
+
+✅ **2026-09-16 · kodda düzeltildi (gece turu, `oksis-ui`, commit bekliyor).** Mock satırı seed'e eşitlendi
+(`SUPER_ADMIN` / "Süper Admin" / 100 / `Platform`), başlık yorumu düzeltildi. Eşitleme **gerçek bir kusuru** açığa
+çıkardı: `packages/core/src/permissions/constants.ts` `BACKEND_PORTAL_TO_KEY` `Platform` portalını tanımıyordu ve
+sessizce "school"a düşürüyordu (`platform: "system"` eklendi, testli). `0019` platform rol modeli gelince satır
+yeniden gözden geçirilecek.
+
+### `TB-168` · Sezonsuz okulda pano "Devamsızlık riski yüklenemedi" diyor 🟡
+
+`K-27` ilk dilim senaryosunda ölçüldü (2026-09-15, platformdan açılan okulun müdürü ilk
+girişte). `AttendanceRiskCard` (`oksis-ui/apps/web/features/dashboard/attendance-risk-card.tsx:49`)
+aktif sezonu okuyan sorgu 404 dönünce ya da dönem kimliği yoksa **hata durumu** çiziyor:
+"Devamsızlık riski yüklenemedi · Tekrar dene". Oysa ortada hata yok; okulun henüz sezonu
+yok ve bu, platformdan açılan **her** okulun ilk günü. "Tekrar dene" hiçbir zaman başarıya
+dönmez. Seed'li okullarda sezon hep olduğu için görünmüyordu (`E-24`'ün "seed gerçek yolu
+ölçmüyor" kalıbı).
+
+Aynı ekranın yan kartları doğru davranıyor ("Aktif sezon yok", "Bugün ders günü değil").
+Alternatif yol var, müdür sezonu açınca kart düzelir. Bu yüzden 🟡.
+Kanıt: `kanit/k27-mudur-ilk-ekran.png`.
+
+⬜ Kapatma yolu: sezon/dönem yokluğu hata değil **boş durum** olarak ayrılsın ("Aktif sezon
+yok, sezon açıldığında risk burada görünür"). Kural tek kartın değil, sezona bağlı bütün pano
+kartlarının; [[yamalama-kabul-degil]] gereği sezon-yok durumu ortak bir bileşene çekilmeli.
+
+✅ **Karar (2026-09-16, kullanıcı): ortak boş durum bileşeni.** Sezona bağlı bütün yüzeyler tek bir
+"sezon yok / kurulumda" bileşenine bağlanacak — pano kartları, topbar seçicisi, mobil başlık ve tatil
+ekranı aynı dili konuşacak. Sunucu tarafındaki sözleşme çelişkisi de hizalanacak: aynı kök durum için bir
+uç `404`, benzeri `200` + boş DTO dönüyor. **En az dört durum var:** sezon yok · sezon kurulumda (`Setup`)
+· sezon aktif ama dönem yok · sezon ve dönem aktif. `TB-173` ve `D-20`'nin "— Sezonu" başlığı bu kararla
+kapanır.
+
+✅ **İstemci ayağı uygulandı — 2026-09-16 (commit bekliyor).** Durum tek çözücüde:
+`packages/core/src/academic-sessions/season-state.ts` → `resolveSeasonState` (dört durum, testli) + kanca
+`useSeasonState`. **`setup` ile `noSeason` ayrımı yalnız sezon listesi ucundan çıkıyor** — `current` ucu `Setup`
+sezonu hiç döndürmüyor. Yüzey bileşeni `SeasonStateEmpty`: `EmptyState`i sarıyor, kendi markup'ını yazmıyor, yeni
+CSS yok; **"Tekrar dene" asla sunmuyor** (hiçbir zaman başarıya dönmeyecek bir eylemdi), gerçek ağ/500 hatası hâlâ
+hata olarak çiziliyor. Bağlanan yüzeyler: devamsızlık riski (asıl bulgu), canlı yoklama, bugünkü devam KPI, not
+girişi, sezon geri sayımı, topbar seçicisi, tatil ekranı başlığı, mobil başlık ve bağlam modalı.
+Topbar'da üç yeni davranış: **kurulumdaki sezon artık yöneticiye kilitli satır + "Kurulumda" rozetiyle listeleniyor**
+(eski "taslak yıl hiç listelenmez" kararı, müdürün sezonu açtığı hâlde "—" görmesinin sebebiydi), seçiciye
+"Sezon Aç / Aktifleştir" yolu eklendi (bugüne dek tek giriş panodaki geri sayım kartıydı), durum noktası renk taşıyor.
+Ayrıca `seasonHeaderLine` core'dan **silindi** — sezon yokken `null` döndürüyordu, mobil başlık satırının kaybolma
+sebebi oydu. core 628 test yeşil (yeni 13), typecheck ve lint 6 pakette temiz.
+
+⬜ **Sunucu hizalaması açık ve sıraya alındı.** Aynı kök durum için **altı farklı sözleşme** ölçüldü: `current` 404,
+sezon listesi 200+`[]`, dönem listesi 200+`[]`, `attendance/risk` 404, `grades/summary` 200+boş DTO, `attendance/board`
+200+bayrak; ayrıca sınıf listesi `warning` alanı, dosya yükleme 422, kullanıcı/duyuru 409. İstemci artık bu
+dağınıklığa **bağışık** (durumu cevabın şeklinden değil sezon verisinden türetiyor), yani hizalama istemciyi
+kırmaz. Ölçümden çıkan iki somut kusur ayrı madde oldu: `TB-185`, `TB-186`.
+
+✅ **Sunucu ayağı da kapandı — 2026-09-16 (commit bekliyor).** Ölçüm: `AttendanceTermResolver` dönem
+çözemediğinde üç yoklama rapor ucu **404** dönüyordu; not modülünün altı ucu aynı kök durumda **200 + boş**
+dönüyor. Üç ucun da "dönem var ama veri yok" hâlinde **zaten** 200 + boş cevabı var, yani boş cevap o uçların
+meşru şekli. Hiçbir test 404 beklemiyordu ve istemcide bu uçların **404 kolu yoktu** — 404 doğrudan hata
+durumuna düşüyordu, `TB-168`'in "Devamsızlık riski yüklenemedi · Tekrar dene" belirtisi tam olarak buydu.
+Üç ucun "dönem yok" dalı boş başarı cevabına çekildi; **kıran değişiklik değil** (yeni şekil yok, alan
+kaldırılmadı, yalnız hata dalı tanımlı duruma bağlandı). Yazma yolu 404 olarak **bırakıldı** — dönemsiz yazmak
+gerçekten mümkün değil. `SeasonlessReadContractTests` 2 test. `oksis-ui`'de değişiklik gerekmedi.
+⬜ Tablodaki iki sözleşme bilerek dokunulmadan kaldı: sınıf listesinin `warning` alanı (zaten 200) ve dosya
+yüklemenin 422'si (yazma yolu).
+
+➕ **2026-09-15 · Altınay saha testi, pano kartı envanteri** (`oksis-ui` @ `1bf6a51`, sezonsuz
+PLT-DOGRULAMA ve seed `s1` müdürüyle canlı GET): panonun 11 kartından
+- **sezondan bağımsız 2:** öğrenci ve öğretmen KPI (`student-stats`/`teacher-stats`, gerçek sıfır),
+- **doğru boş durum çizen 4:** sezon geri sayımı ("Aktif sezon yok", `summary-kpis.tsx:75`),
+  bugünkü devam ve canlı yoklama (`board` → `isSchoolDay:false`), not girişi (`grades/summary`
+  dönem yoksa 200 + boş DTO),
+- **yanlış hata çizen 1:** devamsızlık riski (bu madde),
+- **sabit örnek veri 4 (`K-09` rozeti):** son etkinlikler, bekleyen işlemler, yaklaşan takvim,
+  bugünkü nöbet (`dashboard-static.ts:46/111/155/193`). Nöbet ve bekleyen işlemler için
+  gerçek hook'lar var ama kartlara bağlı değil; etkinlik akışı ve takvim için uç yok.
+
+Aynı kök durum (dönem yok) için **sunucu sözleşmesi de ikiye ayrık**: `GetRiskStudentsQueryHandler:36`
+`NotFound` (404), `grades/summary` `Success` + boş DTO. İstemcide üç ayrı strateji var (sabit
+"—" metni, `isSchoolDay` bayrağı, `termId` yoksa hata dalı). Merkezi bir "sezonsuz" bileşeni ya da
+kapısı yok. Topbar ve mobil başlığın aynı eksikliği: `TB-173`.
+
+### `TB-173` · Sezonsuz okulda topbar sezon seçicisi "—", mobil başlık satırı hiç yok 🟡
+
+Altınay saha testinde (2026-09-15) müdürün ilk ekranında görüldü, kodla ve sezonsuz
+PLT-DOGRULAMA müdürüyle canlı ölçüldü (`academic-sessions/current` **404** `NO_ACTIVE_SESSION`,
+`academic-sessions` ve `terms` **200 `[]`**).
+
+| Yüzey | Bugün | Neden |
+|---|---|---|
+| Web seçici, kapalı | `● 📅 — ⌄` | `season-context-picker.tsx:138` ad zincirinin sonu `"—"`; nokta durum göstermiyor, sabit aksan |
+| Web seçici, yıl bölümü | Yalnız başlık, satır yok | Boş liste için metin tanımlı değil |
+| Web seçici, dönem bölümü | "Bu yıla ait dönem bulunmuyor." (`:318`) | Yıl yokken "bu yıl" diyor |
+| Web seçici, bilgi kutusu | "Tam yetki… hazırlanmakta olan yıl sezon sihirbazından yönetilir." | Sezon var/yok ayrımı yapmıyor; sihirbaza bağlantı yok |
+| Mobil başlık | Bağlam satırı **tamamen kayboluyor** | `seasonHeaderLine(null)` → `null`, `app-header.tsx:103` satırı çizmiyor |
+| Mobil bağlam modalı | Yıl listesi boş, dönem bölümü gizli | Boş durum metni yok |
+
+Sezonu açma yolu seçicide yok; tek yol panodaki "Sezon geri sayımı" kartına tıklamak
+(`summary-kpis.tsx:76` → `/academic-sessions`). Her yeni okulun ilk ekranı → 🟡.
+Aynı sınıfın pano ayağı `TB-168`; ikisi aynı merkezi "sezonsuz" kuralıyla kapanmalı
+([[yamalama-kabul-degil]]).
+
+⬜ Kapatma yolu: pano ve bağlam seçicisi için ortak sezonsuz durum kararı (ürün kararı bekliyor).
+
+✅ **Karar (2026-09-16, kullanıcı):** `TB-168` ile ortak — sezona bağlı bütün yüzeyler tek bir boş durum
+bileşenine bağlanır, dört durum ayrılır (yok · kurulumda · aktif-dönemsiz · aktif). İkisi tek turda kapanacak.
+
+✅ **İstemci ayağı uygulandı — 2026-09-16 (commit bekliyor).** Ayrıntı `TB-168` bloğunda. Bu maddenin tablosundaki
+altı yüzeyin hepsi kapandı: seçici kapalı hâli, yıl bölümü boş metni, dönem bölümünün "bu yıl" yanlışı, bilgi
+kutusunun durum körlüğü, **mobil başlığın tamamen kaybolması** ve mobil modalın boş durumu. Sezonu açma yolu da
+seçiciye eklendi.
+
+➕ **2026-09-16 · ara durum ölçüldü:** Altınay'da sezon açıldı ama `Setup` (henüz aktifleştirilmedi). `academic-sessions/current`
+yalnız `Active` sezonu döndürdüğü için topbar seçicisi hâlâ **"—"**; Redis'te `current-session` `NO_ACTIVE_SESSION` önbellekte.
+Yani önerilen üç kademeli kurala dördüncü bir durum eklenmeli: **"Sezon kurulumda"** (var, aktifleştirilmemiş) — kullanıcı
+az önce sezonu açtığı hâlde ekran "sezon yok" gibi davranıyor.
+
+### `D-19` · Zil programı ekranı: boşken "Yeniden Üret", çarpısı stilsiz modal, Enter ile ilerlemiyor 🟡
+
+Altınay saha testi (B2.3, 2026-09-15), `oksis-ui` @ `1bf6a51` üzerinde ölçüldü.
+
+| Gözlem | Bugün | Neden |
+|---|---|---|
+| Buton metni | Hiç satır yokken de "Çizelgeyi Yeniden Üret"; modal "mevcut **0** satırın üzerine yazar" | `bell-schedule-tab.tsx:354` sabit metin; `:446` 0 satır durumunu ayırmıyor |
+| Onay modalı çarpısı | Sol üstte çıplak | `AModal` (`features/settings/parts.tsx:598-650`) yalnız ayarlar ekranına özel; `className="ayr-mx"` (`:583`, `:626`) için **hiç CSS kuralı yok** |
+| Enter tuşu | Saat alanlarında hiçbir şey yapmıyor | `bell-schedule-tab.tsx:213-230` `onKeyDown` yok; sayfada `<form>` yok |
+
+Çarpı tek ekranın sorunu değil: uygulamada 25'ten fazla özellik kendi kapatma sınıfını yazmış
+(`.snf-mclose`, `.dx`, `.grv-drawer-x`, `.gb-x` …), paylaşılan bir `Dialog` yok. Bileşen envanteri
+`ConfirmDialog` ve `FormDialog`'u zaten **⬜ planned** olarak listeliyor (`frontend/bilesenler/_envanter.md:20-21`).
+Enter ile hücreden hücreye geçişin tek emsali ekrana gömülü: `grade-grid-screen.tsx:511-554` `onCellKey`.
+
+⬜ Kapatma yolu ([[yamalama-kabul-degil]]): `ConfirmDialog` paylaşılan bileşen olarak yazılır, `AModal`
+ona geçer (diğer modallar kademeli); Enter ile ilerleme ortak bir hook'a çekilir (`onCellKey` deseninden);
+buton/modal metni satır sayısına göre "Çizelge Oluştur" / "Yeniden Üret" ayrılır.
+
+✅ **2026-09-16 · kodda düzeltildi (gece düzeltme turu, `oksis-ui` `fix/davet-olu-riza-anahtarlari`, commit bekliyor).**
+Paylaşılan `Dialog` + `ConfirmDialog` (`apps/web/components/shared/`, `packages/ui/src/styles/dialog.css`); `AModal`
+ve `ADrawer` artık `Dialog` sarmalayıcısı (6 çağrı yeri prop değişmeden; çekmece çarpısı da aynı stilsizlikteydi).
+Enter ile ilerleme ortak `useGridEnterNav` (`packages/ui/src/hooks/use-grid-enter-nav.ts`: başlangıç → bitiş → sonraki
+satır; son hücrede yeni satır açar, Shift+Enter geri). Satır yokken "Çizelge Oluştur" onaysız, varken "Çizelgeyi Yeniden
+Üret" + `ConfirmDialog` "mevcut 15 satır". Altınay'da kaydetmeden tarayıcıda ölçüldü; core 580/580, typecheck temiz.
+Açık kalan: 25+ özel modal kademeli taşınacak (envanterde not), `FormDialog` ⬜; `grade-grid-screen` `onCellKey` farklı
+anlamda (Enter aşağı, G/M/ok tuşları) olduğu için hook'a taşınmadı. Madde merge ile arşive gider.
+
+### `B-51` · Zil programında teneffüs ve öğle arası elle eklenemiyor 🟡
+
+Altınay saha testi (B2.3, 2026-09-15). "+ Ders Ekle" (`bell-schedule-tab.tsx:87-100` `addRow`) satırı
+sabit `type: "ders"` ile açıyor; satırın tipini sonradan değiştiren bir kontrol yok (rozet tıklanamayan
+`<span>`). Teneffüs ve öğle arası yalnız otomatik üreticiyle doğuyor — elle çizelge kuran okul molasını
+giremiyor. Sunucu engel değil: `BulkCreateBellScheduleCommandValidator` `Lesson`/`Break`/`LunchBreak`
+üçünü de kabul ediyor. Saf istemci eksikliği.
+
+⬜ Kapatma yolu: satıra tip seçici (mevcut `ASeg`) ya da "+ Ders / + Teneffüs / + Öğle Arası" ekleme
+seçenekleri. Öğle arasının tüketicileri var (`GetAvailableRelievers`, `AutoDistributeDutyJob`) — elle
+girilen öğle arası da onlara doğru ulaşmalı (`TB-174` tüketici düzeltmesiyle birlikte ölçülür).
+
+✅ **2026-09-16 · kodda düzeltildi (commit bekliyor).** Her satırda Ders / Teneffüs / Öğle Arası `ASeg`'i; ekleme
+butonu "Satır Ekle". Tip değişimi ve varsayılan süre `packages/core` `changeBellRowType`/`bellRowDefaultDuration`
+(testli). Tarayıcıda kaydetmeden ölçüldü (Teneffüs 10 dk, Öğle Arası 60 dk). Mobil zil ekranı salt-okunur, kusuru
+taşımıyor. `TB-174`'ün ekran ayağı da aynı turda: Gün Atamaları'nda ders satırı olmayan şablona atanmış gün ⚠ ve
+"O gün ders oturumu açılmaz ve yoklama alınamaz" bandı (web + mobil; Altınay'da Cuma canlı görünüyor). Sunucu hâlâ
+satırsız şablona atamayı reddetmiyor — `TB-174` sunucu ayağında değerlendirilir.
+
+### `TB-175` · Okul açılışında bildirim ana ayarı tohumlanmıyor; ilk "Kaydet" okulun bütün bildirimlerini kapatıyor 🟠
+
+Altınay saha testi (B2.2, 2026-09-15). `SchoolCreated` handler'ları modül ayarlarını
+(`SeedDefaultModuleConfigsHandler`), olay kurallarını (`SeedDefaultNotificationRulesHandler`, 27 satır)
+ve kademeleri tohumluyor — **okulun bildirim ana ayarını (`NotificationConfig`) tohumlayan yok.** Satırı
+yalnız `UpdateNotificationConfigCommandHandler:50-62` müdür ilk kez kaydedince yaratıyor.
+
+DB ölçümü (`school.school_notification_configs`): Altınay ve PLT-DOGRULAMA'da **satır yok**; seed
+okullarından yalnız `ATA-AL`'da var.
+
+Satır yokken üç yüzey üç farklı şey söylüyor:
+
+| Yüzey | Satır yokken |
+|---|---|
+| Ayar ekranı (`GetNotificationConfigQueryHandler:75-78`) | Ana anahtar, e-posta, push **kapalı** (`?? false`) |
+| E-posta ve push kanalları (`EmailNotificationChannel:76`, `PushNotificationChannel:137`) | `config is null` → **gönderilmez** |
+| Uygulama içi kanal (`InAppNotificationChannel:56`) | `config is not null && !IsEnabled` → satır yokken **engellenmez, gönderilir** |
+
+Müdür ekranda "bildirimler kapalı" görüyor, kullanıcılar zile yine bildirim alıyor. E-posta ve push ise
+müdür bu sekmeyi bir kez kaydetmeden hiçbir okulda çalışmıyor — kimse bunun gerektiğini bilmiyor.
+
+**Bayat ipucu:** Sessiz saatlerin yanında "Hazırlanıyor — gönderim henüz bu aralığa bakmıyor"
+(`notification-tab.tsx:227`, `TB-45` dönemi). Artık doğru değil: push kanalı aralığı uyguluyor ve
+bildirimi aralık sonuna erteliyor (`PushNotificationChannel.cs:186-190`, `PushQuietHours`). Uygulama içi
+ve e-posta kanalları bakmıyor.
+
+⬜ Kapatma yolu: `SchoolCreated`'a varsayılan `NotificationConfig` tohumu (ana anahtar + uygulama içi açık;
+e-posta/push varsayılanı ürün kararı) + mevcut satırsız okullar için göç/backfill; ipucu "yalnız push
+bildirimlerini erteler" olarak düzeltilir.
+
+➕ **2026-09-15 · ilk kaydın zinciri ölçüldü → 🟠.** Ekranda (web ve mobil) okulun kanal ana
+anahtarlarını düzenleyen **hiçbir kontrol yok**; `buildNotificationPayload`
+(`packages/core/src/notifications/logic.ts`) `pushEnabled`/`emailEnabled`/`smsEnabled`/`lateArrivalNotify`'ı
+formdan değil **okunan matristen aynen geri yolluyor** (echo). Satır yokken okuma dördünü `false`
+döndürdüğü için ilk PUT dördünü `false` gönderiyor → `UpdateNotificationConfigCommandHandler:50-62`
+satırı yaratıyor → `NotificationConfig.Create:70` `IsEnabled = push || email || sms || lateArrival` =
+**`false`** → `InAppNotificationChannel:56` artık `config is not null && !IsEnabled` dalına giriyor →
+**uygulama içi bildirim de kesilir.**
+
+| An | E-posta | Push | Uygulama içi |
+|---|---|---|---|
+| Okul açıldı, ayar hiç kaydedilmedi | ❌ | ❌ | ✅ |
+| Müdür Bildirim Ayarları'nda bir kez **Kaydet** (matris, sessiz saat — ne değişirse) | ❌ | ❌ | ❌ |
+| Sonrası | Açacak kontrol yok | Açacak kontrol yok | Açacak kontrol yok |
+
+Yani ekran matriste "Portal ✅" gösterirken okul sessizce tamamen bildirimsiz kalıyor ve bunu geri
+alacak bir yüzey yok. Seed okullarında görünmüyordu: `ATA-AL`'ın satırı seed'den `1/1/1` geliyor,
+diğerlerinde ekran hiç kaydedilmemiş.
+
+⬜ Kapatma yolu genişledi: (1) `SchoolCreated`'a varsayılan satır tohumu + satırsız okullara backfill;
+(2) `IsEnabled` "en az bir kanal açık" türevinden çıkarılıp gerçek ana anahtara dönüşür **ya da** uygulama
+içi kanal bu türevi okumayı bırakır (uygulama içi, dış kanalların kapalı olmasıyla susmamalı);
+(3) kanal ana anahtarları ya ekrana gelir ya da echo'dan çıkarılır — ekranın göstermediği bir alanı
+kör geri yazmak bu hatayı üretiyor.
+
+✅ **Karar (2026-09-15, kullanıcı):** geçici DB düzeltmesi yapılmaz; madde Altınay düzeltme turuna girer ve
+**C1 (sezon yaşam döngüsü) başlamadan kapanır**. Altınay'ın `is_enabled=0` satırı o düzeltmenin
+backfill'iyle onarılır.
+
+✅ **2026-09-16 · kapandı, canlı doğrulandı (gece turu, commit bekliyor).** Beş ayak da yazıldı:
+1. **`IsEnabled` gerçek ana anahtar** — `push || email || sms || lateArrival` türevi kaldırıldı; `Update` üç durumlu
+   (`null` = dokunma).
+2. **`TB-125` ile birlikte kapandı** — ana anahtar kapısı `TryGetEventKey` bloğunun dışına çıktı, eşlemede olmayan
+   ~25 tip de kapıya uyuyor; Portal kararının kaynağı yeni `NotificationEventKeyMap` (katalogda satırı olan 22 tip),
+   `PushEventKeyMap` yalnız push kapsamı olarak kaldı. **Uygulama içi kanal artık dış kanallara bakmıyor** — okulun
+   push'u kapatması zili susturmuyor.
+3. **Tohum + backfill** — `SeedDefaultNotificationConfigHandler` (`SchoolCreated`) + göç
+   `20260916004157_20260916_notification_config_seed_backfill` (yalnız veri; `Up()` boş üretildi, gövdeye iki
+   `migrationBuilder.Sql` yazıldı). Dev DB ölçümü: **öncesi 6 okul / 2 satır** (`ALTINAY-AL` `0/0/0/0/0`,
+   `ATA-AL` `1/1/1/0/1`), **sonrası 6 satır**, hepsi `1/1/1/0/1`; 4 tohum + 1 onarım, echo kurbanı kalmadı.
+   `ATA-AL`'a dokunulmadı (koşul dört kanalın da 0 olmasını şart koşuyor → okulun bilinçli kararı ezilmiyor).
+   **Altınay onarıldı: `1/1/1/0/1`.**
+4. **Echo kaldırıldı** — `buildNotificationPayload` kanal ana anahtarlarını göndermiyor, sunucu `null` gelince mevcut
+   değeri koruyor.
+5. **Bayat sessiz saat ipucu** düzeltildi (web + mobil): aralık yalnız push'u erteler.
+
+Canlı ölçüm (seed müdürü): gövdesinde kanal anahtarı olmayan `PUT` → 204, ardından `GET` → `isEnabled: true`,
+push/e-posta açık; DB `1/1/1/0/1`. **"Kaydet" artık okulu kapatmıyor** — maddenin kapanış ölçütü.
+Testler: Application 2671 · Api 435 · mimari 7 yeşil; bildirim entegrasyon testleri 4/4; core 602; UI typecheck ve
+lint temiz (codegen elle düzeltmeyle birebir aynı çıktı).
+
+**Varsayım (ürün kararı, tek dönüş noktası):** e-posta/push varsayılanı `ATA-AL`'ın satırıyla hizalandı — ana anahtar
+açık, push açık, e-posta açık, **SMS kapalı** (`E-23`: uygulaması yok), geç gelme açık. Tersi seçilirse yalnız
+`src/Oksis.Domain/Modules/Schools/NotificationConfigDefaults.cs` değişir (tohum, backfill, okuma yüzü ve üç kanal
+aynı sabitleri okuyor) + bir düzeltme SQL'i.
+
+✅ **Karar (2026-09-16, kullanıcı):** varsayım **onaylandı** — okul açılışında ana anahtar açık, push açık,
+e-posta açık, SMS kapalı, geç gelme açık. Kodda uygulanan hâli geçerli.
+**Operasyonel not:** göç DB'ye doğrudan yazdığı için Redis `notification-config` anahtarı bayat kaldı; ekran ilk
+`PUT`'a kadar eski değeri gösterdi. Göçle veri değiştiren her turda ilgili önbellek anahtarı temizlenmeli.
+
+### `TB-176` · Sezonsuz eklenen okul tatili ayar ekranında görünmüyor, silinemiyor — ama yoklama takvimi onu tatil sayıyor 🟠
+
+Altınay saha testi (B2.4, 2026-09-15), web'den canlı ölçüldü. Sezonu olmayan okulda Ayarlar → Tatil
+Takvimi → "Yeni Tatil" ile "Saha Testi Tatili (silinecek)" (2–3 Kasım 2026) eklendi: ekran "Yeni okul
+tatili eklendi" dedi, liste **"Kayıt yok · 0"** kaldı. DB:
+`academic.school_holidays` → `holiday_type=ClosedDay`, **`academic_session_id = NULL`**.
+
+Neden: `CreateHolidayCommandHandler:52` sezonu `GetCurrentSessionIdOrNullAsync` ile çözüyor, sezon yoksa
+`null` yazıyor. Okuyucular bu kaydı iki farklı biçimde görüyor:
+
+| Okuyucu | Süzgeç | Sezonsuz kayıt |
+|---|---|---|
+| Ayar listesi `GetHolidaysQueryHandler:45` | `AcademicSessionId == seasonId` | **Görünmez** — düzenlenemez, silinemez |
+| Sezon tatil sorgusu `GetSchoolHolidaysForSessionQueryHandler:29` | `AcademicSessionId == session.Id` | **Görünmez** |
+| Takvim okuyucusu `HolidayCalendarReader:42` (yoklama `SchoolCalendarService`, program istisnası planlayıcısı, yayınlı program) | `SchoolId == schoolId` | **Tatil sayılır** |
+
+Ekranda hiç görünmeyen ve silinemeyen bir kayıt, o günleri yoklamada ders dışı gün yapar. Sezonu sonradan
+açmak kaydı sezona bağlamaz. Aynı durum sezon açıldıktan sonra ise olmaz — her yeni okulun **ilk
+gününe** özgü, ama müdürün tatil takvimini sezondan önce doldurması doğal bir sıra.
+
+⬜ Kapatma yolu: sezonsuz okulda tatil oluşturma reddedilir ("önce sezonu açın") **ya da** tarih hangi
+sezona düşüyorsa ona bağlanır / sezon açılışında sezonsuz tatiller sezona devralınır; okuyucuların sezon
+süzgeci tek kurala çekilir. Mevcut sezonsuz satırlar için veri düzeltmesi.
+**Altınay notu:** deneme satırı (`432b4adc-…`) B3 sezon açılışında görünürlüğü ölçmek için bilerek
+bırakıldı; C1'den önce silinmeli, yoksa 2–3 Kasım yoklamada tatil sayılır.
+
+➕ **2026-09-16 · sezon açıldıktan sonra ölçüldü:** Altınay'da `2026-2027` sezonu açıldı; deneme satırı hâlâ
+`academic_session_id = NULL` — sezon açılışı sezonsuz tatilleri devralmıyor. Ayar listesi sezon kimliğiyle süzdüğü için
+kayıt görünmez kalıyor, takvim okuyucusu okul kimliğiyle okuduğu için yoklamada tatil sayılacak. Madde doğrulandı.
+
+✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** Sezon artık **tatilin tarihinden** çözülüyor: yeni
+`HolidaySeasonResolver` (tek kural, iki yazma yolu da onu çağırır). `Setup` sezon kabul (müdürün takvimi sezon
+açılmadan doldurması doğal); **arşivlenmiş sezon reddedilir**; hiçbir sezona düşmüyorsa istek reddedilir —
+`school-settings.errors.holiday.no-season-for-date`. Güncellemede tarih değişirse `Holiday.RebindSeason` ile bağ
+tazeleniyor (yoksa taşınan tatil eski sezonda kalıp aynı maddeyi üretiyordu). Okuyucu tek kurala çekildi:
+`HolidayCalendarReader` artık `AcademicSessionId != null` süzüyor — **müdürün göremediği kayıt devamsızlığı da
+etkileyemez.** Göç `20260916015053_20260916_holiday_session_backfill` sezonsuz satırları tarihini kapsayan arşiv-dışı
+sezona bağlıyor (resolver'la birebir aynı kural; hiçbirine düşmeyen `NULL` kalıyor, okuyucu onları zaten saymıyor).
+Yan kazanç: aktif sezon varken *gelecek* sezona ait tarihe girilen tatil de artık doğru sezona bağlanıyor. Ayrıca
+`CreateHolidayCommandHandler`'da yıllardır duran ve **her zaman `false` dönen** `IsDateInArchivedAcademicYear` stub'ı
+silindi; sözlükteki `holiday.archived-year` anahtarı ilk kez gerçekten üretiliyor.
+Ölçüm: dev DB'de sezonsuz canlı satır **1 → 0**; testler 4199 birim yeşil (28 yeni), `dotnet format` temiz.
+**Altınay deneme satırı (`432b4adc-…`) silindi** — önce göçün yükleminin onu `2026-2027`'ye bağladığı önizlemeyle
+doğrulandı, sonra SQL ile soft-delete edildi (müdür parolası bilinmediği için ürün yolu kullanılamadı); 2–3 Kasım
+artık tatil değil, Altınay'ın diğer üç tatili bozulmadı. **C1 engeli kalktı.**
+**Tuzak notu:** `dotnet ef database update --no-build` bayat DLL yükleyip `EXIT=0` ve "Done." dedi, hiçbir şey
+yapmadan — göç assembly'de yoktu. Temiz derlemeyle tekrarlandı. Bu bayrak göç uygularken kullanılmamalı.
+
+### `D-20` · Tatil Takvimi sezonsuz okulda: "— Sezonu", sabit "Aktif" rozeti, açılır açılmaz hata gösteren form 🟡
+
+Altınay saha testi (B2.4), ekran görüntüsüyle ölçüldü.
+- Kart başlığı "**— Sezonu Tatilleri**" (`holiday-tab.tsx:80,100`), yan kart "Sezon: —".
+- "Sezon Özeti" rozeti koşulsuz yeşil **"Aktif"** (`holiday-tab.tsx:235`) — ortada sezon yokken.
+- `useHolidays` sezon yokken hiç çalışmıyor (`enabled: Boolean(seasonId)`): resmî tatiller de gösterilmiyor,
+  eklenen tatil de (`TB-176`).
+- Boş durum "Tümü" seçiliyken de "**Bu kategoride** tatil kaydı bulunmuyor" (`:140-142`).
+- "Yeni Okul Tatili" penceresi açılır açılmaz kırmızı "En az 2 karakter" ve "Başlangıç tarihi zorunludur"
+  gösteriyor: ayar formlarına `D-09` ile getirilen "dokunulduktan sonra göster" kuralı pencere formunda yok.
+  Çarpı yine sol üstte stilsiz (`D-19`).
+
+⬜ Kapatma yolu: sezonsuz durum `TB-168`/`TB-173` ortak kararına bağlanır; `D-09` kuralı `AModal` formlarına
+da uygulanır; rozet sezon durumundan türer.
+
+➕ **2026-09-16:** sezon açıldıktan sonra başlık "2026-2027 Sezonu Tatilleri" oldu, ama sezon **`Setup`** iken "Sezon Özeti"
+rozeti hâlâ **"Aktif"** — rozetin sezon durumundan türemediği canlı ölçüldü.
+
+✅ **2026-09-16 · ekran ayağı kodda düzeltildi (gece turu, `oksis-ui`, commit bekliyor).** Rozet `sessionStatusBadge`
+(`packages/core/src/academic-sessions/constants.ts`) ile sezon durumundan türüyor (`Setup` → "Hazır", sezon yoksa rozet
+hiç çizilmiyor); boş durum ortak `EmptyState`/`AEmpty` `filtered` desenine geçti ("Tümü"nde artık "bu kategoride"
+demiyor); **`D-09` kuralı merkezîleşti**: `AModal`/`ADrawer` bir `FieldRevealContext` sağlıyor, `AFld` hatayı blur ya da
+gönderim denemesine dek gizliyor, yeni `ASubmit` geçersiz formda tıklanabilir ama istek atmıyor — derslik çekmecesindeki
+yerel kopya da bu yola taşındı. Yan düzeltme: `Dialog` odağı `autoFocus`'tan çalıyordu, artık çalmıyor ve kapanışta açan
+düğmeye dönüyor. "Toplam N gün" sayacı `countHolidayDays` ile farklı takvim günlerinin birleşimi (çok günlü aralık uçlar
+dahil; yarım gün alanı sözleşmede yok, `TB-177` ile gelince tek dokunuş noktası). core 598 test yeşil.
+**Kapsam dışı kalanlar:** "— Sezonu" başlığı ve sezonsuz görünüm (`TB-168`/`TB-173` kararı), sunucu ayağı
+(`TB-176`/`TB-177`). **Canlı doğrulama borcu:** Chrome uzantısı bu turda sayfaya betik enjekte edemedi (bekleyen izin
+istemi olabilir), ekran ölçümü kullanıcı uyanınca yapılmalı.
+
+### `ENG-03` · İlk sezon açılamıyor — kaynak sezon altı katmanda zorunlu 🟠
+
+Altınay saha testi (B3.1, 2026-09-15). Platformdan açılan, hiç sezonu olmayan okulda müdür sihirbazı
+kaynak sezon seçmeden doldurdu; `PUT season-drafts/current` **400**:
+`$.sourceSessionId: The JSON value could not be converted…` (gövdede `"sourceSessionId": ""`).
+**Her yeni okulun ilk sezonu açılamıyor** — seed okullarında sezon hep önceden var olduğu için hiç görünmedi.
+
+Kaynak sezonu zorunlu tutan katmanlar (`oksis-api` @ `60e65caf`, `oksis-ui` @ `1bf6a51`):
+
+| Katman | Yer |
+|---|---|
+| Sihirbaz | `wizard.tsx:186` "Kaynak Sezon *", `:189-197` yalnız mevcut sezonları listeleyen `<select>` |
+| Taslak yükü | `packages/core/src/academic-sessions/logic.ts:593` boş dizeyi aynen yolluyor |
+| Komut | `SaveSeasonDraftCommand` `Guid SourceSessionId` (boş olamaz) → model binding 400 |
+| Doğrulayıcı | `SaveSeasonDraftCommandValidator:17` `NotEmpty` |
+| Domain | `SeasonDraft.Create:54`, `UpdateProgress:83` `Guid.Empty` → istisna |
+| DB | `SeasonDraftConfiguration:21` `IsRequired`, `academic.season_drafts.source_session_id NOT NULL` |
+
+Açılış işleyicisi de kaynağı varsayıyor: `CopyBranches=true` ve harita boşsa şube haritasını kaynak sezondan
+hesaplıyor (`OpenSeasonFromDraftCommandHandler:170-190`) → kaynaksız okulda "Şube haritası boş" hatası.
+
+⬜ Kapatma yolu: kaynak sezon isteğe bağlı (`Guid?`, göç); kopyalama bayraklarından biri açıksa zorunlu
+(doğrulayıcı + domain); sihirbazda kaynak yokken kopyalama anahtarları kapalı ve devre dışı.
+
+🔄 **Kodda düzeltildi, merge bekliyor (2026-09-16):** `oksis-api` dalı `fix/ilk-sezon-acilisi` + `oksis-ui` dalı
+`fix/davet-olu-riza-anahtarlari`. `SeasonDraft.SourceSessionId` `Guid?`; kural tek yerde
+(`SeasonDraft.RequiresSourceSession`: kopyalama bayrağı açıksa kaynak zorunlu, `Guid.Empty` reddedilir); doğrulayıcı
+aynı kuralı okuyor; göç `20260915203011_20260915_season_draft_source_optional` dev DB'ye uygulandı (kolon nullable,
+`has-pending-model-changes` temiz). `OpenSeasonFromDraft` kaynağa dayanan dalları kaynak yokken çalıştırmıyor
+(`source-required`). Aktivasyon (`ActivateSeasonRollover`, `PromoteStudents`, `SetupSeasonReverter`) taslağın kaynağını
+okumuyor — değişiklik gerekmedi. `generated/schema.ts` elle düzenlendi; canlı API'den üretilen şemayla karşılaştırıldı,
+yalnız satır bölme farkı var.
+Doğrulama: `dotnet build` 0 · `test-changed.sh` 0 (Domain 1067 · Application 2658 · Api 435 · mimari 7) ·
+entegrasyon `--filter Draft` 77/77 · web/core/api `tsc` 0 · core vitest 559/559 · api vitest 6/6 · eslint/prettier 0.
+API yeniden başlatıldı; tarayıcıda Altınay'da ölçüldü: sihirbaz "Kaynak yok · İlk sezon", açılır listede "Kaynak sezon yok
+(ilk sezon)", 1. adımın beş kopyalama anahtarı kapalı + soluk + "Kaynak sezon seçilmedi — kopyalanacak önceki sezon yok".
+Kapanış: müdürün sihirbazla sezonu uçtan uca açması (B3.1).
+
+✅ **Uçtan uca ölçüldü (2026-09-16):** Altınay müdürü kaynak sezonsuz sihirbazı doldurdu, sezon açıldı. DB: `2026-2027`
+`Setup` (14.09.2026–25.06.2027), iki dönem `NotStarted` (14.09.2026–22.01.2027, 08.02.2027–25.06.2027), taslak
+`source_session_id=NULL`, kopyalama bayrakları 0, `opened_session_id` sezona bağlı; şube/kayıt 0. Başlangıcın geçmiş tarih
+olması engel olmadı. Arşive taşıma: merge sonrası.
+
+### `TB-178` · Sihirbazda girilen okul tatilleri sezon açılınca hiç yazılmıyor; liste "kopyala" anahtarına bağlı 🟠
+
+Altınay saha testi (B3). Sihirbazın 4. adımında "Tatil Ekle" ile satır girilebiliyor (müdür 1. ve 2. dönem ara
+tatillerini girdi) ve satırlar taslağa `HolidaysJson` olarak kaydediliyor. Ama **`HolidaysJson`'u okuyan tek bir
+kod yok**: `grep` yalnız domain alanı, DTO, komut ve kaydetme işleyicisini buluyor; `OpenSeasonFromDraftCommandHandler`
+yarıyılı (`TermDates.BreakStart/End`) ve `CopyHolidays` ile kaynak sezonun okul tatillerini yazıyor, listeyi hiç
+okumuyor. Girilen tatiller sezon açılınca sessizce kaybolur.
+
+İkinci kusur: liste ekranda ve yükte "Okul tatillerini kopyala" anahtarına bağlı (`wizard.tsx:493`
+`{form.copyHolidays && …}`, `logic.ts:581-582`). Kopyalanacak önceki sezonu olmayan okul, kendi tatilini girmek için
+anlamsız bir "kopyala" anahtarını açmak zorunda.
+
+⬜ Kapatma yolu: açılış işleyicisi `HolidaysJson` satırlarını yeni sezona bağlı `Holiday` olarak yazar; liste
+kopyalama anahtarından ayrılır.
+
+✅ **Karar (2026-09-15, kullanıcı):** sihirbaz tatilleri **`IntermediateBreak` (Ara Tatil), kilitli** olarak yazılır;
+Tatil Takvimi'nde "Ara Tatil" çipinde görünür, ayarlardan düzenlenmez.
+
+🔄 **Kodda düzeltildi, merge bekliyor (2026-09-16):** `OpenSeasonFromDraftCommandHandler` 8c adımı `HolidaysJson`'u okuyor:
+adı/başlangıcı boş satır atlanır, bitiş boşsa tek gün; okunamayan tarih `holidays-invalid`, bitiş < başlangıç
+`holiday-range-invalid`, sezon dışı `holiday-outside-session` (mesaj tatil adını içerir); geçerli satır
+`IntermediateBreak` ve yeni sezona bağlı yazılır; yarıyılla aynı aralık ikinci kez yazılmaz; `holidays:reader:{schoolId}`
+önbelleği temizlenir. Sihirbazda liste kopyalama anahtarından bağımsız ve "Ara Tatil olarak yazılır" diyor.
+Entegrasyon testleri: iki satır `IntermediateBreak` + doğru sezon; sezon dışı tarih reddi. Kalan not: adı boş ama tarihi
+dolu satır sunucuda sessizce atlanıyor, istemcide satır doğrulaması yok.
+
+✅ **Uçtan uca ölçüldü (2026-09-16):** Altınay sezon açılışında `academic.school_holidays`: "1. Ara Tatil" 16–20.11.2026 ve
+"2. Ara Tatil" 08–12.03.2027 `IntermediateBreak`, "Yarıyıl Tatili" 25.01–05.02.2027 `SemesterBreak` — üçü de yeni sezona
+bağlı. Arşive taşıma: merge sonrası.
+
+### `D-22` · Sezon sihirbazı: kaynaksızken kopyalama anahtarları açık, kilitli anahtar kilitli görünmüyor, tarih doğrulaması kopyalamaya bağlı 🟡
+
+Altınay saha testi (B3).
+- **Kopyalama anahtarları:** kaynak sezon yokken de 1. adımdaki "Kopyalanacak Bağlam" anahtarları, 2. adımdaki
+  "Önceki sezonun dönem yapısını kopyala", 4. adımdaki "Okul tatillerini kopyala" ve 5. adımdaki "Öğretmen
+  görevlendirmelerini kopyala" açılabiliyor (`wizard.tsx:201-213`, `:270-276`, `:486-490`, `:578-583`). Varsayılanda
+  `copyBranches` ve `copyHolidays` açık (`logic.ts:533`).
+- **Kilitli anahtar:** 5. adımda "Aktif öğrencileri terfi ettir" `on locked` sabit (`wizard.tsx:565-570`); `SznToggle`
+  `.locked`/`.lock` sınıfı ekliyor ama bu sınıflar için CSS kuralı yok — anahtar tıklanabilir görünüyor, değişmiyor.
+  İlk sezonda "0 aktif öğrenci için yeni sezon kaydı… 0 öğrenci mezun edilir" şeridi de anlamsız.
+- **Tarih doğrulaması:** `next()` ve `submit()` dönem tarihlerini yalnız `form.copyTerms` açıkken doğruluyor
+  (`wizard.tsx:747`, `:781`). Tarihleri elle giren okulun hatalı tarihi istemcide yakalanmıyor.
+
+⬜ Kapatma yolu: kaynak yokken kopyalama anahtarları kapalı + devre dışı + açıklamalı; kilitli anahtar stili;
+tarih doğrulaması koşulsuz.
+
+🔄 **Kodda düzeltildi, merge bekliyor (2026-09-16):** kaynak yokken 1./2./3./4./5. adımlardaki kopyalama ve terfi anahtarları
+kapalı + `disabled`/`aria-disabled` + açıklamalı; kaynak kaldırılınca bayraklar `false`'a çekilir (`sourceSessionPatch`);
+`SznToggle` devre dışı görünümü (`screens.css` `.szn-toggle` bölümü, soluk + `not-allowed`); dönem tarihi doğrulaması
+`next()` ve `submit()`'te koşulsuz; kaynak yokken terfi önizlemesi çağrılmıyor; 5. adım ilk sezon şeridi ("öğrenciler sezon
+açıldıktan sonra Öğrenciler ekranından aktarılır", `E-27` geçici). 1. adım tarayıcıda ölçüldü. Kalan not: kaynaksızken
+"Pasif öğrencileri hariç tut" ekranda kapalı görünse de yükte `true` gidiyor (kopyalama bayrağı değil, aktivasyon zaten
+pasifleri hariç tutuyor).
+
+### `B-52` · Sezon sihirbazı tarih yazılırken resmî tatil sorgusunu her tuşta, yarım yılla atıyor (422 seli) 🟡
+
+Altınay saha testi (B3, 2026-09-16), müdürün DevTools ekran görüntüsüyle: 2. dönem bitişi yazılırken
+`GET official-holidays?start=2026-09-14&end=0002-06-25`, `…0020-06-25`, `…0202-06-25` istekleri tekrar tekrar
+**422**, sonunda `…2027-06-25` 200. Tarayıcının `<input type="date">`'i yıl yazılırken biçimce geçerli ara değerler
+bildiriyor; `useOfficialHolidays` yalnız "değer boş değil" kapısıyla (`enabled: Boolean(start) && Boolean(end)`)
+çalışıyor, sihirbaz iki yerde (`Step4` ve sihirbaz gövdesi) ham form tarihini veriyordu.
+
+🔄 **Kodda düzeltildi, merge bekliyor (2026-09-16, `oksis-ui` dalı `fix/davet-olu-riza-anahtarlari`):**
+- `packages/core/src/date/tr-date.ts`: `isCompleteIsoDate` (YYYY-MM-DD, 1900–2999, takvimde var olan gün) ve
+  `isIsoDateRange`; testleri `iso-date-validity.test.ts`.
+- `packages/api` `useOfficialHolidays` `enabled: isIsoDateRange(start, end)` — kapı kancada, iki çağrı yeri birden.
+- `packages/ui/src/hooks/use-debounced-value.ts`: paylaşılan `useDebouncedValue` (paketin ilk kancası); sihirbaz iki
+  çağrıda tarihleri 400 ms gecikmeli veriyor.
+- Doğrulama: core/api/ui/web `tsc` 0 · core tarih testleri 14/14 · eslint 0 · prettier 0. Tarayıcıda Altınay'da ölçüldü:
+  bitiş `25062027` tuş tuş yazıldı → **tek istek**, `end=2027-06-25`, 200.
+- Aday (düzeltilmedi): veliler araması kendi `setTimeout` debounce'unu yazıyor (`parents-page.tsx:45-48`); paylaşılan
+  kancaya geçirilebilir.
+
+### `TB-191` · Ders kataloğu GLOBAL — okul yöneticisinin ders eklemesi bütün okullara yansıyor 🔴
+
+Altınay B4 ölçümünde çıktı (2026-09-16). `POST /api/v1/academics/subjects` okul yöneticisinin izniyle
+(`school-settings.update-academic-structure`, `[Tenancy(Required)]`) korunuyor — **ama handler `master.subjects`'e
+yazıyor.** Tablo `school_id` taşımıyor (`Subject : MasterEntity`), tenant süzgeci yok, ders kodu benzersizliği
+(`ux_subjects_code`) **global**. Aynı durum güncelleme, silme ve durum değiştirme uçlarında da geçerli;
+`UpdateSubjectCommandHandler`'ın kendi yorumu bunu kabul ediyor: *"Subject GLOBAL master olduğundan tenant
+filtresi yok."*
+
+Sonuçları:
+- Bir okulun müdürü ders eklerse **bütün tenantlar** o dersi görür; pasifleştirirse **hepsinden** kalkar.
+- Bir okul "MAT" kodunu aldıysa başka okul aynı kodu **kullanamaz**.
+- Platform tarafında katalog yönetimi için ayrı bir uç **yok**, yani bu yetki başka yere taşınmış da değil.
+
+Tenant ihlali deponun kırmızı çizgisidir (`CLAUDE.md`); üstelik bu, izin kapısının doğru ama **veri sahipliğinin
+yanlış** olduğu bir sınıf — `TB-139`'un kardeşi.
+
+⬜ Kapatma yolu: ders kataloğu ya okul kapsamına taşınır (master satırları çekirdek, okul kendi satırını ekler —
+branşlardaki `school.branches` + `import-meb` deseni birebir emsal) ya da yazma uçları okul yöneticisinden alınıp
+platform yüzeyine taşınır. Karar verilmeden uçlar açık bırakılmamalı.
+
+✅ **Karar (2026-09-16, kullanıcı): okul kapsamına taşınır.** Master katalog **çekirdek** olarak kalır, okul kendi
+dersini kendi tablosuna ekler, içe aktarımla başlar — yani branşlardaki desenin aynısı. Gerekçe: okulun kendi
+dersini ekleme ihtiyacı gerçek (Altınay'ın edebiyat ve müzik dersleri `TB-192` yüzünden katalogda yok) ve yazma
+yetkisini platforma almak o ihtiyacı karşılamazdı. Ders kodu benzersizliği **okul içine** iner.
+**Bu karar `TB-192`'yi de güvenli kılıyor:** eksik dersleri eklemek artık başka okulları etkilemeyecek.
+Uygulama sürüyor; mevcut kataloğun okullara devri göçle yapılacak — hiçbir okul ders kaybetmemeli.
+
+✅ **Kapandı — 2026-09-16 (commit edildi ve push edildi).** Master katalog `MasterSubject` olarak **çekirdek**
+kaldı (tablo, satırlar, kimlikler, seed aynen; `subject_branches` ve `curriculum_hour_templates` dokunulmadan
+geçerli kaldı); `Subject` artık tenant varlığı, benzersizlik **okul içine** indi.
+**Branş emsalinde olmayan ayak:** kademe eşlemesi de tenant'a taşındı — eski kod onu master'da **tam-replace**
+ediyordu, yani bir okulun kademe düzenlemesi bütün okulların eşlemesini siliyordu. Sızıntının en sessiz ayağı buydu.
+**Düzenlenebilirlik bilinçli olarak branştan ayrışıyor:** branşta MEB satırı tamamen kilitli, derste yalnız katalog
+kimliği donduruldu (kod/ad/kategori/seçmelilik); sıra, açıklama, kademeler, aktiflik ve silme okulun kararı —
+aksi hâlde içe aktarılan 21 dersin hepsi kalıcı kilitlenir ve okul kendi kataloğunu düzenleyemezdi. Kural
+handler'da değil **domain'de**.
+**Merkezî çözüm:** veri kümesi adı korunduğu için dersi okuyan **45 sorgu değişmeden** tenant süzgecine girdi;
+çekirdek kimlikte kalan iki tablo için çeviri tek yerde toplandı, sekiz çağrı yeri ona bağlandı ve bir bekçi
+çevirisiz okumayı yasakladı.
+**Göç üretilirken EF'in iki kusuru yakalandı:** bir yapılandırma satırı eski tipi işaret ettiği için master
+tablosunun yabancı anahtarı **sessizce okul tablosuna kaydırılıyordu**, ve `Down()` `Up()`'ın hiç dokunmadığı bir
+kısıtı düşürüyordu. İkisi de düzeltildi — üretilen göç okunmadan uygulansaydı şema sessizce bozulacaktı.
+**Ölçüm:** altı okulun her birinde **21 ders** (Altınay dahil), okul tablosunda 126 ders + 816 kademe eşlemesi,
+master tabloları değişmedi, **çapraz tenant satır 0**, hiçbir okul ders kaybetmedi.
+**Kanıt testleri:** gerçek SQL Server'a karşı 6 tenant izolasyon testi — bir okulun dersi öbüründe **görünmüyor**,
+iki okul **aynı kodu kullanabiliyor**. Mimari bekçiler 11/11, ders süzgeçli 71 birim testi, arayüzde 314 test.
+**Bonus:** katalog artık tenant varlığı olduğu için önbellek temizleme kapısından geçiyor; eskiden hiçbir yazma o
+anahtarı düşüremiyordu, tek emniyet 24 saatlik ömürdü.
+➕ Arayüzde iki gerçek hata çıktı: ders yönetimi ekranı **arama ucunu** çağırıp yönetim verisi sanıyordu (gerçek
+API'de bütün dersler pasif ve seviyesiz görünecekti; yalnız zengin mock verisi gizliyordu) ve aynı kanca ders
+programı editörünü de besliyordu — hepsini yönetim ucuna yöneltmek o ekranı 403'e düşürürdü.
+
+➕ **Push kapısı üç testi yakaladı — ve kırılma öğretici.** Ders süzgeçli koşu (71/71) yeşildi ama **tam takım
+kırmızıydı**: süzgeç, çeviriyi *tüketen* müfredat saat testlerini adı eşleşmediği için hiç koşturmuyordu.
+Asıl mesele eksik sahtelik değildi: testler şablona ve okul override'ına **aynı ders kimliğini** veriyordu, yani
+çevirinin köprü kurduğu iki kimlik uzayını hiç ayırmamışlardı — **o hâlleriyle çeviri tümüyle silinse bile
+geçerlerdi.** Kurulum gerçeğe uyduruldu (okulun ders satırı kendi kimliğiyle ve çekirdek bağıyla kuruluyor),
+beklenen değerler gevşetilmedi ve çeviri **sahtelenip atlanmadı** — atlansaydı bu maddenin kapattığı "override
+sessizce yok sayılır" hatası bir daha hiç yakalanamazdı. Sonuç: Application 2827/2827, Api 448, Domain 1094,
+bekçiler 66/66. Bu, `TB-184`/`TB-187`/`TB-190` ailesinin dördüncü örneği: **dar süzgeç, yeşil görünen gerçek.**
+
+### `TB-200` · Branş ekranındaki "MEB'den Getir" düğmesi hiçbir uç çağırmıyor; boş listede "hepsi zaten var" diyor 🟠
+
+Altınay B4 turunda **kullanıcı ölçtü** (2026-09-16): Altınay'da branş listesi boş, "MEB'den Getir"e basınca
+*"MEB branş listesi güncel — yeni kayıt bulunamadı"* çıkıyor; başka okullarda liste dolu görünüyor.
+
+Ölçüm: düğme hiçbir istek atmıyor — `subject-area-catalog.tsx` yalnız o toast'ı yazıyordu
+(`onClick={() => api.toast("MEB branş listesi güncel — yeni kayıt bulunamadı")}`). Sunucu tarafı **hazırdı**:
+`POST /api/v1/branches/import-meb` (`ImportMebBranchesCommand`, idempotent, `added`/`skipped` döner,
+izin `school-settings.update-academic-structure`) ve OpenAPI şemasında kayıtlı
+(`ApiResponseOfImportMebResult`). Web'in `packages/api/src/branches/endpoints.ts` dosyası bu ucu hiç
+bağlamamış; dosya başı yorumu da yalnız `GET/POST /branches + PUT /{id} + PUT /{id}/status` sayıyor.
+
+İki kat zarar: **(a)** ekran kullanıcıya yanlış bilgi veriyor — liste boşken "hepsi zaten var" diyor, yani boşluğun
+sebebi tohumlama eksikliği (`TB-193`) iken kullanıcı "içe aktarım çalıştı, MEB'de branş yok" sonucuna varıyor;
+**(b)** `TB-193`'ün kullanıcı kararı ("düğmeyi ekrandan kendim kullanacağım") uygulanamıyordu.
+
+Sınıf olarak bu, `eksik-ekran-eksik-yetkiyi-gizler` kalıbının tersi: uç yazılmış, ekran onu hiç çağırmamış ve
+**çağırmış gibi** cevap vermiş. Aynı dosyada ölçülen ikinci bir boşluk: `GET /api/v1/branches/meb` (MEB kataloğunu
+listeleyen uç) da web'de hiç kullanılmıyor.
+
+✅ **Kapatıldı — 2026-09-16.** `importMebBranches` ucu + `useImportMebBranches` kancası yazıldı, düğme gerçek
+mutasyona bağlandı ve toast artık sunucudan dönen sayıları söylüyor (ders kataloğunun `runImport` deseni). Boş
+liste metni de düzeltildi: "Henüz tanımlı branş yok" yerine ne yapılacağını söyleyen metin.
+⬜ **Canlı doğrulama kullanıcıda:** Altınay'da düğmeye basıp 15 branşın gelmesi görülecek.
+
+### `TB-194` · Müfredat saat kataloğu okulun kademelerini yok sayıyor 🟡
+
+Altınay B4 ölçümünde çıktı (2026-09-16). `GetCatalogWeeklyHoursQueryHandler` bütün `subject_grade_levels`
+satırlarını okuyup ders başına **global** min–max veriyor; okulun `school_grade_levels` listesi süzgeç olarak
+kullanılmıyor ve uçta `gradeLevelCode` parametresi **tanımlı bile değil** (gönderilse sessizce yok sayılır).
+
+Canlı ölçüm (lise okulu): katalog **Türkçe 5, Fen Bilimleri 4, Sosyal Bilgiler 3, Müzik, Görsel Sanatlar** döndü —
+hepsi ortaokul satırları. Yani Ders Kataloğu ekranı lisede ortaokul saatlerini gösteriyor.
+
+⬜ Kapatma yolu: katalog sorgusu okulun kademe listesiyle süzsün; kademe parametresi ya sözleşmeye girsin ya da
+kaldırılsın (bugün ikisi de değil).
+
+✅ **Kapandı — 2026-09-16 (commit edildi, `6cefeed8`).** Sorgu okulun aktif kademe listesiyle süzüyor;
+`TB-191`'in çeviri katmanı olduğu gibi kullanıldı, **ikinci bir çeviri yazılmadı**. Kademe parametresi
+**sözleşmeye alındı** (kaldırmak seçenek değildi: tanımlı değildi ama gönderilince sessizce yok sayılıyordu);
+artık gerçekten süzüyor ve okulun listesinde olmayan kod boş liste döndürüyor. 2 yeni test.
+➕ **Kusurun neden fark edilmediği kayda değer:** gösterilen sayılar "yanlış" değildi, **başka okul türünün doğru
+sayılarıydı** — lise ekranında ortaokul saatleri. Yanlış veri değil, yanlış bağlam.
+
+### `TB-196` · Şube açarken okulun kendi kademe listesi denetlenmiyor 🟡
+
+Altınay B4/B5 ölçümünde çıktı (2026-09-16). `CreateClassRoomCommandHandler` `GradeLevelId`'yi **master'daki 13
+kademeye** karşı doğruluyor, okulun `school_grade_levels` listesine karşı değil. Yani Anadolu Lisesi olan
+Altınay'da **"2-A" şubesi açılabilir**. `SchoolGradeLevel` entity belgesi "bu liste filtre olarak kullanılır"
+diyor; kod bunu yapmıyor.
+
+İkinci ayak (Altınay'ı etkilemiyor, ama aynı eşleşme kusuru): `SeedSchoolGradeLevelsHandler` anaokulu için `"AN"`
+kodunu arıyor, master'da anaokulunun kodu `"0"` → **saf anaokulu açılışında sıfır kademe** tohumlanır, sessizce.
+
+⬜ Kapatma yolu: şube oluşturma okulun kademe listesini süzgeç olarak kullansın; kademe kodu eşlemesi tek yerden
+okunsun.
+
+✅ **Kapandı — 2026-09-16 (commit edildi, `6cefeed8`).** Şube oluşturma artık okulun **aktif** kademe listesiyle
+süzüyor (açık `SchoolId`); pasifleştirilmiş kademe de dışarıda kalıyor, master yalnız kod için join'leniyor.
+İkinci ayak için **tek kaynak** çıkarıldı: okul türü → kademe kodu eşlemesi artık tek bir kuralda yaşıyor ve
+tohumlama handler'ındaki kopya kaldırıldı — yamalama değil merkezî çözüm, ikinci bir çağıran aynı yanlışı
+kopyalayamaz. 3 test: liste dışı kademe reddedilir, pasif kademe reddedilir, saf anaokulu açılışı kademesini alır.
+
+### `TB-197` · Rehber öğretmen doğrulaması stub — daima "var" diyor 🟡
+
+Altınay B5 ön ölçümünde çıktı (2026-09-16). Şube oluşturmada rehber öğretmenin varlığını denetleyen
+`TeacherExistsAsync` **gövdesi sabit `true` dönen bir stub**. Yani var olmayan ya da başka okulun öğretmeni
+rehber olarak atanabilir; kusur ancak o öğretmenden veri okunmaya çalışıldığında görünür.
+
+⬜ Kapatma yolu: kontrol gerçekten okulun öğretmen profillerine baksın (açık `SchoolId` yüklemiyle — `TB-141`'in
+kapattığı kalıp), ya da alan zorunlu değilse kontrol kaldırılıp beklenti belgeye yazılsın. Bugünkü hâli
+"kontrol var" yanılgısı üretiyor.
+
+✅ **Kapandı — 2026-09-16 (commit edildi, `6cefeed8`).** Kontrol artık okulun öğretmen profillerine **açık
+`SchoolId` yüklemiyle** bakıyor ve görevi sona ermiş öğretmeni reddediyor; ölçüt kardeş komutla (`SetHomeroom`)
+aynı. Alan zorunlu olmadığı için boş bırakmak geçerli kalıyor, yalnız **verilen** kimlik doğrulanıyor. Hata
+mesajı da gerçeği söyleyecek biçimde düzeltildi. 3 test: başka okulun öğretmeni reddedilir, ayrılmış öğretmen
+reddedilir, okulun aktif öğretmeni kabul edilir.
+➕ Test kurulumunda **`TB-190` dersi uygulandı**: sahte bağlamda tenant alanı yansımayla kuruldu — kurulmasaydı
+sorgu boş küme döner ve test iş kuralını değil kurulumun eksikliğini ölçerdi. Gerekçe test dosyasında yazılı.
+
+### `TB-188` · `canEdit` iki politikayı tek boolean'da topluyor — idarenin yeni yetkileri hiçbir ekranda görünmüyor 🟠
+
+`TB-109`/`TB-110` turunun hemen ardından ölçüldü (2026-09-16). Sunucu artık `homework.manage` taşıyan idarenin
+ödevi **iptal etmesine, kapatmasına ve işaretlemesine** izin veriyor. Ama okuma yüzü açılmadı:
+
+| Alan | Bugünkü hesap | Sonuç |
+|---|---|---|
+| `GetHomeworkQueryHandler:79` `canEdit` | `isOwner && status is Draft or Published` | idare için **hep `false`**, `readOnlyReason = "adminView"` |
+| `GetHomeworkQueryHandler:80` / `GetHomeworkTrackingQueryHandler:113` `canMark` | `isOwner` / `resolvedView == Owner` | idare ızgarayı işaretleyemiyor |
+
+Web (`homework-detail-screen.tsx:89`) ve mobil (`:389`) bütün eylem bloğunu `detail.canEdit` ile sarıyor;
+işaretleme `tracking.canMark`'a, toplu tamamlama `!readOnly`'ye bağlı. Yani **kural sunucuda var, yüzeyde yok** —
+`TB-32`'nin tersi. `TB-109`'un çözdüğü "ödev sonsuza dek kontrol bekliyor" durumu kullanıcı açısından **hâlâ
+duruyor**; düzeltmenin faydası hiçbir ekrana ulaşmıyor.
+
+**Dikkat — `canEdit`'i idareye açmak yanlış çözüm.** O alan iki ayrı politikayı tek boolean'da topluyor:
+düzenleme/yayın/silme (`OwnerOnly`) ile iptal/kapatma (`OwnerOrManager`); üstelik `isReadOnly = !canEdit` ondan
+türüyor. `true` yapmak idareye düzenleme ve yayın affordance'larını da açar ve salt-okunur bandını kaldırır.
+
+⬜ Kapatma yolu: yetenek alanları **politika başına** ayrılır ve **yazma kapısının kendisiyle aynı kaynaktan**
+türer (`HomeworkWriteGate`'in erişim kipi); `canMark` `OwnerOrManager`'a çekilir; `readOnlyReason`/`isReadOnly`
+yeni ayrıma göre gözden geçirilir (idare "salt-okunur" değil, **sınırlı yetkili**). İstemci mock'ları ve onları
+kilitleyen testler **aynı turda** güncellenmeli — yoksa mock'lu arayüzde görünen ama gerçek API'de görünmeyen
+düğme doğar.
+
+✅ **Kapandı — 2026-09-16 (commit bekliyor).** Tek kaynak: yeni `HomeworkCapabilities`; her alan **yazma kapısının
+kendi erişim kipinden** türüyor, yani okuma yüzü ile kapı aynı gerçeği söylüyor. `canEdit`'in **değeri değişmedi**,
+yalnız anlamı daraldı (sahip-only kol: düzenleme, yayın, taslak silme); `canCancel` ve `canClose` eklendi, `canMark`
+`OwnerOrManager`'a çekildi. `isReadOnly` artık `!canEdit` değil, **"hiçbir yazma yeteneği yok"**; `readOnlyReason`'a
+additive olarak `managerView` eklendi — idare yayındaki ödevde salt-okunur değil, **sınırlı yetkili**; kapanmış
+ödevde `adminView` almaya devam ediyor. Bir bekçi testi idareye düzenlemenin **hâlâ kapalı** olduğunu kilitliyor.
+**Asıl sürpriz yüzeyde çıktı:** web'de idare `activeRole === "admin"` ile **ayrı bir ekrana** gidiyor ve orada
+"Kapat" düğmesi **hiç yoktu**, "İptal et" ekranın kendi durum tahminine bağlıydı, takip ızgarası sabit
+salt-okunur bırakılmıştı. Yalnız sunucuyu düzeltmek hiçbir düğme üretmeyecekti. Mock'lar ve onları kilitleyen
+testler aynı turda hizalandı. Ölçümler: `dotnet build` 0, Homework süzgeçli 318 test, api-mocks 273, core 633,
+typecheck beş pakette temiz.
+⬜ **Kalan iki ayak:** mobilde "Kapat" eylemi sahip için de yok ve idarenin mobil ödev yüzeyi hiç bulunmuyor;
+ayrıca ödev ekranlarının hiç render testi yok, görünürlük yalnız alan düzeyinde kilitlendi.
+
+➕ **Aynı turda bulunan ikinci kusur (düzeltildi):** `packages/core/src/homework/types.ts` içindeki
+`HomeworkAuditKind` birleşimi, sözleşme yazılmadan önce **uydurulmuş** camelCase bir tahmindi
+(`statusMarked`, `exemptSet`, `recordAddedAfterPublish`…) ve sunucunun `ToWire` eşlemesindeki **hiçbir değerle
+eşleşmiyordu**; tüketicisi olmadığı için yıllarca sessizce yanlış kaldı ([[serilesmis-sekil-sozlesmedir]]).
+Değerler sunucuya birebir çekildi, bilinmeyen tür için "Diğer işlem" yedeği eklendi (satır gizlenmiyor, ham tel
+değeri basılmıyor). **Ödev denetim izinin kendisinin hâlâ hiçbir ekranı yok** — uç dün gece açıldı, tüketicisi
+yazılmadı (`TB-112`'nin devamı).
+
+### `TB-186` · `isSchoolDay` sezonun durumuna bakmıyor — kurulumdaki sezonun günleri ders günü sayılabiliyor 🟡
+
+`TB-168` sunucu ölçümünde çıktı (2026-09-16). `SchoolCalendarService` (`:31-45`) bir günün ders günü olup olmadığını
+yalnız `AcademicTerm` **tarih aralığından** çözüyor; sezonun ya da dönemin **durumuna bakmıyor**. Sonuç: henüz
+aktifleştirilmemiş (`Setup`) bir sezonun dönemleri bugünü kapsıyorsa gün "okul günü" sayılır ve `SessionMaterializer`
+o gün için yoklama oturumu üretmeye çalışır.
+
+Aynı kalıp `TB-179`'un (c) ayağının kardeşi: **tarih ekseni ile durum ekseni iki ayrı gerçek üretiyor.**
+
+⬜ Kapatma yolu: ders günü çözümü sezon/dönem durumunu da okusun (tek kural, tek yer); `TB-179`'un dönem çözümüyle
+birlikte ele alınmalı. Önce ölçülmeli: `SessionMaterializer` dönem durumuna ayrıca bakıyor mu, yani belirti bugün
+gerçekten oluşuyor mu.
+
+✅ **Kapandı — 2026-09-16 (commit bekliyor).** **Ölçüm önce yapıldı:** `SessionMaterializer` dönem/sezon durumuna
+ayrıca bakmıyor (tek kapı `IsSchoolDayAsync`) ve günlük süpürme işi bütün okulları geziyor; ama oturum üretimi
+ayrıca **yayınlanmış bir program** istiyor, o yüzden yeni açılmış okulda oturum doğmuyor. Buna karşılık **bugün
+yanlış cevap veren beş yüzey** var: canlı pano, gün ders saatleri, tarih eksenli nöbet, kaydedilmemiş oturumlar ve
+günlük kapatma işi — hepsi aynı kapıyı okuyor, yani kurulumdaki sezonun günleri "ders günü" sayılıyor.
+**Kapı sezonun durumu oldu (`Active`), dönemin değil.** Gerekçe: dönem durumunu kapı yapmak, `TB-179`'un açık
+ayağı yüzünden (2. dönemi başlatacak günlük iş henüz yok) 2. dönem elle başlatılana kadar yoklamayı **tamamen
+durdururdu** — ölçülmemiş bir kural için çalışan bir yüzeyi kırmak olurdu. Sezon `Active` değilken okul günü
+olmadığı ise tartışmasız.
+Kural yeni `AcademicCalendarRules`'ta: tarih kapsama cümlesi tek yerde yaşıyor ve **`TB-179`'un aktivasyon yolu ile
+okuma yolu aynı cümleyi okuyor** — tarih ekseni ile durum ekseni artık yapısal olarak ayrışamıyor. 6 test, içlerinde
+"dönem `NotStarted` olsa da `Active` sezon ders günü üretir" regresyon bekçisi var.
+
+### `TB-185` · Sezonsuzluk cevabı bir saat önbellekte yapışıyor; sezonu açan yollar anahtarı temizlemiyor 🟡
+
+`TB-168` sunucu ölçümünde çıktı (2026-09-16). `GetCurrentSession` sorgusu `[Cacheable]` ve **başarısız sonuç da
+önbelleğe yazılıyor** (`CachingBehavior`), yani `NO_ACTIVE_SESSION` 404'ü `tenant:{schoolId}:current-session`
+anahtarında **1 saat** duruyor. Anahtarı yalnız dört domain olayı temizliyor; **sezon oluşturma, taslaktan açma,
+kurulumu iptal ve yeniden adlandırma temizlemiyor.**
+
+Belirti: müdür sezonu açar, ekran bir saate kadar "sezon yok" demeye devam eder. Gece turunda iki kez ısırdı
+(bildirim göçünden sonra `notification-config`, tatil düzeltmesinden sonra `holidays:*` elle temizlenmek zorunda
+kaldı) — bu, `TB-183`'ün kardeşi ve aynı sınıfın üçüncü örneği.
+
+İkinci ayak: `/current` ucunun 404'ü controller'a gömülü özel bir dal; `NO_ACTIVE_SESSION` kodunu
+`ResultExtensions.MapStatusCode` **tanımıyor** — aynı kodu başka bir handler döndürürse 422 alır.
+
+⬜ Kapatma yolu: sezonun durumunu değiştiren **her** yol anahtarı düşürsün (tercihen tek bir yerden, olay
+listesine güvenmek yerine); başarısız sonucun önbelleğe yazılıp yazılmayacağı bilinçli bir kural olsun; hata kodu
+merkezî eşlemeye taşınsın.
+
+✅ **Kapandı — 2026-09-16 (canlı doğrulama sürüyor, commit bekliyor).** Üç kusurun üçü de kapatıldı:
+1. **Temizlik olaya değil, yazılan satıra bağlandı.** Yeni `CacheInvalidationInterceptor` (EF
+   `SaveChangesInterceptor`): değişiklik kümesi `SavingChangesAsync`'te toplanıyor (kayıttan sonra `ChangeTracker`
+   "ne değişti"yi bilmez), anahtarlar `SavedChangesAsync`'te düşüyor — başarısız `SaveChanges` hiçbir anahtar
+   düşürmüyor. Eşleme tek yerde (`CacheInvalidationRules`). **Bu kapıyı atlamak için EF'i baypas etmek gerekir**;
+   eski beyaz liste yaklaşımı yerine seçilmesinin sebebi bu. Anahtar tenant'ı satırın kendisinden alıyor, ambient
+   bağlamdan değil — arka plan işleri okuldan okula gezerken doğru okul satırdadır. Eski olay handler'ı silindi;
+   iki mekanizma bırakmak yamalama olurdu.
+2. **Başarısız sonuç artık bilinçli kural:** `[Cacheable]`'a `CacheFailures` eklendi, **varsayılan `false`**.
+   Gerekçe belgede: bir sorgunun başarısızlığı neredeyse her zaman durumsaldır ve kullanıcının bir sonraki
+   hamlesiyle değişir; başarısızlığı saklamak, kullanıcıya **kendi yaptığı değişikliği göstermemektir**.
+3. `NO_ACTIVE_SESSION` merkezî `MapStatusCode`'a taşındı, controller'daki özel dal kaldırıldı; cevap gövdesi aynı.
+
+Testler: `CachingBehaviorFailureTests` 3, `CacheInvalidationRulesTests` 4, `ResultExtensionsAcademicSessionsTests` 2.
+⬜ **`TB-183` bu turda kapanmadı, ölçüldü:** tatil okuyucusu hâlâ `IMemoryCache` kullanıyor, yeni kapı Redis
+anahtarlarını düşürüyor — süreç içi önbelleğe dokunmuyor. Okuyucu `ICacheService`'e geçirilirse
+`CacheInvalidationRules`'a tek satır eklemek yetecek; iskelet buna hazır.
+⬜ **Göç ya da elle SQL bu kapıdan geçmez** — "veriyi göçle değiştiren turda anahtarı elle temizle" kuralı
+geçerliliğini koruyor (interceptor belgesinde yazılı).
+
+✅ **Canlı doğrulandı (2026-09-16).** Seed okulda ürünün kendi yollarıyla ölçüldü: anahtar `GET current` ile
+oluşuyor (tenant'ı kendisi taşıyor, TTL 3600); **sezon oluşturma** (eski listenin kaçırdığı birinci yol) anahtarı
+düşürdü, sonraki okuma taze değeri yazdı; **yeniden adlandırma** (dördüncü yol) yine düşürdü. Eski kodda bu anahtar
+bir saat yerinde kalırdı. Sezonsuz okulda (`PLT-DOGRULAMA`) iki `GET current` çağrısı yapıldı → **sıfır anahtar**,
+yani `CacheFailures=false` canlıda çalışıyor; 404 da artık **merkezî eşlemeden** geliyor. Elle SQL'in interceptor'ı
+tetiklemediği de canlı görüldü (belgelenmiş sınırın örneği). Altınay'a dokunulmadı.
+**Bilinçli yan etki:** kural "sezon/dönem satırına dokunan her yazma" olduğu için temizlik muhafazakâr — güncel
+olmayan bir sezon değişse de anahtar düşüyor. Bedeli bir fazladan okuma, kazancı "asla bayat cevap".
+
+### `TB-183` · Tatil önbelleği iki ayrı depoda: okuyucu süreç içi, temizleme Redis'te 🟡
+
+`TB-176`/`TB-177` düzeltmesinde ölçüldü (2026-09-16). `HolidayCalendarReader` okuduğunu **`IMemoryCache`**'e
+(süreç içi) yazıyor; tatil CRUD handler'ları ise değişiklikten sonra **`ICacheService` (Redis)** üzerinden
+`holidays:reader:{schoolId}` anahtarını siliyor. İki ayrı depo olduğu için **bu temizleme okuyucunun önbelleğini
+hiç boşaltmıyor**; tutarlılığı sağlayan tek şey okuyucunun 5 dakikalık TTL'i.
+
+Görünen belirti: müdür tatil ekleyip sildikten sonra yoklama takvimi 5 dakikaya kadar eski cevabı verebilir.
+Aynı sınıfın kardeşi bu gece iki kez daha çıktı: bildirim göçünden sonra Redis `notification-config` bayat kaldı,
+tatil göçünden sonra hem Redis hem süreç içi önbellek elle temizlenmek zorunda kaldı.
+
+⬜ Kapatma yolu: okuyucu ile temizleyen taraf **aynı önbellek soyutlamasını** kullansın (tercihen `ICacheService`,
+çok örnekli çalışmada süreç içi önbellek zaten yanlış cevap verir); anahtar adı tek yerde tanımlansın. Ayrıca
+veriyi göçle değiştiren her turda ilgili anahtarların temizlenmesi kural hâline gelmeli.
+
+✅ **Kapandı — 2026-09-16 (commit bekliyor), üstelik iki kusur daha çıktı ve aynı satırla kapandı.**
+Okuyucu `ICacheService`'e geçti, anahtar tek yerde tanımlandı (`tenant:{schoolId}:holidays:reader`, tenant'ı
+kendisi taşıyor). Temizleme `TB-185`'in interceptor iskeletine bağlandı — **anahtar değil önek ile**, çünkü
+tatilden beslenen ikinci tüketicinin anahtarı parametreli; tek tek saymak yine beyaz liste olurdu. Altı
+handler'daki elle silmeler kaldırıldı (iki mekanizma bırakmak yamalama olurdu) ve o adla hiçbir yere yazılmayan
+**hayalet silmeler** temizlendi.
+**Ölçümde çıkan iki kusur:**
+1. Ayar ekranının tatil listesi anahtarı (TTL **24 saat**) hiç düşürülmüyordu — müdürün eklediği tatil ayar
+   listesinde **bir güne kadar** görünmeyebiliyordu.
+2. Önbellek, **istenen aralığa göre çözülmüş** resmî tatilleri saklıyordu; başka aralıklı ikinci bir çağrı kendi
+   yılının resmî tatillerini göremiyordu (gizil kusur). Artık aralıktan bağımsız ham satırlar saklanıyor, çözüm
+   her çağrıda yapılıyor — bu şekil hatası yapısal olarak imkânsız.
+**TTL 5 dk → 1 saat:** 5 dakika bir *tutarlılık* mekanizmasıydı (bayatlığın üst sınırı); artık tutarlılığı yazma
+yolu sağlıyor, TTL yalnız emniyet ağı — resmî tatil kataloğu `MasterEntity` olduğu için interceptor'dan geçmiyor,
+göç ve elle SQL de geçmiyor.
+**Maliyet ölçüldü:** tüketiciler günü gün **döngüde** soruyor (bir rapor ucu 7–31 çağrı, günlük kapatma işi okul ×
+gün). Süreç içi önbelleği kaldırmak her çağrıyı ayrı Redis turuna çevirirdi; okuyucuya **istek ömürlü memo**
+kondu — iş birimi başına okul başına tek tur, iki istek arasında bayat cevap üretmiyor.
+**Canlı ölçüm** (seed okul): tatil eklenince anahtar düşüyor ve aynı uç **anında** yeni cevabı veriyor, silince de
+öyle; başka okulun anahtarı etkilenmiyor. 78 birim testi + 65 mimari bekçi yeşil.
+⬜ **Kalan:** resmî tatil kataloğunun kendisi hâlâ kapı dışında (emniyet ağı 1 saatlik TTL); entegrasyon takımı
+bellek kısıtı yüzünden koşulmadı, sadeleşen iki test ilk gerçek koşuda gözden geçirilmeli.
+
+### `TB-182` · Entegrasyon fixture'ı `IPlatformContext`'i kaydetmiyor — 22 test kırmızı 🟠
+
+`TB-175` düzeltmesinin entegrasyon koşusunda ölçüldü (2026-09-16): **1453 testten 22'si kırmızı**, hepsi aynı
+istisnayla — `Unable to resolve service for type 'IPlatformContext' while attempting to activate 'TenantContextBehavior'`.
+Kırmızıların tamamı `SchoolSettingsAcademicEndpointsTests` ve iki akademik politika testi; hiçbiri o turda değişen
+koda dokunmuyor.
+
+**Kök neden:** `K-27` platform dilimi (`28366cca`) `TenantContextBehavior`'a `IPlatformContext` bağımlılığı ekledi;
+entegrasyon fixture'ı bu servisi **hiç kaydetmiyor** (`grep` ile doğrulandı). Yani üretim hattı doğru, testin kurduğu
+kap eksik. Düşüş `master`'a merge edilmiş durumda ve gece turundaki her entegrasyon koşusunda tekrarlandı.
+
+Aynı sınıfın dersi `TB-180`'de de çıktı: **koşulmayan ya da kalıcı kırmızı bırakılan bekçi, bekçi değildir** — 22
+kırmızı, gerçek bir düşüşü de gürültüye gömer.
+
+⬜ Kapatma yolu: entegrasyon fixture'ına `IPlatformContext` kaydı (üretimdeki kayıtla aynı ömür ve davranış; okul
+bağlamıyla koşan testlerde platform bağlamı boş olmalı). `K-27` dilimini yazan oturuma yönlendirilmeli.
+
+✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** İki harness (`NotificationMatrixEndpointsTests`,
+`SchoolSettingsAcademicEndpointsTests`) yalnız `AddApplication()` çağırıyordu; ikisine de üretimdekiyle **aynı ömürde
+(scoped)** `FakePlatformContext` kaydı eklendi (`IsPlatformRequest = false`, `PlatformAccountId = null`).
+Entegrasyon takımı **22 kırmızıdan 1'e** indi; kalan tek kırmızı bu iki dosyayla ilgisiz (`TB-184`).
+
+### `TB-150` · Devamsızlık'ın resmî yazı kuralı TÜM uygulamanın çıktısını gizliyor 🔴
+
+Ekran testinde yakalandı (2026-09-14, A7): sınav takviminin *"Yazdır"* düğmesi tarayıcı
+önizlemesini açıyor ama önizleme **bembeyaz** — tek boş A4, altında `localhost:3000/exams 1/1`.
+Oysa diyaloğun arkasındaki ekranda kâğıt doğru çizilmiş durumda.
+
+**Kök sebep — başka bir modülün kapsamsız baskı kuralı.** `threshold-letter.css`
+(Devamsızlık › Eşik Aşımı Resmî Yazısı) şunu taşıyor:
+
+```css
+@media print {
+  body > *:not(.tl-print-root) { display: none !important; }
+}
+```
+
+Resmî yazı `document.body`'e portal atıldığı için kabuğu boşaltması doğrudur — **ama kural
+o ekranın açık olmasına bağlı değil.** `globals.css` tüm stilleri tek pakette yüklüyor, yani
+bu satır **her sayfada** yürürlükte. Uygulama kabuğu da `body`'nin doğrudan çocuğu
+(`body > div.shell`). Sonuç: **hangi ekrandan basılırsa basılsın `.shell` `display:none`
+oluyor** ve kâğıda hiçbir şey düşmüyor.
+
+**Tarayıcıda ölçüldü** (Playwright, `emulateMedia({media:'print'})`, yönetici oturumu,
+1. Sınav panosu → Yazdır görünümü):
+
+| Ölçüm | Düzeltmeden önce | Sonra |
+|---|---|---|
+| `.shell` `display` | **`none`** | `block` |
+| Belge yüksekliği | 823 px (tek görüntü alanı) | 2271 px |
+| `.ex-pr-sheet` sayısı | 5 (DOM'da var, kâğıtta yok) | 5 |
+| Üretilen PDF | boş | **5 sayfa, şube başına bir sayfa** |
+
+**Kapsam tek modül değil.** Kural genel olduğu için yazdırma stili olan her yüzeyi
+vuruyordu: sınav takviminin dört çıktısı (şube takvimi · kapı listesi · oturma planı ·
+gözetmen çizelgesi) ve **Ders Programım** (`schedule-read.css`). İkisi de kendi
+`@media print` bloğunu doğru yazmıştı; hiçbiri iş görmüyordu.
+
+**Neden bugüne kadar görülmedi:** her iki ekranda da "yazdır" bir ÖNİZLEME görünümü açıyor
+ve önizleme ekranda doğru çiziliyor. Doğrulama orada durmuş, **kâğıt hiç üretilmemişti**
+(krş. [[besleyen-yuzey-olculmeden-kapanmaz]]). Bu, modülün Faz 1 çıktısının da hiç
+çalışmamış olduğu anlamına gelir.
+
+**İkinci, daha küçük kusur aynı turda ölçüldü:** kabuk `body { overflow: hidden }` ile
+kilitli (ızgara `100vh`, kaydırma `.main`'de) ve gövdedeki taşma bildirimi CSS gereği
+görüntü alanına yayılıp baskıda belgeyi tek sayfaya kırpıyor. Kabuk gizlenmeseydi bile
+çıktı tek sayfada kalacaktı.
+
+✅ **Düzeltildi** (`oksis-ui`, 2026-09-14):
+
+1. `threshold-letter.css` kuralı sahibine bağlandı —
+   `body:has(.tl-print-root) > *:not(.tl-print-root)`. Resmî yazı açıkken davranış
+   birebir aynı (portal `body`'nin doğrudan çocuğu), kapalıyken kural hiç yok.
+2. `shell.css`e tek bir **baskı tabanı** kuruldu: `html, body { overflow: visible;
+   height: auto }`, ızgaranın çözülmesi, gezinme parçalarının gizlenmesi. `exam.css` ve
+   `schedule-read.css` kopyaladıkları kabuk ezmelerini bıraktı, yalnız kendi parçalarını
+   gizliyor. Blok dosyanın SONUNDADIR — `.shell { display: grid }` ile aynı özgüllükte
+   olduğu için ondan sonra gelmek zorunda (başa konduğunda ızgara kazanıyordu, bu da
+   ölçüldü).
+
+Merkezî kapanış, [[yamalama-kabul-degil]] gereği.
+
+✅ **Kalan ayak ölçüldü (2026-09-15).** Kapsam daraltmasının davranışı değiştirmediği
+`emulateMedia({media:'print'})` altında İKİ YÖNDE birden doğrulandı:
+
+| Durum | `.shell` | `.tl-print-root` |
+|---|---|---|
+| Baskı · resmî yazı KAPALI | `block` — kâğıda düşer | — |
+| Baskı · resmî yazı AÇIK | `none` — gizlenir | `block` — kâğıda düşer |
+| Ekran | `grid` | — |
+
+Uygulanan kural sayfadan okundu: `body:has(.tl-print-root) > :not(.tl-print-root)
+{ display: none !important }`. Yani resmî yazı açıkken kabuk eskisi gibi boşalıyor,
+kapalıyken kural hiç yok.
+
+⬜ **Yine de ölçülmeyen bir şey kaldı ve sebebi ürün değil VERİ:** yazının kendi
+gövdesinin kâğıttaki dizilimi. "Resmî Yazı (PDF)" düğmesi yalnız eşik AŞILMIŞ öğrencide
+açılıyor (`thresholdLevel(...).level === "over"`) ve dev verisinde böyle bir öğrenci yok —
+en yüksek devamsızlık **1 gün**, sınır **30**. `absence_summaries` satırını elle
+büyütmek de işe yaramıyor: `unexcusedDays` özet satırından değil,
+`AbsenceDayBreakdownResolver.CalculateAbsentDaysAsync` ile yoklama KAYITLARINDAN canlı
+hesaplanıyor; düğmeyi açmak için ~31 gerçek devamsızlık kaydı uydurmak gerekir.
+
+**Bu kendi başına bir tohum boşluğudur** ve `TB-143`'ün sınav tarafında yaptığının aynısını
+yapıyor: kural değil, kuralın DOĞRULANABİLİRLİĞİ kapalı. Devamsızlık tohumuna eşik aşmış
+tek bir öğrenci eklemek, resmî yazının bütün yüzeyini teste açar.
+
+**Ders:** bir modülün `@media print` kuralı `body > *` gibi kökten seçici kullanıyorsa,
+kendi kökünün varlığına bağlanmadıkça **uygulamanın tamamının** kuralıdır.
+
+✅ **2026-09-16 · veri ayağı da yazıldı (gece turu, commit bekliyor).** Eşik mektubunu gösterecek öğrenci artık
+dev seed'den geliyor: yeni `AttendanceThresholdDevSeeder` yalnız `DEV-OKUL`'a, şubesi olan ilk aktif öğrenciye,
+okulun kendi `UnexcusedAbsenceLimit + 1` kadar hafta içi gününe `Completed` oturum ve `Absent` kayıt üretiyor
+(şubenin geri kalanı `Present`). Özet satırını elle büyütmek **işe yaramıyordu**: `unexcusedDays` canlı olarak
+yoklama kayıtlarından hesaplanıyor. Idempotent (sentetik `PlacementId` + tekil indeks), yan etkisiz (üretilen
+domain olayları kaydetmeden düşürülüyor → seed veli bildirimi göndermiyor), gelecek tarihli oturum üretmiyor,
+**Altınay dâhil diğer okullara dokunmuyor**. Entegrasyon testi ürünün kendi gün-eşdeğeri hesabıyla sınırın
+aşıldığını, ikinci koşumun satır eklemediğini ve verilmeyen okula yazmadığını birlikte ölçüyor — yeşil.
+⬜ **Kalan:** dev DB yeniden seed edilmedi; seeder bir sonraki dev API açılışında kendiliğinden koşacak. Resmî
+yazının kâğıttaki dizilimi ancak ondan sonra gözle ölçülebilir.
+
+### `TB-142` · Alt-eylem (`:fiil`) yolu bir konumda yönlenmiyor — sessiz 404 ⚪
+
+Faz 2b'nin uçtan uca doğrulamasında ölçüldü (2026-09-13, çalışan API):
+
+| Yol | Ham iki nokta | `%3A` |
+|---|---|---|
+| `POST exams/windows/{id}:publish-window` | ✅ yönleniyor (422 = handler'a ulaştı) | — |
+| `POST exams/windows/{id}:open-review` | ✅ yönleniyor | — |
+| `POST exams/review-comments/{id}:resolve` | ❌ **404, `Content-Length: 0`** (yönlendirme 404'ü, handler'ın değil) | ✅ 200 |
+
+İkisi de aynı kalıpta (`{param:guid}` + literal `:fiil`) yazılmıştı; biri yönleniyor,
+öteki yönlenmiyor. **Neden ölçülmedi** — fark ya `review-comments` literalindeki tireden
+ya da rota ağacındaki konumdan geliyor olabilir; iki hipotez de denenmedi.
+
+**Ürün etkisi gerçekti:** istemci iki noktayı kodlamadan gönderir (`openapi-fetch` yol
+parametresini yerine koyar, literali kodlamaz), yani uç üründe **ölü** olurdu. Birim
+testleri yakalayamazdı: onlar `fetch`'i taklit ediyor, rota ağacını değil.
+
+✅ Kapatıldı 2026-09-13: yol düz alt-kaynağa çevrildi
+(`review-comments/{id}/resolve`). Alt-eylem kalıbı pencere komutlarında olduğu gibi
+KALIR — orada ölçülmüş biçimde çalışıyor.
+
+✅ **Açık soru kapandı (2026-09-15) — ve cevap bulgunun kendisini hükümsüz kıldı.**
+Eski rota geçici olarak geri konup gerçek sunucuda denendi:
+
+| Yol | Sonuç |
+|---|---|
+| `review-comments/{id:guid}:resolve` | **401** — yönleniyor |
+| `hour-requests/{id:guid}:answer` | **401** — tireli literal de suçsuz |
+| `windows/{id:guid}:publish-window` | 401 |
+
+**404'ün sebebi rota ağacı değil KABUKTU.** zsh'de `$id:resolve` yazıldığında `:r` bir
+parametre düzenleyicisidir ("uzantıyı at") ve URL `<guid>esolve`ye dönüşür — var olmayan
+yol, yönlendirme 404'ü. `:publish-window` ve `:open-review` bozulmamıştı çünkü `:p` ve `:o`
+düzenleyici değil; `%3A`'nın "çalışması" da aynı sebeple, iki nokta kalmıyordu. İki
+hipotez de (tireli literal / rota ağacındaki konum) yanlıştı.
+
+Düz alt-kaynak yolu **yine de korunuyor**: istemci ve sözleşme ona geçti, geri döndürmek
+bedava değil. Değişen tek şey gerekçe.
+
+**Ders:** kabuk değişkeniyle kurulan URL'de iki nokta varsa `${}` ile sarmalanmalı;
+sarmalanmazsa ölçüm sunucuyu değil kabuğu ölçer. `oksis-api` `f399c8ea`.
+
+### `TB-121` · Göçler hiçbir testte koşmuyor — entegrasyon fixture'ı modeli kuruyor ⚪
+
+`DatabaseFixture` veritabanını `EnsureCreatedAsync()` ile kuruyor: şema **EF modelinden**
+üretiliyor, göç dosyalarından değil. Sonucu şu — 1070 entegrasyon testinin hiçbiri göçün
+`Up()` gövdesini koşturmuyor, `Down()` ise hiç koşturulmuyor.
+
+Pratik anlamı: modelle göç arasında bir sapma (elle düzeltilmiş bir göç, unutulmuş bir kolon,
+yanlış `DeleteBehavior`) **bütün testlerden geçer** ve yalnız gerçek veritabanında ortaya
+çıkar. Bugün açığı kapatan tek şey, geliştiricinin `dotnet ef database update` çalıştırması —
+ki o da otomatik değil ([[Göçler otomatik uygulanmıyor]], 2026-09-09'da yine elle koşuldu).
+
+2026-09-09'da Faz 2a Görev 1.3'ün gözden geçirmesinde ölçüldü: "dizin testi göçü değil modeli
+doğruluyor". O turda göç gerçek geliştirme veritabanına uygulandı, yani `Up()` fiilen koştu;
+kanıtsız kalan `Down()` ve genel olarak model↔göç eşitliği.
+
+⬜ Kapatma yolu tek değil, bu yüzden karar gerekiyor: (a) fixture'ı `MigrateAsync()`'e çevirmek —
+şemayı göçlerden kurar, sapmayı imkânsızlaştırır, ama 1070 testin kurulum süresini uzatır;
+(b) tek bir "model ile göç eşit mi" bekçi testi — `dotnet ef migrations has-pending-model-changes`
+karşılığı, ucuz ama `Down()`'ı yine kapsamaz. **Tercih verilmeden başlamak yanlış.**
+
+✅ **Karar (2026-09-16, kullanıcı): (b) bekçi testi.** "Model ile göçler eşit mi" sorusunu soran ucuz bir bekçi
+eklenecek; 1400+ entegrasyon testinin kurulum süresi uzamayacak. `Down()` tarafının sınanmadığı **bilinçli olarak
+kabul edildi** ve bu maddenin açık ayağı olarak kalır.
+
+✅ **Uygulandı — 2026-09-16 (commit bekliyor).** `tests/Oksis.Tests/Architecture/MigrationsMatchModelTests.cs`:
+`Database.HasPendingModelChanges()` (EF Core 10'un gerçek public API'si, belgeden doğrulandı) sahte bağlantı
+dizgisiyle kurulan bağlamda çalışıyor — **veritabanı istemiyor**, bağlantı hiç açılmıyor. Konum bilinçli:
+`test-changed.sh` `Oksis.Tests`'i yalnız `--integration` ile seçiyor **ama** `Architecture/` altındaki bekçileri
+her koşumda ayrıca süzgeçle çalıştırıyor. `UseSnakeCaseNamingConvention()` zorunluydu; olmasaydı bekçi gerçek
+sapma olmadan her tabloyu farklı sayardı.
+**Kırmızı kanıtı alındı** (bekçi, kanıtlanmadan bekçi sayılmaz): modele geçici bir gölge kolon eklendiğinde
+takım **1 kırmızı** verdi ve mesaj ne yapılacağını söyledi — "EF modeli ile göç dosyaları AYRIŞTI… Entegrasyon
+testleri bunu YAKALAMAZ… `dotnet ef migrations add` … ardından üretilen göçü OKUYUN". Gölge kolon geri alınınca
+yeşile döndü; depoda sonda izi kalmadı. Mimari bekçi sayısı 9 → 10.
+
+### `TB-120` · Şubenin dersliği zorunlu değil, türetme yapan her yer boşa düşüyor ⚪
+
+`ClassRoom.RoomId` **nullable**. Şubenin fiziksel dersliği tanımlanmamış olabiliyor ve bunu
+zorlayan bir kural yok — ne oluşturmada, ne şube sihirbazında, ne de okul kurulumunda.
+
+Bugün bunun iki görünen sonucu var: sınav takvimi etiketleri `roomName: null` dönüyor
+(Faz 1'de kapatılmadı), ve kelebek oturumunun derslik kümesi şubelerin kendi sınıflarından
+türediği için (2026-09-09 kararı) derslik tanımsız olan şube oturuma derslik getiremiyor.
+Türetmenin dayandığı alan isteğe bağlı olduğu sürece bu sınıf bulgu her yeni tüketicide
+tekrar doğar.
+
+Kullanıcı kararı (2026-09-09): **kural şubenin dersliğinin zorunlu olması yönünde**, ama iş
+sınav takvimi modülünün içinde YAPILMAYACAK — modül bitince kendi turunda ele alınacak.
+
+⬜ Kapatma yolu: alanın zorunluya çevrilmesi (göç + mevcut boş satırların doldurulması),
+şube oluşturma/düzenleme akışlarında kapı, ve türetme yapan tüketicilerin (`Exams`,
+`Timetable`) boş hâl dallarının kaldırılması. Kelebek oturumu bu kapanana kadar eksik
+derslik için yöneticiye elle ekleme sunar — geçici köprü, kalıcı çözüm değil.
+
+- 🔍 **Kullanıcı bulgusu turu (2026-09-20)**: *"Şube eklerken derslik sorulmuyor, sadece edit
+  panelde seçilebiliyor; ekleme sırasında seçilebilmeli hatta zorunlu olmalı."* Aynı bulgunun
+  ekran ayağı; kullanıcı kapsamı **tam TB-120** olarak onayladı.
+- 🔍 **Ölçüm bulgunun tahmininden ağırdı** *(dev DB, 2026-09-20)*: 96 şubenin **71'i**
+  dersliksizdi ve iki okulda atanacak oda bile yoktu (24 şube / **0** oda; 29 şube / 5 oda).
+  Yani "mevcut odalardan birini ata" diye bir göç yolu yoktu — göç odayı da üretmek zorundaydı.
+- ✅ **KAPANDI** *(`oksis-api` + `oksis-ui`, 2026-09-20)*:
+  - **Kural tipe taşındı:** `ClassRoom.RoomId` artık `Guid` (nullable değil), `Create` derslik
+    almadan çağrılamıyor, `RemoveRoom()` **silindi** (boşaltma yolu şubeyi geçersiz hâle
+    sokardı), kolon `NOT NULL`. Boşaltan uç (`DELETE /class-rooms/{id}/room`) ve
+    `RemoveClassRoomRoomCommand` kaldırıldı; `PUT .../room` artık "ata" değil "değiştir".
+  - **Göç veriyi de üretiyor:** dersliksiz her şube ETİKETİ için (okul + `full_name`) bir oda
+    açılır, aynı etiketi taşıyan bütün sezonların şubeleri o odaya bağlanır; aynı kodla oda
+    varsa yenisi üretilmez. EF'in yazdığı `defaultValue: Guid.Empty` **bilinçli kaldırıldı** —
+    sıfır GUID, FK'yi bozan ya da var olmayan dersliği gösteren "dolu" satır üretirdi.
+  - **Yazma yollarının tamamı kapandı:** `POST /class-rooms` artık `roomId` istiyor ve odayı
+    doğruluyor (bu okulun mu, aktif mi — `SetClassRoomRoom` ile aynı ölçüt); sezon devri hedef
+    şubenin dersliğini kaynak sezondan çözüyor (önce aynı ETİKET, sonra kaynak şubenin odası;
+    çözülemezse sezon açılmaz ve şube adıyla söylenir); dev seeder şube başına oda üretiyor.
+  - **Boş hâl dalları kalktı:** `ExamRoomDeriver.DerivationResult.ClassRoomsWithoutRoom`,
+    besteleme raporundaki karşılığı, "ev dersliği tanımlı olmayan şubeler…" uyarısı ve oturum
+    DTO'sundaki `classRoomsWithoutRoom` alanı (FE tipiyle birlikte) silindi. Elle derslik
+    ekleme **duruyor** — o kapasite içindir, dersliksiz şube köprüsü değildi.
+  - **Ekran:** Yeni Şube ve Toplu Şube Aç formlarında derslik seçici; toplu açmada derslik
+    şube BAŞINA sorulur (tek odayı hepsine dayatmak fiziksel olarak yanlış veri üretirdi).
+- 🔍 **Uygulama sırasında yakalanan tuzak (aynı gün):** sezon devrinde derslik, hedef şubenin
+  ETİKETİNDEN çözülüyor. İlk yazımda anahtar `ToUpperInvariant()` ile kuruluyordu; oysa
+  `ClassRoom.NormalizeSection` yalnız **tek harfli** adları büyütür, serbest adlar ("Papatya")
+  olduğu gibi saklanır. Kaçak veritabanında görünmezdi (collation harf duyarsız) — yalnız
+  bellekteki sözlükte olurdu ve serbest adlı şubesi olan okulda devir "dersliği çözülemedi"
+  diye dururdu. Anahtar iki tarafta da büyütülerek kapatıldı.
+
+### `TB-205` · İndirme başlığı kontrol karakterini süzmüyordu — dosya adı başlığı ikiye bölebiliyordu 🟠
+
+Müfredat Dilim 2'de merkez belgesinin imzalı indirme adresi üretilirken ölçüldü (2026-09-20).
+`ContentDispositionBuilder.BuildAttachment` ASCII yedeğini üretirken süzgeci `c < 128` idi;
+CR, LF ve NUL da ASCII olduğu için **geçiyordu**. `karar\r\nx-injected: 1.pdf` adlı bir dosya
+`Content-Disposition` başlığını ikiye bölebilir (header injection). Kurucu yalnız müfredatta
+değil, **okul dosyalarının indirme yolunda da** kullanılıyor
+(`GetFileDownloadUrlQueryHandler`, `S3CompatibleStorageService`).
+
+Ölçüm: aynı adla imzalı adres istendiğinde depo (Garage) isteği **400** ile reddetti — yani kırık
+başlık gerçekten dışarı çıkıyordu. Dosya adı kullanıcı girdisidir (yükleme sırasında serbest
+metin), dolayısıyla bu bir teorik risk değildi.
+
+✅ **Kapandı** (aynı gün, `oksis-api` `a6da46d5`, dal `feat/mufredat-belge-onay`). Süzgeç
+`c is >= ' ' and < (char)127` oldu; kontrol karakterleri `_` ile değişiyor. Kanıt:
+`ContentDispositionBuilderTests.Control_characters_never_reach_the_header` (CR/LF, NUL, DEL) ve
+`CurriculumSourceStorageTests.File_name_cannot_inject_headers` (gerçek Garage üzerinden).
+Türkçe ad yolu korunuyor: ASCII yedek + RFC 5987 `filename*=UTF-8''` birlikte veriliyor.
+
+### `TB-208` · `IAuditLogger`'ın hiç uygulaması yoktu; API açılmıyordu 🟢
+
+Arayüz deponun **ilk commit'inden** beri `Oksis.Application/Common/Abstractions` altında
+duruyordu ama hiçbir uygulaması ve DI kaydı yoktu — kimse enjekte etmediği için fark
+edilmemişti. Müfredat Dilim 2 ilk tüketicisi oldu; `ValidateOnBuild` açılışta patladı ve
+**API hiç başlamadı**. Dilim 2, 3 ve 4'ün bütün handler'ları etkileniyordu.
+
+Birim testleri arayüzü mock'ladığı için sessizdi; entegrasyon testleri de kendi sahtesini
+veriyordu. Kusuru gösteren tek şey **uygulamayı ayağa kaldırmak** oldu. Bu, defterin
+"çağrılmayan uç arkasındaki kusuru saklar" dersinin bir üst basamağı: burada ekran da yoktu,
+uç da çağrılmamıştı, üstelik uygulama hiç çalıştırılmamıştı.
+
+Deponun denetim deseni modül bazlı ve **tenant kapsamlı** tablolardır (`GradeAuditEntry`,
+`HomeworkAuditEntry`, `AnnouncementAuditEntry`); müfredat kaynak hattı ise platform
+(tenant'sız) bir yüzeydir ve onlara yazamaz. Tasarım §9 kapsamı zaten **log** olarak
+tanımlıyor, §8 de operasyon loglarına 5 yıl saklama veriyor.
+
+✅ `StructuredAuditLogger` (Serilog, yapılandırılmış alanlar) yazıldı ve DI'a kaydedildi
+(oksis-api `1f7966fe`). Denetim izinin kalıcı bir tabloya taşınması gerekirse ayrı karar.
+
+### `TB-209` · Depodan gelen PDF ayrıştırılamıyordu; hata da sessizce yutuluyordu 🟢
+
+Obje deposu (S3/Garage) içeriği `Content-Length` ile birlikte **ileri-yönlü bir ağ akışı**
+olarak veriyor (`CanSeek = false`). PDF biçimi ise sondaki xref tablosundan başlayıp geriye
+atlıyor, yani rastgele erişim istiyor. Tamponlama olmadan PdfPig daha ilk adımda patlıyor ve
+uç `CURRICULUM_SOURCE_NOT_PARSABLE` diyordu — belge gayet ayrıştırılabilirken.
+
+İki kat sinsiydi: (1) birim testleri `MemoryStream` ile besliyordu, yani her zaman
+aranabilir; (2) çıkarıcı istisnayı sessizce yutuyordu, bu yüzden günlükte **hiçbir iz yoktu**.
+Gerçek sebebi bulmak için depo istemcisinin dönüş tipine bakmak gerekti.
+
+✅ Aranamayan akış belleğe alınıyor (boyut zaten 25 MB ile sınırlı), istisna günlüğe yazılıyor
+ve `ForwardOnlyStream` ile bir birim testi eklendi (oksis-api `1f7966fe`).
+
+### `TB-211` · Aynı ders aynı sınıfta hem ortak hem seçmeli olabiliyor; tekillik kuralımız bunu yasaklıyordu 🟢
+
+Merkez müfredat ekranı gerçek belgeyle denenirken çıktı (2026-09-20). 2025/05 sayılı kararın
+**Fen Lisesi** çizelgesinde `BİLİŞİM TEKNOLOJİLERİ VE YAZILIM` 9 ve 10. sınıfta **iki kez**
+geçiyor: bir kez **ORTAK** ders olarak (2 saat), bir kez **SEÇMELİ** olarak (1/(1)(2)…).
+Belgenin görüntüsüyle doğrulandı — kaynak doğru, ikisi farklı şeydir: zorunlu saat ile
+isteğe bağlı ek saat.
+
+Bizim ara alan tekilliğimiz `(çalışma, seviye, ders adı)` idi; ders TÜRÜ anahtarın dışındaydı.
+Sonuç: bu çizelge ara alana **hiç giremiyor**, uç `500` veriyordu (`ux_curriculum_import_entries_source_row`
+ihlali). Ayrıştırıcı ve doğrulayıcı doğruydu; yanlış olan **varsayımdı**.
+
+Master tarafında da aynı kusur vardı (`ux_curriculum_entries_active`): ara alan düzeltilse
+bile YAYIM adımı aynı kısıtla patlardı.
+
+✅ İki tekil indeks de ders türünü içerecek şekilde düzeltildi, doğrulayıcı anahtarı
+güncellendi, göç yazıldı ve mimari bekçilerdeki beyan yenilendi (oksis-api `b6189c76`).
+Doğrulandı: Fen Lisesi çizelgesi artık **163 satır, 0 hata** ile geçiyor.
+
+⬜ Tasarım belgesindeki "Aynı seviye ve ders için iki satır olamaz" kuralı (§Dilim 2) gerçek
+veriyle çeliştiği için güncellenmeli.
+
+✅ **2026-09-28 · açık ayak ölçüldü:** kural `domain/kavramlar/Müfredat İçe Aktarma.md`'de zaten "aynı seviye, ders **ve ders türü**" olarak güncel; eski cümle yalnız defterde kalmıştı.
+
+### `TB-212` · Kategori süpürme sessizce hiçbir şey indirmiyordu 🟢
+
+Ekran kontrolünde çıktı (2026-09-20). "Yeni belgeleri indir" düğmesi `202` dönüyor, ekran
+"Tarama başlatıldı" diyor ve kullanıcı bekliyor — ama **hiçbir belge inmiyordu**.
+
+Sebep: `MebCatalogSweepJob`, `FetchSourceDocumentCommand`'ı MediatR üzerinden çağırıyordu.
+Komut `[Tenancy(PlatformOnly)]` taşır ve arka plan işinin `HttpContext`'i, dolayısıyla
+platform kimliği yoktur. Her indirme `ForbiddenException` ile düşüyor, iş de tek tek hataları
+yutup "süpürme tamamlandı" diye kapanıyordu.
+
+Bu, defterdeki [[arka-plan-isinde-izin-kapisi]] dersinin birebir tekrarı: **izin/kapı taşıyan
+bir komut arka plan işinden çağrılamaz.** Ders kayıtlıydı ve yine de tekrar edildi — çünkü
+sweep işinin testi `ISender`'ı sahteliyordu ve sahte kapıyı hiç görmüyordu.
+
+✅ Kapı kullanıcı yüzeyinde bırakıldı; iş sistem aktörü olarak ortak `CurriculumSourceFetcher`
+servisini doğrudan çağırıyor (parmak izi/virüs/revizyon hâlâ tek nüsha). Testler artık gerçek
+servisle koşuyor (oksis-api `f3488976`). Doğrulandı: süpürme sonrası **30 belge / 24 MB**
+indirildi, önce 1 taneydi.
+
+### `TB-218` · Aynı kararın ikinci çizelgesi ara alana taşınamıyor 🟠
+
+2026-09-20'de ölçüldü (`oksis-api` @ `f3488976`, `oksis-ui` merkez müfredat yüzeyi).
+"Ara alana taşı" dialogu **her çizelge için yeni bir belge seti açıyor**
+(`packages/api/src/platform-curriculum/queries.ts:117`). Set benzersizliği ise
+(karar numarası + başlık) ikilisinde (`CreateDocumentSetCommandHandler.cs:20`).
+
+Dialog set başlığını belge başlığıyla dolduruyor ve karar numarası da aynı — çünkü
+belgedeki bütün çizelgeler **tek karara** ait. Dolayısıyla ikinci çizelge
+`409 CURRICULUM_SOURCE_SET_DUPLICATE` alıyor. Arayüz bunu biliyor ve kullanıcıya
+"Farklı bir set başlığı verin" diyor (`start-import-dialog.tsx`, `describe()`).
+
+Ölçülen belgede (2025/05 sayılı karar, `20144001_202505.pdf`) sayfa 2–7 altı ayrı
+eğitim programının çizelgesi. Altısını da taşımak için kullanıcının **altı uydurma
+set başlığı** yazması gerekiyor.
+
+Zarar: tasarımın en temel kuralı deliniyor — bir kurul kararı tek hukuki kaynaktır
+(tasarım kararı 1). Altı sete bölünen karar, kaynak izini altı ayrı yere dağıtıyor ve
+uydurulan başlıklar kalıcı kayıt oluyor. Pratikte merkez kullanıcısı bir belgenin
+yalnız ilk çizelgesini taşıyabiliyor.
+
+⬜ Belge başına tek set; kapaktan okunan karar bilgisiyle açılır ve belgedeki bütün
+çizelgeler o setin altına girer. Modal tamamen kalkar. Tasarım:
+[[meb-kaynakli-katalog-tasarimi]] §6.2.
+
+✅ **2026-09-28 · kodda kapalı olduğu ölçüldü:** müfredat Dilim 8 belge başına tek set kuruyor (`StartImportRunFromDocumentCommandHandler.EnsureDocumentSetAsync`); istemci `useStartImportFromDocument` tek çağrıyla bütün çizelgeleri o setin altına alıyor, kodda `TB-218` adıyla anılıyor.
+
+### `TB-219` · Ayrıştırıcı kategori bandını ders adına taşırıyor 🟡
+
+Aynı ölçümde çıktı (dev veritabanı, `curriculum_import_entries`). Çizelgenin sol
+sütunundaki seçmeli ders bandı bazı satırlarda ders adının içine karışıyor:
+
+| Ara alanda kayıtlı ad | Olması gereken | Bandı |
+|---|---|---|
+| `KÜLTÜR, VE SPOR SANAT TÜRK KÜLTÜR VE MEDENİYET TARİHİ` | `TÜRK KÜLTÜR VE MEDENİYET TARİHİ` | KÜLTÜR, SANAT VE SPOR |
+| `İNSAN, TOPLUM VE DEMOKRASİ VE İNSAN HAKLARI` | `DEMOKRASİ VE İNSAN HAKLARI` | İNSAN, TOPLUM VE BİLİM |
+
+Band adı iki satıra bölünmüş olarak yazıldığında (`KÜLTÜR, SANAT` / `VE SPOR`)
+sütun sınırı kayıyor ve bant metni ders hücresine sızıyor. `CategoryBands.cs`
+bandı çözüyor ama hücre okuması bandın kapladığı yatay alanı dışlamıyor.
+
+Zarar: bozulan ad, ders eşlemesinin **anahtarı**. Bu satırlar hiçbir zaman eşleşemez
+ve elle bağlansa bile yanlış adla kayıtlı kalır.
+
+✅ **2026-09-20 · aynı gün kapandı — aslında hiç açık değildi.** Plan yazılırken yeniden
+ölçüldü: kusuru `TB-217` çalışması (`CategoryBands`, henüz commit edilmemiş çalışma ağacında)
+zaten kapatmış. Kategori sütunu artık cetvel çizgisinden çözülüyor ve ayraç ders adının sol
+sınırını veriyor; sınıfın kendi belgesi bu hata sınıfını adıyla anıyor.
+
+Kanıt — `anadolu-2025-05.expected.json` golden çıktısı:
+
+| Ad | Golden'da geçiş |
+|---|---|
+| `KÜLTÜR, VE SPOR SANAT …` (çöp) | **0** |
+| `İNSAN, TOPLUM VE DEMOKRASİ …` (çöp) | **0** |
+| `TÜRK KÜLTÜR VE MEDENİYET TARİHİ` (doğru) | 6 |
+| `DEMOKRASİ VE İNSAN HAKLARI` (doğru) | 6 |
+
+Dev veritabanındaki bozuk satırlar `TB-217` öncesi koşulardan kalma **bayat veriydi**;
+ölçümü koda değil veriye dayandırmak yanılttı ([[karar-oncesi-yeniden-olcum]]). Veritabanı
+[[meb-kaynakli-katalog-tasarimi]] §8 ile zaten sıfırlanacak. ID iz bıraksın diye silinmedi;
+bir sonraki kapanış turunda arşive taşınır.
+
+### `TB-220` · Derslik hatalarının Türkçe karşılığı kataloğa yazılmamış 🟠
+
+2026-09-21'de ölçüldü. `de7ced5e` (derslik zorunlu hâle getirme) iki hata anahtarı ekledi
+ama `ErrorMessageCatalog.cs`'e cümlelerini yazmadı:
+`academic-sessions.errors.branch-room-unresolved` (`OpenSeasonFromDraftCommandHandler.cs:354`)
+ve `class-rooms.errors.invalid-room` (`CreateClassRoomCommandHandler.cs:118`).
+
+Zarar iki katlı: kullanıcı gerekçe yerine nötr bir cümle görüyordu (`X-14`), **ve**
+`ErrorMessageCatalogTests` kırmızıya düştüğü için **master'ın push kapısı kapalıydı** —
+`Oksis.Api.UnitTests` 462/463.
+
+✅ **2026-09-21 · kapandı** (`89c459b1`). İki cümle kataloğa yazıldı; 463/463 yeşil.
+
+### `D-35` · Ortak `SelectBox` boş dize anahtarlı seçeneği iletmiyordu 🟡 *(düzeltildi, commit bekliyor)*
+
+2026-09-26, `Y-06` kulüp saati yeri alanında. `SelectBox` `onChange`'i `if (next)` ile koşullandırıyordu; "Belirtilmedi" gibi
+boş dize anahtarlı seçenek seçilince değişiklik sessizce düşüyordu. Kulüp formu `none` işaretiyle geçici çözümle yazıldı,
+kök merkezi olarak düzeltildi: yalnız `null` ("Tümü") iletilmez (`filter-dropdown.tsx`). Başka kullanımda boş anahtar yok
+(ölçüldü). 🟡 Kodda düzeltildi, commit bekliyor (`oksis-ui` `feat/kulup-saati`).
+
+### `TB-257` · Domain notu öğretmen varsayılan kapasitesini 30 yazıyor, kod ve okul ayarı 40 ⚪
+
+2026-09-26 Altınay kadro/program optimizasyon raporunda ölçüldü. `domain/kavramlar/Ders Görevlendirmesi.md` ("Programı nasıl
+besliyor"): *"Boşsa okul varsayılanı (30) geçerlidir … (`K-13/3`)"*. Kodda `SchoolSettings.InitialTeacherWeeklyCapacity = 40`
+(`SchoolSettings.cs:207`, `:440-441`) ve Altınay'ın `school.school_settings.branch_teacher_default_weekly_capacity = 40`.
+`TeacherCapacityResolver` profildeki özel değer yoksa bu 40'ı okuyor. Belge ile kod arasındaki fark, kapasite uyarısının
+hangi eşikte çıkacağını yanlış anlatıyor (30 sanan yönetici 31–40 saatte uyarı bekler, çıkmaz). Aynı raporda kullanılan
+diğer semantik: kapasite yumuşak kısıt (aşım yalnız önizleme uyarısı), öğretmen için günlük azami saat kısıtı yok.
+
+⬜ Düzeltme: domain notunu 40'a çek (ya da `K-13/3` kararı 30 ise okul ayarı tohumunu 30'a indir — kullanıcı kararı); rapor:
+`raporlar/Altınay AL/OKSİS — Altınay Anadolu Lisesi Kadro ve Program Optimizasyon Raporu.md` §2.2 V10 (klasör git dışı).
+
+✅ **2026-09-28 · kapandı:** domain notu okul ayarındaki gerçek değere (40, `TB-243`) ve tek çözücüye (`TeacherCapacityResolver`) hizalandı; `K-13/3`'ün ilk 30 değerinin 2026-09-23 kararıyla değiştiği yazıldı (`oksis` `9aaf51d`).
+
+### `B-79` · Kayıt sihirbazıyla açılan öğrenci hesabı rolsüz — öğrenci giriş yapıyor ama her ekranda 403 🔴
+
+> ⛔ **ÇÖZÜLDÜ — dokunma (2026-09-26):** kod düzeltmesi yazıldı ve testli (29/29), `oksis-api` `feat/kulup-saati` çalışma ağacında commit bekliyor (6 dosya: `StudentAccountProvisioner`, `IStudentAccountProvisioner`, `EnrollStudentCommandHandler` + 3 test). Altınay verisi düzeltildi. Commit + merge sonrası arşive taşınacak.
+
+2026-09-25 Altınay kulüp hazırlığında (Y-06). 9 ve 10. sınıf öğrencileri kulübe başvurunca `POST students/me/clubs/{id}:join`
+403 döndü; `students/me/clubs/discovery` de 403. Altınay'daki **101 öğrencinin hiçbirinde rol ataması yok**; veli (151) ve
+öğretmenlerde (13) tam. Tüm dev DB'de rolsüz öğrenci hesabı yalnız Altınay'da; tohum okulların öğrenci rolleri seeder'dan
+geliyor, bu yüzden ürün yolu hiç ölçülmemişti.
+
+Kök neden: `EnrollStudentCommandHandler` → `StudentAccountProvisioner` öğrenciye hesap açıyor ama `STUDENT` rol atamasını
+yazmıyor. İzinler aktif sezonun rol atamasından çözülüyor. Veli ve öğretmen rolünü davet kabulü (`AcceptInvitation`)
+yazıyor; öğrenci davetle değil bu yoldan hesap aldığı için rolsüz kalıyor. Sonuç: öğrenci yüzündeki her izinli uç kapalı.
+
+**Kanıt (DB, 2026-09-25):** Altınay'ın 101 kaydının 101'i kayıt sihirbazından geçmiş (`enrollment_idempotency` satırı var;
+85'i 09-22, 16'sı 09-24; hepsini müdür hesabı açmış), 101'inin hesabı var, 0'ının rolü var; öğrenci daveti yok. Dev DB'de
+sihirbazla kaydedilmiş başka öğrenci **yok**: tohum okulların STUDENT atamaları `IdentityDevSeeder`'dan (created_by boş Guid).
+Provisioner 2026-06-30'da (`8356089c`) rolsüz yazılmış, testleri yalnız hesabı ölçüyordu; domain notu ("Ortaokul ve lisede hesap
+kayıtla birlikte açılır") da rolden söz etmiyor. Sihirbaz yolu ilk kez gerçek okulda koştu ve öğrenci girişi yalnız "giriş
+oluyor mu" diye denendi, izinli bir uç çağrılmadı — "eksik ekran eksik yetkiyi gizler" dersi.
+
+🟡 **Kodda düzeltildi, commit bekliyor** (dal `fix/ogrenci-rolu`): provisioner hesapla birlikte kayıt sezonunun `STUDENT`
+rolünü yazar; sistem rolü yoksa hesap da açılmaz. Testler: `StudentAccountProvisionerTests` rol atamasını ölçer.
+✅ **Mevcut veri düzeltildi (2026-09-25, kullanıcı onayıyla):** Altınay'daki 101 öğrenciye kayıt sezonunun `STUDENT` ataması
+yazıldı (`assigned_by`/`created_by` = müdür hesabı `F50D5B60…`, geri almak için bu işaret) + izin önbelleği temizlendi. Ölçüldü:
+34 öğrenci kulübe başvurdu (hepsi 200), danışmanlar onayladı; 6 kulüpte 34 aktif üyelik.
