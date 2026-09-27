@@ -370,6 +370,8 @@ Test: yancı ile aynı güne nöbetçi seçimi → rozet; kirli taslakla yayın 
 
 ✅ **2026-09-28 · (d) sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `8b81acdb`):** o gün yancı olanı nöbetçi seçmek artık ayrı anahtarla reddediliyor — `duties.errors.duty-teacher-is-reliever-same-day`: "Nöbetçi seçilen öğretmen o gün yancı olarak da görevli; bir öğretmen aynı gün hem nöbetçi hem yancı olamaz. Önce o günkü yancılığını değiştirin." Çift yancılık `reliever-already-busy`'de kaldı, cümlesi yalnız onu anlatıyor; kural gevşemedi. Altınay senaryosu entegrasyon testinde yeşil.
 
+✅ **2026-09-28 · (a)(b)(c) istemci ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `5394140`, merge bekliyor, ekranda ölçülmedi):** (a) `dutyTeacherBusyOnDay` o gün başka hücrede nöbetçi **ya da yancı** olanı "O gün dolu" işaretliyor, ipucu nedenini söylüyor (eski `dutyBusyOnDay` kaldırıldı); (b) kaydedilmemiş değişiklik varken yayın penceresi "Yayınla"yı kilitliyor, nedenini yazıyor ve "Önce Kaydet" sunuyor (kapı core'da, `dutyPublishBlock`); (c) onaylı "Değişiklikleri At" düğmesi, yayın başarısında yerel taslak imza değişmese de sıfırlanıyor. Dört ayak da kodda — madde merge + ekran ölçümüyle kapanır.
+
 ### `D-39` · Nöbet çizelgesi ve Yük Raporu'nda "2026-2027" seçicisi işlevsiz ⚪
 
 Altınay saha testi (C2.1, 2026-09-27). Çizelge araç çubuğunda takvim simgesi + sezon adı + aşağı ok taşıyan bir düğme
@@ -468,6 +470,8 @@ penceresinden 9 bölge Playwright'la girilirken ölçüldü.
 ⬜ Kapatma yolu: Simge satırı kaldırılır (ya da gerçekten ayrı alan olur ve gönderilir); `icon` kolonu için karar;
 stepper düğmelerine `aria-label`, çiplere `aria-pressed`; şablon ya pencereye eklenir ya domain notundan düşülür.
 
+✅ **2026-09-28 · 1. ve 2. ayak kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `2daa11b`, merge bekliyor, ekranda ölçülmedi):** Simge satırı kaldırıldı; kapasite −/+ düğmelerine `aria-label`, tür çiplerine `aria-pressed`, Aktif anahtarına `role=switch`. ⬜ 3. ayak (`icon` kolonu, şablon) karar bekliyor.
+
 ---
 
 ## 9. Notlar 🟡
@@ -522,6 +526,8 @@ duruyordu ama defterde kaydı yoktu; ikisi ürün kararı bekliyor.
 ⬜ Kapatma yolu: tarihi test anına göre üret (ör. bugün + 7 gün) ya da şemaya saat enjekte et. Aynı sabit tarih
 kalıbı başka şema testlerinde de var mı, taranmalı.
 
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `58253db`, merge bekliyor):** test saati 2026-09-10'a sabitlendi; core/api/api-mocks takımları 2028'e sabitlenmiş saatle koşuldu, başka tarih bombası çıkmadı. core 868/868. `TB-258` ve §12'deki `TB-220` aynı kusurun kopyası, birlikte kapandı.
+
 ### `TB-258` · Ödev form şeması testi sabit tarihe bağlı; tarih geçince kırmızıya döndü 🟡
 
 2026-09-27'de `oksis-ui` `packages/core` tam koşusunda ölçüldü, `master`'da da aynı (değişiklik kenara alınarak
@@ -531,6 +537,8 @@ doğrulandı). `src/homework/schemas.test.ts` içindeki "geçerli form" örneği
 
 ⬜ Kapatma yolu: testte saati sabitle (`vi.useFakeTimers()` + `vi.setSystemTime`) ya da teslim tarihini "bugün + N gün"
 diye üret. Aynı desen başka tarih doğrulamalı testlerde de aranmalı.
+
+✅ **2026-09-28:** `TB-251` ile aynı commit'te kapandı (`58253db`).
 
 ## 11. Bildirimler 🟠
 
@@ -590,6 +598,8 @@ bombasıdır — düştüğü gün ilgisiz bir işin ortasında düşer ve o iş
 
 ⬜ Kapatma yolu: `valid` kurgusundaki tarih bugüne göreli üretilir; aynı dosyadaki diğer
 sabit tarihler de taranır. Depodaki benzer kalıplar için tek geçiş yapılmalı.
+
+✅ **2026-09-28:** `TB-251` ile aynı commit'te kapandı (`58253db`).
 
 ---
 
@@ -753,6 +763,8 @@ başka bir taslak seçilebilir.
 ⬜ Kapatma yolu: kaynak, hedeften önce başlayan en yakın sezon olarak (başlangıç tarihine göre)
 seçilir; tercihen sunucu belirler.
 
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fb00cc5`, merge bekliyor):** kaynak saf ve testli `copySourceSeason`: hedeften önce başlayan en yakın sezon (`SeasonOption.startDate`). **Varsayım:** arşivlenmiş önceki sezon da kaynak olabiliyor (eski kod dışlıyordu; sunucu kısıtlamıyor) — istenmezse tek satır.
+
 ### `D-26` · "Görevi kapat (devret)" onay istemiyor ve gerekçeyi sabit metinle yazıyor 🟡
 
 Altınay B9.2 (2026-09-23). Satır menüsündeki kırmızı *Görevi kapat (devret)* tek tıkla
@@ -761,6 +773,8 @@ görev devredilebilir."*). Kapatılan görev iz kaydına düşüyor ve geri açm
 satıra basan idareci görevi geri alamıyor, iz kaydında da gerçek sebep yazmıyor.
 
 ⬜ Kapatma yolu: onay penceresi + gerekçe alanı (sabit metin öneri olarak kalabilir).
+
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `abb1185`, merge bekliyor):** kapatma `ConfirmDialog` istiyor, gerekçe alanı sabit metinle ön dolu (kırpılır, boşsa null, ≤1000); sunucu reddi pencerede.
 
 ### `D-27` · Görevlendirme çekmecesi kayıt hatasında kapanıyor, hata başarı bildirimi gibi görünüyor 🟡
 
@@ -773,6 +787,8 @@ yazıyor (`X-01` kalıbı).
 ⬜ Kapatma yolu: hata çekmecenin içinde gösterilir, çekmece açık kalır; kopyalamada sunucu cümlesi
 geçirilir.
 
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fab4132`, merge bekliyor):** hata çekmecenin içinde, çekmece açık kalıyor; `CopyModal` sunucu cümlesini gösteriyor.
+
 ### `D-28` · Arşiv sezonda Görevlendirmeler'de satır menüsü tamamen gizleniyor ⚪
 
 Altınay B9.2 kod kontrolü (2026-09-23). `detail.tsx`'te `RowMenu` bütünüyle `h.canWrite` koşuluna
@@ -781,6 +797,8 @@ bağlı. Arşiv sezonda salt-okur ekranda yalnız *Görevi kapat* değil, **gezi
 geçiş yapamıyor.
 
 ⬜ Kapatma yolu: yalnız yazma öğesi koşula bağlanır.
+
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `1fd3f2e`, merge bekliyor):** satır menüsü her zaman çiziliyor; yalnız "Görevi kapat" `canWrite`'a bağlı.
 
 ### `TB-244` · Logosu olmayan okulda her sayfa açılışında logo ucu 404 dönüyor ⚪
 
@@ -805,6 +823,8 @@ Aynı kalıp muhtemelen Branş ve Sınav Türü kataloglarında da var (ölçül
 
 ⬜ Kapatma yolu: simge düğmelerine ad; pasife alma için onay (dersin görevlendirme/program
 kullanımı varsa onu da söyleyerek).
+
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `ec6aba8`, merge bekliyor):** ortak `AIconBtn` — satır bağlamlı `aria-label` (Ders, Branş, Sınav Türü kataloglarında ve aynı kalıbı taşıyan Zil/Tatil satırlarında); pasife alma / listeden düşürme onaylı; Sınav Türü onayı kullanımı (`isInUse`) söylüyor, ders/branşta kullanım verisi olmadığı için onay yalın.
 
 ### `E-30` · Öğrencinin pansiyon (yatılı) durumu üründe tutulmuyor 🟡
 
@@ -1382,6 +1402,8 @@ e-postanın değişmediği bilinmeli.
 öğrenci ve veliyi de kapsamalı. [[eksik-ekran-eksik-yetkiyi-gizler]] kalıbı: çağrılmayan uçta izin ve doğrulama
 da ölçülmemiş durumda.
 
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `7a93ac8`, merge bekliyor, ekranda ölçülmedi):** Kullanıcılar, Öğretmenler, Öğrenciler ve Veliler çekmecelerinde ad/soyad düzeltme penceresi (`users.update`). Uç **tam değiştirme** yaptığı için pencere önce kişiyi okuyup yalnız adı/soyadı değiştiriyor, öteki alanları aynen geri gönderiyor; istemci şeması sunucu doğrulayıcısının aynısı (2–100, harf/boşluk/kesme/tire). ⬜ Cinsiyeti boş kişide düzenleme kapalı ve nedeni yazılı (`B-71`); geri gönderilen telefon sunucu desenine uymazsa red olası (ölçülmedi); MSW'de `GET/PUT users/persons/{id}` yok.
+
 ### `TB-198` · `school_onboarding_status` ölü tablo — açılış ilerlemesi hiçbir yerde görünmüyor ⚪
 
 Altınay ölçümünde çıktı (2026-09-16). Tablo Altınay'da **6 satır** taşıyor, hepsi `Pending`. Satırları yaratan
@@ -1868,6 +1890,8 @@ kaldırılsın) — `keyof typeof SHAPES` o zaman gerçek birleşim tipine çöz
 `OksisIconName` olsun. Depoda bilinmeyen adla çizilen başka ikon olup olmadığı **şu an bilinmiyor**; ancak bu
 değişiklikten sonra ölçülebilir.
 
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `b80dec5`, merge bekliyor):** `SHAPES` `satisfies` ile, `name` tipi `OksisIconName`; core'dan `string` gelen 3 yer `isOksisIconName` koruyucusuyla. Tipin yakaladığı ve **boş çizilen** altı ad düzeltildi: `close`→`x`, `wallet`→`para`, `hand`→`userCheck`, `msg`→`mesaj`, `inbox`→`box` (3 yer), `undo`→`move`.
+
 ---
 
 ### `TB-203` · Entegrasyon paketinin yarısı master'da kırmızı — üç tenant'laştırma commit'i test fixture'larını güncellemedi 🟠
@@ -2098,6 +2122,8 @@ koyuyor — yani idari personel için gelen tek değer, ekranın çeviremediği 
 ⬜ **Kapatma yolu:** `staff` istemci tipine ve etiket tablosuna eklenmeli ("İdari Personel").
 Bugünkü hâliyle sütun, "profil bağlanmamış" ile "profili ekranın tanımadığı tipte" durumunu
 ayırt edilemez kılıyor — [[serilesmis-sekil-sozlesmedir]] ile aynı sınıftan bir sessiz kayıp.
+
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `78fe886`, merge bekliyor):** `staff` istemci tipine ve etiketlere "İdari Personel" olarak girdi; modül ekranı olmadığı için profile git düğmesi çizilmiyor.
 
 ### `TB-221` · Ders kataloğu okul kapsamına taşınınca dev seed testi kaldı ⚪
 
@@ -2398,6 +2424,8 @@ bastığında hiçbir şey olmuyor sanıyor. Aynı pencerede "Raporlu" seçilinc
 
 ⬜ Kapatma yolu: kural tek yerde — ya açıklama gerçekten isteğe bağlı olur (sunucu gevşer) ya da alan zorunlu işaretlenir ve
 istemci şeması aynı kuralı uygular; her iki durumda da pencere sunucu hatasını (`mutationErrorDesc`) göstermeli.
+
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `8c180e1`, merge bekliyor):** kural sunucuda olduğu için istemci ona uyuldu: açıklama zorunlu (ortak şema, web + mobil), sunucu reddi pencerede, MSW 400'ü aynalıyor.
 
 ### `TB-259` · Kulüp saati yoklaması: alınmayan kulüp saati hiçbir listeye düşmüyor; idarenin düzeltmesi kulüp listesine yansımıyor 🟡
 
