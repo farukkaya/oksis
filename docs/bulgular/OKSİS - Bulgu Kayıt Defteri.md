@@ -239,16 +239,16 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 12 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 40 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 39 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **145** | |
+| **Toplam** | **144** | |
 
 > **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
 > yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. `D-32` (kart rozetlerinin ders adına binmesi)
 > kullanıcı kararıyla kabul edilen durum sayıldı ve defterden silindi; ID yeniden kullanılmaz. `B-67` kuruluma geçiş kararıyla
-> kapandı (Arşiv §64). Yeniden sayım: **145** blok.
+> kapandı (Arşiv §64). `B-80` okul çapında yük dengesiyle kapandı (Arşiv §65). Yeniden sayım: **144** blok.
 >
 > **Arşiv turu (2026-09-27):** ders programının master'da doğrulanan 3 maddesi arşive taşındı (Arşiv §62: `B-66`, `B-78`,
 > `TB-123`). `TB-236` defterde birebir iki kez yazılmıştı; kopya silindi. Sayılar `grep '^### \`'` ile yeniden sayıldı: **149**
@@ -276,7 +276,7 @@ sayaçlar üçü arasında ortak.
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
 > duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
-**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 127 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 126 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
 
 > **2026-09-16 gece düzeltme turu sürüyor.** Kodda düzeltilip **commit bekleyen** maddeler (dallar
 > `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`): `TB-174`, `D-19`,
@@ -4034,29 +4034,6 @@ rolünü yazar; sistem rolü yoksa hesap da açılmaz. Testler: `StudentAccountP
 ✅ **Mevcut veri düzeltildi (2026-09-25, kullanıcı onayıyla):** Altınay'daki 101 öğrenciye kayıt sezonunun `STUDENT` ataması
 yazıldı (`assigned_by`/`created_by` = müdür hesabı `F50D5B60…`, geri almak için bu işaret) + izin önbelleği temizlendi. Ölçüldü:
 34 öğrenci kulübe başvurdu (hepsi 200), danışmanlar onayladı; 6 kulüpte 34 aktif üyelik.
-
-### `B-80` · Otomatik üretimde "kapasiteye göre dengeli" öğretmen seçimi her kademe × ders için sıfırdan başlıyor; yük okul çapında dengelenmiyor 🟠
-
-Altınay ölçümü (2026-09-27). Kadroya 1 Matematik, 1 TDE, 1 Tarih öğretmeni eklendi, bütün programlar silindi ve 11 şube
-kısıtsız, "Tümü" kapsamıyla birlikte üretildi. Matematik havuzu 70 saat, üç öğretmenin kapasitesi eşit (40). Önerilen adayda
-yükler **32 / 31 / 10** çıktı. Tarihte iki öğretmen **26 / 16**. En yüklü matematikçide 4 saat yerleşemedi ("öğretmen başka
-şubede"), en az yüklü olan ise haftada 10 ders saatinde kaldı. Toplam eksik 12 saatin en az 5'i doğrudan bu dengesizlikten.
-
-Kök neden (`CompetencyAssignmentSource.PickTeacher`, K-13/2): simülasyon yalnız **aynı kademede, aynı dersin** 0..index
-şubelerini sayar. Her (kademe × ders) çifti için sayaç sıfırdan başlar ve eşitlikte kimlik sırası kazanır. Bu yüzden:
-- Kimliği en küçük aday **her kademede her dersin ilk şubesini** alır (9-A, 10-A, 11-A, 12-A matematikleri aynı kişide).
-- İkinci aday her yerde ikinci şubeyi alır. Üçüncü aday yalnız 3+ şubeli kademelerde ders görür.
-- Öğretmenin başka derslerden, başka kademelerden ve rehberlikten gelen yükü hesaba girmez.
-Sonuç, kapasiteler eşitken bile "round-robin" değil, sistematik olarak aynı kişiye yığılma. Kod yorumundaki
-"Kapasiteler eşitken dizi round-robin ile birebir aynıdır" cümlesi yalnız tek bir kademe × ders için doğru.
-
-Neden önemli: idareci "kısıt koymazsam üretim yükü dengeler" diye bekliyor (domain notu da öyle anlatıyor). Yeni öğretmen
-alan okulda yeni gelen neredeyse boş kalıyor ya da tersine aşırı yükleniyor. Tek düzeltme yolu şu an elle dağıtım kısıtı.
-
-⬜ Kapatma yolu: seçim kapsamdaki **bütün** talep satırları üzerinde tek birikimli yük tablosuyla yapılsın. Kademe × ders
-sınırı kalksın, öğretmenin rehberlik ve diğer ders yükü de sayılsın, eşitlik kimlik yerine mevcut yüke göre bozulsun.
-Kapsam dışındaki canlı programların yükü başlangıç yükü olarak girsin. `CompetencyAssignmentDistributionTests` bu
-davranışı kilitlediği için testler de yeniden yazılmalı. Domain notu ([[Ders Programı Yönetimi]] §6) ve kod yorumu düzeltilmeli.
 
 ### `D-31` · Native `<select>` yasağı delinmiş: web uygulamasında ~69 native seçim kutusu 🟠
 

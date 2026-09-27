@@ -57,10 +57,10 @@ Otomatik ders programı üretimi ve yayın önizlemesindeki eksik saat hesabı, 
 
 - **Şube** = programı üretilen sınıfın kendisi.
 - **Haftalık saat** = kademenin müfredatı ([[Haftalık Ders Saati]]); ders o kademede verilmiyorsa hiç aday olmaz.
-- **Öğretmen** = o sezonda derse yetkin aktif kayıtlar arasından seçilir. Tek aday varsa odur. Birden çok aday varsa kademedeki şubeler sabit sırayla (kademe → şube adı) dolaşılır ve her şube, o an **göreli doluluğu** (verilecek saat dâhil / haftalık kapasite) en düşük adaya verilir; eşitlikte kimlik sırası kazanır. Kural durum tutmaz: aynı girdi her zaman aynı çıktıyı verir. Kapasiteler eşitken sonuç dönüşümlü dağıtımla birebir aynıdır; 15 saatlik yarı zamanlı öğretmen orantılı olarak daha az şube alır (`K-13/2`).
+- **Öğretmen** = o sezonda derse yetkin aktif kayıtlar arasından seçilir. Tek aday varsa odur. Birden çok aday varsa seçim **okul çapında** yapılır: sezonun bütün şubelerinin talebi tek geçişte dağıtılır. Öğretmenin yükü bütün derslerinden birikir; sınıf rehberliği saatleri ve pin'ler başlangıç yüküdür. Önce seçeneği az olan, sonra saati büyük olan satırlar dağıtılır ve her satır, o an **göreli doluluğu** (yük + verilecek saat) / haftalık kapasite en düşük adaya verilir; eşitlikte kimlik sırası kazanır. Kural durum tutmaz: aynı girdi her zaman aynı planı verir. 15 saatlik yarı zamanlı öğretmen orantılı olarak daha az saat alır (`K-13/2`). Eski kural her kademe × ders için sayacı sıfırdan başlatıyordu ve yükü okul çapında dengelemiyordu (`B-80`).
 - **Haftalık kapasite** öğretmen profilinde tutulur (1-40 saat). Boşsa okul varsayılanı (30) geçerlidir; boş olmak eksik değil, "idare özel değer girmedi" bilgisidir. Mevcut öğretmenlere değer yazılmadı, herkes varsayılanda doğar (`K-13/3`). Kapasite **yumuşaktır**: dolsa da dağıtım durmaz, aşım yayın önizlemesinde uyarı olarak görünür.
 - [[Dağıtım Kısıtı]] seçimden önce uygulanır: pin hücrenin öğretmenini doğrudan belirler, hariç tutma adayı havuzdan düşürür.
-- Derse yetkin öğretmen yoksa satır üretilmez ve ders "yerleşmemiş" görünür — uydurma bir öğretmen atamak sessiz bir yalan olurdu.
+- Derse yetkin öğretmen yoksa satır öğretmensiz ve gerekçeli gelir; ders eksik saatte ve yerleşmemiş derslerde "görevlendirilmiş öğretmen yok" gerekçesiyle görünür (`B-66`). Uydurma bir öğretmen atamak sessiz bir yalan olurdu.
 
 ## Sezon kopyalama
 

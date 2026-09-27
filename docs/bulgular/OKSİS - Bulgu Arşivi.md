@@ -8847,3 +8847,54 @@ kurulumdaki sezona geçişe `season.update` izniyle zaten izin veriyor (`Account
 - /schedule kilit ekranı yeni metni gösterdi. Aktif Sezona Dön → 2025-2026 · 1. Dönem, kilitler kalktı.
 - Not: sihirbaz dışında açılan kurulum sezonu `cancel-setup` ile iptal edilemiyor ("Taslak bu sezona bağlı değil"). Test sezonu
   (sezon, 2 dönem, okul-program, 4 müfredat taslağı) DB'den silindi.
+
+## 65. Ders programı — okul çapında yük dengesi (2026-09-27) ✅
+
+> Kodda düzeltildi ve master'da; ölçüm gerçek veriyle algoritma canlandırmasıyla yapıldı (blokta).
+
+### `B-80` · Otomatik üretimde "kapasiteye göre dengeli" öğretmen seçimi her kademe × ders için sıfırdan başlıyor; yük okul çapında dengelenmiyor 🟠
+
+Altınay ölçümü (2026-09-27). Kadroya 1 Matematik, 1 TDE, 1 Tarih öğretmeni eklendi, bütün programlar silindi ve 11 şube
+kısıtsız, "Tümü" kapsamıyla birlikte üretildi. Matematik havuzu 70 saat, üç öğretmenin kapasitesi eşit (40). Önerilen adayda
+yükler **32 / 31 / 10** çıktı. Tarihte iki öğretmen **26 / 16**. En yüklü matematikçide 4 saat yerleşemedi ("öğretmen başka
+şubede"), en az yüklü olan ise haftada 10 ders saatinde kaldı. Toplam eksik 12 saatin en az 5'i doğrudan bu dengesizlikten.
+
+Kök neden (`CompetencyAssignmentSource.PickTeacher`, K-13/2): simülasyon yalnız **aynı kademede, aynı dersin** 0..index
+şubelerini sayar. Her (kademe × ders) çifti için sayaç sıfırdan başlar ve eşitlikte kimlik sırası kazanır. Bu yüzden:
+- Kimliği en küçük aday **her kademede her dersin ilk şubesini** alır (9-A, 10-A, 11-A, 12-A matematikleri aynı kişide).
+- İkinci aday her yerde ikinci şubeyi alır. Üçüncü aday yalnız 3+ şubeli kademelerde ders görür.
+- Öğretmenin başka derslerden, başka kademelerden ve rehberlikten gelen yükü hesaba girmez.
+Sonuç, kapasiteler eşitken bile "round-robin" değil, sistematik olarak aynı kişiye yığılma. Kod yorumundaki
+"Kapasiteler eşitken dizi round-robin ile birebir aynıdır" cümlesi yalnız tek bir kademe × ders için doğru.
+
+Neden önemli: idareci "kısıt koymazsam üretim yükü dengeler" diye bekliyor (domain notu da öyle anlatıyor). Yeni öğretmen
+alan okulda yeni gelen neredeyse boş kalıyor ya da tersine aşırı yükleniyor. Tek düzeltme yolu şu an elle dağıtım kısıtı.
+
+⬜ Kapatma yolu: seçim kapsamdaki **bütün** talep satırları üzerinde tek birikimli yük tablosuyla yapılsın. Kademe × ders
+sınırı kalksın, öğretmenin rehberlik ve diğer ders yükü de sayılsın, eşitlik kimlik yerine mevcut yüke göre bozulsun.
+Kapsam dışındaki canlı programların yükü başlangıç yükü olarak girsin. `CompetencyAssignmentDistributionTests` bu
+davranışı kilitlediği için testler de yeniden yazılmalı. Domain notu ([[Ders Programı Yönetimi]] §6) ve kod yorumu düzeltilmeli.
+
+✅ **KAPANDI (2026-09-27):** master'da (`oksis-api` `43ebf6fb`, merge `b98440a2`).
+- `CompetencyAssignmentSource` sezonun bütün şubelerinin talebini tek geçişte dağıtıyor (`Distribute`). Her şubenin satırı bu plandan
+  okunuyor; plan istek (scope) boyunca bir kez hesaplanıyor.
+- Başlangıç yükü: sınıf rehberliği satırları ve pin'ler. Sıra: önce seçeneği az olan, sonra saati büyük olan satır. Seçim:
+  (yük + saat) / kapasite en düşük aday; eşitlikte kimlik sırası.
+- Exclude hücreye özgü kalıyor. Arşivlenmiş şube plana girmiyor; sorulursa plan yükleri değişmeden seçiliyor.
+- `CompetencyAssignmentDistributionTests` yeniden yazıldı: okul çapında denge, başlangıç yükü, önce kısıtlı satır, kapasite oranı,
+  yumuşak kısıt, girdi sırasından bağımsızlık (6 test).
+- Kısıt testleri gerçek SQL'de yeşil (5). Birim 3411 yeşil. Ders programı entegrasyonundaki 12 kırmızı master'da da kırmızı
+  (yayınlanmış program okuyucu 8, `ResolveAsync` 4).
+- Domain notları ([[Ders Görevlendirmesi]], [[Ders Programı Yönetimi]]) ve kod yorumu güncellendi.
+
+**Ölçüm (Altınay gerçek verisi, pin'siz, Python'a birebir aktarılmış eski ve yeni algoritma):** Eski algoritma bugünkü kısıtsız
+üretimi birebir yeniden üretti: Matematik payı 32 / 31 / 10 (üçüncü öğretmenin 3 saat rehberliği ayrı). Yeni kuralla:
+
+| Branş | Eski | Yeni |
+|---|---|---|
+| Matematik | 32 / 31 / 13 | 26 / 25 / 25 |
+| Fizik | 27 / 9 | 18 / 18 |
+| Kimya | 24 / 10 | 18 / 16 |
+| Tarih + TYT Coğrafya | 30 / 20 | 26 / 26 |
+
+⬜ Canlı üretimle ölçülmedi: aynı derse birden çok öğretmeni olan tek okul Altınay, orada 66 pin planı belirliyor.
