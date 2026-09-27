@@ -416,6 +416,17 @@ Sonuç: yayın öğretmene bildirim gönderiyor ama öğretmen hangi gün, nered
 ⬜ Kapatma yolu: öğretmen için "Nöbetlerim" yüzeyi (web + mobil) `useMyDuties` üstüne; bildirim bağlantısı role göre o yüzeye;
 panodaki örnek nöbet kartı gerçek veriye (`K-09`).
 
+✅ **2026-09-28 web ayağı kodda (`oksis-ui` `feat/ogretmen-nobetlerim`, commit bekliyor):** öğretmen menüsüne "Nöbetlerim"
+(`/duty`, `requiresActiveSeason`) eklendi; `duty-page.tsx` rolü okuyup öğretmene `TeacherDutyScreen`, yöneticiye mevcut ekranı
+veriyor (`/exams` deseni, varsayılan dal yok — `B-34`). Ekran `useMyDuties` üstünde: yürürlükteki sürüm ve tarih, "Bugün"
+şeridi ve satır vurgusu, nöbet/yancı sayıları, haftalık liste (yönetici önizlemesinin görsel dili, E-05), yayında çizelge yokken
+ve görev yokken boş durum, "Nöbet nasıl işler?" penceresi. Dönem çözümü üç ekranda tek kancaya (`usePlanningTermId`) toplandı.
+Ekranda ölçüldü (Altınay, 28.09 Pazartesi): bir öğretmen Pzt Bahçe nöbet (Bugün vurgulu) + Per/Cum 2. Kat yancı — DB ile birebir;
+yayın bildirimine tıklayınca "Yetkiniz yok" yerine Nöbetlerim açılıyor; muaf öğretmende boş durum; müdür yönetici ekranını görüyor.
+⬜ **Açık kalan:** mobil "Nöbetlerim" (öğe `href`'siz, mobilde rota yok); öğretmenin vekâlet görevleri (`GET duties/substitution/me`
+var, istemci kancası yok); muaf öğretmene "muafsın" demek yerine genel boş durum gösteriliyor (uç muafiyet bilgisi taşımıyor);
+panodaki `K-09` örnek nöbet kartı.
+
 ### `B-87` · Yancı "öğle arasında meşgul" kontrolü öğle arası satır sırasını ders saati sanıyor — Altınay'da her gün 11 öğretmen yanlışlıkla eleniyor 🟠
 
 Altınay saha testi (C2.1, 2026-09-27). Otomatik dağıtımda yancı yükü bir öğretmene yığıldı (1 nöbet + 3 yancı); kök neden ölçüldü.
