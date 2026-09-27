@@ -240,13 +240,14 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 12 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 41 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 54 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **147** | |
+| **Toplam** | **146** | |
 
 > **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
-> yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. Yeniden sayım: **147** blok.
+> yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. `D-32` (kart rozetlerinin ders adına binmesi)
+> kullanıcı kararıyla kabul edilen durum sayıldı ve defterden silindi; ID yeniden kullanılmaz. Yeniden sayım: **146** blok.
 >
 > **Arşiv turu (2026-09-27):** ders programının master'da doğrulanan 3 maddesi arşive taşındı (Arşiv §62: `B-66`, `B-78`,
 > `TB-123`). `TB-236` defterde birebir iki kez yazılmıştı; kopya silindi. Sayılar `grep '^### \`'` ile yeniden sayıldı: **149**
@@ -274,7 +275,7 @@ sayaçlar üçü arasında ortak.
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
 > duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
-**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 129 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 128 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
 
 > **2026-09-16 gece düzeltme turu sürüyor.** Kodda düzeltilip **commit bekleyen** maddeler (dallar
 > `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`): `TB-174`, `D-19`,
@@ -4094,11 +4095,6 @@ alan okulda yeni gelen neredeyse boş kalıyor ya da tersine aşırı yükleniyo
 sınırı kalksın, öğretmenin rehberlik ve diğer ders yükü de sayılsın, eşitlik kimlik yerine mevcut yüke göre bozulsun.
 Kapsam dışındaki canlı programların yükü başlangıç yükü olarak girsin. `CompetencyAssignmentDistributionTests` bu
 davranışı kilitlediği için testler de yeniden yazılmalı. Domain notu ([[Ders Programı Yönetimi]] §6) ve kod yorumu düzeltilmeli.
-
-### `D-32` · Ders programı kartında "BLOK" ve "KURAL" rozetleri ders adının üstüne biniyor 🟡
-
-Aynı testte 9-A Salı 7–8: "Proje Tasarımı ve Uygulamaları" adı rozetlerin altında kalıp kesiliyor. ⬜ Rozetler başlıkla aynı
-akışta (sağda, sarmadan) ya da başlığın altında yer almalı.
 
 ### `D-31` · Native `<select>` yasağı delinmiş: web uygulamasında ~69 native seçim kutusu 🟠
 
