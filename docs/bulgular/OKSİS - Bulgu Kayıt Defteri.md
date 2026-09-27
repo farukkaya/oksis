@@ -240,13 +240,13 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 12 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 41 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 56 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 54 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **149** | |
+| **Toplam** | **147** | |
 
 > **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
-> yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82` aynı gün master'a merge edilip arşive taşındı. Yeniden sayım: **149** blok.
+> yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. Yeniden sayım: **147** blok.
 >
 > **Arşiv turu (2026-09-27):** ders programının master'da doğrulanan 3 maddesi arşive taşındı (Arşiv §62: `B-66`, `B-78`,
 > `TB-123`). `TB-236` defterde birebir iki kez yazılmıştı; kopya silindi. Sayılar `grep '^### \`'` ile yeniden sayıldı: **149**
@@ -274,7 +274,7 @@ sayaçlar üçü arasında ortak.
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
 > duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
-**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 131 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 129 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
 
 > **2026-09-16 gece düzeltme turu sürüyor.** Kodda düzeltilip **commit bekleyen** maddeler (dallar
 > `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`): `TB-174`, `D-19`,
@@ -4094,24 +4094,6 @@ alan okulda yeni gelen neredeyse boş kalıyor ya da tersine aşırı yükleniyo
 sınırı kalksın, öğretmenin rehberlik ve diğer ders yükü de sayılsın, eşitlik kimlik yerine mevcut yüke göre bozulsun.
 Kapsam dışındaki canlı programların yükü başlangıç yükü olarak girsin. `CompetencyAssignmentDistributionTests` bu
 davranışı kilitlediği için testler de yeniden yazılmalı. Domain notu ([[Ders Programı Yönetimi]] §6) ve kod yorumu düzeltilmeli.
-
-### `B-83` · Editörde elle yerleştirilen ders dersliksiz yazılıyor; otomatik üretim şubenin dersliğini koyuyor 🟡
-
-2026-09-27, TB-253 ekran ölçümünde (Altınay 10-A). Boş hücreye tıklanıp ders seçilince yerleşim `room_id = NULL` yazıldı. Hücrede
-"10A" etiketi kayboldu. Editör `placeMut`'a her zaman `roomId: null` gönderiyor (`editor-page.tsx`), sunucu (`PlaceLessonCommandHandler`)
-da şubenin varsayılan dersliğine düşmüyor. Oysa otomatik üretim ve sabit yerleşim planlayıcısı şubenin dersliğini yazıyor. Sonuç:
-elle yerleştirilen saatte derslik çakışması denetlenmiyor ve öğrenci/öğretmen programında derslik boş görünüyor. Tek yol, ardından
-"Derslik Değiştir" ile elle seçmek; ölçümde bu yolla geri alındı.
-
-⬜ Kapatma yolu: istek derslik taşımıyorsa sunucu şubenin dersliğini (`ClassRoom.RoomId`) kullansın. Sunucu tarafı olmalı ki API'yi
-doğrudan çağıran yollar da aynı sonucu versin. Derslik tanımsız şubede bugünkü davranış kalır (`TB-120`).
-
-### `D-36` · Yeniden yayın penceresi "v1 → v1" ve "İlk yayın — karşılaştırılacak önceki sürüm yok" diyor 🟡
-
-2026-09-27, B-81 ölçümünde (Altınay 10-A, Revize'deki v1'in yeniden yayını). Yayın penceresinin başlığı "Programı Yayınla v1 → v1",
-onay adımı "Sürüm v1 → v1" diyor. Yayın sonrası program **v2** oldu. "v1'e göre değişenler" bölümü "İlk yayın — karşılaştırılacak önceki
-sürüm yok" yazıyor. Oysa yayındaki bir v1 var ve karşılaştırılabilir. İdareci neyin değiştiğini göremeden onaylıyor. ⬜ Ölçülmedi: pencere
-sürümü mü yanlış hesaplıyor, önizleme ucu mu yanlış dönüyor.
 
 ### `D-32` · Ders programı kartında "BLOK" ve "KURAL" rozetleri ders adının üstüne biniyor 🟡
 

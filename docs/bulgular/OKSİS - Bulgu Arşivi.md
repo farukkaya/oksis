@@ -8656,9 +8656,9 @@ indiği **gerçek sağlayıcı** testiyle ölçüldü (`ScheduleProgramStatsReco
 
 ✅ **KAPANDI (2026-09-27 arşiv turu):** master'da doğrulandı — `LessonPlacement.IsLive` (`src/Oksis.Domain/Modules/Timetable/Entities/LessonPlacement.cs:94`).
 
-## 63. Ders programı — ekranda uçtan uca ölçülerek kapanan 3 madde (2026-09-27) ✅
+## 63. Ders programı — ekranda uçtan uca ölçülerek kapanan 5 madde (2026-09-27) ✅
 
-> İkisinin kodu master'da. Kapanış ölçümü Altınay 10-A'da yapıldı (kullanıcı onayıyla; içerik birebir geri alındı, bildirimsiz v2). Ölçümde açılanlar: `B-82` (aynı gün düzeltildi, burada), `B-83` ve `D-36` (defterde).
+> İkisinin kodu master'da. Kapanış ölçümü Altınay 10-A'da yapıldı (kullanıcı onayıyla; içerik birebir geri alındı, bildirimsiz v2). Ölçümde açılan `B-82`, `B-83` ve `D-36` aynı gün düzeltildi, ekranda ölçüldü ve burada.
 
 ### `B-81` · Yayınlanmış program editörde düzenlenemiyor; "Yerleştirilmemiş Dersler" kartı orada işlevsiz 🟠
 
@@ -8736,3 +8736,48 @@ bırakıyor).
 ✅ **KAPANDI (2026-09-27):** master'da (`oksis-api` `e9517eb4`, merge `46d4aa4b`). Derslik değişmediği için denetime
 derslik sorulmuyor (`roomId: null`). Yeni birim testi düzeltme olmadan kırmızı, düzeltmeyle yeşil (`EditPlacementCommandHandlerTests` 11/11).
 Canlıda ölçüldü: API yeniden başlatıldıktan sonra aynı geri dönüş ekranda geçti.
+
+### `B-83` · Editörde elle yerleştirilen ders dersliksiz yazılıyor; otomatik üretim şubenin dersliğini koyuyor 🟡
+
+2026-09-27, TB-253 ekran ölçümünde (Altınay 10-A). Boş hücreye tıklanıp ders seçilince yerleşim `room_id = NULL` yazıldı. Hücrede
+"10A" etiketi kayboldu. Editör `placeMut`'a her zaman `roomId: null` gönderiyor (`editor-page.tsx`), sunucu (`PlaceLessonCommandHandler`)
+da şubenin varsayılan dersliğine düşmüyor. Oysa otomatik üretim ve sabit yerleşim planlayıcısı şubenin dersliğini yazıyor. Sonuç:
+elle yerleştirilen saatte derslik çakışması denetlenmiyor ve öğrenci/öğretmen programında derslik boş görünüyor. Tek yol, ardından
+"Derslik Değiştir" ile elle seçmek; ölçümde bu yolla geri alındı.
+
+⬜ Kapatma yolu: istek derslik taşımıyorsa sunucu şubenin dersliğini (`ClassRoom.RoomId`) kullansın. Sunucu tarafı olmalı ki API'yi
+doğrudan çağıran yollar da aynı sonucu versin. Derslik tanımsız şubede bugünkü davranış kalır (`TB-120`).
+
+✅ **KAPANDI (2026-09-27):** master'da (`oksis-api` `4e52898b`, merge `27cc68e8`). `PlaceLessonCommandHandler`:
+istek derslik taşımıyorsa şubenin dersliği (`ClassRoom.RoomId`, artık zorunlu) kullanılır; kulüp saati dersliksiz kalır. Ev dersliği o saatte
+doluysa doluluk denetimi derslik çakışması döner (üretimdeki `SlotFeasibility` ile aynı kural). Ekran değişmedi. Birim: 2 yeni test
+(ev dersliği, açık derslik korunur). **Ekranda ölçüldü** (Altınay 10-A, kullanıcı onayıyla): Pazartesi 1 kaldırılıp tıklayarak geri
+yerleştirildi, hücre "10A" ile geldi, `room_id` şubenin dersliği.
+
+### `D-36` · Yeniden yayın penceresi "v1 → v1" ve "İlk yayın — karşılaştırılacak önceki sürüm yok" diyor 🟡
+
+2026-09-27, B-81 ölçümünde (Altınay 10-A, Revize'deki v1'in yeniden yayını). Yayın penceresinin başlığı "Programı Yayınla v1 → v1",
+onay adımı "Sürüm v1 → v1" diyor. Yayın sonrası program **v2** oldu. "v1'e göre değişenler" bölümü "İlk yayın — karşılaştırılacak önceki
+sürüm yok" yazıyor. Oysa yayındaki bir v1 var ve karşılaştırılabilir. İdareci neyin değiştiğini göremeden onaylıyor.
+
+**Kök neden (sunucu):** `GetPublishPreviewQueryHandler` `NextVersion`'ı programın mevcut sürümüyle dolduruyor, `Changes`'ı hep boş
+dönüyordu. Ekran boş listeyi "ilk yayın" diye yorumluyordu. Sürüm geçmişi penceresi de fark yokken aynı yanlış metni gösteriyordu.
+
+✅ **KAPANDI (2026-09-27):** master'da (`oksis-api` `4e52898b`/`27cc68e8` + `oksis-ui` `372ec9a`/`3bf5941`; dallar `oksis-api` `fix/elle-yerlesim-dersligi-yayin-farki` + `oksis-ui`
+`fix/yayin-onizleme-surum-farki`).**
+- `NextVersion` yayıncıyla aynı hesap: son yayın sürümü + 1.
+- `Changes` hücre farkını taşıyor: son yayın anlık görüntüsüne, yoksa yerini alacağı yayındaki programın son sürümüne göre.
+- Yeni alan `BaseVersion`: `null` ilk yayın demek. Değer var ama liste boşsa "değişiklik yok" demek.
+- Fark hesabı (`ScheduleVersionDiff`) artık hücre metnini değil ders/öğretmen/derslik kimliğini kıyaslıyor. Metin kıyası aynı adlı
+  iki öğretmeni ve bilinmeyen adları eşit sayıyordu.
+- Hücre metni ve Türkçe hücre adı ("Pazartesi 1. ders") ortak `PlacementDescriber`'da. Sürüm geçmişi farkı "Monday 1" yazıyordu.
+- Ekran: yayın penceresi "vN sürümüne göre değişenler" başlığıyla hücre ve "önce → sonra" satırı gösteriyor. Sürüm geçmişi fark yoksa
+  "Önceki sürümle aynı" diyor.
+- Birim: 4 yeni önizleme testi. Codegen yenilendi.
+
+**Ekranda ölçüldü** (Altınay 10-A):
+- Öğretmen değişince pencere "v2 → v3" dedi ve değişen hücreyi gösterdi: "Pazartesi 1. ders — Felsefe·‹alan içi öğretmen›·10A → Felsefe·‹alan dışı öğretmen›·10A".
+- Kaldırılıp aynı hâliyle geri konan hücre değişiklik sayılmadı.
+- Geri alınınca pencere "Yayındaki v2 ile aynı; hiçbir hücre değişmedi" dedi.
+- Bildirimsiz yayın → v3, 1340 bildirim değişmedi.
+- Sürüm geçmişi: v3 "Önceki sürümle aynı", v1 "İlk yayın".
