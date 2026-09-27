@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-84` · `D-38` · `V-05` · `X-24` · `TB-260` · `E-36` · `ENG-04`
+**Sıradaki boş ID:** `B-89` · `D-40` · `V-05` · `X-24` · `TB-260` · `E-36` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -239,12 +239,14 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 10 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 36 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 55 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 40 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 57 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 41 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **141** | |
+| **Toplam** | **148** | |
 
+> **2026-09-27 (Altınay C2.1):** nöbet bölgeleri ekrandan kurulurken `D-38` açıldı; bölge silinirken `B-84` açıldı ve kodda düzeltildi; ilk yayında `B-85` açıldı; `D-39` açılıp kodda kapatıldı; yayın sonrası uçtan uca kontrolde `B-86`, `B-87`, `B-88` açıldı. Toplam **148**.
+>
 > **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
 > yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. `D-32` (kart rozetlerinin ders adına binmesi)
 > kullanıcı kararıyla kabul edilen durum sayıldı ve defterden silindi; ID yeniden kullanılmaz. `B-67` kuruluma geçiş kararıyla
@@ -340,6 +342,130 @@ tatil okuyucusu yazılmadı, `TB-176`/`TB-177` sonrası tek kaynak). Testler: 4 
 doğru sürümden, muaf → yancı, yancılık kapalı → uncovered, tatil), Api 444 · Application 2711 yeşil.
 ⬜ **Açık kalan:** ucun **tüketicisi yok** — ekran yazılmadı ve oksis-ui codegen'i çalıştırılmadı.
 Defterin kendi dersi gereği (çağrılmayan uç arkasındaki kusuru saklar) madde yüzey gelene kadar kapanmaz.
+
+### `B-84` · Nöbet bölgesi silinemiyor: her silme 500 (çevrilemeyen LINQ) 🟠
+
+Altınay saha testi (C2.1, 2026-09-27). Kullanıcı 9 bölgeden 5'ini silmek istedi; *Ayarlar › Nöbet Bölge Ayarları › Sil*
+her denemede **500** döndü (kullanıcının kendi denemesi dahil, çizelge yokken). Günlük:
+`InvalidOperationException: The LINQ expression 'r => r.Assignments' could not be translated`.
+
+**Kök neden:** `DeleteDutyLocationCommandHandler` `TB-16` kullanım kapısını `DutyRosters.SelectMany(r => r.Assignments)`
+ile kuruyordu; `Assignments` EF'te `Ignore`'lu sarmalayıcı (`DutyRosterConfiguration.cs:40`), gerçek koleksiyon owned
+`_assignments` alanı. Diğer bütün nöbet sorguları `"_assignments"` adını kullanıyor, bu işleyici kullanmıyordu. İşleyicinin
+hiç testi yoktu → kapı 2026-08-17'den (`e2447923`) beri **bütün okullarda** silmeyi kapatıyordu. Ekran hatayı uyarı
+kutucuğuyla gösteriyor, pencere bilerek açık kalıyor (istemci kusuru yok).
+
+✅ **2026-09-27 kodda düzeltildi (`oksis-api` `fix/b84-nobet-yeri-silme`, commit bekliyor):** `EF.Property<List<DutyAssignment>>(r,
+"_assignments")`. Gerçek SQL'de 3 entegrasyon testi (`DeleteDutyLocationTests`: çizelgesiz silinir · yayındakinde kullanılan
+409 · yalnız taslakta kullanılan silinir); düzeltmesiz koşuda ikisi aynı çeviri hatasıyla kırmızı, düzeltmeyle 3/3 yeşil.
+Altınay'da 5 bölge ekrandan silindi (5 × 204), kalan 4 bölge doğru listeleniyor.
+
+### `B-85` · Kaydedilmemiş (ve sunucunun reddettiği) değişiklikle "Çizelgeyi Yayınla" sessizce ESKİ taslağı yayınlıyor; ekran yayından sonra da olmayan atamayı gösteriyor 🟠
+
+Altınay saha testi (C2.1, 2026-09-27), müdür hesabıyla Playwright. Otomatik dağıtım uygulandı (20 atama, taslak). Sonra
+Çarşamba › Bahçe'nin boş ikinci yerine, **o gün aynı hücrede yancı olan** öğretmen nöbetçi seçildi.
+
+1. **Seçim penceresi engellemiyor.** "O gün dolu" rozeti yalnız o gün **nöbetçi** olanları işaretliyor
+   (`packages/core/src/duty/logic.ts:82` `dutyBusyOnDay` yalnız `teacherId`'ye bakıyor); o gün **yancı** olan 4 öğretmen
+   seçilebilir. Yancı seçimi için doğru küme zaten var (`dutyActiveOnDay`, :93), nöbetçi seçiminde kullanılmıyor.
+2. **Kaydet 409 alıyor, mesaj yanıltıcı:** `PUT duties/roster` → *"Seçilen yancı o gün başka bir nöbette görevli."*
+   Kullanıcı yancı seçmedi, nöbetçi seçti. Sunucu kuralı doğru koruyor (taslak yeniden kurulurken yancı ataması düşüyor),
+   ama mesaj kullanıcının yaptığı işi anlatmıyor. Reddedilen atama ekranda kalıyor, "Kaydet" duruyor.
+3. **Asıl kusur — sessiz yanlış yayın:** "Çizelgeyi Yayınla" kaydedilmemiş değişiklik varken de açılıyor
+   (`duty-page.tsx:169-176` düğme `draftCount`'a bakmıyor; `PublishModal` yalnız `hasAssignments` alıyor). Pencere
+   uyarmıyor, "Yayınla" **sunucudaki eski taslağı** yayınlıyor (`POST duties/roster/publish` → 200). Yayın sonrası ekran
+   **"21 nöbet · v1 · 28.09.2026'dan beri yürürlükte"** diyor ve yayınlanmamış atamayı hücrede göstermeye devam ediyor;
+   "Kaydet" de duruyor. Sebep: yerel taslak yalnız sunucu çizelgesinin imzası değişince sıfırlanıyor
+   (`use-duty-editor.ts:72-78`), yayın atamaları değiştirmediği için imza aynı kalıyor. Sayfa yenilenince 20'ye dönüyor.
+   DB: yayınlanan sürüm `13b49377-…` v1, 20 atama, o hücrede yalnız ilk nöbetçi. **Öğretmenlere giden yayın bildirimi
+   ekrandaki çizelgeyi değil sunucudakini anlatıyor; yönetici ise ekranda başka bir şey görüyor.**
+
+⬜ Kapatma yolu: (a) seçim penceresi `dutyActiveOnDay` ile o gün yancı olanı da "o gün dolu" işaretlesin; (b) kaydedilmemiş
+değişiklik varken yayın ya engellensin ya da "önce kaydet" adımı zorunlu olsun (en azından pencere uyarsın); (c) kaydetme
+hatasında yerel taslak geri alınabilsin ("değişiklikleri at"); (d) 409 mesajı rolü doğru anlatsın ("X o gün bu bölgede yancı").
+Test: yancı ile aynı güne nöbetçi seçimi → rozet; kirli taslakla yayın → engel/uyarı.
+
+### `D-39` · Nöbet çizelgesi ve Yük Raporu'nda "2026-2027" seçicisi işlevsiz ⚪
+
+Altınay saha testi (C2.1, 2026-09-27). Çizelge araç çubuğunda takvim simgesi + sezon adı + aşağı ok taşıyan bir düğme
+(`cizelge-tab.tsx:96-99`), Yük Raporu'nda aynısı (`report-page.tsx:69-71`); ikisinde de `onClick` yok. Seçici gibi
+görünüyor, hiçbir şey açmıyor. Ayrıca çizelge **döneme** bağlı olduğu hâlde **sezon** adını yazıyordu.
+
+✅ **2026-09-27 kodda kaldırıldı (`oksis-ui` `feat/nobet-yuk-sekmesi`, commit bekliyor, kullanıcı kararı):** iki düğme ve
+artık kullanılmayan `periodLabel` prop'u silindi; ekranda ölçüldü. Dönem bilgisi üst çubuktaki sezon/dönem seçicisinde.
+⬜ **Açık kalan (ayrı iş, karar gerekir):** nöbet sayfası hep yürürlükteki dönemi açıyor → **2. dönemin çizelgesi dönem
+başlamadan hazırlanamıyor** (geçici muafiyetler de ancak o çizelgede işe yarar). Gerçek dönem seçici; yayın tarihi,
+"bugün" göstergesi ve vekâlet sekmesinin hangi dönemi okuyacağı kararlarıyla birlikte ele alınmalı.
+
+### `B-86` · Öğretmen kendi nöbetini hiçbir ekranda göremiyor; yayın bildirimi "Yetkiniz yok"a götürüyor 🟠
+
+Altınay saha testi (C2.1, 2026-09-27), çizelge v2 yayınlandıktan sonra öğretmen hesabıyla (Playwright) ölçüldü.
+
+- **Web:** öğretmen menüsünde nöbet sayfası yok (Panel, Yoklama, Notlar, Ödevler, Ders Programı, Sınav Takvimi, Duyurular,
+  Mesajlar, Kulüplerim). "📋 Nöbet çizelgesi güncellendi" bildirimi `/duties` → istemci `/duty`'ye çeviriyor → **"Yetkiniz
+  yok · Öğretmen rolü /duty sayfasını görüntüleyemez."**
+- **Mobil:** `MOBILE_MORE_SCHOOL_BY_ROLE.teacher` içinde "Nöbetlerim" öğesinin `href`'i yok; mobilde nöbet rotası da yok
+  (`navigate-to-target.ts:47` bunu kendisi not ediyor).
+- **Pano:** gerçek nöbet bilgisi yok; "BUGÜNKÜ NÖBET · ÖRNEK VERİ · Hakan Yüce · Ana Giriş · Kapı" gibi `K-09` örnek kartı
+  (bkz. `B-54`).
+- **Sunucu hazır:** `GET duties/me?termId=` öğretmen belirteciyle 200 ve doğru (örnek öğretmen: Pzt Bahçe nöbet, Per/Cum
+  2. Kat yancı — DB ile birebir); istemci kancası `useMyDuties` (`packages/api/src/duty/queries.ts:189`) var, **tüketicisi
+  yok**. `duties/on-duty?date=` de öğretmene 200 dönüyor (`TB-19`'un ekransız ucu).
+
+Sonuç: yayın öğretmene bildirim gönderiyor ama öğretmen hangi gün, nerede, nöbetçi mi yancı mı olduğunu göremiyor.
+⬜ Kapatma yolu: öğretmen için "Nöbetlerim" yüzeyi (web + mobil) `useMyDuties` üstüne; bildirim bağlantısı role göre o yüzeye;
+panodaki örnek nöbet kartı gerçek veriye (`K-09`).
+
+### `B-87` · Yancı "öğle arasında meşgul" kontrolü öğle arası satır sırasını ders saati sanıyor — Altınay'da her gün 11 öğretmen yanlışlıkla eleniyor 🟠
+
+Altınay saha testi (C2.1, 2026-09-27). Otomatik dağıtımda yancı yükü bir öğretmene yığıldı (1 nöbet + 3 yancı); kök neden ölçüldü.
+
+`AutoDistributeDutyJob.BuildRelieverBusyDaysAsync` ve `GetAvailableRelieversQueryHandler` (AS-2a-2) zil çizelgesindeki
+`LunchBreak` satırının `LessonOrder`'ını **ders yerleşiminin `Period`'u** ile eşliyor. Koddaki not bunu "belgelenmiş
+basitleştirme" sayıyor, ama iki alan aynı sayı uzayında değil: `lesson_placements.period` = ders numarası (1–8),
+`LessonOrder` = satır sırası.
+- **Altınay** (zil ekrandan girildi, satırlar 1–15 sıralı): öğle arası `LessonOrder=8` → **8. ders (15:10–15:50)** dersi
+  olanlar "öğlede meşgul" sayılıyor. Yayındaki programlarda gün başına 11 öğretmen (Perşembe 7) — 18 kişilik havuzun
+  yarısından fazlası yancı adaylığından düşüyor. 8. dersi hiç olmayan öğretmen her gün aday → yük ona yığılıyor.
+- **Seed okullar** (ders satırları 1–8, aralar 9–11): öğle arası `LessonOrder=10` → 10. ders yok → **kimse meşgul sayılmıyor**.
+
+Tek öğle arası olan okulda o saatte kimsenin dersi olmaz; doğru sonuç "herkes boş". Kontrolün anlamlı olduğu tek durum kademeli
+öğle arası (bazı şubeler derste, bazıları yemekte) — onu da bu eşleme ölçmüyor.
+⬜ Kapatma yolu: öğle penceresi **saat aralığı** olarak alınsın ve yerleşimin ders saatinin (zil satırından çözülen başlangıç–bitiş)
+bu aralıkla kesişip kesişmediğine bakılsın (`AttendanceDayLessons`'daki `TB-174` ordinal eşlemesi emsal); iki tüketici tek
+yardımcıya bağlansın. Test: Altınay tipi (sıralı) ve seed tipi (ayrık) zil çizelgesiyle iki senaryo.
+
+### `B-88` · Nöbet yayın bildirimi: "etkilenen" = yeni çizelgedeki bütün nöbetçiler — değişmeyene gidiyor, yalnız yancıya ve görevden çıkarılana gitmiyor 🟡
+
+Altınay saha testi (C2.1, 2026-09-27). v1 → v2'de görevi (nöbet ya da yancılık) değişen öğretmen **6**, "📋 Nöbet çizelgesi
+güncellendi" bildirimi alan **18**. Kaynak `DutyRoster.Publish` (`DutyRoster.cs:105-107`): `AffectedTeacherIds =
+_assignments.Select(a => a.TeacherId).Distinct()` — önceki sürümle fark alınmıyor, `RelieverId` hiç katılmıyor.
+Sonuçlar: (a) değişmeyen herkese gürültü; (b) **yalnız yancı** olan öğretmen hiç haber almıyor; (c) yeni sürümde görevi
+kaldırılan öğretmen haber almıyor. Yayın penceresi "Etkilenen öğretmenlere otomatik bildirim gönderilir" diyor.
+Ayrıca: teslim yalnız `in-app` (36/36); okulun e-posta/push anahtarları açık ama bu olay için o kanallarda kayıt yok —
+tasarım mı eksik mi ölçülmedi.
+⬜ Kapatma yolu: önceki canlı sürümle (nöbetçi + yancı) fark alınıp yalnız değişenlere; ilk yayında nöbetçi ∪ yancı.
+
+### `D-38` · Bölge penceresinde "Simge" seçicisi "Tür"ün kopyası; stepper ve tür çiplerinin erişilebilir adı/durumu yok; şablon hiç sunulmuyor 🟡
+
+Altınay saha testi (C2.1, 2026-09-27), müdür hesabıyla *Ayarlar › Nöbet Bölge Ayarları › Bölge ekle*
+penceresinden 9 bölge Playwright'la girilirken ölçüldü.
+
+1. **Simge seçicisi ayrı bir alan değil.** Pencerede "Tür" ve "Simge" diye iki satır var; simge düğmesine tıklamak
+   **türü** değiştiriyor (`apps/web/features/duty/region-modal.tsx:93-97`, `onClick={() => setType(k)}`). İstemci
+   `icon: null` gönderiyor (`packages/api/src/duty/endpoints.ts:108-134`, "icon türden türetildiği için null");
+   `academic.duty_locations.icon` tüm DB'de 0 dolu satır. Kullanıcı, ayrı seçtiğini sandığı simgeyle türünü
+   farkında olmadan değiştirebilir; `icon` kolonu ve DTO alanı ölü.
+2. **Erişilebilirlik:** kapasite "−"/"+" düğmelerinin adı yok (yalnız SVG, `class` da yok); tür ve simge çiplerinde
+   seçili durum yalnız `on` CSS sınıfıyla taşınıyor, `aria-pressed` yok. Otomasyonun "+" yerine "Aktif" anahtarına
+   basıp bölgeyi pasif kaydetmesi bu yüzden oldu — ekran okuyucu kullanıcısı için de aynı tuzak.
+3. **Şablon sunulmuyor:** domain notu ([[Nöbet Bölgesi]] §Şablonlar) okulun bölgeyi platform şablonundan
+   kopyalayabileceğini söylüyor, `master.duty_location_templates` 6 satır; ama istemci her zaman `templateId: null`
+   gönderiyor, pencerede şablon seçimi yok. Tür listesi (Koridor, Yemekhane, Açık Alan, Kapı, Salon, Diğer) şablon
+   listesiyle (Kapı, Koridor, Kantin, Bahçe, Spor Salonu, Merdiven) de örtüşmüyor.
+
+⬜ Kapatma yolu: Simge satırı kaldırılır (ya da gerçekten ayrı alan olur ve gönderilir); `icon` kolonu için karar;
+stepper düğmelerine `aria-label`, çiplere `aria-pressed`; şablon ya pencereye eklenir ya domain notundan düşülür.
 
 ---
 
@@ -1802,6 +1928,13 @@ serbest tatil listesi **var** ("Tatil Ekle"), ama yazılmıyor (`TB-178`). Ara t
 ⬜ Ürün kararı bekliyor: (a) sezon sihirbazına ara tatil aralıkları eklenir; (b) MEB çalışma takvimi
 (ara tatil + yarıyıl) yıllık katalog olarak platformdan beslenir; (c) okul ara tatili kendisi girebilir
 (tip kilidi kalkar).
+
+➕ **2026-09-27 (Altınay C evresi hazırlık ölçümü):** (a) seçeneği yalnız sezon **açılırken** işliyor. 2026-09-22 yeniden
+kurulumunda sihirbaza ara tatil girilmemiş; DB'de Altınay'ın 2026-2027 sezonunda yalnız `SemesterBreak` (25.01–05.02.2027)
+var, `IntermediateBreak` **0 satır** (tüm DB'de de 0). Sezon açıldıktan sonra eklemenin yolu yok: `CreateHolidayCommandHandler`
+kilitli tipi reddediyor, sihirbaz tekrar çalışmıyor. Sonuç: 16–20 Kasım 2026 ve 8–12 Mart 2027 Altınay'da **iş günü** sayılıyor;
+yoklama oturumları üretilir, devamsızlık yazılır. **C4.2'yi (16 Kasım) engeller**, C1'i engellemez. Kapatma: açık sezona ara tatil
+ekleme yolu ((b) ya da (c)) ya da yönetici için sezon ayarlarından ara tatil düzenleme.
 
 ### `D-20` · Tatil Takvimi sezonsuz okulda: "— Sezonu", sabit "Aktif" rozeti, açılır açılmaz hata gösteren form 🟡
 
