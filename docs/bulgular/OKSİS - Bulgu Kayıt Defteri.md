@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-89` · `D-40` · `V-05` · `X-24` · `TB-260` · `E-36` · `ENG-04`
+**Sıradaki boş ID:** `B-90` · `D-40` · `V-05` · `X-24` · `TB-260` · `E-36` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -240,12 +240,12 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 10 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 40 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 57 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 58 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 41 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **148** | |
+| **Toplam** | **149** | |
 
-> **2026-09-27 (Altınay C2.1):** nöbet bölgeleri ekrandan kurulurken `D-38` açıldı; bölge silinirken `B-84` açıldı ve kodda düzeltildi; ilk yayında `B-85` açıldı; `D-39` açılıp kodda kapatıldı; yayın sonrası uçtan uca kontrolde `B-86`, `B-87`, `B-88` açıldı. Toplam **148**.
+> **2026-09-27 (Altınay C2.1):** nöbet bölgeleri ekrandan kurulurken `D-38` açıldı; bölge silinirken `B-84` açıldı ve kodda düzeltildi; ilk yayında `B-85` açıldı; `D-39` açılıp kodda kapatıldı; yayın sonrası uçtan uca kontrolde `B-86`, `B-87`, `B-88` açıldı; `B-87` kodda düzeltilip ölçülürken `B-89` açıldı. Toplam **149**.
 >
 > **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
 > yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. `D-32` (kart rozetlerinin ders adına binmesi)
@@ -434,6 +434,30 @@ Tek öğle arası olan okulda o saatte kimsenin dersi olmaz; doğru sonuç "herk
 ⬜ Kapatma yolu: öğle penceresi **saat aralığı** olarak alınsın ve yerleşimin ders saatinin (zil satırından çözülen başlangıç–bitiş)
 bu aralıkla kesişip kesişmediğine bakılsın (`AttendanceDayLessons`'daki `TB-174` ordinal eşlemesi emsal); iki tüketici tek
 yardımcıya bağlansın. Test: Altınay tipi (sıralı) ve seed tipi (ayrık) zil çizelgesiyle iki senaryo.
+
+✅ **2026-09-27 kodda düzeltildi (`oksis-api` `fix/b87-yanci-ogle-penceresi`, commit bekliyor):** tek kaynak
+`BellDayTemplates.LunchPeriodsAsync` — şablonun öğle arasıyla **saatçe kesişen** derslerin ordinal numaraları (yarı açık
+aralık); `GetAvailableRelieversQueryHandler` ve `AutoDistributeDutyJob.BuildRelieverBusyDaysAsync` buna bağlandı, AS-2a-2
+notu kaldırıldı. Testler: saf çekirdek birim testi (sınırda kesişmez / kademeli öğle / iki derse taşan pencere); yeni
+entegrasyon testi Altınay'ın zil biçimiyle (8 ders, aralar sıra tüketir, öğle 8. satır) — **düzeltmesiz kodda kırmızı**
+(8. dersi olan öğretmen yancı listesinden düşüyordu), düzeltmeyle yeşil. `GetAvailableRelieversTests` ve TB-174'ün iki
+öğle testi eski varsayımı kodluyordu (yalnız öğle satırı, ders zili yok / öğle hiçbir dersle kesişmiyor); kademeli öğle
+senaryosuna çevrildi, TB-174'ün "şablon başına öğle" iddiası korundu. İlgili 19 entegrasyon testi yeşil.
+✅ **2026-09-28 Altınay'da ölçüldü** (API yeni kodla, otomatik dağıtım önizlemesi, uygulanmadı — yayındaki v2 değişmedi):
+aynı politika (1 gün/hafta, yancılık açık), 20 nöbet / 20 yancı / 0 eksik. Düzeltme öncesi ilk dağıtım: kişi başı yancı
+**0–3**, toplam yük **1–4** (bir öğretmen 1+3). Düzeltme sonrası: yancı **0–2**, toplam yük **1–3**; en yüklü öğretmen
+4'ten 3'e indi. Kalan dengesizlik ayrı kusur: `B-89`.
+
+### `B-89` · Otomatik dağıtımda yancı seçimi nöbet yükünü saymıyor — toplam yük 1–3 (ideal 2–3) 🟡
+
+Altınay saha testi (C2.1, 2026-09-28), `B-87` düzeltmesinden sonra ölçüldü. 18 öğretmene 20 nöbet + 20 yancı = 40 görev
+düşüyor; dengeli dağılım 14 kişiye 2, 4 kişiye 3 görev (aralık **2–3**). Çözücü **1–3** üretti: 6 öğretmen 3 görev (ikisi
+2 nöbet + 1 yancı), iki öğretmen yalnız 1 nöbet, 0 yancı. Kök neden `DutySolver` adım (3): yancı adayı yalnız
+`relieverCount`'a göre sıralanıyor (`OrderBy(r => relieverCount[r]).ThenBy(r => r)`), öğretmenin o haftaki **nöbet sayısı**
+hesaba katılmıyor; eşitlik GUID sırasıyla bozuluyor. Adalet metriği de (`MinLoad`/`MaxLoad`, ekrandaki "Denge 1–2") yalnız
+nöbeti sayıyor, yancıyı saymıyor — ekran "dengeli" derken Yük & Adalet sekmesi "dengesiz" gösteriyor.
+⬜ Kapatma yolu: yancı seçiminde birincil ölçüt toplam görev (nöbet + yancı), ikincil yancı sayısı; adalet metriği yancılık
+açıkken toplam görevi ölçsün. Test: 18 öğretmen × 20 hücre senaryosunda toplam yük aralığı ≤ 1.
 
 ### `B-88` · Nöbet yayın bildirimi: "etkilenen" = yeni çizelgedeki bütün nöbetçiler — değişmeyene gidiyor, yalnız yancıya ve görevden çıkarılana gitmiyor 🟡
 
