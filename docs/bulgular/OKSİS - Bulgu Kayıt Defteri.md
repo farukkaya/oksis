@@ -239,15 +239,16 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 12 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 41 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 40 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **146** | |
+| **Toplam** | **145** | |
 
 > **Kapanış (2026-09-27, ikinci tur):** `B-81` ve `TB-253` ekranda uçtan uca ölçülüp arşive taşındı (Arşiv §63). Ölçümde üç
 > yeni madde açıldı: `B-82`, `B-83`, `D-36`. `B-82`, `B-83` ve `D-36` aynı gün master'a merge edilip arşive taşındı. `D-32` (kart rozetlerinin ders adına binmesi)
-> kullanıcı kararıyla kabul edilen durum sayıldı ve defterden silindi; ID yeniden kullanılmaz. Yeniden sayım: **146** blok.
+> kullanıcı kararıyla kabul edilen durum sayıldı ve defterden silindi; ID yeniden kullanılmaz. `B-67` kuruluma geçiş kararıyla
+> kapandı (Arşiv §64). Yeniden sayım: **145** blok.
 >
 > **Arşiv turu (2026-09-27):** ders programının master'da doğrulanan 3 maddesi arşive taşındı (Arşiv §62: `B-66`, `B-78`,
 > `TB-123`). `TB-236` defterde birebir iki kez yazılmıştı; kopya silindi. Sayılar `grep '^### \`'` ile yeniden sayıldı: **149**
@@ -275,7 +276,7 @@ sayaçlar üçü arasında ortak.
 > hizalandı; bugünkü dokuz yeni madde de bu gerçek sayımın üstüne eklendi. Kapanmış maddeler hâlâ defterde
 > duruyor (merge sonrası arşive taşınacak), yani bu sayı "açık iş" değil "defterdeki blok" sayısıdır.
 
-**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 128 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
+**Modül dağılımı:** Notlar 5 · Ödevler 7 · Bildirimler 5 · Nöbet 1 · Çapraz kesen 127 (sınav, okul açılışı, platform kimliği ve ders programı maddeleri dahil)
 
 > **2026-09-16 gece düzeltme turu sürüyor.** Kodda düzeltilip **commit bekleyen** maddeler (dallar
 > `oksis-api` `fix/ilk-sezon-acilisi`, `oksis-ui` `fix/davet-olu-riza-anahtarlari`): `TB-174`, `D-19`,
@@ -3890,45 +3891,6 @@ aktifleştirmede herhangi bir seviyede fark varsa uyarı ve **engel**.
 - Görevlendirme kapsamı sezon müfredatından (saat > 0).
 - Commit'ler: oksis-api `9cdd1645`, `12ced2f0` · oksis-ui `0451028`.
 
-### `B-67` · Ders Programı, Nöbet, Şubeler ve Görevlendirmeler web ekranları kurulumdaki sezonu hedeflemiyor 🟠
-
-2026-09-24 sezon–menü ön incelemesinde ölçüldü
-([[sezon-durumuna-gore-menu-erisimi]] §3.2). Bu dört ekran sezon **kurulumunun** araçlarıdır ve
-backend kurulumdaki sezonu kabul ediyor: şube ve nöbet yalnız arşivi reddeder
-(`CreateClassRoomCommandHandler.cs:46-49`, `SaveDutyRosterDraftCommandHandler.cs:21-34`),
-program ve görevlendirme sezon id'sini açıkça alır. Web tarafı ise:
-
-1. `schedule-page.tsx:63-72` dönemi `useCurrentSession()`'dan alıyor; bu yalnız **aktif**
-   sezonu döndürür. İlk sezonda dönem `null`, program listesi sorgusu çalışmıyor, "Yeni" ile
-   program `academicTermId: ""` gönderilerek oluşturuluyor (:133). Aynı kalıp
-   `availability-page.tsx:58-69`, `editor-page.tsx:160-191`, `duty-page.tsx:69-84`.
-2. Şubeler (`sections-page.tsx:56-62`) ve Görevlendirmeler (`teacher-assignments-page.tsx:56-65`)
-   `myContext.activeSeasonId`'yi kullanıyor. Kurulumdaki sezon seçilemediği için
-   (`season-context-picker.tsx:325-327`) bu ekranlar onu hiç gösteremiyor.
-
-Sonuç: sezon geçişinde (eski sezon aktif) bu ekranlar **eski** sezona yazıyor; ilk sezonda
-hiçbiri kurulumdaki sezonla çalışmıyor. Müfredat ekranı doğru emsaldir: `sessionId`
-verilmediğinde sunucu kurulumdaki sezonu kullanır (`curriculum-page.tsx:45-51`).
-
-
-🔎 **Altınay'da ölçüldü (2026-09-24, kullanıcı ekran görüntüsüyle bildirdi):** Görevlendirmeler "Aramaya uyan öğretmen
-yok" gösteriyor, sayaçlar 0/0/0. Üst çubuk "2026-2027 · Kurulumda" diyor ama müdürün oturum bağlamında
-`activeSeasonId = null` (`auth/me/context`). Sayfa sezonsuz istek atıyor, sunucu `IsCurrent` sezona düşüyor, Altınay'ın
-tek sezonu `Setup`/`is_current=0` olduğu için liste boş dönüyor. Aynı uç (`GET assignments/teachers`):
-**sezonsuz 0 öğretmen, `sessionId=42C3DFCF…` ile 13 öğretmen.** Etki: Altınay B6.2'nin son ölçümü ve B9 görevlendirme
-turu bu ekrandan yapılamıyor.
-
-🔄 **Kısmi karar ve uygulama (2026-09-24, kullanıcı):** Görevlendirmeler ve yöneticinin Ders Programı aktif sezon yokken
-**menüde ve rotada kilitli** (`oksis-ui` `a5f719c` + `47dff02`, master'da `5a37114`; `nav-config.ts` `requiresActiveSeason`).
-Programın gerekçesi: program görevlendirmelerden üretiliyor. Altınay'da ölçüldü: menüde soluk; doğrudan adres
-"Sezon kurulumda" ekranını ve "Sezonu Aktifleştir" düğmesini gösteriyor. Core nav testleri 40/40.
-**Nöbet (aynı gün, ikinci karar):** Nöbet & Vekâlet de kilitli. Sezondan bağımsız kısmı (bölgeler, politika,
-muafiyet) **Ayarlar › Nöbet Bölge Ayarları** sekmesine taşındı (`DutyZonesSettings`). Nöbet ekranı iki sekmeye indi,
-boş bölge durumu Ayarlar'a yönlendiriyor. Altınay'da ölçüldü: kurulumdaki sezonda sekme çiziliyor, menüde üç öğe de
-devre dışı. Core nav testleri yeşil.
-⬜ **Açık kalan:** Sınıflar & Şubeler hâlâ açık ve kurulumdaki sezonu hedefleyemiyor. Aynı karar mı uygulanacak,
-yoksa ekran sezon seçebilir mi olacak? Karar bekliyor. Ek olarak kilit, okulun sezonu açmadan
-görevlendirme planlamasını engelliyor. Bilinçli bir sıra kısıtı: önce sezon aktifleştirilir.
 ### `X-22` · İlk sezonda kullanıcı oluşturma, dosya yükleme ve öğrenci kaydı aktif sezon istiyor 🟠
 
 2026-09-24 sezon–menü ön incelemesinde ölçüldü

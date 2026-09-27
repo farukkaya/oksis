@@ -8781,3 +8781,69 @@ dönüyordu. Ekran boş listeyi "ilk yayın" diye yorumluyordu. Sürüm geçmiş
 - Geri alınınca pencere "Yayındaki v2 ile aynı; hiçbir hücre değişmedi" dedi.
 - Bildirimsiz yayın → v3, 1340 bildirim değişmedi.
 - Sürüm geçmişi: v3 "Önceki sürümle aynı", v1 "İlk yayın".
+
+## 64. Sezon kurulumu — kuruluma geçiş kararıyla kapanan madde (2026-09-27) ✅
+
+> Kullanıcı kararı: yönetici kurulumdaki sezona geçer, aktif sezon modülleri o sırada kilitli. Ekranda DEV-OKUL'da ölçüldü.
+
+### `B-67` · Ders Programı, Nöbet, Şubeler ve Görevlendirmeler web ekranları kurulumdaki sezonu hedeflemiyor 🟠
+
+2026-09-24 sezon–menü ön incelemesinde ölçüldü
+([[sezon-durumuna-gore-menu-erisimi]] §3.2). Bu dört ekran sezon **kurulumunun** araçlarıdır ve
+backend kurulumdaki sezonu kabul ediyor: şube ve nöbet yalnız arşivi reddeder
+(`CreateClassRoomCommandHandler.cs:46-49`, `SaveDutyRosterDraftCommandHandler.cs:21-34`),
+program ve görevlendirme sezon id'sini açıkça alır. Web tarafı ise:
+
+1. `schedule-page.tsx:63-72` dönemi `useCurrentSession()`'dan alıyor; bu yalnız **aktif**
+   sezonu döndürür. İlk sezonda dönem `null`, program listesi sorgusu çalışmıyor, "Yeni" ile
+   program `academicTermId: ""` gönderilerek oluşturuluyor (:133). Aynı kalıp
+   `availability-page.tsx:58-69`, `editor-page.tsx:160-191`, `duty-page.tsx:69-84`.
+2. Şubeler (`sections-page.tsx:56-62`) ve Görevlendirmeler (`teacher-assignments-page.tsx:56-65`)
+   `myContext.activeSeasonId`'yi kullanıyor. Kurulumdaki sezon seçilemediği için
+   (`season-context-picker.tsx:325-327`) bu ekranlar onu hiç gösteremiyor.
+
+Sonuç: sezon geçişinde (eski sezon aktif) bu ekranlar **eski** sezona yazıyor; ilk sezonda
+hiçbiri kurulumdaki sezonla çalışmıyor. Müfredat ekranı doğru emsaldir: `sessionId`
+verilmediğinde sunucu kurulumdaki sezonu kullanır (`curriculum-page.tsx:45-51`).
+
+
+🔎 **Altınay'da ölçüldü (2026-09-24, kullanıcı ekran görüntüsüyle bildirdi):** Görevlendirmeler "Aramaya uyan öğretmen
+yok" gösteriyor, sayaçlar 0/0/0. Üst çubuk "2026-2027 · Kurulumda" diyor ama müdürün oturum bağlamında
+`activeSeasonId = null` (`auth/me/context`). Sayfa sezonsuz istek atıyor, sunucu `IsCurrent` sezona düşüyor, Altınay'ın
+tek sezonu `Setup`/`is_current=0` olduğu için liste boş dönüyor. Aynı uç (`GET assignments/teachers`):
+**sezonsuz 0 öğretmen, `sessionId=42C3DFCF…` ile 13 öğretmen.** Etki: Altınay B6.2'nin son ölçümü ve B9 görevlendirme
+turu bu ekrandan yapılamıyor.
+
+🔄 **Kısmi karar ve uygulama (2026-09-24, kullanıcı):** Görevlendirmeler ve yöneticinin Ders Programı aktif sezon yokken
+**menüde ve rotada kilitli** (`oksis-ui` `a5f719c` + `47dff02`, master'da `5a37114`; `nav-config.ts` `requiresActiveSeason`).
+Programın gerekçesi: program görevlendirmelerden üretiliyor. Altınay'da ölçüldü: menüde soluk; doğrudan adres
+"Sezon kurulumda" ekranını ve "Sezonu Aktifleştir" düğmesini gösteriyor. Core nav testleri 40/40.
+**Nöbet (aynı gün, ikinci karar):** Nöbet & Vekâlet de kilitli. Sezondan bağımsız kısmı (bölgeler, politika,
+muafiyet) **Ayarlar › Nöbet Bölge Ayarları** sekmesine taşındı (`DutyZonesSettings`). Nöbet ekranı iki sekmeye indi,
+boş bölge durumu Ayarlar'a yönlendiriyor. Altınay'da ölçüldü: kurulumdaki sezonda sekme çiziliyor, menüde üç öğe de
+devre dışı. Core nav testleri yeşil.
+⬜ **Açık kalan:** Sınıflar & Şubeler hâlâ açık ve kurulumdaki sezonu hedefleyemiyor. Aynı karar mı uygulanacak,
+yoksa ekran sezon seçebilir mi olacak? Karar bekliyor. Ek olarak kilit, okulun sezonu açmadan
+görevlendirme planlamasını engelliyor. Bilinçli bir sıra kısıtı: önce sezon aktifleştirilir.
+
+✅ **Karar (2026-09-27, kullanıcı): kuruluma geçiş açılsın.** Kalan boşluk sezon geçişiydi: eski sezon aktifken yeni sezon kurulumda.
+Sihirbaz yalnız şube yapısını kopyalıyor; yeni şube, ad, rehber ve derslik açılıştan sonra Şubeler'den yapılmalı. Ama Şubeler hep
+aktif sezonu gösteriyordu, yani yeni yılın şubeleri ancak aktifleştirmeyle (eski sezonu arşivleyerek) düzenlenebiliyordu. Ölçüldü: sunucu
+kurulumdaki sezona geçişe `season.update` izniyle zaten izin veriyor (`AccountSwitchSeasonCommandHandler`); engel yalnız ekrandaydı
+(seçicideki "sunucu kabul etmez" yorumu bayattı).
+
+✅ **KAPANDI (2026-09-27):** master'da (`oksis-ui` `136b6ba`, merge `9551144`).
+- Seçici: kurulumdaki sezon yöneticiye tıklanabilir. Üst çubuk "2026-2027 · Kurulumda" yazar, nokta uyarı renginde.
+- Kilit kuralı genelleşti (`isSeasonLocked(item, key, viewingSetup)`): okulda aktif sezon varken bakılan sezon kurulumdaysa, aktif sezon
+  isteyen bütün menü öğeleri ve rotalar kilitli.
+- Kilit ekranı bu durumda "Kurulumdaki sezona bakıyorsunuz" der ve **Aktif Sezona Dön** düğmesi sunar. Menü uyarısı da aynı.
+- Sınıflar & Şubeler değişmedi: `useWorkingSeason` zaten bağlamı izliyor.
+- Menü ve rota tek kancadan (`useSeasonLock`) besleniyor. Core testleri: 3 yeni.
+
+**Ekranda ölçüldü** (DEV-OKUL; 2026-2027 API ile kurulumda açıldı, ölçümden sonra silindi):
+- Seçicide kurulum satırı açık; geçiş 200. Üst çubuk "2026-2027 · Kurulumda".
+- Menüde 9 modül kilitli (Raporlar, Görevlendirmeler, Ders Programı, Sınav Takvimi, Nöbet, Devamsızlık, Etkinlikler, Notlar, Ödevler).
+- Sınıflar & Şubeler "Kurulumdaki 2026-2027 sezonu" başlığıyla boş listeyi ve Şube Ekle'yi gösterdi.
+- /schedule kilit ekranı yeni metni gösterdi. Aktif Sezona Dön → 2025-2026 · 1. Dönem, kilitler kalktı.
+- Not: sihirbaz dışında açılan kurulum sezonu `cancel-setup` ile iptal edilemiyor ("Taslak bu sezona bağlı değil"). Test sezonu
+  (sezon, 2 dönem, okul-program, 4 müfredat taslağı) DB'den silindi.
