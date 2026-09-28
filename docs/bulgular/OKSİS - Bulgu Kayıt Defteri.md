@@ -384,6 +384,8 @@ Test: yancı ile aynı güne nöbetçi seçimi → rozet; kirli taslakla yayın 
 
 ✅ **2026-09-28 · (a)(b)(c) istemci ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `5394140`, merge bekliyor, ekranda ölçülmedi):** (a) `dutyTeacherBusyOnDay` o gün başka hücrede nöbetçi **ya da yancı** olanı "O gün dolu" işaretliyor, ipucu nedenini söylüyor (eski `dutyBusyOnDay` kaldırıldı); (b) kaydedilmemiş değişiklik varken yayın penceresi "Yayınla"yı kilitliyor, nedenini yazıyor ve "Önce Kaydet" sunuyor (kapı core'da, `dutyPublishBlock`); (c) onaylı "Değişiklikleri At" düğmesi, yayın başarısında yerel taslak imza değişmese de sıfırlanıyor. Dört ayak da kodda — madde merge + ekran ölçümüyle kapanır.
 
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): (a) seçim penceresinde o gün başka hücrede nöbetçi ya da yancı olan öğretmenler "O gün dolu" (Pzt: 7 öğretmen); düzenlenen hücrenin kendi yancısı işaretlenmiyor — doğru, nöbetçi değişince o yancı zaten düşüyor (`use-duty-editor.ts:119`). (b)(c) kaydedilmemiş değişiklik gerektirdiği için gerçek veride denenmedi. Not: seçim penceresi Escape ile kapanmıyor (yalnız dış tıklama).
+
 ### `D-39` · Nöbet çizelgesi ve Yük Raporu'nda "2026-2027" seçicisi işlevsiz ⚪
 
 Altınay saha testi (C2.1, 2026-09-27). Çizelge araç çubuğunda takvim simgesi + sezon adı + aşağı ok taşıyan bir düğme
@@ -441,6 +443,8 @@ bölgesi" dahil) hâlâ örnek veri.
 
 ✅ **2026-09-28 · muafiyet yüzeyi kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `2ebabd9`):** web `TeacherDutyScreen` ve mobil `MyDutyScreen` dönemi tamamen kapsayan muafiyette genel boş durum yerine "Nöbetten muafsınız" + tür/tarih/gerekçe, kısmi muafiyette atamaların üstünde bilgi şeridi (`describeMyDutyExemptions`, core'da testli). Böylece defterdeki dört açık ayağın hepsi kodda; madde merge + mobil ekran ölçümüyle kapanır.
 
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): öğretmen Nöbetlerim: Pzt 1. Kat nöbet (Bugün), Per yemekhane yancı, Cum 2. Kat nöbet — çizelgeyle birebir; "Vekâlet derslerim" boş durumu. Sürekli muaf öğretmende "Nöbetten muafsınız · Sürekli muafiyet · Gerekçe: İdari Görev". 2. dönemde geçici muafiyeti olan öğretmende 1. dönem ekranı muafiyet göstermiyor (doğru). Mobil ölçülmedi.
+
 ### `B-89` · Otomatik dağıtımda yancı seçimi nöbet yükünü saymıyor — toplam yük 1–3 (ideal 2–3) 🟡
 
 Altınay saha testi (C2.1, 2026-09-28), `B-87` düzeltmesinden sonra ölçüldü. 18 öğretmene 20 nöbet + 20 yancı = 40 görev
@@ -489,6 +493,8 @@ penceresinden 9 bölge Playwright'la girilirken ölçüldü.
 stepper düğmelerine `aria-label`, çiplere `aria-pressed`; şablon ya pencereye eklenir ya domain notundan düşülür.
 
 ✅ **2026-09-28 · 1. ve 2. ayak kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `2daa11b`, merge bekliyor, ekranda ölçülmedi):** Simge satırı kaldırıldı; kapasite −/+ düğmelerine `aria-label`, tür çiplerine `aria-pressed`, Aktif anahtarına `role=switch`. ⬜ 3. ayak (`icon` kolonu, şablon) karar bekliyor.
+
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): "Bölge ekle" penceresinde Simge satırı yok; tür çipleri `aria-pressed`, "Kapasiteyi azalt/artır", Aktif `role=switch`. Kaydedilmedi. Not: Nöbet Bölge Ayarları listesindeki "Aç/Kapa · Düzenle · Sil" düğmelerinin adında bölge adı yok (`D-29` kalıbının burada uygulanmamış kardeşi).
 
 ---
 
@@ -800,6 +806,8 @@ satıra basan idareci görevi geri alamıyor, iz kaydında da gerçek sebep yazm
 
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `abb1185`, merge bekliyor):** kapatma `ConfirmDialog` istiyor, gerekçe alanı sabit metinle ön dolu (kırpılır, boşsa null, ≤1000); sunucu reddi pencerede.
 
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): "Görevi kapat (devret)" → "Görev kapatılsın mı?" penceresi, öğretmen — ders, gerekçe alanı ön dolu; Vazgeç ile kapatıldı.
+
 ### `D-27` · Görevlendirme çekmecesi kayıt hatasında kapanıyor, hata başarı bildirimi gibi görünüyor 🟡
 
 Altınay B9.2 kod kontrolü (2026-09-23). `drawer.tsx` `save()` hata kolunda `onSaved(mutationErrorDesc(err))`
@@ -840,6 +848,8 @@ döner.
 
 ✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fc759f8`, merge bekliyor):** web `active-role.tsx` ve mobil `use-portal-header.ts` (+ mobil kimlik ekranı) logoyu tek çözücüden (`resolveSchoolLogoSrc`/`resolveSchoolLogoUrl`) alıyor: bağlamdaki `schoolLogoUrl` (yöneticide okul ayarlarının `logoUrl`'i öncelikli); `null` iken istek atılmıyor, baş harfler gösteriliyor. Tarayıcıda ölçülmedi. Madde iki dal birleşince (ve codegen yeniden koşunca) ekranda 404'ün kalktığı ölçülerek kapanır.
 
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): müdür panosu ve diğer sayfalarda logo isteği hiç atılmıyor, 404 yok.
+
 ### `D-29` · Katalog satırındaki simge düğmelerinin adı yok; pasife alma tek tık ve onaysız 🟡
 
 Altınay `B-64` ekran ölçümünde yaşandı (2026-09-23). *Ayarlar › Akademik Yapı › Ders Kataloğu*
@@ -855,6 +865,8 @@ Aynı kalıp muhtemelen Branş ve Sınav Türü kataloglarında da var (ölçül
 kullanımı varsa onu da söyleyerek).
 
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `ec6aba8`, merge bekliyor):** ortak `AIconBtn` — satır bağlamlı `aria-label` (Ders, Branş, Sınav Türü kataloglarında ve aynı kalıbı taşıyan Zil/Tatil satırlarında); pasife alma / listeden düşürme onaylı; Sınav Türü onayı kullanımı (`isInUse`) söylüyor, ders/branşta kullanım verisi olmadığı için onay yalın.
+
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Ders Kataloğu satır düğmeleri "Tarih — Düzenle" / "Tarih — Pasife al" adlarını taşıyor. Pasife almanın `ConfirmDialog`'dan geçtiği kodda doğrulandı (`course-catalog.tsx:126`); gerçek veride tıklanmadı.
 
 ### `E-30` · Öğrencinin pansiyon (yatılı) durumu üründe tutulmuyor 🟡
 
@@ -1444,6 +1456,8 @@ da ölçülmemiş durumda.
 
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `7a93ac8`, merge bekliyor, ekranda ölçülmedi):** Kullanıcılar, Öğretmenler, Öğrenciler ve Veliler çekmecelerinde ad/soyad düzeltme penceresi (`users.update`). Uç **tam değiştirme** yaptığı için pencere önce kişiyi okuyup yalnız adı/soyadı değiştiriyor, öteki alanları aynen geri gönderiyor; istemci şeması sunucu doğrulayıcısının aynısı (2–100, harf/boşluk/kesme/tire). ⬜ Cinsiyeti boş kişide düzenleme kapalı ve nedeni yazılı (`B-71`); geri gönderilen telefon sunucu desenine uymazsa red olası (ölçülmedi); MSW'de `GET/PUT users/persons/{id}` yok.
 
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): çekmecede "Adı düzelt" → pencere ad/soyadı dolu açılıyor; müdürün cinsiyet kaydı boş olduğu için "değer uydurulmadan ad şu an düzeltilemez" uyarısı görünüyor (`B-71`). Kaydedilmedi.
+
 ### `TB-198` · `school_onboarding_status` ölü tablo — açılış ilerlemesi hiçbir yerde görünmüyor ⚪
 
 Altınay ölçümünde çıktı (2026-09-16). Tablo Altınay'da **6 satır** taşıyor, hepsi `Pending`. Satırları yaratan
@@ -1566,6 +1580,8 @@ bilinçli tek istisna.
 belgelendirir. Karar verilene kadar sorgunun determinist bir sıralaması olmalı.
 
 🟡 **2026-09-28 · ara koruma kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `50d9fab5`):** karar gelene kadar `PersonDirectory` sıralaması deterministik — en eski kişi (`CreatedAt`), sonra `Id`; kodda "ürün kararı değil, geçici sabit" diye belgeli, gerçek SQL'de 2 testle kilitli. ⬜ Ürün kararı (a/b/c) açık.
+
+🔴 **2026-09-28 · ekran ölçümü gece turundaki ara korumayı geri çevirdi:** Altınay'da bir öğretmenin e-postası test dışı ALTINAY-SBL'de de kayıtlı (dev DB'de tek çakışan e-posta; hesaba bağlı çift kişi 0). "En eski kişi" kuralı o öğretmenin girişini **SBL'ye** çevirdi — yönetici ekranı ve boş nöbet bölgesiyle açıldı. Master'da sırasız sorgu fiilen birincil anahtar sırasıyla dönüyor (`Include` + küme taraması) ve Altınay'a düşüyordu. Düzeltme (`oksis-api` `24469bac`): açık sıra **en küçük Id** — mevcut davranış sabitlendi, kimsenin girdiği okul değişmiyor; test oluşturulma zamanının sırayı değiştirmediğini kilitliyor. Ekranda yeniden ölçüldü: öğretmen Altınay'a giriyor. ⬜ Ürün kararı hâlâ açık — ve artık somut bir örneği var: aynı e-posta iki okulda.
 
 ### `TB-180` · Rol seed bekçisi dört gündür kırmızı; günlük test döngüsü onu hiç koşmuyor 🟡
 
@@ -2183,6 +2199,8 @@ ayırt edilemez kılıyor — [[serilesmis-sekil-sozlesmedir]] ile aynı sınıf
 
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `78fe886`, merge bekliyor):** `staff` istemci tipine ve etiketlere "İdari Personel" olarak girdi; modül ekranı olmadığı için profile git düğmesi çizilmiyor.
 
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Kullanıcılar'da müdürün Bağlı Profil sütunu "İdari Personel".
+
 ### `TB-221` · Ders kataloğu okul kapsamına taşınınca dev seed testi kaldı ⚪
 
 Aynı turda ölçüldü. `TimetableDevSeederTests` → "K-10: dev seed yetkinlik üretir ve dersleri
@@ -2497,6 +2515,8 @@ istemci şeması aynı kuralı uygular; her iki durumda da pencere sunucu hatas�
 
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `8c180e1`, merge bekliyor):** kural sunucuda olduğu için istemci ona uyuldu: açıklama zorunlu (ortak şema, web + mobil), sunucu reddi pencerede, MSW 400'ü aynalıyor.
 
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Mazeret Kaydı penceresinde "Açıklama" artık "ops." değil; "Belge · ops." kalıyor.
+
 ### `TB-259` · Kulüp saati yoklaması: alınmayan kulüp saati hiçbir listeye düşmüyor; idarenin düzeltmesi kulüp listesine yansımıyor 🟡
 
 2026-09-27, `E-34` uygulanırken ölçüldü. Kulüp saati oturumu danışmanın yoklamasından doğar (şube × kulüp, tamamlanmış). İki sınır kaldı:
@@ -2526,6 +2546,8 @@ Enter tek sonucu seçer, gün menüsünde arama yok.
 ⬜ Kalan: diğer ~65 native select'in `SelectBox`'a taşınması ve bir eslint kuralı (JSX `select` yasağı) ile kalıcı kapı.
 
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `0a9061a`…`b136c67`, merge bekliyor):** web'deki 67 native `<select>` ortak `SelectBox`/`FilterDropdown`'a taşındı; bileşen seçilemeyen madde, grup başlığı, `id`/`htmlFor`, alan + değer söyleyen erişilebilir ad, ↑/↓/Home/End ve odak dönüşü kazandı; uzun listeler aramalı. **Kalıcı kapı:** `packages/eslint-config/next.js`'te JSX `select` yasak (deneme dosyasında lint hatası ölçüldü). Davranış değişikliği: ders programı üretiminde "Seviye seçin…"e dönmek artık 0. seviye değil seçimsizlik yazıyor. Ekranda yalnız DEV hızlı giriş ölçüldü, diğer 38 ekran gezilmedi.
+
+📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): giriş ekranındaki DEV seçiciler ve Kullanıcılar süzgeçleri yeni bileşenle çalışıyor; Mazeret penceresinde native select yok.
 
 ### `B-71` · Kişi güncelleme ucu cinsiyeti zorunlu tutuyor; sihirbazın cinsiyetsiz açtığı veli güncellenemiyor 🟡
 
