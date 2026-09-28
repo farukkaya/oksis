@@ -10811,3 +10811,154 @@ rolünü yazar; sistem rolü yoksa hesap da açılmaz. Testler: `StudentAccountP
 ✅ **Mevcut veri düzeltildi (2026-09-25, kullanıcı onayıyla):** Altınay'daki 101 öğrenciye kayıt sezonunun `STUDENT` ataması
 yazıldı (`assigned_by`/`created_by` = müdür hesabı `F50D5B60…`, geri almak için bu işaret) + izin önbelleği temizlendi. Ölçüldü:
 34 öğrenci kulübe başvurdu (hepsi 200), danışmanlar onayladı; 6 kulüpte 34 aktif üyelik.
+
+## 71. Karar turu doğrulaması — kodda çözülmüş çıkan maddeler (2026-09-28) ✅
+
+> 2026-09-28 karar turunda kullanıcıya sormadan önce açık karar maddeleri koda karşı yeniden ölçüldü
+> ([[defter-maddesi-once-karar-gecmisi]] refleksi). Aşağıdaki beşi defterde açık görünüyordu ama kodda çoktan çözülmüştü.
+
+### `TB-238` · Öğretmenlik alanları ayrıştırıcısı bir sayfayı sessizce düşürüyor, bir adı ikiye bölüyor 🔴
+
+`TB-237` kapandıktan sonra kullanıcı sordu: *"bu branşa sahip öğretmenlerin hangi derslere
+girebileceği bilgisi PDF'de var mıydı?"* Var — kararın dördüncü sütunu tam olarak o. Ama
+kontrol edilince okulun **çekirdek dersi "Türk Dili ve Edebiyatı" branşsızdı**; sebebi
+aranınca ayrıştırıcıda iki ayrı kusur çıktı.
+
+**Kusur 1 · Mükerrer sütun çizgisi bütün sayfayı düşürüyor.** `ColumnsOf` dikey çizgileri
+0,1'e yuvarlayıp `Distinct()` ediyor ve sütunları **sıraya göre** okuyor (`xs[1..3]`).
+
+```
+s42/43/45 :  43,3 · 75,7 · 176,4 · 367,7 · 367,8 · 578,6        → 6 değer, doğru
+s44       :  43,3 · 75,7 · 176,2 · 176,4 · 367,7 · 367,8 · 578,6 → 7 değer, hepsi kayıyor
+```
+
+Aynı sınır 0,2 punto kayma ile iki kez çizilmiş. Ders sütununun solu `367,7` yerine `176,4`
+okunuyor, satırlar çözülemiyor ve **sayfanın tamamı düşüyor**. Hata yok, uyarı yok — belge
+bütün hâlde ayrıştırılınca öteki sayfalar iş gördüğü için sonuç "0 uyarı" görünüyor.
+[[eksik-ekran-eksik-yetkiyi-gizler]] ile aynı sınıf: sessiz eksik.
+
+Kayıp: 49 sayfanın 1'i (s44) ve içindeki dört alan — **Türkçe (83), Türk Dili ve Edebiyatı
+(84)**, Uçak Elektroniği, Uçak Bakım.
+
+**Kusur 2 · Hücre içi ayraç satırı ikiye bölüyor.** Satır ayıracı sütun başına ayrı parçalar
+hâlinde çiziliyor. s14'te `y=485,4`'teki çizgi yalnız program ve ders sütunlarını kat ediyor,
+ALAN sütununda parçası yok — yani satır sınırı değil, hücre içi ayraç. `BandsOf` ayrım
+yapmadığı için "Din Kültürü ve Ahlâk Bilgisi" satırı ortadan kesiliyordu:
+
+- katalogda **"Bilgisi"** adlı çöp branş açılıyor (15 ders bağıyla),
+- gerçek branş **"Din Kültürü ve Ahlâk"** diye eksik adla açılıyor.
+
+**Neden fixture yakalamadı:** golden dosya 2014 kararıydı; iki düzen de yalnız 2025
+belgesinde var. `TB-226`'nın haber verdiği risk sınıfı, bu kez öğretmenlik alanları
+tarafında gerçekleşti.
+
+✅ **2026-09-22 · kapandı.**
+- `ColumnsOf` artık yakın çizgileri **kümeliyor** (2 punto eşik) — yuvarlayıp saymıyor.
+  `367,7/367,8` çiftinin gizli kırılganlığı da böylece kapandı; bugüne kadar şans eseri
+  doğru yere düşüyordu.
+- Bant sınırı olmak için çizginin **ALAN sütununu kat etmesi** şart. Satır ayıracı her zaman
+  eder (ad o sütunda yazılı), hücre içi ayraç etmez.
+- 2025 kararının s14 + s44'ü golden fixture oldu
+  (`ogretmenlik-alanlari-2025-129.words.json`); üç test kuralı kilitliyor.
+
+**Ölçülen sonuç:** 107 → **110 alan**. "Türkçe" 14 ders, "Türk Dili ve Edebiyatı" 16 ders,
+"Din Kültürü ve Ahlâk Bilgisi" 16 ders; "Bilgisi" ve kesik "Din Kültürü ve Ahlâk" yok oldu.
+2014 fixture'ı bozulmadı (40/40).
+
+⬜ **Canlı veri bayat:** kullanıcı düzeltmeden ÖNCE içe aktardı; `master.branches` hâlâ 107
+satır ve içinde "Bilgisi" ile kesik "Din Kültürü ve Ahlâk" var, üç gerçek branş eksik.
+Yeniden işlemek eksikleri ekler ama **çöp satırları silmez** — içe aktarma idempotent ekleme
+yapar, temizlik yapmaz. Bayat satırların ne olacağı karar ister.
+
+⬜ **Ayrı kalan:** ad eşleştirme kuralları (`TB-240`, bu maddenin dışında). Okulun 24
+branşsız dersinin bir kısmı bu kusurdan değil: çizelge birleşik hücre ("Beden Eğitimi ve
+Spor/Görsel Sanatlar/Müzik"), seviye öneki ("Hazırlık Sınıfı Matematik") ve genel ad
+("Birinci Yabancı Dil") kullanıyor; karar bunları ayrı/düz/somut adlarla sayıyor.
+
+✅ **2026-09-28 · kodda çözülmüş olduğu ölçüldü (karar turu doğrulaması):** dev DB'de `master.branches` 110 satır, "Bilgisi" ya da kesik ad yok (`193c9683`). Ad eşleştirme ayağı `TB-240`'ta.
+
+### `TB-192` · Lise müfredatında Türk Dili ve Edebiyatı yok; saat şablonu kendini "doğrulanmadı" ilan ediyor 🟠
+
+Altınay B4 ölçümünde çıktı (2026-09-16). `master.curriculum_hour_templates` lise için 9–12 × 11 ders taşıyor,
+her kademe toplam **30 saat**. Ama:
+- **Türk Dili ve Edebiyatı katalogda yok.** Yalnız `TR` "Türkçe" var ve o **1–8**'e bağlı. Aynı şekilde **Müzik ve
+  Görsel Sanatlar da yalnız 1–8**'de. Yani Anadolu Lisesi'nin edebiyat ve müzik öğretmenine verilecek ders
+  katalogda **bulunmuyor**.
+- Her satırın `meb_decision` sütunu **"Doğrulanmadı — MEB çizelgesi bekleniyor"** diyor; şablon kendi doğruluğunu
+  garanti etmiyor. Toplam 30 saat duruyor, MEB ortaöğretim çizelgesinin 2026–2027 kırılımı **doğrulanmalı**.
+
+Belirtisi somut: Altınay ders kataloğunu ekrandan tamamlamak zorunda kalacak — ve bugün o ekleme `TB-191`
+yüzünden bütün okulları etkiliyor.
+
+⬜ Kapatma yolu: lise müfredat şablonu MEB çizelgesine göre tamamlanıp doğrulanmış olarak işaretlenir; eksik
+dersler kademe eşlemeleriyle birlikte katalogda yerini alır.
+
+✅ **2026-09-28 · kodda çözülmüş olduğu ölçüldü (karar turu doğrulaması):** müfredat MEB 2025/05 kararından geliyor; Türk Dili ve Edebiyatı 9–12, Müzik ve Görsel Sanatlar 9–12 + hazırlık bağlı; eski "doğrulanmadı" şablon tablosu kaldırıldı.
+
+### `TB-207` · Rehberlik saati ortaöğretim çizelgesinde müfredat satırı olarak görünmüyor ⚪
+
+Müfredat Dilim 3 ayrıştırıcısı, MEB çizelgesinin "REHBERLİK VE YÖNLENDİRME" satırını iki
+çizelge ailesinde farklı sınıflandırıyor ve bu **kaynağın kendisinden** geliyor: ilköğretim
+çizelgesinde satır zorunlu ders bloğunun içinde (ders), ortaöğretimde toplam bloğunun bir
+bileşeni (beyan). Ayıran şey konum, ve ayrım doğru — ama sonucunda ortaöğretimde haftada
+1 saatlik rehberlik ara alana **satır olarak girmiyor**.
+
+Bugün bunun görünür bir zararı yok: sezon toplam saati snapshot'tan okunuyor ve okul o saati
+kendi ek dersi olarak yazabiliyor. Ama "MEB 40 saat diyor, bizde 39 görünüyor" sorusu er geç
+gelir.
+
+⬜ Ürün kararı: rehberlik saati bir müfredat satırı mı, yoksa ayrı bir kavram mı? Karar
+verildikten sonra ayrıştırıcı ya satırı üretsin ya da fark ekranı bu bir saati açıkça
+göstersin.
+
+✅ **2026-09-28 · kodda çözülmüş olduğu ölçüldü (karar turu doğrulaması):** rehberlik saati `CurriculumGradeTotal.GuidanceHours`'ta (`9cdd1645`), fark ekranı ayrı gösterip toplama katıyor (`CurriculumGradeStates.cs:342,408`), ders programına `Homeroom` satırı giriyor (`49a0185e`).
+
+### `TB-210` · Çekirdek ders kataloğu liseyi kapsamıyor: gerçek içe aktarmada 146 ders çözülmedi ⚪
+
+2026-09-20 uçtan uca koşusunda gerçek MEB belgesi (2025/05 sayılı karar, Anadolu Lisesi
+çizelgesi) ara alana alındı: **161 satır, 0 hata**, ama ders eşlemesi yalnız **15**'inde
+öneri üretti; **146'sı `Unresolved`** kaldı. Öneri üretenler dev seed'de var olan dersler
+(Tarih, Coğrafya, Matematik, Fizik, Kimya, Biyoloji, Felsefe); kalanlar lise seçmelileri
+(Seçmeli Türk Dili ve Edebiyatı, Astronomi ve Uzay Bilimleri, Kur'an-ı Kerim, Proje Tasarımı…).
+
+Davranış **tasarıma uygun**: bilinmeyen ders otomatik master ders açmaz, çalışma
+`NeedsReview`'e düşer. Ama pratik sonucu şu: ilk gerçek yayım 146 elle karar demek.
+
+**2026-09-20 · eşleme ekranıyla yeniden ölçüldü.** Karar yükü satır bazında değil **ders
+bazındadır**: 142 satır / 123 çözülmemiş satır, yalnız **52 ayrık ders / 45 çözülmemiş ders**.
+Ekran kararı ders bazında topluyor (aynı ham ad dört sınıfta dört satır üretiyor), yani 123
+değil 45 karar. Asıl darboğaz bu değil, **katalog**: çekirdekte **21 ders** var, karara
+bağlanacak **45**. Yani çoğunun bağlanacağı bir karşılık **yok**; operatörün elinde tek
+seçenek "kapsam dışı bırak" kalıyor ve bu, çizelgeyi budayarak yayımlamak demek.
+
+⬜ Ürün kararı: çekirdek ders kataloğu MEB lise ders listesiyle önceden beslenecek mi, yoksa
+ilk içe aktarmada toplu "yeni ders aç" akışı mı eklenecek? İkincisi tasarımın "bilinmeyen ders
+otomatik açmaz" kuralını gevşetmeden, ayrı ve bilinçli bir komutla yapılabilir. **Bu karar
+verilmeden eşleme ekranı işlevsel olarak tamamlanamaz.**
+
+✅ **2026-09-28 · kodda çözülmüş olduğu ölçüldü (karar turu doğrulaması):** yayım, çözülmemiş satırlar için eksik çekirdek dersi kendisi açıyor (`f4aa30ba`, `PublishImportRunCommandHandler.cs:265-300` `OpenMissingSubjectsAsync`); katalog artık yayımdan doğuyor.
+
+### `TB-214` · Bugünkü katalogla yayım, müfredatı 44 satırdan 15 satıra düşürüyor 🟠
+
+Onay/yayım ekranı uçtan uca denendi (2026-09-20) ve `TB-210`'un bedeli **ölçülebilir** hâle
+geldi. Anadolu Lisesi çizelgesi (161 satır) ara alana alındı; çekirdek katalogda karşılığı
+olan **15** satır bağlandı, kalan **146** satır kapsam dışı bırakıldı (başka seçenek yoktu).
+Yayım sonucu:
+
+```text
+sürüm 2025-05 · 15 satır · 15 kaynak izi · 0 saat seçeneği
+LEGACY-2025.04-HIGH (44 satır) → Superseded
+```
+
+Yani yayım, lise programının **44 satırlık yer tutucu sürümünü 15 satırlık bir sürümle
+değiştirdi**. Hat teknik olarak doğru çalışıyor — sağlama tuttu, iki kişi kuralı işledi, izler
+yazıldı — ama sonuç, gerçek çizelgeden daha fakir bir müfredat.
+
+Saat seçeneğinin sıfır çıkması da aynı sebepten: seçenekli hücreler (`(1)(2)`) hep seçmeli
+derslerde ve seçmelilerin hiçbirinin katalogda karşılığı yok.
+
+⬜ `TB-210` kararı verilmeden **yayım yapılmamalı**. Karar verilene kadar ekran bu riski
+gösteriyor ("146 satır atlandı") ama engellemiyor; engellemek gerekip gerekmediği de o kararın
+parçası.
+
+✅ **2026-09-28 · kodda çözülmüş olduğu ölçüldü (karar turu doğrulaması):** aynı `f4aa30ba` ile müfredat 44 → 15 satıra düşmüyor; kalan tek kayıp onaylanmamış öneri satırları (`TB-225`).
