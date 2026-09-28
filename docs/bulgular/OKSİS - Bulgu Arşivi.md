@@ -10962,3 +10962,145 @@ gösteriyor ("146 satır atlandı") ama engellemiyor; engellemek gerekip gerekme
 parçası.
 
 ✅ **2026-09-28 · kodda çözülmüş olduğu ölçüldü (karar turu doğrulaması):** aynı `f4aa30ba` ile müfredat 44 → 15 satıra düşmüyor; kalan tek kayıp onaylanmamış öneri satırları (`TB-225`).
+
+## 72. Karar turu — kararla kapanan maddeler (2026-09-28) ✅
+
+> 2026-09-28 karar turunda kullanıcı kararıyla kapanan maddeler: `TB-240` (okul kuralı yeterli), `TB-225` (olduğu gibi),
+> `TB-259` (sınır kabul), `TB-19` (bugünkü nöbet kartı yeterli), `E-30` (pansiyon kapsam dışı).
+
+### `TB-19` · Geçici muafiyetin TÜKETİM noktası yok 🟡 *(dağıtım ayağı kapandı — 2026-08-31)*
+
+✅ **Kapanan yarı (2026-08-31, `oksis-api` @ `8ed7024`).** Dağıtım işi muafiyeti
+`CoversDay(today)` — **yöneticinin butona bastığı gün** — ile süzüyordu; koddaki yorum
+ise baştan beri *"dönem-kapsayan Temporary"* diyordu. Canlıda ölçülen tablo (2026-08-12)
+tam olarak bu ayrışmaydı: 3–14 Ağustos dönemi 12 Ağustos'ta koşturulunca 11–13 Ağustos
+muafiyetli öğretmen havuzdan düştü, 13–14 Ağustos muafiyetli düşmedi.
+`DutyExemption.CoversPeriod` eklendi: haftalık-tekrarlı çizelgeden çıkarma ölçütü
+**dönemin tamamını** kapsayan muafiyettir. Naif "kesişiyor mu" düzeltmesi testle birlikte
+elendi — beş aylık dönemde iki gün muaf olanı 20 haftalık nöbetten muaf tutardı
+(`duty_assignments` tarih değil `day_of_week` taşır). İki nöbet okuma ucunun "bugün"ü de
+UTC'den **okulun gününe** çevrildi.
+
+⬜ **Açık kalan yarı — bir YÜZEY gerekiyor, bir düzeltme değil.** `K-12` §C2 kararı
+*"öğretmen çizelgede kalsın, o tarihlerde yerine vekil geçsin"* diyor. Bunun için
+**"3 Kasım'da hangi bölgede kim nöbetçi?"** diye soran bir tüketim noktası şart ve bugün
+yok: çizelge `day_of_week` taşıyor, `GetMyDuties` tarihsiz dönüyor. Model hazır
+(`DutyAssignment.RelieverId` var), eksik olan tarih eksenli sorgu ve onu gösteren ekran.
+
+🚫 **Uç yazılıp ekran yazılmadı ve bu bilinçli:** bu tur aynı deseni üç kez ölçtü
+(`E-22`, `TB-100`, `TB-82`) — *çağrılmayan uç, arkasındaki kusuru da saklar*. Yüzey
+kararı verildiğinde ikisi birlikte yazılmalı.
+
+➕ **2026-09-16 · sunucu ayağı kapandı, madde EKRAN için açık kalıyor (gece turu, commit bekliyor).**
+Tarih eksenli tüketim yüzeyi yazıldı: `GetOnDutyForDateQuery` → `GET duties/on-duty?date=…`
+(`duties.view`, yeni izin ve göç gerekmedi). Kurallar: sürüm seçimi `Published ∪ Superseded` +
+`EffectiveFrom <= date <= EffectiveTo` ve **kapanış gününde ardıl sürüm kazanır** (yayın, canlı sürümü
+ardılın `EffectiveFrom`'uyla kapattığı için o gün iki sürüme birden düşüyor — testle ölçüldü); muafiyet
+ölçütü tüketim anı metodu `CoversDay` (dağıtımın `CoversPeriod`'u değil) ve muaf öğretmen çizelgeden
+**düşmüyor**, satırda işaretleniyor; vekâlet `RelieverId` ile çözülüyor, yancı da muafsa ya da okul
+parametresi kapalıysa satır `uncovered` — açık nöbet sessizce kaybolmuyor. **`ISchoolCalendarService`
+Duties'e ilk kez bağlandı:** tatilde "kimse nöbetçi değil" ile "o gün okul yok" artık ayrı (ikinci bir
+tatil okuyucusu yazılmadı, `TB-176`/`TB-177` sonrası tek kaynak). Testler: 4 senaryo yeşil (geçmiş tarih
+doğru sürümden, muaf → yancı, yancılık kapalı → uncovered, tatil), Api 444 · Application 2711 yeşil.
+⬜ **Açık kalan:** ucun **tüketicisi yok** — ekran yazılmadı ve oksis-ui codegen'i çalıştırılmadı.
+Defterin kendi dersi gereği (çağrılmayan uç arkasındaki kusuru saklar) madde yüzey gelene kadar kapanmaz.
+
+✅ **Karar (2026-09-28, kullanıcı):** panodaki "Bugünkü Nöbet" kartı tüketici olarak **yeterli**; tarih seçici yüzey istenmiyor. Madde kapanır.
+
+### `TB-240` · Anadolu Lisesi'nin dört ortak dersi branşsız; atama alan dışı sayılıyor 🟠
+
+Altınay B4.3 ölçümünde çıktı (2026-09-22). `TB-238`'in "ayrı kalan" notuna ID verildi.
+Anadolu Lisesi çizelgesinde **15 ortak dersin 4'ünün**, **45 seçmelinin 12'sinin**
+`master.subject_branches`'te hiç bağı yok:
+
+- Ortak: **Birinci Yabancı Dil**, **Görsel Sanatlar/Müzik**, **T.C. İnkılap Tarihi ve
+  Atatürkçülük**, **Beden Eğitimi ve Spor/Görsel Sanatlar/Müzik**
+- Seçmeli: Seçmeli Birinci / İkinci Yabancı Dil, Kur'an-ı Kerim (+ Anlam Dünyası),
+  Peygamberimizin Hayatı, Temel Dinî Bilgiler, Klasik Ahlak Metinleri, Adabımuaşeret,
+  Proje Tasarımı ve Uygulamaları, Sanat Eğitimi, Spor Eğitimi, Hedef Temelli Destek Eğitimi
+
+Sebep ad eşleştirmesi: çizelge genel ad ("Birinci Yabancı Dil") ve birleşik hücre
+("Görsel Sanatlar/Müzik") kullanıyor, öğretmenlik alanları kararı somut adlar ("İngilizce",
+"Müzik", "Görsel Sanatlar") sayıyor. Branşların kendisi okulda var: Altınay'da 110 branş,
+İngilizce, Almanca, Müzik, Görsel Sanatlar, Tarih ve Rehberlik dahil.
+
+Zarar: `LoadSubjectBranchesAsync` bağsız dersi boş kümeyle döndürüyor. Bu yüzden İngilizce
+öğretmeni "Birinci Yabancı Dil"e, tarih öğretmeni İnkılap Tarihi'ne atanırken
+`SubjectBranchMatch` **OutOfField** diyor ve her atama gerekçe istiyor. Vekâlet önerisi de
+(`GetAvailableSubstitutes`) aynı dersler için alan içi aday bulamıyor. Engel değil ama her
+okulun her dil ve sanat dersinde yanlış uyarı üretir.
+
+⬜ Kapatma yolu: çizelge adı → karar adı eşleme tablosu (genel ad → somut diller, birleşik
+hücre → bileşen branşlar) içe aktarmada uygulanır. Karar gerekir: birleşik hücre
+"Görsel Sanatlar/Müzik" tek ders mi kalır, yoksa iki branşa birden mi bağlanır?
+
+➕ **2026-09-23 · okul tarafı çıkış yolu açıldı:** okul artık MEB eşleşmesinin üstüne kalıcı branş–ders
+kuralı ekleyebiliyor (*Ayarlar › Akademik Yapı › Branş–Ders Uygunluğu*, yalnız SchoolAdmin;
+`oksis-api` `d9cbc041`/`52aae106`, `oksis-ui` `a745c33`). Altınay'da ekranda ölçüldü: İngilizce →
+Birinci Yabancı Dil kuralı eklenince Bahadır Baba'nın görevi "Uyumlu"ya döndü, geri alınınca yeniden
+alan dışı oldu (kural geri alındı, veri test öncesi hâlinde). **Kök neden (platform içe aktarımında ad
+eşleşmesi) açık kalıyor** — madde bu yüzden kapanmıyor.
+
+✅ **Karar (2026-09-28, kullanıcı):** kalan ad farkları (İnkılap Tarihi, din/sanat/spor seçmelileri) için **okul kuralı yeterli**; platform ad eşleme tablosu yazılmaz. Ölçüm: birleşik hücreler `CurriculumAlternativeSplitter` ile bölünüyor (`a814c79d`), yabancı diller okulun dil ayarına bağlanıyor (`07539459`), okul kuralı `d9cbc041`. Madde kapanır.
+
+### `E-30` · Öğrencinin pansiyon (yatılı) durumu üründe tutulmuyor 🟡
+
+Altınay B7 (2026-09-23). e-Okul listesinde 12/A'daki bir öğrenci **Yatılı** işaretli. OKSİS'te
+bu bilginin karşılığı yok: sihirbazda alan yok, öğrenci profilinde ve kayıtta kolon yok, kodda
+"pansiyon/yatılı/boarding" kavramı hiç geçmiyor. Öğrenci pansiyon bilgisi olmadan kaydedildi.
+
+⬜ Karar gerekiyor: kapsam içi mi? İçindeyse öğrenci kaydında (sezonluk) bir alan olur; yoklama,
+nöbet ve veli bildirimleri ileride bunu okuyabilir.
+
+✅ **Karar (2026-09-28, kullanıcı):** pansiyon/yatılı durumu **kapsam dışı**. Madde kararla kapanır.
+
+### `TB-225` · Karara bağlanmamış öneri satırları yayımda atlanıyor 🟠
+
+2026-09-21'de ekran testinde ölçüldü. Yayım kapısı `Confirmed` ya da yayımda açılan
+(`Unresolved`) satırları alıyor; **`Suggested` ikisine de girmiyor** ve satır sessizce
+düşüyor.
+
+Ölçüm — 2025/24 sayılı kararın çizelgesi, ekrandan onaylanıp yayımlandı:
+
+| | Satır |
+|---|---|
+| Ara alana taşınan | 270 |
+| Yayımlanan | **168** |
+| `Suggested` (önerisi var, onaylanmamış) | **87** |
+| `Unresolved` + sınıfı çözülemeyen | 15 |
+
+Yani satırların **%32'si** yalnız "öneri" olduğu için yayıma girmedi. Davranışın kendisi
+savunulabilir — bir tahmin karar değildir ve onaysız yazmak yanlış müfredat üretirdi — ama
+iki şey yanlıştı:
+
+1. **Ekran onaydan önce söylemiyordu.** Üst şerit `Suggested`'ı "karara bağlandı" sayıyordu
+   (`decided = groups.length - unresolved`), yani kullanıcı 87 satırın düşeceğini
+   bilemiyordu.
+2. Yayım bildirimi "102 satır atlandı (kapsam dışı ya da eksik)" diyordu; gerekçe belirsizdi.
+
+✅ **Ekran ayağı kapandı** (2026-09-21, `oksis-ui`): üç hâl ayrıldı — `Unresolved` (yayımda
+açılacak), `Suggested` (yayımlanmayacak, turuncu uyarı), karara bağlanmış. Yayım bildiriminin
+gerekçesi de açıldı.
+
+⬜ **Açık kalan ürün kararı:** yüksek güvenli bir öneri yayıma girmeli mi? Şu an %95 güvenle
+eşleşmiş bir ders bile insan onayı olmadan düşüyor. Seçenekler: (a) olduğu gibi kalsın, ekran
+artık uyarıyor; (b) belirli bir güven eşiğinin üstü otomatik `Confirmed` sayılsın; (c) yayım
+bu satırları da açsın (öneriyi yok sayıp yeni ders açmak) — sonuncusu ikiz ders üretir,
+muhtemelen yanlış.
+
+✅ **Karar (2026-09-28, kullanıcı):** **olduğu gibi kalır** — öneri karar değildir, ekran uyarısı yeterli. Madde kapanır.
+
+### `TB-259` · Kulüp saati yoklaması: alınmayan kulüp saati hiçbir listeye düşmüyor; idarenin düzeltmesi kulüp listesine yansımıyor 🟡
+
+2026-09-27, `E-34` uygulanırken ölçüldü. Kulüp saati oturumu danışmanın yoklamasından doğar (şube × kulüp, tamamlanmış). İki sınır kaldı:
+
+1. **Alınmayan kulüp saati görünmüyor.** Şube dersinde oturum sabah üretilir; alınmazsa gün sonunda "alınmadı"ya düşer, hatırlatma ve
+   idare listesi (`ListUnrecordedSessions`) onu gösterir. Kulüp saatinde danışman hiç işaretlemezse oturum hiç doğmaz: ne hatırlatma
+   gider ne idare görür, o saat öğrencinin günlük paydasına da girmez.
+2. **İki yönlü eşitleme yok.** İdare kaydı yoklama tarafında düzeltirse (ör. mazeretli) kulübün katılım ekranı eski işareti gösterir.
+   Devamsızlık kaydı esastır ve danışman aynı işareti yeniden kaydettiğinde idarenin düzeltmesi ezilmez (yalnız değişen işaret gider).
+
+⬜ Kapatma yolu: kulüp saati etkinliği için "yoklama alınmadı" sinyali (etkinlik bitiminde işaretsiz üye kalan kulübü idare panosuna
+ve danışman hatırlatmasına bağlamak); katılım ekranında devamsızlık kaydının güncel durumunu göstermek.
+
+✅ **Karar (2026-09-28, kullanıcı):** **sınır olarak kabul** edildi; madde kapanır.

@@ -318,43 +318,6 @@ X-06  ──►  ortak koşum kurulmadan yazılan her handler yeni borç ekler
 
 ## 8. Nöbet & Vekalet 🟠
 
-### `TB-19` · Geçici muafiyetin TÜKETİM noktası yok 🟡 *(dağıtım ayağı kapandı — 2026-08-31)*
-
-✅ **Kapanan yarı (2026-08-31, `oksis-api` @ `8ed7024`).** Dağıtım işi muafiyeti
-`CoversDay(today)` — **yöneticinin butona bastığı gün** — ile süzüyordu; koddaki yorum
-ise baştan beri *"dönem-kapsayan Temporary"* diyordu. Canlıda ölçülen tablo (2026-08-12)
-tam olarak bu ayrışmaydı: 3–14 Ağustos dönemi 12 Ağustos'ta koşturulunca 11–13 Ağustos
-muafiyetli öğretmen havuzdan düştü, 13–14 Ağustos muafiyetli düşmedi.
-`DutyExemption.CoversPeriod` eklendi: haftalık-tekrarlı çizelgeden çıkarma ölçütü
-**dönemin tamamını** kapsayan muafiyettir. Naif "kesişiyor mu" düzeltmesi testle birlikte
-elendi — beş aylık dönemde iki gün muaf olanı 20 haftalık nöbetten muaf tutardı
-(`duty_assignments` tarih değil `day_of_week` taşır). İki nöbet okuma ucunun "bugün"ü de
-UTC'den **okulun gününe** çevrildi.
-
-⬜ **Açık kalan yarı — bir YÜZEY gerekiyor, bir düzeltme değil.** `K-12` §C2 kararı
-*"öğretmen çizelgede kalsın, o tarihlerde yerine vekil geçsin"* diyor. Bunun için
-**"3 Kasım'da hangi bölgede kim nöbetçi?"** diye soran bir tüketim noktası şart ve bugün
-yok: çizelge `day_of_week` taşıyor, `GetMyDuties` tarihsiz dönüyor. Model hazır
-(`DutyAssignment.RelieverId` var), eksik olan tarih eksenli sorgu ve onu gösteren ekran.
-
-🚫 **Uç yazılıp ekran yazılmadı ve bu bilinçli:** bu tur aynı deseni üç kez ölçtü
-(`E-22`, `TB-100`, `TB-82`) — *çağrılmayan uç, arkasındaki kusuru da saklar*. Yüzey
-kararı verildiğinde ikisi birlikte yazılmalı.
-
-➕ **2026-09-16 · sunucu ayağı kapandı, madde EKRAN için açık kalıyor (gece turu, commit bekliyor).**
-Tarih eksenli tüketim yüzeyi yazıldı: `GetOnDutyForDateQuery` → `GET duties/on-duty?date=…`
-(`duties.view`, yeni izin ve göç gerekmedi). Kurallar: sürüm seçimi `Published ∪ Superseded` +
-`EffectiveFrom <= date <= EffectiveTo` ve **kapanış gününde ardıl sürüm kazanır** (yayın, canlı sürümü
-ardılın `EffectiveFrom`'uyla kapattığı için o gün iki sürüme birden düşüyor — testle ölçüldü); muafiyet
-ölçütü tüketim anı metodu `CoversDay` (dağıtımın `CoversPeriod`'u değil) ve muaf öğretmen çizelgeden
-**düşmüyor**, satırda işaretleniyor; vekâlet `RelieverId` ile çözülüyor, yancı da muafsa ya da okul
-parametresi kapalıysa satır `uncovered` — açık nöbet sessizce kaybolmuyor. **`ISchoolCalendarService`
-Duties'e ilk kez bağlandı:** tatilde "kimse nöbetçi değil" ile "o gün okul yok" artık ayrı (ikinci bir
-tatil okuyucusu yazılmadı, `TB-176`/`TB-177` sonrası tek kaynak). Testler: 4 senaryo yeşil (geçmiş tarih
-doğru sürümden, muaf → yancı, yancılık kapalı → uncovered, tatil), Api 444 · Application 2711 yeşil.
-⬜ **Açık kalan:** ucun **tüketicisi yok** — ekran yazılmadı ve oksis-ui codegen'i çalıştırılmadı.
-Defterin kendi dersi gereği (çağrılmayan uç arkasındaki kusuru saklar) madde yüzey gelene kadar kapanmaz.
-
 ### `B-85` · Kaydedilmemiş (ve sunucunun reddettiği) değişiklikle "Çizelgeyi Yayınla" sessizce ESKİ taslağı yayınlıyor; ekran yayından sonra da olmayan atamayı gösteriyor 🟠
 
 Altınay saha testi (C2.1, 2026-09-27), müdür hesabıyla Playwright. Otomatik dağıtım uygulandı (20 atama, taslak). Sonra
@@ -397,6 +360,8 @@ artık kullanılmayan `periodLabel` prop'u silindi; ekranda ölçüldü. Dönem 
 ⬜ **Açık kalan (ayrı iş, karar gerekir):** nöbet sayfası hep yürürlükteki dönemi açıyor → **2. dönemin çizelgesi dönem
 başlamadan hazırlanamıyor** (geçici muafiyetler de ancak o çizelgede işe yarar). Gerçek dönem seçici; yayın tarihi,
 "bugün" göstergesi ve vekâlet sekmesinin hangi dönemi okuyacağı kararlarıyla birlikte ele alınmalı.
+
+✅ **Karar (2026-09-28, kullanıcı):** nöbet ekranları **üst çubuktaki sezon/dönem seçicisine bağlanır**; yönetici 2. dönemi seçip çizelgeyi önceden hazırlayabilir. Uygulanacak.
 
 ### `B-86` · Öğretmen kendi nöbetini hiçbir ekranda göremiyor; yayın bildirimi "Yetkiniz yok"a götürüyor 🟠
 
@@ -495,6 +460,8 @@ stepper düğmelerine `aria-label`, çiplere `aria-pressed`; şablon ya pencerey
 ✅ **2026-09-28 · 1. ve 2. ayak kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `2daa11b`, merge bekliyor, ekranda ölçülmedi):** Simge satırı kaldırıldı; kapasite −/+ düğmelerine `aria-label`, tür çiplerine `aria-pressed`, Aktif anahtarına `role=switch`. ⬜ 3. ayak (`icon` kolonu, şablon) karar bekliyor.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): "Bölge ekle" penceresinde Simge satırı yok; tür çipleri `aria-pressed`, "Kapasiteyi azalt/artır", Aktif `role=switch`. Kaydedilmedi. Not: Nöbet Bölge Ayarları listesindeki "Aç/Kapa · Düzenle · Sil" düğmelerinin adında bölge adı yok (`D-29` kalıbının burada uygulanmamış kardeşi).
+
+✅ **Karar (2026-09-28, kullanıcı):** 3. ayak: **`icon` kolonu ve bölge şablonları kaldırılır** (kolon + DTO alanı göçle, şablon tablosu ve domain notundaki vaat). Uygulanacak.
 
 ---
 
@@ -678,39 +645,6 @@ ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerek
 
 ✅ **Karar (2026-09-28, kullanıcı):** (2) push kapısı hızlı kalır; **merge öncesi `./scripts/test-changed.sh --integration` zorunlu adım** olarak CLAUDE.md/AGENTS.md ve commit kurallarına yazılır. Uygulanacak.
 
-### `TB-240` · Anadolu Lisesi'nin dört ortak dersi branşsız; atama alan dışı sayılıyor 🟠
-
-Altınay B4.3 ölçümünde çıktı (2026-09-22). `TB-238`'in "ayrı kalan" notuna ID verildi.
-Anadolu Lisesi çizelgesinde **15 ortak dersin 4'ünün**, **45 seçmelinin 12'sinin**
-`master.subject_branches`'te hiç bağı yok:
-
-- Ortak: **Birinci Yabancı Dil**, **Görsel Sanatlar/Müzik**, **T.C. İnkılap Tarihi ve
-  Atatürkçülük**, **Beden Eğitimi ve Spor/Görsel Sanatlar/Müzik**
-- Seçmeli: Seçmeli Birinci / İkinci Yabancı Dil, Kur'an-ı Kerim (+ Anlam Dünyası),
-  Peygamberimizin Hayatı, Temel Dinî Bilgiler, Klasik Ahlak Metinleri, Adabımuaşeret,
-  Proje Tasarımı ve Uygulamaları, Sanat Eğitimi, Spor Eğitimi, Hedef Temelli Destek Eğitimi
-
-Sebep ad eşleştirmesi: çizelge genel ad ("Birinci Yabancı Dil") ve birleşik hücre
-("Görsel Sanatlar/Müzik") kullanıyor, öğretmenlik alanları kararı somut adlar ("İngilizce",
-"Müzik", "Görsel Sanatlar") sayıyor. Branşların kendisi okulda var: Altınay'da 110 branş,
-İngilizce, Almanca, Müzik, Görsel Sanatlar, Tarih ve Rehberlik dahil.
-
-Zarar: `LoadSubjectBranchesAsync` bağsız dersi boş kümeyle döndürüyor. Bu yüzden İngilizce
-öğretmeni "Birinci Yabancı Dil"e, tarih öğretmeni İnkılap Tarihi'ne atanırken
-`SubjectBranchMatch` **OutOfField** diyor ve her atama gerekçe istiyor. Vekâlet önerisi de
-(`GetAvailableSubstitutes`) aynı dersler için alan içi aday bulamıyor. Engel değil ama her
-okulun her dil ve sanat dersinde yanlış uyarı üretir.
-
-⬜ Kapatma yolu: çizelge adı → karar adı eşleme tablosu (genel ad → somut diller, birleşik
-hücre → bileşen branşlar) içe aktarmada uygulanır. Karar gerekir: birleşik hücre
-"Görsel Sanatlar/Müzik" tek ders mi kalır, yoksa iki branşa birden mi bağlanır?
-
-➕ **2026-09-23 · okul tarafı çıkış yolu açıldı:** okul artık MEB eşleşmesinin üstüne kalıcı branş–ders
-kuralı ekleyebiliyor (*Ayarlar › Akademik Yapı › Branş–Ders Uygunluğu*, yalnız SchoolAdmin;
-`oksis-api` `d9cbc041`/`52aae106`, `oksis-ui` `a745c33`). Altınay'da ekranda ölçüldü: İngilizce →
-Birinci Yabancı Dil kuralı eklenince Bahadır Baba'nın görevi "Uyumlu"ya döndü, geri alınınca yeniden
-alan dışı oldu (kural geri alındı, veri test öncesi hâlinde). **Kök neden (platform içe aktarımında ad
-eşleşmesi) açık kalıyor** — madde bu yüzden kapanmıyor.
 ### `TB-241` · Katalog ders adlarında kesme işaretinden sonra büyük harf: "Kur’An-I Kerim" ⚪
 
 Altınay B4.2 ölçümünde görüldü (2026-09-22). `master.subjects`'te iki satır bozuk:
@@ -892,17 +826,6 @@ kullanımı varsa onu da söyleyerek).
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Ders Kataloğu satır düğmeleri "Tarih — Düzenle" / "Tarih — Pasife al" adlarını taşıyor. Pasife almanın `ConfirmDialog`'dan geçtiği kodda doğrulandı (`course-catalog.tsx:126`); gerçek veride tıklanmadı.
 
-### `E-30` · Öğrencinin pansiyon (yatılı) durumu üründe tutulmuyor 🟡
-
-Altınay B7 (2026-09-23). e-Okul listesinde 12/A'daki bir öğrenci **Yatılı** işaretli. OKSİS'te
-bu bilginin karşılığı yok: sihirbazda alan yok, öğrenci profilinde ve kayıtta kolon yok, kodda
-"pansiyon/yatılı/boarding" kavramı hiç geçmiyor. Öğrenci pansiyon bilgisi olmadan kaydedildi.
-
-⬜ Karar gerekiyor: kapsam içi mi? İçindeyse öğrenci kaydında (sezonluk) bir alan olur; yoklama,
-nöbet ve veli bildirimleri ileride bunu okuyabilir.
-
-✅ **Karar (2026-09-28, kullanıcı):** pansiyon/yatılı durumu **kapsam dışı**. Madde kararla kapanır.
-
 ### `TB-237` · Branş kataloğu boş: seed silindi, yerine geçecek yüzey yazılmadı 🔴
 
 Kullanıcı sordu (2026-09-22): *"Merkez platform sadece dersleri getirmez, branşları getirmek
@@ -985,6 +908,8 @@ yükü 39; Genel profili kullanan şube yok). Uç bağlanırken şube ya da alan
 ⬜ Ders Programı ve Ders Kataloğu yüzeyleri yazılırken bu üçü bağlanır. `snapshot`'ın
 gerçekten gerekli olup olmadığı ayrıca kararlaştırılır — gereksizse silinmesi, çağrılmayan
 uç olarak durmasından iyidir.
+
+✅ **Karar (2026-09-28, kullanıcı):** **`curriculum/snapshot` silinir**; diğer üç uç ait oldukları ekranlar yazılırken bağlanır (`required-total` şube/alan parametresiyle). Uygulanacak.
 
 ### `TB-234` · Müfredatı boş doğan sezondan ürün içinde çıkış yolu yok 🟠
 
@@ -1125,6 +1050,8 @@ tekrar 204; Cuma=HalfDay atamasıyla vekâlet panosu gün bazlı saat döndürd�
 **Açık:** entegrasyon koşusunun özeti alınamadı (ClamAV testi ortam kaynaklı düşüyor, madde dışı), `dotnet format`
 koşulmadı, "satırsız şablona gün atanamasın" sunucu kuralı yazılmadı — ekran uyarısı var (`B-51` notu).
 
+✅ **Karar (2026-09-28, kullanıcı):** satırsız şablona gün ataması **sunucuda 409 ile reddedilir**. Uygulanacak.
+
 ### `E-25` · Zil şablonları sabit ikili (Tam Gün / Yarım Gün); güne göre adlandırılmış program yok 🟡
 
 Altınay saha testi (B2.3, 2026-09-15). Okul Pazartesi–Perşembe bir, Cuma farklı bir zil programı
@@ -1140,6 +1067,8 @@ raporda ve öğretmenin programında "Yarım Gün" yazması yanlış bilgi.
 ⬜ Ürün kararı bekliyor: (a) şablonlar okulun adlandırdığı serbest kayıtlara dönüşür (ör. "Pzt–Per",
 "Cuma"), gün ataması onlara bağlanır; (b) ikili kalır, yalnız etiketler nötrleşir ("Program A / B");
 (c) bugünkü gibi kalır, Cuma "Yarım Gün" olarak kullanılır.
+
+✅ **Karar (2026-09-28, kullanıcı):** ikili yapı kalır, **etiketler nötr (Program A/B) ve okul ad verebilir**. Uygulanacak.
 
 ### `TB-177` · Tatil Takvimi resmî tatilleri yıl ve bitiş tarihine bakmadan birleştiriyor — her dini bayram 5 kez 🟡
 
@@ -1222,6 +1151,8 @@ var, `IntermediateBreak` **0 satır** (tüm DB'de de 0). Sezon açıldıktan son
 kilitli tipi reddediyor, sihirbaz tekrar çalışmıyor. Sonuç: 16–20 Kasım 2026 ve 8–12 Mart 2027 Altınay'da **iş günü** sayılıyor;
 yoklama oturumları üretilir, devamsızlık yazılır. **C4.2'yi (16 Kasım) engeller**, C1'i engellemez. Kapatma: açık sezona ara tatil
 ekleme yolu ((b) ya da (c)) ya da yönetici için sezon ayarlarından ara tatil düzenleme.
+
+⏸️ **Kullanıcı notu (2026-09-28):** sezonun genel hatlarını merkezin girip okulların okuduğu bir altyapı fikri var, özellik olarak gelecek — **şimdilik dokunulmaz**.
 
 ### `D-21` · Liste ekranları "hiç kayıt yok" ile "filtreyle eşleşme yok"u ayırmıyor (`D-10` yalnız ayarlarda uygulanmış) 🟡
 
@@ -1391,6 +1322,8 @@ ve onları kilitleyen testler aynı turda (`TB-188` dersi).
 ⬜ **Doğrulanmamış ürün farkı:** yönetim uçları `ExamsController`'da olduğu için `active-season-write` politikasına
 tabi — **arşiv sezonda katalog yazılamıyor**, oysa ders kataloğu (`AcademicsController`) bu kısıta tabi değil.
 
+✅ **Karar (2026-09-28, kullanıcı):** sınav türü yönetimi **ders kataloğuyla eşitlenir** — `active-season-write` politikası olmayan controller'a taşınır; gerçek SQL tenant izolasyon testi yazılır. Uygulanacak.
+
 ### `E-31` · Kişinin adı ve soyadı hesap açıldıktan sonra düzeltilemiyor — uç var, ekran yok 🟡
 
 Altınay B6.5 ölçümünde çıktı (2026-09-24). Ad ve soyadı değiştirebilen **tek yüzey davet kabul ekranı**
@@ -1439,6 +1372,8 @@ temizlenecek ne de bugünkü hâliyle tüketici yazılacak. Çerçeve sorusu şu
 Karar verilirken birlikte düşünülmesi gerekenler: `TB-193` (yeni okul branşsız doğuyor), `TB-192` (lise kataloğu
 eksik), `E-24`'ün "seed gerçek yolu ölçmüyor" kalıbı ve bu turda ölçülen "yeni okulun ilk günü" kusurları
 (`TB-168`, `TB-173`, `TB-185`). Ölü tablo bu tartışmanın **sonucuna** göre ya doldurulur ya kaldırılır.
+
+⏸️ **Karar (2026-09-28, kullanıcı): askıda kalır** (daha geniş çerçeve kararı bekliyor).
 
 ### `TB-190` · Sahte bağlamla yazılan testte tenant alanı boş kalıyor; okul süzen sorgular sessizce "hepsi reddedildi" ölçüyor 🟡
 
@@ -1790,6 +1725,8 @@ değil (Attendance mı, AcademicSessions mı, ortak bir `Internal` mi) ve iki ç
 şekli farklı (biri tek şube, diğeri çok şube). **Yer kararı verilmeden başlamak yanlış.**
 Ara koruma olarak, iki yüklemin eşitliğini ölçen tek bir bekçi testi ucuz olur.
 
+✅ **Karar (2026-09-28, kullanıcı):** tek paylaşılan okuyucu **AcademicSessions altında `Internal`** (tek şube + çok şube imzası); yoklama, sınav oturma ve sınav yerleşim sayacı ona bağlanır. Uygulanacak.
+
 ---
 ### `TB-163` · Biçim kapısı ~6000 adlandırma satırının altında boğuluyor ⚪
 
@@ -1831,6 +1768,8 @@ edilmemiş iş varken depo geneli biçimlendirme onu boğardı.
 
 İkisi bitmeden `dotnet format --verify-no-changes`'i pre-commit kapısı yapmak, her commit'i
 bloke etmek olur.
+
+✅ **Karar (2026-09-28, kullanıcı):** (b) `Async` son eki kuralı **suggestion'a indirilir**; yeniden adlandırma yapılmaz. Uygulanacak.
 
 ---
 ### `TB-117` · Depoda biriken biçim borcu her görevde commit'e sızıyor ⚪
@@ -1899,6 +1838,8 @@ kapanır. ⬜ **Bu tercihi vermeden başlamak yanlış.**
 bir koşum yazılacak; borç tek hamlede kapanır ve bundan sonra yazılan her sorgu işleyicisi otomatik kapsanır.
 Çok günlük bir iş kalemi: önce koşum altyapısı + pilot bir modül, sonra kademeli geçiş. **Ölçüm güncellendi:**
 tarama sırasında sayı 150/92 idi, gece turunda 218 işleyicinin 132'si ölçüldü — oran sabit, mutlak borç büyüyor.
+
+⏸️ **Karar (2026-09-28, kullanıcı): ertelendi.**
 
 ### `TB-199` · İkon adı tipi hiçbir şeyi korumuyor; olmayan ada sessizce boş ikon çiziliyor ⚪
 
@@ -2076,6 +2017,8 @@ sorgusu atılmaz; "Git" düğmeleri `canAccessRoute` ile kapılı. Öğretmene y
 yeni uç yok). Canlı ölçüm (Playwright, Altınay, worktree web 3005 + API 5113; 3000'deki master'da önce ölçülmemişti, kullanıcı fark etti): öğretmende 403 yok (yalnız bilinen logo 404'ü, `TB-244`), müdür panosu değişmedi.
 ⬜ Açık: öğrenci/veli web yüzeyi kararı ve öğrencinin `academic-sessions/current` 403'ü (canlı ölçülmedi); K-09 örnek kartları.
 
+💬 **2026-09-28 · ayrıca konuşulacak (kullanıcı).** Ölçüm: web'de öğrenci/veli portalı yok; `login-screen.tsx:447` `RedirectView` her rolü `/`'a gönderiyor ama ekranda "… portalına yönlendiriliyorsunuz" yazıyor. 403'ler gitti (kartlar izinle kapılı), ama K-09 örnek kartları (`ActivityFeedCard`, `PendingTasksCard`, `UpcomingCalendarCard`) rol kapısız — öğrenci/veli "Kilitli hesap" gibi yönetici örnek içeriği görüyor.
+
 ### `D-23` · Kullanıcılar ekranı idari personelin bağlı profilini "—" gösteriyor ⚪
 
 **Ölçüm (Altınay, 2026-09-20):** 14 hesaplık listede müdür ve müdür yardımcısının **Bağlı
@@ -2238,39 +2181,7 @@ kararına "yeniden taşımaya izin ver" seçeneği eklensin; (c) en azından ekr
 sonucun ne olduğunu açıkça yazsın. (a) en doğrusu gibi: ret "bu içe aktarma yanlıştı"
 demektir, "bu çizelge sonsuza dek yasak" demek değil.
 
-### `TB-225` · Karara bağlanmamış öneri satırları yayımda atlanıyor 🟠
-
-2026-09-21'de ekran testinde ölçüldü. Yayım kapısı `Confirmed` ya da yayımda açılan
-(`Unresolved`) satırları alıyor; **`Suggested` ikisine de girmiyor** ve satır sessizce
-düşüyor.
-
-Ölçüm — 2025/24 sayılı kararın çizelgesi, ekrandan onaylanıp yayımlandı:
-
-| | Satır |
-|---|---|
-| Ara alana taşınan | 270 |
-| Yayımlanan | **168** |
-| `Suggested` (önerisi var, onaylanmamış) | **87** |
-| `Unresolved` + sınıfı çözülemeyen | 15 |
-
-Yani satırların **%32'si** yalnız "öneri" olduğu için yayıma girmedi. Davranışın kendisi
-savunulabilir — bir tahmin karar değildir ve onaysız yazmak yanlış müfredat üretirdi — ama
-iki şey yanlıştı:
-
-1. **Ekran onaydan önce söylemiyordu.** Üst şerit `Suggested`'ı "karara bağlandı" sayıyordu
-   (`decided = groups.length - unresolved`), yani kullanıcı 87 satırın düşeceğini
-   bilemiyordu.
-2. Yayım bildirimi "102 satır atlandı (kapsam dışı ya da eksik)" diyordu; gerekçe belirsizdi.
-
-✅ **Ekran ayağı kapandı** (2026-09-21, `oksis-ui`): üç hâl ayrıldı — `Unresolved` (yayımda
-açılacak), `Suggested` (yayımlanmayacak, turuncu uyarı), karara bağlanmış. Yayım bildiriminin
-gerekçesi de açıldı.
-
-⬜ **Açık kalan ürün kararı:** yüksek güvenli bir öneri yayıma girmeli mi? Şu an %95 güvenle
-eşleşmiş bir ders bile insan onayı olmadan düşüyor. Seçenekler: (a) olduğu gibi kalsın, ekran
-artık uyarıyor; (b) belirli bir güven eşiğinin üstü otomatik `Confirmed` sayılsın; (c) yayım
-bu satırları da açsın (öneriyi yok sayıp yeni ders açmak) — sonuncusu ikiz ders üretir,
-muhtemelen yanlış.
+✅ **Karar (2026-09-28, kullanıcı):** reddedilen çizelge **yeniden taşınabilir** — tekilleştirme sorgusu ve benzersiz dizin bitmiş (reddedilmiş/karantina) çalışmaları saymaz; eski ret denetim izinde kalır. Uygulanacak.
 
 ### `TB-226` · Ayrıştırıcı yalnız 2025 çizelge düzenini tanıyor 🟠
 
@@ -2298,6 +2209,8 @@ desteklenmeyeceği karara bağlanmalı. Ölçüm hazır: 28 çizelge belgesinin 
 ✅ **2026-09-28 · (a) ve (b) kodda (gece turu, `oksis-api` `fix/gece-defter-turu`, merge bekliyor):** **(a)** `8767d1bd` — 2025/24 PDF'i yeniden ayrıştırılarak kök ölçüldü: başlıktaki "DERS" hazırlık sütununun tam üstünde duruyor ve eşit öncelikte "HAZIRLIK" etiketini yeniyordu. `MebChartParser` sütun adı önceliği sayı > hazırlık > başka metin > SINIF; en az bir sütun tanınıyorsa sayı/hazırlık olmayan sütun sınıf sayılmıyor ama geometriden de atılmıyor (atılsa ad sınırı kayardı). Hiç sütun tanınmıyorsa davranış aynı — eski düzenlerin karantina sinyali (c) kararına kadar korunuyor. Fixture `ozel-fen-2025-24.words.json` + 3 test, golden testler aynen. **(b)** `80152104` — kök neden doğrulayıcının program kodunu 50 karakterle sınırlaması (kolon 120; 2025/25 kodu 52 karakter), hizalandı. Ayrıca tek sayfanın doğrulama hatası artık bütün belgeyi düşürmüyor: sayfa `SkippedCharts[].Reason`'da "Doğrulama hatası: …" ile raporlanıyor, kalanlar taşınıyor, Warning logu belge/sayfa/kod/gerekçeyle. 4 test. ⬜ (c) karar bekliyor. Yan gözlemler: 2025/24'te `SUM_MISMATCH` sürüyor; 2025/25 başlığındaki "TASLAK" filigranı program adına giriyor (`TB-224` ailesi).
 
 ✅ **2026-09-28 · (b) yüzeyi ölçüldü:** `platform-curriculum-page.tsx` taşıma sonucunu zaten "Taşınamayan N sayfa: s{N} ({reason})" diye hata tonunda bildiriyor; sunucu düzeltmesiyle doğrulama gerekçesi değişiklik gerekmeden ekrana düşer.
+
+✅ **Karar (2026-09-28, kullanıcı):** (c) **yalnız okulların fiilen bağlı olduğu eski kararlar** için ayrıştırıcı genişletilir; diğerleri karantinada kalır. Uygulanacak.
 
 ### `TB-224` · Bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠
 
@@ -2335,6 +2248,8 @@ gibi ara alandan geçer ve merkez onaylar; (c) çizelgenin sınıf etiketleri ba
 ve sözlük dışı harf dizisi taşıyan başlık reddedilir. Ölçüm hazır: aynı belge otuzun içinde
 tek bozuk olan, yani eşik yirmi dokuz belgeyi geçirmeli.
 
+✅ **Karar (2026-09-28, kullanıcı):** program adı belgeden doğrudan kataloğa yazılmaz; **ara alanda önerilir, merkez düzeltip onaylar** ("TASLAK" filigranı örneği dahil). Uygulanacak.
+
 ---
 
 ---
@@ -2358,6 +2273,8 @@ sezonla çalışıyor (`SeasonScopeRule.cs:13-25`) — kullanıcı oluşturmanı
 tutarsız. Karar gerekiyor: bu yollar kurulumdaki sezonu mu hedeflemeli, sezonsuz mu
 çalışmalı? Sezon geçişinde aynı yollar eski (aktif) sezona yazar; o da ayrıca ölçülmeli.
 
+✅ **Karar (2026-09-28, kullanıcı):** ölçüm: öğrenci kaydı kurulumdaki sezonda zaten açık (`6647bbd3`). Kalan iki yol: **kullanıcı oluşturma kurulumdaki sezona yazar** (davet yolu gibi), **logo ve dosya yükleme sezondan bağımsız** çalışır. Uygulanacak.
+
 ### `TB-248` · Aktif sezonda dönem yokken ekranlar varsayılan dönemi üç ayrı kuralla seçiyor 🟡
 
 2026-09-24 sezon–menü ön incelemesinde ölçüldü
@@ -2378,6 +2295,8 @@ farklı yedeklere düşüyor:
 Öneri: okuma ekranları en son kapanan dönemi, planlama ekranları başlamamış ilk dönemi
 varsayılan alır; kural core'da tek fonksiyon olur. Backend okuma uçlarının id'siz davranışı
 karar bekliyor.
+
+✅ **Karar (2026-09-28, kullanıcı):** **okuma ekranları son kapanan dönemi, planlama ekranları başlamamış ilk dönemi** varsayılan alır; kural core'da tek fonksiyon, backend'in id'siz okuması da aynı kuralı uygular. Uygulanacak.
 
 ### `TB-256` · Yoklama maddileştirme ve pano entegrasyon testlerinin 17'si master'da kırmızı (ders kataloğu hatasından ayrı) 🟡
 
@@ -2403,6 +2322,8 @@ pano `IsSchoolDay` false. Yeni `ClubHourAttendanceTests` tohumunda sezon aktifle
 göçte birleştirmek (squash), Designer dosyalarını analizörlerden dışlamak (`.editorconfig` `generated_code = true`) ya da göçleri
 ayrı bir derlemeye taşımak. Karar gerektirir.
 
+✅ **Karar (2026-09-28, kullanıcı):** göç **Designer dosyaları analizden çıkarılır** (`generated_code = true`), kazanç ölçülür. Uygulanacak.
+
 ### `D-37` · Mazeret Kaydı penceresi açıklamayı "isteğe bağlı" gösteriyor, sunucu zorunlu tutuyor; red sessizce yutuluyor 🟡
 
 2026-09-27, `E-34` ekran ölçümünde (Altınay'ın veritabanı kopyasında, müdür hesabı) görüldü. *Devamsızlık › Mazeret Kaydı*
@@ -2418,19 +2339,6 @@ istemci şeması aynı kuralı uygular; her iki durumda da pencere sunucu hatas�
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `8c180e1`, merge bekliyor):** kural sunucuda olduğu için istemci ona uyuldu: açıklama zorunlu (ortak şema, web + mobil), sunucu reddi pencerede, MSW 400'ü aynalıyor.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Mazeret Kaydı penceresinde "Açıklama" artık "ops." değil; "Belge · ops." kalıyor.
-
-### `TB-259` · Kulüp saati yoklaması: alınmayan kulüp saati hiçbir listeye düşmüyor; idarenin düzeltmesi kulüp listesine yansımıyor 🟡
-
-2026-09-27, `E-34` uygulanırken ölçüldü. Kulüp saati oturumu danışmanın yoklamasından doğar (şube × kulüp, tamamlanmış). İki sınır kaldı:
-
-1. **Alınmayan kulüp saati görünmüyor.** Şube dersinde oturum sabah üretilir; alınmazsa gün sonunda "alınmadı"ya düşer, hatırlatma ve
-   idare listesi (`ListUnrecordedSessions`) onu gösterir. Kulüp saatinde danışman hiç işaretlemezse oturum hiç doğmaz: ne hatırlatma
-   gider ne idare görür, o saat öğrencinin günlük paydasına da girmez.
-2. **İki yönlü eşitleme yok.** İdare kaydı yoklama tarafında düzeltirse (ör. mazeretli) kulübün katılım ekranı eski işareti gösterir.
-   Devamsızlık kaydı esastır ve danışman aynı işareti yeniden kaydettiğinde idarenin düzeltmesi ezilmez (yalnız değişen işaret gider).
-
-⬜ Kapatma yolu: kulüp saati etkinliği için "yoklama alınmadı" sinyali (etkinlik bitiminde işaretsiz üye kalan kulübü idare panosuna
-ve danışman hatırlatmasına bağlamak); katılım ekranında devamsızlık kaydının güncel durumunu göstermek.
 
 ### `D-31` · Native `<select>` yasağı delinmiş: web uygulamasında ~69 native seçim kutusu 🟠
 
@@ -2475,6 +2383,8 @@ bir ders düzenlendiği için anahtar düşmüş, orada görünüyordu. Üç oku
 
 ⬜ Kapatma yolu: veri yazan göçten sonra ilgili önbellek anahtarları düşmeli — ör. API açılışında uygulanan göç varsa
 etkilenen önbellek önekleri temizlenir, ya da önbellek anahtarı şema/göç sürümünü taşır. Tek seferlik elle silme kalıcı çözüm değil.
+
+✅ **Karar (2026-09-28, kullanıcı):** **API açılışında** son uygulanan göç değişmişse tenant önbellek önekleri temizlenir (göç kimliği Redis'te). Uygulanacak.
 
 ### `TB-254` · `CurriculumVersioningMigrationTests.Cutover_…` kırmızı: eski göç noktasında güncel model `track` kolonunu okuyor ⚪
 
