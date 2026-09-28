@@ -427,6 +427,8 @@ bölgesi" dahil) hâlâ örnek veri.
 
 ✅ **2026-09-28 · muafiyet için sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `95fbb0e1`):** `duties/me` → `exemptions[]` (yalnız çağıranın, açık okul yüklemiyle; sürekli + dönemle kesişen geçici; `coversWholeTerm` = `CoversPeriod`; canlı çizelge yokken de dolu). 3 entegrasyon testi, sınıf 6/6.
 
+✅ **2026-09-28 · muafiyet yüzeyi kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `2ebabd9`):** web `TeacherDutyScreen` ve mobil `MyDutyScreen` dönemi tamamen kapsayan muafiyette genel boş durum yerine "Nöbetten muafsınız" + tür/tarih/gerekçe, kısmi muafiyette atamaların üstünde bilgi şeridi (`describeMyDutyExemptions`, core'da testli). Böylece defterdeki dört açık ayağın hepsi kodda; madde merge + mobil ekran ölçümüyle kapanır.
+
 ### `B-89` · Otomatik dağıtımda yancı seçimi nöbet yükünü saymıyor — toplam yük 1–3 (ideal 2–3) 🟡
 
 Altınay saha testi (C2.1, 2026-09-28), `B-87` düzeltmesinden sonra ölçüldü. 18 öğretmene 20 nöbet + 20 yancı = 40 görev
@@ -822,6 +824,8 @@ döner.
 
 ✅ **2026-09-28 · sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `774c9c43`):** `auth/me/context` → `schoolLogoUrl` (mevcut `ISchoolLogoUrlBuilder`; logo yoksa `null`, ek sorgu yok), 3 test.
 
+✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fc759f8`, merge bekliyor):** web `active-role.tsx` ve mobil `use-portal-header.ts` (+ mobil kimlik ekranı) logoyu tek çözücüden (`resolveSchoolLogoSrc`/`resolveSchoolLogoUrl`) alıyor: bağlamdaki `schoolLogoUrl` (yöneticide okul ayarlarının `logoUrl`'i öncelikli); `null` iken istek atılmıyor, baş harfler gösteriliyor. Tarayıcıda ölçülmedi. Madde iki dal birleşince (ve codegen yeniden koşunca) ekranda 404'ün kalktığı ölçülerek kapanır.
+
 ### `D-29` · Katalog satırındaki simge düğmelerinin adı yok; pasife alma tek tık ve onaysız 🟡
 
 Altınay `B-64` ekran ölçümünde yaşandı (2026-09-23). *Ayarlar › Akademik Yapı › Ders Kataloğu*
@@ -1061,6 +1065,8 @@ görünür ve bölümleme fiilen tekleşir (kodda yorumla işaretli, ayrı iş).
 `invitation-public` politikası da hâlâ bağsız.
 
 ✅ **2026-09-28 · `invitation-public` bağlandı (gece turu, `oksis-api` `fix/gece-defter-turu` `b98bcb17`):** davet önizleme (`GET by-token/{token}`) ve kabul (`POST accept`) uçları ortak, IP bölümlü, girişten ayrı kovada; sınır yapılandırmaya taşındı (`RateLimiting:InvitationPublic`, varsayılan 10/dk). Gerçek HTTP testinde 429 + `Retry-After`, davet kovası tükenince giriş kilitlenmiyor. **Not:** 10/dk/IP okulun ortak ağından toplu kabulde dar kalabilir, yapılandırmadan değişir. ⬜ Açık: yalnız `ForwardedHeaders` (dağıtım kararı).
+
+✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `34cecc4`, `2983c22`):** merkezî `ApiError.retryAfterSec` (`Retry-After` saniye ya da HTTP tarihi); `apiErrorDesc` 429'u "Çok fazla deneme yapıldı. N saniye sonra tekrar deneyin." diye anlatıyor, sorgular 429'u yeniden denemiyor; davet önizleme/kabul ekranları (web + mobil) ayrı "ratelimited" durumu gösteriyor; giriş ekranı sabit 60 sn yerine sunucunun süresini sayıyor. ⬜ **Yeni ayak:** CORS yalnız `X-Correlation-Id`'yi açığa veriyor (`Program.cs:185`) — web API'ye başka kökenden giderse `Retry-After` okunamaz; `WithExposedHeaders`'a eklenmeli.
 
 ### `TB-174` · Yarım Gün zil şablonu hiçbir okulda kaydedilemiyor — tekil indeks şablonu kapsamıyor (500) 🟠
 
@@ -2201,6 +2207,8 @@ görüp aynı numarayı burada arayabilir.
 
 ✅ **2026-09-28 · sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `7d325952`):** `ImportRunListItemDto` ve `ImportRunDetailDto`'ya `EducationProgramName` ve `EducationProgramSourcePageNumber` eklendi (ekleme türü sözleşme); entegrasyon testi yeşil. ⬜ İstemcide program sütunu.
 
+✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `e138272`):** merkez İçe aktarmalar listesinde ilk sütun Program ("ad · s3"), eşleme ekranının üst çubuğunda program adı ve sayfa. Madde merge ile kapanır.
+
 ### `TB-228` · Dipnot işareti saklanıyor, açıklaması atılıyor 🟡
 
 2026-09-21'de kullanıcı manuel ekran testinde sordu: "bazı derslerin yanında `*`, bazılarında
@@ -2336,6 +2344,8 @@ sayılmamalı; (b) `Validation` hatasının gerekçesi kullanıcıya ve loga yaz
 desteklenmeyeceği karara bağlanmalı. Ölçüm hazır: 28 çizelge belgesinin 3'ü sorunsuz taşındı.
 
 ✅ **2026-09-28 · (a) ve (b) kodda (gece turu, `oksis-api` `fix/gece-defter-turu`, merge bekliyor):** **(a)** `8767d1bd` — 2025/24 PDF'i yeniden ayrıştırılarak kök ölçüldü: başlıktaki "DERS" hazırlık sütununun tam üstünde duruyor ve eşit öncelikte "HAZIRLIK" etiketini yeniyordu. `MebChartParser` sütun adı önceliği sayı > hazırlık > başka metin > SINIF; en az bir sütun tanınıyorsa sayı/hazırlık olmayan sütun sınıf sayılmıyor ama geometriden de atılmıyor (atılsa ad sınırı kayardı). Hiç sütun tanınmıyorsa davranış aynı — eski düzenlerin karantina sinyali (c) kararına kadar korunuyor. Fixture `ozel-fen-2025-24.words.json` + 3 test, golden testler aynen. **(b)** `80152104` — kök neden doğrulayıcının program kodunu 50 karakterle sınırlaması (kolon 120; 2025/25 kodu 52 karakter), hizalandı. Ayrıca tek sayfanın doğrulama hatası artık bütün belgeyi düşürmüyor: sayfa `SkippedCharts[].Reason`'da "Doğrulama hatası: …" ile raporlanıyor, kalanlar taşınıyor, Warning logu belge/sayfa/kod/gerekçeyle. 4 test. ⬜ (c) karar bekliyor. Yan gözlemler: 2025/24'te `SUM_MISMATCH` sürüyor; 2025/25 başlığındaki "TASLAK" filigranı program adına giriyor (`TB-224` ailesi).
+
+✅ **2026-09-28 · (b) yüzeyi ölçüldü:** `platform-curriculum-page.tsx` taşıma sonucunu zaten "Taşınamayan N sayfa: s{N} ({reason})" diye hata tonunda bildiriyor; sunucu düzeltmesiyle doğrulama gerekçesi değişiklik gerekmeden ekrana düşer.
 
 ### `TB-224` · Bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠
 
