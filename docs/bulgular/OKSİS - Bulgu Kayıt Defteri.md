@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-90` · `D-40` · `V-05` · `X-24` · `TB-260` · `E-36` · `ENG-04`
+**Sıradaki boş ID:** `B-90` · `D-40` · `V-05` · `X-24` · `TB-262` · `E-36` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -238,12 +238,24 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 10 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 40 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 58 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 41 | Kozmetik, temizlik, adlandırma |
-| ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **149** | |
+| 🔴 Kritik | 4 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 39 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 27 | Kozmetik, temizlik, adlandırma |
+| ❓ Netleşmemiş | 1 | `TB-261` |
+| **Toplam** | **93** | |
+
+> **Gece turu (2026-09-28, kullanıcı uyurken — karar gerektirmeyen maddeler):** iki depoda tek dal `fix/gece-defter-turu`
+> (**merge bekliyor**; `oksis-api` 26, `oksis-ui` 24 commit). Önce master'a çoktan girmiş **58 eski kapanış** arşive taşındı
+> (Arşiv §70; 149 → 91). Sonra kodda kapananlar (bloklarında ✅ 2026-09-28 notu; merge + gerekiyorsa ekran ölçümüyle arşive gider):
+> nöbet `B-85` (dört ayak), `B-86` (tüm açık ayaklar), `B-88`, `B-89`, `D-38` (1–2); ayarlar/görevlendirme `D-23`, `D-26`, `D-27`,
+> `D-28`, `D-29`, `B-65`, `D-37`, `D-31` (67 native select + eslint kapısı), `TB-199`, `E-31`; sunucu `D-24`, `TB-141`, `TB-169`
+> (ForwardedHeaders hariç), `TB-179` (ayak 1), `TB-193`, `TB-227`, `TB-241` (veri düzeltmesi hariç), `TB-226` (a, b), `TB-244`;
+> test altyapısı `TB-203`, `TB-231` (1), `TB-256`, `TB-221`, `TB-184`/`TB-204`, `TB-252`, `TB-254`, `TB-213`/`TB-187`, `TB-190`,
+> `TB-180`, `TB-251`/`TB-258`/`TB-220` — **entegrasyon takımı 675 kırmızıdan 1'e** (kalan `TB-261`, karar). `TB-181` için ara
+> koruma (deterministik sıra). `TB-257` belge düzeltmesiyle kapandı. Yeni: `TB-260` (göç FK), `TB-261` (karar). Dokunulmayanlar
+> karar bekleyen ya da kararlı olanlar (`V-04`, `B-62`, `B-63`, `D-25`, `E-30`, `TB-240`, `TB-105/106/108`, `E-23`, `TB-126`, `X-20`,
+> `X-22`, `X-23`, `TB-139`, `TB-198` vb.) ve çok günlük işler (`X-06`, `TB-163 (b)`).
 
 > **2026-09-27 (Altınay C2.1):** nöbet bölgeleri ekrandan kurulurken `D-38` açıldı; bölge silinirken `B-84` açıldı ve kodda düzeltildi; ilk yayında `B-85` açıldı; `D-39` açılıp kodda kapatıldı; yayın sonrası uçtan uca kontrolde `B-86`, `B-87`, `B-88` açıldı; `B-87` kodda düzeltilip ölçülürken `B-89` açıldı. Toplam **149**.
 >
@@ -645,6 +657,8 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
+
+✅ **2026-09-28 · (1) kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e2aad5a0`, `af322046` ve devamı, merge bekliyor):** entegrasyon takımı **1595 testte 675 kırmızı → 1 kırmızı** (tam koşu, kırmızı ad kümeleri `comm` ile karşılaştırıldı, yeni kırmızı 0; Garage/ClamAV ortam kırmızısı çıkmadı). Merkez `DatabaseFixture`: okul açılışının tek ortak yolu (`CreateSchoolAsync` → okul bağlamında ders + sınav türü kataloğu içe aktarımı), `ImportSchoolCatalogsAsync`, `SeedSubjectAsync` (okul bağlamında ders), `SchoolSubjectIdAsync` (çekirdek → okul kimliği), `OpenGradeLevelsAsync` (kademe + eğitim programı tercihi), `Activated` (sezon). Duyuru kitlesi fixture'ı, 18 sınav dosyası, 9 dosyadaki bağlamsız ders yazımı ve sezon testleri bağlandı; branş kataloğu bilerek içe aktarılmadı (testler branşı kendi adıyla yazıyor). Kalan tek kırmızı `TB-261`. ⬜ **(2) push kapısı / CI kararı** artık verilebilir: takım neredeyse yeşil.
 
 ### `TB-240` · Anadolu Lisesi'nin dört ortak dersi branşsız; atama alan dışı sayılıyor 🟠
 
@@ -1068,6 +1082,8 @@ görünür ve bölümleme fiilen tekleşir (kodda yorumla işaretli, ayrı iş).
 
 ✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `34cecc4`, `2983c22`):** merkezî `ApiError.retryAfterSec` (`Retry-After` saniye ya da HTTP tarihi); `apiErrorDesc` 429'u "Çok fazla deneme yapıldı. N saniye sonra tekrar deneyin." diye anlatıyor, sorgular 429'u yeniden denemiyor; davet önizleme/kabul ekranları (web + mobil) ayrı "ratelimited" durumu gösteriyor; giriş ekranı sabit 60 sn yerine sunucunun süresini sayıyor. ⬜ **Yeni ayak:** CORS yalnız `X-Correlation-Id`'yi açığa veriyor (`Program.cs:185`) — web API'ye başka kökenden giderse `Retry-After` okunamaz; `WithExposedHeaders`'a eklenmeli.
 
+✅ **2026-09-28 · CORS ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `2dbaac65`):** `WithExposedHeaders("X-Correlation-Id", "Retry-After")`. Açık kalan yalnız `ForwardedHeaders`.
+
 ### `TB-174` · Yarım Gün zil şablonu hiçbir okulda kaydedilemiyor — tekil indeks şablonu kapsamıyor (500) 🟠
 
 Altınay saha testinde (B2.3, 2026-09-15) müdür Tam Gün çizelgesini kaydettikten sonra Yarım
@@ -1474,6 +1490,8 @@ test altyapısının sessiz yanlışları.
 yansımayla yapılıyor ve çoğu test hiç yapmıyor). Yamalama yerine merkezî çözüm: aynı kalıbın kullanıldığı diğer
 test dosyaları da ona bağlanmalı.
 
+✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `68f6a3d8`):** ortak yardımcı `TenantTestEntities.InSchool()`; elle yansıma yapan 6 dosya ona bağlandı.
+
 ### `TB-189` · Seed sezon verisi ürünün üretebildiği durumları temsil etmiyor ⚪
 
 `TB-185` canlı ölçümünde ortaya çıktı (2026-09-16), ölçümün kendisi iki kez buna takıldı.
@@ -1508,6 +1526,8 @@ Sınıfı `TB-184` ile aynı: **sıraya bağlı kırmızı**, gerçek bir düş�
 ⬜ Kapatma yolu: eşleme yapılandırması uygulama/test açılışında **bir kez** ve deterministik biçimde derlensin
 (ısınma adımı), ya da testlerde koleksiyon paylaşımı kapatılsın. Önce hangisinin doğru olduğu ölçülmeli.
 
+✅ **2026-09-28 · `TB-213` ile aynı commit'te kapandı (`d5638537`).**
+
 ### `TB-184` · Entegrasyon testi paylaşılan DB'de küresel sayı bekliyor — takımla koşunca kırmızı ⚪
 
 Gece turunun son doğrulamasında ölçüldü (2026-09-16). `ExpireStaleInvitationsJobTests.Run_ShouldExpire_OnlyActiveAndStale…`
@@ -1523,6 +1543,8 @@ gömer (`TB-182`'nin 22 kırmızısında yaşandı).
 
 ⬜ Kapatma yolu: testin iddiası küresel sayı yerine **kendi yazdığı kayıtların kimliğine** bağlansın (ya da süpürme
 tek okula kapsanıp öyle ölçülsün). Testi gevşetmek değil, ölçüyü kendi verisine bağlamak.
+
+✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `02205f44`):** test kendi dört davetinin son durumunu ölçüyor; toplam sayı için yalnız alt sınır (`>= 2`) kaldı. `TB-204` aynı madde.
 
 ### `TB-181` · Hesabın birden çok okulda kişisi varsa giriş hangi okulu seçeceğini garanti etmiyor ⚪
 
@@ -1568,6 +1590,8 @@ anlatmaya devam etti.
 2026-09-12 gerekçesi yazıldı; `RolePermissionSeedData`'nın bayat katalog yorumu düzeltildi.
 ⬜ **Açık ayak:** günlük döngü `Oksis.Tests`'in tam takımını koşmuyor. Süzgeç kapsamı genişletilmeli ya da bu
 projenin tamamı her koşuda çalışmalı — bekçi, koşulmadığı sürece bekçi değildir.
+
+✅ **2026-09-28 · açık ayak kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `c814af5d`):** `Oksis.Tests`'te Docker isteyen tek sınıf (`SchoolSettingsTenantTests`) `Category=RequiresDocker`; günlük döngü artık `Category!=RequiresDocker` ile **110 testi** (eskiden 54 mimari bekçi) ~6 sn'de koşuyor, kalan 2 Docker testi `--integration`'da.
 
 ### `TB-158` · Push tepsiye düşüyor ama ekranı uyandırmıyor 🟡
 
@@ -1966,6 +1990,8 @@ tenant context", 47 Garage ve 4 ClamAV konteyneri ayakta değil, 14 "Index out o
 için eğitim programı tercihi tanımlı değil". Karşılaştırmalı ölçüm olmadan bu takımda "yeşil mi?" sorusunun
 cevabı hâlâ yok.
 
+✅ **2026-09-28 · kapandı (kodda, merge bekliyor):** R1 (ders), R2 (sınav türü) ve R3 (sezon aktivasyonu) imzalarının tamamı sıfırlandı — ayrıntı ve sayılar `TB-231` bloğunda (675 → 1). Tarafta gizli kalmış iki kök de düzeltildi: 13 sezon testi eğitim programı tercihi eksikliğinden düşüyordu; `OpenSeasonFromDraftTests` 2026-09-22 yürürlük kuralından önceki "2026-2027 → Manual" beklentisini taşıyordu (Master + 2025-2026 uyumluluk sürümüne çekildi).
+
 ### `TB-204` · `ExpireStaleInvitationsJobTests` koşu sırasına bağlı — iş paylaşılan DB'deki bütün okulların davetini sayıyor ⚪
 
 `TB-203` teşhisinde ayrı görüldü (2026-09-18). `ExpireStaleInvitationsJobTests.cs:85` 2 bekliyor, 5
@@ -1974,6 +2000,8 @@ görüyor: iş paylaşılan fixture veritabanındaki **tüm** okulların süresi
 tüm okulları taramalı).
 
 ⬜ Test `expiredCount` toplamını değil, yalnız kendi oluşturduğu davetlerin durumunu doğrulasın.
+
+✅ **2026-09-28 · `TB-184` ile aynı commit'te kapandı (`02205f44`).**
 
 ### `TB-206` · PdfPig sürümü kanonik görünmüyor; kararlı sürüme sabitlenmeli ⚪
 
@@ -2042,6 +2070,8 @@ oturumdan önce). Ama kararsız test, gerçek bir kırmızıyı gürültüye bo�
 
 ⬜ Test kendi `TypeAdapterConfig`'ini kursun (global olanı paylaşmasın) ya da kayıt idempotent
 olsun.
+
+✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `d5638537`):** ölçüm — handler'lar `.Adapt<T>()` ile küresel yapılandırmayı okuyor, testin kendi `TypeAdapterConfig`'i handler'a ulaşmaz. Doğru yol tek seferlik kayıt: beş test `ApplicationMappings.EnsureConfigured()` ile `AddApplication()`'daki kilitli, bir kez çalışan kurulumu (`TB-51`) çağırıyor; paylaşılan ayara kilitsiz yazma kalmadı. `TB-187` aynı madde.
 
 ### `TB-214` · Bugünkü katalogla yayım, müfredatı 44 satırdan 15 satıra düşürüyor 🟠
 
@@ -2169,6 +2199,8 @@ tohumlama yoluna hiç girilmedi ve müfredat entegrasyon testlerinin 49/50'si ye
 
 ⬜ Test kendi öncülünü kurmalı: okulu açtıktan sonra `SubjectCatalogImporter` ile ders
 kataloğunu içe aktarmalı. Kusur üründe değil, testin öncülünde.
+
+✅ **2026-09-28 · ölçüldü, kapalı:** davranış `919d22b3` ile zaten düzelmiş, test tabanda yeşildi; `e2aad5a0` ile ortak okul açılış yardımcısına bağlandı.
 
 ### `TB-227` · İçe aktarma ekranı hangi programın müfredatı olduğunu söylemiyor 🟠
 
@@ -2440,6 +2472,8 @@ tohumları `AcademicSession.Create` sonrası `Activate` çağırmıyor → `IsSc
 pano `IsSchoolDay` false. Yeni `ClubHourAttendanceTests` tohumunda sezon aktifleştirilince aynı zincir yeşil koştu. (2) 5 test
 `TB-231`'in "Cannot insert Subject without tenant context" hatası. ⬜ Kapatma yolu: yoklama test tohumlarında sezonu aktifleştirmek.
 
+✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `af322046`, merge bekliyor):** beş yoklama dosyası sezonu `DatabaseFixture.Activated` ile etkinleştiriyor (`StudentAttendanceViewsTests`'te yalnız "bugün" sezonu — okulda tek aktif sezon kısıtı); yoklama kırmızıları sıfır.
+
 ### `X-23` · `Oksis.Infrastructure` derlemesi 5–6 dakika: 227 göç Designer dosyası (≈3,4 milyon satır) her derlemede analiz ediliyor 🟡
 
 2026-09-26, `Y-06` çalışması. Altyapı projesine dokunan her değişiklikten sonra `dotnet build src/Oksis.Api` 4:51–6:02 sürdü
@@ -2526,6 +2560,8 @@ güncel sorguyu çalıştırıyor.
 ⬜ Kapatma yolu: testin okuma adımı hedef göç noktasının şemasıyla uyumlu kalsın (ham SQL) ya da test kesme noktasını
 güncel göçe taşısın. `TB-252` ailesi (entegrasyon testi ortam varsayımı).
 
+✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `f47ebdd3`):** okuma adımı kesme noktasının şemasına uygun ham SQL'e alındı. Göç zincirini sona kadar sürmek ayrı bir kusur gösterdi → `TB-260`.
+
 ### `TB-252` · Müfredat entegrasyon testi paylaşılan veritabanındaki yayımlanmış sürüme bağlı — çalışma sırasına göre kırmızı ⚪
 
 `Y-04` (alan bazlı müfredat profili) doğrulamasında çıktı (2026-09-24, `oksis-api` `cc4a2aa3` tabanı).
@@ -2539,6 +2575,29 @@ ilgisi yok: snapshot kaynak türünü taslaktan alıyor, o yol değişmedi.
 ⬜ Kapatma yolu: "master'ı olmayan yıl"ı test içinde garanti et (ör. hiçbir testin yayımlamadığı ve
 çalışma anında boş olduğu doğrulanan bir yıl) ya da `CurriculumPublishTests` kendi yayımladığı sürümü
 temizlesin. `TB-184` ailesi: paylaşılan veritabanında küresel duruma bakan test.
+
+✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `03005e56`, `fc4b718c`):** manuel taslak testi çalışma anında yayımlı en eski yılın öncesini seçip öncülünü doğruluyor (sabit 2033 ayrıca 2026-09-22 yürürlük kuralıyla da kırmızıydı). `CurriculumPublishTests` paylaşılan DB'deki "Matematik/Türkçe" adlı başka derslerle "ambiguous" eşleşiyordu; fixture'ın iki dersine bağlandı ve payload ders kodunu taşıyor. Yan etki düzeltildi: `Preview_matches_the_snapshot` karşılaştırması saatli satırlara çekildi (önizleme 0 saatlik satırı saymıyor, snapshot yazıyor). ⚠️ **İz:** paylaşılan test DB'sinde MIDDLE-GENERAL için 2031/2033/2035 sürümleri kalıyor; ileri yıl testi kırmızıya düşerse ilk bakılacak yer.
+
+### `TB-260` · `education_program_from_document` göçü, cutover'ın snapshot satırlarının bağlı olduğu tohum müfredat satırlarını silerken FK'ye takılıyor 🟡
+
+2026-09-28 gece turunda `TB-254` düzeltilirken ölçüldü (`CurriculumVersioningMigrationTests`, göç zinciri sona kadar sürüldü).
+`20260921 education_program_from_document` göçü tohum müfredat satırlarını siliyor; cutover'ın ürettiği snapshot satırları bu
+satırlara `source_entry_id` ile bağlıysa silme yabancı anahtara takılıyor ve göç düşüyor. Göç testinde tekrarlanabilir. Dev
+veritabanı bu noktayı çoktan geçtiği için bugün belirti yok; ama cutover sırasında aktif sezonu olan **eski bir veritabanında**
+(üretime ilk kurulum ya da eski yedekten geri dönüş) göç zinciri kırılabilir.
+
+⬜ Kapatma yolu: göç silmeden önce snapshot satırlarının `source_entry_id` bağını boşaltsın ya da yeni satıra taşısın (hangi
+anlamın doğru olduğu snapshot'ın kaynak izi sözleşmesine göre seçilmeli); göç testi zinciri sona kadar yeşil koşmalı.
+
+### `TB-261` · Sezon devri önizlemesi: yalnız hazırlık, 9 ve 10'u açık okulda 10-A "Mezun" çıkıyor, test "Terfi" bekliyor ❓
+
+2026-09-28 gece turunda entegrasyon takımı 675 → 1 kırmızıya indirildiğinde kalan tek kırmızı
+(`SeasonRolloverPreviewTests.Rows_Preparatory_PromotesToNinthGradeAsync`; tabanda da kırmızıydı). Önizleme hesabı okulun **kendi
+kademe listesine** bakıyor: okulda 11. sınıf açık olmadığı için 10-A'nın bir üst kademesi yok ve satır "Graduate" dönüyor. Test
+ise 10-A'nın terfi etmesini bekliyor. Hangisi doğru, ürün sorusu: kademe listesi eksik açılmış (henüz 11'i olmayan yeni) bir okulda
+10. sınıf mezun mu sayılır, yoksa MEB kademe sırasına göre 11'e mi terfi eder (ve 11 kademesi açılması mı istenir)?
+
+⬜ Karar gerekiyor; kod ve test ona göre hizalanır.
 
 ## Not
 
