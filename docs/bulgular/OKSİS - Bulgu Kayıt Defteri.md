@@ -425,6 +425,8 @@ bölgesi" dahil) hâlâ örnek veri.
 
 ✅ **2026-09-28 · vekâlet ve mobil ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `d021419`, `cd27d16`, merge bekliyor):** web Nöbetlerim'de "Vekâlet derslerim" (`GET duties/substitution/me`, bugün vurgulu, geçmiş katlanır); mobilde `/duty` ekranı, "Daha fazla › Nöbetlerim" satırı ve `duties` bildiriminin yönlendirmesi; ortak mantık core'da testli (`buildMyDutyWeek`, `splitMySubstitutions`). Web Altınay'da öğretmenle ölçüldü (vekâlet listesi canlıda boş, boş durum doğru). ⬜ Açık: muafiyet bilgisi için `duties/me` alanı (sunucu), mobil ekran ölçümü.
 
+✅ **2026-09-28 · muafiyet için sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `95fbb0e1`):** `duties/me` → `exemptions[]` (yalnız çağıranın, açık okul yüklemiyle; sürekli + dönemle kesişen geçici; `coversWholeTerm` = `CoversPeriod`; canlı çizelge yokken de dolu). 3 entegrasyon testi, sınıf 6/6.
+
 ### `B-89` · Otomatik dağıtımda yancı seçimi nöbet yükünü saymıyor — toplam yük 1–3 (ideal 2–3) 🟡
 
 Altınay saha testi (C2.1, 2026-09-28), `B-87` düzeltmesinden sonra ölçüldü. 18 öğretmene 20 nöbet + 20 yancı = 40 görev
@@ -687,6 +689,8 @@ böyle iner. Branş eşleşmesini de zorlaştırması olası (`TB-240`; eşleşm
 ⬜ Kapatma yolu: kesme işareti ve kısa çizgiden sonra gelen eki küçük bırakan bir başlık
 dönüştürücü; mevcut iki satır için düzeltme.
 
+✅ **2026-09-28 · kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `2213cefe`, merge bekliyor):** ders ve program adı tek Türkçe başlık dönüştürücüsünden geçiyor (`Parsing/TurkishTitleCase.cs`; `MasterSubjectCode` ve `MebProgramIdentity` bağlı): kesme (’ ' ʼ ‘) ve harfe bağlı kısa çizgiden sonraki ek küçük; nokta, eğik çizgi ve parantez yeni kelime; Roma rakamı büyük ("Programı-I" ünlüden sonra rakam, "Kur’an-ı" ünsüzden sonra ek). 21 vaka. **İkiz satır riski ölçüldü, yok:** tekillik görüntü adına değil ham addan türeyen koda bağlı (`MasterSubjectCode.From`/`Fold`), eski ve yeni ad aynı koda katlanıyor (testli). ⬜ **Mevcut veri kendiliğinden düzelmez** (yayım var olan kodda adı yeniden yazmıyor): `master.subjects` 2 satır + `school.subjects` 10 satır için tek seferlik ad düzeltmesi — master'da `code` üzerinden, okul kopyalarında yalnız adı hâlâ bozuk olan satırlar (`name = N'Kur’An-I Kerim'`) ki okulun elle verdiği ad ezilmesin. Gerçek veri olduğu için yapılmadı, kullanıcı onayı bekliyor.
+
 ### `D-24` · Davet ekranı okulun resmî adını gösteriyor, görünen adını değil ⚪
 
 Altınay B6 turunda görüldü (2026-09-23). Davet önizlemesinde "Okul" satırı **"Altınay Eğitim
@@ -815,6 +819,8 @@ bilmeden isteği atıyor. Zararsız ama gerçek hataları konsolda gürültüye 
 döner.
 
 🔎 **2026-09-28 · istemci tek başına kapatamaz (ölçüldü):** logonun varlığı yalnız `SchoolSettingsDetailDto.logoUrl` (yönetici izinli) ve `school-settings/public` (`X-Tenant-Code` istiyor) cevaplarında; oturum bağlamı `auth/me/context` logo taşımıyor. Kapatma: sunucu `ContextView.schoolLogoUrl: string | null` (ya da logo yokken 204), sonra istemci `null`'da istek atmaz.
+
+✅ **2026-09-28 · sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `774c9c43`):** `auth/me/context` → `schoolLogoUrl` (mevcut `ISchoolLogoUrlBuilder`; logo yoksa `null`, ek sorgu yok), 3 test.
 
 ### `D-29` · Katalog satırındaki simge düğmelerinin adı yok; pasife alma tek tık ve onaysız 🟡
 
@@ -2328,6 +2334,8 @@ kararlar arşiv değil — okul hâlâ 2023 çizelgesine bağlı bir sezon açab
 sayılmamalı; (b) `Validation` hatasının gerekçesi kullanıcıya ve loga yazılmalı — şu an
 "neden taşınamadı" hiçbir yerde yok; (c) eski çizelge düzenlerinin desteklenip
 desteklenmeyeceği karara bağlanmalı. Ölçüm hazır: 28 çizelge belgesinin 3'ü sorunsuz taşındı.
+
+✅ **2026-09-28 · (a) ve (b) kodda (gece turu, `oksis-api` `fix/gece-defter-turu`, merge bekliyor):** **(a)** `8767d1bd` — 2025/24 PDF'i yeniden ayrıştırılarak kök ölçüldü: başlıktaki "DERS" hazırlık sütununun tam üstünde duruyor ve eşit öncelikte "HAZIRLIK" etiketini yeniyordu. `MebChartParser` sütun adı önceliği sayı > hazırlık > başka metin > SINIF; en az bir sütun tanınıyorsa sayı/hazırlık olmayan sütun sınıf sayılmıyor ama geometriden de atılmıyor (atılsa ad sınırı kayardı). Hiç sütun tanınmıyorsa davranış aynı — eski düzenlerin karantina sinyali (c) kararına kadar korunuyor. Fixture `ozel-fen-2025-24.words.json` + 3 test, golden testler aynen. **(b)** `80152104` — kök neden doğrulayıcının program kodunu 50 karakterle sınırlaması (kolon 120; 2025/25 kodu 52 karakter), hizalandı. Ayrıca tek sayfanın doğrulama hatası artık bütün belgeyi düşürmüyor: sayfa `SkippedCharts[].Reason`'da "Doğrulama hatası: …" ile raporlanıyor, kalanlar taşınıyor, Warning logu belge/sayfa/kod/gerekçeyle. 4 test. ⬜ (c) karar bekliyor. Yan gözlemler: 2025/24'te `SUM_MISMATCH` sürüyor; 2025/25 başlığındaki "TASLAK" filigranı program adına giriyor (`TB-224` ailesi).
 
 ### `TB-224` · Bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠
 
