@@ -515,6 +515,8 @@ ekranda seçiliyor, hiçbir davranışı değiştirmiyor; 5'lik ilkokulda üst s
 ya da override'ı ayar yüzeyinden kaldırmak. Geçme notu zinciri de aynı serviste ve aynı
 şekilde ölü.
 
+✅ **Karar (2026-09-28, kullanıcı):** kademe ölçeği **not girişine bağlanır** (`IGradeScaleResolver` not girişi ve politika ucunda; kademeye göre üst sınır ve geçme notu). Uygulanacak.
+
 ### `TB-106` · Akademik politikanın not alanları tüketicisiz 🟡
 
 `TB-46` ağırlığı tek yere indirdi ama tüketici gelmedi: `WrittenWeight` /
@@ -526,6 +528,8 @@ sütunu açamıyor. ⬜ Bu alanların gerçek tüketicisi karne / dönem sonu no
 gelene kadar ekranda "çalışıyormuş gibi görünen" üç ayar var. Ya ayar yüzeyinden gizlenir
 ya da karne kararına bağlanır.
 
+✅ **Karar (2026-09-28, kullanıcı):** **olduğu gibi kalır** (karne modülü gelene kadar).
+
 ### `TB-108` · Harf ölçeği seçilebiliyor ama not girişi harf kabul etmiyor 🟡
 
 Master katalogda `HARFLI` ölçek var ve okul onu varsayılan seçebiliyor. Not girişi
@@ -533,6 +537,8 @@ Master katalogda `HARFLI` ölçek var ve okul onu varsayılan seçebiliyor. Not 
 boş olduğundan üst sınır sessizce 100'e düşüyor. Harf sistemi seçen okulda öğretmen "A"
 girince 400 alır, "85" girince kabul edilir. ⬜ Ya harf ölçeği katalogdan/seçimden
 kaldırılır ya da harfli giriş ve ortalama kuralı tasarlanır ([[Not Ölçeği]] açık sorusu).
+
+✅ **Karar (2026-09-28, kullanıcı):** harfli ölçek **katalogdan/seçimden kaldırılır**. Uygulanacak.
 
 ## 10. Ödevler 🟡
 
@@ -585,6 +591,8 @@ e-postayı okul açarsa gönderir. `ANNOUNCEMENT_URGENT` zaten `delivered: false
 işaretli, diğer ikisi `true` — yani ekran onları "çalışıyor" diye gösteriyor.
 ⬜ `TB-125` ile aynı kapı düzeltmesine bağlı.
 
+✅ **Karar (2026-09-28, kullanıcı):** e-posta kanalı kapsamını **katalogdan** (`NotificationEventKeyMap`) alır; üç olay gerçekten e-posta göndermeye başlar (okul kapatabilir). Uygulanacak.
+
 ### `E-23` · SMS kanalının hiçbir uygulaması yok; matris sütunu, okul ayarı ve kota kartı sahte yüzey 🟡
 
 `ISmsSender` bir arayüz olarak duruyor ("MVP'de concrete provider yok"), `Infrastructure`
@@ -602,6 +610,8 @@ o kararla birlikte kaldırılmadı. ⬜ İki yoldan biri: sağlayıcı (Netgsm/�
 bağlanıp `SmsNotificationChannel` yazılır, ya da sütun ayar yüzeyinden gizlenip
 `SupportsSms` katalogda `false`'a çekilir. Arada kalan hâl, yöneticiye kontör harcadığını
 düşündüren bir toggle.
+
+✅ **Karar (2026-09-28, kullanıcı):** SMS **yüzeyden gizlenir** — matris sütunu, okul ayarı ve kota kartı; katalogda `SupportsSms=false`. Sağlayıcı seçilince geri gelir. Uygulanacak.
 
 ## 12. Çapraz Kesen İşler ✳️
 
@@ -666,6 +676,8 @@ ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerek
 
 ✅ **2026-09-28 · (1) kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e2aad5a0`, `af322046` ve devamı, merge bekliyor):** entegrasyon takımı **1595 testte 675 kırmızı → 1 kırmızı** (tam koşu, kırmızı ad kümeleri `comm` ile karşılaştırıldı, yeni kırmızı 0; Garage/ClamAV ortam kırmızısı çıkmadı). Merkez `DatabaseFixture`: okul açılışının tek ortak yolu (`CreateSchoolAsync` → okul bağlamında ders + sınav türü kataloğu içe aktarımı), `ImportSchoolCatalogsAsync`, `SeedSubjectAsync` (okul bağlamında ders), `SchoolSubjectIdAsync` (çekirdek → okul kimliği), `OpenGradeLevelsAsync` (kademe + eğitim programı tercihi), `Activated` (sezon). Duyuru kitlesi fixture'ı, 18 sınav dosyası, 9 dosyadaki bağlamsız ders yazımı ve sezon testleri bağlandı; branş kataloğu bilerek içe aktarılmadı (testler branşı kendi adıyla yazıyor). Kalan tek kırmızı `TB-261`. ⬜ **(2) push kapısı / CI kararı** artık verilebilir: takım neredeyse yeşil.
 
+✅ **Karar (2026-09-28, kullanıcı):** (2) push kapısı hızlı kalır; **merge öncesi `./scripts/test-changed.sh --integration` zorunlu adım** olarak CLAUDE.md/AGENTS.md ve commit kurallarına yazılır. Uygulanacak.
+
 ### `TB-240` · Anadolu Lisesi'nin dört ortak dersi branşsız; atama alan dışı sayılıyor 🟠
 
 Altınay B4.3 ölçümünde çıktı (2026-09-22). `TB-238`'in "ayrı kalan" notuna ID verildi.
@@ -713,6 +725,8 @@ dönüştürücü; mevcut iki satır için düzeltme.
 
 ✅ **2026-09-28 · kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `2213cefe`, merge bekliyor):** ders ve program adı tek Türkçe başlık dönüştürücüsünden geçiyor (`Parsing/TurkishTitleCase.cs`; `MasterSubjectCode` ve `MebProgramIdentity` bağlı): kesme (’ ' ʼ ‘) ve harfe bağlı kısa çizgiden sonraki ek küçük; nokta, eğik çizgi ve parantez yeni kelime; Roma rakamı büyük ("Programı-I" ünlüden sonra rakam, "Kur’an-ı" ünsüzden sonra ek). 21 vaka. **İkiz satır riski ölçüldü, yok:** tekillik görüntü adına değil ham addan türeyen koda bağlı (`MasterSubjectCode.From`/`Fold`), eski ve yeni ad aynı koda katlanıyor (testli). ⬜ **Mevcut veri kendiliğinden düzelmez** (yayım var olan kodda adı yeniden yazmıyor): `master.subjects` 2 satır + `school.subjects` 10 satır için tek seferlik ad düzeltmesi — master'da `code` üzerinden, okul kopyalarında yalnız adı hâlâ bozuk olan satırlar (`name = N'Kur’An-I Kerim'`) ki okulun elle verdiği ad ezilmesin. Gerçek veri olduğu için yapılmadı, kullanıcı onayı bekliyor.
 
+✅ **Karar (2026-09-28, kullanıcı):** mevcut bozuk adlar **göçle** düzeltilir (her ortamda aynı; okulun elle değiştirdiği adlara dokunulmaz, önbellek temizlenir). Uygulanacak.
+
 ### `D-24` · Davet ekranı okulun resmî adını gösteriyor, görünen adını değil ⚪
 
 Altınay B6 turunda görüldü (2026-09-23). Davet önizlemesinde "Okul" satırı **"Altınay Eğitim
@@ -744,6 +758,8 @@ Altınay'ın 85 öğrencisi 100–184 aralığında numara aldı; e-Okul numaras
 tutuyor ve sayaç çakışması orada yaşıyor. Karar gerekiyor: içe aktarmada da numara kalkar mı,
 yoksa sayaç dolu numarayı atlar mı? Domain notu (`Öğrenci Numarası.md`) karara göre güncellenmeli.
 
+✅ **Karar (2026-09-28, kullanıcı):** Excel içe aktarmada da **numara otomatik** — `OgrenciNo` sütunu yok sayılır/kaldırılır, tek kaynak sayaç; e-Okul numarası tutulmaz. Domain notu (`Öğrenci Numarası.md`) güncellenecek. Uygulanacak.
+
 ### `B-62` · Nakil öğrencinin devreden devamsızlığı hiçbir yere yazılmıyor 🟡
 
 Altınay B7 (2026-09-23). Sihirbaz nakil kaydında *Özürsüz/Özürlü Gün Sayısı* soruyor ve özette
@@ -758,6 +774,8 @@ sayısı** tutuyor.
 (b) alanlar kaldırılır ve devir ayrı ekrandan girilir. Bugün kullanıcıya veri alıyormuş gibi
 görünüp sessizce atıyor.
 
+✅ **Karar (2026-09-28, kullanıcı):** **sihirbaz devir ucuna bağlanır** — devir kaydı özürsüz/özürlü gün modeline genişletilir (e-Okul nakil belgesi gibi), sihirbaz değerleri kayıtla birlikte yazar. Uygulanacak.
+
 ### `B-63` · Sihirbazdaki "Birincil veli mi?" seçimi sunucuya gitmiyor 🟠
 
 Altınay B7 (2026-09-23). Veli adımında iki ayrı kavram var: *Birincil veli mi? (Evet/Hayır)* ve
@@ -770,6 +788,8 @@ yetkiden besleniyor.
 ⬜ Kapatma yolu: iki kavram birleşir. "Birincil veli" seçimi `isPrimaryContact`'i belirler ve
 öğrenci başına tekillik sunucuda uygulanır. Ya da biri kaldırılır (karar).
 
+✅ **Karar (2026-09-28, kullanıcı):** iki kavram **birleşir**: "Birincil veli" seçimi Birincil İletişim'i belirler, öğrenci başına tam bir birincil sunucuda zorlanır. **Onarım:** 0 ya da 2 birincili olan öğrencilerde **ilk eklenen veli** birincil olur. Uygulanacak.
+
 ### `D-25` · Öğrencinin ilk girişi "KVKK onayınız geri çekilmiş, yönetime başvurun" diyor 🟡
 
 Altınay B7 (2026-09-23). Kayıt komutu öğrenci için rıza kaydı açmıyor. Öğrenci ilk girişte
@@ -779,6 +799,8 @@ düğmesi sorunu kendisi çözüyor; 85 öğrencinin hepsi bu yoldan geçti.
 Ürün sorusu da var: reşit olmayan öğrencinin KVKK rızasını kim verir (veli mi, öğrenci mi)?
 
 ⬜ Kapatma yolu: ilk onay ile geri çekilmiş onay ayrı metinle anlatılır; rızanın sahibi kararı.
+
+✅ **Karar (2026-09-28, kullanıcı):** reşit olmayan öğrencinin KVKK rızasını **veli verir**; öğrenci yalnız aydınlatma metnini görür; ilk onay ve geri çekilmiş onay ayrı metinle anlatılır. Uygulanacak.
 
 ### `B-65` · "Önceki Sezondan Kopyala" kaynak sezonu yanlış seçebilir (gizli) 🟡
 
@@ -794,6 +816,8 @@ başka bir taslak seçilebilir.
 seçilir; tercihen sunucu belirler.
 
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fb00cc5`, merge bekliyor):** kaynak saf ve testli `copySourceSeason`: hedeften önce başlayan en yakın sezon (`SeasonOption.startDate`). **Varsayım:** arşivlenmiş önceki sezon da kaynak olabiliyor (eski kod dışlıyordu; sunucu kısıtlamıyor) — istenmezse tek satır.
+
+✅ **Karar (2026-09-28, kullanıcı):** gece turunun varsayımı onaylandı — **arşivlenmiş sezon da kaynak olabilir**.
 
 ### `D-26` · "Görevi kapat (devret)" onay istemiyor ve gerekçeyi sabit metinle yazıyor 🟡
 
@@ -876,6 +900,8 @@ bu bilginin karşılığı yok: sihirbazda alan yok, öğrenci profilinde ve kay
 
 ⬜ Karar gerekiyor: kapsam içi mi? İçindeyse öğrenci kaydında (sezonluk) bir alan olur; yoklama,
 nöbet ve veli bildirimleri ileride bunu okuyabilir.
+
+✅ **Karar (2026-09-28, kullanıcı):** pansiyon/yatılı durumu **kapsam dışı**. Madde kararla kapanır.
 
 ### `TB-237` · Branş kataloğu boş: seed silindi, yerine geçecek yüzey yazılmadı 🔴
 
@@ -1343,6 +1369,8 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
 
 ✅ **2026-09-28 · açık ayak 1 kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e3497537`, merge bekliyor):** sistem komutu `StartDueAcademicTerms` (izinsiz, `Tenancy.Required`, açık okul yüklemi, okul-yerel gün) + günlük iş `academic-sessions.term-daily-sweep` (05:40 İstanbul; sınav 06:00 ve yoklama 07:00 süpürmelerinden önce); gövde yine `AcademicTermStarter`. 7 birim testi + kayıt bekçisi. **Korunan ön koşul:** sezonda aktif dönem varken başlatıcı dokunmuyor, yani 1. dönem kapatılmadan (karne) 2. dönem kendiliğinden başlamaz — olağan akışta sorun değil, 1. dönemi hiç kapatmayan okulda 2. dönem yine elle başlar. ⬜ Ayak 2 (topbar ile sunucunun iki dönem gerçeği) açık.
 
+✅ **Karar (2026-09-28, kullanıcı):** 1. dönem kapatılmadan 2. dönemin başlangıç günü gelirse günlük iş **başlatmaz, uyarır** (pano + yönetici: "1. dönemi kapatın, 2. dönem başlayamıyor"); karne otomatiği tetiklenmez. Uygulanacak.
+
 ### `TB-192` · Lise müfredatında Türk Dili ve Edebiyatı yok; saat şablonu kendini "doğrulanmadı" ilan ediyor 🟠
 
 Altınay B4 ölçümünde çıktı (2026-09-16). `master.curriculum_hour_templates` lise için 9–12 × 11 ders taşıyor,
@@ -1582,6 +1610,8 @@ belgelendirir. Karar verilene kadar sorgunun determinist bir sıralaması olmal�
 🟡 **2026-09-28 · ara koruma kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `50d9fab5`):** karar gelene kadar `PersonDirectory` sıralaması deterministik — en eski kişi (`CreatedAt`), sonra `Id`; kodda "ürün kararı değil, geçici sabit" diye belgeli, gerçek SQL'de 2 testle kilitli. ⬜ Ürün kararı (a/b/c) açık.
 
 🔴 **2026-09-28 · ekran ölçümü gece turundaki ara korumayı geri çevirdi:** Altınay'da bir öğretmenin e-postası test dışı ALTINAY-SBL'de de kayıtlı (dev DB'de tek çakışan e-posta; hesaba bağlı çift kişi 0). "En eski kişi" kuralı o öğretmenin girişini **SBL'ye** çevirdi — yönetici ekranı ve boş nöbet bölgesiyle açıldı. Master'da sırasız sorgu fiilen birincil anahtar sırasıyla dönüyor (`Include` + küme taraması) ve Altınay'a düşüyordu. Düzeltme (`oksis-api` `24469bac`): açık sıra **en küçük Id** — mevcut davranış sabitlendi, kimsenin girdiği okul değişmiyor; test oluşturulma zamanının sırayı değiştirmediğini kilitliyor. Ekranda yeniden ölçüldü: öğretmen Altınay'a giriyor. ⬜ Ürün kararı hâlâ açık — ve artık somut bir örneği var: aynı e-posta iki okulda.
+
+✅ **Karar (2026-09-28, kullanıcı):** **tek okul kısıtı** — bir e-posta/hesap yalnız bir okulda kişi olabilir (kısıt + göç). Mevcut tek çakışma: ALTINAY-SBL'deki kaydın e-postası `@altinaysbl.test` alanına çekilir (kayıt silinmez). Uygulanacak.
 
 ### `TB-180` · Rol seed bekçisi dört gündür kırmızı; günlük test döngüsü onu hiç koşmuyor 🟡
 
@@ -1911,6 +1941,8 @@ Kapı sorunu sürüyor ve **istemcide de yok**: `useModuleConfigs` yalnız ayar 
 çağrılıyor (web `module-tab.tsx:73`, mobil `modules-screen.tsx:208` ve ayar hub'ı); web menüsü ve
 mobil sekmeler modül ayarını okumuyor. Bir modülü kapatmak bugün ne menüden gizliyor ne ucu
 kapatıyor — ekranda tutulan bir tercih.
+
+✅ **Karar (2026-09-28, kullanıcı):** **menü + API kapısı** — kapalı modül menüden gizlenir, uçları tek `RequireModule` davranışıyla 403; seed anahtarları modül listesiyle hizalanır (ödev anahtarı eklenir, `marks`/`grades` adı birleşir). Uygulanacak.
 
 ### `X-06` geniş ayağı · Sorgu çevirisi 92 handler'da doğrulanmıyor 🟠
 
@@ -2301,6 +2333,8 @@ ile 'kültür, sanat ve spor' seçmeli ders gruplarından her bir gruptan en az 
 okusun; (c) kapsam dışı kalsın ve bu bilinçli olarak yazılsın. Seçmeli ders grubu kısıtının
 kendisi ayrı ve daha büyük bir iş — bu bulgu yalnız "açıklama hiç okunmuyor" kısmını kapsıyor.
 
+✅ **Karar (2026-09-28, kullanıcı):** dipnot metinleri **ayrıştırılıp işaretle eşleşir**, merkez ekranında üzerine gelince gösterilir. Seçmeli grup kısıtı ayrı iş. Uygulanacak.
+
 ### `TB-229` · Reddedilen çizelge bir daha içe aktarılamıyor 🔴
 
 2026-09-21'de kullanıcı manuel ekran testinde "Reddet'e basarsam ne olur?" diye sorunca
@@ -2560,6 +2594,8 @@ Altınay'da cinsiyet, seçilen ilişkiden verildi (Anne → Kadın, Baba → Erk
 
 ⬜ Kapatma yolu: gövdede `Gender?` (komutla aynı); ya da sihirbaz veliden cinsiyet istesin. Karar bekliyor.
 
+✅ **Karar (2026-09-28, kullanıcı):** **sihirbaz veliden cinsiyet sorsun** (zorunlu alan). Güncelleme ucu cinsiyeti zorunlu tutmaya devam eder; ⚠️ mevcut cinsiyetsiz kayıtlar (Altınay velileri, müdür) bu kararla düzeltilebilir hâle gelmez — ayrıca ele alınmalı. Uygulanacak.
+
 ### `TB-255` · Veri yazan göç Redis önbelleğini düşürmüyor — yeni ders 24 saat listede görünmüyor ⚪
 
 2026-09-25 Altınay testinde çıktı (kullanıcı: "rehberlik dersi sabit kural modalında ders listesinde yok").
@@ -2611,6 +2647,8 @@ veritabanı bu noktayı çoktan geçtiği için bugün belirti yok; ama cutover 
 ⬜ Kapatma yolu: göç silmeden önce snapshot satırlarının `source_entry_id` bağını boşaltsın ya da yeni satıra taşısın (hangi
 anlamın doğru olduğu snapshot'ın kaynak izi sözleşmesine göre seçilmeli); göç testi zinciri sona kadar yeşil koşmalı.
 
+✅ **Karar (2026-09-28, kullanıcı):** göç silmeden önce snapshot'ın `source_entry_id` bağını **boşaltır**, sonra siler (veri kaybı yok, yalnız kaynak izi kopar). Uygulanacak.
+
 ### `TB-261` · Sezon devri önizlemesi: yalnız hazırlık, 9 ve 10'u açık okulda 10-A "Mezun" çıkıyor, test "Terfi" bekliyor ❓
 
 2026-09-28 gece turunda entegrasyon takımı 675 → 1 kırmızıya indirildiğinde kalan tek kırmızı
@@ -2620,6 +2658,8 @@ ise 10-A'nın terfi etmesini bekliyor. Hangisi doğru, ürün sorusu: kademe lis
 10. sınıf mezun mu sayılır, yoksa MEB kademe sırasına göre 11'e mi terfi eder (ve 11 kademesi açılması mı istenir)?
 
 ⬜ Karar gerekiyor; kod ve test ona göre hizalanır.
+
+✅ **Karar (2026-09-28, kullanıcı):** **terfi + uyarı** — 10. sınıf MEB sırasına göre 11'e terfi eder; önizleme "11. sınıf kademesi açık değil" uyarısı verir ve devir o kademe açılmadan tamamlanmaz. Uygulanacak.
 
 ## Not
 
