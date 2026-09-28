@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-90` · `D-40` · `V-05` · `X-24` · `TB-262` · `E-36` · `ENG-04`
+**Sıradaki boş ID:** `B-91` · `D-40` · `V-05` · `X-24` · `TB-262` · `E-36` · `ENG-04`
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -238,12 +238,14 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 4 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🔴 Kritik | 5 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 39 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 27 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **93** | |
+| **Toplam** | **94** | |
+
+> **2026-09-28 (öğleden sonra):** yönetici devamsızlık ekranında yoklamasını tamamlamış öğretmen "bekliyor" görününce `B-90` 🔴 açıldı — yeniden yayınlanan program eski sürümün önceden üretilmiş oturumlarını temizlemiyor; Altınay'da bugün 80 fazladan oturum, bir kısmında çift yoklama kaydı. Toplam **94**.
 
 > **Gece turu (2026-09-28, kullanıcı uyurken — karar gerektirmeyen maddeler):** iki depoda tek dal `fix/gece-defter-turu`
 > (**merge bekliyor**; `oksis-api` 26, `oksis-ui` 24 commit). Önce master'a çoktan girmiş **58 eski kapanış** arşive taşındı
@@ -2297,6 +2299,27 @@ varsayılan alır; kural core'da tek fonksiyon olur. Backend okuma uçlarının 
 karar bekliyor.
 
 ✅ **Karar (2026-09-28, kullanıcı):** **okuma ekranları son kapanan dönemi, planlama ekranları başlamamış ilk dönemi** varsayılan alır; kural core'da tek fonksiyon, backend'in id'siz okuması da aynı kuralı uygular. Uygulanacak.
+
+### `B-90` · Program yeniden yayınlanınca eski sürümün önceden üretilmiş yoklama oturumları kalıyor — mükerrer oturum ve çift yoklama 🔴
+
+2026-09-28, Altınay. Yönetici *Devamsızlık* ekranında **Hale Kübra Öztürk** bütün yoklamalarını tamamladığı hâlde 1. ders
+"bekliyor" göründü. Ölçüm (`academic.attendance_sessions`, `date = 2026-09-28`):
+
+- 10-A'nın (`CFC74DA7…`) programı 27 Eylül'de üç kez yayınlandı (v1 10:53, v2 12:37, v3 13:21 UTC). 28 Eylül oturumları **v1'den**
+  27 Eylül 11:45'te önceden üretilmişti. Gece işi 21:22'de v3'ün oturumlarını da üretti → aynı şube + ders saati için **iki
+  oturum**. Öğretmen ekranı v1 oturumunu gösterdi, öğretmen onu doldurdu (7 kayıt); v3 oturumu boş kaldı → panoda "bekliyor".
+- Okulda aynı gün **80 eski-sürüm oturumu** (33 tamamlanmış, 47 bekleyen). Öğretmeni değişmiş derslerde **iki öğretmen de**
+  yoklama aldı: 11-? `D37F…` 4. ders (13 + 13 kayıt), `AD74…` 5. ders (8 + 8) — öğrenci başına aynı saat için **iki kayıt**.
+  Kimsenin artık dersi olmayan hayalet oturumlar da bekliyor (`E2B2…` 3. ders, `D37F…` 6. ders).
+
+**Kök neden:** `SessionMaterializer.MaterializeForDateAsync` "bu ders üretildi mi" sorusunu **`PlacementId`** ile soruyor
+(`alreadyMaterialized = existing.Select(s => s.PlacementId)`). Yeniden yayın yerleşimleri yeni kimliklerle doğurduğu için eski
+sürümün oturumunu tanımıyor ve yanına ikincisini açıyor. Yayın anında gelecek tarihli, eski sürüme bağlı oturumları
+iptal eden/taşıyan bir adım da yok. Öğretmen günlük listesi ve pano da sürüme bakmadan mevcut oturumları okuyor.
+
+⬜ **Karar gerekiyor:** (1) yeniden yayında eski sürümün **bekleyen** oturumları ne olur — silinir mi, `Cancelled` mı olur?
+(2) eski sürümde **tamamlanmış** oturumun kayıtları yeni sürümün aynı saatteki oturumuna taşınır mı (aynı şube/saat/ders
+ise), yoksa tarihçe olarak kalır mı? (3) Altınay'ın 28 Eylül verisi nasıl temizlenir — çift kayıtlarda hangisi geçerli?
 
 ### `TB-256` · Yoklama maddileştirme ve pano entegrasyon testlerinin 17'si master'da kırmızı (ders kataloğu hatasından ayrı) 🟡
 
