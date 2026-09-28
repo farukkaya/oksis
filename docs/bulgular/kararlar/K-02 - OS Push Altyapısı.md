@@ -1,10 +1,55 @@
 # K-02 · OS Push Bildirim Altyapısı — Karar ve Uygulama Planı
 
-> **Durum:** ✅ Karara bağlandı
+> **Durum:** ✅ Karara bağlandı · **iki kez revize edildi** (2026-08-28, 2026-09-28) — yürürlükteki hâl aşağıdaki *Revizyonlar* bölümündedir
 > **Tarih:** 2026-08-08
 > **Ana dosya:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
 > **Blokladıkları:** `K-01a` `K-01b` `K-01c` `E-05`
 > **Kaynak envanter:** `oksis-api/docs/analysis/bildirim-teslim-ihtiyac-analizi.md` (531 satır)
+
+---
+
+## Revizyonlar — yürürlükteki hâl
+
+> Aşağıdaki §1–§12 2026-08-08 kararının **tarihçesidir**; çelişen yerlerde bu bölüm esas alınır.
+
+### R1 · 2026-08-28 — sağlayıcı ve istemci (kullanıcı kararı)
+
+| Konu | 2026-08-08 | Yürürlükte |
+|:--|:--|:--|
+| iOS taşıma | Doğrudan APNs HTTP/2 | **FCM → APNs** (tek gönderici, tek token biçimi) |
+| Mobil kütüphane | `expo-notifications` | **`@react-native-firebase/messaging`** |
+| Veli bazlı tercih | Kapsam dışı (`S-1`) | **Kapsam içinde** (`notification_preferences`, olay başına push kapatma) |
+
+Değişmeyenler: cihaz başına tek aktif hesap (K3), `user_devices`'ta `Platform`/`Provider` kolonları, Web Push kapsam dışı (K2), Android önce (K4).
+
+⚠️ **KVKK gerekçesi bozuldu:** §5, R-03 istisnasını "iOS Google'dan geçmiyor" diye kabul etmişti; FCM→APNs ile artık her iki platform da Google'dan geçiyor. Pilot öncesi hukuk görüşüne bu hâliyle gidilmeli.
+
+### R2 · 2026-09-28 — devamsızlık ve yoklama hatırlatması push kapsamına alındı (kullanıcı kararı)
+
+İlk dalga (`GRADE_PUBLISHED`, `HOMEWORK_PUBLISHED`, `HOMEWORK_DUE`) devamsızlığı dışarıda bırakmıştı; bu yüzden §1'deki pilot çıkış kriteri karşılanmıyordu. İki olay eklendi:
+
+| Olay anahtarı | Kind | Alıcı | Sıklık | Varsayılan push |
+|:--|:--|:--|:--|:--|
+| `ATT_ABSENT` | `AttendanceAbsent` | Veli | Yalnız **ilk ders** yoklamasında, öğrenci başına günde bir kez | Açık |
+| `ATT_REMINDER` | `AttendanceReminder` | Dersin öğretmeni | Yoklaması alınmamış oturum başına bir kez | Açık |
+
+Günlük özet (`ATT_DAILY_SUMMARY`) ve eşik aşımı (`ATT_THRESHOLD`) push kapsamı **dışında** kalır. Okul her iki yeni satırı ayar ekranındaki olay×kanal matrisinden kapatabilir.
+
+Uygulama: `oksis-api` göçü `20260928_attendance_push_event_types`; `PushEventKeyMap` + `NotificationEventKeyMap` + katalog seed'i.
+
+**Yürürlükteki push kapsamı (17 olay)** — kanonik liste `PushEventKeyMap`'tir, bu tablo onun özetidir:
+
+| Grup | Olaylar |
+|:--|:--|
+| Yoklama | `ATT_ABSENT`, `ATT_REMINDER` |
+| Not | `GRADE_PUBLISHED`, `GRADE_ENTRY_REMINDER` |
+| Ödev | `HOMEWORK_PUBLISHED`, `HOMEWORK_DUE` |
+| Kulüp | `CLUB_ACTIVITY_PUBLISHED`, `CLUB_ACTIVITY_CANCELLED`, `CLUB_ANNOUNCEMENT_PUBLISHED`, `CLUB_APPLICATION_DECIDED` |
+| Sınav | `EXAM_PLACEMENT_REMINDER`, `EXAM_HOUR_REQUESTED`, `EXAM_HOUR_ANSWERED`, `EXAM_SCHEDULE_PUBLISHED`, `EXAM_MOVED`, `EXAM_TOMORROW`, `EXAM_INVIGILATION_CHANGED` |
+
+Bilinçli olarak dışarıda: ders programı yayını ve sınav penceresi yayını (tek işlemde okulun tamamına fan-out, throttle yok), duyuru, eksik ödev, sınav görüşü olayları.
+
+**Aynı gün Android bildirim ikonu düzeltildi** (`oksis-ui`, `plugins/with-notification-icon.js`): tanımlı bildirim ikonu yoktu, Firebase opak uygulama ikonunu kullanıyor ve Android onu gri kareye çeviriyordu. Artık tek renk vektör ikon + `#1B2B5E` rengi manifestte `default_notification_icon`/`default_notification_color` olarak bildiriliyor.
 
 ---
 
