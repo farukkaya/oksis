@@ -698,6 +698,8 @@ katıldığını bu satırdan ayırt edemiyor (`ALTINAY-SBL` da "Altınay Eğiti
 ⬜ Kapatma yolu: önizleme görünen adı döner (boşsa resmî ada düşer). Logo sorgusu aynı
 ayar satırını zaten okuyor.
 
+✅ **2026-09-28 · kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `b453124a`, merge bekliyor):** önizleme okul adını görünen ad → ayarlardaki resmî ad → `School.Name` sırasıyla veriyor (oturum bağlamı `GetCurrentContext` ile aynı sıra); ek sorgu yok. 3 birim testi.
+
 ### `V-04` · Öğrenci numarası: öneksiz okulda elle girişte "en az 100" şartı; sayaç elle girilen numarayı atlamıyor 🟠
 
 Altınay B7 (2026-09-23). Rapor e-Okul numarasıyla (1–222) girişi öneriyordu; numarası 100'ün
@@ -1052,6 +1054,8 @@ Test: gerçek Kestrel üzerinde sınır 2'ye indirilip 3. istekte 429 ve iki kov
 görünür ve bölümleme fiilen tekleşir (kodda yorumla işaretli, ayrı iş). Davet kabulü için yazılmış
 `invitation-public` politikası da hâlâ bağsız.
 
+✅ **2026-09-28 · `invitation-public` bağlandı (gece turu, `oksis-api` `fix/gece-defter-turu` `b98bcb17`):** davet önizleme (`GET by-token/{token}`) ve kabul (`POST accept`) uçları ortak, IP bölümlü, girişten ayrı kovada; sınır yapılandırmaya taşındı (`RateLimiting:InvitationPublic`, varsayılan 10/dk). Gerçek HTTP testinde 429 + `Retry-After`, davet kovası tükenince giriş kilitlenmiyor. **Not:** 10/dk/IP okulun ortak ağından toplu kabulde dar kalabilir, yapılandırmadan değişir. ⬜ Açık: yalnız `ForwardedHeaders` (dağıtım kararı).
+
 ### `TB-174` · Yarım Gün zil şablonu hiçbir okulda kaydedilemiyor — tekil indeks şablonu kapsamıyor (500) 🟠
 
 Altınay saha testinde (B2.3, 2026-09-15) müdür Tam Gün çizelgesini kaydettikten sonra Yarım
@@ -1297,6 +1301,8 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
    *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
    1. dönemi aktif görecek.
 
+✅ **2026-09-28 · açık ayak 1 kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e3497537`, merge bekliyor):** sistem komutu `StartDueAcademicTerms` (izinsiz, `Tenancy.Required`, açık okul yüklemi, okul-yerel gün) + günlük iş `academic-sessions.term-daily-sweep` (05:40 İstanbul; sınav 06:00 ve yoklama 07:00 süpürmelerinden önce); gövde yine `AcademicTermStarter`. 7 birim testi + kayıt bekçisi. **Korunan ön koşul:** sezonda aktif dönem varken başlatıcı dokunmuyor, yani 1. dönem kapatılmadan (karne) 2. dönem kendiliğinden başlamaz — olağan akışta sorun değil, 1. dönemi hiç kapatmayan okulda 2. dönem yine elle başlar. ⬜ Ayak 2 (topbar ile sunucunun iki dönem gerçeği) açık.
+
 ### `TB-192` · Lise müfredatında Türk Dili ve Edebiyatı yok; saat şablonu kendini "doğrulanmadı" ilan ediyor 🟠
 
 Altınay B4 ölçümünde çıktı (2026-09-16). `master.curriculum_hour_templates` lise için 9–12 × 11 ders taşıyor,
@@ -1337,6 +1343,8 @@ branşsız doğacak. Kalıcı düzeltme (açılışta tohum + mevcut boş okulla
 ⚠️ **Kararın dayandığı yol fiilen yoktu:** "kullanıcı düğmeye kendisi basacak" derken ekrandaki düğmenin hiçbir uç
 çağırmadığı görülmemişti — bkz. `TB-200`. Düğme aynı gün gerçek uca bağlandı; karar ancak bundan sonra
 uygulanabilir hâle geldi.
+
+✅ **2026-09-28 · kalıcı ayak kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e1529723`, merge bekliyor):** yeni tek yol `BranchCatalogImporter` (`TB-195` kalıbı); "MEB'den Getir" düğmesi ve okul açılışı (`CreateSchoolCommandHandler`, sınav türü tohumundan sonra) aynı sınıfı çağırıyor. `master.branches` boşsa açılış durmuyor, bilinçli ve yorumlu. Entegrasyon testi: açılan okulun branşları aktif master branş sayısına eşit. ⬜ Açık: mevcut branşsız okullar için backfill (göç yazılmadı).
 
 ### `TB-195` · Sınav türü kataloğu global ve okul tarafından değiştirilemiyor 🟠
 
@@ -1523,6 +1531,8 @@ bilinçli tek istisna.
 çok kişi bulduğunda okul seçtirir; (c) kod bugünkü örtük "ilk kayıt" davranışını açıkça yazar ve
 belgelendirir. Karar verilene kadar sorgunun determinist bir sıralaması olmalı.
 
+🟡 **2026-09-28 · ara koruma kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `50d9fab5`):** karar gelene kadar `PersonDirectory` sıralaması deterministik — en eski kişi (`CreatedAt`), sonra `Id`; kodda "ürün kararı değil, geçici sabit" diye belgeli, gerçek SQL'de 2 testle kilitli. ⬜ Ürün kararı (a/b/c) açık.
+
 ### `TB-180` · Rol seed bekçisi dört gündür kırmızı; günlük test döngüsü onu hiç koşmuyor 🟡
 
 `TB-174` düzeltmesi sırasında entegrasyon koşusunda ortaya çıktı (2026-09-16, dal `fix/ilk-sezon-acilisi`,
@@ -1646,6 +1656,8 @@ sonraki kopya yüklemsiz doğar — `TB-140`'ın yaşadığı tam olarak buydu (
 ⬜ **Açık kalan iki ayak:** (1) `GetMySubstitutions` o sırada başka bir turdaydı (`TB-174`), hâlâ yüklemsiz —
 bekçide **geçici** muafiyet ve randevu notu var. (2) `PersonDirectory.FindByAccountIdAsync` bilinçli olarak
 tenant süzgeci dışı (giriş akışı, `BR-identity-001`); oradan çıkan belirsizlik ayrı madde: `TB-181`.
+
+✅ **2026-09-28 · açık ayak (1) kapandı (gece turu, `oksis-api` `fix/gece-defter-turu` `6d718b8d`):** `GetMySubstitutions` `CallerPerson.ResolveIdAsync`'e bağlandı, bekçideki geçici muafiyet silindi; ham kalıp 3 → 2 (`CallerPerson` + gerekçeli `PersonDirectory`). Entegrasyon testi: hesabın başka okuldaki kişisi bu okulda çağıran sayılmıyor. Kalan (2) `TB-181`'de. Madde merge ile arşive gider.
 
 ### `TB-139` · Küresel tenant süzgeci süper yöneticiyi BÜTÜN okullara açıyor 🔴
 
@@ -2180,6 +2192,8 @@ denetleyemez.
 ⬜ Program adı iki DTO'ya da eklenmeli ve listede sütun olmalı. Çizelge sayfa numarası
 (`SourcePageNumber`) da yardımcı olur: kullanıcı MEB Kaynakları ekranında `s3` kartını
 görüp aynı numarayı burada arayabilir.
+
+✅ **2026-09-28 · sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `7d325952`):** `ImportRunListItemDto` ve `ImportRunDetailDto`'ya `EducationProgramName` ve `EducationProgramSourcePageNumber` eklendi (ekleme türü sözleşme); entegrasyon testi yeşil. ⬜ İstemcide program sütunu.
 
 ### `TB-228` · Dipnot işareti saklanıyor, açıklaması atılıyor 🟡
 
