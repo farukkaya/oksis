@@ -2321,6 +2321,11 @@ iptal eden/taşıyan bir adım da yok. Öğretmen günlük listesi ve pano da s�
 (2) eski sürümde **tamamlanmış** oturumun kayıtları yeni sürümün aynı saatteki oturumuna taşınır mı (aynı şube/saat/ders
 ise), yoksa tarihçe olarak kalır mı? (3) Altınay'ın 28 Eylül verisi nasıl temizlenir — çift kayıtlarda hangisi geçerli?
 
+✅ **Karar (2026-09-29, kullanıcı):**
+(1) Yeniden yayında eski sürümün **bekleyen** oturumları (`Pending`/`NotTaken`) **silinir**; tamamlanmışa dokunulmaz.
+(2) Tamamlanmış kayıtlar **taşınmaz, tarihçe olarak eski sürümde kalır** — kayıt oluştuğu anki `SubjectId`/`ExpectedTeacherId`/`ScheduleVersionId`'yi tutmaya devam eder ("Kimya'ya gelmedi" raporda hep Kimya'dır, sonradan Fizik'e dönse de). `SessionMaterializer`'ın "aynı saat için üretildi mi?" gate'i **`PlacementId`** yerine **(`ClassRoomId`, `Date`, `Period`)** üstünden bakar; pano ve öğretmen listesi sorguları `ScheduleVersionId` süzgecini bırakıp aynı üçlü üstünden tekilleşir. Tarihsel doğruluk (`AttendanceSession` doc'unda kilitli) korunur, `AttendanceSubmittedEvent` ikinci kez atılmaz.
+(3) Altınay 28 Eylül temizliği · yalnız **bekleyen 47 eski-sürüm oturumu silinir**; tamamlanmış 33 + çift yoklamalı kayıtlar dokunulmaz — tarihçe olarak durur, gerekirse ayrıca ele alınır. Uygulanacak.
+
 ### `TB-256` · Yoklama maddileştirme ve pano entegrasyon testlerinin 17'si master'da kırmızı (ders kataloğu hatasından ayrı) 🟡
 
 2026-09-26, `Y-06` entegrasyon koşusunda ölçüldü. `SessionMaterializerTests` + `AttendanceBoardAndJobsTests`: **17 kırmızı / 27**.
