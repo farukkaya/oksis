@@ -2310,7 +2310,14 @@ düştü, ikisi de yakalanıp 200 döndü** (düzeltme öncesi 500). Ama bir `bo
 `SessionMaterializer.cs:123`) → 500. Kurbanın işlemi sunucuda tümüyle geri alındığından "yakala + yeniden oku" burada işe
 yaramaz; işlemin yeniden denenmesi gerekir (`TransactionBehavior` içinde EF yürütme stratejisi / yeniden deneme). İki eşzamanlı
 istekle 6 günde (6–13 Ekim) hepsi 200, ama o denemelerde istekler çakışmadı; kanıt sayılmaz.
-⬜ **Kalan:** gün üretiminde deadlock kolu. İndeks ihlali kolu kapandı.
+✅ **2026-09-30 · deadlock kolu da kodda kapandı** (`oksis-api` master `d251036a`): `MaterializeForDateAsync` yazacak satır
+varsa kendi transaction'ını açıp `sp_getapplock` ile **okul×gün kilidi** alıyor, dolu slotları kilit altında yeniden okuyup
+yalnız eksikleri yazıyor; ikinci istek bekliyor ve hiçbir şey yazmıyor (yazacak satır yoksa kilit hiç alınmıyor). İndeks
+ihlali yakalaması kilit almayan `GetOrCreateAsync`'e karşı ikinci savunma olarak kaldı. Testler: ikinci üretimin kilitte
+beklediği `sys.dm_tran_locks`'tan ölçülerek kuruluyor; yoklama/ders programı/okul entegrasyon takımı 286/286.
+Canlı ölçüm **yapılmadı**: 23:36'da başka bir oturum ana ağaçtan (kilitsiz kodla) 5112'de API başlatmıştı; ona karşı 5 günde
+6'şar eşzamanlı istek yine 500 verdi — eski davranışın teyidi, yeni kodun ölçümü değil. İkinci API açmak arka plan işlerini
+yineleyeceği için açılmadı. **Arşive gitmek için:** yeni ikiliyle eşzamanlı istek ölçümü.
 
 ### `TB-263` · Dev veritabanında koddan olmayan bir B-90 göçü uygulanmış (`…b90_attendance_supersession`) 🟡
 
@@ -2322,6 +2329,9 @@ boş kabul ediyor). Ama iki dal birleşirse ya da dev DB'den şema karşılaşt�
 ✅ **2026-09-30 · karar (kullanıcı): atılır.** `codex/b90-attendance-republish` dalı (master'da olmayan commit yoktu) ve
 `stash@{0}` "b-90-codex-fix" (karma `0c33da6c`, 32 dosya) silindi. `stash@{1}` ("dersProgramıv1tov2_fix_codex", başka iş)
 duruyor. ⬜ **Kalan:** dev DB'de `superseded_*` sütunları ve `__EFMigrationsHistory` satırı hâlâ duruyor; elle kaldırılmalı.
+Kullanıcı kaldırmayı onayladı (2026-09-30) ama otomatik izin denetimi veritabanı yazımını engelledi; komut kullanıcıya verildi.
+Ölçüm: üç sütun da boş, bağlı indeks/FK/varsayılan yok; codex göçünün yeniden kurduğu `placement` indeksini
+`20260930182147` zaten düşürdü.
 
 ### `D-40` · Program editörü açılışta başlıkta şube adı yerine şube kimliği gösteriyor ⚪
 
