@@ -1128,36 +1128,6 @@ Ramazan Bayramı ve arifesi 3–4 Şubat, 13–14 Şubat, 25–26 Şubat, 8–9 
 
 🔎 **2026-09-28 · kod çözülmüş (ölçüldü):** `GetHolidaysQueryHandler.cs:102` → `OfficialHolidayResolver` (`425160d4`); seed `s1`'de 9 resmî kayıt, tekrar yok. Altınay'daki "25" ölçümü büyük olasılıkla eski API'ye karşı alınmış; yalnız Altınay ekranında "Resmî 9" teyidi kaldı.
 
-### `E-26` · Ara tatil girilemiyor: okul oluşturamıyor, onu üreten kaynak da yok 🟡
-
-Altınay saha testi (B2.4). Tatil ekranı "Resmî, ara tatil ve yarıyıl kayıtları MEB takviminden gelir
-ve kilitlidir — yalnızca Okul kategorisi düzenlenebilir" diyor ve "Ara Tatil" çipi taşıyor. Ölçüm:
-`HolidayType.IntermediateBreak` kilitli tip (`HolidaySourceClassifier`), okul oluşturamıyor; ama bu tipte
-satır **üreten tek bir kod yok**. Yarıyıl tatili (`SemesterBreak`) yalnız sezon sihirbazında taslakta
-tarih verilirse yazılıyor (`OpenSeasonFromDraftCommandHandler:307-335`); ara tatil için sihirbazda alan da
-yok. Resmî tatil kataloğunda da ara tatil/yarıyıl kategorisi yok (yalnız `NATIONAL`/`RELIGIOUS`).
-
-Sonuç: Kasım ve Nisan ara tatilleri OKSİS'e "ara tatil" olarak girilemiyor; "Ara Tatil" çipi her okulda
-kalıcı olarak 0. Tek yol okul kategorisinde "kapalı gün" eklemek — bu da raporda ve takvimde yanlış tür.
-
-➕ **Düzeltme (2026-09-15, B3):** "sihirbazda ara tatil için alan yok" ifadesi yanlıştı. Sihirbazın 4. adımında
-serbest tatil listesi **var** ("Tatil Ekle"), ama yazılmıyor (`TB-178`). Ara tatilin doğal girişi bu liste;
-`TB-178` kapanınca `E-26`'nın (a) seçeneği fiilen gerçekleşir. Ölçülen takvim (MEB 2026/68): 16–20 Kasım 2026 ve
-8–12 Mart 2027 (2. dönem ara tatili Mart'ta, Nisan'da değil).
-
-⬜ Ürün kararı bekliyor: (a) sezon sihirbazına ara tatil aralıkları eklenir; (b) MEB çalışma takvimi
-(ara tatil + yarıyıl) yıllık katalog olarak platformdan beslenir; (c) okul ara tatili kendisi girebilir
-(tip kilidi kalkar).
-
-➕ **2026-09-27 (Altınay C evresi hazırlık ölçümü):** (a) seçeneği yalnız sezon **açılırken** işliyor. 2026-09-22 yeniden
-kurulumunda sihirbaza ara tatil girilmemiş; DB'de Altınay'ın 2026-2027 sezonunda yalnız `SemesterBreak` (25.01–05.02.2027)
-var, `IntermediateBreak` **0 satır** (tüm DB'de de 0). Sezon açıldıktan sonra eklemenin yolu yok: `CreateHolidayCommandHandler`
-kilitli tipi reddediyor, sihirbaz tekrar çalışmıyor. Sonuç: 16–20 Kasım 2026 ve 8–12 Mart 2027 Altınay'da **iş günü** sayılıyor;
-yoklama oturumları üretilir, devamsızlık yazılır. **C4.2'yi (16 Kasım) engeller**, C1'i engellemez. Kapatma: açık sezona ara tatil
-ekleme yolu ((b) ya da (c)) ya da yönetici için sezon ayarlarından ara tatil düzenleme.
-
-⏸️ **Kullanıcı notu (2026-09-28):** sezonun genel hatlarını merkezin girip okulların okuduğu bir altyapı fikri var, özellik olarak gelecek — **şimdilik dokunulmaz**.
-
 ### `D-21` · Liste ekranları "hiç kayıt yok" ile "filtreyle eşleşme yok"u ayırmıyor (`D-10` yalnız ayarlarda uygulanmış) 🟡
 
 Altınay saha testi (2026-09-15): kaydı olmayan okulda Öğrenciler ekranı, hiçbir arama/filtre yokken
@@ -2331,7 +2301,16 @@ yayında bekleyen oturumları sildiği için yayından sonraki ilk açılışta 
 ✅ **2026-09-30 · kodda düzeltildi** (`oksis-api` master `0582af31`): indeks ihlalinde kaybedenin
 satırları `Detach` edilir, kazananın ürettiği gün okunup döner (`GetOrCreateAsync` kalıbı). Entegrasyon testi yarışı
 kaybedenin `SaveChanges` anına bir yakalayıcıyla kazananı sokarak **deterministik** kuruyor
-(`MaterializeForDateAsync_RaceLoss_ReturnsWinnersSessionsWithoutThrowing`). **Arşive gitmek için:** yeni ikiliyle yeniden yayından sonra ilk pano açılışının 500'süz olduğu ekranda ölçülmeli.
+(`MaterializeForDateAsync_RaceLoss_ReturnsWinnersSessionsWithoutThrowing`). 
+
+**2026-09-30 · canlı ölçüm (API master `0582af31` ile yeniden başlatıldı):** panonun tarih seçicisi yalnız bugün ve geçmiş iki günü
+sunuyor, yani ekrandan yeni gün açılamıyor (yarış ekranda yalnız yeniden yayınla kurulur). Ölçüm panonun çağırdığı iki uçla,
+oturumu olmayan günlerde yapıldı. Altı eşzamanlı istek (`board` + `unrecorded`, 5 Ekim): **iki istek slot indeksi ihlaline
+düştü, ikisi de yakalanıp 200 döndü** (düzeltme öncesi 500). Ama bir `board` isteği **deadlock kurbanı** oldu (SQL 1205,
+`SessionMaterializer.cs:123`) → 500. Kurbanın işlemi sunucuda tümüyle geri alındığından "yakala + yeniden oku" burada işe
+yaramaz; işlemin yeniden denenmesi gerekir (`TransactionBehavior` içinde EF yürütme stratejisi / yeniden deneme). İki eşzamanlı
+istekle 6 günde (6–13 Ekim) hepsi 200, ama o denemelerde istekler çakışmadı; kanıt sayılmaz.
+⬜ **Kalan:** gün üretiminde deadlock kolu. İndeks ihlali kolu kapandı.
 
 ### `TB-263` · Dev veritabanında koddan olmayan bir B-90 göçü uygulanmış (`…b90_attendance_supersession`) 🟡
 
@@ -2339,8 +2318,10 @@ kaybedenin `SaveChanges` anına bir yakalayıcıyla kazananı sokarak **determin
 `fix/b-90-yeniden-yayin-slot-gate`'te bu göç yok; `codex/b90-attendance-republish` dalından (ve `stash@{0}`
 "b-90-codex-fix") kalmış. Eklediği `superseded_at`, `superseded_by_session_id`, `superseded_reason` sütunları
 `academic.attendance_sessions`'ta duruyor, hiçbir satırda dolu değil, bu dalın modelinde yok. Şimdilik zararsız (sütunlar
-boş kabul ediyor). Ama iki dal birleşirse ya da dev DB'den şema karşılaştırması yapılırsa çakışır. ⬜ Karar: `codex` dalı
-ve stash atılacak mı? Atılacaksa dev DB'den sütunlar + geçmiş satırı elle kaldırılmalı.
+boş kabul ediyor). Ama iki dal birleşirse ya da dev DB'den şema karşılaştırması yapılırsa çakışır.
+✅ **2026-09-30 · karar (kullanıcı): atılır.** `codex/b90-attendance-republish` dalı (master'da olmayan commit yoktu) ve
+`stash@{0}` "b-90-codex-fix" (karma `0c33da6c`, 32 dosya) silindi. `stash@{1}` ("dersProgramıv1tov2_fix_codex", başka iş)
+duruyor. ⬜ **Kalan:** dev DB'de `superseded_*` sütunları ve `__EFMigrationsHistory` satırı hâlâ duruyor; elle kaldırılmalı.
 
 ### `D-40` · Program editörü açılışta başlıkta şube adı yerine şube kimliği gösteriyor ⚪
 

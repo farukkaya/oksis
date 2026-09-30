@@ -11154,3 +11154,45 @@ açılmadı; bekleyenler bir kez yeniden üretildi (bugün 88 oturum, çift 0). 
 "Bekliyor" yok; mobilde 1. ders tamamlandığı gibi açıldı. Göç sonrası öğretmenin "Yoklama Geçmişim"inde 28 Eylül 6. ders
 tek satır (önceden 11-B "Alınmadı" hayaleti de vardı). Yan bulgular: `B-91`, `TB-262`, `TB-263`, `D-40`.
 ✅ **2026-09-30 · kapandı:** `oksis-api` master `7ba5c87a` + `0582af31` (hızlı ileri birleştirme); göç dev DB'de; ekranda ölçüldü (yukarıda).
+
+## 74. Altınay B2 · kurulum ayarları planlaması (2026-09-30) ✅
+
+> Altınay saha testinin B2 satırları DB'den yeniden ölçüldü. `E-26` kullanıcı kararıyla kapandı. B2.1'in maddeleri (`TB-165`,
+> `TB-171`, `TB-172`) §52'de zaten arşivdeydi.
+
+### `E-26` · Ara tatil girilemiyor: okul oluşturamıyor, onu üreten kaynak da yok 🟡 *(kullanıcı kararıyla kapandı — 2026-09-30)*
+
+Altınay saha testi (B2.4). Tatil ekranı "Resmî, ara tatil ve yarıyıl kayıtları MEB takviminden gelir
+ve kilitlidir — yalnızca Okul kategorisi düzenlenebilir" diyor ve "Ara Tatil" çipi taşıyor. Ölçüm:
+`HolidayType.IntermediateBreak` kilitli tip (`HolidaySourceClassifier`), okul oluşturamıyor; ama bu tipte
+satır **üreten tek bir kod yok**. Yarıyıl tatili (`SemesterBreak`) yalnız sezon sihirbazında taslakta
+tarih verilirse yazılıyor (`OpenSeasonFromDraftCommandHandler:307-335`); ara tatil için sihirbazda alan da
+yok. Resmî tatil kataloğunda da ara tatil/yarıyıl kategorisi yok (yalnız `NATIONAL`/`RELIGIOUS`).
+
+Sonuç: Kasım ve Nisan ara tatilleri OKSİS'e "ara tatil" olarak girilemiyor; "Ara Tatil" çipi her okulda
+kalıcı olarak 0. Tek yol okul kategorisinde "kapalı gün" eklemek — bu da raporda ve takvimde yanlış tür.
+
+➕ **Düzeltme (2026-09-15, B3):** "sihirbazda ara tatil için alan yok" ifadesi yanlıştı. Sihirbazın 4. adımında
+serbest tatil listesi **var** ("Tatil Ekle"), ama yazılmıyor (`TB-178`). Ara tatilin doğal girişi bu liste;
+`TB-178` kapanınca `E-26`'nın (a) seçeneği fiilen gerçekleşir. Ölçülen takvim (MEB 2026/68): 16–20 Kasım 2026 ve
+8–12 Mart 2027 (2. dönem ara tatili Mart'ta, Nisan'da değil).
+
+⬜ Ürün kararı bekliyor: (a) sezon sihirbazına ara tatil aralıkları eklenir; (b) MEB çalışma takvimi
+(ara tatil + yarıyıl) yıllık katalog olarak platformdan beslenir; (c) okul ara tatili kendisi girebilir
+(tip kilidi kalkar).
+
+➕ **2026-09-27 (Altınay C evresi hazırlık ölçümü):** (a) seçeneği yalnız sezon **açılırken** işliyor. 2026-09-22 yeniden
+kurulumunda sihirbaza ara tatil girilmemiş; DB'de Altınay'ın 2026-2027 sezonunda yalnız `SemesterBreak` (25.01–05.02.2027)
+var, `IntermediateBreak` **0 satır** (tüm DB'de de 0). Sezon açıldıktan sonra eklemenin yolu yok: `CreateHolidayCommandHandler`
+kilitli tipi reddediyor, sihirbaz tekrar çalışmıyor. Sonuç: 16–20 Kasım 2026 ve 8–12 Mart 2027 Altınay'da **iş günü** sayılıyor;
+yoklama oturumları üretilir, devamsızlık yazılır. **C4.2'yi (16 Kasım) engeller**, C1'i engellemez. Kapatma: açık sezona ara tatil
+ekleme yolu ((b) ya da (c)) ya da yönetici için sezon ayarlarından ara tatil düzenleme.
+
+⏸️ **Kullanıcı notu (2026-09-28):** sezonun genel hatlarını merkezin girip okulların okuduğu bir altyapı fikri var, özellik olarak gelecek — **şimdilik dokunulmaz**.
+
+✅ **2026-09-30 · kullanıcı kararıyla kapandı** (Altınay B2 planlaması). Ürün yolu sezon açılışında var: sihirbazın tatil
+listesi ara tatili `IntermediateBreak` olarak yazıyor (`TB-178`). Açık sezona sonradan ara tatil eklemek, 2026-09-28 notundaki
+"sezonun genel hatlarını merkez girer" özelliğine bırakıldı; ayrı madde açılmadı.
+**Veri notu (DB ölçümü, 2026-09-30):** Altınay'ın 2026-2027 sezonunda okul tatili olarak yalnız `SemesterBreak` (25.01–05.02.2027)
+var, `IntermediateBreak` **0 satır**. Yani 16–20 Kasım 2026 ve 8–12 Mart 2027 Altınay'da iş günü sayılıyor. Etkisi C4.2'de görülecek.
+
