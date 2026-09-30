@@ -238,16 +238,16 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 5 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🔴 Kritik | 4 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 24 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 28 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **98** | |
+| **Toplam** | **97** | |
 
 > **2026-09-28 (öğleden sonra):** yönetici devamsızlık ekranında yoklamasını tamamlamış öğretmen "bekliyor" görününce `B-90` 🔴 açıldı — yeniden yayınlanan program eski sürümün önceden üretilmiş oturumlarını temizlemiyor; Altınay'da bugün 80 fazladan oturum, bir kısmında çift yoklama kaydı. Toplam **94**.
 
-> **2026-09-30 (`B-90` ekran testi + düzeltme turu):** `B-90`'ın üç kararı bağlandı ve kodda düzeltildi (commit/merge bekliyor); ilk commit'in göçü hiç çalışamazdığı için silinip yeniden yazıldı, dev DB'ye uygulandı. Aynı testte `B-91` 🟠 (açık mobil uygulama silinen oturum kimliğini tutuyor), `TB-262` 🟠 (yayından sonra ilk pano açılışında 500 — kodda düzeltildi), `TB-263` 🟡 (dev DB'de koddan olmayan codex B-90 göçü) ve `D-40` ⚪ açıldı. Toplam **98**.
+> **2026-09-30 (`B-90` ekran testi + düzeltme turu):** `B-90`'ın üç kararı bağlandı ve kodda düzeltildi (commit/merge bekliyor); ilk commit'in göçü hiç çalışamazdığı için silinip yeniden yazıldı, dev DB'ye uygulandı. Aynı testte `B-91` 🟠 (açık mobil uygulama silinen oturum kimliğini tutuyor), `TB-262` 🟠 (yayından sonra ilk pano açılışında 500 — kodda düzeltildi), `TB-263` 🟡 (dev DB'de koddan olmayan codex B-90 göçü) ve `D-40` ⚪ açıldı. Ardından iki depoda commit + master'a birleştirme: `B-90` kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §73). Toplam **97**.
 
 > **Gece turu (2026-09-28, kullanıcı uyurken — karar gerektirmeyen maddeler):** iki depoda tek dal `fix/gece-defter-turu`
 > (**merge bekliyor**; `oksis-api` 26, `oksis-ui` 24 commit). Önce master'a çoktan girmiş **58 eski kapanış** arşive taşındı
@@ -2302,54 +2302,6 @@ karar bekliyor.
 
 ✅ **Karar (2026-09-28, kullanıcı):** **okuma ekranları son kapanan dönemi, planlama ekranları başlamamış ilk dönemi** varsayılan alır; kural core'da tek fonksiyon, backend'in id'siz okuması da aynı kuralı uygular. Uygulanacak.
 
-### `B-90` · Program yeniden yayınlanınca eski sürümün önceden üretilmiş yoklama oturumları kalıyor — mükerrer oturum ve çift yoklama 🔴
-
-2026-09-28, Altınay. Yönetici *Devamsızlık* ekranında **Hale Kübra Öztürk** bütün yoklamalarını tamamladığı hâlde 1. ders
-"bekliyor" göründü. Ölçüm (`academic.attendance_sessions`, `date = 2026-09-28`):
-
-- 10-A'nın (`CFC74DA7…`) programı 27 Eylül'de üç kez yayınlandı (v1 10:53, v2 12:37, v3 13:21 UTC). 28 Eylül oturumları **v1'den**
-  27 Eylül 11:45'te önceden üretilmişti. Gece işi 21:22'de v3'ün oturumlarını da üretti → aynı şube + ders saati için **iki
-  oturum**. Öğretmen ekranı v1 oturumunu gösterdi, öğretmen onu doldurdu (7 kayıt); v3 oturumu boş kaldı → panoda "bekliyor".
-- Okulda aynı gün **80 eski-sürüm oturumu** (33 tamamlanmış, 47 bekleyen). Öğretmeni değişmiş derslerde **iki öğretmen de**
-  yoklama aldı: 11-? `D37F…` 4. ders (13 + 13 kayıt), `AD74…` 5. ders (8 + 8) — öğrenci başına aynı saat için **iki kayıt**.
-  Kimsenin artık dersi olmayan hayalet oturumlar da bekliyor (`E2B2…` 3. ders, `D37F…` 6. ders).
-
-**Kök neden:** `SessionMaterializer.MaterializeForDateAsync` "bu ders üretildi mi" sorusunu **`PlacementId`** ile soruyor
-(`alreadyMaterialized = existing.Select(s => s.PlacementId)`). Yeniden yayın yerleşimleri yeni kimliklerle doğurduğu için eski
-sürümün oturumunu tanımıyor ve yanına ikincisini açıyor. Yayın anında gelecek tarihli, eski sürüme bağlı oturumları
-iptal eden/taşıyan bir adım da yok. Öğretmen günlük listesi ve pano da sürüme bakmadan mevcut oturumları okuyor.
-
-✅ **Kararlar:** (1) yeniden yayında şubenin bugün ve sonrası tarihli **bekleyen** (`Pending`/`NotTaken`) oturumları silinir
-(yumuşak silme), yeni sürümden yeniden üretilir. (2) Tamamlanmış oturum taşınmaz, **tarihçe olarak kalır** ve slotu tutar;
-yeni sürüm aynı saate ikinci oturum açmaz. (3) *(2026-09-30, kullanıcı)* çift slotta önce yoklaması alınmış olan, o da
-eşitse **en son yayınlanan sürümünki** kalır. O gün yürürlükteki program oydu; eskisi öğretmenlerin doldurduğu hayaletti.
-
-✅ **2026-09-30 · kodda düzeltildi** (`oksis-api` `fix/b-90-yeniden-yayin-slot-gate`: `7ba5c87a` + commit edilmemiş düzeltme turu,
-**commit/merge bekliyor**):
-- Tekillik anahtarı `PlacementId` → slot (`school_id, class_room_id, date, period, club_id`); `SessionMaterializer` iki
-  yolda da slota bakıyor. Yayıncı bekleyen oturumları siliyor.
-- **İlk commit'in göçü hiç çalışamazdı** (`20260929100000_…`): `Designer.cs` yoktu (EF göçü tanımıyordu), SQL yanlış
-  şemaya bakıyordu (`timetable.schedule_versions`; tablo `academic.`'te), temizlikten sonra 5 slot çift kalıp yeni indeks
-  kurulamıyordu. Üstelik geçmişte slotunu tek başına tutan 60 "alınmadı" kaydını hayalet sayıp siliyordu. Silindi; yerine
-  `20260930182147_20260930_attendance_republish_slot_gate` (EF ile üretildi, snapshot güncel). Kural: slot başına tek canlı
-  oturum (yukarıdaki (3)); bugün+ güncel sürüme bağlı olmayan bekleyenler silinir; geçmişin tek kayıtlarına dokunulmaz.
-- İlk commit yayıncıda `ExecuteDeleteAsync` kullanıyordu: silme `SaveChanges`'ten **ayrı ve önce** çalışıyor (yayın düşerse
-  oturumlar yeni sürümsüz silinmiş kalır) ve 7 birim testi kırmızıydı (sahte `DbSet` desteklemiyor — push kapısı tıkalı).
-  Takipli `RemoveRange`'e çevrildi: yayınla aynı işlemde, `SoftDeleteInterceptor`'la yumuşak silme. Silme kapsamını ölçen
-  birim testi eklendi.
-- Entegrasyon testi `Task 7: alınmayanlar…` aynı şube+saate iki oturum tohumluyordu; slot indeksi bunu reddetti, ikinci
-  öğretmenin oturumu ayrı şubeye alındı.
-- **Dev DB'ye uygulandı** (yedek `~/oksis-yedek/oksis_dev_oncesi_b90_slot_gate_20260930_2130.bak`): Altınay 28 Eylül'ün
-  5 fazla oturumu (2 `NotTaken` + 3 eski `Completed`, 30 kayıt) silindi; 21 Eylül'den bu yana çift slot **0**.
-
-**Ekran ölçümü (2026-09-30, Altınay 11-A):** öğretmen mobilde 1. dersin yoklamasını aldı; müdür webde programı içerik
-aynı kalacak biçimde iki kez yeniden yayınladı: v3, sonra v4 — v4'te 1. dersin yerleşimi silinip aynı içerikle yeniden
-eklendi (yeni `PlacementId`, B-90'ın asıl tetikleyicisi). Tamamlanmış oturum (11 kayıt) tek kaldı, ikinci oturum
-açılmadı; bekleyenler bir kez yeniden üretildi (bugün 88 oturum, çift 0). Pano 1. dersi "Tamamlandı" gösteriyor, hayalet
-"Bekliyor" yok; mobilde 1. ders tamamlandığı gibi açıldı. Göç sonrası öğretmenin "Yoklama Geçmişim"inde 28 Eylül 6. ders
-tek satır (önceden 11-B "Alınmadı" hayaleti de vardı). Yan bulgular: `B-91`, `TB-262`, `TB-263`, `D-40`.
-**Arşive gitmek için:** commit + merge.
-
 ### `B-91` · Açık mobil uygulama, yeniden yayında silinen yoklama oturumunun kimliğini tutuyor — "Sınıf listesi yüklenemedi" 🟠
 
 2026-09-30, `B-90` ekran testi (Android, `com.oksis.mobile.dev`, öğretmen Zuhal Karaca Kaya). 11-A yeniden yayınlandıktan
@@ -2376,10 +2328,10 @@ ux_attendance_sessions_school_placement_date`. Pano ile "Alınmayan Yoklamalar" 
 `SessionMaterializer.MaterializeForDateAsync`'te — `GetOrCreateAsync`'in aksine — yarış koruması **hiç yoktu**. `B-90`
 yayında bekleyen oturumları sildiği için yayından sonraki ilk açılışta bu yarış **her seferinde** yaşanıyor.
 
-✅ **2026-09-30 · kodda düzeltildi** (`fix/b-90-yeniden-yayin-slot-gate`, commit bekliyor): indeks ihlalinde kaybedenin
+✅ **2026-09-30 · kodda düzeltildi** (`oksis-api` master `0582af31`): indeks ihlalinde kaybedenin
 satırları `Detach` edilir, kazananın ürettiği gün okunup döner (`GetOrCreateAsync` kalıbı). Entegrasyon testi yarışı
 kaybedenin `SaveChanges` anına bir yakalayıcıyla kazananı sokarak **deterministik** kuruyor
-(`MaterializeForDateAsync_RaceLoss_ReturnsWinnersSessionsWithoutThrowing`). Ekranda yeniden ölçülmedi.
+(`MaterializeForDateAsync_RaceLoss_ReturnsWinnersSessionsWithoutThrowing`). **Arşive gitmek için:** yeni ikiliyle yeniden yayından sonra ilk pano açılışının 500'süz olduğu ekranda ölçülmeli.
 
 ### `TB-263` · Dev veritabanında koddan olmayan bir B-90 göçü uygulanmış (`…b90_attendance_supersession`) 🟡
 

@@ -11104,3 +11104,53 @@ muhtemelen yanlış.
 ve danışman hatırlatmasına bağlamak); katılım ekranında devamsızlık kaydının güncel durumunu göstermek.
 
 ✅ **Karar (2026-09-28, kullanıcı):** **sınır olarak kabul** edildi; madde kapanır.
+
+## 73. B-90 — yeniden yayında slot bazlı yoklama oturumu (2026-09-30) ✅
+
+### `B-90` · Program yeniden yayınlanınca eski sürümün önceden üretilmiş yoklama oturumları kalıyor — mükerrer oturum ve çift yoklama 🔴 *(kapandı — 2026-09-30, `7ba5c87a` + `0582af31`)*
+
+2026-09-28, Altınay. Yönetici *Devamsızlık* ekranında **Hale Kübra Öztürk** bütün yoklamalarını tamamladığı hâlde 1. ders
+"bekliyor" göründü. Ölçüm (`academic.attendance_sessions`, `date = 2026-09-28`):
+
+- 10-A'nın (`CFC74DA7…`) programı 27 Eylül'de üç kez yayınlandı (v1 10:53, v2 12:37, v3 13:21 UTC). 28 Eylül oturumları **v1'den**
+  27 Eylül 11:45'te önceden üretilmişti. Gece işi 21:22'de v3'ün oturumlarını da üretti → aynı şube + ders saati için **iki
+  oturum**. Öğretmen ekranı v1 oturumunu gösterdi, öğretmen onu doldurdu (7 kayıt); v3 oturumu boş kaldı → panoda "bekliyor".
+- Okulda aynı gün **80 eski-sürüm oturumu** (33 tamamlanmış, 47 bekleyen). Öğretmeni değişmiş derslerde **iki öğretmen de**
+  yoklama aldı: 11-? `D37F…` 4. ders (13 + 13 kayıt), `AD74…` 5. ders (8 + 8) — öğrenci başına aynı saat için **iki kayıt**.
+  Kimsenin artık dersi olmayan hayalet oturumlar da bekliyor (`E2B2…` 3. ders, `D37F…` 6. ders).
+
+**Kök neden:** `SessionMaterializer.MaterializeForDateAsync` "bu ders üretildi mi" sorusunu **`PlacementId`** ile soruyor
+(`alreadyMaterialized = existing.Select(s => s.PlacementId)`). Yeniden yayın yerleşimleri yeni kimliklerle doğurduğu için eski
+sürümün oturumunu tanımıyor ve yanına ikincisini açıyor. Yayın anında gelecek tarihli, eski sürüme bağlı oturumları
+iptal eden/taşıyan bir adım da yok. Öğretmen günlük listesi ve pano da sürüme bakmadan mevcut oturumları okuyor.
+
+✅ **Kararlar:** (1) yeniden yayında şubenin bugün ve sonrası tarihli **bekleyen** (`Pending`/`NotTaken`) oturumları silinir
+(yumuşak silme), yeni sürümden yeniden üretilir. (2) Tamamlanmış oturum taşınmaz, **tarihçe olarak kalır** ve slotu tutar;
+yeni sürüm aynı saate ikinci oturum açmaz. (3) *(2026-09-30, kullanıcı)* çift slotta önce yoklaması alınmış olan, o da
+eşitse **en son yayınlanan sürümünki** kalır. O gün yürürlükteki program oydu; eskisi öğretmenlerin doldurduğu hayaletti.
+
+✅ **2026-09-30 · kodda düzeltildi** (`oksis-api` `fix/b-90-yeniden-yayin-slot-gate`: `7ba5c87a` + commit edilmemiş düzeltme turu,
+master'a birleşti):
+- Tekillik anahtarı `PlacementId` → slot (`school_id, class_room_id, date, period, club_id`); `SessionMaterializer` iki
+  yolda da slota bakıyor. Yayıncı bekleyen oturumları siliyor.
+- **İlk commit'in göçü hiç çalışamazdı** (`20260929100000_…`): `Designer.cs` yoktu (EF göçü tanımıyordu), SQL yanlış
+  şemaya bakıyordu (`timetable.schedule_versions`; tablo `academic.`'te), temizlikten sonra 5 slot çift kalıp yeni indeks
+  kurulamıyordu. Üstelik geçmişte slotunu tek başına tutan 60 "alınmadı" kaydını hayalet sayıp siliyordu. Silindi; yerine
+  `20260930182147_20260930_attendance_republish_slot_gate` (EF ile üretildi, snapshot güncel). Kural: slot başına tek canlı
+  oturum (yukarıdaki (3)); bugün+ güncel sürüme bağlı olmayan bekleyenler silinir; geçmişin tek kayıtlarına dokunulmaz.
+- İlk commit yayıncıda `ExecuteDeleteAsync` kullanıyordu: silme `SaveChanges`'ten **ayrı ve önce** çalışıyor (yayın düşerse
+  oturumlar yeni sürümsüz silinmiş kalır) ve 7 birim testi kırmızıydı (sahte `DbSet` desteklemiyor — push kapısı tıkalı).
+  Takipli `RemoveRange`'e çevrildi: yayınla aynı işlemde, `SoftDeleteInterceptor`'la yumuşak silme. Silme kapsamını ölçen
+  birim testi eklendi.
+- Entegrasyon testi `Task 7: alınmayanlar…` aynı şube+saate iki oturum tohumluyordu; slot indeksi bunu reddetti, ikinci
+  öğretmenin oturumu ayrı şubeye alındı.
+- **Dev DB'ye uygulandı** (yedek `~/oksis-yedek/oksis_dev_oncesi_b90_slot_gate_20260930_2130.bak`): Altınay 28 Eylül'ün
+  5 fazla oturumu (2 `NotTaken` + 3 eski `Completed`, 30 kayıt) silindi; 21 Eylül'den bu yana çift slot **0**.
+
+**Ekran ölçümü (2026-09-30, Altınay 11-A):** öğretmen mobilde 1. dersin yoklamasını aldı; müdür webde programı içerik
+aynı kalacak biçimde iki kez yeniden yayınladı: v3, sonra v4 — v4'te 1. dersin yerleşimi silinip aynı içerikle yeniden
+eklendi (yeni `PlacementId`, B-90'ın asıl tetikleyicisi). Tamamlanmış oturum (11 kayıt) tek kaldı, ikinci oturum
+açılmadı; bekleyenler bir kez yeniden üretildi (bugün 88 oturum, çift 0). Pano 1. dersi "Tamamlandı" gösteriyor, hayalet
+"Bekliyor" yok; mobilde 1. ders tamamlandığı gibi açıldı. Göç sonrası öğretmenin "Yoklama Geçmişim"inde 28 Eylül 6. ders
+tek satır (önceden 11-B "Alınmadı" hayaleti de vardı). Yan bulgular: `B-91`, `TB-262`, `TB-263`, `D-40`.
+✅ **2026-09-30 · kapandı:** `oksis-api` master `7ba5c87a` + `0582af31` (hızlı ileri birleştirme); göç dev DB'de; ekranda ölçüldü (yukarıda).
