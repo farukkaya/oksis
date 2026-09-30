@@ -11157,7 +11157,8 @@ tek satır (önceden 11-B "Alınmadı" hayaleti de vardı). Yan bulgular: `B-91`
 
 ## 74. Altınay B2 · kurulum ayarları planlaması (2026-09-30) ✅
 
-> Altınay saha testinin B2 satırları DB'den yeniden ölçüldü. `E-26` kullanıcı kararıyla kapandı. B2.1'in maddeleri (`TB-165`,
+> Altınay saha testinin B2 satırları DB'den yeniden ölçüldü. `E-26` kullanıcı kararıyla kapandı. 2026-10-01: gerçek zil girişinden
+> önce çıkan `B-93` düzeltildi ve `E-25` (şablon adları) uygulandı; ikisi de bu bölümde. B2.1'in maddeleri (`TB-165`,
 > `TB-171`, `TB-172`) §52'de zaten arşivdeydi.
 
 ### `E-26` · Ara tatil girilemiyor: okul oluşturamıyor, onu üreten kaynak da yok 🟡 *(kullanıcı kararıyla kapandı — 2026-09-30)*
@@ -11195,4 +11196,68 @@ listesi ara tatili `IntermediateBreak` olarak yazıyor (`TB-178`). Açık sezona
 "sezonun genel hatlarını merkez girer" özelliğine bırakıldı; ayrı madde açılmadı.
 **Veri notu (DB ölçümü, 2026-09-30):** Altınay'ın 2026-2027 sezonunda okul tatili olarak yalnız `SemesterBreak` (25.01–05.02.2027)
 var, `IntermediateBreak` **0 satır**. Yani 16–20 Kasım 2026 ve 8–12 Mart 2027 Altınay'da iş günü sayılıyor. Etkisi C4.2'de görülecek.
+
+### `B-93` · Zil saatleri değişince önceden üretilmiş yoklama oturumları eski saatleri taşıyor 🟠 *(kapandı — 2026-10-01, `oksis-api` @ `9b8e7c4c`)*
+
+2026-09-30, Altınay B2.3 (gerçek zil çizelgesi girilmeden önce ölçüldü). Kullanıcının verdiği gerçek çizelge DB'dekinden farklı:
+Pzt–Per 08:55–15:30 (öğle arası 4. dersten sonra, 12:00–12:45), Cuma 08:55–15:25 (öğle arası 6. dersten sonra, 60 dk).
+DB'de beş gün de Tam Gün şablonunda: 08:30–15:50, öğle arası 11:40–12:40.
+
+Ölçüm: `academic.attendance_sessions` kendi `start_time`/`end_time` kolonlarını taşıyor ve Altınay için **30 Eylül–13 Ekim arası
+~870 oturum önceden üretilmiş** (günde 84–88). Oturum saatini `SessionMaterializer` üretim anında zilden kopyalıyor
+(`AttendanceSession.cs:137`). Zil satırını ya da gün atamasını değiştiren komutların (`BulkCreateBellSchedule`, `CreateBellSchedule`,
+`UpsertBellDayAssignments` …) hiçbiri oturumlara dokunmuyor; Schools modülünde `AttendanceSession` referansı yok.
+
+Sonuç: okul zilini düzelttiğinde önümüzdeki iki haftanın oturumları eski saatle kalır. Öğretmenin günlük listesi, yoklama
+hatırlatması (`auto_reminder_sent_at`, 28 Eylül'de push kapsamına girdi) ve pano yanlış saate göre çalışır. Gün şablonu
+değişirse (ör. Cuma → B şablonu) ders sayısı farklıysa artık var olmayan saatin oturumu da bekler. B-90'ın kardeşi: aynı
+"önceden üretilen oturum, kaynağı değişince bayatlıyor" sınıfı; orada kaynak programdı, burada zil.
+
+⬜ Kapatma yolu (öneri, B-90 kararı (1) ile aynı kural): zil ya da gün ataması değişince okulun bugün ve sonrası tarihli
+**bekleyen** (`Pending`/`NotTaken`) oturumları silinir ve yeni zilden yeniden üretilir; tamamlanmış oturum tarihçe olarak kalır.
+Silme yolu `ProgramPublisher`'daki B-90 adımıyla tek yere çekilmeli, kopyalanmamalı ([[yamalama-kabul-degil]]).
+
+✅ **Karar (2026-09-30, kullanıcı):** öneri kabul — B-90 kuralı zile de uygulanır.
+
+✅ **2026-09-30 · kodda düzeltildi** (`oksis-api` `fix/b-93-zil-degisimi-oturum-saatleri`, master'a birleşti):
+- Kural tek yerde: `Attendance/Common/PendingSessionPurge.cs` (`RemoveAsync` + `RemoveForBellChangeAsync`). `ProgramPublisher`'ın
+  B-90 silmesi bu yardımcıya taşındı (davranış aynı, şube kapsamlı).
+- Zil ve gün atamasını değiştiren beş komut (`BulkCreateBellSchedule`, `CreateBellSchedule`, `UpdateBellSchedule`,
+  `DeleteBellSchedule`, `UpsertBellDayAssignments`) kaydetmeden önce okulun bekleyen oturumlarını işaretliyor; silme komutla
+  aynı `SaveChanges`'te. Sınır **okulun saat dilimindeki bugün** (`ISchoolCalendarService.GetLocalNowAsync`).
+- Testler: 4 yeni entegrasyon testi (`BellTemplateConsumersTests`: toplu kayıt, gün ataması, tek satır düzenleme, kayıt düşerse
+  oturumlar yerinde). Zil/oturum/pano sınıfları 43/43; birim Application 3466 · Api 478 · Oksis.Tests 110 yeşil.
+- **Altınay'da canlı ölçüldü (2026-10-01 02:40 yerel):** gerçek zil girildi (Pzt–Per 08:55–15:30, öğle 4. dersten sonra 12:00–12:45;
+  Cuma Yarım Gün şablonunda 08:55–15:25, öğle 6. dersten sonra 12:55–13:55). 1 Ekim ve sonrasındaki **784** bekleyen oturum
+  yumuşak silindi, geçmiş oturumlara dokunulmadı. Pano 1 ve 2 Ekim'i yeniden üretti: saatler çizelgeyle birebir, çift slot 0.
+- Açık not: yayıncının silme sınırı hâlâ **UTC** günü (`publishedAt.UtcDateTime`); Türkiye'de 00:00–03:00 arası yayında bir önceki
+  günün bekleyenleri de silinir. B-93 kapsamına alınmadı, ayrı madde adayı.
+
+✅ **2026-10-01 · kapandı:** `oksis-api` master `9b8e7c4c` (TB-262'nin üstüne çakışmasız yeniden temellendirildi; birleşik hâlin entegrasyon koşusu kullanıcı isteğiyle atlandı — testler TB-262 öncesi tabanda yeşildi, TB-262 ayrı dosyalara dokunuyor). Altınay'da canlı ölçüm yukarıda.
+
+
+### `E-25` · Zil şablonları sabit ikili (Tam Gün / Yarım Gün); güne göre adlandırılmış program yok 🟡 *(kapandı — 2026-10-01, `oksis-ui` @ `58de004`)*
+
+Altınay saha testi (B2.3, 2026-09-15). Okul Pazartesi–Perşembe bir, Cuma farklı bir zil programı
+uyguluyor. Şablon hem sunucuda (`BellTemplateKey` enum) hem istemcide
+(`packages/core/src/bell-schedule/{types,constants}.ts`) yalnız `FullDay`/`HalfDay`; `BellDayAssignment`
+her güne bu ikiliden birini ya da "kapalı" atıyor. Üçüncü ya da adlandırılmış şablonun yolu yok.
+
+Ölçüm: `TB-174` düzeltilince Cuma'yı "Yarım Gün" şablonuna atamak **hesapça** güvenli — devamsızlığın
+yarım gün eşiği (`HalfDayLessonThresholdPercent`, `AbsenceDayEquivalenceCalculator:29-56`) şablon adına
+değil o günün gerçek oturum oranına bakıyor. Sorun **anlam**: Cuma programı yarım gün değil; ekranda,
+raporda ve öğretmenin programında "Yarım Gün" yazması yanlış bilgi.
+
+⬜ Ürün kararı bekliyor: (a) şablonlar okulun adlandırdığı serbest kayıtlara dönüşür (ör. "Pzt–Per",
+"Cuma"), gün ataması onlara bağlanır; (b) ikili kalır, yalnız etiketler nötrleşir ("Program A / B");
+(c) bugünkü gibi kalır, Cuma "Yarım Gün" olarak kullanılır.
+
+✅ **Karar (2026-09-28, kullanıcı):** ikili yapı kalır, **etiketler nötr (Program A/B) ve okul ad verebilir**. Uygulanacak.
+
+✅ **2026-10-01 · kapandı (kullanıcı kararı revize edildi):** varsayılan ad **"1. Program / 2. Program"** oldu; okulun kendi ad
+vermesi **istenmedi** ("bu adlarla yetinelim"), sunucuya alan/göç eklenmedi. Etiket tek yerde: `packages/core/src/bell-schedule/constants.ts`
+`BELL_TEMPLATE_LABEL`; web şablon seçicisi, gün ataması seçicileri, sayaç ("1. Program: 4 gün · 2. Program: 1 gün · 2 kapalı"),
+satırsız şablon uyarısı ve mobil zil ekranı (yerel kopya kaldırıldı, ızgara işareti T/Y → 1/2) oradan okuyor. Sunucu anahtarları
+(`FullDay`/`HalfDay`) sözleşme olarak kaldı. core zil testleri 16/16, web/mobil tip denetimi temiz. Altınay'da Cuma 2. programa atanmış
+ve gerçek Cuma çizelgesiyle dolu (B-93 kaydı).
 

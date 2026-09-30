@@ -1054,25 +1054,13 @@ tekrar 204; Cuma=HalfDay atamasıyla vekâlet panosu gün bazlı saat döndürd�
 **Açık:** entegrasyon koşusunun özeti alınamadı (ClamAV testi ortam kaynaklı düşüyor, madde dışı), `dotnet format`
 koşulmadı, "satırsız şablona gün atanamasın" sunucu kuralı yazılmadı — ekran uyarısı var (`B-51` notu).
 
+➕ **2026-10-01 · `E-25` yalnız etiket olarak kapandı** ("1. Program / 2. Program", okul ad vermiyor), yani yukarıda ona bırakılan
+**gün bazlı ızgara** işi artık bu maddede açık. Altınay'da somutlaştı: Cuma 2. programda (08:55–15:25, öğle 6. dersten sonra),
+Pzt–Per 1. programda; iki şablon da 8 ders olduğu için gün bilgisi olmayan bağlamlar (yayınlı haftalık ızgara, ders sayısı) tek
+şablon okur ve **Cuma sütununda Pzt–Per saatleri** görünebilir. Yoklama, vekâlet ve nöbet gün bazlı okuduğu için doğru. Ekranda
+ölçülmedi; B9.5/B10.2 rol gezintisinde bakılacak.
+
 ✅ **Karar (2026-09-28, kullanıcı):** satırsız şablona gün ataması **sunucuda 409 ile reddedilir**. Uygulanacak.
-
-### `E-25` · Zil şablonları sabit ikili (Tam Gün / Yarım Gün); güne göre adlandırılmış program yok 🟡
-
-Altınay saha testi (B2.3, 2026-09-15). Okul Pazartesi–Perşembe bir, Cuma farklı bir zil programı
-uyguluyor. Şablon hem sunucuda (`BellTemplateKey` enum) hem istemcide
-(`packages/core/src/bell-schedule/{types,constants}.ts`) yalnız `FullDay`/`HalfDay`; `BellDayAssignment`
-her güne bu ikiliden birini ya da "kapalı" atıyor. Üçüncü ya da adlandırılmış şablonun yolu yok.
-
-Ölçüm: `TB-174` düzeltilince Cuma'yı "Yarım Gün" şablonuna atamak **hesapça** güvenli — devamsızlığın
-yarım gün eşiği (`HalfDayLessonThresholdPercent`, `AbsenceDayEquivalenceCalculator:29-56`) şablon adına
-değil o günün gerçek oturum oranına bakıyor. Sorun **anlam**: Cuma programı yarım gün değil; ekranda,
-raporda ve öğretmenin programında "Yarım Gün" yazması yanlış bilgi.
-
-⬜ Ürün kararı bekliyor: (a) şablonlar okulun adlandırdığı serbest kayıtlara dönüşür (ör. "Pzt–Per",
-"Cuma"), gün ataması onlara bağlanır; (b) ikili kalır, yalnız etiketler nötrleşir ("Program A / B");
-(c) bugünkü gibi kalır, Cuma "Yarım Gün" olarak kullanılır.
-
-✅ **Karar (2026-09-28, kullanıcı):** ikili yapı kalır, **etiketler nötr (Program A/B) ve okul ad verebilir**. Uygulanacak.
 
 ### `TB-177` · Tatil Takvimi resmî tatilleri yıl ve bitiş tarihine bakmadan birleştiriyor — her dini bayram 5 kez 🟡
 
