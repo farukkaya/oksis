@@ -47,6 +47,7 @@
 | **Y-04** | Müfredat alan bazlı mı tutulur; ortak derste MEB'den sapma nasıl kabul edilir | ✅ Karara bağlandı · 🟡 backend + ekran uygulandı (iki depoda dal `feat/alan-bazli-mufredat-profili`, commit yok) | 2026-09-24 | **Tam profil:** müfredat `(seviye, alan)` başına; alan profili ortak + seçmeli + okul dersini taşır, seviye profilinden kopyayla doğar, miras yok · ortak sapma seçmelideki gibi **bilerek onayla** — tasarım [[alan-bazli-mufredat-profili-tasarimi]] |
 | **Y-05** | Sınıf rehber öğretmeninin girdiği dersler (Deneme, Koçluk, Rehberlik) ve dersi gün/saate sabitleyen kural | ✅ Karara bağlandı · 🟡 uygulanıyor (dal `feat/sinif-rehberligi-dersleri`) | 2026-09-25 | Katalogda **"sınıf rehberliği dersi" türü** (öğretmen = şubenin rehber öğretmeni, not almaz, yoklama tutulur) · Rehberlik = MEB beyan saati programa satır olarak girer · **sabit yerleşim kuralı** (ders, gün, saat/"son ders", blok, kapsam) üreticide önce basılır · çakışma sessizce çözülmez — tasarım [[sinif-rehberligi-dersleri-ve-sabit-yerlesim]] · `E-32`, `TB-253` |
 | **Y-06** | Kulüp saati ders programında nasıl işlenir | ✅ Karara bağlandı · 🟡 uygulandı, commit bekliyor (dal `feat/kulup-saati`, 2026-09-26) · açık: `E-34` devamsızlığa yansıma (ürün kararı) | 2026-09-25 | Katalogda **kulüp dersi türü**: şube hücresi öğretmensiz "Kulüp Saati", öğretmen tarafı danışmanlıktan · kapsam müfredattan (Altınay 9–10) · konum `Y-05` sabit kuralı, kapsamda tüm şubeler aynı anda · danışman o dilimde meşgul (zorunlu kısıt), danışmanlığı olmayan boş · öğrenci tek kulüp, kapsamdaki her öğrenci üye olmak zorunda, **kulüp saati olmayan sınıfın öğrencisi başvuramaz** · öğretmen tek kulübün danışmanı, kulübün tek öğretmeni · yoklamayı danışman alır: haftalık otomatik kulüp saati etkinliği, **devamsızlığa yansır** · **kulüp saati yük yüzdesine girer (`K-15/3` revize)** — tasarım [[kulup-saati]] |
+| **Y-07** | Okul günü içinde zil ve ders programı değişmez: bir günün yoklaması tek sürümden | ✅ Karara bağlandı · 🟡 uygulanıyor (2026-10-01) | 2026-10-01 | Ders saatlerinde (okul günü ilk dersin başı – son dersin sonu) **program yayını reddedilir**; dışında yayınlanan sürüm **ertesi okul gününden** yürürlüğe girer (sabah 07:30 dahil) → bir günün bütün oturumları tek sürümden · **zil**: okul günü 00:00'dan son dersin sonuna kadar kaydedilemez, son dersten sonra ya da okul dışı günde kaydedilir (zile sürüm eklenmez; fiilen ertesi günden geçerli) · vekâlet/iptal/derslik istisnaları kural dışı, gün içinde serbest · bkz. [[#Y-07 · Okul günü içinde zil ve ders programı değişmez]] |
 
 **Kritik yol:** ~~`K-02`~~ → ~~`K-01a/b/c`~~. **İkisi de çözüldü (2026-08-08)** — bildirim zinciri baştan sona karara bağlandı. Kalan açık kararlar `K-03`, `K-04` ve `K-05` birbirinden bağımsız; sıra artık **uygulamada**: [[K-02 - OS Push Altyapısı]] Parti 1 ile [[K-01 - Bildirim Matrisi]] §8 doğan işleri.
 
@@ -1762,3 +1763,33 @@ Bunu bir plan olarak değil, **bloklama ilişkisinin doğal sonucu** olarak yaz�
 > C4 sekiz görev + bir düzeltme dalgası + iki kapanış kararıyla tamamlandı ve `master`'a birleştirildi *(uzak depoya push edilmedi)*. Ayrıntılı backlog `oksis` deposunda **spec §17**'de `C4-1`…`C4-20` olarak duruyor; buraya yalnız **yapısal** olanlar taşındı.
 >
 > C4'ün öğrettiği şey ayrıca kayda değer: planın dört ayrı yerinde **ölçülmemiş gerekçe** vardı ve ikisi *koruma* vaat ediyordu — biri uygulansaydı veli yönetim konsolunu görecekti. Bunun panzehiri `TB-05`'teki atıf politikası ve kararların `packages/core`'a taşınıp testlenmesi oldu; merkezîleştirme üç ayrı gerçek hatayı kendiliğinden ortaya çıkardı.
+
+## Y-07 · Okul günü içinde zil ve ders programı değişmez
+
+**Tarih:** 2026-10-01 · **Karar veren:** kullanıcı · **Bağlam:** Altınay saha testi (`B-90`, `B-93`, `B-96`, `B-98`).
+Program ya da zil gün içinde değişince bir günün oturumları iki sürümden doğuyordu (1. ders v1, 2. ders v2), kulüp saati
+ikizleniyor, kapanmış oturumlar yeniden açılıyor ve hatırlatmalar yineleniyordu.
+
+**Kural:**
+1. **Program yayını:** okul gününde ilk dersin başlangıcı ile son dersin bitişi arasında yeni sürüm **yayınlanamaz**.
+   Bu aralığın dışında yayınlanan sürüm **ertesi okul gününden** yürürlüğe girer — akşam da, sabah ilk dersten önce de.
+   Oturum üretici her gün için **o gün yürürlükte olan** sürümü kullanır; bir günün bütün yoklaması tek sürümdendir.
+2. **Zil programı:** okul günü 00:00'dan son dersin bitişine kadar zil kaydedilemez; son dersten sonra ya da okul olmayan
+   günde kaydedilir. Zile sürüm eklenmez — kaydedilebildiği her an o günün dersleri bitmiş olduğu için değişiklik fiilen
+   ertesi günden geçerlidir. Bedel: sabah fark edilen zil hatası o gün düzeltilemez.
+3. **İstisnalar** (vekâlet, ders iptali, derslik değişikliği) bu kuralın dışındadır; gün içinde serbesttir ve ders
+   saatindeki tek değişiklik yolu bunlardır.
+
+**Seçilmeyenler:** zile yürürlük tarihi (tam kural) — zil en az 7 tüketicide canlı okunuyor (`TB-174`), sürümlemek ayrı
+büyük iş; programda "son dersten önce kilitli" sadeleştirmesi — yürürlük günü programda ucuz olduğu için tam kural seçildi.
+
+**Uygulama (2026-10-01 gece):** `oksis-api` `feat/y07-gun-ici-degismezlik` (`640f5339`…`5eb52c1b`), `oksis-ui` aynı adlı dal
+(`92838aa`, `f3ad2e7`). Göç `20261001175907_…schedule_version_effective_from`: `schedule_versions.effective_from`, geri doldurma
+= yayın anının okul yerel günü (Altınay: 26 sürüm 27 Eylül, 2 sürüm 30 Eylül). Ortak pencere `SchoolDayLessonWindow`; tarihe göre
+sürüm seçimi tek yerde `InForceScheduleVersions` (oturum üretici, kulüp saati eşitleme ve kaydedici, sınav okuyucusu, haftalık
+program görünümleri). Yeni 409'lar: `Timetable.Publish.DuringLessonHours`, `Schools.Bell.LockedOnSchoolDay`; yayın yanıtı, toplu
+yayın kalemleri ve sürüm listesi `effectiveFrom` taşır.
+**Bilinçli dışarıda bırakılanlar:** yerleşim rezervasyonu, kulüp başvuru kapsamı, danışman meşguliyeti ve not/defter kapsamı güne
+bağlı değil, yayında hemen değişir.
+**Açık nokta:** `ScheduleExceptionPlanner` istisnanın hedef yerleşimini programın en son sürümünden çözüyor. Sabah ilk dersten önce
+yayın yapılırsa o güne yazılan vekâlet, o günün (eski sürümden doğan) oturumuna uygulanmaz. Akşam yayında sorun yok. Sahada ölçülecek.
