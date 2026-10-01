@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-92` · `D-41` · `V-05` · `X-24` · `TB-264` · `E-36` · `ENG-04`
+**Sıradaki boş ID:** `B-99` · `D-43` · `V-05` · `X-24` · `TB-265` · `E-36` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -239,12 +239,20 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 4 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 24 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 28 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 29 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 43 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 29 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **97** | |
+| **Toplam** | **106** | |
 
+> **2026-10-01 (Altınay saha testi — öğretmenlerin bugünkü yoklama görevleri):** 17 öğretmen, 84 oturum; web + mobil (Expo web) +
+> API. Mutlu yol, sahiplik (404), hatalı gövdeler, idempotent gönderim, düzeltme, gün içi izin ve pano doğru çalıştı. Açılan: `B-92` 🟠
+> (gelecek ders/gün yoklaması), `B-94` 🟠 (eksik/boş liste "tamamlandı"), `B-95` 🟠 (pencere dışı + yayın öncesi üretim),
+> `B-96` 🟠 (zil değişimi kapanmış günü yeniden açıyor, yinelenen hatırlatma), `B-97` 🟡 (gün içi izin doğrulaması/iptali),
+> `TB-264` 🟡 (eşzamanlı gönderimde 500), `D-41` ⚪. Toplam **104**.
+> Aynı gün kulüp saati (9-A/9-B/10-A/10-B, 8. saat, 6 kulüp): `B-98` 🟠 (zil değişimi kulüp saatini ikizledi, eski etkinliğe
+> girilen yoklama devamsızlığa yazılmıyor), `D-42` 🟡; `B-92`'ye kulüp ayağı eklendi. Kapalı `TB-259`'un ("sınır olarak kabul")
+> sahadaki sonucu ölçüldü: boş kalan bir kulübün 5 üyesinin 8. saati iz bırakmadı, hiçbir hatırlatma gitmedi. Toplam **106**.
 > **2026-09-28 (öğleden sonra):** yönetici devamsızlık ekranında yoklamasını tamamlamış öğretmen "bekliyor" görününce `B-90` 🔴 açıldı — yeniden yayınlanan program eski sürümün önceden üretilmiş oturumlarını temizlemiyor; Altınay'da bugün 80 fazladan oturum, bir kısmında çift yoklama kaydı. Toplam **94**.
 
 > **2026-09-30 (`B-90` ekran testi + düzeltme turu):** `B-90`'ın üç kararı bağlandı ve kodda düzeltildi (commit/merge bekliyor); ilk commit'in göçü hiç çalışamazdığı için silinip yeniden yazıldı, dev DB'ye uygulandı. Aynı testte `B-91` 🟠 (açık mobil uygulama silinen oturum kimliğini tutuyor), `TB-262` 🟠 (yayından sonra ilk pano açılışında 500 — kodda düzeltildi), `TB-263` 🟡 (dev DB'de koddan olmayan codex B-90 göçü) ve `D-40` ⚪ açıldı. Ardından iki depoda commit + master'a birleştirme: `B-90` kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §73). Toplam **97**.
@@ -2259,6 +2267,157 @@ varsayılan alır; kural core'da tek fonksiyon olur. Backend okuma uçlarının 
 karar bekliyor.
 
 ✅ **Karar (2026-09-28, kullanıcı):** **okuma ekranları son kapanan dönemi, planlama ekranları başlamamış ilk dönemi** varsayılan alır; kural core'da tek fonksiyon, backend'in id'siz okuması da aynı kuralı uygular. Uygulanacak.
+
+### `B-92` · Henüz başlamamış dersin — hatta gelecek haftanın — yoklaması alınıp kaydedilebiliyor 🟠
+
+2026-10-01, Altınay saha testi (öğretmenlerin bugünkü yoklama görevleri). Saat 11:42'de Zuhal Karaca Kaya webde
+*Yoklama*'yı açtı; 13:30'daki 6. dersin (10-B Kimya) "Yoklama Al" düğmesi etkindi, liste açıldı, bir "gelmedi" + bir "geç"
+işaretlenip **kaydedildi** (oturum `30132fbd…` `Completed`). Mobilde (Expo web, Bahadır Baba) gelecek dersler soluk ve
+"Bekliyor" görünüyor ama dokununca liste açılıyor ve "Kaydet" etkin (12:45'teki 5. ders). Sunucuda da sınır yok:
+`POST sessions/{placementId}/open?date=2026-10-08` **200** döndü ve gelecek haftanın oturumunu `Open` yaptı
+(`2f9e8ccf…`, test artığı). `OpenOrGetSessionCommandHandler` ve `AttendanceSession.Open/Submit` ders saatine ya da tarihe hiç
+bakmıyor; `?date=` serbest.
+
+Yan etki ölçüldü: aynı şubeden bir öğrenciye 11:46'da 5. dersten itibaren gün içi izin verildi. Henüz yapılmamış
+7. ders doğru biçimde "İzinli" varsayıldı, ama önceden kaydedilmiş 6. derste öğrenci **"Geldi"** olarak kaldı — izin
+tamamlanmış oturumu çevirmiyor. Önceden alınan yoklama, sonradan olan her şeyle (izin, geç gelme, erken çıkış) çelişebilir.
+
+Neden önemli: devamsızlık resmî kayıt; dersi yapılmadan "geldi" yazılması sahte veri üretir ve veli bildirimi de bu
+kayıttan tetiklenir. **Kulüp saatinde de aynı** (2026-10-01 14:50): Münazara danışmanı ders başlamadan 10 dk önce üye listesini
+işaretledi → 200, dört şubenin 8. saatine `Completed` kayıt yazıldı (`UpdateClubActivityRoster`'da da zaman kapısı yok).
+⬜ Karar: dersin başlangıcından (ya da başlangıçtan N dk önce) önce açma/gönderme reddedilsin mi,
+yoksa yalnız ekranda kilit mi? Gelecek **gün** her durumda sunucuda reddedilmeli.
+
+✅ **Karar (2026-10-01, kullanıcı):** yoklama en erken **ders başlangıcından 5 dk önce** açılır/gönderilir; daha erkeni ve gelecek
+gün sunucuda reddedilir, ekranda düğme kilitli ve başlangıç saati yazılı. Kural kulüp saatine de uygulanır.
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `110e6635`; `oksis-ui` `fix/yoklama-ekran-kurallari` ← `285e7f3`, `80c1c09`): kural tek yerde (`AttendanceOpeningRule`, 5 dk; core `canTakeAttendance`). Sahada ölçüldü: 8 Ekim ve yarın için açma 409 `Attendance.Session.NotStarted`, satır üretilmedi. **Kalan ölçüm:** gün içi 5 dk sınırı ve ekran kilidi bir ders saatinde (2 Ekim sabahı).
+
+### `B-94` · Eksik ya da boş listeyle gönderilen yoklama "Tamamlandı" sayılıyor; eksik öğrenciler kalıcı olarak kayıtsız 🟠
+
+2026-10-01, Altınay saha testi, API ile. `PUT sessions/{id}/submit` gövdesinde yalnız bir **alt küme** kabul ediliyor:
+- Bahadır Baba, 1. ders 9-A İngilizce (7 öğrenci): 3 kayıtla gönderim → **200**, oturum `Completed`, 3 kayıt.
+- Kezban Dumanlı, 1. ders 10-A TDE (7 öğrenci): **boş** `records: []` → **200**, oturum `Completed`, 0 kayıt, sayaçlar 0/0/0.
+
+Sonra kurtarma yolu yok: farklı içerikle yeniden gönderim `Attendance.Session.AlreadyCompleted` (409), tekil düzeltme yalnız
+var olan kaydı değiştirir. Mobil, 7 kişilik 9-A'yı **"3 öğrenci · İstisna yok — tüm sınıf geldi"** diye gösteriyor; dört
+öğrenci ekrandan sessizce düşmüş. Pano bu oturumu tamamlandı sayıyor.
+
+Kod: `AttendanceSession.Submit` gelen listeyi şubenin aktif kaydıyla karşılaştırmıyor; `SubmitAttendanceCommandHandler`
+yalnız "gelen kayıt bu şubede mi" diye bakıyor, "şubedeki herkes geldi mi" diye bakmıyor. Bugünkü ekranlar tam listeyi
+gönderdiği için olağan yolda tetiklenmez; tetikleyen yollar: eski istemci, liste yüklendikten sonra şubeye öğrenci
+eklenmesi, el yapımı istek. ⬜ Öneri: gönderimde aktif listenin tamamı zorunlu (eksik → 422, eksikler adıyla).
+**Test artığı:** iki oturum (`328dc721…` 9-A 1. ders, Kezban'ın 10-A 1. dersi) bu hâlde duruyor; üründe onarım yolu yok.
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `9e4978d3`; ekranda 422'de liste yenileniyor `oksis-ui` `fix/yoklama-ekran-kurallari` ← `1af834d`). Sahada ölçüldü: 3/12 ve boş gönderim 422 `Attendance.Roster.Incomplete`, mesaj eksikleri adıyla sayıyor.
+
+### `B-95` · Pencere dışı ve program yayınından önceki günler maddileşiyor — 21 Eylül sonsuza dek "Bekliyor", 21–25 Eylül hayalet "Alınmadı" 🟠
+
+2026-10-01, Altınay saha testi (DB + `GET attendance/unrecorded`). Program 27 Eylül'de yayınlandı. Buna rağmen Altınay'da
+**21–25 Eylül** için oturum var: hepsi 28 Eylül 10:12 UTC'de tek seferde üretilmiş. 22–25 Eylül'ün 348'i `NotTaken`;
+**21 Eylül'ün 88'i `Pending`** — kapanış işinin 7 günlük penceresinin bir gün dışında kaldığı için hiç kapanmayacak ve
+retro giriş de yalnız `NotTaken`'dan kabul edildiği için hiç düzeltilemeyecek. "Alınmayan Yoklamalar" (24 Eyl–1 Eki) 360
+satır döndü; bunların **172'si (24–25 Eylül) programın olmadığı günler** — öğretmenler o günler için yoklama almamış görünüyor.
+
+İki kaynak:
+1. `GetTeacherDailySessionsQueryHandler` (`sessions/my?from=&to=`) aralıktaki **her günü** `MaterializeForDateAsync` ile üretiyor;
+   aralık uzunluğu ve `AttendanceMaterializationWindow` sınırı yok. `AttendanceMaterializationWindow`'un belgesindeki uyarı
+   ("pencere dışında üretilen satır sonsuza dek Pending kalır") tam olarak burada gerçekleşmiş. Tek tarih `?date=` de serbest.
+2. Maddileştirici en güncel `ScheduleVersion`'ı tarih bağımsız kullanıyor; sürümün yayın tarihinden **önceki** günü de üretiyor.
+   (Aynı sorun `GetOrCreateAsync` için ölçüldü: `open?date=2026-09-16` 404 verdi — o tarihte dönem/okul günü süzgeci tuttu,
+   ama 21–25 Eylül dönem içinde olduğu için tutmuyor.)
+
+⬜ Öneri: üretim sürümün yayın gününden önceye inmez; `sessions/my` aralığı pencereyle sınırlanır (pencere dışı salt okunur).
+Veri: 21–25 Eylül oturumları temizlenmeli (karar: sil mi, iptal mi).
+
+✅ **Karar (2026-10-01, kullanıcı):** öneri kabul; sürümün yayın gününden önce üretilmiş, kaydı olmayan oturumlar göçle
+**yumuşak silinir** (tüm okullar için aynı kural).
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `60d2e6bc`, göç `20261001132803_…attendance_prepublish_cleanup` dev DB'de, **436 satır** yumuşak silindi). Sahada ölçüldü: 30 günlük aralık 400, 16 Eylül ve 21–25 Eylül okununca satır üretilmedi.
+
+### `B-96` · Zil değişince "bugün"ün kapanmış oturumları da silinip "Bekliyor" olarak yeniden doğuyor; gece yarısı 87 yinelenen hatırlatma 🟠
+
+2026-10-01, Altınay saha testi (DB + bildirim tablosu). 30 Eylül'ün 87 oturumu 21:45'teki gün sonu işiyle `NotTaken` oldu ve
+hatırlatmaları 20:28–20:50 arasında gitti. Aynı gece **23:37**'de zil değiştirildi (`B-93` canlı ölçümü); `PendingSessionPurge`'ün
+sınırı "okulun bugünü" olduğu için **30 Eylül'ün 87 `NotTaken` oturumu** yumuşak silindi ve 23:48'de **`Pending`** olarak
+yeniden üretildi. 23:50'de hatırlatma işi bunları yeni oturum sayıp **87 "yoklama alınmadı" hatırlatmasını ikinci kez** gönderdi
+(`notifications`, tür 10, 23:xx). Bugün öğle saatinde de 30 Eylül hâlâ 87 `Pending` — bu akşamki kapanışa kadar yönetici
+"Alınmayanlar"da dünü "bekliyor" görüyor.
+
+Kural (`B-93` kararı) "bugün ve sonrası tarihli **bekleyen** (`Pending`/`NotTaken`)" diyor; gün içinde de geçerli: zil öğlen
+değişirse sabah dersleri — saati geçmiş, hatırlatması gitmiş, alınmamış — yeni kimlikle `Pending` doğar, hatırlatma tekrarlanır.
+⬜ Öneri: silme sınırı "bugün" değil "henüz başlamamış ders" (`date > bugün` ya da `date == bugün && start_time > şimdi`);
+`NotTaken` hiç silinmez. `B-91` ile aynı aile (yeniden üretim kimlik değiştiriyor).
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `dafeab1c`): silme yalnız başlamamış `Pending`; `NotTaken`/`Open` hiç silinmez; yayıncı (B-90) da aynı kurala ve okul yerel saatine geçti (B-93'teki UTC notu kapandı). Entegrasyon testi 23:37 zil değişimini canlandırıyor. **Kalan ölçüm:** sahada zil değişimi yapılmadı.
+
+### `B-97` · Gün içi izin: aynı öğrenciye aynı gün yinelenen izin ve var olmayan ders saati kabul ediliyor, geri alma yolu yok 🟡
+
+2026-10-01, Altınay saha testi, müdür hesabıyla `POST attendance/daily-leaves`. Bir 10-B öğrencisine 1 Ekim için üç izin de **201**
+aldı: 5. dersten, 6. dersten (aynı gün ikinci izin) ve **99. dersten** (okulun 8 dersi var). Her biri veliye ayrı
+"🚪 Gün İçi İzin Verildi" bildirimi üretti (6 bildirim, 2 veli). Öğretmen izin veremiyor (403, doğru). Uçlar yalnız
+`GET`/`POST`; yanlış verilen izni silen ya da düzelten uç yok — ekrandan da yok.
+⬜ Öneri: `FromPeriod` o günün ders sayısıyla doğrulanır; aynı öğrenci+gün için tek izin (ikinci istek erken saate günceller ya da
+409); iptal ucu + veliye düzeltme bildirimi. **Test artığı:** `12de22f5…` (6. ders) ve `67a51d56…` (99. ders) duruyor.
+
+✅ **Karar (2026-10-01, kullanıcı):** aynı öğrenci + gün için ikinci izin **409** ile reddedilir; `FromPeriod` o günün ders sayısıyla
+doğrulanır; idare için **iptal ucu** eklenir — veliye düzeltme bildirimi gider, bekleyen derslerin "İzinli" varsayılanı kalkar.
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `a674ef94`; `oksis-ui` `fix/yoklama-ekran-kurallari` ← `1af834d`, `6ebc2f2`): ikinci izin 409, ders aralığı 400, `DELETE daily-leaves/{id}`, veliye iptal bildirimi (tür `DailyLeaveGranted` yeniden kullanıldı). Sahada ölçüldü: 409 / 400; iki test artığı izin üründen iptal edildi (204), ikinci iptal 404, öğretmen 403. Açık: tekillik yalnız uygulama kontrolü (DB indeksi tekil değil); `GrantDailyLeave` öğrencinin okulunu doğrulamıyor (önceden de). **Kalan ölçüm:** web iptal penceresi.
+
+### `TB-264` · Aynı oturuma eşzamanlı iki gönderimde biri 500 dönüyor 🟡
+
+2026-10-01, Altınay saha testi. Nazlı Erdoğdu'nun açık oturumuna (9-B Kimya, 1. ders) iki iş parçacığıyla aynı anda farklı
+içerik gönderildi: biri **200**, öteki **500 `InternalError`**. Veri sağlam (8 kayıt, 8 tekil öğrenci — `row_version` korudu),
+ama çift dokunuş/yeniden deneme senaryosunda istemci "beklenmeyen hata" görüyor. Eşzamanlılık istisnası
+`Attendance.Session.AlreadyCompleted` gibi 409'a çevrilmeli (ikinci istek aynı içerikse idempotent 200).
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `692dc41f`): kök neden SQL 1205 deadlock; oturum başına `sp_getapplock` + ikinci savunma olarak eşzamanlılık istisnası yakalama. Sahada ölçüldü: eşzamanlı iki aynı gönderim 200/200, sonra farklı içerik 409.
+
+### `D-41` · Öğretmenin web yoklama ekranı yalnız idareye açık düzeltme talepleri ucunu çağırıyor — her açılışta 403 ⚪
+
+2026-10-01, Altınay saha testi. Öğretmen (Zuhal Karaca Kaya) `/roll-call`'da bir listeyi açınca
+`GET /api/v1/attendance/amendment-requests?state=1` **403** dönüyor, konsola hata düşüyor (`roster.tsx:65`
+`useAmendmentRequests("pending")`). İşlev bozulmuyor; sorgu ya izne bağlanmalı ya da öğretmenin kendi taleplerini dönen uca
+geçmeli. (Ayrıca öğretmen `/attendance`'a gidince "Yetkiniz yok" — menü `/roll-call`'a götürdüğü için kusur sayılmadı.)
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-ui` `fix/yoklama-ekran-kurallari` ← `fe86152`): sorgu `attendance.manage`'e bağlandı. **Kalan ölçüm:** öğretmen ekranında konsol.
+
+### `B-98` · Zil değişince kulüp saati etkinliği ikizleniyor; eski saatteki etkinliğe girilen yoklama devamsızlığa hiç yazılmıyor 🟠
+
+2026-10-01, Altınay saha testi (9-A/9-B/10-A/10-B, Perşembe 8. saat kulüp saati; 6 kulüp, 34 üye). Her kulübün bugün **iki**
+"Kulüp saati" etkinliği var, ikisi de `Published`: **15:10–15:50** (28 Eylül'de eski zille açılmış) ve **15:00–15:30** (bugün
+11:39'da yeni zille açılmış). Web'de *Kulüplerim › Etkinlikler* ve mobilde *Etkinlikler* ikisini de "Yoklama al" ile sunuyor.
+Ders başlayınca (15:03) gerçek etkinlik **"Geçmiş"** sekmesine düşüyor, **"Yaklaşan"da yalnız eski 15:10 etkinliği** kalıyor —
+ders sırasında yoklama açan danışman büyük olasılıkla yanlış olanı seçer.
+
+Ölçüldü: Kütüphanecilik danışmanı eski 15:10 etkinliğine 5 üyeyi işaretledi → **200**, kulüp listesinde "katıldı" görünüyor,
+ama `attendance_sessions`'a **hiçbir şey yazılmadı**. `ClubHourAttendanceRecorder` zili etkinlik aralığına düşen kulüp saati
+dersini arıyor (`b.Start >= from && b.End <= to`); 8. ders 15:00'te başladığı için 15:10–15:50'ye sığmıyor ve kaydedici
+`Success(empty)` dönüyor — hata yok, uyarı yok. Sonuç: o kulübün 5 öğrencisinin 8. saatinde devamsızlık kaydı yok
+(`TB-259` sınırı yüzünden de kimse fark etmez).
+
+Kök neden iki parça: (1) `OpenClubHourActivitiesCommandHandler` tekilliği **kulüp × başlangıç** ile kuruyor; başlangıç değişince
+eskisini bulmuyor, yenisini açıyor; (2) `B-93`'ün `PendingSessionPurge`'ü zil değişiminde yalnız yoklama oturumlarını yeniliyor,
+kulüp saati etkinliklerine dokunmuyor. ⬜ Öneri: zil/gün ataması değişince başlamamış kulüp saati etkinlikleri yeni zile **taşınır**
+(katılım satırlarıyla), ikiz açılmaz; kaydedici eşleşen ders bulamazsa sessiz başarı yerine hata verir.
+**Test artığı:** 6 eski 15:10 etkinliği duruyor; Kütüphanecilik'inkinde 5 "katıldı" işareti var.
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `d77d3d4b`, göç `20261001132811_…club_hour_twin_cleanup` dev DB'de, **5 ikiz** yumuşak silindi): başlamamış kulüp saati yeni zile taşınır (`ClubHourActivitySync`, `RescheduleClubHour`), beş zil komutu hizalamayı tetikler, eşleşmeyen yoklama 409 `Attendance.ClubHour.NoMatchingPeriod`. Sahada ölçüldü: her kulübün tek kulüp saati var; bayat etkinliğe işaret 409. **Karar bekliyor:** Kütüphanecilik'in işaretli bayat 15:10 etkinliği (`90E2D7C4…`, 5 "katıldı") korunuyor.
+
+### `D-42` · Danışmanın ekranları kulüp saatini göstermiyor: günlük listede "Boş", kulüp kartında "0 etkinlik" 🟡
+
+2026-10-01, Altınay saha testi. Çevre ve Kimya danışmanı (aynı zamanda 10-B Kimya öğretmeni) mobilde *Yoklama › Bugünkü
+Derslerim*'de 8. saati (15:00–15:30) **"Boş"** görüyor; o saatte kulüp yoklaması alması gerektiğini söyleyen hiçbir şey yok,
+*Daha fazla › Kulüplerim › kulüp › Etkinlikler*'e kendisi gitmeli. Aynı kulübün kartı hem webde hem mobilde **"0 etkinlik"**
+diyor (web özet kartı "Toplam etkinlik 0"); kulübün içindeki sekme "Etkinlikler 2" gösteriyor — sayaç kulüp saati türünü
+saymıyor. `TB-259` kararıyla hatırlatma da gitmediği için danışmanı kulüp saatine götüren tek yol hafızası. ⬜ Öneri: günlük listede
+kulüp saati satırı ("Kulüp saati · <kulüp> · Yoklama al"), kart sayacı tüm türleri saysın.
+
+✅ **Karar (2026-10-01, kullanıcı):** öneri kabul — web ve mobil günlük ders listesinde kulüp saati satırı, doğrudan kulüp
+yoklamasına götürür; kart sayacı tüm etkinlik türlerini sayar.
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-ui` `fix/yoklama-ekran-kurallari` ← `a76c07b`; sayaç `oksis-api` `fix/yoklama-saha-2026-10-01` ← `6f3c530d`). Sahada ölçüldü: web'de danışmanın 8. saati "Kulüp saati · Müzik Kulübü · 6 üye · Yoklama Al"; `/clubs/mine` `activityCount` 1. **Kalan ölçüm:** mobil.
 
 ### `B-91` · Açık mobil uygulama, yeniden yayında silinen yoklama oturumunun kimliğini tutuyor — "Sınıf listesi yüklenemedi" 🟠
 

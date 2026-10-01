@@ -1,0 +1,179 @@
+---
+tags: [saha-testi, altinay, yoklama, kulup]
+---
+
+# Altınay — 1 Ekim 2026 Yoklama Saha Testi Bulguları
+
+**Tarih:** 1 Ekim 2026, Perşembe · 11:35–15:15 (okul saatiyle)
+**Kapsam:** Öğretmenlerin o güne ait bekleyen yoklama görevleri: şube yoklaması (1–8. ders) ve 9-A/9-B/10-A/10-B'nin
+8. saatindeki kulüp saati yoklaması.
+**Ortam:** Yerel dev · oksis-api `6a3cd210` · oksis-ui `f99f61f` · Altınay (`ALTINAY-AL`)
+**Yüzeyler:** Web (`/roll-call`, `/clubs/...`), mobil (Expo web, telefon genişliği), API (betikle 17 öğretmen), DB ölçümü.
+**Ana kayıt:** Bulguların tam metni [[OKSİS - Bulgu Kayıt Defteri]]'nde; bu belge testin özetidir.
+Test başlığı satırları: [[Altınay — Yaşam Döngüsü Test Başlıkları]] `C1.1` ve `C2.2`.
+
+> **Kişisel veri:** Depo herkese açık. Öğretmen ve öğrenciler rolüyle anılır (ör. "10-B Kimya öğretmeni", "Müzik
+> kulübü danışmanı").
+
+---
+
+## 1. Özet
+
+| | Sayı |
+|---|---|
+| Öğretmen | 17 (o gün dersi olan herkes) |
+| Şube yoklama oturumu | 84 (1–8. ders) |
+| Alınan şube yoklaması | 44 (1–4. dersler; 41 gerçekçi dağılım + 3 kenar testi) + 1 gelecek ders testi |
+| Kulüp | 6 kulüp, 34 üye, 4 şube |
+| Yeni bulgu | **9** — 🟠 5 · 🟡 3 · ⚪ 1 |
+| Mevcut maddeye ek | `B-92`'ye kulüp ayağı; kapalı `TB-259`'un sahadaki sonucu |
+
+**En önemli üç sonuç:**
+1. Henüz yapılmamış dersin — hatta gelecek haftanın — yoklaması alınabiliyor (`B-92`), kulüp saatinde de.
+2. Eksik ya da boş öğrenci listesiyle gönderilen yoklama "Tamamlandı" sayılıyor ve eksik öğrenciler kalıcı olarak kayıtsız kalıyor (`B-94`).
+3. Zil değişikliği kulüp saatini ikiye katladı; yanlış (eski) etkinliğe girilen kulüp yoklaması devamsızlığa hiç yazılmıyor (`B-98`).
+
+---
+
+## 2. Bulgular
+
+| ID | Öncelik | Başlık | Yüzey |
+|---|---|---|---|
+| `B-92` | 🟠 | Başlamamış dersin ve gelecek günün yoklaması alınıp kaydedilebiliyor (kulüp saati dahil) | Sunucu · web · mobil |
+| `B-94` | 🟠 | Eksik/boş listeyle gönderilen yoklama "Tamamlandı"; eksik öğrenciler kalıcı kayıtsız | Sunucu · mobil görünüm |
+| `B-95` | 🟠 | Pencere dışı ve program yayınından önceki günler maddileşiyor; 21 Eylül sonsuza dek "Bekliyor" | Sunucu |
+| `B-96` | 🟠 | Zil değişimi bugünün kapanmış oturumlarını yeniden açıyor; gece 87 yinelenen hatırlatma | Sunucu · bildirim |
+| `B-98` | 🟠 | Zil değişimi kulüp saatini ikizliyor; eski etkinliğe girilen yoklama devamsızlığa yazılmıyor | Sunucu · web · mobil |
+| `B-97` | 🟡 | Gün içi izin: yinelenen izin ve var olmayan ders saati kabul ediliyor, iptal yolu yok | Sunucu |
+| `TB-264` | 🟡 | Aynı oturuma eşzamanlı iki gönderimde biri 500 | Sunucu |
+| `D-42` | 🟡 | Danışmanın günlük listesinde kulüp saati "Boş", kulüp kartı "0 etkinlik" | Web · mobil |
+| `D-41` | ⚪ | Öğretmen yoklama ekranı idareye açık ucu çağırıyor, her açılışta 403 | Web |
+
+### `B-92` 🟠 Gelecek ders ve gün yoklaması
+
+- Web: 11:42'de 10-B'nin 13:30'daki 6. dersinin "Yoklama Al" düğmesi etkindi, liste açıldı ve kaydedildi.
+- Mobil: gelecek dersler soluk ve "Bekliyor" görünüyor ama dokununca liste açılıyor, "Kaydet" etkin.
+- API: `POST sessions/{placementId}/open?date=2026-10-08` → 200, gelecek haftanın oturumu `Open` oldu.
+- Kulüp saati: Münazara danışmanı ders başlamadan 10 dk önce (14:50) işaretledi → 200, dört şubenin 8. saatine yazıldı.
+- Yan etki: öğrenciye 11:46'da 5. dersten itibaren gün içi izin verildi; önceden kaydedilmiş 6. derste öğrenci **"Geldi"**
+  olarak kaldı. İzin tamamlanmış oturumu çevirmiyor.
+- Kod: `OpenOrGetSessionCommandHandler`, `AttendanceSession.Open/Submit` ve `UpdateClubActivityRoster` saate/tarihe bakmıyor.
+
+### `B-94` 🟠 Eksik ve boş liste
+
+- 9-A İngilizce (7 öğrenci) 3 kayıtla gönderildi → 200, `Completed`, 3 kayıt.
+- 10-A TDE (7 öğrenci) `records: []` ile gönderildi → 200, `Completed`, 0 kayıt.
+- Kurtarma yolu yok: farklı içerikle tekrar → 409 `AlreadyCompleted`; tekil düzeltme yalnız var olan kaydı değiştirir.
+- Mobil 9-A'yı **"3 öğrenci · İstisna yok — tüm sınıf geldi"** diye gösteriyor; 4 öğrenci ekrandan düşmüş.
+- Bugünkü ekranlar tam listeyi gönderdiği için olağan yolda tetiklenmez; eski istemci, liste açıkken şubeye öğrenci eklenmesi
+  ya da el yapımı istekle tetiklenir.
+
+### `B-95` 🟠 Pencere dışı ve yayın öncesi üretim
+
+- Program 27 Eylül'de yayınlandı; 21–25 Eylül için oturumlar 28 Eylül'de tek seferde üretilmiş.
+- 22–25 Eylül: 348 oturum "Alınmadı". 21 Eylül: 88 oturum "Bekliyor"; 7 günlük kapanış penceresinin dışında kaldığı için
+  hiç kapanmayacak, retro giriş de yapılamayacak.
+- "Alınmayan Yoklamalar" (24 Eylül–1 Ekim) 360 satır; **172'si programın olmadığı günler**.
+- Kaynaklar: `sessions/my?from=&to=` aralıktaki her günü sınırsız üretiyor; maddileştirici sürümün yayın gününden öncesini de üretiyor.
+
+### `B-96` 🟠 Zil değişimi kapanmış günü yeniden açıyor
+
+- 30 Eylül 21:45'te 87 oturum "Alınmadı" oldu, hatırlatmaları 20:28–20:50 arası gitti.
+- 23:37'de zil değişti; silme sınırı "okulun bugünü" olduğu için bu 87 oturum silindi, 23:48'de "Bekliyor" olarak yeniden üretildi.
+- 23:50'de hatırlatma işi bunları yeni sayıp **87 hatırlatmayı ikinci kez** gönderdi.
+- Gün içinde de geçerli: zil öğlen değişirse sabahın saati geçmiş dersleri yeni kimlikle "Bekliyor" doğar.
+
+### `B-98` 🟠 Kulüp saati ikizlendi, yoklama kayboluyor
+
+- Her kulübün bugün iki "Kulüp saati" etkinliği vardı, ikisi de yayında: **15:10–15:50** (eski zil, 28 Eylül) ve
+  **15:00–15:30** (yeni zil, 1 Ekim 11:39). Web ve mobil ikisini de "Yoklama al" ile sunuyor.
+- 15:03'te gerçek etkinlik "Geçmiş"e düştü; **"Yaklaşan"da yalnız yanlış olan kaldı.**
+- Kütüphanecilik danışmanı yanlış etkinliği işaretledi → 200, kulüp ekranında "katıldı", ama **devamsızlığa hiçbir şey yazılmadı**:
+  kaydedici zili etkinlik aralığına düşen dersi arıyor, 8. ders 15:00'te başladığı için 15:10–15:50'ye sığmıyor, sessizce boş dönüyor.
+- Kök neden: kulüp saati tekilliği "kulüp × başlangıç"; `B-93`'ün zil temizliği kulüp etkinliklerine dokunmuyor.
+
+### `B-97` 🟡 Gün içi izin doğrulaması
+
+- Aynı öğrenciye aynı gün üç izin: 5. dersten, 6. dersten ve **99. dersten** (okulun 8 dersi var) → üçü de 201.
+- Her biri veliye ayrı bildirim (6 bildirim, 2 veli). İzni silen ya da düzelten uç ve ekran yok.
+- Öğretmen izin veremiyor (403) — doğru.
+
+### `TB-264` 🟡 Eşzamanlı gönderim
+
+- Aynı açık oturuma iki iş parçacığıyla aynı anda farklı içerik: biri 200, öteki **500**. Veri sağlam (8 kayıt, 8 tekil öğrenci);
+  ikinci istek 409'a (aynı içerikse 200'e) çevrilmeli.
+
+### `D-42` 🟡 Danışman kulüp saatini görmüyor
+
+- Çevre ve Kimya danışmanının mobil *Bugünkü Derslerim* listesinde 8. saat **"Boş"**; kulüp yoklamasına ancak
+  *Daha fazla › Kulüplerim › kulüp › Etkinlikler* yoluyla ulaşılıyor.
+- Kulüp kartı hem web hem mobilde **"0 etkinlik"**, kulübün içindeki sekme "Etkinlikler 2".
+
+### `D-41` ⚪ Öğretmen ekranında 403
+
+- `/roll-call`'da liste açılınca `GET attendance/amendment-requests?state=1` → 403, konsol hatası. İşlev bozulmuyor.
+
+---
+
+## 3. Mevcut maddelerle ilişki
+
+- **`TB-259` (kapalı, 28 Eylül "sınır olarak kabul"):** Alınmayan kulüp saati hiçbir listeye düşmüyor. Sahadaki sonucu: Kütüphanecilik'in
+  doğru etkinliği boş kaldı → 5 öğrencinin 8. saatinin hiç kaydı yok. Danışmana hatırlatma gitmedi (15:10'da 7 şube öğretmenine
+  gitti); yönetici panosu ve öğrencinin günlük görünümü kulüp saatini göstermiyor. `B-98` ile birleşince kayıp tamamen
+  görünmez oluyor. **Kararın yeniden değerlendirilmesi önerilir.**
+- **`B-93` (kapalı):** Zil değişiminde yoklama oturumlarını yeniden üretme kuralı. `B-96` ve `B-98` onun yan etkileri.
+- **`B-91` (açık):** Yeniden üretilen oturumun kimliği değişiyor. `B-96` aynı aileden.
+
+---
+
+## 4. Doğru çalışanlar
+
+**Şube yoklaması**
+- API'nin her öğretmene döndürdüğü günlük liste DB ile birebir (17/17).
+- Web akışı: liste → istisna işaretle → onay penceresi → kaydet → "Görüntüle" → tekil düzeltme + tarihçe.
+- Başkasının oturumunu açma, okuma ve gönderme → 404.
+- Açmadan gönderim → 409 `NotOpen`; yinelenen öğrenci → 409; geçersiz durum (0, 6) → 400; bilinmeyen kayıt → 409.
+- Öğretmenin retro gönderimi → 403.
+- Aynı içerikle tekrar gönderim → 200, hiçbir şey değişmez; farklı içerik → 409.
+- Gün içi izin, sonraki bekleyen derste "İzinli · Gün içi izin" varsayılanı (web ve mobil).
+- Pano anlık dersi ve sayaçları doğru gösteriyor; hatırlatma ders başlangıcından 10 dk sonra gidiyor.
+
+**Kulüp saati**
+- Liste şubeden değil kulübün üyelerinden geliyor (üyeler dört ayrı şubeden); işaret her öğrencinin kendi şubesinin 8. saatine
+  "şube × kulüp" oturumu olarak yazılıyor.
+- Gün içi izinli öğrenciye "katılmadı" → İzinli olarak yazılıyor.
+- Danışman olmayan öğretmen → 404; üye olmayan öğrenci, kayıt geri çekme, yinelenen ve geçersiz statü → 400.
+- Düzeltme (katıldı → katılmadı) çalışıyor; işaret "işaretlenmedi"ye geri alınamıyor.
+- Kısmi işaretleme sonradan tamamlanabiliyor (aynı oturuma eklenerek).
+
+---
+
+## 5. Karar bekleyen gözlemler (deftere yazılmadı)
+
+1. Sabah gelmeyen öğrenci öğleden sonraki derslerde varsayılan olarak "Geldi" geliyor. Tasarım gereği, ama öğretmen
+   işaretlemeyi unutursa öğrenci derse gelmiş görünür.
+2. "Gelmedi" kaydı sonradan "Geldi"ye düzeltildiğinde veliye düzeltme bildirimi gitmiyor ("ilk derse gelmedi" bildirimi
+   yanlış kalıyor).
+3. Kulüp saati devamsızlığa sayılıyor ama öğrencinin/velinin günlük görünümünde yer almıyor.
+
+---
+
+## 6. Test artıkları
+
+Ürün içinden onarılamadıkları için olduğu gibi duruyor; kanıt olarak tutuluyor, temizlik kararı kullanıcıda.
+
+| Artık | Bağlı bulgu |
+|---|---|
+| 9-A 1. ders 3/7 kayıtla, 10-A 1. ders 0 kayıtla "Tamamlandı" | `B-94` |
+| 10-B 6. ders ders saatinden önce kaydedildi | `B-92` |
+| 8 Ekim'e açık bırakılmış oturum `2f9e8ccf…` | `B-92` |
+| Fazla gün içi izinler `12de22f5…` (6. ders) ve `67a51d56…` (99. ders) | `B-97` |
+| Her kulübün eski 15:10 etkinliği; Kütüphanecilik'inkinde 5 "katıldı" işareti | `B-98` |
+| 10-B'de rastgele dağılımla yüksek devamsızlık (bir derste 12'de 5) ve bunlara giden veli bildirimleri | — |
+
+## 7. Açık kalan ölçümler
+
+- 5–8. derslerin bekleyen oturumları bilerek bırakıldı: akşam 21:45 kapanışında "Alınmadı"ya düşüp düşmedikleri ölçülmedi
+  (API'nin akşam açık olması gerekiyor).
+- 30 Eylül'ün yeniden "Bekliyor"a dönen 87 oturumunun bu akşamki kapanışla tekrar "Alınmadı"ya düşmesi (`B-96`).
+- Mazeret akışı ölçülmedi.
