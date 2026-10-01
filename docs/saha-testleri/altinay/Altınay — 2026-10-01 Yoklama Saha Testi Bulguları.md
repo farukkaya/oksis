@@ -160,7 +160,7 @@ Test başlığı satırları: [[Altınay — Yaşam Döngüsü Test Başlıklar�
 
 ## 6. Test artıkları
 
-Ürün içinden onarılamadıkları için olduğu gibi duruyor; kanıt olarak tutuluyor, temizlik kararı kullanıcıda.
+**2026-10-01 akşamı temizlendi (kullanıcı kararı).** İki fazla gün içi izin ürünün yeni iptal ucuyla (`B-97`) iptal edildi; diğerleri veritabanında tek işlemle temizlendi: dört artık oturumun 27 kaydı ve 28 tarihçe satırı silindi, oturumlar "Alınmadı"ya çekildi (idare geriye dönük girebilir), bir öğrencinin geç sayacı düzeltildi; 8 Ekim oturumu ile Kütüphanecilik'in bayat 15:10 etkinliği (5 katılımıyla) yumuşak silindi. Diğer beş kulübün bayat ikizi `B-98` göçüyle silinmişti. Göç öncesi yedekler: `~/oksis-yedek/oksis_dev_oncesi_yoklama_goc_20261001.bak`, `…_oncesi_y07_20261001.bak`. Kalan: bugünün diğer yoklamaları ve veli bildirimleri ürünün ürettiği akışın parçası olarak bırakıldı.
 
 | Artık | Bağlı bulgu |
 |---|---|
