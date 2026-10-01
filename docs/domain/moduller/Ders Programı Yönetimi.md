@@ -2,7 +2,7 @@
 aliases: [Timetable, Scheduling, api/v1/timetable]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-01 (6a3cd210)
 ---
 
 # Ders Programı Yönetimi
@@ -68,9 +68,11 @@ Modülün taşıyıcı fikri **rezervasyon**: bir yerleşim ancak programı canl
 
 11. **Tüketici görünümleri** — Şube haftalık, öğretmenin kendi haftalık ve günlük programı, öğrencinin kendi programı, velinin çocuğunun programı. Hepsi yayın snapshot'ı üzerinden beslenir ve o günün istisnalarıyla katmanlanır; ders saatleri [[Zil Çizelgesi]]'nden etiketlenir. Gün değeri gerçek takvim günü olduğu için "bugünün dersleri" dönüşümsüz doğru gün seçer ([[0013-gun-degeri-gercek-system-dayofweek]]).
 
+    **Rehber öğretmenin şubesi ("Sınıfım", 2026-10-01).** Öğretmen, rehberi olduğu [[Şube]]'nin haftasını okur — öğrencinin gördüğü ızgaranın aynısı, şubenin bakış açısıyla (vekâlet "size atandı" diye değil şubenin gözünden çizilir). Şube istekten değil oturumdaki kişinin rehberlik kaydından çözülür ve yalnız **yürürlükteki** [[Sezon]]'un aktif şubesi sayılır: arşiv sezondaki şube de aktif kalabildiği için süzgeç şarttır. Öğretmenin kendi haftası, rehberi olduğu şubenin adını kapsamında bildirir; şube haftası da kapsamında şubenin rehber öğretmenini taşır (öğrenci/öğretmen çıktısının başlığı "sınıf/şube · rehber öğretmen" buradan beslenir).
+
 12. **Silme** — Önizlemesi vardır. Silme tüm aktif yerleşimleri pasifleştirir ve programı yumuşak siler; programın **bütün sürümleri ve istisnaları da** birlikte yumuşak silinir. Tekil index'ler yalnız aktif yerleşimleri kapsadığı için slotlar serbest kalır; dönemdeki kardeş programların çakışma sayaçları yeniden hesaplanır. Şubenin öğrenci ve velilerine "program kaldırıldı" bildirimi gider.
 
-**Yetki:** Düzenlemenin tamamı `timetable.manage` — dağıtım kısıtı yazma dahil; kısıt listesi `timetable.view-all`. Yayın `timetable.publish`, silme `timetable.delete`, tüm sınıfları görme `timetable.view-all` ile ayrılmış. Yerleştirme, taşıma, öğretmen atama ve istisna işlemleri ayrıca `timetable.override` tanır — sert kısıtın (öğretmen "müsait değil" demiş) yönetici tarafından bilerek aşılabilmesi için. Derslik kataloğu bu modülde yaşar ama izni [[Sınıflar ve Şubeler]] ailesindedir (`class-rooms.manage`).
+**Yetki:** Düzenlemenin tamamı `timetable.manage` — dağıtım kısıtı yazma dahil; kısıt listesi `timetable.view-all`. Yayın `timetable.publish`, silme `timetable.delete`, tüm sınıfları görme `timetable.view-all` ile ayrılmış. Yerleştirme, taşıma, öğretmen atama ve istisna işlemleri ayrıca `timetable.override` tanır — sert kısıtın (öğretmen "müsait değil" demiş) yönetici tarafından bilerek aşılabilmesi için. Derslik kataloğu bu modülde yaşar ama izni [[Sınıflar ve Şubeler]] ailesindedir (`class-rooms.manage`). Tüketici `me` uçları — rehber öğretmenin şube haftası dahil — **bilinçli olarak izinsizdir**: yetki, sorgunun oturumdaki kişinin kendi kaydına kilitlenmesinden gelir ve başka bir şube kimliği verilecek alan yoktur. Rehber öğretmene `timetable.view-all` vermek bütün şubeleri açardı.
 
 ### Kulüp saati (`Y-06`, 2026-09-26)
 
@@ -85,6 +87,7 @@ Modülün taşıyıcı fikri **rezervasyon**: bir yerleşim ancak programı canl
 - **Otomatik üretimde blok grubu.** Üretim ikili yan yana yerleşim eğilimi taşır ama blok grubu kurmaz; uygulanan taslakta bloklar elle işaretlenir.
 - **Öğretmenin kendi müsaitliğini girmesi.** Tek yazma yüzeyi yönetici.
 - **Görevlendirme yazmak.** Program yetkinlik kaydını ve kısıtları okur; hiçbirini üretmez.
+- **Birden çok şubenin rehberi için şube seçimi.** Genel yaklaşım şube başına tek rehber öğretmendir; birden çok şubeye rehberlik (2026-06-10'da açıldı) Altınay'daki fiilî durumu yansıtmak için açık bırakılmış bir istisnadır. "Sınıfım" bu istisnada yalnız adı alfabetik ilk gelen şubeyi gösterir; talep gelirse seçim eklenir.
 
 ## Açık Sorular (koddan doğrulanamayan)
 

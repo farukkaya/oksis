@@ -3,7 +3,7 @@ aliases: [ClassRoom, Branch (Timetable), BranchId (Timetable), Sınıf Şubesi]
 tags: [domain/academic]
 table: class_rooms
 status: active
-last-synced: 2026-09-20 (f3488976)
+last-synced: 2026-10-01 (6a3cd210)
 ---
 
 # Şube
@@ -46,7 +46,7 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 - Arşivleme ve silme, **aktif öğrenci varken** reddedilir; önce öğrenciler taşınmalıdır. Sezon kapanışında ayrı bir yol vardır: aktif atamalar `Archive` sebebiyle topluca kapatılır ve şube arşive geçer.
 - Arşivleme gerekçe ister; gerekçe en fazla 500 karakterdir.
 - **Arşiv ile silme ayrı niyetlerdir.** Arşiv *geçmişi korur*: şube salt-okunur kalır ve (sezon, seviye, şube adı) slotunu **dolu tutar**. Silme *yanlış açılmış şubeyi kaldırır*: statü engel değildir, kayıt fiziksel silinmez (`is_deleted`) ve slot **serbest kalır** — aynı ad yeniden açılabilir.
-- Bir öğretmen **birden çok şubeye rehber** olabilir (2026-06-10'da tek şube sınırı kaldırıldı). Ayrılmış öğretmen rehber atanamaz; arşivlenmiş şubeye rehber atanamaz.
+- Bir öğretmen **birden çok şubeye rehber** olabilir (2026-06-10'da tek şube sınırı kaldırıldı). Bu, Altınay'daki fiilî durum için açık bırakılmış bir **istisnadır**; genel yaklaşım şube başına tek rehber öğretmendir — rehberliğe bakan yüzeyler (ör. ders programındaki "Sınıfım") tek şubeyi esas alır. Ayrılmış öğretmen rehber atanamaz; arşivlenmiş şubeye rehber atanamaz.
 - Şube adı 1-30 karakter.
 - **Şubenin ev dersliği ZORUNLUDUR** (`TB-120`, 2026-09-20). Dersliksiz şube kurulamaz: alan domainde `Guid`, kolonda `NOT NULL` ve [[Derslik]] kataloğuna FK'lıdır. Verilen derslik okulun kendi kataloğunda ve aktif olmalıdır. Dersliği **boşaltan** bir yol yoktur — yanlış atanan derslik başkasıyla değiştirilir. Gerekçe: dersliğinden türetme yapan yüzeyler (sınav oturumunun derslik kümesi, ders programı) alan isteğe bağlı kaldığı sürece "derslik yok" dalı taşımak zorunda kalıyordu.
 - Öğrenci [[Profil]]'indeki "güncel şube" alanı bu defterin **aynasıdır**, ayrı bir doğruluk kaynağı değil: defter her değiştiğinde aynı transaction içinde bir interceptor tarafından türetilir.
@@ -71,8 +71,9 @@ Okul ayarına bağlı olarak iki yol (BR-AS-008):
 - [[Kullanıcılar]] — öğrenci [[Profil]]'i güncel şube bağını taşır; öğretmenin erişim kapsamı kendi şubeleriyle sınırlıdır
 - [[Notlar]] — [[Not Defteri]] koordinatının bir ekseni; "bu şubeye kim not girer" sorusu ders programından çözülür
 - [[Ödevler]] — [[Ödev]] şube başına ayrı kayıttır; rehber öğretmen kendi şubesinin ödevlerini salt liste olarak görür; yoğunluk panosu şube × gün sayar
+- [[Ders Programı Yönetimi]] — [[Ders Programı]]'nın sahibi şubedir; rehber öğretmen kendi şubesinin yayınlanmış haftasını izinsiz okur ("Sınıfım"), şube haftası başlığında rehber öğretmeni taşır
 
-Şubeyi kullanan ama henüz notu olmayan modüller: Students, Teachers, Attendance, Schools, Timetable, Duties, Announcements.
+Şubeyi kullanan ama henüz notu olmayan modüller: Students, Teachers, Attendance, Schools, Duties, Announcements.
 
 <!-- generated:end -->
 
