@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-102` · `D-46` · `V-05` · `X-25` · `TB-265` · `E-36` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-102` · `D-46` · `V-05` · `X-25` · `TB-266` · `E-36` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -239,9 +239,9 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 4 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 29 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 28 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 42 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 30 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 31 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
 | **Toplam** | **106** | |
 
@@ -259,6 +259,8 @@ sayaçlar üçü arasında ortak.
 > **2026-10-02 (öğleden önce, kullanıcı veri değiştiren testlere izin verdi):** `D-43` düzeltildi ve kapandı (arşiv §75). `Y-07` yayın reddi sahada (API + web) ölçüldü. `B-97` iptali ekrandan uçtan uca doğrulandı. Yeni: `X-24` 🟡 (hata iki kez — ekranlar geneli), `D-44` ⚪. Toplam **102**.
 
 > **2026-10-02 (öğrenci ve veli pencerelerinden devamsızlık ölçümü):** 12 öğrenci, öğrenci + veli hesabı, özet/aylık kayıt/bugün uçları ve mobil veli ekranı. API değerleri beklenen hesapla birebir; öğrenci ve veli aynı veriyi görüyor, başka öğrencinin verisi 404. Kuralın kendisinde üç kusur: `B-99` 🟠 (payda yalnız alınmış dersler), `B-100` 🟠 (özürlü "gün" aslında ders sayısı), `B-101` 🟠 (geç birikimi veli özetinde yok), `D-45` ⚪. Toplam **106**.
+
+> **2026-10-02 (gün sonu):** 88 oturumun 88'i tamamlandı (yoklamalar ders saati geldikçe alındı). `Y-07` zil kabulü son dersten sonra ölçüldü (204); `B-96` sahada doğrulandı ve kapandı (arşiv §75). Yeni `TB-265` ⚪ (aynı içerikli zil de gelecek oturumları yeniletiyor). Açık: `B-98` + `D-42` (Perşembe kulüp saati), `Y-07` sabah yayını + vekâlet. Toplam **106**.
 > **2026-09-28 (öğleden sonra):** yönetici devamsızlık ekranında yoklamasını tamamlamış öğretmen "bekliyor" görününce `B-90` 🔴 açıldı — yeniden yayınlanan program eski sürümün önceden üretilmiş oturumlarını temizlemiyor; Altınay'da bugün 80 fazladan oturum, bir kısmında çift yoklama kaydı. Toplam **94**.
 
 > **2026-09-30 (`B-90` ekran testi + düzeltme turu):** `B-90`'ın üç kararı bağlandı ve kodda düzeltildi (commit/merge bekliyor); ilk commit'in göçü hiç çalışamazdığı için silinip yeniden yazıldı, dev DB'ye uygulandı. Aynı testte `B-91` 🟠 (açık mobil uygulama silinen oturum kimliğini tutuyor), `TB-262` 🟠 (yayından sonra ilk pano açılışında 500 — kodda düzeltildi), `TB-263` 🟡 (dev DB'de koddan olmayan codex B-90 göçü) ve `D-40` ⚪ açıldı. Ardından iki depoda commit + master'a birleştirme: `B-90` kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §73). Toplam **97**.
@@ -2333,21 +2335,13 @@ halkası (core `thresholdLevel`) da geçleri bilmiyor.
 yok · İlk ders 08:55'da başlayacak" gösteriyor — saat geçmiş, ders başlamış; ek de yanlış ("08:55'te"). ⬜ Öneri: ilk ders saati geçtiyse "İlk
 dersin yoklaması henüz girilmedi"; ek için core'daki `tr-ablative` yardımcısı kullanılsın.
 
-### `B-96` · Zil değişince "bugün"ün kapanmış oturumları da silinip "Bekliyor" olarak yeniden doğuyor; gece yarısı 87 yinelenen hatırlatma 🟠
+### `TB-265` · Aynı içerikle kaydedilen zil de gelecek günlerin bekleyen oturumlarını silip yeniden ürettiriyor ⚪
 
-2026-10-01, Altınay saha testi (DB + bildirim tablosu). 30 Eylül'ün 87 oturumu 21:45'teki gün sonu işiyle `NotTaken` oldu ve
-hatırlatmaları 20:28–20:50 arasında gitti. Aynı gece **23:37**'de zil değiştirildi (`B-93` canlı ölçümü); `PendingSessionPurge`'ün
-sınırı "okulun bugünü" olduğu için **30 Eylül'ün 87 `NotTaken` oturumu** yumuşak silindi ve 23:48'de **`Pending`** olarak
-yeniden üretildi. 23:50'de hatırlatma işi bunları yeni oturum sayıp **87 "yoklama alınmadı" hatırlatmasını ikinci kez** gönderdi
-(`notifications`, tür 10, 23:xx). Bugün öğle saatinde de 30 Eylül hâlâ 87 `Pending` — bu akşamki kapanışa kadar yönetici
-"Alınmayanlar"da dünü "bekliyor" görüyor.
-
-Kural (`B-93` kararı) "bugün ve sonrası tarihli **bekleyen** (`Pending`/`NotTaken`)" diyor; gün içinde de geçerli: zil öğlen
-değişirse sabah dersleri — saati geçmiş, hatırlatması gitmiş, alınmamış — yeni kimlikle `Pending` doğar, hatırlatma tekrarlanır.
-⬜ Öneri: silme sınırı "bugün" değil "henüz başlamamış ders" (`date > bugün` ya da `date == bugün && start_time > şimdi`);
-`NotTaken` hiç silinmez. `B-91` ile aynı aile (yeniden üretim kimlik değiştiriyor).
-
-✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `dafeab1c`): silme yalnız başlamamış `Pending`; `NotTaken`/`Open` hiç silinmez; yayıncı (B-90) da aynı kurala ve okul yerel saatine geçti (B-93'teki UTC notu kapandı). Entegrasyon testi 23:37 zil değişimini canlandırıyor. **Kalan ölçüm:** sahada zil değişimi yapılmadı.
+2026-10-02 15:37, Altınay saha testi (`Y-07` zil kabulü). Son dersten sonra müdür toplu zil ucuna **mevcut içeriğin aynısını** kaydetti
+(204, zil satırları birebir aynı): 14–20 Ekim'in 436 bekleyen oturumu yine de yumuşak silindi (ilk okumada yeniden üretilecek).
+İçerik değişmediği hâlde kimlikler değişiyor; açık mobil uygulamanın eski oturum kimliğini tutması (`B-91`) bu yoldan da tetiklenir.
+⬜ Öneri: zil komutları değişiklik yoksa temizlik/hizalama zincirini çalıştırmasın (ön yüz artık yalnız değişen parçayı gönderiyor —
+`D-43`; sunucu da no-op'u tanısın).
 
 ### `B-98` · Zil değişince kulüp saati etkinliği ikizleniyor; eski saatteki etkinliğe girilen yoklama devamsızlığa hiç yazılmıyor 🟠
 

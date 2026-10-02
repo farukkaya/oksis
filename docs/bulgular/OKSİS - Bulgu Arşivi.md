@@ -11388,3 +11388,21 @@ kaydet yalnız değişen parçayı göndersin.
 ✅ **2026-10-02 · düzeltildi ve kapandı** (`oksis-ui` master `6c111fa` + `3c0c517`, kullanıcı kararı): zil sekmesindeki kalıcı not ve "Kaydedilmedi." şeridi kaldırıldı, ret yalnız alttaki geçici bildirimde; kaydet yalnız değişen parçayı gönderiyor (core `bellSaveParts`). Kuralın anlatımı başlıktaki **"Zil Kuralları"** bilgi penceresine taşındı; pencere not politikasıyla ortak `InfoDialog`/`InfoButton` bileşeninden. Ekranda 09:38'de ölçüldü: yalnız Cumartesi ataması değişince tek istek (`PUT bell-day-assignments` → 409), tek bildirim. Kök neden genel hata yüzeyi + ekran `onError`; ekranlar geneli `X-24`.
 
 ➕ **`B-97` ekran ölçümü (2026-10-02 09:43):** 11-A'dan bir öğrenciye 6. dersten izin verildi, müdür web penceresinde "İptal et" → onay ("Veliye bildirim gider.") → izin yumuşak silindi, iki veliye "↩️ Gün İçi İzin İptal Edildi" bildirimi gitti.
+
+### `B-96` · Zil değişince "bugün"ün kapanmış oturumları da silinip "Bekliyor" olarak yeniden doğuyor; gece yarısı 87 yinelenen hatırlatma 🟠 *(kapandı — 2026-10-02)*
+
+2026-10-01, Altınay saha testi (DB + bildirim tablosu). 30 Eylül'ün 87 oturumu 21:45'teki gün sonu işiyle `NotTaken` oldu ve
+hatırlatmaları 20:28–20:50 arasında gitti. Aynı gece **23:37**'de zil değiştirildi (`B-93` canlı ölçümü); `PendingSessionPurge`'ün
+sınırı "okulun bugünü" olduğu için **30 Eylül'ün 87 `NotTaken` oturumu** yumuşak silindi ve 23:48'de **`Pending`** olarak
+yeniden üretildi. 23:50'de hatırlatma işi bunları yeni oturum sayıp **87 "yoklama alınmadı" hatırlatmasını ikinci kez** gönderdi
+(`notifications`, tür 10, 23:xx). Bugün öğle saatinde de 30 Eylül hâlâ 87 `Pending` — bu akşamki kapanışa kadar yönetici
+"Alınmayanlar"da dünü "bekliyor" görüyor.
+
+Kural (`B-93` kararı) "bugün ve sonrası tarihli **bekleyen** (`Pending`/`NotTaken`)" diyor; gün içinde de geçerli: zil öğlen
+değişirse sabah dersleri — saati geçmiş, hatırlatması gitmiş, alınmamış — yeni kimlikle `Pending` doğar, hatırlatma tekrarlanır.
+⬜ Öneri: silme sınırı "bugün" değil "henüz başlamamış ders" (`date > bugün` ya da `date == bugün && start_time > şimdi`);
+`NotTaken` hiç silinmez. `B-91` ile aynı aile (yeniden üretim kimlik değiştiriyor).
+
+✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `dafeab1c`): silme yalnız başlamamış `Pending`; `NotTaken`/`Open` hiç silinmez; yayıncı (B-90) da aynı kurala ve okul yerel saatine geçti (B-93'teki UTC notu kapandı). Entegrasyon testi 23:37 zil değişimini canlandırıyor. **Kalan ölçüm:** sahada zil değişimi yapılmadı.
+
+✅ **2026-10-02 · sahada ölçüldü, kapandı:** `Y-07` ile zil artık okul günü son ders bitene kadar kaydedilemiyor (08:56'da 409), dolayısıyla "bugünün kapanmış dersleri yeniden açılıyor" senaryosu gün içinde oluşamıyor. 15:37'de son dersten sonra aynı içerikli zil kaydı kabul edildi (204): bugünün 88 tamamlanmış oturumuna dokunulmadı, yalnız gelecek günlerin bekleyen oturumları (14–20 Ekim, 436) silindi; `NotTaken`/`Open` hiç silinmedi. Gece 1 Ekim kapanışından sonra 30 Eylül'ün yeniden açılmış 87 oturumu "Alınmadı"ya döndü. Aynı içerikte de silme yapılması ayrı madde: `TB-265`.

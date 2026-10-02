@@ -217,3 +217,19 @@ hesabıyla `students/{id}/summary`, `records?month=`, `today` okundu; mobil veli
 Doğru çalışanlar: öğrenci ve veli aynı değerleri görüyor; başka öğrencinin özeti 404; günlük kırılım etiketleri ("3 ders gelmedi",
 "2 ders raporlu", "1 ders geç") ve bugünkü ders listesi doğru; dönem raporu özetle (geç dışında) tutarlı.
 
+---
+
+## 10. 2 Ekim gün sonu
+
+- **Yoklamalar:** 88 oturumun 88'i tamamlandı. 1–5. derslerin bir kısmı API sabah 2 saatlik süre sınırıyla kapandığı için 12:12'de
+  gecikmeli alındı; 6–8. dersler açılış saatinde (başlangıç − 5 dk). Kayıtlar: 758 geldi, 24 gelmedi (3 öğrenci gün boyu), 23 raporlu
+  (3 öğrenci), 3 geç (yalnız 1. ders), 0 izinli (verilen tek izin ekrandan iptal edildi).
+- **Hatırlatma:** 88 dersin 52'sine gitti; 6–8. dersler ders başlangıcı + 10 dk'dan önce alındığı için hatırlatma gerekmedi. API kapalı
+  olduğu sabah aralığında gitmesi gereken hatırlatmalar kaçtı (ortam sorunu, ürün değil).
+- **`Y-07` zil kabulü:** 15:37'de son dersten sonra aynı içerikli zil kaydı 204; bugüne dokunulmadı. Yeni `TB-265` ⚪ (aynı içerikte de
+  gelecek bekleyen oturumlar siliniyor). `B-96` kapandı.
+- **`Y-07` yayın kabulü:** sahada ölçülmedi (birim testli); 10-A "Revize Ediliyor" bekliyor.
+
+**Açık kalan ölçümler:** `D-42` mobil ve `B-98` zil değişiminde kulüp saati taşıma (kulüp saati Perşembe; 8 Ekim etkinlikleri pazartesi
+üretilecek) · `Y-07` sabah ilk dersten önce yayın + aynı güne vekâlet açık noktası · `Y-07` yayın kabulü ve yürürlük günü (10-A).
+

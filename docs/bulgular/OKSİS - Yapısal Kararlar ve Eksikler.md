@@ -1804,3 +1804,8 @@ aynı öğretmenle yeniden atanarak) "Revize Ediliyor"a alındı; ders saatinde 
 "Ders saatlerinde (08:55–15:25) program yayınlanamaz…"; web Yayınla penceresinde de aynı ret (onay adımında "ertesi okul gününden geçerli"
 notu görünüyor). Yeni sürüm oluşmadı, oturumlar değişmedi. Önizleme reddi önceden bilmiyor (`D-44`), ret iki kez görünüyor (`X-24`).
 **10-A "Revize Ediliyor" durumunda bırakıldı;** son dersten sonra yayınlanıp yürürlük gününün (3 Ekim) ölçülmesi kullanıcı onayına kaldı.
+**Zil kabulü sahada ölçüldü (2026-10-02 15:37, son ders 15:25'te bitti):** toplu zil ucuna mevcut içerik kaydedildi → 204; zil satırları
+değişmedi, bugünün 88 tamamlanmış oturumuna dokunulmadı, gelecek günlerin bekleyen oturumları yeni zilden yeniden üretilmek üzere silindi
+(aynı içerikte de silmesi `TB-265`). **Program yayını kabulü sahada ölçülmedi:** son dersten sonra yayın gerçek bir yeni sürüm (v4) yaratır
+ve otomatik izin denetimi yayını "üretim dağıtımı" saydığı için yapılmadı — birim testle doğrulandı. 10-A hâlâ "Revize Ediliyor"; kullanıcı
+ekrandan yayınlarsa yürürlük günü 3 Ekim olmalı. Kalan: sabah ilk dersten önce yayın + aynı güne vekâlet açık noktası.
