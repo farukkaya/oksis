@@ -1799,3 +1799,8 @@ yayın yapılırsa o güne yazılan vekâlet, o günün (eski sürümden doğan)
 değişiklik yok. Web zil ekranında kalıcı not ve kart üstü ret şeridi görünüyor (mesaj ayrıca geçici bildirimde de çıkıyor: `D-43`).
 **Program yayını reddi sahada ölçülmedi:** Altınay'ın 11 programı da yayında; ders saati kontrolü "zaten yayında" kontrolünden sonra
 geldiği için ölçmek bir programı düzenlemeye açmayı gerektiriyordu (veri değişikliği). Birim testle doğrulandı.
+**Yayın reddi sahada ölçüldü (2026-10-02 09:32–09:42, kullanıcı izniyle):** 10-A programı içerik değiştirmeden (bir dersin öğretmeni
+aynı öğretmenle yeniden atanarak) "Revize Ediliyor"a alındı; ders saatinde tekil ve toplu yayın API'de 409 `Timetable.Publish.DuringLessonHours`
+"Ders saatlerinde (08:55–15:25) program yayınlanamaz…"; web Yayınla penceresinde de aynı ret (onay adımında "ertesi okul gününden geçerli"
+notu görünüyor). Yeni sürüm oluşmadı, oturumlar değişmedi. Önizleme reddi önceden bilmiyor (`D-44`), ret iki kez görünüyor (`X-24`).
+**10-A "Revize Ediliyor" durumunda bırakıldı;** son dersten sonra yayınlanıp yürürlük gününün (3 Ekim) ölçülmesi kullanıcı onayına kaldı.

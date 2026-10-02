@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-99` · `D-44` · `V-05` · `X-24` · `TB-265` · `E-36` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-99` · `D-45` · `V-05` · `X-25` · `TB-265` · `E-36` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -240,10 +240,10 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 4 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 26 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 41 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 42 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 29 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **101** | |
+| **Toplam** | **102** | |
 
 > **2026-10-01 (Altınay saha testi — öğretmenlerin bugünkü yoklama görevleri):** 17 öğretmen, 84 oturum; web + mobil (Expo web) +
 > API. Mutlu yol, sahiplik (404), hatalı gövdeler, idempotent gönderim, düzeltme, gün içi izin ve pano doğru çalıştı. Açılan: `B-92` 🟠
@@ -255,6 +255,8 @@ sayaçlar üçü arasında ortak.
 > sahadaki sonucu ölçüldü: boş kalan bir kulübün 5 üyesinin 8. saati iz bırakmadı, hiçbir hatırlatma gitmedi. Toplam **106**.
 
 > **2026-10-02 (ders saati testi):** `B-92` (gün içi 5 dk sınırı + web/mobil kilit), `D-41`, `B-97` (iptal penceresi) sahada ölçüldü; dün ölçülen `B-94`, `B-95`, `TB-264` ile birlikte **6 madde kapandı**, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §75). `Y-07` ders saatinde zil kilidi sahada doğrulandı; yeni `D-43` ⚪. Açık kalan: `B-96`, `B-98` (sahada zil değişimi), `D-42` (mobil, Perşembe). Toplam **101**.
+
+> **2026-10-02 (öğleden önce, kullanıcı veri değiştiren testlere izin verdi):** `D-43` düzeltildi ve kapandı (arşiv §75). `Y-07` yayın reddi sahada (API + web) ölçüldü. `B-97` iptali ekrandan uçtan uca doğrulandı. Yeni: `X-24` 🟡 (hata iki kez — ekranlar geneli), `D-44` ⚪. Toplam **102**.
 > **2026-09-28 (öğleden sonra):** yönetici devamsızlık ekranında yoklamasını tamamlamış öğretmen "bekliyor" görününce `B-90` 🔴 açıldı — yeniden yayınlanan program eski sürümün önceden üretilmiş oturumlarını temizlemiyor; Altınay'da bugün 80 fazladan oturum, bir kısmında çift yoklama kaydı. Toplam **94**.
 
 > **2026-09-30 (`B-90` ekran testi + düzeltme turu):** `B-90`'ın üç kararı bağlandı ve kodda düzeltildi (commit/merge bekliyor); ilk commit'in göçü hiç çalışamazdığı için silinip yeniden yazıldı, dev DB'ye uygulandı. Aynı testte `B-91` 🟠 (açık mobil uygulama silinen oturum kimliğini tutuyor), `TB-262` 🟠 (yayından sonra ilk pano açılışında 500 — kodda düzeltildi), `TB-263` 🟡 (dev DB'de koddan olmayan codex B-90 göçü) ve `D-40` ⚪ açıldı. Ardından iki depoda commit + master'a birleştirme: `B-90` kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §73). Toplam **97**.
@@ -2270,13 +2272,24 @@ karar bekliyor.
 
 ✅ **Karar (2026-09-28, kullanıcı):** **okuma ekranları son kapanan dönemi, planlama ekranları başlamamış ilk dönemi** varsayılan alır; kural core'da tek fonksiyon, backend'in id'siz okuması da aynı kuralı uygular. Uygulanacak.
 
-### `D-43` · Zil ekranında ders saati reddi iki kez görünüyor: kalıcı şerit + geçici bildirim ⚪
+### `X-24` · Hata iki kez gösteriliyor: genel hata yüzeyi + ekranın kendi hata kolu (ekranlar genelinde) 🟡
 
-2026-10-02 08:57, Altınay saha testi (`Y-07`). Müdür web *Ayarlar › Zil Programı*'nda Cuma'yı 1. programa çekip kaydetti;
-sunucu 409 `Schools.Bell.LockedOnSchoolDay` döndü (veri değişmedi). Ekran mesajı kartın üstünde kalıcı "Kaydedilmedi. …" şeridiyle
-**ve** aynı anda alttaki kırmızı geçici bildirimle gösteriyor. Ayrıca yalnız gün ataması değiştiği hâlde istemci toplu zil ucunu da
-iki kez çağırıyor (üç 409). İşlev bozulmuyor. ⬜ Öneri: 409 LockedOnSchoolDay genel hata yüzeyinde bastırılsın (`meta.errorHandled`);
-kaydet yalnız değişen parçayı göndersin.
+2026-10-02, Altınay saha testi. `D-43` kök nedeni (ön yüz ajanı ölçtü): uygulamanın genel hata yüzeyi (`apps/web` `query-client.ts`
+MutationCache) `useMutation` tanımında `onError` yoksa kırmızı bildirimi basıyor; ekranlar ise hatayı `mutate(..., { onError })` ile
+ayrıca gösterince aynı mesaj iki kez çıkıyor. Zil sekmesinde düzeltildi (`6c111fa`). **Aynı çift gösterim sahada ikinci kez ölçüldü:**
+Ders Programı › Yayınla penceresinde 409 `DuringLessonHours` hem pencere üstünde "Yayınlanamadı. …" şeridinde hem alttaki
+bildirimde çıktı (09:42). `apps/web/features` altında `onError` + toast deseni ~54 yerde var (ayarlar sekmeleri: tatil, genel, modül,
+bildirim, ders/alan/sınav türü katalogları, kademe kartı…) — hepsi tek tek ölçülmedi.
+⬜ Öneri (merkezî, [[yamalama-kabul-degil]]): ekran kendi hatasını gösteriyorsa mutasyon `meta.errorHandled` ile genel yüzeyi
+bastırsın (`useGrantDailyLeave` kalıbı) ya da genel yüzey `mutate` seviyesindeki `onError`'u da görsün; tek kural, lint ya da test ile
+korunur.
+
+### `D-44` · Yayın penceresi ders saatinde "Yayına hazır" diyor, ret ancak düğmeye basınca geliyor ⚪
+
+2026-10-02 09:42, Altınay saha testi (`Y-07`). Ders saatinde 10-A için *Yayınla* penceresi yeşil "Yayına hazır. Çakışma yok." gösteriyor,
+`publish-preview` `canPublish: true` dönüyor; kullanıcı ancak "Onayla ve Yayınla"dan sonra 409 alıyor. Onay adımında "ertesi okul
+gününden geçerli" bilgisi var ama ders saati yasağı yok. ⬜ Öneri: önizleme `Y-07` penceresini bilsin (`canPublish=false` + gerekçe
+"Ders saatlerinde yayınlanamaz; 15:25'ten sonra"), pencere bunu yeşil kutu yerine gösterip Yayınla'yı kilitlesin.
 
 ### `B-96` · Zil değişince "bugün"ün kapanmış oturumları da silinip "Bekliyor" olarak yeniden doğuyor; gece yarısı 87 yinelenen hatırlatma 🟠
 

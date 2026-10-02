@@ -11376,3 +11376,15 @@ geçmeli. (Ayrıca öğretmen `/attendance`'a gidince "Yetkiniz yok" — menü `
 ✅ **2026-10-01 · kodda düzeltildi** (`oksis-ui` `fix/yoklama-ekran-kurallari` ← `fe86152`): sorgu `attendance.manage`'e bağlandı. **Kalan ölçüm:** öğretmen ekranında konsol.
 
 ✅ **2026-10-02 · sahada ölçüldü, kapandı:** öğretmen (10-B Fizik) listeyi açınca istekler yalnız `sessions/my`, `day-periods`, `roster`; `amendment-requests` çağrılmıyor, konsolda hata yok.
+
+### `D-43` · Zil ekranında ders saati reddi iki kez görünüyor: kalıcı şerit + geçici bildirim ⚪ *(kapandı — 2026-10-02)*
+
+2026-10-02 08:57, Altınay saha testi (`Y-07`). Müdür web *Ayarlar › Zil Programı*'nda Cuma'yı 1. programa çekip kaydetti;
+sunucu 409 `Schools.Bell.LockedOnSchoolDay` döndü (veri değişmedi). Ekran mesajı kartın üstünde kalıcı "Kaydedilmedi. …" şeridiyle
+**ve** aynı anda alttaki kırmızı geçici bildirimle gösteriyor. Ayrıca yalnız gün ataması değiştiği hâlde istemci toplu zil ucunu da
+iki kez çağırıyor (üç 409). İşlev bozulmuyor. ⬜ Öneri: 409 LockedOnSchoolDay genel hata yüzeyinde bastırılsın (`meta.errorHandled`);
+kaydet yalnız değişen parçayı göndersin.
+
+✅ **2026-10-02 · düzeltildi ve kapandı** (`oksis-ui` master `6c111fa` + `3c0c517`, kullanıcı kararı): zil sekmesindeki kalıcı not ve "Kaydedilmedi." şeridi kaldırıldı, ret yalnız alttaki geçici bildirimde; kaydet yalnız değişen parçayı gönderiyor (core `bellSaveParts`). Kuralın anlatımı başlıktaki **"Zil Kuralları"** bilgi penceresine taşındı; pencere not politikasıyla ortak `InfoDialog`/`InfoButton` bileşeninden. Ekranda 09:38'de ölçüldü: yalnız Cumartesi ataması değişince tek istek (`PUT bell-day-assignments` → 409), tek bildirim. Kök neden genel hata yüzeyi + ekran `onError`; ekranlar geneli `X-24`.
+
+➕ **`B-97` ekran ölçümü (2026-10-02 09:43):** 11-A'dan bir öğrenciye 6. dersten izin verildi, müdür web penceresinde "İptal et" → onay ("Veliye bildirim gider.") → izin yumuşak silindi, iki veliye "↩️ Gün İçi İzin İptal Edildi" bildirimi gitti.
