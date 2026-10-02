@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-99` · `D-45` · `V-05` · `X-25` · `TB-265` · `E-36` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-102` · `D-46` · `V-05` · `X-25` · `TB-265` · `E-36` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -239,11 +239,11 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 4 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 26 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟠 Yüksek | 29 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 42 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 29 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 30 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **102** | |
+| **Toplam** | **106** | |
 
 > **2026-10-01 (Altınay saha testi — öğretmenlerin bugünkü yoklama görevleri):** 17 öğretmen, 84 oturum; web + mobil (Expo web) +
 > API. Mutlu yol, sahiplik (404), hatalı gövdeler, idempotent gönderim, düzeltme, gün içi izin ve pano doğru çalıştı. Açılan: `B-92` 🟠
@@ -257,6 +257,8 @@ sayaçlar üçü arasında ortak.
 > **2026-10-02 (ders saati testi):** `B-92` (gün içi 5 dk sınırı + web/mobil kilit), `D-41`, `B-97` (iptal penceresi) sahada ölçüldü; dün ölçülen `B-94`, `B-95`, `TB-264` ile birlikte **6 madde kapandı**, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §75). `Y-07` ders saatinde zil kilidi sahada doğrulandı; yeni `D-43` ⚪. Açık kalan: `B-96`, `B-98` (sahada zil değişimi), `D-42` (mobil, Perşembe). Toplam **101**.
 
 > **2026-10-02 (öğleden önce, kullanıcı veri değiştiren testlere izin verdi):** `D-43` düzeltildi ve kapandı (arşiv §75). `Y-07` yayın reddi sahada (API + web) ölçüldü. `B-97` iptali ekrandan uçtan uca doğrulandı. Yeni: `X-24` 🟡 (hata iki kez — ekranlar geneli), `D-44` ⚪. Toplam **102**.
+
+> **2026-10-02 (öğrenci ve veli pencerelerinden devamsızlık ölçümü):** 12 öğrenci, öğrenci + veli hesabı, özet/aylık kayıt/bugün uçları ve mobil veli ekranı. API değerleri beklenen hesapla birebir; öğrenci ve veli aynı veriyi görüyor, başka öğrencinin verisi 404. Kuralın kendisinde üç kusur: `B-99` 🟠 (payda yalnız alınmış dersler), `B-100` 🟠 (özürlü "gün" aslında ders sayısı), `B-101` 🟠 (geç birikimi veli özetinde yok), `D-45` ⚪. Toplam **106**.
 > **2026-09-28 (öğleden sonra):** yönetici devamsızlık ekranında yoklamasını tamamlamış öğretmen "bekliyor" görününce `B-90` 🔴 açıldı — yeniden yayınlanan program eski sürümün önceden üretilmiş oturumlarını temizlemiyor; Altınay'da bugün 80 fazladan oturum, bir kısmında çift yoklama kaydı. Toplam **94**.
 
 > **2026-09-30 (`B-90` ekran testi + düzeltme turu):** `B-90`'ın üç kararı bağlandı ve kodda düzeltildi (commit/merge bekliyor); ilk commit'in göçü hiç çalışamazdığı için silinip yeniden yazıldı, dev DB'ye uygulandı. Aynı testte `B-91` 🟠 (açık mobil uygulama silinen oturum kimliğini tutuyor), `TB-262` 🟠 (yayından sonra ilk pano açılışında 500 — kodda düzeltildi), `TB-263` 🟡 (dev DB'de koddan olmayan codex B-90 göçü) ve `D-40` ⚪ açıldı. Ardından iki depoda commit + master'a birleştirme: `B-90` kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §73). Toplam **97**.
@@ -2290,6 +2292,46 @@ korunur.
 `publish-preview` `canPublish: true` dönüyor; kullanıcı ancak "Onayla ve Yayınla"dan sonra 409 alıyor. Onay adımında "ertesi okul
 gününden geçerli" bilgisi var ama ders saati yasağı yok. ⬜ Öneri: önizleme `Y-07` penceresini bilsin (`canPublish=false` + gerekçe
 "Ders saatlerinde yayınlanamaz; 15:25'ten sonra"), pencere bunu yeşil kutu yerine gösterip Yayınla'yı kilitlesin.
+
+### `B-99` · Günlük devamsızlık paydası yalnız yoklaması alınmış dersler: tek ders gelmeyen öğrenciye "1 gün özürsüz" yazılıyor 🟠
+
+2026-10-02, Altınay saha testi (öğrenci ve veli pencereleri, 12 öğrenci). Gün-eşdeğeri `AbsenceDayBreakdownResolver` (veli/öğrenci özeti)
+ve eşik motoru (`AbsenceCalculator`) **yalnız `Completed` oturumlarda kaydı olan dersleri** payda sayıyor; günün programındaki ama
+yoklaması alınmamış (Bekliyor/Alınmadı) dersler hesaba girmiyor. Sonuç (API + mobil veli ekranı ile ölçüldü):
+- 10-A'dan bir öğrenci bugün yalnız 1. derse gelmedi; günün diğer 7 dersinin yoklaması henüz alınmamış → özet **1 gün özürsüz**,
+  veli ekranı "Özürsüz devamsızlık 1 / 10 gün". Gün ilerleyip dersler alındıkça değer kendiliğinden düşecek (1/8 → 0).
+- 11-A'dan bir öğrenci 30 Eylül'de yalnız 1 dersi alınmış günde o derse gelmedi → **1 gün**.
+- 11-A'dan bir öğrenci 1 Ekim'de günün 8 dersinden yoklaması alınan 4'üne gelmedi (5–8. dersler "Alınmadı") → **1 gün** (8 derslik günde 4 ders).
+Neden önemli: veliye ve eşik uyarılarına giden resmî sayı, öğretmenlerin yoklamayı ne kadar aldığına göre oynuyor; yoklaması
+eksik alınan günler devamsızlığı şişiriyor, gün içinde veli yanlış alarm görüyor.
+⬜ Karar gerekiyor: payda (a) günün programlı ders sayısı (iptal hariç; alınmamış ders "geldi" mi sayılır, hesap dışı mı?) (b) gün
+kapanmadan (21:45) gün-eşdeğeri hesaplanmaz, gün içinde yalnız ders sayısı gösterilir (c) bugünkü hâli. Öneri (a)+(b).
+
+### `B-100` · "İzinli/Raporlu Gün" ve uyarı yazısındaki özürlü gün aslında ders sayısı 🟠
+
+2026-10-02, Altınay saha testi. `StudentAttendanceSummaryDto.ExcusedDays` = `TotalExcusedCount + TotalMedicalReportCount` — **ders kaydı
+sayısı**. Ön yüz çekirdek tipi aynı alanı "izinli + raporlu gün karşılığı" diye tanımlıyor (`packages/core/src/attendance/types.ts:243`);
+mobil öğrenci ve veli ekranı "İzinli/Raporlu Gün", web sorgu sekmesi "{n} gün" (`query-tab.tsx:304`) gösteriyor. 1 Ekim'de 2 dersi raporlu
+olan öğrenci için ekranlar **2 gün** diyor. Veliye gönderilen devamsızlık uyarı yazısı (`threshold-letter.tsx:145`) toplamı
+`unexcusedDays + excusedDays + carryOverDays` ile kuruyor — gün ile ders sayısını topluyor. Dönem raporundaki "özürlü" sütunu da ders sayısı.
+⬜ Öneri: özürlü devamsızlık da özürsüzle aynı gün-eşdeğeri kuralıyla (izinli/raporlu dersler üzerinden) hesaplanıp `excusedDays` gün
+olarak dönsün; ders sayısı ayrı alanda (`excusedLessons`). MEB toplam sınırı (okul ayarı `total_absence_limit` = 30) özette hiç yok.
+
+### `B-101` · Geç kalma birikimi öğrenci/veli özetine girmiyor; dönem raporu ve eşik uyarısı sayıyor 🟠
+
+2026-10-02, Altınay saha testi. Okul ayarı `late_to_half_day_count = 3` (3 geç = 0,5 gün özürsüz). Bir 11-B öğrencisinin 1 Ekim'deki üç dersi
+müdür hesabıyla "geç geldi"ye düzeltildi (ölçümden sonra geri alındı): **dönem raporu özürsüz 0,5**, öğrenci ve veli özeti **0 gün** (mobil
+veli ekranı "Özürsüz devamsızlık 0 / 10 gün · 3 Geç Kalma"). Kod: `GetStudentSummaryQueryHandler` yalnız `AbsenceDayBreakdownResolver`
+(gelmedi günleri) kullanıyor; `AttendanceReportMath.CalculateTotalUnexcusedDays` (geç birikimi + devreden dahil) dönem raporu,
+`AbsenceDaysBatchReader` ve eşik motoru `AbsenceCalculator`'da. Veli "0 gün" görürken eşik uyarısı 0,5 üzerinden çalışır; ekrandaki eşik
+halkası (core `thresholdLevel`) da geçleri bilmiyor.
+⬜ Öneri: özet de `AttendanceReportMath`'ten (tek kaynak) dönsün; `unexcusedDays` içinde geç birikimi ayrı alan olarak da gösterilsin.
+
+### `D-45` · Veli ekranı ders başladıktan sonra "Henüz bilgi yok — İlk ders 08:55'da başlayacak" diyor ⚪
+
+2026-10-02 10:23, mobil veli ekranı (11-B öğrencisinin velisi). Öğrencinin 1. dersinin yoklaması alınmamışken kart "Bugün ilk ders: Henüz bilgi
+yok · İlk ders 08:55'da başlayacak" gösteriyor — saat geçmiş, ders başlamış; ek de yanlış ("08:55'te"). ⬜ Öneri: ilk ders saati geçtiyse "İlk
+dersin yoklaması henüz girilmedi"; ek için core'daki `tr-ablative` yardımcısı kullanılsın.
 
 ### `B-96` · Zil değişince "bugün"ün kapanmış oturumları da silinip "Bekliyor" olarak yeniden doğuyor; gece yarısı 87 yinelenen hatırlatma 🟠
 

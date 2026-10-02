@@ -195,3 +195,25 @@ Bütün düzeltmeler master'da (`oksis-api` `5eb52c1b`, `oksis-ui` `8f97170`); `
 Gece kapanışı ve sabah üretimi temiz: 1 Ekim'de Bekliyor kalmadı, 30 Eylül'ün yeniden açılmış 87 oturumu "Alınmadı"ya düştü,
 2 Ekim'in 88 oturumu Cuma ziliyle (08:55–15:25) üretildi. Kapanan altı madde arşivde (§75). Açık: `B-96`, `B-98` (sahada zil değişimi —
 son ders sonrası ölçülecek), `D-42` (mobil, Perşembe), `Y-07` sabah yayını + vekâlet açık noktası.
+
+---
+
+## 9. Öğrenci ve veli pencerelerinden devamsızlık yansıması (2 Ekim)
+
+Okul ayarı: özürsüz sınır 10 gün, uyarı 5, toplam sınır 30, yarım gün eşiği %50, 3 geç = 0,5 gün. Her durumu taşıyan 12 öğrenci
+(tam gün gelmedi, kısmi ≥%50 ve <%50, raporlu, izinli/gün içi izin + kulüp saati, geç, tek dersi alınmış gün) için öğrenci ve veli
+hesabıyla `students/{id}/summary`, `records?month=`, `today` okundu; mobil veli ekranı gezildi.
+
+| Durum | Örnek gün | Beklenen (kural) | Öğrenci/veli özeti | Doğru mu |
+|---|---|---|---|---|
+| Alınmış derslerin hepsi gelmedi | 1 Ekim, 4/4 (günün 8 dersinden 4'ü alınmış) | 1 gün | 1 gün | Kurala uygun, kural yanlış (`B-99`) |
+| Kısmi ≥ %50 | 1 Ekim, 3/4 | 0,5 | 0,5 | ✅ |
+| Kısmi < %50 | 1 Ekim, 1/4 | 0 | 0 | ✅ |
+| Raporlu | 1 Ekim, 2 ders raporlu | özürsüze girmez | özürsüz 0, "İzinli/Raporlu Gün 2" | Etiket yanlış (`B-100`) |
+| Gün içi izin + kulüp saati izinli | 1 Ekim | izinli 1 ders | özürlü 1 | Etiket yanlış (`B-100`) |
+| Geç ×3 | 1 Ekim (deneme, geri alındı) | 0,5 gün | özet 0, dönem raporu 0,5 | ❌ `B-101` |
+| Tek dersi alınmış gün | 2 Ekim 1. ders gelmedi | — | 1 gün, veli "1/10 gün" | ❌ `B-99` |
+
+Doğru çalışanlar: öğrenci ve veli aynı değerleri görüyor; başka öğrencinin özeti 404; günlük kırılım etiketleri ("3 ders gelmedi",
+"2 ders raporlu", "1 ders geç") ve bugünkü ders listesi doğru; dönem raporu özetle (geç dışında) tutarlı.
+
