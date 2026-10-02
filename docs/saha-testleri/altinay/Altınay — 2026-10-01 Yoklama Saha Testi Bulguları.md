@@ -177,3 +177,21 @@ Test başlığı satırları: [[Altınay — Yaşam Döngüsü Test Başlıklar�
   (API'nin akşam açık olması gerekiyor).
 - 30 Eylül'ün yeniden "Bekliyor"a dönen 87 oturumunun bu akşamki kapanışla tekrar "Alınmadı"ya düşmesi (`B-96`).
 - Mazeret akışı ölçülmedi.
+
+---
+
+## 8. 2 Ekim ders saati testi (düzeltmelerin sahada ölçümü)
+
+Bütün düzeltmeler master'da (`oksis-api` `5eb52c1b`, `oksis-ui` `8f97170`); `Y-07` (okul günü içinde zil ve program değişmez) da dahil.
+
+| Madde | Ölçüm | Sonuç |
+|---|---|---|
+| `B-92` | 08:44'te 1. dersi açma; 08:50:06'da açma + gönderim; web ve mobil liste kilidi | ✅ 409 "08:50 itibarıyla", oturum Pending kaldı → 200; ekranda "08:50'den itibaren", 08:50'de kilit kalktı, mobil ve web kayıt |
+| `D-41` | Öğretmen listeyi açınca ağ ve konsol | ✅ `amendment-requests` çağrılmıyor, konsol temiz |
+| `B-97` | Müdür Gün İçi İzin Ver penceresi | ✅ seçili günün izinleri + "İptal et" |
+| `Y-07` zil | Ders saatinde toplu zil ve gün ataması (aynı içerik), web zil ekranı | ✅ 409 "Bugün 15:25'ten sonra…", veri değişmedi; kalıcı not ve ret şeridi. Yeni `D-43` ⚪ (mesaj iki kez) |
+| `Y-07` yayın | — | Sahada ölçülmedi (yayınlanmamış program yok; ölçmek veri değiştirirdi), birim testli |
+
+Gece kapanışı ve sabah üretimi temiz: 1 Ekim'de Bekliyor kalmadı, 30 Eylül'ün yeniden açılmış 87 oturumu "Alınmadı"ya düştü,
+2 Ekim'in 88 oturumu Cuma ziliyle (08:55–15:25) üretildi. Kapanan altı madde arşivde (§75). Açık: `B-96`, `B-98` (sahada zil değişimi —
+son ders sonrası ölçülecek), `D-42` (mobil, Perşembe), `Y-07` sabah yayını + vekâlet açık noktası.

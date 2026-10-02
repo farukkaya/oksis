@@ -1793,3 +1793,9 @@ yayın kalemleri ve sürüm listesi `effectiveFrom` taşır.
 bağlı değil, yayında hemen değişir.
 **Açık nokta:** `ScheduleExceptionPlanner` istisnanın hedef yerleşimini programın en son sürümünden çözüyor. Sabah ilk dersten önce
 yayın yapılırsa o güne yazılan vekâlet, o günün (eski sürümden doğan) oturumuna uygulanmaz. Akşam yayında sorun yok. Sahada ölçülecek.
+
+**Saha ölçümü (2026-10-02, Cuma, ders saati):** 08:56'da müdür hesabıyla toplu zil kaydı (mevcut içeriğin aynısı) ve gün ataması
+→ 409 `Schools.Bell.LockedOnSchoolDay` "… Bugün 15:25'ten sonra kaydedebilirsiniz." (Cuma zilinden); zil ve gün ataması tablolarında
+değişiklik yok. Web zil ekranında kalıcı not ve kart üstü ret şeridi görünüyor (mesaj ayrıca geçici bildirimde de çıkıyor: `D-43`).
+**Program yayını reddi sahada ölçülmedi:** Altınay'ın 11 programı da yayında; ders saati kontrolü "zaten yayında" kontrolünden sonra
+geldiği için ölçmek bir programı düzenlemeye açmayı gerektiriyordu (veri değişikliği). Birim testle doğrulandı.
