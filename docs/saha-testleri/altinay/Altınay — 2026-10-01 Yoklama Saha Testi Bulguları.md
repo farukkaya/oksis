@@ -233,3 +233,21 @@ Doğru çalışanlar: öğrenci ve veli aynı değerleri görüyor; başka öğr
 **Açık kalan ölçümler:** `D-42` mobil ve `B-98` zil değişiminde kulüp saati taşıma (kulüp saati Perşembe; 8 Ekim etkinlikleri pazartesi
 üretilecek) · `Y-07` sabah ilk dersten önce yayın + aynı güne vekâlet açık noktası · `Y-07` yayın kabulü ve yürürlük günü (10-A).
 
+---
+
+## 11. Devamsızlık hesabının düzeltilmesi ve gün kapanışı ölçümü (2 Ekim akşamı)
+
+Kararlar: payda günün programdaki dersleri (kulüp saati dahil, iptal hariç); bugün 21:45 kapanışından sonra sayılır; o gün raporlu ders
+varsa gelmedi dersleri de raporlu; özürlü devamsızlık gün olarak; geç birikimi her yerde. Kod: oksis-api `01f94a97`, oksis-ui `20bbe86`.
+
+| Ölçüm | Saat | Sonuç |
+|---|---|---|
+| 12 öğrenci, bağımsız hesap = API (öğrenci = veli) | 18:30 | ✅; tek dersi alınmış gün 1 → 0, 4/8 → 0,5, bugün sayılmıyor |
+| Aynı 12 öğrenci kapanıştan sonra | 21:48 | ✅; bugün gün boyu gelmeyen iki öğrenci +1 gün |
+| Gün boyu raporlu üç öğrenci | 21:48 | ✅ özürlü 1 / 1 / 0,5 gün (8, 8, 7 ders) |
+| Rapor önceliği (raporlu günde bir ders gelmedi) | 21:49 | ✅ özürlü 1, özürsüz 0, "Tam gün raporlu" (geri alındı) |
+| Geç birikimi 3 geç | 21:50 | ✅ özet = veli = dönem raporu = 0,5 (geri alındı) |
+| Kapanış işi | 21:47 | ✅ telafi koşusu, hata yok |
+
+Kapandı: `B-99`, `B-100`, `B-101`. Ekranda ölçüm bekleyen: `X-24`, `D-44`, `D-45`, `TB-265` (pazartesi ders saati).
+

@@ -11406,3 +11406,63 @@ değişirse sabah dersleri — saati geçmiş, hatırlatması gitmiş, alınmam�
 ✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `dafeab1c`): silme yalnız başlamamış `Pending`; `NotTaken`/`Open` hiç silinmez; yayıncı (B-90) da aynı kurala ve okul yerel saatine geçti (B-93'teki UTC notu kapandı). Entegrasyon testi 23:37 zil değişimini canlandırıyor. **Kalan ölçüm:** sahada zil değişimi yapılmadı.
 
 ✅ **2026-10-02 · sahada ölçüldü, kapandı:** `Y-07` ile zil artık okul günü son ders bitene kadar kaydedilemiyor (08:56'da 409), dolayısıyla "bugünün kapanmış dersleri yeniden açılıyor" senaryosu gün içinde oluşamıyor. 15:37'de son dersten sonra aynı içerikli zil kaydı kabul edildi (204): bugünün 88 tamamlanmış oturumuna dokunulmadı, yalnız gelecek günlerin bekleyen oturumları (14–20 Ekim, 436) silindi; `NotTaken`/`Open` hiç silinmedi. Gece 1 Ekim kapanışından sonra 30 Eylül'ün yeniden açılmış 87 oturumu "Alınmadı"ya döndü. Aynı içerikte de silme yapılması ayrı madde: `TB-265`.
+
+## 76. Devamsızlık gün hesabı — öğrenci ve veli pencereleri (2026-10-02) ✅
+
+> 2 Ekim'de öğrenci ve veli pencerelerinden yapılan ölçümde açılan üç madde kullanıcı kararlarıyla (payda programdan, gün kapanınca, rapor önceliği,
+> özürlü gün olarak) aynı gün düzeltildi ve kapanış sonrası sahada ölçüldü. Rapor: [[Altınay — 2026-10-01 Yoklama Saha Testi Bulguları]] §9 ve §11.
+
+### `B-99` · Günlük devamsızlık paydası yalnız yoklaması alınmış dersler: tek ders gelmeyen öğrenciye "1 gün özürsüz" yazılıyor 🟠 *(kapandı — 2026-10-02)*
+
+2026-10-02, Altınay saha testi (öğrenci ve veli pencereleri, 12 öğrenci). Gün-eşdeğeri `AbsenceDayBreakdownResolver` (veli/öğrenci özeti)
+ve eşik motoru (`AbsenceCalculator`) **yalnız `Completed` oturumlarda kaydı olan dersleri** payda sayıyor; günün programındaki ama
+yoklaması alınmamış (Bekliyor/Alınmadı) dersler hesaba girmiyor. Sonuç (API + mobil veli ekranı ile ölçüldü):
+- 10-A'dan bir öğrenci bugün yalnız 1. derse gelmedi; günün diğer 7 dersinin yoklaması henüz alınmamış → özet **1 gün özürsüz**,
+  veli ekranı "Özürsüz devamsızlık 1 / 10 gün". Gün ilerleyip dersler alındıkça değer kendiliğinden düşecek (1/8 → 0).
+- 11-A'dan bir öğrenci 30 Eylül'de yalnız 1 dersi alınmış günde o derse gelmedi → **1 gün**.
+- 11-A'dan bir öğrenci 1 Ekim'de günün 8 dersinden yoklaması alınan 4'üne gelmedi (5–8. dersler "Alınmadı") → **1 gün** (8 derslik günde 4 ders).
+Neden önemli: veliye ve eşik uyarılarına giden resmî sayı, öğretmenlerin yoklamayı ne kadar aldığına göre oynuyor; yoklaması
+eksik alınan günler devamsızlığı şişiriyor, gün içinde veli yanlış alarm görüyor.
+⬜ Karar gerekiyor: payda (a) günün programlı ders sayısı (iptal hariç; alınmamış ders "geldi" mi sayılır, hesap dışı mı?) (b) gün
+kapanmadan (21:45) gün-eşdeğeri hesaplanmaz, gün içinde yalnız ders sayısı gösterilir (c) bugünkü hâli. Öneri (a)+(b).
+
+✅ **Karar (2026-10-02, kullanıcı):** (1) **payda = günün programdaki bütün dersleri** (iptal edilenler hariç; kulüp saati dahil); yoklaması
+alınmamış ders paydada kalır ama gelmedi/izinli sayılmaz. (2) **Gün kapanınca sayılır:** bugünün gün-eşdeğeri gece kapanışından (21:45)
+sonra toplama ve eşik uyarılarına katılır; gün içinde veli ders bilgisini görür, oynayan gün sayısı görmez. (3) **Rapor önceliği:** o gün
+en az bir ders raporluysa, aynı günün "gelmedi" dersleri de raporlu sayılır; oran kuralı (%50 → 0,5, tamamı → 1) raporlu+gelmedi toplamına
+uygulanır. **İzinli** için öncelik yok: izinli ve gelmedi kendi oranlarıyla ayrı hesaplanır.
+
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97`; `5f8cd5ac`, `1f39c08c`): payda programdaki dersler (kulüp saati dahil, iptal hariç), rapor önceliği, bütün gün-eşdeğeri kopyaları tek yükleyici (`AbsenceDayCountsLoader`) + tek hesaplayıcı (`AttendanceReportMath.Calculate`); bugün 21:45'ten önce sayılmıyor (`AttendanceDayClose`, Hangfire cron'u da buradan). Sahada 18:30'da 12 öğrencide bağımsız hesapla birebir: tek dersi alınmış gün 1 → 0, 4/8 → 0,5, bugün sayılmıyor. **Kalan ölçüm:** 21:47 kapanış sonrası ve rapor önceliği (görev kurulu).
+
+✅ **2026-10-02 21:48 · sahada ölçüldü, kapandı:** kapanıştan sonra 12 öğrencinin özeti bağımsız hesapla birebir; bugün gün boyu gelmeyen iki öğrenci 18:30'a göre +1 gün (0,5→1,5 ve 0→1) — bugün kapanıştan önce sayılmıyor, sonra sayılıyor. Rapor önceliği: gün boyu raporlu öğrencinin bir dersi "gelmedi" yapılınca özürlü 1 gün, özürsüz 0, günlük kırılım "Tam gün raporlu" (kayıt geri alındı). Kapanış işi API açılışında telafi koştu (21:47:54), hata yok. Açık notlar (ajan): bugünün geç kayıtları kapanışa bağlı değil; kulüp saati paydaya yalnız yoklaması alındıysa giriyor; hiç üretilmemiş günlerde payda eksik kalabilir.
+
+### `B-100` · "İzinli/Raporlu Gün" ve uyarı yazısındaki özürlü gün aslında ders sayısı 🟠 *(kapandı — 2026-10-02)*
+
+2026-10-02, Altınay saha testi. `StudentAttendanceSummaryDto.ExcusedDays` = `TotalExcusedCount + TotalMedicalReportCount` — **ders kaydı
+sayısı**. Ön yüz çekirdek tipi aynı alanı "izinli + raporlu gün karşılığı" diye tanımlıyor (`packages/core/src/attendance/types.ts:243`);
+mobil öğrenci ve veli ekranı "İzinli/Raporlu Gün", web sorgu sekmesi "{n} gün" (`query-tab.tsx:304`) gösteriyor. 1 Ekim'de 2 dersi raporlu
+olan öğrenci için ekranlar **2 gün** diyor. Veliye gönderilen devamsızlık uyarı yazısı (`threshold-letter.tsx:145`) toplamı
+`unexcusedDays + excusedDays + carryOverDays` ile kuruyor — gün ile ders sayısını topluyor. Dönem raporundaki "özürlü" sütunu da ders sayısı.
+⬜ Öneri: özürlü devamsızlık da özürsüzle aynı gün-eşdeğeri kuralıyla (izinli/raporlu dersler üzerinden) hesaplanıp `excusedDays` gün
+olarak dönsün; ders sayısı ayrı alanda (`excusedLessons`). MEB toplam sınırı (okul ayarı `total_absence_limit` = 30) özette hiç yok.
+
+✅ **Karar (2026-10-02, kullanıcı):** özürlü devamsızlık **gün olarak, özürsüzle aynı kuralla** (payda ve gün kapanışı `B-99` ile aynı) hesaplanır;
+ders sayısı ayrı alanda gösterilir; özette toplam sınır (30 gün) yer alır; uyarı yazısı günleri toplar.
+
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `36cb0f55`; `oksis-ui` master `123fa82`, `20bbe86`): `excusedDays` gün (decimal), `excusedLessons`, `totalAbsenceLimit` (30); mobil/web gün + "N ders" + toplam sınır; uyarı yazısı günleri topluyor. Sahada 2 dersi raporlu öğrenci: özürlü 0 gün · 2 ders.
+
+✅ **2026-10-02 · sahada ölçüldü, kapandı:** gün boyu raporlu üç öğrenci kapanıştan sonra özürlü 1 / 1 / 0,5 gün (8, 8 ve 7 ders raporlu — sonuncusunun 1. dersi "geldi"); `excusedLessons` ders sayısını ayrı veriyor, `totalAbsenceLimit` 30. Ekran tarafı tip denetimi ve testlerle; mobil ekran görüntüsü alınmadı.
+
+### `B-101` · Geç kalma birikimi öğrenci/veli özetine girmiyor; dönem raporu ve eşik uyarısı sayıyor 🟠 *(kapandı — 2026-10-02)*
+
+2026-10-02, Altınay saha testi. Okul ayarı `late_to_half_day_count = 3` (3 geç = 0,5 gün özürsüz). Bir 11-B öğrencisinin 1 Ekim'deki üç dersi
+müdür hesabıyla "geç geldi"ye düzeltildi (ölçümden sonra geri alındı): **dönem raporu özürsüz 0,5**, öğrenci ve veli özeti **0 gün** (mobil
+veli ekranı "Özürsüz devamsızlık 0 / 10 gün · 3 Geç Kalma"). Kod: `GetStudentSummaryQueryHandler` yalnız `AbsenceDayBreakdownResolver`
+(gelmedi günleri) kullanıyor; `AttendanceReportMath.CalculateTotalUnexcusedDays` (geç birikimi + devreden dahil) dönem raporu,
+`AbsenceDaysBatchReader` ve eşik motoru `AbsenceCalculator`'da. Veli "0 gün" görürken eşik uyarısı 0,5 üzerinden çalışır; ekrandaki eşik
+halkası (core `thresholdLevel`) da geçleri bilmiyor.
+⬜ Öneri: özet de `AttendanceReportMath`'ten (tek kaynak) dönsün; `unexcusedDays` içinde geç birikimi ayrı alan olarak da gösterilsin.
+
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `93877fd7`): özet geç birikimini `AttendanceReportMath`'ten alıyor (`lateDays`); entegrasyon testi özet = rapor = batch = eşik. Açık not (ajan): bugünün geç kayıtları kapanış kuralına bağlı değil, gün içinde de sayılıyor.
+
+✅ **2026-10-02 21:50 · sahada ölçüldü, kapandı:** bir öğrencinin 3 dersi geçici olarak "geç" yapıldı: öğrenci ve veli özeti `lateDays` 0,5 / `unexcusedDays` 0,5, dönem raporu özürsüz 0,5 — aynı sayı (kayıtlar geri alındı).
