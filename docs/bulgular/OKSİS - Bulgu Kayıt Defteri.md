@@ -2288,12 +2288,16 @@ bildirim, ders/alan/sınav türü katalogları, kademe kartı…) — hepsi tek 
 bastırsın (`useGrantDailyLeave` kalıbı) ya da genel yüzey `mutate` seviyesindeki `onError`'u da görsün; tek kural, lint ya da test ile
 korunur.
 
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-ui` master `8ef5c3d`): `@workspace/api` `useMutation` sarmalayıcısı — çağrı anındaki `onError` çalıştıysa genel yüzey susuyor; `SCREEN_SHOWS_ERROR` seçeneği; doğrudan TanStack `useMutation` importu lint ile yasak; ~20 ekran tek gösterime indi. **Kalan ölçüm:** ekranda (yayın penceresi ve bir ayar sekmesi).
+
 ### `D-44` · Yayın penceresi ders saatinde "Yayına hazır" diyor, ret ancak düğmeye basınca geliyor ⚪
 
 2026-10-02 09:42, Altınay saha testi (`Y-07`). Ders saatinde 10-A için *Yayınla* penceresi yeşil "Yayına hazır. Çakışma yok." gösteriyor,
 `publish-preview` `canPublish: true` dönüyor; kullanıcı ancak "Onayla ve Yayınla"dan sonra 409 alıyor. Onay adımında "ertesi okul
 gününden geçerli" bilgisi var ama ders saati yasağı yok. ⬜ Öneri: önizleme `Y-07` penceresini bilsin (`canPublish=false` + gerekçe
 "Ders saatlerinde yayınlanamaz; 15:25'ten sonra"), pencere bunu yeşil kutu yerine gösterip Yayınla'yı kilitlesin.
+
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `ac682f9b`; `oksis-ui` master `536dac5`): önizleme ders saatinde `canPublish=false` + `publishBlockedReason`/`publishOpensAt` (409 ile aynı üretici); pencere kilitli, "15:25'ten sonra". **Kalan ölçüm:** ders saatinde ekranda (pazartesi).
 
 ### `B-99` · Günlük devamsızlık paydası yalnız yoklaması alınmış dersler: tek ders gelmeyen öğrenciye "1 gün özürsüz" yazılıyor 🟠
 
@@ -2309,6 +2313,14 @@ eksik alınan günler devamsızlığı şişiriyor, gün içinde veli yanlış a
 ⬜ Karar gerekiyor: payda (a) günün programlı ders sayısı (iptal hariç; alınmamış ders "geldi" mi sayılır, hesap dışı mı?) (b) gün
 kapanmadan (21:45) gün-eşdeğeri hesaplanmaz, gün içinde yalnız ders sayısı gösterilir (c) bugünkü hâli. Öneri (a)+(b).
 
+✅ **Karar (2026-10-02, kullanıcı):** (1) **payda = günün programdaki bütün dersleri** (iptal edilenler hariç; kulüp saati dahil); yoklaması
+alınmamış ders paydada kalır ama gelmedi/izinli sayılmaz. (2) **Gün kapanınca sayılır:** bugünün gün-eşdeğeri gece kapanışından (21:45)
+sonra toplama ve eşik uyarılarına katılır; gün içinde veli ders bilgisini görür, oynayan gün sayısı görmez. (3) **Rapor önceliği:** o gün
+en az bir ders raporluysa, aynı günün "gelmedi" dersleri de raporlu sayılır; oran kuralı (%50 → 0,5, tamamı → 1) raporlu+gelmedi toplamına
+uygulanır. **İzinli** için öncelik yok: izinli ve gelmedi kendi oranlarıyla ayrı hesaplanır.
+
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97`; `5f8cd5ac`, `1f39c08c`): payda programdaki dersler (kulüp saati dahil, iptal hariç), rapor önceliği, bütün gün-eşdeğeri kopyaları tek yükleyici (`AbsenceDayCountsLoader`) + tek hesaplayıcı (`AttendanceReportMath.Calculate`); bugün 21:45'ten önce sayılmıyor (`AttendanceDayClose`, Hangfire cron'u da buradan). Sahada 18:30'da 12 öğrencide bağımsız hesapla birebir: tek dersi alınmış gün 1 → 0, 4/8 → 0,5, bugün sayılmıyor. **Kalan ölçüm:** 21:47 kapanış sonrası ve rapor önceliği (görev kurulu).
+
 ### `B-100` · "İzinli/Raporlu Gün" ve uyarı yazısındaki özürlü gün aslında ders sayısı 🟠
 
 2026-10-02, Altınay saha testi. `StudentAttendanceSummaryDto.ExcusedDays` = `TotalExcusedCount + TotalMedicalReportCount` — **ders kaydı
@@ -2318,6 +2330,11 @@ olan öğrenci için ekranlar **2 gün** diyor. Veliye gönderilen devamsızlık
 `unexcusedDays + excusedDays + carryOverDays` ile kuruyor — gün ile ders sayısını topluyor. Dönem raporundaki "özürlü" sütunu da ders sayısı.
 ⬜ Öneri: özürlü devamsızlık da özürsüzle aynı gün-eşdeğeri kuralıyla (izinli/raporlu dersler üzerinden) hesaplanıp `excusedDays` gün
 olarak dönsün; ders sayısı ayrı alanda (`excusedLessons`). MEB toplam sınırı (okul ayarı `total_absence_limit` = 30) özette hiç yok.
+
+✅ **Karar (2026-10-02, kullanıcı):** özürlü devamsızlık **gün olarak, özürsüzle aynı kuralla** (payda ve gün kapanışı `B-99` ile aynı) hesaplanır;
+ders sayısı ayrı alanda gösterilir; özette toplam sınır (30 gün) yer alır; uyarı yazısı günleri toplar.
+
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `36cb0f55`; `oksis-ui` master `123fa82`, `20bbe86`): `excusedDays` gün (decimal), `excusedLessons`, `totalAbsenceLimit` (30); mobil/web gün + "N ders" + toplam sınır; uyarı yazısı günleri topluyor. Sahada 2 dersi raporlu öğrenci: özürlü 0 gün · 2 ders.
 
 ### `B-101` · Geç kalma birikimi öğrenci/veli özetine girmiyor; dönem raporu ve eşik uyarısı sayıyor 🟠
 
@@ -2329,11 +2346,15 @@ veli ekranı "Özürsüz devamsızlık 0 / 10 gün · 3 Geç Kalma"). Kod: `GetS
 halkası (core `thresholdLevel`) da geçleri bilmiyor.
 ⬜ Öneri: özet de `AttendanceReportMath`'ten (tek kaynak) dönsün; `unexcusedDays` içinde geç birikimi ayrı alan olarak da gösterilsin.
 
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `93877fd7`): özet geç birikimini `AttendanceReportMath`'ten alıyor (`lateDays`); entegrasyon testi özet = rapor = batch = eşik. Açık not (ajan): bugünün geç kayıtları kapanış kuralına bağlı değil, gün içinde de sayılıyor.
+
 ### `D-45` · Veli ekranı ders başladıktan sonra "Henüz bilgi yok — İlk ders 08:55'da başlayacak" diyor ⚪
 
 2026-10-02 10:23, mobil veli ekranı (11-B öğrencisinin velisi). Öğrencinin 1. dersinin yoklaması alınmamışken kart "Bugün ilk ders: Henüz bilgi
 yok · İlk ders 08:55'da başlayacak" gösteriyor — saat geçmiş, ders başlamış; ek de yanlış ("08:55'te"). ⬜ Öneri: ilk ders saati geçtiyse "İlk
 dersin yoklaması henüz girilmedi"; ek için core'daki `tr-ablative` yardımcısı kullanılsın.
+
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-ui` master `a77a414`): kart "İlk dersin yoklaması henüz girilmedi" / "08:55'te başlayacak". ➕ Açık kalan: veli çocuk listesindeki kısa etiket ders başladıktan sonra da "Henüz ders başlamadı".
 
 ### `TB-265` · Aynı içerikle kaydedilen zil de gelecek günlerin bekleyen oturumlarını silip yeniden ürettiriyor ⚪
 
@@ -2342,6 +2363,8 @@ dersin yoklaması henüz girilmedi"; ek için core'daki `tr-ablative` yardımcı
 İçerik değişmediği hâlde kimlikler değişiyor; açık mobil uygulamanın eski oturum kimliğini tutması (`B-91`) bu yoldan da tetiklenir.
 ⬜ Öneri: zil komutları değişiklik yoksa temizlik/hizalama zincirini çalıştırmasın (ön yüz artık yalnız değişen parçayı gönderiyor —
 `D-43`; sunucu da no-op'u tanısın).
+
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `7297d5a7`): beş zil komutu içerik aynıysa hiçbir şey yazmıyor, temizlik/hizalama çalışmıyor (`BellContentComparison`); Y-07 kilidi eşitlikten önce. **Kalan ölçüm:** sahada aynı içerikli zil kaydı (son dersten sonra).
 
 ### `B-98` · Zil değişince kulüp saati etkinliği ikizleniyor; eski saatteki etkinliğe girilen yoklama devamsızlığa hiç yazılmıyor 🟠
 
