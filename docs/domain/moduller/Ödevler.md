@@ -2,7 +2,7 @@
 aliases: [Homework, api/v1/homework, Ödev Modülü]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-04 (972fc99d)
 ---
 
 # Ödevler
@@ -34,23 +34,23 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 
 ## Ana akışlar
 
-1. **Oluşturma ve düzenleme** — Form bağlamı sunucunun gününü, öğretmenin dersini ve o dersin şubelerini verir; hedef seçici şubenin öğrencilerini listeler (kapsam dışı şube 404). Kayıt taslak doğar, bildirim gitmez. Düzenlemede ek alanı gönderilmezse ekler korunur, boş dizi temizler; hedef tipi yayında donmuştur. Seçili öğrenci hedefi yalnız tek şubeyle kullanılabilir. Kapanmış ve iptal edilmiş ödev düzenlenemez.
+1. **Oluşturma ve düzenleme** — Form bağlamı sunucunun gününü ve öğretmenin okuttuğu **bütün dersleri** kendi şubeleriyle verir; varsayılan ders son ödevin dersi (hâlâ okutuluyorsa), yoksa en çok şubede okutulan derstir; hedef seçici şubenin öğrencilerini listeler (kapsam dışı şube 404). Kayıt taslak doğar, bildirim gitmez. Düzenlemede ek alanı gönderilmezse ekler korunur, boş dizi temizler; hedef tipi yayında donmuştur. Seçili öğrenci hedefi yalnız tek şubeyle kullanılabilir ve her öğrencisi o şubenin mevcudunda olmalıdır (400). Kapanmış ve iptal edilmiş ödev düzenlenemez. Yayındaki ödevde gerçek bir içerik değişikliği öğrenciye ve veliye "güncellendi" haberi verir; aynı içeriği yeniden kaydetmek haber değildir. Son teslim tarihinin değişmesi denetime yazılır ve hatırlatma damgalarını sıfırlar.
 
 2. **Yayın** — Geri alınamaz. Hedef bu anda mevcutla çözülür; boş hedef 409, geçmiş son teslim 400. Takip satırları açılır, seçim tüketilir, yayın denetim kaydı yazılır, kayıt bittikten sonra hedef öğrencilere ve velilerine bildirim kuyruklanır.
 
-3. **Kapatma, iptal, taslak silme** — Üçü de sahibinindir; idare kapatamaz. Kapatma denetlenmez. İptal gerekçe ister (≥ 15), gerekçe öğrenciye görünür ve denetime yazılır. Taslak silme sessizdir ve yumuşaktır.
+3. **Kapatma, iptal, taslak silme** — Sahip yapar; kapatma ve iptal yönetme izni taşıyan idareye de açıktır (idari kapatma denetime yazılır). İptal gerekçe ister (≥ 15), gerekçe denetime yazılır ve öğrenciye/veliye "iptal edildi" haberi gider — gerekçenin aileye gösterilip gösterilmeyeceği açık karardır. Taslak silme sessizdir ve yumuşaktır.
 
-4. **Kontrol ızgarası** — Kalıcı satırlar ile şube mevcudu birleştirilir (yalnız tüm-sınıf hedefli yayındaki ödevde); ayrılan öğrencinin satırı kalır. İşaretleme yalnız sahibe açıktır, muaf gerekçe ister, sentezlenmiş satır ilk işaretlemede doğar. Toplu tamamlama işaretlenmemişlerin tümünü kapsar ve tek özet kayıt yazar. Anlık kipte eksik/yapılmadı işareti veliye o anda bildirilir.
+4. **Kontrol ızgarası** — Kalıcı satırlar ile şube mevcudu birleştirilir (yalnız tüm-sınıf hedefli yayındaki ödevde); ayrılan öğrencinin satırı kalır. İşaretleme sahibe ve yönetme izni taşıyan idareye açıktır (işaretleyen kişi satıra kendi adıyla yazılır), muaf gerekçe ister, sentezlenmiş satır ilk işaretlemede doğar. Toplu tamamlama işaretlenmemişlerin tümünü kapsar ve tek özet kayıt yazar. Anlık kipte eksik/yapılmadı işareti veliye o anda bildirilir.
 
 5. **Öğrenci ve veli yüzü** — Kimlik oturumdan gelir; öğrencinin listesinde yalnız yayında ve kapanmış ödevler vardır, detayda iptal edilmiş de döner. Tanınmayan liste süzgeci 400'dür, sessiz "hepsi" değil. Velinin listesi öğrencininkinin salt okunur ikizidir: çocuk sorgudan gelir, kapsam sunucuda süzülür, kapsam dışı çocuk 404. Aile şemasında "yükleyebilir" ve muafiyet gerekçesi alanları hiç yoktur.
 
-6. **Teslim** — Öğrenci yayındaki ödeve, son teslim günü geçmiş olsa da, en fazla 5 aktif dosya yükler; kaldırma yumuşaktır. Yükleme takip satırının durumunu değiştirmez; kararı öğretmen verir. Yükleme 201 döner ama tekil teslimin adresi yoktur. Bildirim üretmez.
+6. **Teslim** — Öğrenci yayındaki ödeve, son teslim günü geçmiş olsa da, en fazla 5 aktif dosya yükler; kaldırma yumuşaktır. Yükleme takip satırının durumunu değiştirmez; kararı öğretmen verir. Yükleme 201 döner ama tekil teslimin adresi yoktur. Bildirim üretmez. Dosya, beyan ettiği türün içerik imzasını taşımalıdır (yüklemede ve virüs taramasında denetlenir); tarama dosyayı zararlı ya da türüyle uyuşmaz bulursa teslim **sistem adına** (aktörsüz) kaldırılır ve kotadan düşer. Teslim dosyasını sahibi öğrenci, velisi, ödevin sahibi ve idare açar; rehber açamaz. PDF ve görsel istenirse tarayıcıda önizlenecek biçimde imzalanır.
 
-7. **İdare** — Okul geneli listede taslak yalnız sahibi ayrılmışsa görünür; öğretmen parametresi bir süzgeçtir, kapsam kapısı değil (kapsamı olmayan kimlik boş liste alır, 403 değil); gün süzgeci ile aralık süzgeci birlikte kullanılamaz. Süzgeç evreni listeden türetilmez. Yoğunluk panosu haftanın herhangi bir gününü alır, içeren haftanın **Pazartesi–Cuma**'sına indirger ve indirgenmiş hâlini döner; hafta sonu girdi önceki pazartesiye düşer. **Öğretmen parametresi yoktur** — pano yük ölçerdir, performans karnesi değil. Kontrol bekleyenler "gecikmiş ve işaretlenmemiş satırı var" koşuluyla, en eski üstte. Adına yayın yalnız ayrılmış öğretmenin taslağına, gerekçeli ve yeni tarihle; sahibi çalışan taslak 409. İdari teslim kaldırma gerekçeli ve denetimli.
+7. **İdare** — Şubeler sınıf düzeyine, sonra ada göre dizilir. Okul geneli listede taslak yalnız sahibi ayrılmışsa görünür; öğretmen parametresi bir süzgeçtir, kapsam kapısı değil (kapsamı olmayan kimlik boş liste alır, 403 değil); gün süzgeci ile aralık süzgeci birlikte kullanılamaz. Süzgeç evreni listeden türetilmez. Yoğunluk panosu haftanın herhangi bir gününü alır, içeren haftanın **Pazartesi–Cuma**'sına indirger ve indirgenmiş hâlini döner; hafta sonu girdi önceki pazartesiye düşer. **Öğretmen parametresi yoktur** — pano yük ölçerdir, performans karnesi değil. Kontrol bekleyenler "gecikmiş ve işaretlenmemiş satırı var" koşuluyla, en eski üstte. Adına yayın yalnız ayrılmış öğretmenin taslağına, gerekçeli ve yeni tarihle; sahibi çalışan taslak 409. İdari teslim kaldırma gerekçeli ve denetimli.
 
 8. **Okul politikası** — Okul ayarları altında yaşar, ödev rotasında değil. Ekranda beş kontrol, kolon üç: hatırlatma saati (0 = kapalı), eksik ödev bildirim kipi (kapalı / günlük özet / anlık) ve günlük yoğunluk eşiği. "Hatırlatma açık" ve "veli bildirimi açık" anahtarları türetilir, kalıcılaştırılmaz.
 
-9. **Bildirim ve zamanlanmış işler** — Üç tür: **yayın** (hedef öğrenciler + veliler; gövdede başlık geçer, içerik geçmez), **son teslim yaklaşıyor** (saatlik iş; her okulun kendi politikası; yalnız işaretlenmemiş satırın öğrencisi + velisi; pencere son teslim gününün okul-yerel başlangıcına göre; damga satırda; kaçırılan pencere sonradan telafi edilmez) ve **eksik ödev** (yalnız veliye; anlık kipte işaretleme anında, özet kipte her akşam 20:30'da veli başına tek bildirim; özet iş hiçbir şey yazmaz, tekliği deterministik olay anahtarı sağlar). Bildirim grubu "Akademik" değil ayrı **Ödev** grubudur — veli not bildirimlerini kapatırken ödevi de kapatmış olmasın. Teslim yükleme, taslak silme ve oluşturma bildirim üretmez.
+9. **Bildirim ve zamanlanmış işler** — Üç tür: **ödev haberi** (yayın, güncelleme ve iptal — üçü aynı türdür ki veli tercihinde tek satır olsun; hedef öğrenciler + veliler; gövdede başlık geçer, içerik ve gerekçe geçmez), **son teslim yaklaşıyor** (saatlik iş; her okulun kendi politikası; yalnız işaretlenmemiş satırın öğrencisi + velisi; pencere son teslim gününün okul-yerel başlangıcına göre; damga satırda; kaçırılan pencere sonradan telafi edilmez) ve **eksik ödev** (yalnız veliye; anlık kipte işaretleme anında, özet kipte her akşam 20:30'da veli başına tek bildirim; özet iş hiçbir şey yazmaz, tekliği deterministik olay anahtarı sağlar). Bildirim grubu "Akademik" değil ayrı **Ödev** grubudur — veli not bildirimlerini kapatırken ödevi de kapatmış olmasın. Derin bağlantı: ödev haberi ve anlık eksik ödev detayına, günlük özet ödev listesine iner. Eksik ödev push kapsamı dışındadır (yalnız uygulama içi); kullanıcı ödev haberi ve hatırlatmanın push'unu kişisel tercihten kapatabilir. Teslim yükleme, taslak silme ve oluşturma bildirim üretmez. "Yüklendi/güncellendi" etiketleri okulun saat diliminde hesaplanır.
 
 **Yetki — izin ve görünüm.** **Okuma** öğretmen, veli, öğrenci ve idarede (platform hesabında da); **yazma** öğretmen ve okul yöneticisinde; **yönetme** yalnız okul yöneticisinde ve izin kataloğu dışında — platform hesabı okul içi ödev veremez ve ödev kararı alamaz. İkinci katman görünümdür ve istemciden gelmez: **sahiplik → idare → rehberlik → kapsam dışı (404)**. Daraltma serileştirme düzeyindedir; rehber ve aile şemaları ayrı kayıt tipleridir, alan "boş" değil "yok"tur. Yazma kapısı yöneticiye açılmaz; idarenin işleri kendi uçlarındadır.
 
@@ -62,11 +62,8 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 - **Sahiplik devri.** Adına yayınlanan ödevin sahibi ayrılmış öğretmen kalır (açık soru).
 - **Teslimin notlandırılması.** Öğretmenin kararı beş durumdur; puan yoktur.
 - **Teslim yükleme, taslak silme ve oluşturma bildirimi.**
-- **Denetim izi okuma ucu.** Yazılıyor, okuyan yok.
 - **Öğretmene göre sıralama ve öğretmen başına sayaç** panolarda; süzme kıyas değildir, sıralama kıyastır.
-- **Bildirimde derin bağlantı.** İstemci rotaları bu depodan doğrulanamıyor.
 - **E-posta kanalı.** Seed'de işaretli ama depo genelinde kanal yok.
-- **Çok dersli form.** Form bağlamı ilk dersi alır.
 - **Kaçırılan hatırlatmanın telafisi.** Geç kalmış hatırlatma gürültü sayıldı.
 - **Aile yüzünde "gördü" damgası.** [[Notlar]]'daki "yeni not" rozetinin karşılığı yoktur; ödev okumaları hiçbir şey yazmaz.
 - **Modül açık/kapalı kontrolü.** Seed'de anahtar bile yok; bkz. `X-20`.
