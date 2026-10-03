@@ -248,7 +248,7 @@ sayaçlar üçü arasında ortak.
 > **2026-10-04 (gece · Altınay ödev saha testi, kullanıcı uyurken):** ödevin bütün yaşam döngüsü öğretmen/öğrenci/veli/rehber/
 > idare yüzlerinden, web + mobil (Expo web) + API + Hangfire ile ölçüldü. **21 yeni madde** (§10): `B-102` 🔴 (çok dersli
 > öğretmen ana dersine ödev veremiyor), `B-103` 🟠, `V-05` 🟠, `B-105` 🟠, `B-104`, `B-106`, `V-06`, `D-47`, `D-48`, `E-36`,
-> `E-37` 🟡, `D-49`, `D-50`, `D-51`, `TB-266`, `TB-267` ⚪; ekran turunda `B-107` 🟠, `B-108`, `E-38`, `TB-269` 🟡, `TB-268` ⚪. On altısı aynı gece kodda düzeltildi (`fix/odev-ekran-turu`, **merge
+> `E-37` 🟡, `D-49`, `D-50`, `D-51`, `TB-266`, `TB-267` ⚪; ekran turunda `B-107` 🟠, `B-108`, `E-38`, `TB-269` 🟡, `TB-268` ⚪. On sekizi aynı gece kodda düzeltildi (`fix/odev-ekran-turu`, **merge
 > bekliyor**). İki karar adayı: `K-31` (öğrenci/veli ödev yüzü web'de), `K-32` (iptal gerekçesi aileye görünsün mü). Toplam
 > özet satırları yeniden toplandı: **126**.
 
@@ -711,6 +711,10 @@ sınıf arkadaşı 404).
 PDF'i çizmek yerine indiriyor. Öğretmen 30 öğrencinin PDF teslimini tek tek indirmek zorunda. ⬜ Kapatma yolu: uca `inline`
 seçeneği (yalnız pdf/görsel türlerinde), istemci önizlemede onu ister.
 
+✅ **2026-10-04 · kodda:** `download-url?inline=true` yalnız PDF/PNG/JPEG için `inline` imzalar (SVG/HTML asla); canlı ölçüm:
+varsayılan `attachment`, inline `inline`. Web görüntüleyici PDF'i tarayıcının okuyucusunda çerçeve içinde açıyor (ekranda ölçüldü);
+mobil "Aç" ile cihazda açmaya devam ediyor.
+
 ### `B-108` · Öğretmen ödev listesinin şube süzgeci mock'tan kalma sabit dört şube 🟡
 
 `homework-list-screen.tsx` `SECTION_FILTERS` = 9-A, 9-B, 10-C, 11-A ve kimlikleri `cr-9a`… Gerçek okulda süzgeç öğretmenin
@@ -745,6 +749,9 @@ yeniden saydı (iki öğrencinin velileri ikişer haber aldı). Özet "bugün an
 
 İhtiyaç analizi (Denetim): "yayın, iptal, son tarih değişikliği … hepsi izli". 6 → 7 → 8 Ekim değişiklikleri `homework/{id}/audit`'te
 yok; yalnız yayın ve idari kaldırma var.
+
+✅ **2026-10-04 · kodda:** yeni denetim türü `DueDateChanged` (tel `due-date-changed`, çip "Tarih değişti"), yalnız yayındaki
+ödevde, cümlede eski → yeni tarih ("Son teslim tarihini 6 Ekim → 8 Ekim olarak değiştirdi").
 
 ## 11. Bildirimler 🟠
 
