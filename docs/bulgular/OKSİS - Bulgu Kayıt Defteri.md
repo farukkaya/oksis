@@ -224,8 +224,8 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-102` · `D-47` · `V-05` · `X-25` · `TB-266` · `E-36` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
-*(`K-##` karar sayacı: sıradaki `K-30` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
+**Sıradaki boş ID:** `B-109` · `D-52` · `V-07` · `X-25` · `TB-270` · `E-39` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+*(`K-##` karar sayacı: sıradaki `K-33` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -238,12 +238,19 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 4 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 25 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 43 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 31 | Kozmetik, temizlik, adlandırma |
+| 🔴 Kritik | 5 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🟠 Yüksek | 29 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 37 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **107** | |
+| **Toplam** | **126** | |
+
+> **2026-10-04 (gece · Altınay ödev saha testi, kullanıcı uyurken):** ödevin bütün yaşam döngüsü öğretmen/öğrenci/veli/rehber/
+> idare yüzlerinden, web + mobil (Expo web) + API + Hangfire ile ölçüldü. **21 yeni madde** (§10): `B-102` 🔴 (çok dersli
+> öğretmen ana dersine ödev veremiyor), `B-103` 🟠, `V-05` 🟠, `B-105` 🟠, `B-104`, `B-106`, `V-06`, `D-47`, `D-48`, `E-36`,
+> `E-37` 🟡, `D-49`, `D-50`, `D-51`, `TB-266`, `TB-267` ⚪; ekran turunda `B-107` 🟠, `B-108`, `E-38`, `TB-269` 🟡, `TB-268` ⚪. On altısı aynı gece kodda düzeltildi (`fix/odev-ekran-turu`, **merge
+> bekliyor**). İki karar adayı: `K-31` (öğrenci/veli ödev yüzü web'de), `K-32` (iptal gerekçesi aileye görünsün mü). Toplam
+> özet satırları yeniden toplandı: **126**.
 
 > **2026-10-01 (Altınay saha testi — öğretmenlerin bugünkü yoklama görevleri):** 17 öğretmen, 84 oturum; web + mobil (Expo web) +
 > API. Mutlu yol, sahiplik (404), hatalı gövdeler, idempotent gönderim, düzeltme, gün içi izin ve pano doğru çalıştı. Açılan: `B-92` 🟠
@@ -560,6 +567,184 @@ doğrulandı). `src/homework/schemas.test.ts` içindeki "geçerli form" örneği
 diye üret. Aynı desen başka tarih doğrulamalı testlerde de aranmalı.
 
 ✅ **2026-09-28:** `TB-251` ile aynı commit'te kapandı (`58253db`).
+
+### Altınay ödev saha testi · 2026-10-04 (gece)
+
+Kaynak: Altınay (`ALTINAY-AL`) üzerinde ödevin bütün yaşam döngüsü — öğretmen (Matematik 9-A/10-A), öğrenci, iki veli, rehber
+(10-A), başka şubenin öğretmeni ve öğrencisi, müdür; web, mobil (Expo web, telefon genişliği), API betiği, DB ve Hangfire.
+Ayrıntılı test özeti: [[Altınay — 2026-10-04 Ödev Saha Testi Bulguları]]. Kod: `oksis-api` `fix/odev-ekran-turu`
+(`9e34817c` · `3547e33b` · `042f4a19` · `dff0c417`), `oksis-ui` aynı dal. **Merge bekliyor.**
+
+### `B-102` · Çok dersli öğretmenin ödev formu yalnız alfabetik ilk dersi açıyor — 19 öğretmenin 18'i ana dersine ödev veremiyor 🔴
+
+Form bağlamı (`GET homework/form-context`) öğretmenin okuttuğu derslerden ada göre İLKİNİ tek başına dönüyordu. Altınay'da 19
+öğretmenin 18'i "Deneme", "Rehberlik ve Yönlendirme", "Koçluk" gibi ikinci bir ders okutuyor; Matematik öğretmenine form
+**"Deneme" dersini ve yalnız 12-B'yi** sundu, matematik ödevi ekrandan **verilemiyordu** (sunucunun oluşturma ucu her dersi kabul
+ediyordu — kusur bağlam + iki istemci). Kodun kendi notu bunu "bilinen sınır, Faz 2" sayıyordu; gerçek veride sınır değil engel.
+
+✅ **2026-10-04 · kodda:** bağlam `subjects[]` taşıyor (her ders kendi şubeleriyle); varsayılan ders son ödevin dersi (hâlâ
+okutuluyorsa), yoksa en çok şubede okutulan ders. Web ve mobil formda ders seçici; ders değişince şube/öğrenci seçimi sıfırlanır,
+mobilde "Ders" alanı "Şube"nin üstüne taşındı (şubeler dersten türüyor). Canlı ölçüm: Matematik öğretmeni (9-A/10-A) → varsayılan Matematik
+(10-A, 9-A), 5 dersin hepsi seçilebilir; TYT Matematik → 11-A/11-C. Web'den ekli ödev uçtan uca verildi.
+
+### `B-103` · Virüslü bulunan teslim listede kalıyor, kotadan yiyor; indirme "henüz taranmadı" diyor 🟠
+
+Öğrenci dosyayı bağladığında tarama henüz `Pending`; EICAR test dosyası saniyeler sonra `Infected` + karantina oldu ama teslim
+satırı kaldı: öğrencinin 5 dosyalık kotasının birini yedi, öğretmenin ızgarasında açılamayan dosya olarak durdu, indirme ucu
+"Dosya henüz virüs taramasından geçmedi" (409) dedi. `FileQuarantinedEvent` yayınlanıyordu ama **hiç tüketicisi yoktu**.
+
+✅ **2026-10-04 · kodda:** ödev modülü olayın ilk tüketicisi — teslim sistem adına yumuşak silinir (`HomeworkSubmissionRemoval.Quarantine`:
+aktörsüz, durum kapısı atlanır, gerekçe satırda). İndirme ucu virüslü dosyaya `FILES_INFECTED` (409) "Dosyada zararlı içerik
+bulundu; bu dosya açılamaz." döner; istemci kataloğuna da eklendi. Birim testli (kapanmış ödevde de kaldırır, ilgisiz dosyada yazmaz).
+⬜ Açık ayak: öğrenciye "dosyan kaldırıldı" haberi yok — dosya listeden sessizce düşer.
+
+### `V-05` · Yükleme kapısı içeriğe bakmıyor: `.jpg` adlı çalıştırılabilir dosya "temiz" geçip öğretmene sunuluyor 🟠
+
+Politika yalnız dosya adına ve istemcinin BEYAN ettiği türe bakıyordu. İçi `MZ` (Windows çalıştırılabilir) olan `sahte.jpg`
+teslim olarak kabul edildi, ClamAV'den temiz geçti, öğretmen için indirme bağlantısı üretildi. Dosya modülünün tamamını etkiler
+(duyuru, logo, belge kategorileri).
+
+✅ **2026-10-04 · kodda:** `FileSignature` ilk 1024 baytı beyan edilen türle karşılaştırıyor (pdf, png, jpeg, zip tabanlı docx/epub,
+svg; bilinmeyen tür geçer). Vekil yükleme ucunda anında 422; virüs tarama işinde — presigned yol dahil her dosyanın geçtiği tek
+kapı — `CONTENT_TYPE_MISMATCH` karantinası (ve `B-103` ile teslim kaldırılır). İmzasız içerik yükleyen 10 test gerçek imzaya
+çevrildi; EICAR testi depoya doğrudan yazıyor (dize ClamAV'de yalnız dosya başındayken tanınır).
+
+### `B-105` · Yayındaki ödevin iptali ve değişikliği öğrenciye/veliye hiç bildirilmiyor 🟠
+
+İhtiyaç analizi K-4 ("yayınlanmış ödevde değişiklik → ödev güncellendi bildirimi"), K-10 ve BR-HW-04 ("iptal bildirim üretir;
+sessiz geri çekme veli güvenini kırar") ve teknik analiz (`HOMEWORK_UPDATED`, `HOMEWORK_CANCELLED`) açık. Kodda ikisi de yoktu:
+iptal edilen ödev öğrencinin listesinden sessizce kayboluyordu, tarihi ileri alınan ödevin haberi gitmiyordu.
+
+✅ **2026-10-04 · kodda:** yayın bildiricisi genelleşti — aynı alıcı kümesi (takip satırlarının öğrencileri + velileri), aynı tür
+(`HomeworkPublished`; `DailyLeaveRevoked` emsali: veli tercihinde ödev haberi tek satır, yayını kapatan iptali de kapatmış olur),
+ayrım başlık/gövdede ("Ödev iptal edildi" / "Ödev güncellendi", tarih değiştiyse "son teslim tarihi değişti"). Güncelleme yalnız
+GERÇEK değişiklikte gider (aynı içerikle kaydetmek haber üretmedi — ölçüldü). İstemcide tür etiketi "Ödev verildi" → "Ödev".
+Canlı: tarih değişikliği 10-A'ya 20 bildirim, derin bağlantılı.
+
+### `B-104` · "Yüklendi/Güncellendi" etiketleri UTC gününden hesaplanıyor — gece yarısından sonra her şey "dün" 🟡
+
+`HomeworkDateLabel` saat dilimi kabul ediyordu (testi bile "dilim verilmezse dün der" diye yazılıydı) ama **hiçbir üretim
+çağıranı dilimi geçmiyordu**. Okul saatiyle 00:36'da yüklenen dosya ve 00:44'te güncellenen ödev "dün" göründü.
+
+✅ **2026-10-04 · kodda:** `HomeworkReader.SchoolTimeZoneAsync`; dört çağıran (öğrenci/veli detayı, ızgara, işaretleme, yükleme
+yanıtı) okulun dilimini geçiriyor. Canlı: aynı dosyalar "bugün".
+
+### `B-106` · Eksik ödev bildirimleri (anlık + günlük özet) hiçbir yere götürmüyor 🟡
+
+Yayın bildirimi `/homework/{id}` taşırken anlık eksik bildirimi ve 20:30 özeti `deepLink: null` gönderiyordu; veli dokununca
+hiçbir şey olmuyordu. Tasarım (EKRAN 6): özetin hedefi "Çocuğumun Ödevleri" listesi.
+
+✅ **2026-10-04 · kodda:** anlık → `/homework/{id}`, özet → `/homework` (`PushDeepLinks.HomeworkList`); istemci çözücüsü
+`/homework`'ü liste hedefi olarak tanıyor (web + mobil yönlendirici).
+
+### `V-06` · Seçili öğrenci hedefine başka şubenin öğrencisi taslakta sessizce giriyor 🟡
+
+9-A'ya seçili öğrenci hedefiyle 10-A öğrencisi verildi → 201. Yayında mevcutla kesişimde düştü: tamamen yabancı listede "şubede
+öğrenci bulunamadı" (409), karışık listede öğrenci **habersiz** ödevden çıkıyordu.
+
+✅ **2026-10-04 · kodda:** oluşturma ve taslak düzenleme mevcut dışı kimliği 400 ile reddediyor (`HomeworkReader.AllInRosterAsync`).
+
+### `D-47` · Dosya seçicisi kalıcı reddi geçici hata gibi sunuyor 🟡
+
+Web ek seçicisi yalnız boyutu ön-eliyordu: `.txt` ve sahte `.jpg` sunucuya gidip "Yüklenemedi · Tekrar dene" aldı — ret kalıcı,
+gerekçe yok; aynı anda iki ret olunca yalnız sonuncusu görünüyordu. Sunucu mesajı da teknikti ("kategori kurallarına uymuyor").
+
+✅ **2026-10-04 · kodda:** uzantı ön-elemesi, ön-retlerin hepsi birlikte, 4xx kalıcı ret satırı "Reddedildi" + sunucu gerekçesi
+(tekrar dene yok), tekrar dene yalnız ağ/5xx'te; aynı ilke mobil öğretmen eki ve öğrenci tesliminde. Sunucu cümlesi: "Bu dosya
+yüklenemez: türü desteklenmiyor, içeriği uzantısıyla uyuşmuyor ya da boyutu sınırı aşıyor." (istemci kataloğuyla birebir).
+
+### `D-48` · Türkçe iyelik eki elle "'in" yazılıyor — ünlüyle biten adda yanlış ek 🟡
+
+Veli ödev detayı ve boş liste başlığı `${ad}'in` kuruyordu; ünlüyle biten adda "…'İN YÜKLEMELERİ" çıktı (doğrusu "…'NİN"). ✅ **2026-10-04 · kodda:** core `trGenitive` (ünlü uyumu, kaynaştırma
+"n", Türkçe büyük harf, ince "l" istisnaları: Alp'in, Kemal'in) + test; iki çağrı yeri bağlandı.
+
+### `D-49` · PDF/Word teslimleri resim ikonuyla çiziliyor ⚪
+
+Veli ızgarası, öğrenci teslim kartı, web teslim paneli/görüntüleyicisi PDF'e resim ikonu, mobil öğretmen görüntüleyicisi ataç
+koyuyordu; Word dosyasının alt yazısı "Defter sayfası fotoğrafı"ydı. ✅ **2026-10-04 · kodda:** core `fileVisualKind(contentType)`.
+
+### `D-50` · Yönetici ödev listesinde şube çipi kırılıyor ("10-" / "A") ⚪
+
+`/homework` (müdür) Şube sütunu dar; "10-A" çipi tire yerinden iki satıra bölünüyor (9-A sığıyor). Çipe `white-space: nowrap`.
+✅ **2026-10-04 · kodda:** `.attm-cls` `white-space: nowrap`.
+
+### `D-51` · Şubeler sözlük sırasıyla diziliyor — 9-A, 12-D'nin altında ⚪
+
+Ödev panosu (yoğunluk) ve yönetici süzgeçleri şubeleri `StringComparer.Ordinal` ile sıralıyor: 10-A … 12-D, sonra 9-A, 9-B.
+Kademe + şube sırası beklenir. Büyük olasılıkla modüller arası kalıp (başka ekranlarda da aranmalı) — tek ekranda yamamak yerine
+ortak bir şube sıralama anahtarı.
+🟡 **2026-10-04 · kısmen kodda:** ödev yönetim kataloğu (pano + süzgeçler) `GradeLevel.DisplayOrder` → ad sırasına geçti; öğretmen
+süzgeci core `homeworkSectionOptions` ile doğal sıralı. Başka modüllerde aynı kalıp aranmadı — madde açık.
+
+### `E-36` · Öğrenci mobilde PDF teslim edemiyor — "PDF seç" seçeneği yok 🟡
+
+Tasarım (EKRAN 5): yükleme sayfası **Fotoğraf çek · Galeriden seç · PDF seç**. Uygulamada yalnız ilk ikisi var;
+`expo-document-picker` kurulu değil. Politika PDF/Word kabul ediyor, yani öğrenci matematik çözümünü taranmış PDF olarak
+veremiyor. Yerel modül eklemek geliştirme istemcisinin yeniden derlenmesini gerektirdiği için gece turunda yapılmadı.
+
+### `E-37` · Rehber öğretmenin şubesinin ödevlerini gördüğü ekran yok 🟡
+
+İhtiyaç analizi: rehber, şubesinin tüm derslerdeki ödev listesini ve ızgarasını salt okunur görür. `GET homework/homeroom` ve
+`useHomeroomHomework` kancası var, **hiçbir ekran çağırmıyor**; 10-A rehber öğretmeni web'de yalnız "Henüz ödev vermediniz"
+gördü. ([[eksik-ekran-eksik-yetkiyi-gizler]] kalıbı.)
+
+✅ **2026-10-04 · kodda:** web ve mobil öğretmen listesinde "Verdiğim ödevler / Sınıfımın ödevleri" sekmeleri (core
+`teacher-tabs.ts`); hiç ödev vermemiş rehber "Sınıfımın ödevleri"yle açılır. Canlı: 10-A rehber öğretmeni şubenin 3 ödevini (Ders,
+Öğretmen sütunlarıyla) salt okunur gördü, satırdan rehber detayı açıldı.
+
+### `B-107` · Öğrenci teslim dosyası hiçbir yüzeyde açılmıyor — öğretmen defter fotoğrafını göremiyor 🟠
+
+Web öğretmen teslim görüntüleyicisi seçili dosya için yalnız yer tutucu çiziyor (kod yorumu: "Mock evreninde … yer tutucu,
+gerçek indirme URL'si bağlanınca <img>/<embed> ile değişir"); hiç ağ isteği yok, indirme düğmesi yok. Mobil öğretmen
+görüntüleyicisi, öğrencinin kendi teslim kartı ve veli teslim karoları da dosyayı açmıyor. İhtiyaç analizinin hedefi —
+"yüklemesi olan öğrenciyi uzaktan kontrol edebilmek" — çalışmıyor. Sunucu erişimi doğru (sahip/idare/öğrenci/veli açar, rehber ve
+sınıf arkadaşı 404).
+
+✅ **2026-10-04 · kodda:** web görüntüleyici ve idari sağ bölme ortak `submission-file-stage` sahnesini kullanıyor (görsel
+`<img>` satır içi, tıklayınca tam boy; her dosyada "İndir"; 409 tarama/virüs ve 404 için Türkçe hata + yeniden dene); mobil
+öğretmen görüntüleyicisi, öğrenci teslim kartı ve veli karoları `submission-file-view` (görsel önizleme, PDF/Word "Aç").
+İndirme adresi yalnız sorgu önbelleğinde (5 dk; imza 10 dk). PDF'in tarayıcı içi önizlemesi için `TB-268`.
+
+### `TB-268` · İmzalı indirme adresi hep `attachment` — PDF tarayıcıda önizlenemiyor, yalnız iniyor ⚪
+
+`GetFileDownloadUrlQueryHandler` adresi her zaman `ContentDispositionBuilder.BuildAttachment` ile üretiyor; `<iframe>`/yeni sekme
+PDF'i çizmek yerine indiriyor. Öğretmen 30 öğrencinin PDF teslimini tek tek indirmek zorunda. ⬜ Kapatma yolu: uca `inline`
+seçeneği (yalnız pdf/görsel türlerinde), istemci önizlemede onu ister.
+
+### `B-108` · Öğretmen ödev listesinin şube süzgeci mock'tan kalma sabit dört şube 🟡
+
+`homework-list-screen.tsx` `SECTION_FILTERS` = 9-A, 9-B, 10-C, 11-A ve kimlikleri `cr-9a`… Gerçek okulda süzgeç öğretmenin
+şubelerini göstermiyor, seçilen kimlik sunucuda hiçbir şubeye denk gelmiyor. ✅ **2026-10-04 · kodda:** seçenekler filtresiz
+listeden türüyor (core `homeworkSectionOptions`, doğal sıralı: 9-A, 10-A'dan önce).
+
+### `E-38` · Kişisel bildirim tercihi ve telefon bildirim izni hiçbir ekranda yok 🟡
+
+`K-02` R1 (2026-08-28) "veli bazlı tercih kapsam içinde (olay başına push kapatma)" dedi; sunucu uygulandı ve ölçüldü (tercihi
+kapatan veliye push denemesi yapılmadı, uygulama içi bildirim geldi) ama `GET/PUT notifications/preferences`'ı **hiçbir istemci
+çağırmıyor**. Telefon izni girişten sonra bir kez soruluyor; reddedilirse uygulama bunu göstermiyor, yeniden açma yolu yok —
+veli "neden bildirim gelmiyor" sorusunun cevabını göremez.
+
+✅ **2026-10-04 · kodda (mobil):** "Daha fazla › Bildirim tercihlerim" — telefon izni kartı (kapalı: "Telefon ayarlarını aç",
+sorulmadı: "Bildirimlere izin ver", web: "desteklenmiyor"; uygulama öne dönünce yeniden okunur), gruplu olay anahtarları, değişiklik
+anında PUT (iyimser, hata geri alınır). Canlı: veli ödev anahtarını açtı → `notification_preferences.push_enabled = 1`.
+⬜ Kalan: RNFirebase `hasPermission`/`requestPermission` `@deprecated` — ileride `expo-notifications`'a geçiş.
+
+### `TB-269` · Push tercih listesi role göre süzülmüyor — veli öğretmen olaylarını görüyor 🟡
+
+`GetNotificationPreferencesQueryHandler` `PushEventKeyMap.PushableEventKeys`'in 17 anahtarının hepsini her hesaba dönüyor. Veli
+"Not girişi hatırlatması", "Sınav yerleştirme hatırlatması", "Sınav saati isteği" gibi hiç alamayacağı olayların anahtarlarını
+görüyor (ekranda ölçüldü) — `Y-05`/`TB-44` sınıfı sahte anahtar. İstemci süzmez (kural sunucuda). ⬜ Kapatma yolu: anahtarlara
+alıcı rolü bilgisi; liste aktif profile göre süzülür. Mock zaten rol bazlı döndüğü için mock ile sunucu bu noktada ayrışıyor.
+
+### `TB-266` · Eksik bildirim kipi gün içinde anlıktan özete çevrilince aynı eksik iki kez bildiriliyor ⚪
+
+Anlık kipte işaretlenen eksik için veliye anlık bildirim gitti; kip aynı gün "günlük özet"e çevrilince 20:30 özeti aynı işaretleri
+yeniden saydı (iki öğrencinin velileri ikişer haber aldı). Özet "bugün anlık bildirimi gitmiş işaret"i ayırt etmiyor. Seyrek.
+
+### `TB-267` · Son teslim tarihi değişikliği denetime yazılmıyor ⚪
+
+İhtiyaç analizi (Denetim): "yayın, iptal, son tarih değişikliği … hepsi izli". 6 → 7 → 8 Ekim değişiklikleri `homework/{id}/audit`'te
+yok; yalnız yayın ve idari kaldırma var.
 
 ## 11. Bildirimler 🟠
 

@@ -41,6 +41,8 @@
 | **K-28** | Kurum yetkilisi: kim sorar, kim düzenler? | ✅ Karara bağlandı · ✅ **uygulandı** (2026-09-22) | 2026-09-15 | **(a)** Platform okul açılışında sorar · sonradan platform düzenler · müdür yalnız görür — `TB-165`/`TB-171`/`TB-172` kapandı ([[OKSİS - Bulgu Arşivi]] §52); artakalan boşluk `TB-230` |
 | **K-29** | Dersin kod alanı: kalsın mı, tekillik neye bağlansın? | ✅ Karara bağlandı · ⬜ uygulanmadı | 2026-09-22 | **Kod alanı KALKAR** (`master.subjects.code` + `school.subjects.code`), tekillik görünmez türetilmiş `name_key` kolonuna geçer. Gerekçe: MEB ders kodu vermiyor (964/964 içe aktarma satırında `source_subject_code = NULL`) — kod bizim icadımızdı |
 | **K-30** | Okulun türünü kim değiştirir, program değişince saat kararları ne olur? | ✅ Karara bağlandı · ✅ uygulandı | 2026-09-22 | **Tür değişimi platformun işi**: künyeye program alanı eklendi, müdürün yazma ucu silindi, penceresi salt-okunur. **Program değişince saat kararları silinir**, müfredat MEB'den geldiği gibi iner; okulun kendi dersleri kalır |
+| **K-31** | Öğrenci ve veli ödev yüzü web'de de olsun mu? | ⬜ Bekliyor | 2026-10-04 | — |
+| **K-32** | İptal edilen ödevin gerekçesi öğrenciye ve veliye gösterilsin mi? | ⬜ Bekliyor | 2026-10-04 | — |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 | **Y-03** | Şube alanı (Sayısal / Eşit Ağırlık / Sözel / Yabancı Dil) nerede tutulur | ✅ Karara bağlandı · ✅ **uygulandı** (`oksis-api` `614a51b3` + `oksis-ui` `7fe92fc`) | 2026-09-17 | **(a) `ClassRoom.Track` + sabit enum.** Derse BAĞLANMADI (ders↔alan çoka-çok: "seçmeli matematik" dört alandan üçünde geçer) · öğrencinin alanı aktif şube atamasından türetilir, ayrıca tutulmaz · MEB'in 09/05/2025-05 çizelgesinde alan sütunu **yok**, yani bu okulun organizasyon ihtiyacı · enum çünkü listeyi okul düzenlemiyor — meslek lisesi kapsama girerse katalog tablosuna terfi eder |
@@ -1809,3 +1811,81 @@ değişmedi, bugünün 88 tamamlanmış oturumuna dokunulmadı, gelecek günleri
 (aynı içerikte de silmesi `TB-265`). **Program yayını kabulü sahada ölçülmedi:** son dersten sonra yayın gerçek bir yeni sürüm (v4) yaratır
 ve otomatik izin denetimi yayını "üretim dağıtımı" saydığı için yapılmadı — birim testle doğrulandı. 10-A hâlâ "Revize Ediliyor"; kullanıcı
 ekrandan yayınlarsa yürürlük günü 3 Ekim olmalı. Kalan: sabah ilk dersten önce yayın + aynı güne vekâlet açık noktası.
+
+## K-31 · Öğrenci ve veli ödev yüzü web'de de olsun mu?
+
+--- start-multi-column: K-31
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor
+**Kaynak:** 2026-10-04 Altınay ödev saha testi — kullanıcı isteği: *"Öğrenci ödev teslimi web mobil ayakları"*.
+
+Ödev ihtiyaç analizi ve tasarım siparişleri (EKRAN 4, 5, 6) öğrenci ve veli yüzlerini **"Platform: Yalnız MOBİL"** diye tanımlıyor.
+Web'de `/homework` öğrenci ve veliye bilinçli olarak "Bu ekran hazırlanıyor" kabuğu gösteriyor (`homework-page.tsx`: öğretmen
+ekranı bu rollere sızdırılmaz). Yani web'den ödev teslimi bugün **mümkün değil** — kusur değil, verilmiş kapsam kararı.
+
+Duyurular aynı yolu izledi (`K-5`/spec K-7: "Duyurular şu an mobil uygulamada" yer tutucusu).
+
+**Seçenekler:**
+- **(a) Mobil kalsın** — web yer tutucusu "Ödevler mobil uygulamada" diye açık yönlendirsin (bugün genel "hazırlanıyor" diyor).
+- **(b) Web'e salt okunur liste + detay** (öğrenci ve veli) — teslim yine mobilde.
+- **(c) Web'e tam yüz** (öğrenci tesliminde dosya yükleme dahil) — sunucu uçları hazır; iş istemci tarafında (liste, detay,
+  teslim kartı; mobil bileşenlerin web karşılıkları).
+
+**Bağlı:** `E-36` (mobilde PDF seçimi yok — web'de dosya seçici doğal olarak PDF alır)
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ⬜ Bekliyor
+**Tarih:**
+**Karar veren:**
+
+> 
+
+--- end-multi-column
+
+## K-32 · İptal edilen ödevin gerekçesi öğrenciye ve veliye gösterilsin mi?
+
+--- start-multi-column: K-32
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ⬜ Bekliyor
+**Kaynak:** 2026-10-04 Altınay ödev saha testi.
+
+İptal 15 karakterlik gerekçe ister. Kaynaklar çelişiyor:
+- Domain notu ([[Ödevler]]): *"İptal gerekçe ister, gerekçe öğrenciye görünür ve denetime yazılır."*
+- Tasarım EKRAN 5 (öğrenci detayı): iptal bandı yalnız *"Bu ödev öğretmenin tarafından iptal edildi."* — gerekçe yok.
+- Kod: öğretmen/idare detayında `cancelReason` dolu; öğrenci ve veli şemasında alan **hiç yok**. Mobil öğrenci detayı tasarımdaki
+  sabit cümleyi gösteriyor, veli detayında iptal bandı yok.
+
+Ölçüm: "Konu sıralaması değişti, bu ödev gelecek hafta yeniden verilecek." gerekçesiyle iptal edilen ödevde öğrenci ve veli
+detayı `cancelReason` taşımadı. İptal bildirimi (`B-105`, aynı gece eklendi) gerekçeyi gövdeye koymuyor (KVKK yüzeyi, B4).
+
+**Seçenekler:** (a) Gerekçe aileye gösterilir (öğrenci + veli detayında bant altında) · (b) gösterilmez, domain notu düzeltilir ·
+(c) yalnız veliye.
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ⬜ Bekliyor
+**Tarih:**
+**Karar veren:**
+
+> 
+
+--- end-multi-column
