@@ -37,7 +37,7 @@ Test başlığı satırı: [[Altınay — Yaşam Döngüsü Test Başlıkları]]
 |---|---|
 | Verilen ödev | 6 (biri iki şubeye → 2 kayıt; biri seçili öğrenci; biri web'den ekli; biri mobilden) |
 | Yeni bulgu | **21** — 🔴 1 · 🟠 4 · 🟡 10 · ⚪ 6 *(ayrıntı defterde)* |
-| Aynı gece kodda düzeltilen | 18 (+ `D-51` kısmen) — merge bekliyor |
+| Aynı gece kodda düzeltilen | 19 (+ `D-51` kısmen) — merge bekliyor |
 | Karar adayı | 2 — `K-31`, `K-32` |
 
 **En önemli üç sonuç:**
@@ -94,7 +94,7 @@ Test başlığı satırı: [[Altınay — Yaşam Döngüsü Test Başlıkları]]
 | `D-50` | ⚪ | Yönetici listesinde şube çipi kırılıyor | ✅ kodda |
 | `D-51` | ⚪ | Şubeler sözlük sırasıyla (9-A en sonda) | 🟡 ödev ekranlarında kodda; diğer modüller aranmadı |
 | `TB-268` | ⚪ | İmzalı adres hep `attachment` — PDF önizlenemiyor | ✅ kodda · web'de PDF önizlemesi ölçüldü |
-| `TB-266` | ⚪ | Kip değişiminde aynı eksik iki kez bildiriliyor | ⬜ |
+| `TB-266` | ⚪ | Kip değişiminde aynı eksik iki kez bildiriliyor | ✅ kodda · canlı ölçüldü |
 | `TB-267` | ⚪ | Son teslim değişikliği denetime yazılmıyor | ✅ kodda |
 
 **Karar adayları:** `K-31` — öğrenci/veli ödev yüzü web'de de olsun mu (analiz "yalnız mobil" diyor; web bugün "hazırlanıyor"

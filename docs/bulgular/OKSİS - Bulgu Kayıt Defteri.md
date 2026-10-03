@@ -248,7 +248,7 @@ sayaçlar üçü arasında ortak.
 > **2026-10-04 (gece · Altınay ödev saha testi, kullanıcı uyurken):** ödevin bütün yaşam döngüsü öğretmen/öğrenci/veli/rehber/
 > idare yüzlerinden, web + mobil (Expo web) + API + Hangfire ile ölçüldü. **21 yeni madde** (§10): `B-102` 🔴 (çok dersli
 > öğretmen ana dersine ödev veremiyor), `B-103` 🟠, `V-05` 🟠, `B-105` 🟠, `B-104`, `B-106`, `V-06`, `D-47`, `D-48`, `E-36`,
-> `E-37` 🟡, `D-49`, `D-50`, `D-51`, `TB-266`, `TB-267` ⚪; ekran turunda `B-107` 🟠, `B-108`, `E-38`, `TB-269` 🟡, `TB-268` ⚪. On sekizi aynı gece kodda düzeltildi (`fix/odev-ekran-turu`, **merge
+> `E-37` 🟡, `D-49`, `D-50`, `D-51`, `TB-266`, `TB-267` ⚪; ekran turunda `B-107` 🟠, `B-108`, `E-38`, `TB-269` 🟡, `TB-268` ⚪. On dokuzu aynı gece kodda düzeltildi (`fix/odev-ekran-turu`, **merge
 > bekliyor**). İki karar adayı: `K-31` (öğrenci/veli ödev yüzü web'de), `K-32` (iptal gerekçesi aileye görünsün mü). Toplam
 > özet satırları yeniden toplandı: **126**.
 
@@ -744,6 +744,9 @@ alıcı rolü bilgisi; liste aktif profile göre süzülür. Mock zaten rol bazl
 
 Anlık kipte işaretlenen eksik için veliye anlık bildirim gitti; kip aynı gün "günlük özet"e çevrilince 20:30 özeti aynı işaretleri
 yeniden saydı (iki öğrencinin velileri ikişer haber aldı). Özet "bugün anlık bildirimi gitmiş işaret"i ayırt etmiyor. Seyrek.
+
+✅ **2026-10-04 · kodda:** özet işi anlık bildirimin deterministik olay kimliğini teslim günlüğünde arıyor; haber gitmişse işaret
+özete girmez. Canlı: anlık kipte işaretlenen öğrencinin velileri, kip özete çevrilip iş tetiklenince ikinci haber almadı.
 
 ### `TB-267` · Son teslim tarihi değişikliği denetime yazılmıyor ⚪
 
