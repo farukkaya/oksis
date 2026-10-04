@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-109` · `D-52` · `V-07` · `X-25` · `TB-270` · `E-39` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-111` · `D-52` · `V-07` · `X-25` · `TB-270` · `E-39` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-33` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -238,12 +238,15 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 5 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 29 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🔴 Kritik | 6 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🟠 Yüksek | 30 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 37 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **126** | |
+| **Toplam** | **128** | |
+
+> **2026-10-04 (öğle · iPhone'da kullanıcı testi):** `B-109` 🔴 telefonda hiçbir dosya yüklenemiyordu (`expo/fetch`) —
+> kodda düzeltildi ve cihazda ölçüldü (oksis-ui `c3fac5b`, `fix/odev-ekran-turu`). Yeni `B-110` 🟠 (iOS push kaydı). Toplam **128**.
 
 > **2026-10-04 (gece · Altınay ödev saha testi, kullanıcı uyurken):** ödevin bütün yaşam döngüsü öğretmen/öğrenci/veli/rehber/
 > idare yüzlerinden, web + mobil (Expo web) + API + Hangfire ile ölçüldü. **21 yeni madde** (§10): `B-102` 🔴 (çok dersli
@@ -720,6 +723,26 @@ mobil "Aç" ile cihazda açmaya devam ediyor.
 `homework-list-screen.tsx` `SECTION_FILTERS` = 9-A, 9-B, 10-C, 11-A ve kimlikleri `cr-9a`… Gerçek okulda süzgeç öğretmenin
 şubelerini göstermiyor, seçilen kimlik sunucuda hiçbir şubeye denk gelmiyor. ✅ **2026-10-04 · kodda:** seçenekler filtresiz
 listeden türüyor (core `homeworkSectionOptions`, doğal sıralı: 9-A, 10-A'dan önce).
+
+### `B-109` · Telefonda hiçbir dosya yüklenemiyor — `expo/fetch` RN dosya parçasını tanımıyor 🔴
+
+iPhone'da (kablolu dev derlemesi) öğrenci ödev teslimi "Çalışman yüklenemedi, tekrar dene." dedi; API günlüğüne `POST /files` hiç
+düşmedi. Yakalanan hata: `Unsupported FormDataPart implementation` (`expo/src/winter/fetch/convertFormData.ts`). Expo SDK 57
+`globalThis.fetch`'i `expo/fetch` ile değiştiriyor; o uygulama seçicilerin ürettiği RN `{ uri, name, type }` parçasını
+desteklemiyor. Aynı yol duyuru eki, mazeret belgesi ve okul logosu yüklemelerinde de kullanılıyor — mobilde bütün yüklemeler
+kapalıydı. Expo web'de görünmez (orada seçici gerçek `File` verir); gece turunda bu yüzden yakalanmadı.
+
+✅ **2026-10-04 · kodda ve cihazda ölçüldü** (oksis-ui `c3fac5b`): mobilin tek `fetch` girişine sarmalayıcı
+(`apps/mobile/src/lib/upload-aware-fetch.ts`) — `{ uri }` parçaları `expo-file-system` `File` üzerinden `bytes()` parçasına
+çevriliyor. Telefonda teslim: `POST /files` 200 → `POST /submissions` 201 → tarama temiz. ⬜ Duyuru/mazeret/logo yüklemesi
+cihazda ayrıca denenmedi (aynı yol).
+
+### `B-110` · iPhone'da push cihaz kaydı yapılamıyor — `getToken` "unregistered" 🟠
+
+Aynı cihazda her açılışta `[push] cihaz kaydı yapılamadı: [messaging/unregistered] You must be registered for remote messages
+before calling getToken`. Telefon sunucuya kaydolmuyor, yani iOS'ta anlık bildirim hiç düşmez (uygulama içi bildirim etkilenmez).
+Kodda (`push-registration.ts`) `getToken` öncesi `registerDeviceForRemoteMessages` çağrısı yok; RNFirebase'in otomatik
+kaydının bu derlemede kapalı mı olduğu ölçülmedi. ⬜ Açık — kök sebep doğrulanmadı.
 
 ### `E-38` · Kişisel bildirim tercihi ve telefon bildirim izni hiçbir ekranda yok 🟡
 
