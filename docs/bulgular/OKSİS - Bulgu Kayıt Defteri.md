@@ -740,9 +740,13 @@ cihazda ayrıca denenmedi (aynı yol).
 ### `B-110` · iPhone'da push cihaz kaydı yapılamıyor — `getToken` "unregistered" 🟠
 
 Aynı cihazda her açılışta `[push] cihaz kaydı yapılamadı: [messaging/unregistered] You must be registered for remote messages
-before calling getToken`. Telefon sunucuya kaydolmuyor, yani iOS'ta anlık bildirim hiç düşmez (uygulama içi bildirim etkilenmez).
-Kodda (`push-registration.ts`) `getToken` öncesi `registerDeviceForRemoteMessages` çağrısı yok; RNFirebase'in otomatik
-kaydının bu derlemede kapalı mı olduğu ölçülmedi. ⬜ Açık — kök sebep doğrulanmadı.
+before calling getToken`. Telefon sunucuya kaydolmuyor, iOS'ta anlık bildirim düşmez (uygulama içi bildirim etkilenmez).
+
+**Kod kusuru değil, hesap engeli** (karar geçmişi: `app.config.ts` iOS yorumu, 2026-08-29; [[K-02]]): APNs için
+`aps-environment` yetkisi + `UIBackgroundModes: remote-notification` gerekir, ücretsiz kişisel Apple takımı bu yeteneği vermez.
+Ölçüldü: cihazdaki derlemenin profili 7 günlük (28 Eyl → 5 Eki), yetkilerde `aps-environment` yok. ⬜ Kapatma yolu: ücretli
+Apple Developer Program → APNs `.p8` anahtarı Firebase'e → iki satır yapılandırma + yeniden derleme. O güne dek OS push yalnız
+Android'de test edilir. Yan not: E-38 ekranı iOS'ta izin "verildi" gösteriyor ama push gelmez — hesap açılınca kendiliğinden düzelir.
 
 ### `E-38` · Kişisel bildirim tercihi ve telefon bildirim izni hiçbir ekranda yok 🟡
 
