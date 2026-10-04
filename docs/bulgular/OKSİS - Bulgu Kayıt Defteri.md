@@ -748,6 +748,11 @@ before calling getToken`. Telefon sunucuya kaydolmuyor, iOS'ta anlık bildirim d
 Apple Developer Program → APNs `.p8` anahtarı Firebase'e → iki satır yapılandırma + yeniden derleme. O güne dek OS push yalnız
 Android'de test edilir. Yan not: E-38 ekranı iOS'ta izin "verildi" gösteriyor ama push gelmez — hesap açılınca kendiliğinden düzelir.
 
+✅ **2026-10-04 · kodda ve cihazda ölçüldü** (oksis-ui `da137d0`): ücretli Apple Developer Program'a geçildi; APNs anahtarı
+(Sandbox & Production) Firebase `oksis-dev` iOS uygulamasının iki yuvasına yüklendi; `app.config.ts`'e `aps-environment` +
+`remote-notification`. Profil artık 1 yıllık. Cihazda: kayıt 204, FCM kabul, uygulama arka plandayken "Yeni ödev verildi"
+telefona düştü. Uygulama ön plandayken afiş çıkmaz — tasarım gereği (`push-router.ts` `onMessage` yalnız listeyi tazeler).
+
 ### `E-38` · Kişisel bildirim tercihi ve telefon bildirim izni hiçbir ekranda yok 🟡
 
 `K-02` R1 (2026-08-28) "veli bazlı tercih kapsam içinde (olay başına push kapatma)" dedi; sunucu uygulandı ve ölçüldü (tercihi
