@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-112` · `D-53` · `V-07` · `X-25` · `TB-270` · `E-41` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-112` · `D-56` · `V-07` · `X-25` · `TB-270` · `E-41` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-33` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -240,12 +240,14 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 6 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 32 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 54 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 38 | Kozmetik, temizlik, adlandırma |
+| 🟡 Orta | 55 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **132** | |
+| **Toplam** | **135** | |
 
-> **2026-10-05 (Android kullanıcı testi):** yeni `B-111` 🟠 (yoklama hatırlatması bildirimi dünün ekranını açıyor), `E-39` 🟠 (raporlu/izinli sonraki oturumlara otomatik gelmiyor), `E-40` 🟡 (yoklama hatırlatması işi bitince kalkmıyor), `D-52` ⚪ (hatırlatma hangi ders olduğunu söylemiyor). Toplam **132**.
+> **2026-10-05 (`E-40` cihaz ölçümü):** yeni `D-53` ⚪ (perdede push zamanı "2032y"). Toplam **133**.
+
+> **2026-10-05 (Android kullanıcı testi):** yeni `B-111` 🟠 (yoklama hatırlatması bildirimi dünün ekranını açıyor), `E-39` 🟠 (raporlu/izinli sonraki oturumlara otomatik gelmiyor), `E-40` 🟡 (yoklama hatırlatması işi bitince kalkmıyor), `D-52` ⚪ (hatırlatma hangi ders olduğunu söylemiyor), `D-54` 🟡 (Android'de A kartında düğme dipnota biniyor), `D-55` ⚪ (Android'de etkin sekme arka planı köşeli). Toplam **135**.
 
 > **2026-10-04 (öğle · iPhone'da kullanıcı testi):** `B-109` 🔴 telefonda hiçbir dosya yüklenemiyordu (`expo/fetch`) —
 > kodda düzeltildi ve cihazda ölçüldü (oksis-ui `c3fac5b`, `fix/odev-ekran-turu`). Yeni `B-110` 🟠 (iOS push kaydı). Toplam **128**.
@@ -851,12 +853,51 @@ ayrıştırarak silmek kırılgan; bildirime kaynak kimliği alanı (ör. oturum
 kaldır" bunun üstünden yapılmalı. Domain uyumu: sözlükte `notification` geçici, kişisel olay haberi — kalıcı/silinmez
 kayıt `announcement`'tır.
 
+✅ **2026-10-05 · 1. ve 2. adım kodda** (master'da — oksis-api `92173ece`): yeni kolon gerekmedi —
+hatırlatmanın `EventId`'si oturumdan deterministik türetiliyordu (`AttendanceReminderEventIds`, üretici ve kaldırıcı aynı yerden okur).
+(1) `RetractAttendanceRemindersOnSubmitHandler`: yoklama gönderilince o oturumun otomatik + elle hatırlatması yumuşak silinir (yoklamayla aynı
+işlemde). (2) `CloseDailySessionsJob` (21:45): okulun kapanıştan önce yaratılmış BÜTÜN `AttendanceReminder` satırları kalkar — oturumu
+iptal/yeniden yayında silinmiş olanlar ve geçmişte birikenler de. Birim testleri: `AttendanceReminderRetractionTests` (4).
+✅ **3. adım (çekmece) kodda — 2026-10-05, karar (b):** `expo-notifications` yerine kendi yerel modülümüz
+(oksis-ui `apps/mobile/modules/notification-tray`, Kotlin + Swift): yalnız teslim edilmişleri listeler/kaldırır, bildirim merkezi
+delegesine ve RNFirebase dokunuş yoluna dokunmaz (`expo-notifications` iOS'ta delegeyi alıp `pending-push.ts`'i kırabilirdi;
+proje onu bilinçli bırakmıştı, `teknik/kurallar/frontend/mobil.md` §10). Sunucu her push'a `{OLAY_ANAHTARI}:{eventId:N}` etiketi
+koyar (Android `tag`, iOS `apns-collapse-id`; `PushNotificationTag`); mobil açılışta ve her öne gelişte `ATT_REMINDER:` önekli
+bildirimleri çekmeceden kaldırır (`features/notifications/lib/tray-cleanup.ts`; iOS ayrıca veri `kind`'ine bakar). Hâlâ geçerli
+hatırlatma uygulama içi listede kalır. Ölçülen: Android `:notification-tray:compileDebugKotlin` ve iOS `NotificationTray` hedefi
+derleniyor, autolinking buluyor.
+✅ **Cihazda ölçüldü (2026-10-05 12:43–12:46, Xiaomi M2003J15SC, Altınay, Kezban Dumanlı öğretmen hesabı):** yeni derleme kuruldu;
+uygulama arka plandayken müdür 2. ders için "Hatırlat" dedi → push çekmeceye `tag=ATT_REMINDER:b22f96c2…` ile düştü (olay kimliği
+`b22f96c2-7979-…` ile birebir); uygulama öne gelince çekmecedeki `ATT_REMINDER` sayısı 1 → 0. Ardından öğretmen yoklamayı gönderdi
+(open + submit, 200) → o dersin iki satırı (09:55 otomatik + 12:43 elle) aynı anda `is_deleted=1`; diğer derslerinkiler yerinde.
+Bildirimler ekranı 40 → 41 → **39 okunmamış**, "Bugün" altında 2. ders yok. Gün kapanışı (21:45) ve B-111 gün dönümü cihazda ölçülmedi.
+Bilinen dar pencere: hatırlatma in-app satırı Hangfire'da yazılmadan yoklama gönderilirse satır gün kapanışına dek kalır.
+
 ### `D-52` · Yoklama hatırlatması hangi ders olduğunu söylemiyor; satırlar birbirinin aynısı ⚪
 
 2026-10-05, kullanıcı testi (aynı ekran, `E-40`). Her satır "⏰ Yoklama Hatırlatması · Bu ders için henüz yoklama
 girmediniz" — "bu ders" hangisi belli değil; öğretmen hangi dersi kaçırdığını ancak dokunarak öğrenebiliyor. Kaynak metin
 `AttendanceNotificationContent.TeacherReminder()` parametresiz. ⬜ Öneri: başlık/gövdeye ders saati, şube ve ders adı
 ("3. ders · 9-A Matematik"). `E-40` uygulansa da değerli.
+
+✅ **2026-10-05 · kodda ve cihazda ölçüldü** (master'da — oksis-api `92173ece`): `SessionNotTakenNotificationHandler`
+oturumdan ders saati, başlangıç, şube (`ClassRoom.FullName`) ve ders adını okur; `TeacherReminder(period, start, section, subject)` →
+"4. ders (11:25) · 12-C Türk Dili ve Edebiyatı için henüz yoklama girmediniz." Ad bulunamazsa uydurulmaz ("7. ders (14:15) için …").
+Telefonda (Altınay, Kezban Dumanlı) hem perdede hem uygulama içi listede bu metin görüldü. Eski satırlar eski metinle kalır (metin
+üretim anında yazılır). Testler: `SessionNotTakenNotificationHandlerTests` +2.
+
+### `D-53` · Android bildirim perdesinde push'un zamanı "2032y" görünüyor ⚪
+
+2026-10-05, `E-40` cihaz ölçümü (Xiaomi M2003J15SC, MIUI, Android 11). Az önce gelen yoklama hatırlatması perdede "Oksis Dev •
+**2032y**" başlığıyla duruyor — bildirimin zamanı yerine anlamsız bir süre. Diğer uygulamaların satırları ("2sa") doğru. Kaynak
+ölçülmedi: FCM `AndroidNotification.EventTimestamp` boş gönderiliyor olabilir (`FcmSender`) ya da MIUI'nin kendi kusuru. `E-40`
+etiketinden önce de var mıydı bilinmiyor; etiket `when` alanına dokunmaz.
+
+✅ **2026-10-05 · kök neden + düzeltme, cihazda ölçüldü:** bildirimin zamanı `when=-62135596800000` = **0001-01-01** (.NET `DateTime.MinValue`).
+FirebaseAdmin 3.6.0'da `AndroidNotification.EventTimestamp` nullable değil; doldurulmazsa `"event_time":"0001-01-01T00:00:00Z"` gider
+(JSON ölçüldü). Etiketten bağımsız, bütün OKSİS push'larında vardı. "2032" = MIUI'nin farkı 364 günlük yılla yazması (2032,7; takvim
+yılıyla 2025,8). Yan etkisi görüntüden büyük: Android çekmeceyi bu zamana göre sıralar, OKSİS bildirimleri en alta düşüyordu.
+Düzeltme `FcmSender`: `EventTimestamp = DateTime.UtcNow`. Telefonda `when=1791194542857` (gönderimden 13 sn önce okunan cihaz saatiyle tutarlı).
 
 ## 12. Çapraz Kesen İşler ✳️
 
@@ -2632,6 +2673,25 @@ yoklamasına götürür; kart sayacı tüm etkinlik türlerini sayar.
 
 ✅ **2026-10-01 · kodda düzeltildi** (`oksis-ui` `fix/yoklama-ekran-kurallari` ← `a76c07b`; sayaç `oksis-api` `fix/yoklama-saha-2026-10-01` ← `6f3c530d`). Sahada ölçüldü: web'de danışmanın 8. saati "Kulüp saati · Müzik Kulübü · 6 üye · Yoklama Al"; `/clubs/mine` `activityCount` 1. **Kalan ölçüm:** mobil.
 
+### `D-54` · Android'de öğretmen anasayfasının "Şu anki ders" kartında "Yoklama al" düğmesi "Sonra:" satırının üstüne biniyor 🟡
+
+2026-10-05, kullanıcı testi (Android, öğretmen hesabı, 5. ders 12-B TYT Kimya). A kartında "Yoklama al" düğmesi
+alttaki "Sonra: 12-B · 13:30" dipnotunun üstüne biniyor; üstte "Şu anki ders" etiketi de ders adına değiyor. **iOS'ta
+doğru** çiziliyor.
+
+Not (doğrulanmadı): `HomeSquareCard` (`apps/mobile/src/features/home/components/home-parts.tsx`) `aspectRatio: 1` ile
+sabit kare; gövde `flex: 1`. İki satırlık ders adı + alt satır + düğme kareye sığmayınca içerik etikete ve dipnota
+taşıyor. Android'de yazı tipinin satır yüksekliği/genişliği daha büyük çıktığı için yalnız orada taşıyor olabilir.
+
+### `D-55` · Android'de alt sekme çubuğunda etkin sekmenin arka planı köşeli çiziliyor (yarıçap kayboluyor) ⚪
+
+2026-10-05, kullanıcı testi (Android, öğretmen hesabı). Alt sekme çubuğunda etkin "Anasayfa" sekmesinin ikon arka planı
+yuvarlak hap yerine **köşeli dikdörtgen** görünüyor. **Yalnız Android**; iOS'ta doğru.
+
+Not (doğrulanmadı): aralıklı — aynı cihazda 13:07 ekran görüntüsünde hap yuvarlak, 13:14'te köşeli. Kodda yarıçap sabit
+(`apps/mobile/src/components/tab-bar.tsx`: `width: 56, height: 30, borderRadius: 16`); değişen yalnız `backgroundColor`
+(`transparent` ↔ `pillBackground`). Sekme değişimi/yeniden çizim sonrası Android'in yarıçapı düşürmesi ihtimali ölçülmeli.
+
 ### `E-39` · Raporlu/izinli işaretlenen öğrenci aynı günün sonraki oturumlarında otomatik raporlu/izinli gelmiyor 🟠
 
 2026-10-05, kullanıcı testi. Bir derste **raporlu** (ya da **izinli**) işaretlenen öğrenci, aynı günün sonraki derslerinin
@@ -2665,6 +2725,14 @@ almaz — hatırlatmanın amacı tersine döner.
 Not (doğrulanmadı): `today-lessons.tsx` tarihi (`todayISODate()`) ve başlığı her render'da yeniden hesaplıyor; üst
 çubuktaki tarih de bayat olduğuna göre ağaç gün döndükten sonra yeniden çizilmemiş görünüyor. Kapatıp açınca düzelme
 deseni `B-91` ile aynı aileden.
+
+✅ **2026-10-05 · kodda** (master'da — oksis-ui `487dc25`; gün dönümü cihazda ölçülmedi): kök neden tek ekran değil bir
+sınıf — mobilde "bugün" render anında `new Date()` ya da `useMemo(..., [])` ile bir kez hesaplanıyordu; dokunuş sekmeyi yeniden mount
+etmediği için dünün tarihi ve dünün sorgu anahtarı kalıyordu. Merkezî çözüm: `lib/current-day.ts` (`useToday`/`useTodayDate`) günü öne
+gelişte (`AppState` active) ve yerel gece yarısında yeniden hesaplar; *Bugünkü Derslerim*, etkinlik sayımı, yönetici canlı yoklama, yoklama
+detayı ve üst çubuk tarihi ona bağlandı. Ayrıca `lib/app-focus.ts` React Query `focusManager`'ı `AppState`'e bağladı — RN'de bağlı değildi,
+öne gelişte hiçbir sorgu tazelenmiyordu (`B-91`'in "kapatıp açınca düzelir" belirtisine de değebilir, ölçülmedi). Core: `msUntilNextLocalDay`
++ 3 test. Kapsam dışı bırakılanlar: ay anahtarı (`currentMonthKey`) ve form varsayılanları — kullanıcı gezinmesiyle değişen değerler.
 
 ### `B-91` · Açık mobil uygulama, yeniden yayında silinen yoklama oturumunun kimliğini tutuyor — "Sınıf listesi yüklenemedi" 🟠
 
