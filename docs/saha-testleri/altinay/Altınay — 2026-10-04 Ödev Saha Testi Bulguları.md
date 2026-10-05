@@ -37,7 +37,7 @@ Test başlığı satırı: [[Altınay — Yaşam Döngüsü Test Başlıkları]]
 |---|---|
 | Verilen ödev | 6 (biri iki şubeye → 2 kayıt; biri seçili öğrenci; biri web'den ekli; biri mobilden) |
 | Yeni bulgu | **21** — 🔴 1 · 🟠 4 · 🟡 10 · ⚪ 6 *(ayrıntı defterde)* |
-| Aynı gece kodda düzeltilen | 19 (+ `D-51` kısmen) — merge bekliyor |
+| Aynı gece kodda düzeltilen | 19 (+ `D-51` kısmen) — master'da (oksis-api `e3bab34b`, oksis-ui `1dbf0a0`) |
 | Karar adayı | 2 — `K-31`, `K-32` |
 
 **En önemli üç sonuç:**

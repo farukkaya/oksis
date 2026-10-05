@@ -128,7 +128,7 @@
 > yolunda da kullanılıyordu. Defter **73**.
 >
 > **Önceki kapanış:** 2026-09-18 — MEB müfredatı Dilim 1: `TB-201` ve `TB-202` kapandı
-> ([[OKSİS - Bulgu Arşivi]] §50; kod `feat/mufredat-surum-snapshot` dalında, merge bekliyor). Defter **73**.
+> ([[OKSİS - Bulgu Arşivi]] §50; kod master'da — oksis-api `c89c22bf`). Defter **73**.
 >
 > **Son ekleme:** 2026-09-18 (MEB müfredatı Dilim 1 uygulaması, entegrasyon koşusu) — `TB-203`
 > (entegrasyon paketinin 676/1479'u master'da kırmızı; üç tenant'laştırma commit'i fixture'ları
@@ -165,7 +165,7 @@
 > (davetteki duyuru ve fotoğraf anahtarları hiçbir şeye bağlı değil 🟡), §11 · B2.1: `TB-171` (platformdan
 > açılan okulda görünen ad ve kurum yetkilisi boş 🟡), §12 · B1.2: `TB-172` (okul kodu tekilliği DB'de
 > zorlanmıyor ⚪), §12 · ilk ekran: `TB-173` (sezonsuz topbar seçici "—", mobil başlık satırı yok 🟡) +
-> `TB-168`'e pano kartı envanteri eklendi. Kararlar: `TB-170` kaldırma (kodda, merge bekliyor) ·
+> `TB-168`'e pano kartı envanteri eklendi. Kararlar: `TB-170` kaldırma (master'da) ·
 > `TB-171` → `K-28` (a) · B2.3: `TB-174` (Yarım Gün zil şablonu hiçbir okulda kaydedilemiyor, 500 🟠; Cuma yoklaması sessizce
 > üretilmeyecek), `D-19` (zil ekranı: boşken "Yeniden Üret", stilsiz modal çarpısı, Enter akışı 🟡), `B-51`
 > (elle teneffüs/öğle arası yok 🟡), `E-25` (güne göre adlandırılmış zil şablonu yok 🟡, karar bekliyor) · B2.2:
@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-111` · `D-52` · `V-07` · `X-25` · `TB-270` · `E-39` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-112` · `D-53` · `V-07` · `X-25` · `TB-270` · `E-41` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-33` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -239,11 +239,13 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 6 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 30 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 37 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 32 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 54 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 38 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **128** | |
+| **Toplam** | **132** | |
+
+> **2026-10-05 (Android kullanıcı testi):** yeni `B-111` 🟠 (yoklama hatırlatması bildirimi dünün ekranını açıyor), `E-39` 🟠 (raporlu/izinli sonraki oturumlara otomatik gelmiyor), `E-40` 🟡 (yoklama hatırlatması işi bitince kalkmıyor), `D-52` ⚪ (hatırlatma hangi ders olduğunu söylemiyor). Toplam **132**.
 
 > **2026-10-04 (öğle · iPhone'da kullanıcı testi):** `B-109` 🔴 telefonda hiçbir dosya yüklenemiyordu (`expo/fetch`) —
 > kodda düzeltildi ve cihazda ölçüldü (oksis-ui `c3fac5b`, `fix/odev-ekran-turu`). Yeni `B-110` 🟠 (iOS push kaydı). Toplam **128**.
@@ -251,8 +253,8 @@ sayaçlar üçü arasında ortak.
 > **2026-10-04 (gece · Altınay ödev saha testi, kullanıcı uyurken):** ödevin bütün yaşam döngüsü öğretmen/öğrenci/veli/rehber/
 > idare yüzlerinden, web + mobil (Expo web) + API + Hangfire ile ölçüldü. **21 yeni madde** (§10): `B-102` 🔴 (çok dersli
 > öğretmen ana dersine ödev veremiyor), `B-103` 🟠, `V-05` 🟠, `B-105` 🟠, `B-104`, `B-106`, `V-06`, `D-47`, `D-48`, `E-36`,
-> `E-37` 🟡, `D-49`, `D-50`, `D-51`, `TB-266`, `TB-267` ⚪; ekran turunda `B-107` 🟠, `B-108`, `E-38`, `TB-269` 🟡, `TB-268` ⚪. On dokuzu aynı gece kodda düzeltildi (`fix/odev-ekran-turu`, **merge
-> bekliyor**). İki karar adayı: `K-31` (öğrenci/veli ödev yüzü web'de), `K-32` (iptal gerekçesi aileye görünsün mü). Toplam
+> `E-37` 🟡, `D-49`, `D-50`, `D-51`, `TB-266`, `TB-267` ⚪; ekran turunda `B-107` 🟠, `B-108`, `E-38`, `TB-269` 🟡, `TB-268` ⚪. On dokuzu aynı gece kodda düzeltildi (`fix/odev-ekran-turu`, **master'da**
+> — oksis-api `e3bab34b`, oksis-ui `1dbf0a0`). İki karar adayı: `K-31` (öğrenci/veli ödev yüzü web'de), `K-32` (iptal gerekçesi aileye görünsün mü). Toplam
 > özet satırları yeniden toplandı: **126**.
 
 > **2026-10-01 (Altınay saha testi — öğretmenlerin bugünkü yoklama görevleri):** 17 öğretmen, 84 oturum; web + mobil (Expo web) +
@@ -277,10 +279,10 @@ sayaçlar üçü arasında ortak.
 > **2026-10-02 (akşam, Devam Karnesi ekran testi — Chrome eklentisi, Altınay müdürü):** öğrenci seçimi, gün çekmecesi, ay gezinmesi ve "Öğrenci değiştir" doğru çalıştı; takvim veriye sadık (9-A'da 29–30 Eylül'ün 16 oturumunun hiçbiri alınmamış → boş gün). Yeni `D-46` 🟡 (ilk aramanın öneri listesi kartın içinde kırpılıyor, 5 sonuçtan 1'i görünüyor). Toplam **107**.
 > **2026-09-28 (öğleden sonra):** yönetici devamsızlık ekranında yoklamasını tamamlamış öğretmen "bekliyor" görününce `B-90` 🔴 açıldı — yeniden yayınlanan program eski sürümün önceden üretilmiş oturumlarını temizlemiyor; Altınay'da bugün 80 fazladan oturum, bir kısmında çift yoklama kaydı. Toplam **94**.
 
-> **2026-09-30 (`B-90` ekran testi + düzeltme turu):** `B-90`'ın üç kararı bağlandı ve kodda düzeltildi (commit/merge bekliyor); ilk commit'in göçü hiç çalışamazdığı için silinip yeniden yazıldı, dev DB'ye uygulandı. Aynı testte `B-91` 🟠 (açık mobil uygulama silinen oturum kimliğini tutuyor), `TB-262` 🟠 (yayından sonra ilk pano açılışında 500 — kodda düzeltildi), `TB-263` 🟡 (dev DB'de koddan olmayan codex B-90 göçü) ve `D-40` ⚪ açıldı. Ardından iki depoda commit + master'a birleştirme: `B-90` kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §73). Toplam **97**.
+> **2026-09-30 (`B-90` ekran testi + düzeltme turu):** `B-90`'ın üç kararı bağlandı ve kodda düzeltildi (aynı gün master'a alındı); ilk commit'in göçü hiç çalışamazdığı için silinip yeniden yazıldı, dev DB'ye uygulandı. Aynı testte `B-91` 🟠 (açık mobil uygulama silinen oturum kimliğini tutuyor), `TB-262` 🟠 (yayından sonra ilk pano açılışında 500 — kodda düzeltildi), `TB-263` 🟡 (dev DB'de koddan olmayan codex B-90 göçü) ve `D-40` ⚪ açıldı. Ardından iki depoda commit + master'a birleştirme: `B-90` kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §73). Toplam **97**.
 
 > **Gece turu (2026-09-28, kullanıcı uyurken — karar gerektirmeyen maddeler):** iki depoda tek dal `fix/gece-defter-turu`
-> (**merge bekliyor**; `oksis-api` 26, `oksis-ui` 24 commit). Önce master'a çoktan girmiş **58 eski kapanış** arşive taşındı
+> (**master'da — 2026-10-04 doğrulandı**; `oksis-api` 26, `oksis-ui` 24 commit). Önce master'a çoktan girmiş **58 eski kapanış** arşive taşındı
 > (Arşiv §70; 149 → 91). Sonra kodda kapananlar (bloklarında ✅ 2026-09-28 notu; merge + gerekiyorsa ekran ölçümüyle arşive gider):
 > nöbet `B-85` (dört ayak), `B-86` (tüm açık ayaklar), `B-88`, `B-89`, `D-38` (1–2); ayarlar/görevlendirme `D-23`, `D-26`, `D-27`,
 > `D-28`, `D-29`, `B-65`, `D-37`, `D-31` (67 native select + eslint kapısı), `TB-199`, `E-31`; sunucu `D-24`, `TB-141`, `TB-169`
@@ -379,7 +381,7 @@ Test: yancı ile aynı güne nöbetçi seçimi → rozet; kirli taslakla yayın 
 
 ✅ **2026-09-28 · (d) sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `8b81acdb`):** o gün yancı olanı nöbetçi seçmek artık ayrı anahtarla reddediliyor — `duties.errors.duty-teacher-is-reliever-same-day`: "Nöbetçi seçilen öğretmen o gün yancı olarak da görevli; bir öğretmen aynı gün hem nöbetçi hem yancı olamaz. Önce o günkü yancılığını değiştirin." Çift yancılık `reliever-already-busy`'de kaldı, cümlesi yalnız onu anlatıyor; kural gevşemedi. Altınay senaryosu entegrasyon testinde yeşil.
 
-✅ **2026-09-28 · (a)(b)(c) istemci ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `5394140`, merge bekliyor, ekranda ölçülmedi):** (a) `dutyTeacherBusyOnDay` o gün başka hücrede nöbetçi **ya da yancı** olanı "O gün dolu" işaretliyor, ipucu nedenini söylüyor (eski `dutyBusyOnDay` kaldırıldı); (b) kaydedilmemiş değişiklik varken yayın penceresi "Yayınla"yı kilitliyor, nedenini yazıyor ve "Önce Kaydet" sunuyor (kapı core'da, `dutyPublishBlock`); (c) onaylı "Değişiklikleri At" düğmesi, yayın başarısında yerel taslak imza değişmese de sıfırlanıyor. Dört ayak da kodda — madde merge + ekran ölçümüyle kapanır.
+✅ **2026-09-28 · (a)(b)(c) istemci ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `5394140`, master'da — 2026-10-04 doğrulandı, ekranda ölçülmedi):** (a) `dutyTeacherBusyOnDay` o gün başka hücrede nöbetçi **ya da yancı** olanı "O gün dolu" işaretliyor, ipucu nedenini söylüyor (eski `dutyBusyOnDay` kaldırıldı); (b) kaydedilmemiş değişiklik varken yayın penceresi "Yayınla"yı kilitliyor, nedenini yazıyor ve "Önce Kaydet" sunuyor (kapı core'da, `dutyPublishBlock`); (c) onaylı "Değişiklikleri At" düğmesi, yayın başarısında yerel taslak imza değişmese de sıfırlanıyor. Dört ayak da kodda — madde merge + ekran ölçümüyle kapanır.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): (a) seçim penceresinde o gün başka hücrede nöbetçi ya da yancı olan öğretmenler "O gün dolu" (Pzt: 7 öğretmen); düzenlenen hücrenin kendi yancısı işaretlenmiyor — doğru, nöbetçi değişince o yancı zaten düşüyor (`use-duty-editor.ts:119`). (b)(c) kaydedilmemiş değişiklik gerektirdiği için gerçek veride denenmedi. Not: seçim penceresi Escape ile kapanmıyor (yalnız dış tıklama).
 
@@ -436,7 +438,7 @@ ve başlıkta açık sayısı; okul günü değil / yürürlükte çizelge yok /
 nöbet satırı canlı veride yok, ekranda ölçülmedi. Panonun diğer `K-09` kartları (Bekleyen İşlemler'deki "Boşta kalan nöbet
 bölgesi" dahil) hâlâ örnek veri.
 
-✅ **2026-09-28 · vekâlet ve mobil ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `d021419`, `cd27d16`, merge bekliyor):** web Nöbetlerim'de "Vekâlet derslerim" (`GET duties/substitution/me`, bugün vurgulu, geçmiş katlanır); mobilde `/duty` ekranı, "Daha fazla › Nöbetlerim" satırı ve `duties` bildiriminin yönlendirmesi; ortak mantık core'da testli (`buildMyDutyWeek`, `splitMySubstitutions`). Web Altınay'da öğretmenle ölçüldü (vekâlet listesi canlıda boş, boş durum doğru). ⬜ Açık: muafiyet bilgisi için `duties/me` alanı (sunucu), mobil ekran ölçümü.
+✅ **2026-09-28 · vekâlet ve mobil ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `d021419`, `cd27d16`, master'da — 2026-10-04 doğrulandı):** web Nöbetlerim'de "Vekâlet derslerim" (`GET duties/substitution/me`, bugün vurgulu, geçmiş katlanır); mobilde `/duty` ekranı, "Daha fazla › Nöbetlerim" satırı ve `duties` bildiriminin yönlendirmesi; ortak mantık core'da testli (`buildMyDutyWeek`, `splitMySubstitutions`). Web Altınay'da öğretmenle ölçüldü (vekâlet listesi canlıda boş, boş durum doğru). ⬜ Açık: muafiyet bilgisi için `duties/me` alanı (sunucu), mobil ekran ölçümü.
 
 ✅ **2026-09-28 · muafiyet için sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `95fbb0e1`):** `duties/me` → `exemptions[]` (yalnız çağıranın, açık okul yüklemiyle; sürekli + dönemle kesişen geçici; `coversWholeTerm` = `CoversPeriod`; canlı çizelge yokken de dolu). 3 entegrasyon testi, sınıf 6/6.
 
@@ -455,7 +457,7 @@ nöbeti sayıyor, yancıyı saymıyor — ekran "dengeli" derken Yük & Adalet s
 ⬜ Kapatma yolu: yancı seçiminde birincil ölçüt toplam görev (nöbet + yancı), ikincil yancı sayısı; adalet metriği yancılık
 açıkken toplam görevi ölçsün. Test: 18 öğretmen × 20 hücre senaryosunda toplam yük aralığı ≤ 1.
 
-✅ **2026-09-28 · kodda düzeltildi (gece turu, `oksis-api` `fix/gece-defter-turu` `ab467c95`, merge bekliyor):** `DutySolver.AssignRelievers` yancı adayını üç ölçütle sıralıyor — toplam görev (nöbet + yancı) → yancı sayısı → döner sıra (GUID'e dizilmiş havuzda son seçilenden sonraki; deterministik, eşitlik hep aynı öğretmene düşmüyor). `DutyFairnessScorer` yancılık açıkken nöbet + yancıyı, kapalıyken yalnız nöbeti ölçüyor. 6 yeni test (18 öğretmen × 20 hücrede toplam yük 2–3; öğle meşguliyetli varyantı; iki nöbetliye yancılık verilmez; metrik = gerçek yük), eski kodda 5'i kırmızı. ⬜ Altınay önizlemesinde yeniden ölçülmedi; ekrandaki "Denge x–y" etiketi artık toplam görevi gösterecek.
+✅ **2026-09-28 · kodda düzeltildi (gece turu, `oksis-api` `fix/gece-defter-turu` `ab467c95`, master'da — 2026-10-04 doğrulandı):** `DutySolver.AssignRelievers` yancı adayını üç ölçütle sıralıyor — toplam görev (nöbet + yancı) → yancı sayısı → döner sıra (GUID'e dizilmiş havuzda son seçilenden sonraki; deterministik, eşitlik hep aynı öğretmene düşmüyor). `DutyFairnessScorer` yancılık açıkken nöbet + yancıyı, kapalıyken yalnız nöbeti ölçüyor. 6 yeni test (18 öğretmen × 20 hücrede toplam yük 2–3; öğle meşguliyetli varyantı; iki nöbetliye yancılık verilmez; metrik = gerçek yük), eski kodda 5'i kırmızı. ⬜ Altınay önizlemesinde yeniden ölçülmedi; ekrandaki "Denge x–y" etiketi artık toplam görevi gösterecek.
 
 ### `B-88` · Nöbet yayın bildirimi: "etkilenen" = yeni çizelgedeki bütün nöbetçiler — değişmeyene gidiyor, yalnız yancıya ve görevden çıkarılana gitmiyor 🟡
 
@@ -468,7 +470,7 @@ Ayrıca: teslim yalnız `in-app` (36/36); okulun e-posta/push anahtarları açı
 tasarım mı eksik mi ölçülmedi.
 ⬜ Kapatma yolu: önceki canlı sürümle (nöbetçi + yancı) fark alınıp yalnız değişenlere; ilk yayında nöbetçi ∪ yancı.
 
-✅ **2026-09-28 · kodda düzeltildi (gece turu, `oksis-api` `fix/gece-defter-turu` `da83b009`, merge bekliyor):** `DutyRoster.Publish(…, previousLive)` önceki canlı sürümle öğretmen başına (gün, bölge, nöbetçi/yancı) görev kümesi farkını alıyor: eklenen, çıkarılan ya da kümesi değişen öğretmen etkilenir; ilk yayında nöbetçi ∪ yancı; kimsenin görevi değişmediyse bildirim gitmez. 6 domain + 1 entegrasyon testi (eski kodda kırmızı). ⬜ E-posta/push kanalında kayıt olmaması sorusu ölçülmedi, açık.
+✅ **2026-09-28 · kodda düzeltildi (gece turu, `oksis-api` `fix/gece-defter-turu` `da83b009`, master'da — 2026-10-04 doğrulandı):** `DutyRoster.Publish(…, previousLive)` önceki canlı sürümle öğretmen başına (gün, bölge, nöbetçi/yancı) görev kümesi farkını alıyor: eklenen, çıkarılan ya da kümesi değişen öğretmen etkilenir; ilk yayında nöbetçi ∪ yancı; kimsenin görevi değişmediyse bildirim gitmez. 6 domain + 1 entegrasyon testi (eski kodda kırmızı). ⬜ E-posta/push kanalında kayıt olmaması sorusu ölçülmedi, açık.
 
 ### `D-38` · Bölge penceresinde "Simge" seçicisi "Tür"ün kopyası; stepper ve tür çiplerinin erişilebilir adı/durumu yok; şablon hiç sunulmuyor 🟡
 
@@ -491,7 +493,7 @@ penceresinden 9 bölge Playwright'la girilirken ölçüldü.
 ⬜ Kapatma yolu: Simge satırı kaldırılır (ya da gerçekten ayrı alan olur ve gönderilir); `icon` kolonu için karar;
 stepper düğmelerine `aria-label`, çiplere `aria-pressed`; şablon ya pencereye eklenir ya domain notundan düşülür.
 
-✅ **2026-09-28 · 1. ve 2. ayak kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `2daa11b`, merge bekliyor, ekranda ölçülmedi):** Simge satırı kaldırıldı; kapasite −/+ düğmelerine `aria-label`, tür çiplerine `aria-pressed`, Aktif anahtarına `role=switch`. ⬜ 3. ayak (`icon` kolonu, şablon) karar bekliyor.
+✅ **2026-09-28 · 1. ve 2. ayak kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `2daa11b`, master'da — 2026-10-04 doğrulandı, ekranda ölçülmedi):** Simge satırı kaldırıldı; kapasite −/+ düğmelerine `aria-label`, tür çiplerine `aria-pressed`, Aktif anahtarına `role=switch`. ⬜ 3. ayak (`icon` kolonu, şablon) karar bekliyor.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): "Bölge ekle" penceresinde Simge satırı yok; tür çipleri `aria-pressed`, "Kapasiteyi azalt/artır", Aktif `role=switch`. Kaydedilmedi. Not: Nöbet Bölge Ayarları listesindeki "Aç/Kapa · Düzenle · Sil" düğmelerinin adında bölge adı yok (`D-29` kalıbının burada uygulanmamış kardeşi).
 
@@ -557,7 +559,7 @@ duruyordu ama defterde kaydı yoktu; ikisi ürün kararı bekliyor.
 ⬜ Kapatma yolu: tarihi test anına göre üret (ör. bugün + 7 gün) ya da şemaya saat enjekte et. Aynı sabit tarih
 kalıbı başka şema testlerinde de var mı, taranmalı.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `58253db`, merge bekliyor):** test saati 2026-09-10'a sabitlendi; core/api/api-mocks takımları 2028'e sabitlenmiş saatle koşuldu, başka tarih bombası çıkmadı. core 868/868. `TB-258` ve §12'deki `TB-220` aynı kusurun kopyası, birlikte kapandı.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `58253db`, master'da — 2026-10-04 doğrulandı):** test saati 2026-09-10'a sabitlendi; core/api/api-mocks takımları 2028'e sabitlenmiş saatle koşuldu, başka tarih bombası çıkmadı. core 868/868. `TB-258` ve §12'deki `TB-220` aynı kusurun kopyası, birlikte kapandı.
 
 ### `TB-258` · Ödev form şeması testi sabit tarihe bağlı; tarih geçince kırmızıya döndü 🟡
 
@@ -831,6 +833,31 @@ düşündüren bir toggle.
 
 ✅ **Karar (2026-09-28, kullanıcı):** SMS **yüzeyden gizlenir** — matris sütunu, okul ayarı ve kota kartı; katalogda `SupportsSms=false`. Sağlayıcı seçilince geri gelir. Uygulanacak.
 
+### `E-40` · Yoklama hatırlatması işi bitince bildirim merkezinden kalkmıyor; liste sonsuza kadar birikiyor 🟡
+
+2026-10-05, kullanıcı testi (öğretmen, mobil Bildirimler). Liste art arda aynı satırla doluyor: "⏰ Yoklama Hatırlatması ·
+Bu ders için henüz yoklama girmediniz" — bugün 2, 2 Ekim 5, 1 Ekim 2+ satır; 35 okunmamış. Yoklaması alınmış ya da
+penceresi kapanmış dersin hatırlatması da duruyor; dokunulduğunda gidilen ekranda yapılacak bir şey yok.
+
+✅ **Karar (2026-10-05, kullanıcı):** hatırlatma bildirimi verilmeye devam eder, ama işi bitince kaldırılır:
+1. **Yoklama gönderilince** o dersin hatırlatması kalkar (metin "henüz girmediniz" dediği için o an yanlışlaşır).
+2. **Yoklama penceresi kapanınca** kalan hatırlatmalar kalkar — gün kapanışı işi (`CloseDailySessionsJob`) bağlanma yeri.
+3. **Cihaz çekmecesi de temizlenir:** teslim edilmiş push uygulama içi satır silinince kendiliğinden gitmez; mobil açılışta
+   / liste yenilenince kaldırır (`expo-notifications`), yoksa çekmeceden yine ölü ekrana gidilir.
+
+Kod ölçümü: `Notification` satırında hangi oturuma ait olduğunu söyleyen alan yok — bağ yalnız `DeepLink` metninde
+(`Oksis.Domain/Modules/Notifications/Entities/Notification.cs`); silme ya da süre sonu mekanizması da yok. Metni
+ayrıştırarak silmek kırılgan; bildirime kaynak kimliği alanı (ör. oturum kimliği) eklenip "bu oturumun hatırlatmalarını
+kaldır" bunun üstünden yapılmalı. Domain uyumu: sözlükte `notification` geçici, kişisel olay haberi — kalıcı/silinmez
+kayıt `announcement`'tır.
+
+### `D-52` · Yoklama hatırlatması hangi ders olduğunu söylemiyor; satırlar birbirinin aynısı ⚪
+
+2026-10-05, kullanıcı testi (aynı ekran, `E-40`). Her satır "⏰ Yoklama Hatırlatması · Bu ders için henüz yoklama
+girmediniz" — "bu ders" hangisi belli değil; öğretmen hangi dersi kaçırdığını ancak dokunarak öğrenebiliyor. Kaynak metin
+`AttendanceNotificationContent.TeacherReminder()` parametresiz. ⬜ Öneri: başlık/gövdeye ders saati, şube ve ders adı
+("3. ders · 9-A Matematik"). `E-40` uygulansa da değerli.
+
 ## 12. Çapraz Kesen İşler ✳️
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
@@ -892,7 +919,7 @@ en azından bir CI adımına bağla — yoksa aynı şey üçüncü kez olur.
 ⚠️ Docker gerektirdiği için kapıya doğrudan eklemek pahalı olabilir; o hâlde kapı yerine
 ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerektirir.
 
-✅ **2026-09-28 · (1) kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e2aad5a0`, `af322046` ve devamı, merge bekliyor):** entegrasyon takımı **1595 testte 675 kırmızı → 1 kırmızı** (tam koşu, kırmızı ad kümeleri `comm` ile karşılaştırıldı, yeni kırmızı 0; Garage/ClamAV ortam kırmızısı çıkmadı). Merkez `DatabaseFixture`: okul açılışının tek ortak yolu (`CreateSchoolAsync` → okul bağlamında ders + sınav türü kataloğu içe aktarımı), `ImportSchoolCatalogsAsync`, `SeedSubjectAsync` (okul bağlamında ders), `SchoolSubjectIdAsync` (çekirdek → okul kimliği), `OpenGradeLevelsAsync` (kademe + eğitim programı tercihi), `Activated` (sezon). Duyuru kitlesi fixture'ı, 18 sınav dosyası, 9 dosyadaki bağlamsız ders yazımı ve sezon testleri bağlandı; branş kataloğu bilerek içe aktarılmadı (testler branşı kendi adıyla yazıyor). Kalan tek kırmızı `TB-261`. ⬜ **(2) push kapısı / CI kararı** artık verilebilir: takım neredeyse yeşil.
+✅ **2026-09-28 · (1) kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e2aad5a0`, `af322046` ve devamı, master'da — 2026-10-04 doğrulandı):** entegrasyon takımı **1595 testte 675 kırmızı → 1 kırmızı** (tam koşu, kırmızı ad kümeleri `comm` ile karşılaştırıldı, yeni kırmızı 0; Garage/ClamAV ortam kırmızısı çıkmadı). Merkez `DatabaseFixture`: okul açılışının tek ortak yolu (`CreateSchoolAsync` → okul bağlamında ders + sınav türü kataloğu içe aktarımı), `ImportSchoolCatalogsAsync`, `SeedSubjectAsync` (okul bağlamında ders), `SchoolSubjectIdAsync` (çekirdek → okul kimliği), `OpenGradeLevelsAsync` (kademe + eğitim programı tercihi), `Activated` (sezon). Duyuru kitlesi fixture'ı, 18 sınav dosyası, 9 dosyadaki bağlamsız ders yazımı ve sezon testleri bağlandı; branş kataloğu bilerek içe aktarılmadı (testler branşı kendi adıyla yazıyor). Kalan tek kırmızı `TB-261`. ⬜ **(2) push kapısı / CI kararı** artık verilebilir: takım neredeyse yeşil.
 
 ✅ **Karar (2026-09-28, kullanıcı):** (2) push kapısı hızlı kalır; **merge öncesi `./scripts/test-changed.sh --integration` zorunlu adım** olarak CLAUDE.md/AGENTS.md ve commit kurallarına yazılır. Uygulanacak.
 
@@ -908,7 +935,7 @@ böyle iner. Branş eşleşmesini de zorlaştırması olası (`TB-240`; eşleşm
 ⬜ Kapatma yolu: kesme işareti ve kısa çizgiden sonra gelen eki küçük bırakan bir başlık
 dönüştürücü; mevcut iki satır için düzeltme.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `2213cefe`, merge bekliyor):** ders ve program adı tek Türkçe başlık dönüştürücüsünden geçiyor (`Parsing/TurkishTitleCase.cs`; `MasterSubjectCode` ve `MebProgramIdentity` bağlı): kesme (’ ' ʼ ‘) ve harfe bağlı kısa çizgiden sonraki ek küçük; nokta, eğik çizgi ve parantez yeni kelime; Roma rakamı büyük ("Programı-I" ünlüden sonra rakam, "Kur’an-ı" ünsüzden sonra ek). 21 vaka. **İkiz satır riski ölçüldü, yok:** tekillik görüntü adına değil ham addan türeyen koda bağlı (`MasterSubjectCode.From`/`Fold`), eski ve yeni ad aynı koda katlanıyor (testli). ⬜ **Mevcut veri kendiliğinden düzelmez** (yayım var olan kodda adı yeniden yazmıyor): `master.subjects` 2 satır + `school.subjects` 10 satır için tek seferlik ad düzeltmesi — master'da `code` üzerinden, okul kopyalarında yalnız adı hâlâ bozuk olan satırlar (`name = N'Kur’An-I Kerim'`) ki okulun elle verdiği ad ezilmesin. Gerçek veri olduğu için yapılmadı, kullanıcı onayı bekliyor.
+✅ **2026-09-28 · kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `2213cefe`, master'da — 2026-10-04 doğrulandı):** ders ve program adı tek Türkçe başlık dönüştürücüsünden geçiyor (`Parsing/TurkishTitleCase.cs`; `MasterSubjectCode` ve `MebProgramIdentity` bağlı): kesme (’ ' ʼ ‘) ve harfe bağlı kısa çizgiden sonraki ek küçük; nokta, eğik çizgi ve parantez yeni kelime; Roma rakamı büyük ("Programı-I" ünlüden sonra rakam, "Kur’an-ı" ünsüzden sonra ek). 21 vaka. **İkiz satır riski ölçüldü, yok:** tekillik görüntü adına değil ham addan türeyen koda bağlı (`MasterSubjectCode.From`/`Fold`), eski ve yeni ad aynı koda katlanıyor (testli). ⬜ **Mevcut veri kendiliğinden düzelmez** (yayım var olan kodda adı yeniden yazmıyor): `master.subjects` 2 satır + `school.subjects` 10 satır için tek seferlik ad düzeltmesi — master'da `code` üzerinden, okul kopyalarında yalnız adı hâlâ bozuk olan satırlar (`name = N'Kur’An-I Kerim'`) ki okulun elle verdiği ad ezilmesin. Gerçek veri olduğu için yapılmadı, kullanıcı onayı bekliyor.
 
 ✅ **Karar (2026-09-28, kullanıcı):** mevcut bozuk adlar **göçle** düzeltilir (her ortamda aynı; okulun elle değiştirdiği adlara dokunulmaz, önbellek temizlenir). Uygulanacak.
 
@@ -923,7 +950,7 @@ katıldığını bu satırdan ayırt edemiyor (`ALTINAY-SBL` da "Altınay Eğiti
 ⬜ Kapatma yolu: önizleme görünen adı döner (boşsa resmî ada düşer). Logo sorgusu aynı
 ayar satırını zaten okuyor.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `b453124a`, merge bekliyor):** önizleme okul adını görünen ad → ayarlardaki resmî ad → `School.Name` sırasıyla veriyor (oturum bağlamı `GetCurrentContext` ile aynı sıra); ek sorgu yok. 3 birim testi.
+✅ **2026-09-28 · kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `b453124a`, master'da — 2026-10-04 doğrulandı):** önizleme okul adını görünen ad → ayarlardaki resmî ad → `School.Name` sırasıyla veriyor (oturum bağlamı `GetCurrentContext` ile aynı sıra); ek sorgu yok. 3 birim testi.
 
 ### `V-04` · Öğrenci numarası: öneksiz okulda elle girişte "en az 100" şartı; sayaç elle girilen numarayı atlamıyor 🟠
 
@@ -1000,7 +1027,7 @@ başka bir taslak seçilebilir.
 ⬜ Kapatma yolu: kaynak, hedeften önce başlayan en yakın sezon olarak (başlangıç tarihine göre)
 seçilir; tercihen sunucu belirler.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fb00cc5`, merge bekliyor):** kaynak saf ve testli `copySourceSeason`: hedeften önce başlayan en yakın sezon (`SeasonOption.startDate`). **Varsayım:** arşivlenmiş önceki sezon da kaynak olabiliyor (eski kod dışlıyordu; sunucu kısıtlamıyor) — istenmezse tek satır.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fb00cc5`, master'da — 2026-10-04 doğrulandı):** kaynak saf ve testli `copySourceSeason`: hedeften önce başlayan en yakın sezon (`SeasonOption.startDate`). **Varsayım:** arşivlenmiş önceki sezon da kaynak olabiliyor (eski kod dışlıyordu; sunucu kısıtlamıyor) — istenmezse tek satır.
 
 ✅ **Karar (2026-09-28, kullanıcı):** gece turunun varsayımı onaylandı — **arşivlenmiş sezon da kaynak olabilir**.
 
@@ -1013,7 +1040,7 @@ satıra basan idareci görevi geri alamıyor, iz kaydında da gerçek sebep yazm
 
 ⬜ Kapatma yolu: onay penceresi + gerekçe alanı (sabit metin öneri olarak kalabilir).
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `abb1185`, merge bekliyor):** kapatma `ConfirmDialog` istiyor, gerekçe alanı sabit metinle ön dolu (kırpılır, boşsa null, ≤1000); sunucu reddi pencerede.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `abb1185`, master'da — 2026-10-04 doğrulandı):** kapatma `ConfirmDialog` istiyor, gerekçe alanı sabit metinle ön dolu (kırpılır, boşsa null, ≤1000); sunucu reddi pencerede.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): "Görevi kapat (devret)" → "Görev kapatılsın mı?" penceresi, öğretmen — ders, gerekçe alanı ön dolu; Vazgeç ile kapatıldı.
 
@@ -1028,7 +1055,7 @@ yazıyor (`X-01` kalıbı).
 ⬜ Kapatma yolu: hata çekmecenin içinde gösterilir, çekmece açık kalır; kopyalamada sunucu cümlesi
 geçirilir.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fab4132`, merge bekliyor):** hata çekmecenin içinde, çekmece açık kalıyor; `CopyModal` sunucu cümlesini gösteriyor.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fab4132`, master'da — 2026-10-04 doğrulandı):** hata çekmecenin içinde, çekmece açık kalıyor; `CopyModal` sunucu cümlesini gösteriyor.
 
 ### `D-28` · Arşiv sezonda Görevlendirmeler'de satır menüsü tamamen gizleniyor ⚪
 
@@ -1039,7 +1066,7 @@ geçiş yapamıyor.
 
 ⬜ Kapatma yolu: yalnız yazma öğesi koşula bağlanır.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `1fd3f2e`, merge bekliyor):** satır menüsü her zaman çiziliyor; yalnız "Görevi kapat" `canWrite`'a bağlı.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `1fd3f2e`, master'da — 2026-10-04 doğrulandı):** satır menüsü her zaman çiziliyor; yalnız "Görevi kapat" `canWrite`'a bağlı.
 
 ### `TB-244` · Logosu olmayan okulda her sayfa açılışında logo ucu 404 dönüyor ⚪
 
@@ -1055,7 +1082,7 @@ döner.
 
 ✅ **2026-09-28 · sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `774c9c43`):** `auth/me/context` → `schoolLogoUrl` (mevcut `ISchoolLogoUrlBuilder`; logo yoksa `null`, ek sorgu yok), 3 test.
 
-✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fc759f8`, merge bekliyor):** web `active-role.tsx` ve mobil `use-portal-header.ts` (+ mobil kimlik ekranı) logoyu tek çözücüden (`resolveSchoolLogoSrc`/`resolveSchoolLogoUrl`) alıyor: bağlamdaki `schoolLogoUrl` (yöneticide okul ayarlarının `logoUrl`'i öncelikli); `null` iken istek atılmıyor, baş harfler gösteriliyor. Tarayıcıda ölçülmedi. Madde iki dal birleşince (ve codegen yeniden koşunca) ekranda 404'ün kalktığı ölçülerek kapanır.
+✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fc759f8`, master'da — 2026-10-04 doğrulandı):** web `active-role.tsx` ve mobil `use-portal-header.ts` (+ mobil kimlik ekranı) logoyu tek çözücüden (`resolveSchoolLogoSrc`/`resolveSchoolLogoUrl`) alıyor: bağlamdaki `schoolLogoUrl` (yöneticide okul ayarlarının `logoUrl`'i öncelikli); `null` iken istek atılmıyor, baş harfler gösteriliyor. Tarayıcıda ölçülmedi. Madde iki dal birleşince (ve codegen yeniden koşunca) ekranda 404'ün kalktığı ölçülerek kapanır.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): müdür panosu ve diğer sayfalarda logo isteği hiç atılmıyor, 404 yok.
 
@@ -1073,7 +1100,7 @@ Aynı kalıp muhtemelen Branş ve Sınav Türü kataloglarında da var (ölçül
 ⬜ Kapatma yolu: simge düğmelerine ad; pasife alma için onay (dersin görevlendirme/program
 kullanımı varsa onu da söyleyerek).
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `ec6aba8`, merge bekliyor):** ortak `AIconBtn` — satır bağlamlı `aria-label` (Ders, Branş, Sınav Türü kataloglarında ve aynı kalıbı taşıyan Zil/Tatil satırlarında); pasife alma / listeden düşürme onaylı; Sınav Türü onayı kullanımı (`isInUse`) söylüyor, ders/branşta kullanım verisi olmadığı için onay yalın.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `ec6aba8`, master'da — 2026-10-04 doğrulandı):** ortak `AIconBtn` — satır bağlamlı `aria-label` (Ders, Branş, Sınav Türü kataloglarında ve aynı kalıbı taşıyan Zil/Tatil satırlarında); pasife alma / listeden düşürme onaylı; Sınav Türü onayı kullanımı (`isInUse`) söylüyor, ders/branşta kullanım verisi olmadığı için onay yalın.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Ders Kataloğu satır düğmeleri "Tarih — Düzenle" / "Tarih — Pasife al" adlarını taşıyor. Pasife almanın `ConfirmDialog`'dan geçtiği kodda doğrulandı (`course-catalog.tsx:126`); gerçek veride tıklanmadı.
 
@@ -1376,7 +1403,7 @@ Aynı denetimde ürün kararı bekleyen veli ekranı noktaları (düzeltmeye al�
 "telefon" ve "öğrenci" vaat ediyor ama `ListPersonsQueryHandler:55-76` telefonla ve öğrenci→veli yönünde
 aramıyor; "Yakınlık" ve "Sınıf" filtreleri sunucuya gitmiyor, yalnız ekrandaki sayfada süzüyor.
 
-🔄 **Kodda düzeltildi, merge bekliyor (2026-09-15):** `apps/web/components/shared/empty-state.tsx`
+🔄 **Kodda düzeltildi (2026-09-15); master'da — oksis-ui `197920e`, 2026-10-04 doğrulandı:** `apps/web/components/shared/empty-state.tsx`
 (`filtered` sözleşmesi, `page`/`compact` varyantı, yeni CSS yok). Yedi ekran geçti: Öğrenciler, Öğretmenler,
 Veliler, Kullanıcılar, Davetler, Etkinlikler, Dağıtım Kısıtları. Ayarların `AEmpty`'si artık onun ince sarmalayıcısı.
 Arama kutularına `aria-label`. Envanterde `EmptyState` ✅, `bilesen-ve-stil-kurallari.md` §5 güncellendi.
@@ -1453,7 +1480,7 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
    *aktivasyon anında* hizalıyor, kalıcı olarak birleştirmiyor — 8 Şubat 2027'de topbar "2. Dönem" derken sunucu hâlâ
    1. dönemi aktif görecek.
 
-✅ **2026-09-28 · açık ayak 1 kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e3497537`, merge bekliyor):** sistem komutu `StartDueAcademicTerms` (izinsiz, `Tenancy.Required`, açık okul yüklemi, okul-yerel gün) + günlük iş `academic-sessions.term-daily-sweep` (05:40 İstanbul; sınav 06:00 ve yoklama 07:00 süpürmelerinden önce); gövde yine `AcademicTermStarter`. 7 birim testi + kayıt bekçisi. **Korunan ön koşul:** sezonda aktif dönem varken başlatıcı dokunmuyor, yani 1. dönem kapatılmadan (karne) 2. dönem kendiliğinden başlamaz — olağan akışta sorun değil, 1. dönemi hiç kapatmayan okulda 2. dönem yine elle başlar. ⬜ Ayak 2 (topbar ile sunucunun iki dönem gerçeği) açık.
+✅ **2026-09-28 · açık ayak 1 kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e3497537`, master'da — 2026-10-04 doğrulandı):** sistem komutu `StartDueAcademicTerms` (izinsiz, `Tenancy.Required`, açık okul yüklemi, okul-yerel gün) + günlük iş `academic-sessions.term-daily-sweep` (05:40 İstanbul; sınav 06:00 ve yoklama 07:00 süpürmelerinden önce); gövde yine `AcademicTermStarter`. 7 birim testi + kayıt bekçisi. **Korunan ön koşul:** sezonda aktif dönem varken başlatıcı dokunmuyor, yani 1. dönem kapatılmadan (karne) 2. dönem kendiliğinden başlamaz — olağan akışta sorun değil, 1. dönemi hiç kapatmayan okulda 2. dönem yine elle başlar. ⬜ Ayak 2 (topbar ile sunucunun iki dönem gerçeği) açık.
 
 ✅ **Karar (2026-09-28, kullanıcı):** 1. dönem kapatılmadan 2. dönemin başlangıç günü gelirse günlük iş **başlatmaz, uyarır** (pano + yönetici: "1. dönemi kapatın, 2. dönem başlayamıyor"); karne otomatiği tetiklenmez. Uygulanacak.
 
@@ -1482,7 +1509,7 @@ branşsız doğacak. Kalıcı düzeltme (açılışta tohum + mevcut boş okulla
 çağırmadığı görülmemişti — bkz. `TB-200`. Düğme aynı gün gerçek uca bağlandı; karar ancak bundan sonra
 uygulanabilir hâle geldi.
 
-✅ **2026-09-28 · kalıcı ayak kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e1529723`, merge bekliyor):** yeni tek yol `BranchCatalogImporter` (`TB-195` kalıbı); "MEB'den Getir" düğmesi ve okul açılışı (`CreateSchoolCommandHandler`, sınav türü tohumundan sonra) aynı sınıfı çağırıyor. `master.branches` boşsa açılış durmuyor, bilinçli ve yorumlu. Entegrasyon testi: açılan okulun branşları aktif master branş sayısına eşit. ⬜ Açık: mevcut branşsız okullar için backfill (göç yazılmadı).
+✅ **2026-09-28 · kalıcı ayak kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e1529723`, master'da — 2026-10-04 doğrulandı):** yeni tek yol `BranchCatalogImporter` (`TB-195` kalıbı); "MEB'den Getir" düğmesi ve okul açılışı (`CreateSchoolCommandHandler`, sınav türü tohumundan sonra) aynı sınıfı çağırıyor. `master.branches` boşsa açılış durmuyor, bilinçli ve yorumlu. Entegrasyon testi: açılan okulun branşları aktif master branş sayısına eşit. ⬜ Açık: mevcut branşsız okullar için backfill (göç yazılmadı).
 
 ### `TB-195` · Sınav türü kataloğu global ve okul tarafından değiştirilemiyor 🟠
 
@@ -1554,7 +1581,7 @@ e-postanın değişmediği bilinmeli.
 öğrenci ve veliyi de kapsamalı. [[eksik-ekran-eksik-yetkiyi-gizler]] kalıbı: çağrılmayan uçta izin ve doğrulama
 da ölçülmemiş durumda.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `7a93ac8`, merge bekliyor, ekranda ölçülmedi):** Kullanıcılar, Öğretmenler, Öğrenciler ve Veliler çekmecelerinde ad/soyad düzeltme penceresi (`users.update`). Uç **tam değiştirme** yaptığı için pencere önce kişiyi okuyup yalnız adı/soyadı değiştiriyor, öteki alanları aynen geri gönderiyor; istemci şeması sunucu doğrulayıcısının aynısı (2–100, harf/boşluk/kesme/tire). ⬜ Cinsiyeti boş kişide düzenleme kapalı ve nedeni yazılı (`B-71`); geri gönderilen telefon sunucu desenine uymazsa red olası (ölçülmedi); MSW'de `GET/PUT users/persons/{id}` yok.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `7a93ac8`, master'da — 2026-10-04 doğrulandı, ekranda ölçülmedi):** Kullanıcılar, Öğretmenler, Öğrenciler ve Veliler çekmecelerinde ad/soyad düzeltme penceresi (`users.update`). Uç **tam değiştirme** yaptığı için pencere önce kişiyi okuyup yalnız adı/soyadı değiştiriyor, öteki alanları aynen geri gönderiyor; istemci şeması sunucu doğrulayıcısının aynısı (2–100, harf/boşluk/kesme/tire). ⬜ Cinsiyeti boş kişide düzenleme kapalı ve nedeni yazılı (`B-71`); geri gönderilen telefon sunucu desenine uymazsa red olası (ölçülmedi); MSW'de `GET/PUT users/persons/{id}` yok.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): çekmecede "Adı düzelt" → pencere ad/soyadı dolu açılıyor; müdürün cinsiyet kaydı boş olduğu için "değer uydurulmadan ad şu an düzeltilemez" uyarısı görünüyor (`B-71`). Kaydedilmedi.
 
@@ -2070,7 +2097,7 @@ kaldırılsın) — `keyof typeof SHAPES` o zaman gerçek birleşim tipine çöz
 `OksisIconName` olsun. Depoda bilinmeyen adla çizilen başka ikon olup olmadığı **şu an bilinmiyor**; ancak bu
 değişiklikten sonra ölçülebilir.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `b80dec5`, merge bekliyor):** `SHAPES` `satisfies` ile, `name` tipi `OksisIconName`; core'dan `string` gelen 3 yer `isOksisIconName` koruyucusuyla. Tipin yakaladığı ve **boş çizilen** altı ad düzeltildi: `close`→`x`, `wallet`→`para`, `hand`→`userCheck`, `msg`→`mesaj`, `inbox`→`box` (3 yer), `undo`→`move`.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `b80dec5`, master'da — 2026-10-04 doğrulandı):** `SHAPES` `satisfies` ile, `name` tipi `OksisIconName`; core'dan `string` gelen 3 yer `isOksisIconName` koruyucusuyla. Tipin yakaladığı ve **boş çizilen** altı ad düzeltildi: `close`→`x`, `wallet`→`para`, `hand`→`userCheck`, `msg`→`mesaj`, `inbox`→`box` (3 yer), `undo`→`move`.
 
 ---
 
@@ -2118,7 +2145,7 @@ tenant context", 47 Garage ve 4 ClamAV konteyneri ayakta değil, 14 "Index out o
 için eğitim programı tercihi tanımlı değil". Karşılaştırmalı ölçüm olmadan bu takımda "yeşil mi?" sorusunun
 cevabı hâlâ yok.
 
-✅ **2026-09-28 · kapandı (kodda, merge bekliyor):** R1 (ders), R2 (sınav türü) ve R3 (sezon aktivasyonu) imzalarının tamamı sıfırlandı — ayrıntı ve sayılar `TB-231` bloğunda (675 → 1). Tarafta gizli kalmış iki kök de düzeltildi: 13 sezon testi eğitim programı tercihi eksikliğinden düşüyordu; `OpenSeasonFromDraftTests` 2026-09-22 yürürlük kuralından önceki "2026-2027 → Manual" beklentisini taşıyordu (Master + 2025-2026 uyumluluk sürümüne çekildi).
+✅ **2026-09-28 · kapandı (kodda; master'da — 2026-10-04 doğrulandı):** R1 (ders), R2 (sınav türü) ve R3 (sezon aktivasyonu) imzalarının tamamı sıfırlandı — ayrıntı ve sayılar `TB-231` bloğunda (675 → 1). Tarafta gizli kalmış iki kök de düzeltildi: 13 sezon testi eğitim programı tercihi eksikliğinden düşüyordu; `OpenSeasonFromDraftTests` 2026-09-22 yürürlük kuralından önceki "2026-2027 → Manual" beklentisini taşıyordu (Master + 2025-2026 uyumluluk sürümüne çekildi).
 
 ### `TB-204` · `ExpireStaleInvitationsJobTests` koşu sırasına bağlı — iş paylaşılan DB'deki bütün okulların davetini sayıyor ⚪
 
@@ -2249,7 +2276,7 @@ koyuyor — yani idari personel için gelen tek değer, ekranın çeviremediği 
 Bugünkü hâliyle sütun, "profil bağlanmamış" ile "profili ekranın tanımadığı tipte" durumunu
 ayırt edilemez kılıyor — [[serilesmis-sekil-sozlesmedir]] ile aynı sınıftan bir sessiz kayıp.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `78fe886`, merge bekliyor):** `staff` istemci tipine ve etiketlere "İdari Personel" olarak girdi; modül ekranı olmadığı için profile git düğmesi çizilmiyor.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `78fe886`, master'da — 2026-10-04 doğrulandı):** `staff` istemci tipine ve etiketlere "İdari Personel" olarak girdi; modül ekranı olmadığı için profile git düğmesi çizilmiyor.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Kullanıcılar'da müdürün Bağlı Profil sütunu "İdari Personel".
 
@@ -2415,7 +2442,7 @@ sayılmamalı; (b) `Validation` hatasının gerekçesi kullanıcıya ve loga yaz
 "neden taşınamadı" hiçbir yerde yok; (c) eski çizelge düzenlerinin desteklenip
 desteklenmeyeceği karara bağlanmalı. Ölçüm hazır: 28 çizelge belgesinin 3'ü sorunsuz taşındı.
 
-✅ **2026-09-28 · (a) ve (b) kodda (gece turu, `oksis-api` `fix/gece-defter-turu`, merge bekliyor):** **(a)** `8767d1bd` — 2025/24 PDF'i yeniden ayrıştırılarak kök ölçüldü: başlıktaki "DERS" hazırlık sütununun tam üstünde duruyor ve eşit öncelikte "HAZIRLIK" etiketini yeniyordu. `MebChartParser` sütun adı önceliği sayı > hazırlık > başka metin > SINIF; en az bir sütun tanınıyorsa sayı/hazırlık olmayan sütun sınıf sayılmıyor ama geometriden de atılmıyor (atılsa ad sınırı kayardı). Hiç sütun tanınmıyorsa davranış aynı — eski düzenlerin karantina sinyali (c) kararına kadar korunuyor. Fixture `ozel-fen-2025-24.words.json` + 3 test, golden testler aynen. **(b)** `80152104` — kök neden doğrulayıcının program kodunu 50 karakterle sınırlaması (kolon 120; 2025/25 kodu 52 karakter), hizalandı. Ayrıca tek sayfanın doğrulama hatası artık bütün belgeyi düşürmüyor: sayfa `SkippedCharts[].Reason`'da "Doğrulama hatası: …" ile raporlanıyor, kalanlar taşınıyor, Warning logu belge/sayfa/kod/gerekçeyle. 4 test. ⬜ (c) karar bekliyor. Yan gözlemler: 2025/24'te `SUM_MISMATCH` sürüyor; 2025/25 başlığındaki "TASLAK" filigranı program adına giriyor (`TB-224` ailesi).
+✅ **2026-09-28 · (a) ve (b) kodda (gece turu, `oksis-api` `fix/gece-defter-turu`, master'da — 2026-10-04 doğrulandı):** **(a)** `8767d1bd` — 2025/24 PDF'i yeniden ayrıştırılarak kök ölçüldü: başlıktaki "DERS" hazırlık sütununun tam üstünde duruyor ve eşit öncelikte "HAZIRLIK" etiketini yeniyordu. `MebChartParser` sütun adı önceliği sayı > hazırlık > başka metin > SINIF; en az bir sütun tanınıyorsa sayı/hazırlık olmayan sütun sınıf sayılmıyor ama geometriden de atılmıyor (atılsa ad sınırı kayardı). Hiç sütun tanınmıyorsa davranış aynı — eski düzenlerin karantina sinyali (c) kararına kadar korunuyor. Fixture `ozel-fen-2025-24.words.json` + 3 test, golden testler aynen. **(b)** `80152104` — kök neden doğrulayıcının program kodunu 50 karakterle sınırlaması (kolon 120; 2025/25 kodu 52 karakter), hizalandı. Ayrıca tek sayfanın doğrulama hatası artık bütün belgeyi düşürmüyor: sayfa `SkippedCharts[].Reason`'da "Doğrulama hatası: …" ile raporlanıyor, kalanlar taşınıyor, Warning logu belge/sayfa/kod/gerekçeyle. 4 test. ⬜ (c) karar bekliyor. Yan gözlemler: 2025/24'te `SUM_MISMATCH` sürüyor; 2025/25 başlığındaki "TASLAK" filigranı program adına giriyor (`TB-224` ailesi).
 
 ✅ **2026-09-28 · (b) yüzeyi ölçüldü:** `platform-curriculum-page.tsx` taşıma sonucunu zaten "Taşınamayan N sayfa: s{N} ({reason})" diye hata tonunda bildiriyor; sunucu düzeltmesiyle doğrulama gerekçesi değişiklik gerekmeden ekrana düşer.
 
@@ -2551,7 +2578,7 @@ yerel typeahead yerine portal'la çizilen ortak combobox/popover (kırpan atadan
 iki karne araması da onu kullansın. `.attm-card`'dan `overflow:hidden`'ı kaldırmak yalnız bu ekranı kurtarır, kartın köşe kırpmasını
 bozabilir.
 
-✅ **2026-10-02 · kodda düzeltildi** (`oksis-ui` master, commit YOK): iki karne araması tek `KarneStudentSearch`
+✅ **2026-10-02 · kodda düzeltildi** (`oksis-ui` master `2de91b5`): iki karne araması tek `KarneStudentSearch`
 (`features/attendance/karne-student-search.tsx`) — liste mevcut ortak `AnchoredPopover` ile çiziliyor; ↓/↑ + Enter, Esc/dışarı tıklama,
 ARIA combobox/listbox/option, "N öğrenci daha — aramayı daraltın" ipucu. **Merkezî ikinci ayak:** `AnchoredPopover` body'ye çizdiği için
 rol teması (`--p/--s`, `.shell[data-role]`) kayboluyor, avatarlar renksiz çıkıyordu — portal hedefi artık çapanın en yakın `.shell`'i
@@ -2604,6 +2631,40 @@ kulüp saati satırı ("Kulüp saati · <kulüp> · Yoklama al"), kart sayacı t
 yoklamasına götürür; kart sayacı tüm etkinlik türlerini sayar.
 
 ✅ **2026-10-01 · kodda düzeltildi** (`oksis-ui` `fix/yoklama-ekran-kurallari` ← `a76c07b`; sayaç `oksis-api` `fix/yoklama-saha-2026-10-01` ← `6f3c530d`). Sahada ölçüldü: web'de danışmanın 8. saati "Kulüp saati · Müzik Kulübü · 6 üye · Yoklama Al"; `/clubs/mine` `activityCount` 1. **Kalan ölçüm:** mobil.
+
+### `E-39` · Raporlu/izinli işaretlenen öğrenci aynı günün sonraki oturumlarında otomatik raporlu/izinli gelmiyor 🟠
+
+2026-10-05, kullanıcı testi. Bir derste **raporlu** (ya da **izinli**) işaretlenen öğrenci, aynı günün sonraki derslerinin
+yoklama listesinde yine "var" olarak açılıyor; öğretmen her derste yeniden işaretlemek zorunda.
+
+✅ **Karar (2026-10-05, kullanıcı):** raporlu ve izinli öğrenciler bir sonraki oturumlarda otomatik setli gelmeli.
+
+Kod ölçümü: gönderilmemiş oturumun sanal listesi (`oksis-api` `AttendanceRosterBuilder.BuildVirtualRecordsAsync`)
+varsayılanı yalnız üç kaynaktan alıyor — onaylı mazeret (`ExcuseDefaultsProvider`), etkinlik katılımı, gün içi izin.
+Aynı gün daha önce **gönderilmiş** oturumdaki öğretmen kaydını okuyan kaynak yok; geçmişte de yazılıp silinmemiş (tüm
+dallar tarandı). Karıştırılan iki komşu yetenek:
+- **Rapor önceliği** (`B-99`, oksis-api `5f8cd5ac`, `26785237`): "o gün raporlu ders varsa gelmedileri de raporlu say" —
+  yalnız devamsızlık **hesabında**, yoklama listesini doldurmuyor.
+- **Blok devralma afişi**: mobil `roster-screen.tsx` "X. saatin yoklamasını devralayım mı?" afişini çiziyor, ama sunucu
+  `CarryFrom`'u her zaman `null` dönüyor (`AttendanceRosterBuilder.cs:180`) — afiş hiç görünmüyor.
+
+Uygulama yeri: sanal listeye dördüncü varsayılan kaynağı — aynı gün önceki oturumda raporlu/izinli kaydı olan öğrenci.
+Mevcut öncelik sırasına (Mazeret > Etkinlik > Gün içi izin) nereye gireceği ve kaydın `DefaultedByDailyLeave` benzeri
+bir "ön seçim" işareti taşıyıp taşımayacağı uygulamada netleşecek.
+
+### `B-111` · Yoklama hatırlatması bildirimine dokununca *Bugünkü Derslerim* dünü açıyor; uygulama kapatılıp açılınca düzeliyor 🟠
+
+2026-10-05, kullanıcı testi (Android, öğretmen hesabı). Bildirim merkezindeki **yoklama hatırlatması** bildirimine
+dokunuldu; açılan *Bugünkü Derslerim* ekranı bugünü değil **dünü** gösterdi: başlık "Bugün · 4 Ekim Pazar", üst çubuk
+"Pazar, 4 Ekim 2026", gövde "Bugün dersiniz yok". Uygulama **tamamen kapatılıp açılınca** ekran doğru güne (5 Ekim)
+geldi.
+
+Neden önemli: öğretmen hatırlatmaya güvenip ekrana gelir, dünün boş listesini "bugün dersim yok" diye okur ve yoklamayı
+almaz — hatırlatmanın amacı tersine döner.
+
+Not (doğrulanmadı): `today-lessons.tsx` tarihi (`todayISODate()`) ve başlığı her render'da yeniden hesaplıyor; üst
+çubuktaki tarih de bayat olduğuna göre ağaç gün döndükten sonra yeniden çizilmemiş görünüyor. Kapatıp açınca düzelme
+deseni `B-91` ile aynı aileden.
 
 ### `B-91` · Açık mobil uygulama, yeniden yayında silinen yoklama oturumunun kimliğini tutuyor — "Sınıf listesi yüklenemedi" 🟠
 
@@ -2685,7 +2746,7 @@ tohumları `AcademicSession.Create` sonrası `Activate` çağırmıyor → `IsSc
 pano `IsSchoolDay` false. Yeni `ClubHourAttendanceTests` tohumunda sezon aktifleştirilince aynı zincir yeşil koştu. (2) 5 test
 `TB-231`'in "Cannot insert Subject without tenant context" hatası. ⬜ Kapatma yolu: yoklama test tohumlarında sezonu aktifleştirmek.
 
-✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `af322046`, merge bekliyor):** beş yoklama dosyası sezonu `DatabaseFixture.Activated` ile etkinleştiriyor (`StudentAttendanceViewsTests`'te yalnız "bugün" sezonu — okulda tek aktif sezon kısıtı); yoklama kırmızıları sıfır.
+✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `af322046`, master'da — 2026-10-04 doğrulandı):** beş yoklama dosyası sezonu `DatabaseFixture.Activated` ile etkinleştiriyor (`StudentAttendanceViewsTests`'te yalnız "bugün" sezonu — okulda tek aktif sezon kısıtı); yoklama kırmızıları sıfır.
 
 ### `X-23` · `Oksis.Infrastructure` derlemesi 5–6 dakika: 227 göç Designer dosyası (≈3,4 milyon satır) her derlemede analiz ediliyor 🟡
 
@@ -2710,7 +2771,7 @@ bastığında hiçbir şey olmuyor sanıyor. Aynı pencerede "Raporlu" seçilinc
 ⬜ Kapatma yolu: kural tek yerde — ya açıklama gerçekten isteğe bağlı olur (sunucu gevşer) ya da alan zorunlu işaretlenir ve
 istemci şeması aynı kuralı uygular; her iki durumda da pencere sunucu hatasını (`mutationErrorDesc`) göstermeli.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `8c180e1`, merge bekliyor):** kural sunucuda olduğu için istemci ona uyuldu: açıklama zorunlu (ortak şema, web + mobil), sunucu reddi pencerede, MSW 400'ü aynalıyor.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `8c180e1`, master'da — 2026-10-04 doğrulandı):** kural sunucuda olduğu için istemci ona uyuldu: açıklama zorunlu (ortak şema, web + mobil), sunucu reddi pencerede, MSW 400'ü aynalıyor.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Mazeret Kaydı penceresinde "Açıklama" artık "ops." değil; "Belge · ops." kalıyor.
 
@@ -2729,7 +2790,7 @@ Ekranda ölçüldü: kutu kap genişliğine eşit (251/251), "rehb" → Rehberli
 Enter tek sonucu seçer, gün menüsünde arama yok.
 ⬜ Kalan: diğer ~65 native select'in `SelectBox`'a taşınması ve bir eslint kuralı (JSX `select` yasağı) ile kalıcı kapı.
 
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `0a9061a`…`b136c67`, merge bekliyor):** web'deki 67 native `<select>` ortak `SelectBox`/`FilterDropdown`'a taşındı; bileşen seçilemeyen madde, grup başlığı, `id`/`htmlFor`, alan + değer söyleyen erişilebilir ad, ↑/↓/Home/End ve odak dönüşü kazandı; uzun listeler aramalı. **Kalıcı kapı:** `packages/eslint-config/next.js`'te JSX `select` yasak (deneme dosyasında lint hatası ölçüldü). Davranış değişikliği: ders programı üretiminde "Seviye seçin…"e dönmek artık 0. seviye değil seçimsizlik yazıyor. Ekranda yalnız DEV hızlı giriş ölçüldü, diğer 38 ekran gezilmedi.
+✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `0a9061a`…`b136c67`, master'da — 2026-10-04 doğrulandı):** web'deki 67 native `<select>` ortak `SelectBox`/`FilterDropdown`'a taşındı; bileşen seçilemeyen madde, grup başlığı, `id`/`htmlFor`, alan + değer söyleyen erişilebilir ad, ↑/↓/Home/End ve odak dönüşü kazandı; uzun listeler aramalı. **Kalıcı kapı:** `packages/eslint-config/next.js`'te JSX `select` yasak (deneme dosyasında lint hatası ölçüldü). Davranış değişikliği: ders programı üretiminde "Seviye seçin…"e dönmek artık 0. seviye değil seçimsizlik yazıyor. Ekranda yalnız DEV hızlı giriş ölçüldü, diğer 38 ekran gezilmedi.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): giriş ekranındaki DEV seçiciler ve Kullanıcılar süzgeçleri yeni bileşenle çalışıyor; Mazeret penceresinde native select yok.
 
