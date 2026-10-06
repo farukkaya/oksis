@@ -20,7 +20,7 @@
 | **Prod** | `Dockerfile` (`ASPNETCORE_ENVIRONMENT=Production`), `appsettings.json` taban değerleri, mobil `APP_ENV=prod` | `Production` | {{TBD}}. Kodda geçen alan adları §4'te. | {{TBD}} | {{TBD}} |
 
 > [!warning] Dal ↔ ortam eşlemesi doğrulanamadı
-> `oksis-test` ve `oksis-preprod` dalları iki repoda da yok. Görülen dallar: `master`, `fix/polish`, `feature/exam-session-client`.
+> **Dal modeli (2026-10-07):** `dev` → `test` → `master`; `oksis-test` / `oksis-preprod` adları kullanılmıyor, pre-prod yok. `test` dalı Test ortamına gider, `master` prod'a (ertelendi). Ayrıntı: [[oksis-ortam-ve-hosting-plani]] §6.
 > Deploy hattı, sunucu, barındırma sağlayıcısı: kodda yok. {{TBD}}
 
 ## 2. Backend yapılandırma farkları
@@ -118,9 +118,10 @@ Bu adreslerin gerçekten canlı olup olmadığı ve sahibi bilinmiyor: {{TBD}}.
 
 ## 7. CI / CD
 
-- `oksis-ui`: CI yok.
-- `oksis-api`: İki GitHub Actions iş akışı var (`01-architect.yml`, `04-reviewer.yml`). İkisi de ajan iş akışıdır ve depoda olmayan `.github/scripts/` klasörünü çağırır. Derleme, test ya da deploy yapmaz.
-- Deploy süreci: {{TBD}}.
+- İki depoda `ci.yml` (2026-10-07): `dev` push → build/lint + birim testler (+ API'de DB'siz bekçiler); `test` push ve `master`'a PR → ek olarak API entegrasyon takımı (Testcontainers SQL + compose Garage/ClamAV) ve web production build.
+- `oksis-api`: `01-architect.yml`, `04-reviewer.yml` ajan iş akışlarıdır; depoda olmayan `.github/scripts/`'i çağırır, derleme/test yapmaz.
+- Dal koruması: depolar private + GitHub Free → sunucu tarafı koruma yok; yerel `.githooks/dal-korumasi.sh` (silme/force yasak, `master` yalnız `test`'ten ve `OKSIS_MASTER_ONAY=1` ile).
+- Deploy süreci: [[oksis-ortam-ve-hosting-plani]] §6.2–6.3 (Dilim C, W).
 
 ## 8. Kullanıcıdan istenecek bilgiler
 
@@ -128,7 +129,7 @@ Bu adreslerin gerçekten canlı olup olmadığı ve sahibi bilinmiyor: {{TBD}}.
 - [ ] Her ortamın sorumlusu ve erişim yöntemi (VPN, bastion, bulut konsolu)
 - [ ] Barındırma: container platformu, SQL Server, Redis, S3 depolama ve ClamAV prod karşılıkları
 - [ ] Gizli değerlerin tutulduğu yer ve rotasyon sorumlusu
-- [ ] Dal ↔ ortam eşlemesi (`oksis-test`, `oksis-preprod` dalları kullanılacak mı?)
+- [x] Dal ↔ ortam eşlemesi — `dev` → `test` → `master` (2026-10-07)
 - [ ] Doğru alan adı: `.tr` mı `.net` mi?
 - [ ] Prod JWT imzalama yolu (RS256 mı, HS256 mı) ve ayar adlarının düzeltilmesi
 - [ ] Log toplama hedefi (Elasticsearch sink bağlanacak mı?)

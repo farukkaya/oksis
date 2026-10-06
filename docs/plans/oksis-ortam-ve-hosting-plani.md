@@ -1,0 +1,495 @@
+# OKSİS — Ortam, Subdomain ve Ücretsiz Hosting Planı
+
+| | |
+|---|---|
+| **Sürüm** | v0.2 |
+| **Tarih** | 07.10.2026 |
+| **Kapsam** | Test ortamının ücretsiz altyapıda devreye alınması; prod'un hazırlık iskeleti |
+| **Domain** | `oksis.net` |
+| **İlgili** | [[ortamlar]] (`docs/teknik/ortamlar/ortamlar.md`) — ortam envanteri |
+
+> [!info] v0.1 → v0.2 değişikliği
+> v0.1 genel bir şablona göre yazılmıştı; 07.10.2026'da koddan ölçülüp düzeltildi.
+> Ölçüm bulguları ve verilen kararlar §11'de. Özet:
+> - **Prod ertelendi.** Azure SQL Free Offer bu kodla prod'u ay ortasında durdurur (§5.4).
+>   Bu turda yalnız **Test** kurulur; prod ilk ücretli okulla birlikte açılır.
+> - **Web tek Next.js 16 uygulamasıdır**, 3 Vite SPA değil. Yayın: Cloudflare Workers (OpenNext).
+> - **Dal modeli:** `dev` → `test` → `master`; üçü de korumalı (§6).
+
+---
+
+## 1. Amaç
+
+Hosting bütçesi olmadan OKSİS'in **test** ortamını devreye almak; prod için mimariyi
+şimdiden aynı kalıba oturtmak. Kurgu, ilk ücretli okulla birlikte ücretli altyapıya
+**mimariyi değiştirmeden** taşınabilecek şekilde tasarlanmıştır. Taşınırken yalnızca
+makine ve bağlantı bilgileri değişir.
+
+### Ortamlar
+
+| Ortam | Veritabanı | Barındırma | Durum |
+|---|---|---|---|
+| Development | `oksis_dev` | Yerel (Docker MSSQL) | Var |
+| Test | `oksis-test` | Bulut (ücretsiz) | **Bu turda kurulur** |
+| Production | `oksis-prod` | Ücretli, tercihen yurt içi | **Ertelendi** (§9 tetikleyicileri) |
+
+### Yayınlanacak bileşenler
+
+| Bileşen | Kaynak | Not |
+|---|---|---|
+| API | `oksis-api` | .NET 10, tek imaj, ortam `ASPNETCORE_ENVIRONMENT` ile seçilir |
+| Web (Merkez + Okul) | `oksis-ui/apps/web` | **Tek** Next.js 16 uygulaması; Merkez = `(platform)`, Okul = `(dashboard)` route grubu |
+| Landing + Marka Profili | **Depo yok** | Ayrı iş; bu turun kapsamı dışında (§10) |
+
+---
+
+## 2. Subdomain Yapısı
+
+### 2.1 Temel kural
+
+**Ortam tire ile eklenir, alt seviye açılmaz.**
+
+- ✅ `api-test.oksis.net`
+- ❌ `api.test.oksis.net`
+
+**Gerekçe:** Cloudflare'in ücretsiz Universal SSL sertifikası yalnızca tek seviyeyi
+(`*.oksis.net`) kapsar. İki seviyeli adlar ücretli Advanced Certificate Manager ister.
+
+### 2.2 Subdomain tablosu
+
+| Bileşen | Prod (ertelendi) | Test |
+|---|---|---|
+| Landing | `oksis.net` (`www` → 301) | — |
+| Marka Profili | `oksis.net/marka` | — |
+| API | `api.oksis.net` | `api-test.oksis.net` |
+| Merkez Platform | `merkez.oksis.net` | `merkez-test.oksis.net` |
+| Okul Platformu | `okul.oksis.net` | `okul-test.oksis.net` |
+
+Merkez ve Okul **aynı Worker'ın** iki host adıdır (§5.2); ayrı build yoktur.
+
+### 2.3 Kararların gerekçeleri
+
+**Marka Profili → `oksis.net/marka`**
+Ayrı subdomain ayrı deploy ve SEO bölünmesi demektir. `brand.oksis.net` → `oksis.net/marka`
+**301**. Landing deposu açılana kadar `brand.oksis.net` olduğu gibi kalır.
+
+**Merkez Platform → `merkez` (`admin` değil)**
+Okul tarafında da "yönetici" rolü vardır; `admin.oksis.net` bir okul müdürüne "bu benim
+panelim" algısı verir. Merkez yalnız OKSİS ekibinin platform konsoludur — erişim K-27
+platform rolleriyle (`PLATFORM_ADMIN` / `PLATFORM_OPERATIONS` / `PLATFORM_SUPPORT`) belirlenir.
+
+**Okul Platformu → tek domain `okul.oksis.net`**
+- Tenant çözümü login sonrası JWT claim'i üzerinden yapılır (bugünkü davranış).
+- Okul bazlı subdomain (ör. `ornekkolej.oksis.net`) ileride premium "vanity domain" olabilir.
+
+> [!warning] `app.oksis.net` çakışması — karar gerekli
+> Kodda e-posta bağlantılarının ve mobil davet deep link'inin hedefi `app.oksis.net`'tir
+> (`appsettings.json` → `App:BaseUrl`; mobil `app.config.ts` universal link / App Links `/invite`).
+> CORS tabanında ise `app.oksis.tr` / `admin.oksis.tr` geçer. `okul.oksis.net`'e geçilirse:
+> mobil derlemedeki associated domain değişir (yeni mağaza sürümü), `apple-app-site-association`
+> ve `assetlinks.json` yeni host'tan sunulur. Seçenekler: (a) `okul` + mobil güncelleme,
+> (b) `app.oksis.net` kalır, `okul` ona 301. **Test için** `App:BaseUrl = https://okul-test.oksis.net`
+> verilir; prod kararı prod açılırken.
+
+### 2.4 Rezerve adlar
+
+Bugün kodda tenant slug / okul subdomain kavramı **yoktur**; bu yüzden validasyon işi yok.
+Vanity domain gelirse şu adlar rezerve edilir:
+
+```
+www, api, api-test, merkez, merkez-test, okul, okul-test, app, admin,
+status, docs, s3, cdn, mail, marka, brand, test, prod, staging, dev
+```
+
+### 2.5 API dokümantasyonu (Scalar)
+
+| Ortam | Scalar | Bugünkü kod |
+|---|---|---|
+| Development | Açık | Açık |
+| Test | Açık (`api-test.oksis.net/scalar`) | **Kapalı** — koşul `IsDevelopment()`; genişletilecek |
+| Production | Kapalı | Kapalı |
+
+Hangfire dashboard Test'te de **kapalı** kalır (yalnız dev + localhost; `Program.cs`).
+
+---
+
+## 3. Ortam Adlandırma
+
+### 3.1 Backend (.NET)
+
+| Ortam | `ASPNETCORE_ENVIRONMENT` | Ayar dosyası |
+|---|---|---|
+| Development | `Development` | `appsettings.Development.json` |
+| Test | `Test` | `appsettings.Test.json` |
+| Production | `Production` | `appsettings.json` (taban) |
+
+> [!danger] `appsettings.Test.json` bugün kullanılamaz durumda
+> Dosya var ama içinde dev değerleri ve **depoya işlenmiş gizli bilgiler** duruyor:
+> localdb bağlantısı, eski simetrik `Jwt:SecretKey` (kod artık RSA `Jwt:PublicKeyPath` kullanıyor),
+> `NationalIdProtection` şifreleme/hash anahtarları. Bu anahtarlar **hiçbir bulut ortamında
+> kullanılmaz** (depo geçmişinde açık). Dosya yalnız gizli olmayan ayarları tutacak şekilde
+> yeniden yazılır; gizli bilgiler sunucudaki env dosyasından gelir. Test/integration test
+> kodu `Test` ortam adını kullanmıyor (07.10 ölçümü), çakışma yok.
+
+### 3.2 Frontend (Next.js)
+
+Web, API'yi tarayıcıdan doğrudan çağırmaz: istekler aynı origin'deki `/api/*`'a gider ve
+`next.config.ts` `rewrites` ile API'ye proxy'lenir. Bu yüzden **CORS ve cross-site cookie
+sorunu yoktur**; ortam farkı tek değişkendir:
+
+| Ortam | `OKSIS_API_PROXY_TARGET` |
+|---|---|
+| Development | tanımsız → `http://localhost:5112` |
+| Test | `https://api-test.oksis.net` |
+| Production | `https://api.oksis.net` |
+
+> `rewrites` hedefi build anında config'e gömülür; değişken **build ortamında** verilmelidir
+> (Worker runtime env'i değil). Dilim W0'da ölçülür.
+
+---
+
+## 4. Hosting Mimarisi
+
+### 4.1 Genel görünüm (Test)
+
+```
+                         ┌─────────────────────────────┐
+   Kullanıcı ──────────▶ │  Cloudflare (DNS/SSL/CDN)   │
+                         └──────────────┬──────────────┘
+              ┌─────────────────────────┼──────────────────────────┐
+              ▼                         ▼                          ▼
+   ┌────────────────────┐   ┌────────────────────┐   ┌────────────────────────┐
+   │ Cloudflare Workers │   │ Cloudflare Access  │   │ Cloudflare Tunnel      │
+   │ (OpenNext)         │◀──│ yalnız merkez-test │   │ api-test               │
+   │ merkez-test /      │   │ ve okul-test       │   └───────────┬────────────┘
+   │ okul-test          │──── /api/* proxy ───────────────────▶ │
+   └────────────────────┘                                        ▼
+                                          ┌──────────────────────────────────────┐
+                                          │ Oracle Cloud Always Free (ARM VM)    │
+                                          │ docker compose:                      │
+                                          │  api-test · redis · garage ·         │
+                                          │  clamav · seq · cloudflared          │
+                                          └───────────────────┬──────────────────┘
+                                                              ▼
+                                          ┌──────────────────────────────────────┐
+                                          │ Azure SQL Database (Free Offer)      │
+                                          │  oksis-test                          │
+                                          └──────────────────────────────────────┘
+```
+
+### 4.2 Bileşen – sağlayıcı eşlemesi
+
+| Katman | Sağlayıcı | Plan |
+|---|---|---|
+| DNS, SSL, CDN | Cloudflare | Free |
+| Web (Next.js) | Cloudflare Workers + `@opennextjs/cloudflare` | Free (sınırlar §5.2 — W0'da ölçülür) |
+| Test web erişim koruması | Cloudflare Access (Zero Trust) | Free (50 kullanıcıya kadar) |
+| API + Redis + Garage + ClamAV + Seq | Oracle Cloud | Always Free (ARM A1) |
+| Dışa açılım | Cloudflare Tunnel | Free |
+| Veritabanı | Azure SQL Database | Free Offer (yalnız Test) |
+| E-posta | {{TBD}} — ücretsiz SMTP katmanı (ör. Brevo/Resend) | Free |
+| Push | Firebase `oksis-dev` | Free |
+| CI/CD | GitHub Actions + GHCR | Free |
+| Log | Seq (aynı VM, container) | Free (tek kullanıcı) |
+
+---
+
+## 5. Bileşen Detayları
+
+### 5.1 DNS → Cloudflare Free
+
+1. `oksis.net` Cloudflare'e eklenir.
+2. Domain kayıt firmasında nameserver'lar Cloudflare'inkilerle değiştirilir.
+3. SSL modu **Full (strict)**.
+4. Taşımadan önce mevcut kayıtlar (özellikle `brand.oksis.net` ve varsa MX) dışa aktarılıp
+   Cloudflare'de birebir yeniden kurulur — yoksa marka sayfası ve e-posta kesilir.
+
+### 5.2 Web → Cloudflare Workers (OpenNext)
+
+`apps/web` tek bir Next.js 16 uygulamasıdır (SSR + `rewrites`). Statik export (`output: "export"`)
+`rewrites`'ı desteklemediği için Cloudflare Pages statik yayını **kullanılmaz**.
+`@opennextjs/cloudflare` adaptörü uygulamayı Node.js runtime'ıyla Worker olarak çalıştırır;
+`/api/*` proxy'si aynen korunur.
+
+| Worker | Kaynak dal | Host adları |
+|---|---|---|
+| `oksis-web-test` | `test` | `merkez-test.oksis.net`, `okul-test.oksis.net` |
+| `oksis-web` (ertelendi) | `master` | `merkez.oksis.net`, `okul.oksis.net` |
+
+**Host → yüzey ayrımı:** Bugün tek uygulama her iki yüzeyi de aynı host'tan sunar. İlk sürümde
+iki host da aynı uygulamayı açar (kabul edilebilir). Ayrımı kesinleştirmek — `merkez-*`'de
+yalnız `(platform)`, `okul-*`'da yalnız `(dashboard)` — Next `proxy.ts` ile host bazlı
+yönlendirme işidir; ayrı dilim (W2).
+
+> [!warning] Workers Free sınırları — W0 ölçümü olmadan devam edilmez
+> - Worker boyutu: **3 MiB (sıkıştırılmış)** Free planda. Next uygulamaları bu sınırı sıkça aşar.
+> - CPU: istek başına **10 ms** Free planda. SSR sayfaları bunu aşabilir (1102 hatası).
+> - Günde 100.000 istek; istek başına 50 alt istek.
+>
+> W0'da `opennextjs-cloudflare build` çıktısı ölçülür ve tipik sayfalar `wrangler` ile denenir.
+> Sınır aşılırsa yedek: **Next standalone container'ı aynı Oracle VM'de** çalıştırmak
+> (Tunnel arkasında; mimari ve domain'ler değişmez). Workers Paid ($5/ay) üçüncü seçenektir.
+
+**Test ortamı koruması:** `merkez-test` ve `okul-test` Cloudflare Access arkasına alınır
+(izinli e-posta listesi). `api-test` Access arkasına **alınmaz**: mobil uygulamanın kullanması
+gerekir ve uygulamaya gömülen bir Service Token sızmış sayılır. API zaten JWT ile korunur;
+login uçlarında rate limiting var (TB-169).
+
+### 5.3 API → Oracle Cloud Always Free + Cloudflare Tunnel
+
+**Kaynak limiti (2026):** Ampere A1 Always Free kotası **2 OCPU / 12 GB RAM**. Eski
+rehberlerdeki "4 OCPU / 24 GB" artık geçerli değildir. Kota aşılırsa instance kapatılır.
+
+**Önerilen VM:** `VM.Standard.A1.Flex`, 2 OCPU, 12 GB RAM, Ubuntu 24.04 aarch64, Frankfurt.
+
+**docker compose servisleri (Test):**
+
+| Servis | Açıklama | `mem_limit` (öneri) |
+|---|---|---|
+| `api-test` | `ASPNETCORE_ENVIRONMENT=Test`, `env/test.env`, RSA anahtar dosyaları salt-okunur mount | 2g |
+| `redis` | Cache, oturum/izin deposu, rate limit | 512m |
+| `garage` | S3 uyumlu object storage (okul başına bucket) | 512m |
+| `clamav` | Yükleme virüs taraması (v0.1'de eksikti) | 1.5g |
+| `seq` | Log | 1g |
+| `cloudflared` | Tunnel istemcisi | 128m |
+
+Prod açıldığında aynı dosyaya `api-prod` (3g) eklenir; RAM bütçesi ~9 GB ile sığar.
+
+**Cloudflare Tunnel ingress:**
+
+| Hostname | Hedef |
+|---|---|
+| `api-test.oksis.net` | `http://api-test:8080` |
+
+- VM'de **80/443 dışarı açılmaz**; yalnız SSH (anahtar ile) açık.
+- SignalR (`/hubs/session`, `/hubs/notifications`) WebSocket'leri tunnel üzerinden çalışır.
+- Mevcut `Dockerfile` multi-arch taban imaj kullanır; GitHub Actions'ta `buildx` ile
+  `linux/arm64` build edilir, GHCR'ye itilir, VM'de çekilir. `Dockerfile`'daki
+  `ASPNETCORE_ENVIRONMENT=Production` compose'da `Test` ile ezilir.
+- TLS tunnel'da biter; API `UseHttpsRedirection` kullandığı için forwarded headers
+  (`X-Forwarded-Proto`) yapılandırılır — yoksa yönlendirme döngüsü olur.
+
+### 5.4 Veritabanı → Azure SQL Database Free Offer (yalnız Test)
+
+**Limitler:** abonelik başına 10 ücretsiz DB; DB başına aylık **100.000 vCore saniyesi**
+serverless; 32 GB veri; kota her ay yenilenir.
+
+**Yapılandırma:**
+- `oksis-test`, bölge **Germany West Central**
+- Limit dolunca: **Auto-pause until next month**
+- Alarm: "Free amount remaining" < 10.000 vCore saniyesi → e-posta
+
+> [!danger] Bu kod Azure Free kotasını birkaç günde bitirir — prod'un ertelenme nedeni
+> 0,5 vCore'la 100.000 vCore-sn ≈ **ayda 55 saat** uyanıklık. Serverless DB ancak en az
+> 1 saat hiç sorgu gelmezse duraklar. Kodda veritabanını doğrudan sorgulayan sık işler var
+> (`HangfireSetup.cs`):
+> - `PublishScheduledAnnouncementsJob` — **her dakika**
+> - `AttendanceReminderJob` — **her 5 dakika**
+> - `HomeworkDueReminderJob` — saatlik
+>
+> Hangfire storage'ı Redis'e taşımak bunu **çözmez**; işin kendisi DB'ye gider. Ayrıca gerçek
+> kullanımda okul saatleri tek başına ayda ~170 saattir. Sonuç: Free Offer prod için uygun
+> değil; Test için yalnız aşağıdaki önlemlerle.
+>
+> SQL Server'ın ARM64 Linux imajı yoktur (Azure SQL Edge emekli). Veritabanı Oracle VM'ine
+> taşınamaz.
+
+**Test için önlemler:**
+
+| Risk | Önlem |
+|---|---|
+| Sık recurring job'lar DB'yi hep uyanık tutar | Test'te `Hangfire:Enabled = false` (varsayılan). Job testi gerektiğinde geçici açılır, test bitince kapatılır |
+| Hangfire SQL storage polling (15 sn) | Job'lar kapalıyken Hangfire hiç kurulmaz — ek iş yok. Redis storage'a geçiş **prod işi**, bu turda yapılmaz |
+| `/health/ready` DB'yi sorgular | Zaten ayrık: `/health/live` DB'ye dokunmaz (`Predicate = _ => false`). Docker healthcheck ve dış izleme **yalnız** `/health/live` kullanır |
+| Uyanma (cold start) saniyeler–1 dk | `EnableRetryOnFailure` **doğrudan açılamaz**: retrying execution strategy, kullanıcı başlatmalı transaction'larla (`BeginTransaction`) çalışmaz. Önce kullanım yerleri taranır; ya `CreateExecutionStrategy().ExecuteAsync` ile sarılır ya da yalnız bağlantı açılışına `Connect Timeout=60` + `ConnectRetryCount` verilir. Eşik gerçek uyanmada ölçülür |
+| Her startup'ta location seed DB'yi uyandırır | Kabul — yalnız deploy anında |
+
+### 5.5 Loglama
+
+Elasticsearch + Kibana VM'de RAM'in yarısını tüketir. Test'te:
+
+- Serilog → **Seq** (aynı VM, container; tek kullanıcı ücretsiz). `Serilog.Sinks.Seq` eklenir;
+  sink seçimi config'den yapılır, `Elasticsearch` sink'i korunur.
+- Seq UI dışarı açılmaz; SSH tüneliyle erişilir.
+- Correlation ID ve structured logging standardı aynen korunur.
+
+---
+
+## 6. Dal Modeli ve Deploy Akışı
+
+### 6.1 Dallar (karar: 07.10.2026)
+
+`oksis-api` ve `oksis-ui` depolarında üç kalıcı dal vardır; üçü de **korumalı**
+(silinemez, force-push yasak):
+
+| Dal | Rolü | Ortam | Kim günceller |
+|---|---|---|---|
+| `dev` | Geliştirmenin birleştiği dal; feature dalları buraya girer | — (yalnız CI build+test) | Geliştirme akışı |
+| `test` | Geliştirmesi tamamlanan iş buraya push edilir | **Test** — otomatik deploy | Geliştirme tamamlanınca |
+| `master` | Kontrolleri biten iş | Prod (ertelendi) | **Yalnız kullanıcı onayıyla** merge |
+
+```
+feature/* ──▶ dev ──(geliştirme tamam)──▶ test ──(kontroller tamam + onay)──▶ master
+                                            │                                  │
+                                            ▼                                  ▼
+                                      Test deploy                        Prod deploy
+                                      (otomatik)                    (ertelendi; tag + onay)
+```
+
+**Koruma kuralları (GitHub branch protection / ruleset):**
+- `dev`, `test`, `master`: silme yasak, force-push yasak.
+- `master`: doğrudan push yasak; yalnız PR ile, **kullanıcı onayı (review) zorunlu**,
+  `test` CI'ı yeşil olmalı.
+- `test`: CI (build + birim testler) yeşil olmadan deploy işi koşmaz.
+
+> Mevcut `04-reviewer.yml` `oksis-test` / `oksis-preprod` dal adlarını dinliyor; bu dallar yok.
+> Yeni dal adlarına (`test`, `master`) güncellenir ya da iş akışı kaldırılır (depoda olmayan
+> `.github/scripts/`'i çağırıyor, bugün zaten çalışmıyor).
+
+### 6.2 API pipeline
+
+```
+dev push      → build & birim testler (+ mimari bekçiler)
+
+test push     → build & birim testler
+              → docker buildx (linux/arm64) → GHCR (tag: test-<sha>)
+              → EF migration bundle → oksis-test
+              → SSH → VM: docker compose pull api-test && up -d api-test
+              → duman testi: GET https://api-test.oksis.net/health/live
+
+master (ertelendi)
+              → tag v0.x.y → build → GHCR (v0.x.y)
+              → [GitHub Environments: manuel onay]
+              → EF migration bundle → oksis-prod → deploy
+```
+
+**Kurallar:**
+- Prod'a migration **asla otomatik** gitmez.
+- Migration'lar geriye dönük uyumlu yazılır (önce kolon ekle, sonra kod, en son eski kolonu kaldır).
+- Prod deploy öncesi `oksis-prod` için point-in-time restore noktası not edilir.
+- Test DB'sine migration otomatik gider (bugün API kendi migrate etmez; bundle bu açığı kapatır).
+
+### 6.3 Web pipeline
+
+`test` push → GitHub Actions: `opennextjs-cloudflare build` (`OKSIS_API_PROXY_TARGET` build
+env'inde) → `wrangler deploy` → `oksis-web-test`. Cloudflare API token GitHub secret'ında.
+(Workers Builds'in Git entegrasyonu da kullanılabilir; monorepo + turbo için Actions daha
+öngörülebilir.)
+
+---
+
+## 7. KVKK Değerlendirmesi
+
+Azure (Almanya) ve Oracle (Frankfurt) kullanımı kişisel verinin **yurt dışına aktarımı** demektir.
+
+1. Gerçek kişisel veriler (Altınay gerçek okul açılışı dahil) yalnız yerel `oksis_dev`'de tutulur.
+2. `oksis-test`'te yalnız **sentetik veri**. Mevcut seed hesapları (s1…) ve seed runbook'u
+   (`docs/teknik/ortamlar/seed-runbook.md`) sentetik olduğu ölçülerek kullanılır; gerçek veri
+   içeren seed adımı (varsa) test'e uygulanmaz. Ayrı anonimleştirme betiği yalnız gerçek veri
+   test'e taşınmak istenirse yazılır.
+3. Prod açılmadan önce: yurt dışı aktarım için hukuki dayanak **veya** yurt içi barındırma.
+   Prod ertelendiği için bu karar prod açılışına bağlanır; yurt içi sağlayıcı önceliklidir.
+
+---
+
+## 8. Yedek Plan
+
+Oracle hesabı açılamazsa (Türk kartlarında doğrulama sorunu olabiliyor) veya Frankfurt'ta ARM
+kapasitesi doluysa: aynı `docker compose` + Tunnel kurulumu **evdeki bir bilgisayarda** çalışır.
+Mimari ve domain'ler değişmez. Kısıt: bilgisayar kapanınca API kapanır — Test için kabul edilebilir.
+
+---
+
+## 9. Prod Açılış Tetikleyicileri
+
+Aşağıdakilerden biri gerçekleşince prod ücretli altyapıda açılır:
+
+- İlk ücretli okul sözleşmesi
+- Gerçek kişisel verinin buluta girmesi gerekliliği
+- Prod API için SLA/uptime taahhüdü
+
+Prod açılırken karara bağlanacaklar: barındırma (yurt içi), `app.oksis.net` / `okul.oksis.net`
+(§2.3), Hangfire storage'ın Redis'e taşınması, prod Firebase projesi, mobil prod dağıtım hattı.
+
+---
+
+## 10. Uygulama Dilimleri
+
+Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi (kullanıcı yapar),
+🤖 = kod/yapılandırma (Claude yapar).
+
+### Dilim 0 — Dal modeli
+- [x] 🤖 `oksis-api`, `oksis-ui`: `dev` ve `test` dallarını `master`'dan aç, push et
+- [ ] 👤 GitHub'da üç dala koruma kuralı — **engel:** private depo + GitHub Free'de ruleset/branch protection kapalı (HTTP 403). Şimdilik yerel kanca `.githooks/dal-korumasi.sh` (silme/force yasak, `master` yalnız `test`'ten + `OKSIS_MASTER_ONAY=1`); sunucu koruması GitHub Pro ile
+- [x] 🤖 `04-reviewer.yml` dal adlarını güncelle (`master`, `test`, `dev`)
+- [x] 🤖 CI (`ci.yml`, iki depo): `dev` → build/lint + birim + bekçiler; `test` ve `master` PR → + entegrasyon / web build
+
+### Dilim B — Backend uyarlamaları (`oksis-api`, `dev` dalında)
+- [ ] 🤖 `appsettings.Test.json`'u gizli bilgiden arındır; gizli anahtarlar env'den
+- [ ] 🤖 Scalar'ı Development + Test'te aç
+- [ ] 🤖 Forwarded headers (Tunnel arkası HTTPS)
+- [ ] 🤖 `Serilog.Sinks.Seq` + config'den sink seçimi
+- [ ] 🤖 Transaction kullanımını tara → retry stratejisi kararı → uygula, gerçek uyanmada ölç
+- [ ] 🤖 Test CORS/`App:BaseUrl` değerleri (`okul-test`, `merkez-test`)
+
+### Dilim D — Hesaplar ve DNS (👤)
+- [ ] 👤 Mevcut DNS kayıtlarını dışa aktar; `oksis.net` nameserver'larını Cloudflare'e taşı
+- [ ] 👤 SSL Full (strict)
+- [ ] 👤 Azure hesabı; Free Offer ile `oksis-test` (Germany West Central, auto-pause, alarm)
+- [ ] 👤 Oracle Cloud hesabı (Frankfurt), A1.Flex 2 OCPU / 12 GB VM
+- [ ] 👤 Azure SQL firewall'a VM çıkış IP'si
+- [ ] 👤 SMTP sağlayıcısı seç ve hesap aç
+
+### Dilim S — Sunucu (`oksis-api`, `infra/` altında)
+- [ ] 🤖 `infra/test/docker-compose.yml`, `env/test.env.example`, Garage/ClamAV/Seq yapılandırması
+- [ ] 🤖 VM kurulum betiği (Docker, kullanıcı, SSH sertleştirme)
+- [ ] 👤 Tunnel oluştur (token), `env/test.env` gizli değerleri VM'e yerleştir
+- [ ] 🤖 RSA JWT anahtar çifti ve `NationalIdProtection` anahtarlarını **yeni** üret (test'e özgü)
+
+### Dilim C — API CI/CD
+- [ ] 🤖 `test` push → arm64 imaj → GHCR → migration bundle → SSH deploy → duman testi
+- [ ] 👤 GitHub secrets: SSH anahtarı, VM adresi, `oksis-test` bağlantısı
+- [ ] 🤖 Test DB'sine sentetik seed
+
+### Dilim W — Web
+- [ ] 🤖 **W0:** OpenNext build'i ölç (boyut ≤ 3 MiB, CPU) — sınır aşılırsa VM container yedeğine geç
+- [ ] 🤖 W1: `wrangler` yapılandırması, `test` push → deploy workflow'u
+- [ ] 👤 Cloudflare API token, `merkez-test`/`okul-test` custom domain, Access politikası
+- [ ] 🤖 W2: host → yüzey ayrımı (`proxy.ts`)
+
+### Kapsam dışı (bu tur)
+- Prod ortamı (§9)
+- Landing deposu ve `brand.oksis.net` → `oksis.net/marka` 301 (landing deposu açılınca)
+- Hangfire storage'ın Redis'e taşınması
+- Mobil uygulamanın `api-test`'e bağlanan derlemesi (ayrı EAS/derleme işi)
+
+---
+
+## 11. Ölçüm Bulguları ve Kararlar (07.10.2026)
+
+| # | v0.1 varsayımı | Koddaki gerçek | Sonuç |
+|---|---|---|---|
+| 1 | Azure Free Offer test + prod'u taşır | Dakikalık/5 dk'lık job'lar DB'yi sürekli uyandırır; okul saatleri tek başına kotayı aşar | **Karar:** Test Azure (job'lar kapalı), prod ertelendi |
+| 2 | 3 React + Vite SPA, Cloudflare Pages | Tek Next.js 16 uygulaması, `rewrites` proxy'si, `OKSIS_API_PROXY_TARGET` | **Karar:** Cloudflare Workers (OpenNext); W0 ölçümü şart |
+| 3 | `main` + `develop` | Üç depoda yalnız `master` | **Karar:** `dev` → `test` → `master`, üçü korumalı, master'a merge kullanıcı onayıyla |
+| 4 | Landing Pages projesi | Landing deposu yok | Kapsam dışı |
+| 5 | Health check ayrılacak | Zaten ayrık (`/health/live`, `/health/ready`) | Yalnız healthcheck hedefi seçilir |
+| 6 | Scalar prod'da kapatılacak | Zaten yalnız Development'ta açık | Test'e genişletilir |
+| 7 | CORS eklenecek | Zaten config'den (`Cors:AllowedOrigins`); web proxy kullandığı için tarayıcı CORS'u gerekmiyor | Yalnız değerler |
+| 8 | `appsettings.Test.json` eklenecek | Var; içinde depoya işlenmiş gizli anahtarlar ve bayat JWT ayarı | Temizlenir, anahtarlar yeniden üretilir |
+| 9 | Compose: api, redis, garage, cloudflared | ClamAV eksik; SMTP yok (yalnız Mailpit) | ClamAV + Seq eklendi; SMTP sağlayıcısı {{TBD}} |
+| 10 | Tenant slug rezerve adları | Kodda slug kavramı yok | Validasyon işi yok; liste ileriye not |
+| 11 | "SuperAdmin konsolu" | K-27: platform rolleri | Metin güncellendi |
+| 12 | `EnableRetryOnFailure` aç | Kullanıcı transaction'larıyla çakışır | Önce tarama |
+| 13 | Mobil için Access Service Token | Uygulamaya gömülen token sızmış sayılır | `api-test` Access'e alınmaz |
+| 14 | `okul.oksis.net` | `App:BaseUrl` ve mobil deep link `app.oksis.net` | Prod kararı açık (§2.3) |
+
+---
+
+## Kaynaklar
+
+- [Azure SQL Database free offer – Microsoft Learn](https://learn.microsoft.com/en-us/azure/azure-sql/database/free-offer)
+- [Oracle Quietly Halves Free Tier Ampere A1 Compute Limits – InfoQ](https://infoq.com/news/2026/07/oracle-cloud-free-tier-limits/)
+- [Oracle Always Free Resources – Oracle Docs](https://docs.oracle.com/en-us/iaas/Content/FreeTier/resourceref.htm)
+- [OpenNext — Cloudflare adaptörü](https://opennext.js.org/cloudflare)
+- [Cloudflare Workers — fiyatlandırma ve sınırlar](https://developers.cloudflare.com/workers/platform/pricing/)
