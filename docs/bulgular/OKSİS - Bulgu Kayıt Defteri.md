@@ -239,13 +239,15 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 6 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 32 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 55 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 40 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 31 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 54 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 39 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **135** | |
+| **Toplam** | **132** | |
 
 > **2026-10-05 (`E-40` cihaz ölçümü):** yeni `D-53` ⚪ (perdede push zamanı "2032y"). Toplam **133**.
+
+> **2026-10-05 (kapanış):** `E-39`, `D-54`, `D-55` kodda düzeltildi (oksis-api `9d313ff8`, oksis-ui `78f2618` `5b0f33b`), cihazda doğrulandı ve arşive taşındı ([[OKSİS - Bulgu Arşivi]] §77). Toplam **132**.
 
 > **2026-10-05 (Android kullanıcı testi):** yeni `B-111` 🟠 (yoklama hatırlatması bildirimi dünün ekranını açıyor), `E-39` 🟠 (raporlu/izinli sonraki oturumlara otomatik gelmiyor), `E-40` 🟡 (yoklama hatırlatması işi bitince kalkmıyor), `D-52` ⚪ (hatırlatma hangi ders olduğunu söylemiyor), `D-54` 🟡 (Android'de A kartında düğme dipnota biniyor), `D-55` ⚪ (Android'de etkin sekme arka planı köşeli). Toplam **135**.
 
@@ -2672,45 +2674,6 @@ kulüp saati satırı ("Kulüp saati · <kulüp> · Yoklama al"), kart sayacı t
 yoklamasına götürür; kart sayacı tüm etkinlik türlerini sayar.
 
 ✅ **2026-10-01 · kodda düzeltildi** (`oksis-ui` `fix/yoklama-ekran-kurallari` ← `a76c07b`; sayaç `oksis-api` `fix/yoklama-saha-2026-10-01` ← `6f3c530d`). Sahada ölçüldü: web'de danışmanın 8. saati "Kulüp saati · Müzik Kulübü · 6 üye · Yoklama Al"; `/clubs/mine` `activityCount` 1. **Kalan ölçüm:** mobil.
-
-### `D-54` · Android'de öğretmen anasayfasının "Şu anki ders" kartında "Yoklama al" düğmesi "Sonra:" satırının üstüne biniyor 🟡
-
-2026-10-05, kullanıcı testi (Android, öğretmen hesabı, 5. ders 12-B TYT Kimya). A kartında "Yoklama al" düğmesi
-alttaki "Sonra: 12-B · 13:30" dipnotunun üstüne biniyor; üstte "Şu anki ders" etiketi de ders adına değiyor. **iOS'ta
-doğru** çiziliyor.
-
-Not (doğrulanmadı): `HomeSquareCard` (`apps/mobile/src/features/home/components/home-parts.tsx`) `aspectRatio: 1` ile
-sabit kare; gövde `flex: 1`. İki satırlık ders adı + alt satır + düğme kareye sığmayınca içerik etikete ve dipnota
-taşıyor. Android'de yazı tipinin satır yüksekliği/genişliği daha büyük çıktığı için yalnız orada taşıyor olabilir.
-
-### `D-55` · Android'de alt sekme çubuğunda etkin sekmenin arka planı köşeli çiziliyor (yarıçap kayboluyor) ⚪
-
-2026-10-05, kullanıcı testi (Android, öğretmen hesabı). Alt sekme çubuğunda etkin "Anasayfa" sekmesinin ikon arka planı
-yuvarlak hap yerine **köşeli dikdörtgen** görünüyor. **Yalnız Android**; iOS'ta doğru.
-
-Not (doğrulanmadı): aralıklı — aynı cihazda 13:07 ekran görüntüsünde hap yuvarlak, 13:14'te köşeli. Kodda yarıçap sabit
-(`apps/mobile/src/components/tab-bar.tsx`: `width: 56, height: 30, borderRadius: 16`); değişen yalnız `backgroundColor`
-(`transparent` ↔ `pillBackground`). Sekme değişimi/yeniden çizim sonrası Android'in yarıçapı düşürmesi ihtimali ölçülmeli.
-
-### `E-39` · Raporlu/izinli işaretlenen öğrenci aynı günün sonraki oturumlarında otomatik raporlu/izinli gelmiyor 🟠
-
-2026-10-05, kullanıcı testi. Bir derste **raporlu** (ya da **izinli**) işaretlenen öğrenci, aynı günün sonraki derslerinin
-yoklama listesinde yine "var" olarak açılıyor; öğretmen her derste yeniden işaretlemek zorunda.
-
-✅ **Karar (2026-10-05, kullanıcı):** raporlu ve izinli öğrenciler bir sonraki oturumlarda otomatik setli gelmeli.
-
-Kod ölçümü: gönderilmemiş oturumun sanal listesi (`oksis-api` `AttendanceRosterBuilder.BuildVirtualRecordsAsync`)
-varsayılanı yalnız üç kaynaktan alıyor — onaylı mazeret (`ExcuseDefaultsProvider`), etkinlik katılımı, gün içi izin.
-Aynı gün daha önce **gönderilmiş** oturumdaki öğretmen kaydını okuyan kaynak yok; geçmişte de yazılıp silinmemiş (tüm
-dallar tarandı). Karıştırılan iki komşu yetenek:
-- **Rapor önceliği** (`B-99`, oksis-api `5f8cd5ac`, `26785237`): "o gün raporlu ders varsa gelmedileri de raporlu say" —
-  yalnız devamsızlık **hesabında**, yoklama listesini doldurmuyor.
-- **Blok devralma afişi**: mobil `roster-screen.tsx` "X. saatin yoklamasını devralayım mı?" afişini çiziyor, ama sunucu
-  `CarryFrom`'u her zaman `null` dönüyor (`AttendanceRosterBuilder.cs:180`) — afiş hiç görünmüyor.
-
-Uygulama yeri: sanal listeye dördüncü varsayılan kaynağı — aynı gün önceki oturumda raporlu/izinli kaydı olan öğrenci.
-Mevcut öncelik sırasına (Mazeret > Etkinlik > Gün içi izin) nereye gireceği ve kaydın `DefaultedByDailyLeave` benzeri
-bir "ön seçim" işareti taşıyıp taşımayacağı uygulamada netleşecek.
 
 ### `B-111` · Yoklama hatırlatması bildirimine dokununca *Bugünkü Derslerim* dünü açıyor; uygulama kapatılıp açılınca düzeliyor 🟠
 

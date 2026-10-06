@@ -11466,3 +11466,59 @@ halkası (core `thresholdLevel`) da geçleri bilmiyor.
 ✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `93877fd7`): özet geç birikimini `AttendanceReportMath`'ten alıyor (`lateDays`); entegrasyon testi özet = rapor = batch = eşik. Açık not (ajan): bugünün geç kayıtları kapanış kuralına bağlı değil, gün içinde de sayılıyor.
 
 ✅ **2026-10-02 21:50 · sahada ölçüldü, kapandı:** bir öğrencinin 3 dersi geçici olarak "geç" yapıldı: öğrenci ve veli özeti `lateDays` 0,5 / `unexcusedDays` 0,5, dönem raporu özürsüz 0,5 — aynı sayı (kayıtlar geri alındı).
+
+## 77. 5 Ekim mobil kullanıcı testi — yoklama ön seçimi ve Android yerleşimi (2026-10-05) ✅
+
+> 5 Ekim Android kullanıcı testinde açılan üç madde aynı gün kodda düzeltildi, iki depoda master'a alındı ve kullanıcı cihazda doğruladı.
+> Aynı turun bildirim maddeleri (`B-111`, `E-40`, `D-52`, `D-53`) ayrı oturumda düzeltildi.
+
+### `E-39` · Raporlu/izinli işaretlenen öğrenci aynı günün sonraki oturumlarında otomatik raporlu/izinli gelmiyor 🟠 *(kapandı — 2026-10-05)*
+
+2026-10-05, kullanıcı testi. Bir derste **raporlu** (ya da **izinli**) işaretlenen öğrenci, aynı günün sonraki derslerinin
+yoklama listesinde yine "var" olarak açılıyor; öğretmen her derste yeniden işaretlemek zorunda.
+
+✅ **Karar (2026-10-05, kullanıcı):** raporlu ve izinli öğrenciler bir sonraki oturumlarda otomatik setli gelmeli.
+
+Kod ölçümü: gönderilmemiş oturumun sanal listesi (`oksis-api` `AttendanceRosterBuilder.BuildVirtualRecordsAsync`)
+varsayılanı yalnız üç kaynaktan alıyor — onaylı mazeret (`ExcuseDefaultsProvider`), etkinlik katılımı, gün içi izin.
+Aynı gün daha önce **gönderilmiş** oturumdaki öğretmen kaydını okuyan kaynak yok; geçmişte de yazılıp silinmemiş (tüm
+dallar tarandı). Karıştırılan iki komşu yetenek:
+- **Rapor önceliği** (`B-99`, oksis-api `5f8cd5ac`, `26785237`): "o gün raporlu ders varsa gelmedileri de raporlu say" —
+  yalnız devamsızlık **hesabında**, yoklama listesini doldurmuyor.
+- **Blok devralma afişi**: mobil `roster-screen.tsx` "X. saatin yoklamasını devralayım mı?" afişini çiziyor, ama sunucu
+  `CarryFrom`'u her zaman `null` dönüyor (`AttendanceRosterBuilder.cs:180`) — afiş hiç görünmüyor.
+
+Uygulama yeri: sanal listeye dördüncü varsayılan kaynağı — aynı gün önceki oturumda raporlu/izinli kaydı olan öğrenci.
+Mevcut öncelik sırasına (Mazeret > Etkinlik > Gün içi izin) nereye gireceği ve kaydın `DefaultedByDailyLeave` benzeri
+bir "ön seçim" işareti taşıyıp taşımayacağı uygulamada netleşecek.
+
+✅ **2026-10-05 · kodda düzeltildi** (`oksis-api` master `9d313ff8`, birleştirme `b6958d96`): yeni ortak yardımcı `EarlierSessionDefaults` — öğrencinin o gün bu dersten önceki, yoklaması alınmış (Completed) derslerinden EN SONUNCUSU raporlu/izinliyse aynı durum ön seçili gelir; arada "var" işaretlendiyse rapor taşınmaz. Öncelik: onaylı mazeret > etkinlik > gün içi izin > önceki ders. Kullanıcı kararıyla kaynak notu yok: `DefaultedByDailyLeave` bu kaynakta açılmaz ("Gün içi izin" yazmaz). Kulüp saatine de bağlandı (`ClubHourAttendanceRecorder`): gelmeyen öğrenci o gün önceki derste raporluysa "yok" yerine raporlu yazılır. Entegrasyon testleri +3 (`AttendanceDailyLeaveAndActivityTests`); yoklama entegrasyon takımı 204/205 — tek kırmızı `AttendanceReminderJob_FlushesDispatcher_SchedulesDispatchNotificationJob` değişiklik olmadan master'da da kırmızı (bu işle ilgisiz).
+
+✅ **2026-10-05 · cihazda ölçüldü, kapandı:** kullanıcı Android'de test etti, sorun yok.
+
+### `D-54` · Android'de öğretmen anasayfasının "Şu anki ders" kartında "Yoklama al" düğmesi "Sonra:" satırının üstüne biniyor 🟡 *(kapandı — 2026-10-05)*
+
+2026-10-05, kullanıcı testi (Android, öğretmen hesabı, 5. ders 12-B TYT Kimya). A kartında "Yoklama al" düğmesi
+alttaki "Sonra: 12-B · 13:30" dipnotunun üstüne biniyor; üstte "Şu anki ders" etiketi de ders adına değiyor. **iOS'ta
+doğru** çiziliyor.
+
+Not (doğrulanmadı): `HomeSquareCard` (`apps/mobile/src/features/home/components/home-parts.tsx`) `aspectRatio: 1` ile
+sabit kare; gövde `flex: 1`. İki satırlık ders adı + alt satır + düğme kareye sığmayınca içerik etikete ve dipnota
+taşıyor. Android'de yazı tipinin satır yüksekliği/genişliği daha büyük çıktığı için yalnız orada taşıyor olabilir.
+
+✅ **2026-10-05 · kodda düzeltildi** (`oksis-ui` master `78f2618`, birleştirme `274bf23`): kök neden kesin kare — `aspectRatio: 1` içerik sığmayınca `justifyContent: 'center'` gövdeyi hem etikete hem dipnota taşırıyordu; Android'de ders adı iki satıra kırıldığı için yalnız orada görünüyordu. `HomeSquareCard` artık "en az kare": genişlik ölçülünce `minHeight: genişlik`, içerik fazlaysa kart uzar (dört rolün A kartı). Aynı taşma "Yoklama alındı · 1 yok, 1 geç" hâlinde de vardı, birlikte düzeldi.
+
+✅ **2026-10-05 · cihazda ölçüldü, kapandı:** kullanıcı Android'de test etti, sorun yok.
+
+### `D-55` · Android'de alt sekme çubuğunda etkin sekmenin arka planı köşeli çiziliyor (yarıçap kayboluyor) ⚪ *(kapandı — 2026-10-05)*
+
+2026-10-05, kullanıcı testi (Android, öğretmen hesabı). Alt sekme çubuğunda etkin "Anasayfa" sekmesinin ikon arka planı
+yuvarlak hap yerine **köşeli dikdörtgen** görünüyor. **Yalnız Android**; iOS'ta doğru.
+
+Not (doğrulanmadı): aralıklı — aynı cihazda 13:07 ekran görüntüsünde hap yuvarlak, 13:14'te köşeli. Kodda yarıçap sabit
+(`apps/mobile/src/components/tab-bar.tsx`: `width: 56, height: 30, borderRadius: 16`); değişen yalnız `backgroundColor`
+(`transparent` ↔ `pillBackground`). Sekme değişimi/yeniden çizim sonrası Android'in yarıçapı düşürmesi ihtimali ölçülmeli.
+
+✅ **2026-10-05 · kodda düzeltildi** (`oksis-ui` master `5b0f33b`, birleştirme `274bf23`): hap ayrı katmana alındı — rengi sabit, yalnız görünürlüğü (`opacity`) değişir; arka plan rengi `transparent` ↔ renk arasında değişen View'ın Android'de yarıçapı düşürdüğü varsayımına dayanır (kök neden ayrıca ölçülmedi).
+
+✅ **2026-10-05 · cihazda ölçüldü, kapandı:** kullanıcı Android'de test etti, sorun yok.
