@@ -324,7 +324,7 @@ Elasticsearch + Kibana VM'de RAM'in yarısını tüketir. Test'te:
 
 | Dal | Rolü | Ortam | Kim günceller |
 |---|---|---|---|
-| `dev` | Geliştirmenin birleştiği dal; feature dalları buraya girer | — (yalnız CI build+test) | Geliştirme akışı |
+| `dev` | Geliştirmenin birleştiği dal; feature dalları buraya girer | — (test koşmaz) | Geliştirme akışı |
 | `test` | Geliştirmesi tamamlanan iş buraya push edilir | **Test** — otomatik deploy | Geliştirme tamamlanınca |
 | `master` | Kontrolleri biten iş | Prod (ertelendi) | **Yalnız kullanıcı onayıyla** merge |
 
@@ -340,7 +340,9 @@ feature/* ──▶ dev ──(geliştirme tamam)──▶ test ──(kontrolle
 - `dev`, `test`, `master`: silme yasak, force-push yasak.
 - `master`: doğrudan push yasak; yalnız PR ile, **kullanıcı onayı (review) zorunlu**,
   `test` CI'ı yeşil olmalı.
-- `test`: CI (build + birim testler) yeşil olmadan deploy işi koşmaz.
+- `test`: CI yeşil olmadan deploy işi koşmaz.
+- **Testler yalnız `test` ve `master` push'unda otomatik koşar** (karar 07.10.2026) — hem yerel
+  pre-push kancası hem CI. `dev` ve feature push'ları testsiz ve hızlıdır.
 
 > Mevcut `04-reviewer.yml` `oksis-test` / `oksis-preprod` dal adlarını dinliyor; bu dallar yok.
 > Yeni dal adlarına (`test`, `master`) güncellenir ya da iş akışı kaldırılır (depoda olmayan
@@ -349,9 +351,9 @@ feature/* ──▶ dev ──(geliştirme tamam)──▶ test ──(kontrolle
 ### 6.2 API pipeline
 
 ```
-dev push      → build & birim testler (+ mimari bekçiler)
+dev push      → (CI yok)
 
-test push     → build & birim testler
+test push     → build & birim testler + bekçiler + entegrasyon
               → docker buildx (linux/arm64) → GHCR (tag: test-<sha>)
               → EF migration bundle → oksis-test
               → SSH → VM: docker compose pull api-test && up -d api-test
@@ -422,7 +424,8 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [x] 🤖 `oksis-api`, `oksis-ui`: `dev` ve `test` dallarını `master`'dan aç, push et
 - [ ] 👤 GitHub'da üç dala koruma kuralı — **engel:** private depo + GitHub Free'de ruleset/branch protection kapalı (HTTP 403). Şimdilik yerel kanca `.githooks/dal-korumasi.sh` (silme/force yasak, `master` yalnız `test`'ten + `OKSIS_MASTER_ONAY=1`); sunucu koruması GitHub Pro ile
 - [x] 🤖 `04-reviewer.yml` dal adlarını güncelle (`master`, `test`, `dev`)
-- [x] 🤖 CI (`ci.yml`, iki depo): `dev` → build/lint + birim + bekçiler; `test` ve `master` PR → + entegrasyon / web build
+- [x] 🤖 CI (`ci.yml`, iki depo) ve pre-push kancası: testler yalnız `test` ve `master` push'unda (API: build + birim + bekçiler + entegrasyon; UI: lint + typecheck + paket testleri + web build)
+- [ ] 👤 `gh` token'ına `workflow` yetkisi (`gh auth refresh -h github.com -s workflow`) — yoksa `.github/workflows/` push edilemez
 
 ### Dilim B — Backend uyarlamaları (`oksis-api`, `dev` dalında)
 - [ ] 🤖 `appsettings.Test.json`'u gizli bilgiden arındır; gizli anahtarlar env'den

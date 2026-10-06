@@ -118,7 +118,7 @@ Bu adreslerin gerçekten canlı olup olmadığı ve sahibi bilinmiyor: {{TBD}}.
 
 ## 7. CI / CD
 
-- İki depoda `ci.yml` (2026-10-07): `dev` push → build/lint + birim testler (+ API'de DB'siz bekçiler); `test` push ve `master`'a PR → ek olarak API entegrasyon takımı (Testcontainers SQL + compose Garage/ClamAV) ve web production build.
+- İki depoda `ci.yml` (2026-10-07): **yalnız `test` ve `master` push'unda** koşar. API: build + birim + DB'siz bekçiler + entegrasyon (Testcontainers SQL + compose Garage/ClamAV). UI: lint + typecheck + paket testleri + web production build. Yerel pre-push kancası da testleri yalnız bu iki dala push'ta koşturur.
 - `oksis-api`: `01-architect.yml`, `04-reviewer.yml` ajan iş akışlarıdır; depoda olmayan `.github/scripts/`'i çağırır, derleme/test yapmaz.
 - Dal koruması: depolar private + GitHub Free → sunucu tarafı koruma yok; yerel `.githooks/dal-korumasi.sh` (silme/force yasak, `master` yalnız `test`'ten ve `OKSIS_MASTER_ONAY=1` ile).
 - Deploy süreci: [[oksis-ortam-ve-hosting-plani]] §6.2–6.3 (Dilim C, W).
