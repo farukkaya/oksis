@@ -260,6 +260,7 @@ Prod açıldığında aynı dosyaya `api-prod` (3g) eklenir; RAM bütçesi ~9 GB
 | Hostname | Hedef |
 |---|---|
 | `api-test.oksis.net` | `http://api-test:8080` |
+| `s3-test.oksis.net` | `http://garage:3900` (imzalı dosya adresleri; anahtarsız erişim yok) |
 
 - VM'de **80/443 dışarı açılmaz**; yalnız SSH (anahtar ile) açık.
 - SignalR (`/hubs/session`, `/hubs/notifications`) WebSocket'leri tunnel üzerinden çalışır.
@@ -425,15 +426,29 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [ ] 👤 GitHub'da üç dala koruma kuralı — **engel:** private depo + GitHub Free'de ruleset/branch protection kapalı (HTTP 403). Şimdilik yerel kanca `.githooks/dal-korumasi.sh` (silme/force yasak, `master` yalnız `test`'ten + `OKSIS_MASTER_ONAY=1`). **Karar (07.10.2026): Free planda kalınır**, sunucu koruması yok; koruma yalnız yerel kancadadır
 - [x] 🤖 `04-reviewer.yml` dal adlarını güncelle (`master`, `test`, `dev`)
 - [x] 🤖 CI (`ci.yml`, iki depo) ve pre-push kancası: testler yalnız `test` ve `master` push'unda (API: build + birim + bekçiler + entegrasyon; UI: lint + typecheck + paket testleri + web build)
-- [ ] 👤 `gh` token'ına `workflow` yetkisi (`gh auth refresh -h github.com -s workflow`) — yoksa `.github/workflows/` push edilemez
+- [x] 👤 `gh` token'ına `workflow` yetkisi (`gh auth refresh -h github.com -s workflow`) — yoksa `.github/workflows/` push edilemez
+- [x] 🤖 **Göç birleştirmesi (07.10.2026, kullanıcı kararı):** pre-push ve CI derlemesi bitmiyordu — kök neden 240 EF
+  göçünün Designer dosyaları (Infrastructure'ın ~%98'i, 3,65 M satır). Tek `20261007_baseline` göçüne birleştirildi; çözüm
+  sıfırdan 54 sn'de derleniyor, CI build 3 dk. Eski zincir ve baseline iki boş DB'de şema + veri satır satır karşılaştırıldı;
+  iki ham SQL tohumu (plan modülleri, rehberlik dersi) baseline'a taşındı. Var olan DB'ler için
+  `scripts/goc-birlestirme-dev-gecisi.sql` (veriye dokunmaz; eski zincir DB'sinde denendi).
+- [ ] 👤 **Dev veritabanının baseline'a geçirilmesi** — betik hazır; çalıştırma zamanı kullanıcıyla (§11 #15)
 
 ### Dilim B — Backend uyarlamaları (`oksis-api`, `dev` dalında)
-- [ ] 🤖 `appsettings.Test.json`'u gizli bilgiden arındır; gizli anahtarlar env'den
-- [ ] 🤖 Scalar'ı Development + Test'te aç
-- [ ] 🤖 Forwarded headers (Tunnel arkası HTTPS)
-- [ ] 🤖 `Serilog.Sinks.Seq` + config'den sink seçimi
-- [ ] 🤖 Transaction kullanımını tara → retry stratejisi kararı → uygula, gerçek uyanmada ölç
-- [ ] 🤖 Test CORS/`App:BaseUrl` değerleri (`okul-test`, `merkez-test`)
+- [x] 🤖 `appsettings.Test.json`'u gizli bilgiden arındır — gizli değerler `OKSIS_SECRETS_DIR` altında dosya başına bir anahtar
+  (`AddKeyPerFile`; PEM/JSON çok satırlı). Test'in gizli listesi: `ConnectionStrings__DefaultConnection`, `Jwt__PrivateKeyPem`,
+  `NationalIdProtection__EncryptionKeyBase64`, `NationalIdProtection__HashKeyBase64`, `Storage__S3__AccessKey`,
+  `Storage__S3__SecretKey` (+ SMTP seçilince `Email__Smtp__*`, push için `Firebase__*`)
+- [x] 🤖 Scalar'ı Development + Test'te aç
+- [x] 🤖 Forwarded headers — kod gerekmedi: compose'da `ASPNETCORE_FORWARDEDHEADERS_ENABLED=true` (Dilim S)
+- [x] 🤖 `Serilog.Sinks.Seq` + config'den sink seçimi (Test → `seq:5341`)
+- [x] 🤖 Transaction taraması → `EnableRetryOnFailure` **kullanılamaz** (`TransactionBehavior` her komutu transaction'a sarar).
+  Yerine `ConnectionOpenRetryInterceptor` (`Database:OpenRetry`): yalnız bağlantı açılışı yeniden denenir. Kesinti vekiliyle
+  ölçüldü: kapalı ayarla 12. sn'de düşüyor, açıkla 22. sn'de ayağa kalkıyor. Azure uyanmasında yeniden ölçülecek (Dilim D sonrası)
+- [x] 🤖 Test CORS/`App:BaseUrl` değerleri (`okul-test`, `merkez-test`)
+- [x] 🤖 **`TB-270` (yeni bulgu):** RS256 token API'de doğrulanmıyordu — düzeltildi, RS256 anahtarıyla uçtan uca ölçüldü
+- [ ] 🤖 **Yeni ihtiyaç:** imzalı dosya adresleri (`PresignedEndpoint`) tarayıcıdan erişilebilir olmalı → Garage S3 de Tunnel
+  arkasından açılır: `s3-test.oksis.net` → `garage:3900` (Dilim S ingress + Dilim D DNS)
 
 ### Dilim D — Hesaplar ve DNS (👤)
 - [ ] 👤 Mevcut DNS kayıtlarını dışa aktar; `oksis.net` nameserver'larını Cloudflare'e taşı
@@ -486,6 +501,7 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 | 12 | `EnableRetryOnFailure` aç | Kullanıcı transaction'larıyla çakışır | Önce tarama |
 | 13 | Mobil için Access Service Token | Uygulamaya gömülen token sızmış sayılır | `api-test` Access'e alınmaz |
 | 14 | `okul.oksis.net` | `App:BaseUrl` ve mobil deep link `app.oksis.net` | Prod kararı açık (§2.3) |
+| 15 | Göçler kod geçmişi | 240 göçün Designer dosyaları derlemeyi kilitliyordu | **Karar:** birleştirildi (baseline). Dev DB'nin geçişi betikle, zamanı kullanıcıyla |
 
 ---
 

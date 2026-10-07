@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-112` · `D-56` · `V-07` · `X-25` · `TB-270` · `E-41` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-112` · `D-56` · `V-07` · `X-25` · `TB-271` · `E-41` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-33` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -244,6 +244,9 @@ sayaçlar üçü arasında ortak.
 | ⚪🟢 Düşük | 39 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
 | **Toplam** | **132** | |
+
+> **2026-10-07 (ortam/hosting planı v0.2 · Dilim B ön ölçümü):** yeni `TB-270` 🟠 — RS256 ile imzalanan token
+> API'de doğrulanamıyor; yalnız simetrik dev anahtarıyla çalışıldığı için görünmedi, Test ortamını bloklar (§12). Toplam **134**.
 
 > **2026-10-05 (`E-40` cihaz ölçümü):** yeni `D-53` ⚪ (perdede push zamanı "2032y"). Toplam **133**.
 
@@ -905,6 +908,36 @@ Düzeltme `FcmSender`: `EventTimestamp = DateTime.UtcNow`. Telefonda `when=17911
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-270` · RS256 ile imzalanan token API'de doğrulanamıyor — anahtar çifti yalnız imzada okunuyor 🟠
+
+2026-10-07, [[oksis-ortam-ve-hosting-plani]] Dilim B ön ölçümü (kod okuması; ortamda henüz koşturulmadı).
+
+**Ölçüm:** imza tarafı RS256'yı biliyor — `JwtSigningCredentials.Build` `Jwt:PrivateKeyPem` doluysa
+`RsaSecurityKey` ile imzalıyor (`AccountTokenIssuer`, `PlatformTokenIssuer`). Doğrulama tarafı bilmiyor —
+`Program.cs:71-76` `IssuerSigningKey`'i **yalnız** `Jwt:SecretKey` (simetrik) doluysa kuruyor; RSA açık
+anahtarı hiçbir yerde okunmuyor. Taban `appsettings.json`'daki `Jwt:PublicKeyPath` kodda **tek bir
+okuyucusu olmayan** ölü bir anahtar.
+
+**Sonuç:** RSA anahtar çiftiyle çalışan her ortamda (Test, Prod) giriş başarılı olur, token üretilir,
+ama sonraki **her** istek 401 döner (`IDX10500: Signature validation failed. No security keys were
+provided`). Bugüne kadar yalnız Development'ta, simetrik `SecretKey` ile çalışıldığı için görünmedi.
+
+⬜ Kapatma yolu: doğrulama imzayla aynı kaynaktan beslenir — `Jwt:PublicKeyPem` (yoksa private
+anahtardan türetilen açık anahtar) `RsaSecurityKey` olarak `IssuerSigningKey`'e girer; simetrik yol
+yalnız Development'ta kalır. Ölü `PublicKeyPath` kaldırılır. RS256 ile üretilen token'ın aynı API'de
+doğrulandığını ölçen test yazılır.
+
+**Yan bulgu (aynı ölçüm):** `Jwt:AccessTokenExpirationMinutes` / `RefreshTokenExpirationDays` ayar
+anahtarları `JwtOptions`'a hiç bağlanmıyordu (özellik adları `AccessTokenMinutes` / `RefreshTokenDays`);
+dev'deki "60 dakika" hiç etkili olmadı, ömür hep kod varsayılanı 15 dk.
+
+🟡 **2026-10-07 · kodda düzeltildi, dalda** (oksis-api `feature/test-ortami-backend`): doğrulama anahtarı
+imzayla aynı kaynaktan (`JwtSigningCredentials.BuildValidationKey`), açılışta kurulur; ölü anahtarlar
+temizlendi (davranış değişmedi). 7 birim testi + RS256 anahtarıyla başlatılan API'de uçtan uca: giriş
+token'ı RS256, yetkili uç 200, token'sız 401. `master`'a geçince arşive taşınır.
+
+---
 
 ### `TB-220` · Ödev form testi sabit tarihle yazılmış; takvim geçince kendiliğinden kırmızıya döndü ⚪
 
