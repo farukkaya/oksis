@@ -422,7 +422,7 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 
 ### Dilim 0 — Dal modeli
 - [x] 🤖 `oksis-api`, `oksis-ui`: `dev` ve `test` dallarını `master`'dan aç, push et
-- [ ] 👤 GitHub'da üç dala koruma kuralı — **engel:** private depo + GitHub Free'de ruleset/branch protection kapalı (HTTP 403). Şimdilik yerel kanca `.githooks/dal-korumasi.sh` (silme/force yasak, `master` yalnız `test`'ten + `OKSIS_MASTER_ONAY=1`); sunucu koruması GitHub Pro ile
+- [ ] 👤 GitHub'da üç dala koruma kuralı — **engel:** private depo + GitHub Free'de ruleset/branch protection kapalı (HTTP 403). Şimdilik yerel kanca `.githooks/dal-korumasi.sh` (silme/force yasak, `master` yalnız `test`'ten + `OKSIS_MASTER_ONAY=1`). **Karar (07.10.2026): Free planda kalınır**, sunucu koruması yok; koruma yalnız yerel kancadadır
 - [x] 🤖 `04-reviewer.yml` dal adlarını güncelle (`master`, `test`, `dev`)
 - [x] 🤖 CI (`ci.yml`, iki depo) ve pre-push kancası: testler yalnız `test` ve `master` push'unda (API: build + birim + bekçiler + entegrasyon; UI: lint + typecheck + paket testleri + web build)
 - [ ] 👤 `gh` token'ına `workflow` yetkisi (`gh auth refresh -h github.com -s workflow`) — yoksa `.github/workflows/` push edilemez
