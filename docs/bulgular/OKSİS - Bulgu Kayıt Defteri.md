@@ -245,6 +245,8 @@ sayaçlar üçü arasında ortak.
 | ❓ Netleşmemiş | 1 | `TB-261` |
 | **Toplam** | **132** | |
 
+> **2026-10-07 (kapanış):** `TB-270` ve `TB-271` oksis-api master `78001ff8`'de; arşive taşındı ([[OKSİS - Bulgu Arşivi]] §78). Toplam **134**.
+
 > **2026-10-07 (ilk tam CI koşusu, göç birleştirmesi sonrası):** entegrasyon 1666/1672. Yeni `TB-271` 🟠 (süreç kültürü
 > ortama bırakılmış — Linux'ta invariant, Türkçe arama bozuluyor; kodda düzeltildi) ve `TB-272` 🟡 (deftersiz iki kırmızı
 > entegrasyon testi). Kalan kırmızı `TB-261`. Toplam **136**.
@@ -913,26 +915,6 @@ Düzeltme `FcmSender`: `EventTimestamp = DateTime.UtcNow`. Telefonda `when=17911
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
 
-### `TB-271` · Süreç kültürü ortama bırakılmış — Linux sunucuda invariant'a düşüyor, Türkçe arama bozuluyor 🟠
-
-2026-10-07, ilk tam GitHub CI koşusu (`oksis-api` `test`, `da0d9a54`).
-`GetAnnouncementsTests.Should_BeCaseInsensitive_When_QueryUsesDifferentCasing` CI'da kırmızı, yerelde yeşil.
-
-**Ölçüm:** sunucu araması `ToLower()` + `LIKE` kalıbını kullanıyor (Application'da 39 `ToLower()`); kalıp
-bilerek Türkçe kültüre yaslanıyor (`GetAnnouncementsQueryHandler` yorumu: invariant küçültme `İ`'yi
-olduğu gibi bırakır). Uygulama kültürü **hiçbir yerde** ayarlamıyor. Geliştirme makinesi (macOS) sistem
-dilinden tr-TR alıyor — `LANG` silinse bile; Linux'ta `LANG` tanımsızsa .NET invariant'a düşer.
-`DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` ile test yerelde de kırmızı; `en_US` ve `tr_TR` ile yeşil.
-
-**Sonuç:** Test/Prod container'ında (Linux, `LANG` tanımsız) "VELİ" gibi `İ` içeren her arama boş
-dönerdi; bütün testler tr-TR'de koştuğu için hiçbiri yakalamazdı.
-
-🟡 **2026-10-07 · kodda düzeltildi, dalda** (oksis-api `feature/test-ortami-backend`): `Program.cs` açılışta
-`DefaultThreadCurrentCulture`/`UICulture` = tr-TR; CI testleri `LANG=tr_TR.UTF-8` ile koşar. `master`'a
-geçince arşive taşınır.
-
----
-
 ### `TB-272` · İki entegrasyon testi master'da kırmızı ama defterde kaydı yok 🟡
 
 2026-10-07, ilk tam CI koşusu + yerel ölçüm. İkisi de göç birleştirmesinden **önceki** commit'te
@@ -948,36 +930,6 @@ koşuyu kırmızıya boyar ve yeni bir kırmızıyı gizler (`TB-231` dersi, §1
 
 ⬜ Kapatma yolu: iki testin kök nedeni ölçülür (test mi yanlış, kod mu); `TB-261` ile birlikte
 kapandığında entegrasyon takımı tam yeşil olur.
-
----
-
-### `TB-270` · RS256 ile imzalanan token API'de doğrulanamıyor — anahtar çifti yalnız imzada okunuyor 🟠
-
-2026-10-07, [[oksis-ortam-ve-hosting-plani]] Dilim B ön ölçümü (kod okuması; ortamda henüz koşturulmadı).
-
-**Ölçüm:** imza tarafı RS256'yı biliyor — `JwtSigningCredentials.Build` `Jwt:PrivateKeyPem` doluysa
-`RsaSecurityKey` ile imzalıyor (`AccountTokenIssuer`, `PlatformTokenIssuer`). Doğrulama tarafı bilmiyor —
-`Program.cs:71-76` `IssuerSigningKey`'i **yalnız** `Jwt:SecretKey` (simetrik) doluysa kuruyor; RSA açık
-anahtarı hiçbir yerde okunmuyor. Taban `appsettings.json`'daki `Jwt:PublicKeyPath` kodda **tek bir
-okuyucusu olmayan** ölü bir anahtar.
-
-**Sonuç:** RSA anahtar çiftiyle çalışan her ortamda (Test, Prod) giriş başarılı olur, token üretilir,
-ama sonraki **her** istek 401 döner (`IDX10500: Signature validation failed. No security keys were
-provided`). Bugüne kadar yalnız Development'ta, simetrik `SecretKey` ile çalışıldığı için görünmedi.
-
-⬜ Kapatma yolu: doğrulama imzayla aynı kaynaktan beslenir — `Jwt:PublicKeyPem` (yoksa private
-anahtardan türetilen açık anahtar) `RsaSecurityKey` olarak `IssuerSigningKey`'e girer; simetrik yol
-yalnız Development'ta kalır. Ölü `PublicKeyPath` kaldırılır. RS256 ile üretilen token'ın aynı API'de
-doğrulandığını ölçen test yazılır.
-
-**Yan bulgu (aynı ölçüm):** `Jwt:AccessTokenExpirationMinutes` / `RefreshTokenExpirationDays` ayar
-anahtarları `JwtOptions`'a hiç bağlanmıyordu (özellik adları `AccessTokenMinutes` / `RefreshTokenDays`);
-dev'deki "60 dakika" hiç etkili olmadı, ömür hep kod varsayılanı 15 dk.
-
-🟡 **2026-10-07 · kodda düzeltildi, dalda** (oksis-api `feature/test-ortami-backend`): doğrulama anahtarı
-imzayla aynı kaynaktan (`JwtSigningCredentials.BuildValidationKey`), açılışta kurulur; ölü anahtarlar
-temizlendi (davranış değişmedi). 7 birim testi + RS256 anahtarıyla başlatılan API'de uçtan uca: giriş
-token'ı RS256, yetkili uç 200, token'sız 401. `master`'a geçince arşive taşınır.
 
 ---
 

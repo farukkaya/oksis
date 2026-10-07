@@ -432,7 +432,8 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
   sıfırdan 54 sn'de derleniyor, CI build 3 dk. Eski zincir ve baseline iki boş DB'de şema + veri satır satır karşılaştırıldı;
   iki ham SQL tohumu (plan modülleri, rehberlik dersi) baseline'a taşındı. Var olan DB'ler için
   `scripts/goc-birlestirme-dev-gecisi.sql` (veriye dokunmaz; eski zincir DB'sinde denendi).
-- [ ] 👤 **Dev veritabanının baseline'a geçirilmesi** — betik hazır; çalıştırma zamanı kullanıcıyla (§11 #15)
+- [x] 🤖 **Dev veritabanı baseline'a geçirildi (07.10.2026)** — önce yedek (`/var/opt/mssql/backup/oksis_dev_once_baseline_20261007.bak`,
+  doğrulandı); şema baseline ile birebir (Hangfire hariç), `dotnet ef database update` boş geçiyor. Dilim 0 + B master'da (PR #39)
 
 ### Dilim B — Backend uyarlamaları (`oksis-api`, `dev` dalında)
 - [x] 🤖 `appsettings.Test.json`'u gizli bilgiden arındır — gizli değerler `OKSIS_SECRETS_DIR` altında dosya başına bir anahtar

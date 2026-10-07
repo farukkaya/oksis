@@ -11522,3 +11522,57 @@ Not (doğrulanmadı): aralıklı — aynı cihazda 13:07 ekran görüntüsünde 
 ✅ **2026-10-05 · kodda düzeltildi** (`oksis-ui` master `5b0f33b`, birleştirme `274bf23`): hap ayrı katmana alındı — rengi sabit, yalnız görünürlüğü (`opacity`) değişir; arka plan rengi `transparent` ↔ renk arasında değişen View'ın Android'de yarıçapı düşürdüğü varsayımına dayanır (kök neden ayrıca ölçülmedi).
 
 ✅ **2026-10-05 · cihazda ölçüldü, kapandı:** kullanıcı Android'de test etti, sorun yok.
+
+## 78. Ortam/hosting planı Dilim B — Test ortamı ön koşulları (2026-10-07) ✅
+
+> Hosting planı v0.2 Dilim B ölçümünde açılan iki madde aynı gün düzeltildi ve `master`'a alındı
+> (oksis-api PR #39). Aynı turda 240 EF göçü tek baseline'a birleştirildi, dev veritabanı geçirildi.
+
+### `TB-270` · RS256 ile imzalanan token API'de doğrulanamıyor — anahtar çifti yalnız imzada okunuyor 🟠 *(kapandı — 2026-10-07)*
+
+2026-10-07, [[oksis-ortam-ve-hosting-plani]] Dilim B ön ölçümü (kod okuması; ortamda henüz koşturulmadı).
+
+**Ölçüm:** imza tarafı RS256'yı biliyor — `JwtSigningCredentials.Build` `Jwt:PrivateKeyPem` doluysa
+`RsaSecurityKey` ile imzalıyor (`AccountTokenIssuer`, `PlatformTokenIssuer`). Doğrulama tarafı bilmiyor —
+`Program.cs:71-76` `IssuerSigningKey`'i **yalnız** `Jwt:SecretKey` (simetrik) doluysa kuruyor; RSA açık
+anahtarı hiçbir yerde okunmuyor. Taban `appsettings.json`'daki `Jwt:PublicKeyPath` kodda **tek bir
+okuyucusu olmayan** ölü bir anahtar.
+
+**Sonuç:** RSA anahtar çiftiyle çalışan her ortamda (Test, Prod) giriş başarılı olur, token üretilir,
+ama sonraki **her** istek 401 döner (`IDX10500: Signature validation failed. No security keys were
+provided`). Bugüne kadar yalnız Development'ta, simetrik `SecretKey` ile çalışıldığı için görünmedi.
+
+⬜ Kapatma yolu: doğrulama imzayla aynı kaynaktan beslenir — `Jwt:PublicKeyPem` (yoksa private
+anahtardan türetilen açık anahtar) `RsaSecurityKey` olarak `IssuerSigningKey`'e girer; simetrik yol
+yalnız Development'ta kalır. Ölü `PublicKeyPath` kaldırılır. RS256 ile üretilen token'ın aynı API'de
+doğrulandığını ölçen test yazılır.
+
+**Yan bulgu (aynı ölçüm):** `Jwt:AccessTokenExpirationMinutes` / `RefreshTokenExpirationDays` ayar
+anahtarları `JwtOptions`'a hiç bağlanmıyordu (özellik adları `AccessTokenMinutes` / `RefreshTokenDays`);
+dev'deki "60 dakika" hiç etkili olmadı, ömür hep kod varsayılanı 15 dk.
+
+✅ **2026-10-07 · kapandı** — oksis-api master `78001ff8` (PR #39) (oksis-api `feature/test-ortami-backend`): doğrulama anahtarı
+imzayla aynı kaynaktan (`JwtSigningCredentials.BuildValidationKey`), açılışta kurulur; ölü anahtarlar
+temizlendi (davranış değişmedi). 7 birim testi + RS256 anahtarıyla başlatılan API'de uçtan uca: giriş
+token'ı RS256, yetkili uç 200, token'sız 401.
+
+---
+
+### `TB-271` · Süreç kültürü ortama bırakılmış — Linux sunucuda invariant'a düşüyor, Türkçe arama bozuluyor 🟠 *(kapandı — 2026-10-07)*
+
+2026-10-07, ilk tam GitHub CI koşusu (`oksis-api` `test`, `da0d9a54`).
+`GetAnnouncementsTests.Should_BeCaseInsensitive_When_QueryUsesDifferentCasing` CI'da kırmızı, yerelde yeşil.
+
+**Ölçüm:** sunucu araması `ToLower()` + `LIKE` kalıbını kullanıyor (Application'da 39 `ToLower()`); kalıp
+bilerek Türkçe kültüre yaslanıyor (`GetAnnouncementsQueryHandler` yorumu: invariant küçültme `İ`'yi
+olduğu gibi bırakır). Uygulama kültürü **hiçbir yerde** ayarlamıyor. Geliştirme makinesi (macOS) sistem
+dilinden tr-TR alıyor — `LANG` silinse bile; Linux'ta `LANG` tanımsızsa .NET invariant'a düşer.
+`DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` ile test yerelde de kırmızı; `en_US` ve `tr_TR` ile yeşil.
+
+**Sonuç:** Test/Prod container'ında (Linux, `LANG` tanımsız) "VELİ" gibi `İ` içeren her arama boş
+dönerdi; bütün testler tr-TR'de koştuğu için hiçbiri yakalamazdı.
+
+✅ **2026-10-07 · kapandı** — oksis-api master `78001ff8` (PR #39) (oksis-api `feature/test-ortami-backend`): `Program.cs` açılışta
+`DefaultThreadCurrentCulture`/`UICulture` = tr-TR; CI testleri `LANG=tr_TR.UTF-8` ile koşar.
+
+---
