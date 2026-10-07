@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-112` · `D-56` · `V-07` · `X-25` · `TB-271` · `E-41` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-112` · `D-56` · `V-07` · `X-25` · `TB-273` · `E-41` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-33` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -244,6 +244,10 @@ sayaçlar üçü arasında ortak.
 | ⚪🟢 Düşük | 39 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 1 | `TB-261` |
 | **Toplam** | **132** | |
+
+> **2026-10-07 (ilk tam CI koşusu, göç birleştirmesi sonrası):** entegrasyon 1666/1672. Yeni `TB-271` 🟠 (süreç kültürü
+> ortama bırakılmış — Linux'ta invariant, Türkçe arama bozuluyor; kodda düzeltildi) ve `TB-272` 🟡 (deftersiz iki kırmızı
+> entegrasyon testi). Kalan kırmızı `TB-261`. Toplam **136**.
 
 > **2026-10-07 (ortam/hosting planı v0.2 · Dilim B ön ölçümü):** yeni `TB-270` 🟠 — RS256 ile imzalanan token
 > API'de doğrulanamıyor; yalnız simetrik dev anahtarıyla çalışıldığı için görünmedi, Test ortamını bloklar (§12). Toplam **134**.
@@ -908,6 +912,44 @@ Düzeltme `FcmSender`: `EventTimestamp = DateTime.UtcNow`. Telefonda `when=17911
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `TB-271` · Süreç kültürü ortama bırakılmış — Linux sunucuda invariant'a düşüyor, Türkçe arama bozuluyor 🟠
+
+2026-10-07, ilk tam GitHub CI koşusu (`oksis-api` `test`, `da0d9a54`).
+`GetAnnouncementsTests.Should_BeCaseInsensitive_When_QueryUsesDifferentCasing` CI'da kırmızı, yerelde yeşil.
+
+**Ölçüm:** sunucu araması `ToLower()` + `LIKE` kalıbını kullanıyor (Application'da 39 `ToLower()`); kalıp
+bilerek Türkçe kültüre yaslanıyor (`GetAnnouncementsQueryHandler` yorumu: invariant küçültme `İ`'yi
+olduğu gibi bırakır). Uygulama kültürü **hiçbir yerde** ayarlamıyor. Geliştirme makinesi (macOS) sistem
+dilinden tr-TR alıyor — `LANG` silinse bile; Linux'ta `LANG` tanımsızsa .NET invariant'a düşer.
+`DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1` ile test yerelde de kırmızı; `en_US` ve `tr_TR` ile yeşil.
+
+**Sonuç:** Test/Prod container'ında (Linux, `LANG` tanımsız) "VELİ" gibi `İ` içeren her arama boş
+dönerdi; bütün testler tr-TR'de koştuğu için hiçbiri yakalamazdı.
+
+🟡 **2026-10-07 · kodda düzeltildi, dalda** (oksis-api `feature/test-ortami-backend`): `Program.cs` açılışta
+`DefaultThreadCurrentCulture`/`UICulture` = tr-TR; CI testleri `LANG=tr_TR.UTF-8` ile koşar. `master`'a
+geçince arşive taşınır.
+
+---
+
+### `TB-272` · İki entegrasyon testi master'da kırmızı ama defterde kaydı yok 🟡
+
+2026-10-07, ilk tam CI koşusu + yerel ölçüm. İkisi de göç birleştirmesinden **önceki** commit'te
+(`4b59123d`, ayrı worktree) aynı şekilde kırmızı — birleştirmeyle ilgisiz.
+
+| Test | Hata |
+|---|---|
+| `AttendanceNotificationsTests.AttendanceReminderJob_FlushesDispatcher_SchedulesDispatchNotificationJob` | "start+10dk geçmiş tek Pending oturum hatırlatılmalı" — 1 beklenip 0. `E-39` kapanışında (2026-10-05) "master'da da kırmızı, ilgisiz" diye not düşülmüş, madde açılmamıştı |
+| `SchoolLogoLifecycleIntegrationTests.Upload_then_public_stream_after_scan_clean_then_delete_then_404` | `uploadResult.IsSuccess` false — Garage + ClamAV ayaktayken de |
+
+Neden önemli: CI artık bu takımı `test` ve `master` push'unda koşturuyor; bilinen kırmızılar her
+koşuyu kırmızıya boyar ve yeni bir kırmızıyı gizler (`TB-231` dersi, §12).
+
+⬜ Kapatma yolu: iki testin kök nedeni ölçülür (test mi yanlış, kod mu); `TB-261` ile birlikte
+kapandığında entegrasyon takımı tam yeşil olur.
+
+---
 
 ### `TB-270` · RS256 ile imzalanan token API'de doğrulanamıyor — anahtar çifti yalnız imzada okunuyor 🟠
 
