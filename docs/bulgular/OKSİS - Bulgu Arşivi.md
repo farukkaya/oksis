@@ -11576,3 +11576,37 @@ dönerdi; bütün testler tr-TR'de koştuğu için hiçbiri yakalamazdı.
 `DefaultThreadCurrentCulture`/`UICulture` = tr-TR; CI testleri `LANG=tr_TR.UTF-8` ile koşar.
 
 ---
+
+## 79. Ortam/hosting planı Dilim S — Test sunucusu yerel duman koşusu (2026-10-07) ✅
+
+> Dilim S'in compose yığını yerelde uçtan uca ayağa kaldırılırken iki engel çıktı; ikisi de aynı gün
+> oksis-api `dev` `32b8f5b0`'da düzeltildi.
+
+### `TB-273` · API Docker imajı derlenmiyor — `dotnet restore Oksis.slnx` test projelerini arıyor 🔴 *(kapandı — 2026-10-07)*
+
+2026-10-07, Dilim S yerel duman koşusu (`docker build .`).
+
+**Ölçüm:** `Dockerfile` yalnız `src/` altındaki beş `.csproj`'u kopyalayıp `dotnet restore Oksis.slnx`
+çalıştırıyor; çözüm dosyası beş test projesini de listelediği için restore `MSB3202 ... was not found`
+ile düşüyor. İmaj hiç derlenmiyor; Dilim C'nin (GHCR'ye imaj) ilk adımı olduğu için deploy hattını baştan
+kilitlerdi. Ayrıca imaj kök kullanıcıyla çalışıyordu.
+
+✅ **2026-10-07 · kapandı** — oksis-api `dev` `32b8f5b0`: restore yalnız `src/Oksis.Api/Oksis.Api.csproj`'a;
+final aşamada `USER $APP_UID` (1654); `.dockerignore`'a `**/.env` ve `infra/`. İmaj 2 dk 17 sn'de derlendi,
+Test yapılandırmasıyla açıldı (aşağıdaki duman ölçümleri).
+
+---
+
+### `TB-274` · Planlanan ClamAV imajı arm64'te yok — Oracle A1 VM'de virüs taraması açılmazdı 🟠 *(kapandı — 2026-10-07)*
+
+2026-10-07, Dilim S imaj mimarisi kontrolü (Docker Hub manifest listeleri).
+
+**Ölçüm:** `clamav/clamav:1.4` ve `:stable` yalnız `amd64` yayımlanıyor. Diğer servisler (redis, garage
+v1.0.1, seq 2026.1, cloudflared) arm64 içeriyor. Plan VM'i Ampere A1 (arm64) — ClamAV konteyneri
+başlamaz, `ClamAv:Enabled=true` olan API'de yükleme taraması çalışmazdı.
+
+✅ **2026-10-07 · kapandı** — `infra/test/docker-compose.yml` resmi Debian tabanlı `clamav/clamav-debian:1.4`
+kullanır (amd64 + arm64). Yerel koşuda aynı `CLAMD_CONF_*` ayarları ve `clamdcheck.sh` sağlık kontrolüyle
+sağlıklı, `zPING` → `PONG`, ClamAV 1.4.6. arm64'te gerçek koşu VM açılınca (Dilim D sonrası).
+
+---

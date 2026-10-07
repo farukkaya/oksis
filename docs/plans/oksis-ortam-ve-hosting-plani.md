@@ -246,10 +246,10 @@ rehberlerdeki "4 OCPU / 24 GB" artık geçerli değildir. Kota aşılırsa insta
 
 | Servis | Açıklama | `mem_limit` (öneri) |
 |---|---|---|
-| `api-test` | `ASPNETCORE_ENVIRONMENT=Test`, `env/test.env`, RSA anahtar dosyaları salt-okunur mount | 2g |
+| `api-test` | `ASPNETCORE_ENVIRONMENT=Test`; gizli ayarlar `secrets/api/` → `OKSIS_SECRETS_DIR` (salt-okunur mount) | 2g |
 | `redis` | Cache, oturum/izin deposu, rate limit | 512m |
 | `garage` | S3 uyumlu object storage (okul başına bucket) | 512m |
-| `clamav` | Yükleme virüs taraması (v0.1'de eksikti) | 1.5g |
+| `clamav` | Yükleme virüs taraması (v0.1'de eksikti); arm64 için `clamav/clamav-debian` (`TB-274`) | 1.5g |
 | `seq` | Log | 1g |
 | `cloudflared` | Tunnel istemcisi | 128m |
 
@@ -459,11 +459,27 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [ ] 👤 Azure SQL firewall'a VM çıkış IP'si
 - [ ] 👤 SMTP sağlayıcısı seç ve hesap aç
 
-### Dilim S — Sunucu (`oksis-api`, `infra/` altında)
-- [ ] 🤖 `infra/test/docker-compose.yml`, `env/test.env.example`, Garage/ClamAV/Seq yapılandırması
-- [ ] 🤖 VM kurulum betiği (Docker, kullanıcı, SSH sertleştirme)
-- [ ] 👤 Tunnel oluştur (token), `env/test.env` gizli değerleri VM'e yerleştir
-- [ ] 🤖 RSA JWT anahtar çifti ve `NationalIdProtection` anahtarlarını **yeni** üret (test'e özgü)
+### Dilim S — Sunucu (`oksis-api`, `infra/test/` altında)
+- [x] 🤖 `infra/test/docker-compose.yml` (api-test, redis, garage, clamav, seq, cloudflared; dışa port yok, Seq UI ve
+  API yalnız `127.0.0.1` — SSH tüneli/duman testi), `env.example` (VM'de `.env`), `garage/garage.toml` (sırlar env'den)
+- [x] 🤖 `scripts/vm-kurulum.sh` — Docker resmi depo, `oksis` kullanıcısı, SSH sertleştirme, fail2ban, otomatik
+  güvenlik güncellemesi, 2 GB swap, Docker log sınırı. Konteynerde deneme koşusu ağ yavaşlığından yarıda kaldı;
+  **ilk gerçek koşu VM'de** doğrulanacak
+- [x] 🤖 `scripts/anahtar-uret.sh` — Test'e özgü **yeni** RSA 2048 JWT, `NationalIdProtection` (32/64 bayt), Garage S3
+  anahtarı, Garage RPC/admin, Seq parolası, platform kurucu hesabı; idempotent (var olanı ezmez); bağlantı dizesi ve
+  tunnel token'ı terminalden gizli okunur. Gizli dosyalar `1654` (API konteyner kullanıcısı) sahipliğinde, `400`
+- [x] 🤖 `scripts/garage-ilk-kurulum.sh` — layout + API anahtarını içe alma + bucket oluşturma izni; idempotent
+- [x] 🤖 **Yerel duman koşusu (07.10.2026)** — imaj + yığın + baseline'lı boş DB: `/health/live`, `/health/ready`,
+  Scalar 200; ilk platform hesabı üretildi, giriş token'ı RS256, yetkili 200 / token'sız 401; dış host adıyla
+  (`s3-test.oksis.net`) imzalanan adres Garage'da 200, bozuk/imzasız 403; Seq'e `Service=oksis-api`,
+  `Environment=Test` olaylar düşüyor; ClamAV `PONG`. Bellek: API 444 MB, ClamAV 961 MB, Seq 123 MB
+- [x] 🤖 Bulunan iki engel düzeltildi: `TB-273` (Dockerfile restore kırık, imaj hiç derlenmiyordu) ve `TB-274`
+  (`clamav/clamav` yalnız amd64 → `clamav/clamav-debian`)
+- [ ] 👤 Tunnel oluştur (token) — ingress panelde: `api-test.oksis.net` → `http://api-test:8080`,
+  `s3-test.oksis.net` → `http://garage:3900` (Host başlığı **değiştirilmez**; imza onu kapsar)
+- [ ] 👤 VM'de sırayla: `vm-kurulum.sh` → `anahtar-uret.sh <eposta>` → `compose up -d redis garage clamav seq` →
+  `garage-ilk-kurulum.sh` → (Dilim C göç sonrası) `compose up -d`
+- [ ] 👤 Seq ilk girişte parola değişikliği ister (`ssh -L 8081:127.0.0.1:8081`, kullanıcı `admin`)
 
 ### Dilim C — API CI/CD
 - [ ] 🤖 `test` push → arm64 imaj → GHCR → migration bundle → SSH deploy → duman testi
