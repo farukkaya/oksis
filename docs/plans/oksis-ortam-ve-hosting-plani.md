@@ -452,10 +452,12 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
   arkasından açılır: `s3-test.oksis.net` → `garage:3900` (Dilim S ingress + Dilim D DNS)
 
 ### Dilim D — Hesaplar ve DNS (👤)
-- [ ] 👤 Mevcut DNS kayıtlarını dışa aktar; `oksis.net` nameserver'larını Cloudflare'e taşı
+- [x] 👤 Mevcut DNS kayıtlarını dışa aktar; `oksis.net` nameserver'larını Cloudflare'e taşı — **08.10.2026 aktif**. DNS önceden
+  Vercel'deydi (yalnız Vercel'in otomatik kayıtları); yerine `@`→`76.76.21.21`, `www`/`brand`→`cname.vercel-dns.com` (DNS only)
 - [ ] 👤 SSL Full (strict)
 - [ ] 👤 Azure hesabı; Free Offer ile `oksis-test` (Germany West Central, auto-pause, alarm)
-- [ ] 👤 Oracle Cloud hesabı (Frankfurt), A1.Flex 2 OCPU / 12 GB VM
+- [x] 👤 Oracle Cloud hesabı (Frankfurt), A1.Flex 2 OCPU / 12 GB VM — **08.10.2026**: `oksis-test`, AD-2 (AD-1 kapasite yok),
+  Ubuntu 24.04 aarch64, genel IP `130.61.174.101` (ephemeral; sihirbazda açılamadı, sonradan VNIC'ten verildi)
 - [ ] 👤 Azure SQL firewall'a VM çıkış IP'si
 - [ ] 👤 SMTP sağlayıcısı seç ve hesap aç
 
@@ -475,10 +477,12 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
   `Environment=Test` olaylar düşüyor; ClamAV `PONG`. Bellek: API 444 MB, ClamAV 961 MB, Seq 123 MB
 - [x] 🤖 Bulunan iki engel düzeltildi: `TB-273` (Dockerfile restore kırık, imaj hiç derlenmiyordu) ve `TB-274`
   (`clamav/clamav` yalnız amd64 → `clamav/clamav-debian`)
-- [ ] 👤 Tunnel oluştur (token) — ingress panelde: `api-test.oksis.net` → `http://api-test:8080`,
+- [x] 👤 Tunnel oluştur (token) — **08.10.2026**, Zero Trust Free (kart doğrulamalı, $0). Ingress panelde: `api-test.oksis.net` → `http://api-test:8080`,
   `s3-test.oksis.net` → `http://garage:3900` (Host başlığı **değiştirilmez**; imza onu kapsar)
-- [ ] 👤 VM'de sırayla: `vm-kurulum.sh` → `anahtar-uret.sh <eposta>` → `compose up -d redis garage clamav seq` →
-  `garage-ilk-kurulum.sh` → (Dilim C göç sonrası) `compose up -d`
+- [x] 👤 VM'de sırayla: `vm-kurulum.sh` → `anahtar-uret.sh <eposta>` → `compose up -d redis garage clamav seq` →
+  `garage-ilk-kurulum.sh` → (Dilim C göç sonrası) `compose up -d` — **08.10.2026** API hariç hepsi arm64'te ayakta; ClamAV
+  `clamav-debian` sağlıklı (`TB-274` gerçek ortamda doğrulandı); tunnel 4 bağlantı (fra); dışarıdan `api-test` 502 (API yok),
+  `s3-test` Garage 403 (anonim erişim yok). Eksik yalnız `ConnectionStrings__DefaultConnection` (Azure)
 - [ ] 👤 Seq ilk girişte parola değişikliği ister (`ssh -L 8081:127.0.0.1:8081`, kullanıcı `admin`)
 
 ### Dilim C — API CI/CD
