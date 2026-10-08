@@ -531,7 +531,7 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - Prod ortamı (§9)
 - Landing deposu ve `brand.oksis.net` → `oksis.net/marka` 301 (landing deposu açılınca)
 - Hangfire storage'ın Redis'e taşınması
-- Mobil uygulamanın `api-test`'e bağlanan derlemesi (ayrı EAS/derleme işi)
+- ~~Mobil uygulamanın `api-test`'e bağlanan derlemesi~~ — **08.10.2026 yapıldı:** "Oksis Test" (`com.oksis.mobile.test`), yerel derleme `apps/mobile/scripts/build-test.sh ios|android`, TestFlight iç grup + Play iç test; push için oksis-dev Firebase'e test uygulamaları ve Test API'ye FCM servis hesabı (oksis-ui `e514179`)
 
 ---
 
