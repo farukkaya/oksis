@@ -88,7 +88,8 @@ Parola (passphrase) sorarsa bir parola verin; Mac anahtar zincirine kaydedilir.
    ad `oksis-test-vm`, başlangıç ve bitiş IP = Adım 2'deki VM IP'si → **Save**.
 6. Alarm: veritabanı sayfası → **Free offer** kartı / **Alerts → Create** → "Free amount remaining"
    < 10.000 → e-posta.
-7. Bağlantı dizesi (VM'de sorulacak; şimdi sadece hazırlayın):
+7. Bağlantı dizesi VM'de `sudo /opt/oksis/test/scripts/baglanti-yaz.sh` ile yazılır — yalnız parolayı sorar
+   (şablonu elle düzenlemek 2026-10-08'de `PAROLA` kelimesinin olduğu gibi kalmasına yol açtı). Dizenin biçimi:
 
    ```
    Server=tcp:<sunucu-adı>.database.windows.net,1433;Initial Catalog=oksis-test;User ID=<yönetici>;Password=<parola>;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;

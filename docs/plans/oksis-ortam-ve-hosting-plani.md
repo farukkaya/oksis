@@ -455,10 +455,12 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [x] 👤 Mevcut DNS kayıtlarını dışa aktar; `oksis.net` nameserver'larını Cloudflare'e taşı — **08.10.2026 aktif**. DNS önceden
   Vercel'deydi (yalnız Vercel'in otomatik kayıtları); yerine `@`→`76.76.21.21`, `www`/`brand`→`cname.vercel-dns.com` (DNS only)
 - [ ] 👤 SSL Full (strict)
-- [ ] 👤 Azure hesabı; Free Offer ile `oksis-test` (Germany West Central, auto-pause, alarm)
+- [x] 👤 Azure hesabı; Free Offer ile `oksis-test` (Germany West Central, auto-pause, alarm) — **08.10.2026**: eski `rg-oksis`
+  (West Europe, 39 MB) kullanıcı kararıyla silindi; yeni `oksis-test-rg` / `oksis-test-sql` / `oksis-test`, GP_S_Gen5_2, overage kapalı,
+  SQL + Entra kimlik doğrulaması (`oksisadmin`), harmanlama dev ile aynı. ⬜ "Free amount remaining" alarmı henüz kurulmadı
 - [x] 👤 Oracle Cloud hesabı (Frankfurt), A1.Flex 2 OCPU / 12 GB VM — **08.10.2026**: `oksis-test`, AD-2 (AD-1 kapasite yok),
   Ubuntu 24.04 aarch64, genel IP `130.61.174.101` (ephemeral; sihirbazda açılamadı, sonradan VNIC'ten verildi)
-- [ ] 👤 Azure SQL firewall'a VM çıkış IP'si
+- [x] 👤 Azure SQL firewall'a VM çıkış IP'si — yalnız `130.61.174.101`; VM'den gerçek giriş ölçüldü (`baglanti-yaz.sh`)
 - [ ] 👤 SMTP sağlayıcısı seç ve hesap aç
 
 ### Dilim S — Sunucu (`oksis-api`, `infra/test/` altında)
