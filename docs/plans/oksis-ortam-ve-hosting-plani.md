@@ -468,8 +468,8 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
   (West Europe, 39 MB) kullanıcı kararıyla silindi; yeni `oksis-test-rg` / `oksis-test-sql` / `oksis-test`, GP_S_Gen5_2, overage kapalı,
   SQL + Entra kimlik doğrulaması (`oksisadmin`), harmanlama dev ile aynı. "Free amount remaining" alarmı kuruldu (aşağıda, Dilim C)
 - [x] 👤 Oracle Cloud hesabı (Frankfurt), A1.Flex 2 OCPU / 12 GB VM — **08.10.2026**: `oksis-test`, AD-2 (AD-1 kapasite yok),
-  Ubuntu 24.04 aarch64, genel IP `130.61.174.101` (ephemeral; sihirbazda açılamadı, sonradan VNIC'ten verildi)
-- [x] 👤 Azure SQL firewall'a VM çıkış IP'si — yalnız `130.61.174.101`; VM'den gerçek giriş ölçüldü (`baglanti-yaz.sh`)
+  Ubuntu 24.04 aarch64, genel IP `138.2.159.102` — **reserved** (`oksis-test-ip`, 08.10.2026). İlk IP `130.61.174.101` ephemeral'dı (sihirbazda açılamadı, VNIC'ten verildi); OCI ephemeral'ı reserved'a çeviremediği için yeni adres ayrıldı, host anahtarı aynı
+- [x] 👤 Azure SQL firewall'a VM çıkış IP'si — yalnız `138.2.159.102` (kural `oksis-test-vm-reserved`; eski IP kuralı silindi); VM'den gerçek giriş ölçüldü (`baglanti-yaz.sh`)
 - [x] 👤 SMTP — **Test'te gerçek gönderim yok (kullanıcı kararı 08.10.2026):** Altınay hesapları `@altinay.test`, gerçek gönderim
   geri döner ve gönderici itibarını yakar. Mailpit compose'da, arayüz `mail-test.oksis.net` (tunnel + Access). Uçtan uca ölçüldü:
   şifre sıfırlama e-postası Mailpit'e düştü, bağlantı `okul-test.oksis.net/reset-password`. Gerçek sağlayıcı (Brevo/OCI Email Delivery,
