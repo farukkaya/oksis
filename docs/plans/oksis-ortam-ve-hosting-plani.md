@@ -488,9 +488,18 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [ ] 👤 Seq ilk girişte parola değişikliği ister (`ssh -L 8081:127.0.0.1:8081`, kullanıcı `admin`)
 
 ### Dilim C — API CI/CD
-- [ ] 🤖 `test` push → arm64 imaj → GHCR → migration bundle → SSH deploy → duman testi
-- [ ] 👤 GitHub secrets: SSH anahtarı, VM adresi, `oksis-test` bağlantısı
-- [ ] 🤖 Test DB'sine sentetik seed
+- [x] 🤖 `test` push → arm64 imaj → GHCR → migration bundle → SSH deploy → duman testi — **08.10.2026, ilk koşu yeşil**
+  (oksis-api `eca9fc34`, run 37759608355). Dockerfile derlemeyi runner mimarisinde yapıp arm64'e çapraz derler (QEMU yok);
+  `efbundle` imajın içinde; `infra/test/scripts/dagit.sh` çek → göç (Azure uyanması için 3 deneme) → yeniden başlat → sağlık.
+  Dağıtım birim kapısına bağlı, entegrasyona değil (bilinen kırmızılar `TB-261`, `TB-272` — bu koşuda da aynı üç test).
+  Ölçüm: Azure'a baseline uygulandı; dışarıdan `/health/live`, `/health/ready`, Scalar 200; platform girişi RS256,
+  yetkili 200 / token'sız 401; API 266 MB
+- [x] 🤖 Yan bulgu düzeltildi: `OksisDbContextFactory` ayarları yalnız `../Oksis.Api`'de arıyordu — imajdaki göç paketi
+  açılışta düşerdi; artık paketin yanındaki `appsettings.json`'a da bakar
+- [x] 👤 GitHub secrets: `TEST_VM_SSH_KEY` (yalnız dağıtım anahtarı; port/agent yönlendirme ve pty kapalı), `TEST_VM_KNOWN_HOSTS`
+  (host anahtarı sabit), `TEST_VM_HOST`. GHCR çekme için kalıcı token yok — işin `GITHUB_TOKEN`'ı stdin'den geçer
+- [ ] 🤖 Test DB'sine sentetik seed (şu an yalnız konum verisi + ilk platform hesabı var)
+- [ ] 👤 Azure "Free amount remaining" alarmı
 
 ### Dilim W — Web
 - [ ] 🤖 **W0:** OpenNext build'i ölç (boyut ≤ 3 MiB, CPU) — sınır aşılırsa VM container yedeğine geç
