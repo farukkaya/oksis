@@ -385,13 +385,22 @@ env'inde) → `wrangler deploy` → `oksis-web-test`. Cloudflare API token GitHu
 
 Azure (Almanya) ve Oracle (Frankfurt) kullanımı kişisel verinin **yurt dışına aktarımı** demektir.
 
-1. Gerçek kişisel veriler (Altınay gerçek okul açılışı dahil) yalnız yerel `oksis_dev`'de tutulur.
-2. `oksis-test`'te yalnız **sentetik veri**. Mevcut seed hesapları (s1…) ve seed runbook'u
-   (`docs/teknik/ortamlar/seed-runbook.md`) sentetik olduğu ölçülerek kullanılır; gerçek veri
-   içeren seed adımı (varsa) test'e uygulanmaz. Ayrı anonimleştirme betiği yalnız gerçek veri
-   test'e taşınmak istenirse yazılır.
+1. ~~Gerçek kişisel veriler (Altınay dahil) yalnız yerel `oksis_dev`'de tutulur; `oksis-test`'te yalnız sentetik veri.~~
+   **Karar değişti (kullanıcı, 08.10.2026):** Altınay AL (gerçek okul açılışı, izinli liste) **olduğu gibi** Test'e
+   kopyalandı — gerçek adlarla, anonimleştirmesiz. Kullanıcı yurt dışı aktarımı Test için bilerek kabul etti.
+   Kapsam: 272 hesap/kişi (öğretmen, öğrenci, veli), 101 öğrenci kaydı, programlar, yoklama, bildirim geçmişi, 23 dosya.
+   Listelerde TCKN, doğum tarihi, iletişim yok (veri kaynağı raporu). Oturum belirteçleri (`refresh_tokens`) taşınmadı.
+2. Test ortamına erişim dar tutulur: web Cloudflare Access arkasında (yalnız `test-ekibi`), API JWT, DB yalnız VM IP'si.
+   Yeni gerçek okul verisi Test'e kullanıcı kararı olmadan taşınmaz.
 3. Prod açılmadan önce: yurt dışı aktarım için hukuki dayanak **veya** yurt içi barındırma.
-   Prod ertelendiği için bu karar prod açılışına bağlanır; yurt içi sağlayıcı önceliklidir.
+   Prod ertelendiği için bu karar prod açılışına bağlanır; yurt içi sağlayıcı önceliklidir. Test'teki gerçek veri
+   prod kararından önce gözden geçirilir (silinmesi ya da anonimleştirilmesi).
+
+**Altınay aktarımı (08.10.2026):** dev'den tek transaction'lık SQL betiği (depo dışı üretici), VM'den Azure'a koşturuldu.
+Kısıtlar yükleme boyunca kapalı, sonda `WITH CHECK` ile tüm satırlarda yeniden doğrulandı (güvenilmeyen FK 0). Sayımlar
+dev ile birebir. Katalog: Test'te olmayan MEB/ders/branş verisi eklendi; konum, rol/izin ve sabit katalog ID'leri iki
+DB'de aynıydı (ölçüldü); `plan_modules` aynı içerik farklı ID — referansı olmadığı için atlandı. Garage kovası
+`oksis-tea1a0cc2-…` 23 nesneyle kopyalandı. Giriş bilgileri dev ile aynı (`ad.soyad@altinay.test`).
 
 ---
 
@@ -498,7 +507,7 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
   açılışta düşerdi; artık paketin yanındaki `appsettings.json`'a da bakar
 - [x] 👤 GitHub secrets: `TEST_VM_SSH_KEY` (yalnız dağıtım anahtarı; port/agent yönlendirme ve pty kapalı), `TEST_VM_KNOWN_HOSTS`
   (host anahtarı sabit), `TEST_VM_HOST`. GHCR çekme için kalıcı token yok — işin `GITHUB_TOKEN`'ı stdin'den geçer
-- [ ] 🤖 Test DB'sine sentetik seed (şu an yalnız konum verisi + ilk platform hesabı var)
+- [x] 🤖 Test DB'sine örnek veri — sentetik yerine Altınay AL olduğu gibi (§7 kararı)
 - [ ] 👤 Azure "Free amount remaining" alarmı
 
 ### Dilim W — Web
@@ -512,8 +521,8 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
   işi (`test` push → OpenNext build → deploy → Access 302 duman testi; Node 22, wrangler gereği). İlk koşu yeşil (run 37768739744)
 - [x] 👤 Cloudflare API token ("Edit Cloudflare Workers", yalnız `oksis.net`), `merkez-test`/`okul-test` custom domain,
   Access politikası `test-ekibi` (yalnız `farukkaya03@hotmail.com.tr`, e-posta kodu, 24 saat). Platform girişi uçtan uca çalıştı
-- [ ] 🤖 W2: host → yüzey ayrımı (`proxy.ts`) — bugün iki host da aynı uygulamayı açıyor; kök `/` okul girişine gittiği için
-  platform kullanıcısı `merkez-test`'te de okul girişine düşüyor (08.10.2026 deneyiminde yaşandı)
+- [x] 🤖 W2: host → yüzey ayrımı — `merkez-*` yalnız `/platform/*`, `okul-*`/`app.*` `/platform`'u okula yönlendirir, localhost
+  ayrımsız. `proxy.ts` (Node) Worker'ı 3,42 MiB'a çıkardığı için Edge `middleware.ts` (2,27 MiB; Next "deprecated" uyarısı, bilinçli)
 
 ### Kapsam dışı (bu tur)
 - Prod ortamı (§9)
