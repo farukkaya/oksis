@@ -463,7 +463,7 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 ### Dilim D — Hesaplar ve DNS (👤)
 - [x] 👤 Mevcut DNS kayıtlarını dışa aktar; `oksis.net` nameserver'larını Cloudflare'e taşı — **08.10.2026 aktif**. DNS önceden
   Vercel'deydi (yalnız Vercel'in otomatik kayıtları); yerine `@`→`76.76.21.21`, `www`/`brand`→`cname.vercel-dns.com` (DNS only)
-- [ ] 👤 SSL Full (strict)
+- [x] 🤖 SSL Full (strict) — **08.10.2026** (önce "Automatic SSL/TLS" Full'de çalışıyordu); sonrası api-test 200, okul/merkez/mail-test 302 (Access), oksis.net/www/brand açık
 - [x] 👤 Azure hesabı; Free Offer ile `oksis-test` (Germany West Central, auto-pause, alarm) — **08.10.2026**: eski `rg-oksis`
   (West Europe, 39 MB) kullanıcı kararıyla silindi; yeni `oksis-test-rg` / `oksis-test-sql` / `oksis-test`, GP_S_Gen5_2, overage kapalı,
   SQL + Entra kimlik doğrulaması (`oksisadmin`), harmanlama dev ile aynı. "Free amount remaining" alarmı kuruldu (aşağıda, Dilim C)
