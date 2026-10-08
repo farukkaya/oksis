@@ -502,10 +502,18 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [ ] 👤 Azure "Free amount remaining" alarmı
 
 ### Dilim W — Web
-- [ ] 🤖 **W0:** OpenNext build'i ölç (boyut ≤ 3 MiB, CPU) — sınır aşılırsa VM container yedeğine geç
-- [ ] 🤖 W1: `wrangler` yapılandırması, `test` push → deploy workflow'u
-- [ ] 👤 Cloudflare API token, `merkez-test`/`okul-test` custom domain, Access politikası
-- [ ] 🤖 W2: host → yüzey ayrımı (`proxy.ts`)
+- [x] 🤖 **W0 (08.10.2026):** OpenNext ölçüldü — Worker **2,20 MiB gzip** (sınır 3 MiB). Gerçek trafikte (173 istek) CPU
+  P50 **2,5 ms**, P90 **7,9 ms**, "Exceeded CPU" **0**; P99 254 ms soğuk başlatma. **Karar: Workers Free yeter**, VM
+  container yedeğine gerek yok. Önceden üretilen sayfalar `staticAssetsIncrementalCache` ile statik varlıklardan okunur
+  (açılmadan her istek render ediliyordu, ~50 ms → 5-7 ms); `populateCache` adımı `opennextjs-cloudflare deploy` içinde
+- [x] 🤖 Yan bulgu: **Next 16.2.6 → 16.3.8** (Eylül 2026 güvenlik sürümü; OpenNext 1.20.8+ 16.3.8 altını desteklemiyor).
+  `next/image` kullanılmıyor (yalnız `<img>`) — görüntü optimizasyonu SSRF'i bizi etkilemez
+- [x] 🤖 W1: `wrangler.jsonc` (`oksis-web-test`, özel alan adları, `workers_dev`/`preview_urls` kapalı), `ci.yml` `deploy-web`
+  işi (`test` push → OpenNext build → deploy → Access 302 duman testi; Node 22, wrangler gereği). İlk koşu yeşil (run 37768739744)
+- [x] 👤 Cloudflare API token ("Edit Cloudflare Workers", yalnız `oksis.net`), `merkez-test`/`okul-test` custom domain,
+  Access politikası `test-ekibi` (yalnız `farukkaya03@hotmail.com.tr`, e-posta kodu, 24 saat). Platform girişi uçtan uca çalıştı
+- [ ] 🤖 W2: host → yüzey ayrımı (`proxy.ts`) — bugün iki host da aynı uygulamayı açıyor; kök `/` okul girişine gittiği için
+  platform kullanıcısı `merkez-test`'te de okul girişine düşüyor (08.10.2026 deneyiminde yaşandı)
 
 ### Kapsam dışı (bu tur)
 - Prod ortamı (§9)
