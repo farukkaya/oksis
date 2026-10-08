@@ -497,7 +497,7 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
   `garage-ilk-kurulum.sh` → (Dilim C göç sonrası) `compose up -d` — **08.10.2026** API hariç hepsi arm64'te ayakta; ClamAV
   `clamav-debian` sağlıklı (`TB-274` gerçek ortamda doğrulandı); tunnel 4 bağlantı (fra); dışarıdan `api-test` 502 (API yok),
   `s3-test` Garage 403 (anonim erişim yok). Eksik yalnız `ConnectionStrings__DefaultConnection` (Azure)
-- [ ] 👤 Seq ilk girişte parola değişikliği ister (`ssh -L 8081:127.0.0.1:8081`, kullanıcı `admin`)
+- [x] 👤 Seq ilk girişte parola değişikliği — **08.10.2026** değiştirildi (`ssh -L 8081:127.0.0.1:8081`, kullanıcı `admin`). `.env`'deki `SEQ_ADMIN_PASSWORD` artık yalnız `seq-data` birimi sıfırdan kurulursa geçerli
 
 ### Dilim C — API CI/CD
 - [x] 🤖 `test` push → arm64 imaj → GHCR → migration bundle → SSH deploy → duman testi — **08.10.2026, ilk koşu yeşil**
