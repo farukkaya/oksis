@@ -11610,3 +11610,58 @@ kullanır (amd64 + arm64). Yerel koşuda aynı `CLAMD_CONF_*` ayarları ve `clam
 sağlıklı, `zPING` → `PONG`, ClamAV 1.4.6. arm64'te gerçek koşu VM açılınca (Dilim D sonrası).
 
 ---
+
+## 80. Entegrasyon takımının son kırmızıları (2026-10-08) ✅
+
+> Kullanıcı "kırmızı testleri yeşile çevir sonra mastera geçir" dedi. Üç kırmızıdan ikisi testin bayatlığıydı,
+> biri (`TB-261`) kararı verilmiş ama uygulanmamış üründü.
+
+### `TB-261` · Sezon devri önizlemesi: yalnız hazırlık, 9 ve 10'u açık okulda 10-A "Mezun" çıkıyor, test "Terfi" bekliyor 🟠 *(kapandı — 2026-10-08)*
+
+2026-09-28 gece turunda entegrasyon takımı 675 → 1 kırmızıya indirildiğinde kalan tek kırmızı
+(`SeasonRolloverPreviewTests.Rows_Preparatory_PromotesToNinthGradeAsync`; tabanda da kırmızıydı). Önizleme hesabı okulun **kendi
+kademe listesine** bakıyor: okulda 11. sınıf açık olmadığı için 10-A'nın bir üst kademesi yok ve satır "Graduate" dönüyor. Test
+ise 10-A'nın terfi etmesini bekliyor. Hangisi doğru, ürün sorusu: kademe listesi eksik açılmış (henüz 11'i olmayan yeni) bir okulda
+10. sınıf mezun mu sayılır, yoksa MEB kademe sırasına göre 11'e mi terfi eder (ve 11 kademesi açılması mı istenir)?
+
+⬜ Karar gerekiyor; kod ve test ona göre hizalanır.
+
+✅ **Karar (2026-09-28, kullanıcı):** **terfi + uyarı** — 10. sınıf MEB sırasına göre 11'e terfi eder; önizleme "11. sınıf kademesi açık değil" uyarısı verir ve devir o kademe açılmadan tamamlanmaz. Uygulanacak.
+
+✅ **2026-10-08 · kapandı** — oksis-api `dev`: `SeasonRolloverMapCalculator` artık okulun kademe listesine ek olarak MEB
+kataloğuna bakar. Üst kademe okulda açık değil ama **aynı eğitim seviyesinde** varsa (10 → 11) satır `Promote`, hedef
+katalog kademesi ve önizlemeye `grade-not-offered` uyarısı (`SeasonRolloverPreviewDto.Warnings`); seviyenin son kademesi
+(ilkokul 4, ortaokul 8, lise 12) `Graduate` kalır. `OpenSeasonFromDraft` hedefi okulda açık olmayan her harita girdisini
+— hesaplanan da kullanıcının düzenlediği de — `academic-sessions.errors.rollover-grade-not-offered` ile reddeder, taslak
+yerinde kalır. oksis-ui: sihirbaz Şubeler adımı uyarıyı gösterir. Testler: önizleme (10-A → 11-A + uyarı) ve yeni
+`Handle_Fails_WhenPromotionTargetsGradeNotOfferedAsync`.
+
+---
+
+### `TB-272` · İki entegrasyon testi master'da kırmızı ama defterde kaydı yok 🟡 *(kapandı — 2026-10-08)*
+
+2026-10-07, ilk tam CI koşusu + yerel ölçüm. İkisi de göç birleştirmesinden **önceki** commit'te
+(`4b59123d`, ayrı worktree) aynı şekilde kırmızı — birleştirmeyle ilgisiz.
+
+| Test | Hata |
+|---|---|
+| `AttendanceNotificationsTests.AttendanceReminderJob_FlushesDispatcher_SchedulesDispatchNotificationJob` | "start+10dk geçmiş tek Pending oturum hatırlatılmalı" — 1 beklenip 0. `E-39` kapanışında (2026-10-05) "master'da da kırmızı, ilgisiz" diye not düşülmüş, madde açılmamıştı |
+| `SchoolLogoLifecycleIntegrationTests.Upload_then_public_stream_after_scan_clean_then_delete_then_404` | `uploadResult.IsSuccess` false — Garage + ClamAV ayaktayken de |
+
+Neden önemli: CI artık bu takımı `test` ve `master` push'unda koşturuyor; bilinen kırmızılar her
+koşuyu kırmızıya boyar ve yeni bir kırmızıyı gizler (`TB-231` dersi, §12).
+
+⬜ Kapatma yolu: iki testin kök nedeni ölçülür (test mi yanlış, kod mu); `TB-261` ile birlikte
+kapandığında entegrasyon takımı tam yeşil olur.
+
+---
+
+✅ **2026-10-08 · kapandı** — ikisi de **test** kusuru, kod doğru:
+- **Logo:** `V-05` (2026-10-04) yüklemede içerik imzasını beyan edilen türle karşılaştırıyor; test `image/png` diye düz
+  metin yüklüyordu → imza kapısı `PolicyViolation`. Test içeriği gerçek PNG imzasıyla başlıyor (iki yükleme de).
+- **Yoklama hatırlatması:** `D-52` (`92173ece`) `SessionNotTakenNotificationHandler`'a `IApplicationDbContext` ekledi (ders
+  adı için); testin küçük DI konteynerinde yoktu → handler çözülemedi, job hatayı okul başına **yutup** 0 döndü (testin
+  `NullLogger`'ı yüzünden görünmezdi; geçici konsol loglayıcıyla ölçüldü). Konteynere resolver'ın ayrı context'i eklendi.
+Ders: okul başına `try/catch` ile hatayı yutan job'ların testi `NullLogger` ile kurulursa kök neden görünmez.
+
+---

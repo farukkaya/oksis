@@ -240,10 +240,13 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 6 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 31 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 54 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 39 | Kozmetik, temizlik, adlandırma |
-| ❓ Netleşmemiş | 1 | `TB-261` |
-| **Toplam** | **132** | |
+| ❓ Netleşmemiş | 0 | — |
+| **Toplam** | **130** | |
+
+> **2026-10-08 (entegrasyon takımı tam yeşil):** `TB-261` (karar uygulandı: terfi + uyarı, açılmamış kademeye devir
+> engelli) ve `TB-272` (iki bayat test) kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §80). Toplam **130**.
 
 > **2026-10-07 (kapanış):** `TB-270` ve `TB-271` oksis-api master `78001ff8`'de; arşive taşındı ([[OKSİS - Bulgu Arşivi]] §78). Toplam **134**.
 
@@ -914,24 +917,6 @@ Düzeltme `FcmSender`: `EventTimestamp = DateTime.UtcNow`. Telefonda `when=17911
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
-
-### `TB-272` · İki entegrasyon testi master'da kırmızı ama defterde kaydı yok 🟡
-
-2026-10-07, ilk tam CI koşusu + yerel ölçüm. İkisi de göç birleştirmesinden **önceki** commit'te
-(`4b59123d`, ayrı worktree) aynı şekilde kırmızı — birleştirmeyle ilgisiz.
-
-| Test | Hata |
-|---|---|
-| `AttendanceNotificationsTests.AttendanceReminderJob_FlushesDispatcher_SchedulesDispatchNotificationJob` | "start+10dk geçmiş tek Pending oturum hatırlatılmalı" — 1 beklenip 0. `E-39` kapanışında (2026-10-05) "master'da da kırmızı, ilgisiz" diye not düşülmüş, madde açılmamıştı |
-| `SchoolLogoLifecycleIntegrationTests.Upload_then_public_stream_after_scan_clean_then_delete_then_404` | `uploadResult.IsSuccess` false — Garage + ClamAV ayaktayken de |
-
-Neden önemli: CI artık bu takımı `test` ve `master` push'unda koşturuyor; bilinen kırmızılar her
-koşuyu kırmızıya boyar ve yeni bir kırmızıyı gizler (`TB-231` dersi, §12).
-
-⬜ Kapatma yolu: iki testin kök nedeni ölçülür (test mi yanlış, kod mu); `TB-261` ile birlikte
-kapandığında entegrasyon takımı tam yeşil olur.
-
----
 
 ### `TB-220` · Ödev form testi sabit tarihle yazılmış; takvim geçince kendiliğinden kırmızıya döndü ⚪
 
@@ -2919,18 +2904,6 @@ veritabanı bu noktayı çoktan geçtiği için bugün belirti yok; ama cutover 
 anlamın doğru olduğu snapshot'ın kaynak izi sözleşmesine göre seçilmeli); göç testi zinciri sona kadar yeşil koşmalı.
 
 ✅ **Karar (2026-09-28, kullanıcı):** göç silmeden önce snapshot'ın `source_entry_id` bağını **boşaltır**, sonra siler (veri kaybı yok, yalnız kaynak izi kopar). Uygulanacak.
-
-### `TB-261` · Sezon devri önizlemesi: yalnız hazırlık, 9 ve 10'u açık okulda 10-A "Mezun" çıkıyor, test "Terfi" bekliyor ❓
-
-2026-09-28 gece turunda entegrasyon takımı 675 → 1 kırmızıya indirildiğinde kalan tek kırmızı
-(`SeasonRolloverPreviewTests.Rows_Preparatory_PromotesToNinthGradeAsync`; tabanda da kırmızıydı). Önizleme hesabı okulun **kendi
-kademe listesine** bakıyor: okulda 11. sınıf açık olmadığı için 10-A'nın bir üst kademesi yok ve satır "Graduate" dönüyor. Test
-ise 10-A'nın terfi etmesini bekliyor. Hangisi doğru, ürün sorusu: kademe listesi eksik açılmış (henüz 11'i olmayan yeni) bir okulda
-10. sınıf mezun mu sayılır, yoksa MEB kademe sırasına göre 11'e mi terfi eder (ve 11 kademesi açılması mı istenir)?
-
-⬜ Karar gerekiyor; kod ve test ona göre hizalanır.
-
-✅ **Karar (2026-09-28, kullanıcı):** **terfi + uyarı** — 10. sınıf MEB sırasına göre 11'e terfi eder; önizleme "11. sınıf kademesi açık değil" uyarısı verir ve devir o kademe açılmadan tamamlanmaz. Uygulanacak.
 
 ## Not
 
