@@ -466,7 +466,7 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [ ] 👤 SSL Full (strict)
 - [x] 👤 Azure hesabı; Free Offer ile `oksis-test` (Germany West Central, auto-pause, alarm) — **08.10.2026**: eski `rg-oksis`
   (West Europe, 39 MB) kullanıcı kararıyla silindi; yeni `oksis-test-rg` / `oksis-test-sql` / `oksis-test`, GP_S_Gen5_2, overage kapalı,
-  SQL + Entra kimlik doğrulaması (`oksisadmin`), harmanlama dev ile aynı. ⬜ "Free amount remaining" alarmı henüz kurulmadı
+  SQL + Entra kimlik doğrulaması (`oksisadmin`), harmanlama dev ile aynı. "Free amount remaining" alarmı kuruldu (aşağıda, Dilim C)
 - [x] 👤 Oracle Cloud hesabı (Frankfurt), A1.Flex 2 OCPU / 12 GB VM — **08.10.2026**: `oksis-test`, AD-2 (AD-1 kapasite yok),
   Ubuntu 24.04 aarch64, genel IP `130.61.174.101` (ephemeral; sihirbazda açılamadı, sonradan VNIC'ten verildi)
 - [x] 👤 Azure SQL firewall'a VM çıkış IP'si — yalnız `130.61.174.101`; VM'den gerçek giriş ölçüldü (`baglanti-yaz.sh`)
@@ -511,7 +511,7 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [x] 👤 GitHub secrets: `TEST_VM_SSH_KEY` (yalnız dağıtım anahtarı; port/agent yönlendirme ve pty kapalı), `TEST_VM_KNOWN_HOSTS`
   (host anahtarı sabit), `TEST_VM_HOST`. GHCR çekme için kalıcı token yok — işin `GITHUB_TOKEN`'ı stdin'den geçer
 - [x] 🤖 Test DB'sine örnek veri — sentetik yerine Altınay AL olduğu gibi (§7 kararı)
-- [ ] 👤 Azure "Free amount remaining" alarmı
+- [x] 🤖 Azure "Free amount remaining" alarmı — **08.10.2026** `az` ile: kural `oksis-test-ucretsiz-kota` (min `free_amount_remaining` < 20.000 vCore sn, 1 sa pencere, önem 2), eylem grubu `oksis-test-uyari` → `farukkaya03@hotmail.com.tr`. Kurulumda kalan 92.130/100.000
 
 ### Dilim W — Web
 - [x] 🤖 **W0 (08.10.2026):** OpenNext ölçüldü — Worker **2,20 MiB gzip** (sınır 3 MiB). Gerçek trafikte (173 istek) CPU
