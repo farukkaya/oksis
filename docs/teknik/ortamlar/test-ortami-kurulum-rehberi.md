@@ -67,6 +67,11 @@ Parola (passphrase) sorarsa bir parola verin; Mac anahtar zincirine kaydedilir.
    hesabı **Pay As You Go**'ya yükseltin (Always Free sınırında kaldıkça ücret yok; kapasite önceliği
    artar). Yükseltmeden önce Claude'a sorun.
 4. Instance "Running" olunca **Public IP**'yi not alın ve Claude'a verin.
+   ⚠️ Sihirbazın verdiği IP **ephemeral**'dır (VM yeniden kurulunca değişir) ve OCI onu reserved'a
+   **çeviremez**. Kalıcı IP için: Networking → IP management → **Reserved public IPs → Reserve**; sonra
+   VNIC → IP administration → `⋯` → Edit → önce *No public IP* → Update, tekrar Edit → *Reserved public IP*.
+   IP değişirse güncellenecekler: Azure SQL firewall, GitHub `TEST_VM_HOST` + `TEST_VM_KNOWN_HOSTS`.
+   (08.10.2026: `oksis-test-ip` = `138.2.159.102`.)
 5. Bağlantı denemesi (Mac): `ssh -i ~/.ssh/oksis_test ubuntu@<IP>`
 
 ---
@@ -137,7 +142,40 @@ Bitince Claude'a "VM hazır" deyin; çıktıyı birlikte kontrol ederiz.
 
 ---
 
-## Adım 6 — SMTP (sonra, acil değil)
+## Adım 6 — E-posta (08.10.2026: Mailpit)
 
-Davet/şifre e-postaları için. Öneri: **Brevo** (günde 300 e-posta ücretsiz). Hesap açıp `oksis.net`
-alan adını doğrulamak Cloudflare'e birkaç DNS kaydı eklemeyi gerektirir — Claude kayıtları birlikte girer.
+Test'te gerçek gönderim **yok**: tüm e-postalar VM'deki Mailpit'te yakalanır, arayüz
+<https://mail-test.oksis.net> (Cloudflare Access arkasında). Gerçek sağlayıcı (Brevo / OCI Email Delivery,
+SPF/DKIM ile) prod açılışında. Şifre sıfırlama denerken istekte `schoolHint` olmalı — yoksa API sessizce
+e-posta göndermez.
+
+---
+
+## Adım 7 — Mobil "Oksis Test" (08.10.2026)
+
+Kimlik `com.oksis.mobile.test` ("Oksis Test"), API `https://api-test.oksis.net`, dev uygulamasıyla aynı
+telefonda yan yana durur. Dağıtım: **TestFlight** iç grup "Oksis Test Ekibi" + **Play** iç test listesi
+`oksis-test-ekibi` ("farukkaya" geliştirici hesabı). Push: oksis-dev Firebase projesinde "Oksis Test"
+uygulamaları; iOS için APNs anahtarı (`7M8HLMT92S`, takım `26QMTVX47Z`) test uygulamasına ayrıca yüklü.
+
+**Yeni sürüm** (`oksis-ui/apps/mobile` içinde; derleme numarası commit sayısıdır, aynı commit'ten ikinci
+yükleme için `BUILD_NUMBER=<daha büyük>` ver):
+
+```bash
+./scripts/build-test.sh ios       # arşivler + App Store Connect'e yükler → 5-15 dk sonra TestFlight'ta
+./scripts/build-test.sh android   # imzalı AAB → build/test/oksis-test-<no>.aab
+npx expo prebuild --clean         # dev'e dön: ios/ ve android/ test kimliğiyle ezilmişti
+```
+
+Android AAB'yi Play Console → Oksis Test → Test etme → **Dahili test → Yeni sürüm oluştur** sayfasına
+sürükleyip **Kaydet ve yayınla** (incelemesiz, dakikalar içinde gelir).
+
+**Ön koşullar / tuzaklar:**
+- Android yükleme anahtarı depoda değil: `~/.oksis/android-upload.jks` + `android-upload.env` — **yedekli
+  tutun**; kaybolursa Play Console → Uygulama bütünlüğü'nden sıfırlatılır (birkaç gün).
+- iOS arşivi "No profiles … Unable to log in" ile durursa: Xcode → Settings → Accounts → yeniden giriş.
+- Yeni iOS test kullanıcısı: App Store Connect → Users and Access → `+` (yalnız Oksis Test erişimi, en kısıtlı
+  rol) → davet kabul edilince TestFlight → Oksis Test Ekibi → Testers `+`.
+- Yeni Android test kullanıcısı: Play Console → Dahili test → Test kullanıcıları → `oksis-test-ekibi`
+  listesine e-posta; katılım bağlantısını paylaş. Hesaptaki `testers` listesi AntrePlan'ındır, kullanmayın.
+- Test'te Altınay'ın **gerçek verisi** var: test kullanıcısı eklemek o veriye erişim vermektir.
