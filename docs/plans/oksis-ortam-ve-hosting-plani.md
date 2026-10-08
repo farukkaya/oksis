@@ -187,7 +187,7 @@ sorunu yoktur**; ortam farkı tek değişkendir:
 | API + Redis + Garage + ClamAV + Seq | Oracle Cloud | Always Free (ARM A1) |
 | Dışa açılım | Cloudflare Tunnel | Free |
 | Veritabanı | Azure SQL Database | Free Offer (yalnız Test) |
-| E-posta | {{TBD}} — ücretsiz SMTP katmanı (ör. Brevo/Resend) | Free |
+| E-posta | Test: Mailpit (yakalayıcı, dışarı gönderim yok) · Prod: {{TBD}} (Brevo / OCI Email Delivery) | Free |
 | Push | Firebase `oksis-dev` | Free |
 | CI/CD | GitHub Actions + GHCR | Free |
 | Log | Seq (aynı VM, container) | Free (tek kullanıcı) |
@@ -470,7 +470,10 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
 - [x] 👤 Oracle Cloud hesabı (Frankfurt), A1.Flex 2 OCPU / 12 GB VM — **08.10.2026**: `oksis-test`, AD-2 (AD-1 kapasite yok),
   Ubuntu 24.04 aarch64, genel IP `130.61.174.101` (ephemeral; sihirbazda açılamadı, sonradan VNIC'ten verildi)
 - [x] 👤 Azure SQL firewall'a VM çıkış IP'si — yalnız `130.61.174.101`; VM'den gerçek giriş ölçüldü (`baglanti-yaz.sh`)
-- [ ] 👤 SMTP sağlayıcısı seç ve hesap aç
+- [x] 👤 SMTP — **Test'te gerçek gönderim yok (kullanıcı kararı 08.10.2026):** Altınay hesapları `@altinay.test`, gerçek gönderim
+  geri döner ve gönderici itibarını yakar. Mailpit compose'da, arayüz `mail-test.oksis.net` (tunnel + Access). Uçtan uca ölçüldü:
+  şifre sıfırlama e-postası Mailpit'e düştü, bağlantı `okul-test.oksis.net/reset-password`. Gerçek sağlayıcı (Brevo/OCI Email Delivery,
+  SPF/DKIM ile) prod açılışında
 
 ### Dilim S — Sunucu (`oksis-api`, `infra/test/` altında)
 - [x] 🤖 `infra/test/docker-compose.yml` (api-test, redis, garage, clamav, seq, cloudflared; dışa port yok, Seq UI ve
