@@ -457,8 +457,8 @@ Her dilim kendi başına doğrulanır. ☐ = yapılacak, 👤 = hesap/panel işi
   ölçüldü: kapalı ayarla 12. sn'de düşüyor, açıkla 22. sn'de ayağa kalkıyor. Azure uyanmasında yeniden ölçülecek (Dilim D sonrası)
 - [x] 🤖 Test CORS/`App:BaseUrl` değerleri (`okul-test`, `merkez-test`)
 - [x] 🤖 **`TB-270` (yeni bulgu):** RS256 token API'de doğrulanmıyordu — düzeltildi, RS256 anahtarıyla uçtan uca ölçüldü
-- [ ] 🤖 **Yeni ihtiyaç:** imzalı dosya adresleri (`PresignedEndpoint`) tarayıcıdan erişilebilir olmalı → Garage S3 de Tunnel
-  arkasından açılır: `s3-test.oksis.net` → `garage:3900` (Dilim S ingress + Dilim D DNS)
+- [x] 🤖 **Yeni ihtiyaç:** imzalı dosya adresleri (`PresignedEndpoint`) tarayıcıdan erişilebilir olmalı → Garage S3 de Tunnel
+  arkasından açılır: `s3-test.oksis.net` → `garage:3900` (Dilim S ingress + Dilim D DNS) — **08.10.2026** tunnel'da açık; imzalı adres 200, bozuk/imzasız 403
 
 ### Dilim D — Hesaplar ve DNS (👤)
 - [x] 👤 Mevcut DNS kayıtlarını dışa aktar; `oksis.net` nameserver'larını Cloudflare'e taşı — **08.10.2026 aktif**. DNS önceden
