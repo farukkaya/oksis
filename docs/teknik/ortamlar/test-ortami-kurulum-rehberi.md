@@ -171,9 +171,25 @@ Android AAB'yi Play Console → Oksis Test → Test etme → **Dahili test → Y
 sürükleyip **Kaydet ve yayınla** (incelemesiz, dakikalar içinde gelir).
 
 **Ön koşullar / tuzaklar:**
+- **Android Play yüklemesi otomatik (2026-10-09):** `build-test.sh android`, `~/.oksis/play-upload.json` varsa AAB'yi
+  `scripts/play-upload.js` ile iç test kanalına yükleyip yayınlar. Kimlik: Google Cloud `oksis-dev` projesinde
+  `oksis-play-upload` hizmet hesabı (projede rolü yok; Google Play Android Developer API açık), Play Console'da yalnız
+  Oksis Test için "Release to testing tracks" + salt okuma izni. Denetim: `node scripts/play-upload.js --check`.
+  Anahtar kaybolursa Cloud → hizmet hesabı → Keys'ten yenisi üretilir, eskisi silinir.
 - Android yükleme anahtarı depoda değil: `~/.oksis/android-upload.jks` + `android-upload.env` — **yedekli
   tutun**; kaybolursa Play Console → Uygulama bütünlüğü'nden sıfırlatılır (birkaç gün).
 - iOS arşivi "No profiles … Unable to log in" ile durursa: Xcode → Settings → Accounts → yeniden giriş.
+- iOS **yükleme** adımı `exportArchive Failed to Use Accounts` ile durursa (arşiv başarılı, yükleme değil): Xcode'da
+  Apple hesabı yok/oturum düşmüş — Xcode → Settings → Accounts → giriş; sonra yalnız yükleme adımı yeniden koşulur
+  (`xcodebuild -exportArchive -archivePath build/test/OksisTest.xcarchive -exportOptionsPlist build/test/ExportOptions.plist
+  -exportPath build/test/export -allowProvisioningUpdates`), yeniden derleme gerekmez (2026-10-09).
+- `AuthKey_7M8HLMT92S.p8` **APNs (push) anahtarıdır**, App Store Connect'e yükleme yapamaz. Xcode oturumu olmadan yükleme
+  için App Store Connect → Users and Access → Integrations → **App Store Connect API** anahtarı (`.p8` + Key ID + Issuer ID)
+  gerekir. **Kuruldu (2026-10-09):** Admin rollü anahtar `~/.oksis/` altında; `build-test.sh` `~/.oksis/asc-api.env`
+  (`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_PATH`) varsa arşiv ve yükleme adımlarında bu anahtarı kullanır — Xcode'da hesap
+  girişi gerekmez. Rol **Admin** olmalı: App Manager anahtarı yükleyebilir ama bulut dağıtım sertifikası oluşturamaz
+  ("Cloud signing permission error"). Elle yükleme: yukarıdaki komuta `-authenticationKeyPath/-authenticationKeyID/
+  -authenticationKeyIssuerID` eklenir.
 - Yeni iOS test kullanıcısı: App Store Connect → Users and Access → `+` (yalnız Oksis Test erişimi, en kısıtlı
   rol) → davet kabul edilince TestFlight → Oksis Test Ekibi → Testers `+`.
 - Yeni Android test kullanıcısı: Play Console → Dahili test → Test kullanıcıları → `oksis-test-ekibi`

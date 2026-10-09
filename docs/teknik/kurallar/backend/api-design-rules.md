@@ -101,22 +101,16 @@ POST   /api/v1/academic-years/transition       ← sezon geçişi başlat
 
 ### Liste Response (paged)
 
-```json
-{
-  "data": [
-    { "id": "...", "firstName": "...", "lastName": "..." },
-    { "id": "...", "firstName": "...", "lastName": "..." }
-  ],
-  "meta": {
-    "page": 1,
-    "pageSize": 50,
-    "totalItems": 234,
-    "totalPages": 5
-  },
-  "errors": null,
-  "correlationId": "abc-123"
-}
-```
+Sayfalı listeler `Oksis.Shared.PagedResult<T>`'yi zarfın **`data`** alanında döndürür; zarfın `meta` alanı
+sayfalı listelerde de **`null`** kalır. `data`'nın alanları: `items` (satırlar), `page`, `pageSize`, `totalCount`,
+`totalPages`, `hasPreviousPage`, `hasNextPage`. OpenAPI'de tip adı `PagedResultOf<Dto>` biçimindedir
+(ör. `PagedResultOfUnrecordedSessionDto`). Emsal uçlar: `ListUsers`, `GetAnnouncements`, `attendance/unrecorded`,
+`attendance/reopen-requests`. İstemci sayfa bilgisini `data`'dan okur (oksis-ui `toAnnouncementPage`,
+`toAttendancePage`).
+
+> Düzeltme (2026-10-09, E-41): bu bölüm eskiden `data: [...]` + `meta: { page, pageSize, totalItems, totalPages }`
+> biçimini tarif ediyordu. Koddaki hiçbir uç bu biçimi kullanmıyordu (`ApiResponse.Meta` hiçbir yerde doldurulmuyor);
+> kural gereği kod kazandı, belge düzeltildi.
 
 ### Hata Response
 
