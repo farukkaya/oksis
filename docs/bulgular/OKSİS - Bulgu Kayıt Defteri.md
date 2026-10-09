@@ -224,8 +224,8 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-112` · `D-56` · `V-07` · `X-25` · `TB-275` · `E-41` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
-*(`K-##` karar sayacı: sıradaki `K-33` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
+**Sıradaki boş ID:** `B-114` · `D-63` · `V-07` · `X-26` · `TB-277` · `E-45` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+*(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
 **Yazma kuralı:** yeni ID vermeden önce hem bu dosyada hem
@@ -239,11 +239,35 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 6 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 31 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 53 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 39 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 33 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 61 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 43 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **130** | |
+| **Toplam** | **144** | |
+
+> **2026-10-09 (kullanıcı isteği, CI):** yeni `TB-275` ⚪ (web `test` CI koşusu ≈8,5 dk; kısaltılacak). Toplam **144**.
+
+> **2026-10-09 (kullanıcı isteği, test ortamı):** yeni `E-43` 🟡 (hızlı giriş Test derlemelerinde görünmüyor; testçiler
+> hesapları bilmiyor) — aynı gün kodda. Toplam **143**.
+
+> **2026-10-09 (kullanıcı isteği, duyuru):** yeni `E-42` 🟡 (duyuru gönderim kanalları — push ve e-posta — kilitli; yayınlayan
+> seçemiyor). Aynı gün `E-41`, `D-56`, `D-61`, `D-62`'ye kullanıcı kararları işlendi. Toplam **142**.
+
+> **2026-10-09 (Android kullanıcı testi, vekâlet):** yeni `B-113` 🟠 (vekil atandığı ders vekilin *Bugünkü Derslerim*'inde
+> "Boş" görünüyor; yoklama oturumu asıl öğretmende kalıyor). Toplam **141**.
+
+> **2026-10-09 (Test DB uyanması):** yeni `X-25` 🟠 (Test DB'si uykudan uyanırken mobil giriş "Sunucuya ulaşılamadı" diyor, oturum
+> yenileme yarıda kesilip 500 kaydediliyor — sunucu 503 + mobil otomatik yeniden deneme önerisi) ve `B-112` 🟡 (aynı cihaz yeniden
+> kaydolunca `notifications/devices` 500). Toplam **140**.
+
+> **2026-10-09 (Android kullanıcı testi):** yeni `D-56` 🟡 (mobil uygulama açılışta OKSİS yerine Expo şablon logosunu
+> gösteriyor; ardından ikinci bir açılış ekranı geliyor) ve `D-57` 🟡 (giriş ekranı hero'sunda sağ üstte istenmeyen
+> keskin kenarlı mavi daire — iPhone), `D-58` ⚪ (giriş ekranında *Beni hatırla*'ya basınca kapalı klavye açılıyor) ve
+> `D-59` ⚪ (yönetici panosunda *Yoklama durumu* kartı ile *Canlı yoklama* kısayolu aynı ekranı açıyor) ve
+> `D-60` 🟡 (Android giriş ekranında klavye parola alanını örtüyor, ekran kendiliğinden kaymıyor) ve `D-61` ⚪
+> (*Giriş başarılı* yönlendirme ekranı, yapım aşamasında sayfasındaki hareketli OKSİS logosuyla yeniden tasarlanacak) ve `D-62` 🟡 (öğretmen *Nöbetlerim* ekranı
+> yeniden tasarlanacak; Android'de bugünkü kartlar gri çift çerçeveyle bozuk çiziliyor) ve `E-41` 🟡 (mobil *Canlı Yoklama*
+> yalnız görüntülüyor: hatırlatma, geriye dönük giriş, öğretmene açma yok; liste sayfasız). Toplam **138**.
 
 > **2026-10-08 (entegrasyon takımı tam yeşil):** `TB-261` (karar uygulandı: terfi + uyarı, açılmamış kademeye devir
 > engelli) ve `TB-272` (iki bayat test) kapandı, arşive taşındı ([[OKSİS - Bulgu Arşivi]] §80). Toplam **130**.
@@ -912,6 +936,30 @@ FirebaseAdmin 3.6.0'da `AndroidNotification.EventTimestamp` nullable değil; dol
 (JSON ölçüldü). Etiketten bağımsız, bütün OKSİS push'larında vardı. "2032" = MIUI'nin farkı 364 günlük yılla yazması (2032,7; takvim
 yılıyla 2025,8). Yan etkisi görüntüden büyük: Android çekmeceyi bu zamana göre sıralar, OKSİS bildirimleri en alta düşüyordu.
 Düzeltme `FcmSender`: `EventTimestamp = DateTime.UtcNow`. Telefonda `when=1791194542857` (gönderimden 13 sn önce okunan cihaz saatiyle tutarlı).
+
+### `B-112` · Aynı cihaz yeniden kaydolunca `POST notifications/devices` 500 dönüyor 🟡
+
+2026-10-09 07:39, Test ortamı API günlüğü. Aynı hesap + aynı FCM token için ikinci kayıt isteği `ux_user_devices_account_token` benzersiz
+indeksine takılıyor: `DbUpdateException` → "Cannot insert duplicate key row in object 'notifications.user_devices'" → 500. Satır zaten var
+olduğu için bildirim teslimi büyük olasılıkla etkilenmiyor, ama uç beklenen bir durumu hata olarak dönüyor ve günlüğü kirletiyor; istemci
+500'ü yeniden denemeye ya da hata göstermeye çevirebilir. ⬜ Öneri: kayıt **upsert** olsun — hesap + token varsa `last_seen_at`/uygulama
+sürümü/aktiflik güncellensin, 200 dönsün; eşzamanlı iki istek için benzersiz indeks ihlali de aynı yola düşsün. Entegrasyon testiyle korunur.
+
+🔧 **2026-10-09 · kodda (oksis-api `fix/cihaz-kaydi-ve-db-uyanma`) · Test'e itildi:** `9c520611` kayıt upsert'e döndü
+(hesap + token varsa güncellenir, 200); `33af6e3b` eşzamanlı yarışta benzersiz indeks ihlali ya da eşzamanlılık çakışması
+yakalanıp satır yeniden okunarak tekrar denenir, soft-delete'li satırla çakışma yutulmaz. İstemci `registerDevice`
+veritabanı uyanırken yeniden dener (`X-25`). Entegrasyon testleri yeşil.
+
+### `TB-276` · Sessiz saatte ertelenen push alıcı başına ayrı Hangfire işi açıyor 🟡
+
+2026-10-09, `E-42` kod incelemesi. `PushNotificationChannel` sessiz saat kapısında her alıcı için ayrı bir
+`DeferredPushJob` planlıyor (`foreach (var accountId in recipients) jobs.Schedule<DeferredPushJob>(...)`). Sıradan duyuru
+push'a girdiği için ([[K-02 - OS Push Altyapısı]] R3) okulun tamamına giden bir duyuru sessiz saatte yayınlanırsa binlerce iş
+aynı ana planlanıyor: Hangfire depolamasında şişme ve sabah aynı saniyede toplu çalışma. `perf/push-toplu-gonderim`'in 500'lük
+paket mantığı bu yolda kullanılmıyor.
+
+⬜ Öneri: erteleme olay başına tek iş olsun (alıcı listesi işin içinde ya da çalışma anında yeniden çözülsün), sabah gönderimi
+mevcut paketli yoldan gitsin. Entegrasyon testi: sessiz saatte N alıcılı yayın → tek planlı iş.
 
 ## 12. Çapraz Kesen İşler ✳️
 
@@ -2904,6 +2952,520 @@ veritabanı bu noktayı çoktan geçtiği için bugün belirti yok; ama cutover 
 anlamın doğru olduğu snapshot'ın kaynak izi sözleşmesine göre seçilmeli); göç testi zinciri sona kadar yeşil koşmalı.
 
 ✅ **Karar (2026-09-28, kullanıcı):** göç silmeden önce snapshot'ın `source_entry_id` bağını **boşaltır**, sonra siler (veri kaybı yok, yalnız kaynak izi kopar). Uygulanacak.
+
+### `D-56` · Mobil uygulama ilk açılışta OKSİS yerine Expo şablon logosunu gösteriyor; ardından ikinci bir açılış ekranı geliyor 🟡
+
+2026-10-09, kullanıcı testi (Android). Uygulama soğuk açılışta önce lacivert zeminde ortada beyaz bir **"^"** işareti
+gösteriyor ([kanıt](kanit/d56-acilis-expo-logosu.jpg)). Bu işaret OKSİS markası değil, **Expo proje şablonunun logosu**.
+
+Koddan ölçüldü (oksis-ui, salt okuma):
+- `apps/mobile/app.config.ts` → `expo-splash-screen` eklentisi `image: './assets/images/splash-icon.png'`,
+  `backgroundColor: '#1B2B5E'`, `imageWidth: 76`. Ekrandaki zemin rengi ve boyut bununla birebir.
+- `assets/images/splash-icon.png` (228×213, 3317 bayt) şablon commit'indeki `expo-logo.png` ile **bayt bayt aynı**
+  (md5 `5ee5db91…`); `8648db9` (2026-07-08) ile şablondan gelmiş, o günden beri değişmemiş. Uygulama ikonu
+  (`d531bdc`) OKSİS işaretine çevrilmiş, açılış görseli unutulmuş.
+- Bu yerel (native) açılış ekranı; ardından JS tarafındaki `src/features/auth/components/splash-screen.tsx` 2,4 sn
+  boyunca **ayrı** bir açılış ekranı (gradyan + `OksisMark` + `OksisWordmark`) çiziyor. Kullanıcı arka arkaya iki farklı
+  açılış görüyor: önce Expo logosu, sonra OKSİS. Kodda `SplashScreen.preventAutoHideAsync`/`hideAsync` çağrısı yok;
+  yerel ekran ilk çizimde kendiliğinden kalkıyor.
+- Eklenti aynı görseli iOS açılış ekranına da yazıyor; **iOS cihazda ölçülmedi**.
+
+Neden önemli: Oksis Test derlemesi TestFlight ve Play iç teste çıktı (`e514179`); her kullanıcı her soğuk açılışta
+başka bir ürünün logosunu görüyor. İşlev etkilenmiyor.
+
+Kullanıcı sorusu: *"Bu ekranı kapatabilir miyiz?"* Yerel açılış ekranı işletim sistemi gereği tamamen kaldırılamıyor
+(Android 12+ her uygulamaya bir açılış ekranı çiziyor); karar gereken: yerel ekrana OKSİS işaretini koymak mı, yoksa yerel
+ekranı JS açılışıyla aynı görünüme getirip ikisini tek ekran gibi birleştirmek mi.
+
+✅ **Karar (2026-10-09, kullanıcı):** kalacak olan, JS tarafındaki mevcut açılış ekranı (`splash-screen.tsx` — lacivertten maviye
+gradyan, OKSİS işareti + "Oksis" yazısı; [kanıt](kanit/d56-istenen-splash.png)). Ondan **önce** gelen Expo logolu yerel ekran
+istenmiyor. Yerel ekran işletim sistemi gereği tamamen kaldırılamadığı için (Android 12+) kullanıcıya ayrı bir ekran olarak
+görünmemeli: yerel ekran mevcut açılış ekranıyla aynı görünür (aynı zemin rengi, aynı işaret) ve geçiş fark edilmez.
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/mobil-kullanici-testi-turu`, cihazda ölçülmedi) · Test'e itildi:** `assets/images/splash-icon.png` Expo
+logosu yerine OKSİS işaretiyle değiştirildi — `OksisMark` geometrisinden üretildi (288 px, beyaz modüller, çapraz %60).
+`app.config.ts` `imageWidth` 76 → 96 (JS açılışındaki `OksisMark size={96}` ile aynı), zemin `#1B2B5E` (gradyanın başlangıç rengi).
+Yerel ekran JS açılışının ilk karesine benziyor. ⚠️ `android/` gitignore'da: değişiklik ancak `expo prebuild` ve yeni
+derlemeyle cihaza iner.
+
+### `D-57` · Giriş ekranı hero'sunun sağ üst köşesinde keskin kenarlı, opak mavi bir daire çiziliyor 🟡
+
+2026-10-09, kullanıcı testi (iPhone, giriş ekranı). Lacivert hero alanının sağ üst köşesinde, köşeyi merkez alan büyük,
+düz mavi bir daire görünüyor ([kanıt](kanit/d57-giris-hero-yuvarlak.jpg)). Kullanıcı: *"yuvarlak zemin görüntüsünü
+istemiyorum."*
+
+Koddan ölçüldü (oksis-ui, salt okuma): `apps/mobile/src/features/auth/components/auth-shell.tsx` → `AuthHero` içinde
+`<Circle cx={size.width} cy={0} r={140} fill="url(#auth-hero-glow)" />`. Gradyan `auth-hero-glow` yumuşak bir **parlama**
+olarak yazılmış: merkezde `rgba(79,107,255,0.35)`, %66'da `rgba(79,107,255,0)`. Ekrandaki daire ise saydam değil, opak ve
+kenarı keskin; yarıçapı ekranda ≈140 pt, koddaki değerle örtüşüyor. Yani tasarlanan hafif parlama yerine dolu bir disk
+çiziliyor.
+
+Not (doğrulanmadı): olası neden `react-native-svg`'nin `stopColor` içindeki `rgba` alfasını yok sayması (saydamlık
+`stopOpacity` ile verilmediği için iki durak da tam opak `#4F6BFF` oluyor). **Android'de de aynı** — 2026-10-09 `D-60`
+ekran görüntüsünde aynı opak daire görünüyor ([kanıt](kanit/d60-giris-klavye-parola-ortuyor.jpg)).
+
+Etki alanı: `AuthShell` ortak kabuk — aynı hero **giriş**, **şifremi unuttum** (`forgot-password-screen.tsx`) ve **davet
+kabul** (`invite-accept-screen.tsx`) ekranlarında da çiziliyor. Çevrelenen alanda ayrıca üç yarı saydam dekoratif kare
+(`HeroSquare`) var; kullanıcı onları **istiyor** (2026-10-09: *"karelerde sorun yok"*) — kapsam yalnız daire.
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/mobil-kullanici-testi-turu`, cihazda ölçülmedi) · Test'e itildi:** `auth-shell.tsx` → `auth-hero-glow`
+gradyanı ve `Circle` kaldırıldı; `HeroSquare`'ler duruyor. Giriş, şifremi unuttum ve davet kabul ekranlarının üçü de düzeldi.
+
+### `D-58` · Giriş ekranında *Beni hatırla* kutusuna basınca kapalı klavye açılıyor ⚪
+
+2026-10-09, kullanıcı testi (mobil giriş ekranı; platform belirtilmedi, aynı turun diğer ekranları iPhone). Klavye
+**kapalıyken** *Beni hatırla* kutusuna dokunulunca klavye açılıyor. Kullanıcı: *"bence gerek yok"* — kutu yalnız işaretlenmeli,
+hiçbir alana odak gitmemeli.
+
+Koddan ölçüldü (oksis-ui, salt okuma) — **kök neden bulunamadı**:
+- `apps/mobile/src/features/auth/components/login-screen.tsx` → kutu bir `Pressable`; `onPress` yalnız
+  `setRemember((v) => !v)` çağırıyor. Ekranda `ref`, `focus()` ya da `autoFocus` yok.
+- `src/components/text-field.tsx` → alanı saran, dokunuşu `TextInput`'a yönlendiren bir sarmalayıcı yok.
+- `auth-shell.tsx` → `ScrollView` `keyboardShouldPersistTaps="handled"`; bu yalnız **açık** klavyenin kapanmamasını açıklar,
+  kapalı klavyenin açılmasını açıklamaz.
+- Gözlem: kutunun dokunma alanı satır yüksekliği kadar (≈19 pt, işaret kutusu 19×19) ve parola alanının 16 pt altında;
+  önerilen en küçük dokunma hedefinin (44 pt) altında. Dokunuşun parola alanına düşmesi bir olasılık — **doğrulanmadı**.
+
+Cihazda yeniden üretilip hangi öğenin odak aldığı ölçülmeli (parola alanında imleç görünüyor mu).
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/acik-bulgular` `3206de8`; cihazda doğrulanmadı) · Test'e itildi:** kök neden cihazda ölçülemedi; en olası
+neden giderildi — kutunun dokunma alanı satır yüksekliği kadardı (≈19 pt) ve parola alanının 16 pt altındaydı. Satır artık en az
+44 pt ve yalnız kendi genişliğinde (`alignSelf: flex-start`), erişilebilir adı var. Telefonda yeniden denenmeli; klavye hâlâ
+açılıyorsa hangi alanın odak aldığı ölçülecek.
+
+### `D-59` · Yönetici mobil panosunda *Yoklama durumu* kartı ile *Canlı yoklama* kısayolu aynı ekranı açıyor ⚪
+
+2026-10-09, kullanıcı testi (iPhone, Altınay, yönetici Metin Kabaca). Anasayfadaki **Yoklama durumu** kartı (A kartı) ve
+alttaki kısayol şeridindeki **Canlı yoklama** düğmesi aynı ekrana gidiyor ([kanıt](kanit/d59-yonetici-pano-canli-yoklama-cift.jpg));
+dört kısayol yerinden biri tekrar için harcanıyor.
+
+Koddan ölçüldü (oksis-ui, salt okuma):
+- `apps/mobile/src/features/home/components/admin-home.tsx` → A kartı `RollCallCard` `onPress={openLive}`;
+  `openLive` = `router.push('/attendance/live')` (sezon kilitliyse uyarı).
+- `packages/core/src/home/constants.ts` → `HOME_SHORTCUTS_BY_ROLE.admin` içinde `live-attendance` · *Canlı yoklama* ·
+  `href: "/attendance/live"`. Aynı rota.
+- Kısayol 2026-10-05 kullanıcı kararıyla (Faz 0) "Akademik takvim"/"Mesajlar"ın yerine gelmişti (dosyadaki yorum).
+- `HOME_SHORTCUTS_BY_ROLE` yalnız mobilde kullanılıyor (`apps/mobile/src/features/home/use-home-shell.ts`);
+  `packages/core/src/home/logic.test.ts` de sabite bağlı. Web etkilenmiyor.
+
+Kullanıcı isteği: *Canlı yoklama* kısayolunun yerine **Rehber** gelsin. Rehber ekranı mevcut: `/contacts`
+(`contact-directory-screen.tsx`, başlık "Rehber" — öğretmen, veli ve personel iletişimi); yönetici menüsünde kaydı
+var (`packages/core/src/nav/nav-config.ts`, `id: "contacts"`); hangi menüde göründüğü ekranda ölçülmedi.
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/mobil-kullanici-testi-turu`) · Test'e itildi:** `packages/core/src/home/constants.ts` →
+`HOME_SHORTCUTS_BY_ROLE.admin` içinde `live-attendance` yerine `{ id: "contacts", label: "Rehber", icon: "users",
+href: "/contacts" }`. Core testleri 106/106, mobil + web typecheck yeşil.
+
+### `D-60` · Android giriş ekranında parola alanına geçince klavye alanı örtüyor; ekran kendiliğinden kaymıyor 🟡
+
+2026-10-09, kullanıcı testi (Android, Oksis Test, Altınay). E-posta yazılıp **Parola** alanına geçilince klavye açılıyor ve
+parola alanının yalnız üst kenarı görünüyor; kullanıcı ne yazdığını görmek için ekranı **eliyle kaydırmak** zorunda
+([kanıt](kanit/d60-giris-klavye-parola-ortuyor.jpg)). Beklenen: odaklanan alan klavyenin üstüne kendiliğinden gelmeli.
+
+Koddan ölçüldü (oksis-ui, salt okuma):
+- `apps/mobile/src/features/auth/components/auth-shell.tsx:128` →
+  `<KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined}>` — Android'de **hiçbir davranış yok**;
+  kaçınma tamamen işletim sisteminin pencereyi yeniden boyutlamasına bırakılmış.
+- `android/app/src/main/AndroidManifest.xml` → `windowSoftInputMode="adjustResize"`. Ekran görüntüsünde pencere küçülmemiş,
+  içerik klavyenin altında kalmış; yani yeniden boyutlama bu derlemede işlemiyor.
+- Not (doğrulanmadı): olası neden Android 15+ / güncel Expo'da zorunlu kenardan kenara (edge-to-edge) çizim — bu kipte
+  `adjustResize` pencereyi küçültmüyor, klavye yüksekliğini uygulamanın kendisinin karşılaması gerekiyor.
+
+Etki alanı: `AuthShell` ortak kabuk — **şifremi unuttum** ve **davet kabul** ekranları da aynı kabukta (ölçülmedi).
+Aynı `behavior={… 'ios' ? 'padding' : undefined}` deseni `announcements/components/template-form-screen.tsx:139`'da da var;
+bir sınıf olabilir — diğer form ekranları Android'de ölçülmedi.
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/mobil-kullanici-testi-turu`, cihazda ölçülmedi) · Test'e itildi:** kök neden doğrulandı —
+`android/gradle.properties` `edgeToEdgeEnabled=true`; bu kipte `adjustResize` pencereyi kısaltmıyor. Ekran bazlı yama yerine
+ortak kök yazıldı: `src/components/keyboard-avoiding-root.tsx` (`KeyboardAvoidingView`, iki platformda `behavior="padding"`).
+`AuthShell` (giriş, şifremi unuttum, davet kabul) ve duyuru `template-form-screen.tsx` ona bağlandı (ikincisinin yorumu
+"Android'de adjustResize yeter" diyordu — bayattı). Diğer form ekranları taranmadı; klavye altında kalan başka alan görülürse
+aynı kök kullanılır.
+
+### `D-61` · Mobil *Giriş başarılı* yönlendirme ekranı durağan; yapım aşamasında sayfasındaki hareketli OKSİS logosuyla yeniden tasarlanacak ⚪
+
+2026-10-09, kullanıcı testi (Android, Oksis Test, öğretmen hesabı). Giriş sonrası ≈1,4 sn görünen ekran: açık zemin, ortada
+durağan OKSİS işareti, "Giriş başarılı" ve "Öğretmen portalına yönlendiriliyorsunuz…" ([kanıt](kanit/d61-giris-basarili-yonlendirme.jpg)).
+Kullanıcı kararı: ekranın tasarımı değişecek; **oksis.net yapım aşamasında sayfasındaki logonun yükleme (loading) hâli**
+uygulamaya entegre edilecek.
+
+Bugünkü kod (oksis-ui, salt okuma): `apps/mobile/src/features/auth/components/login-screen.tsx` → `RedirectView`
+(`COLORS.surfaceLight` zemin, `<OksisMark size={64} bg="gradient" />`, `setTimeout(() => router.replace('/home'), 1400)`).
+`components/oksis-mark.tsx` durağan SVG; animasyon desteği yok. Projede `react-native-reanimated` 4.5.0 zaten var.
+
+Kaynak tasarım (2026-10-09'da yayından okundu): `https://oksis.net/yapim/index.html`, başlık "Oksis — Yapım Aşamasında".
+Logo bloğu `.mark-wrap` > `.mark-orbit` + `.mark` (4 × `.sq`) + `.mark-badge`:
+- **Kareler** (`pulse-sq`, 3,2 sn, sonsuz): saat yönünde sırayla (sol üst → sağ üst → sağ alt → sol alt, 0,8 sn aralıkla)
+  saydamlık 0,55 → 1 ve ölçek 0,96 → 1,04, beyaz parlama halesi.
+- **Zemin** (`gradient-shift`, 6 sn): üç duraklı gradyan (`primary-dark` → `primary-blue` → `accent`) çapraz kayıyor;
+  sol üstte radyal parlaklık.
+- **Yörünge** (`orbit-rotate`, 30 sn): logonun 28 px dışında kesikli çerçeve, üstünde iki küçük aksan noktası, dönüyor.
+- **Rozet** (`badge-wobble`): sağ üstte çekiç/anahtar ikonu — "yapım aşamasında"ya özgü; yükleme hâlinde muhtemelen düşer
+  (karar gerekir).
+
+Açık sorular (karar gerektirir): yörünge ve rozet uygulamada kalacak mı; aynı hareketli işaret açılış ekranında
+(`splash-screen.tsx`, bkz. `D-56`) ve diğer tam ekran yüklemelerde de kullanılacak mı; zemin açık mı kalacak, lacivert mi olacak.
+Kaynak sayfanın kodu depolarda yok — yalnız yayında (`docs/gecici/landing-taslak/` tanıtım sayfası taslağı, bu sayfa değil).
+
+✅ **Karar (2026-10-09, kullanıcı):** kapsam ekrandan büyüdü — **OKSİS'e özel ortak bir yükleme (loading) animasyonu** yapılacak:
+- **Yalnız logo:** dört karenin sırayla parlaması (yapım aşamasındaki `pulse-sq` hareketi) ve logonun kendi gradyan zemini.
+  Çekiç rozeti, yörünge çerçevesi ve sayfa arka planı **olmayacak**. Referans: [kanıt](kanit/d61-oksis-loading-referans.gif).
+- Yeni tasarım yapılmayacak; yapım aşamasındaki animasyon olduğu gibi alınacak.
+- **Ortak bir yerde** durup hem mobilde hem webde kullanılabilecek; *Giriş başarılı* ekranı ilk kullanım yeri, sonra
+  uygulamadaki diğer bekleme yerleri.
+✅ **Karar (2026-10-09, kullanıcı — kural çakışması):** logo animasyonu **ekran geçişlerinde** (ör. *Giriş başarılı ·
+yönlendiriliyorsunuz*) ve **kaydet/gönder beklemelerinde** kullanılır; liste ve sayfa **verisi** yüklenirken iskelet (skeleton)
+kalır. `CLAUDE.md`'deki "tam sayfa yüklemede spinner yok" yasağı bozulmaz.
+
+✅ **Karar (2026-10-09, kullanıcı — ikinci tur):** ilk sürüm (yapım aşamasındaki logonun sadeleştirilmiş nabzı) yeterince canlı
+bulunmadı: *"benim tarifimi unut, kendin yap, animasyonlu tam ekran loading."* Tasarım serbest bırakıldı.
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/mobil-kullanici-testi-turu`; mobilde cihazda görülmedi) · Test'e itildi:**
+"**Nabız**" — tam ekran yükleme ([kanıt](kanit/d61-oksis-nabiz-loading.gif), gerçek web bileşeninden kaydedildi):
+- Zemin açılış ekranıyla aynı marka gradyanı; logonun ardında **nefes alan yumuşak hale** (3,2 sn); kutusuz, iri ve yuvarlak dört
+  modül **saat yönünde dalga** ile sırayla kalkar (2,4 sn tur; büyür, tam beyaza çıkar, iner); altında başlık + mesaj.
+- **Tek tanım** `packages/core/src/tokens/loader.ts` (tur/hale süreleri, sıra, keyframe'ler, geometri, durağan hâl) + 4 test.
+- **Mobil** `apps/mobile/src/components/oksis-loader.tsx` → `OksisLoader` + `OksisLoadingScreen` (RN `Animated`, yerel sürücü;
+  hale `RadialGradient` `stopOpacity` ile — `D-57` dersi). Yeni token `TYPE.loadingTitle`.
+- **Web** `apps/web/components/shared/oksis-loader.tsx` → aynı iki bileşen; keyframe'ler CSS'e kopyalanmadı, Web Animations API
+  core tanımından oynatıyor.
+- İki platformda *hareketi azalt* açıksa durağan logo.
+- Kullanım: mobil ve web *Giriş başarılı · … portalına yönlendiriliyorsunuz* artık tam ekran yükleme. Diğer bekleme yerlerine
+  kural gereği (geçiş + gönderim; veri yüklemede iskelet) geliştikçe bağlanır.
+- Typecheck + lint (mobil, web, core) yeşil.
+
+### `D-62` · Öğretmen mobil *Nöbetlerim* ekranı kötü görünüyor; Android'de "bugün" kartları gri çift çerçeveyle bozuk çiziliyor 🟡
+
+2026-10-09, kullanıcı testi (Android, Oksis Test, Altınay, öğretmen ZK). Kullanıcı: *"Bu ekranı da yeniden tasarlayalım,
+kötü görünüyor."* ([kanıt](kanit/d62-nobetlerim-ekrani.jpg)). Ekran: `apps/mobile/src/features/duty/components/my-duty-screen.tsx`
+(`MyDutyScreen`, `B-86` ile yazıldı). Yeniden tasarım kullanıcı kararı; ekranda ve kodda ölçülen somut kusurlar:
+
+1. **Bugünkü vekâlet kartları bozuk çiziliyor (asıl görsel hata).** İki *Vekâlet derslerim* kartı kalın gri bir dış çerçeve
+   ve içinde köşeleri yuvarlatılmamış açık mor bir dikdörtgen olarak görünüyor. Yalnız **bugüne ait** kartlar böyle; bugüne
+   ait olmayan nöbet/yancı kartları düzgün. Kod: `RowCard` bugünse zemini `softTint(tone, 0.07)` — yani **yarı saydam**
+   `rgba(…,0.07)` — ve aynı görünümde `CARD_SHADOW` (`elevation: 1`) var. Not (doğrulanmadı): Android'de yarı saydam zeminli
+   görünüme `elevation` verilince gölge zeminin içinden görünüyor; belirti bununla örtüşüyor. iOS'ta ölçülmedi.
+2. **"Bugün" iki kez söyleniyor:** kart başlığına `'  · Bugün'` ekleniyor (çift boşlukla — "Coğrafya  · Bugün") ve solda
+   zaten "09.10 Cum" yazıyor. Uzun başlıkta "· Bugün" alt satıra kırılıyor ("11-B · Seçmeli Coğrafya · / Bugün").
+3. **Gün iki kez söyleniyor:** nöbet kartında solda "Sal", altyazının başında yine "Salı · …" (`DutyRow` →
+   `detail = day.full · window`).
+4. **Üst şerit çelişkili okunuyor:** "Bugün nöbet ya da yancılık görevin yok." yazarken aynı ekranda bugüne iki vekâlet dersi
+   var. Şerit yalnız nöbet/yancıya bakıyor (`TodayStrip` ← `week.todayItems`); vekâlet bugünün işi olarak hiç anılmıyor.
+5. Sayaç kartları tutarsız: "1 · bu hafta nöbet" ile "1 · yancı görevi" (ikincisinde "bu hafta" yok); vekâlet için sayaç kartı
+   yok, sayısı bölüm başlığındaki rozette.
+
+Karar gerektirir: yeni tasarımın kaynağı (Claude Design / handoff) ve vekâlet derslerinin "bugün" şeridine dahil olup olmayacağı.
+Web karşılığı `TeacherDutyScreen` aynı core kararlarını (`buildMyDutyWeek`, `splitMySubstitutions`) çiziyor; webde ölçülmedi.
+
+✅ **Karar (2026-10-09, kullanıcı):** yeni tasarım uygulayan oturuma (Claude) bırakıldı; şart: **işlev bozulmayacak** — iki uç,
+muafiyet şeritleri, geçmiş vekâletler ve yenileme olduğu gibi kalır. Yukarıdaki 1–5 kusurları da kapsar.
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/mobil-kullanici-testi-turu`; ekranda/cihazda görülmedi) · Test'e itildi:**
+`my-duty-screen.tsx` yeniden düzenlendi, iki uç ve core kararları aynen:
+- En üstte **Bugün kartı**: günün nöbet/yancı görevleri + vekâlet dersleri tek listede; boşsa "Bugün nöbet, yancılık ya da vekâlet
+  görevin yok", hafta sonu ayrı cümle; vekâlet sorgusu gelmeden "görevin yok" denmez (madde 4 kapandı).
+- Üç özet kutusu: Nöbet (bu hafta) · Yancı (bu hafta) · Vekâlet (yaklaşan) — tutarlı etiketler (madde 5).
+- Satırlar: "Bugün" başlığa eklenmez, soldaki gün rozeti dolu tona döner (madde 2); nöbet altyazısında gün tekrarı yok (madde 3).
+- Bütün kart ve rozet zeminleri **opak** (`mixWithWhite`), yarı saydam zemin + `elevation` birleşimi kalmadı (madde 1).
+  Aynı birleşim başka ekranda bulunmadı (`CARD_SHADOW` + `softTint` zemin taraması).
+- Çizelge sürümü bölüm dipnotuna indi. Muafiyet şeritleri, boş durumlar, geçmiş vekâletler, aşağı çekip yenileme korunuyor.
+Typecheck + lint yeşil.
+
+### `E-41` · Yönetici mobil *Canlı Yoklama* ekranı yalnız görüntülüyor: alınmamış yoklamaya hiçbir işlem yapılamıyor; liste sayfasız 🟡
+
+2026-10-09, kullanıcı testi (iPhone, Oksis Test, Altınay, yönetici). *Canlı Yoklama* ekranındaki **Alınmayan Yoklamalar**
+listesinde bir satıra dokunmak yalnız "Geriye dönük giriş web panosundan yapılır" uyarısını gösteriyor
+([kanıt](kanit/e41-mobil-canli-yoklama.png)). Kullanıcı: *"Hiçbir işlem yapılamıyor; ne yönetici yoklamayı alabiliyor
+ne de öğretmene yoklamayı açabiliyor. Sadece görüntülemek bu ekran için yetersiz."*
+
+Koddan ölçüldü (salt okuma):
+- Mobil: `apps/mobile/src/features/attendance/components/admin-live-screen.tsx` — satırın tek eylemi
+  `showNotice('Geriye dönük giriş web panosundan yapılır')`. Dosya başındaki yorum bunu **bilinçli** sayıyor ("mobil
+  kısaltılmış görünüm … geriye dönük giriş/ızgara detayı kasıtlı olarak yok", tasarım `AttAdminLiveMobile`). Kullanıcı bu
+  kapsamı yetersiz buluyor — tasarım kararı değişiyor.
+- **Öğretmene hatırlat:** sunucuda var (`POST attendance/sessions/{id}/remind`), istemci kancası var
+  (`packages/api` `useRemindTeacher`), web kullanıyor (`missing-list.tsx`, `live-board.tsx`); **mobil çağırmıyor**.
+- **Yöneticinin yoklamayı kendisinin girmesi (geriye dönük):** sunucuda var — `PUT attendance/sessions/{id}/submit`
+  `Retro: true`, yalnız `attendance.manage` (`SubmitAttendanceCommandHandler`), yalnız `NotTaken` oturumda (domain
+  `AttendanceSession.Submit`). Web'de `AttRetroModal` (`missing-list.tsx`, kalem düğmesi). **Mobilde yok.**
+  Dikkat: web düğmesi yalnız oturum gün sonunda `NotTaken`'a kapandıktan sonra etkin; gün içinde gecikmiş (`Open`) oturuma
+  idarenin yoklama girmesi hiçbir istemcide yok. Sunucu buna kapalı değil gibi görünüyor (handler yorumu: `attendance.manage`
+  sahibi `Open` oturuma `Retro: true` gönderebilir) — **ekranda/uçta ölçülmedi**.
+- **Yoklamayı öğretmene (yeniden) açmak:** sunucuda **böyle bir yetenek yok**. `NotTaken` oturum yalnız idarenin geriye dönük
+  girişiyle tamamlanabiliyor; öğretmen `Retro` olmadan gönderemiyor (`AttendanceSession.Submit`). Yeni iş kuralı — karar gerekir.
+- **Sayfalama:** `GET attendance/unrecorded` sayfa almıyor, günün tüm kayıtlarını döndürüyor; mobil hepsini tek `ScrollView`
+  içinde `map` ile çiziyor. Kullanıcı isteği: varsayılan **10 satır**, kaydırdıkça yüklensin (sonsuz kaydırma).
+
+Ekranda ayrıca görülen, **ölçülmemiş** iki tutarsızlık (ayrı madde olabilir):
+- Sayaç **"0 ALINMADI"** derken başlığı "Alınmayan Yoklamalar" olan listede çok sayıda satır var. Sayaç `board.notTaken`
+  (gün sonunda kapanmış oturum), liste ise gecikmiş açık oturumları da içeriyor — iki kelime aynı, anlamları farklı.
+- Satırlar **"2 sa gecikme"** iken "Hatırlatma 10 dk içinde gönderilecek" yazıyor; yani `autoRemindedAt` iki saat sonra hâlâ boş.
+  Otomatik hatırlatma işinin Test ortamında koşup koşmadığı ölçülmeli.
+
+Karar gerektirir: mobilde hangi eylemler olacak (hatırlat · geriye dönük giriş · gün içinde idare girişi · öğretmene açma);
+öğretmene açma kuralı (kim, ne kadar süre, kayıt izi); sayfalamanın sunucuda mı istemcide mi yapılacağı.
+
+✅ **Karar (2026-10-09, kullanıcı):**
+- İdare alınmamış yoklamayı **öğretmene 24 saatliğine açar**; süre dolunca oturum yeniden kapanır.
+- **Öğretmen de yeniden açılmasını talep edebilir**; talep idarenin onayına düşer. Mevcut *Düzeltme talebi* akışı
+  (`amendment-requests`, tamamlanmış oturum için) emsal — aynı onay yüzeyini (*Onay bekleyen* sayfası) kullanıp
+  kullanmayacağı uygulamada netleşir.
+- Liste varsayılan **10 satır**, kaydırdıkça yüklenir.
+⬜ Hâlâ açık (teknik): sayfalamanın sunucuda mı istemcide mi yapılacağı; açma süresinin okul ayarı mı sabit mi olacağı;
+mobilde hatırlatma ve geriye dönük girişin de eklenmesi (sunucu hazır).
+
+🔧 **2026-10-09 · kodda (oksis-ui/oksis-api, Test'e itildi):**
+- **Sunucu** — oksis-api `feat/yoklama-yeniden-acma` (`4aa1a51c`, `48240805`, `91d76720`, inceleme düzeltmesi `e6f281c3`):
+  - Yeniden açma durum makinesine yeni durum eklemeden: `NotTaken` oturuma `ReopenedUntil` (+24 sa) yazılır; süre içinde sahibi
+    öğretmen `attendance.manage` olmadan gönderir (domain'e retro → veliye anlık bildirim yok, `EnteredRetroactively`). Süre
+    dolunca `Attendance.Session.ReopenExpired` (409). Zamanlanmış iş yok.
+  - Uçlar: `POST sessions/{id}/reopen` (manage) · `POST sessions/{id}/reopen-requests` (sahibi) · `GET reopen-requests?status=
+    pending|all` · `GET reopen-requests/mine` · `GET reopen-requests/{id}` · `PUT reopen-requests/{id}/decision`.
+  - Yeni tablo `academic.attendance_reopen_requests` (kısmi tekillik: oturum başına tek bekleyen talep); göç
+    `20261009133231_20261009_attendance_reopen`. Bildirimler: talep → idare (push; **gerekçe push gövdesinde yok** — K-02, KVKK),
+    açıldı → öğretmen (push), red → öğretmen.
+  - Testler: domain 1335 · application 3610 · api 495 · bekçiler 110 · entegrasyon yoklama+bildirim 341/341.
+  - Bağımsız kod incelemesi: 🔴 yok; 🟠 (push'ta gerekçe) ve iki 🟡 ile iki ⚪ aynı gün düzeltildi.
+- **İstemci** — oksis-ui `feat/canli-yoklama-eylemleri`:
+  - Mobil *Canlı Yoklama*: son 7 gün, güne göre gruplu, **10'ar satır kaydırdıkça** (istemci sayfalaması); satır eylemi core
+    `getUnrecordedRowAction`: gecikmiş → **Hatırlat** · kapanmış → **Öğretmene aç** (onay penceresi) · açık → bitiş saati.
+  - Öğretmen *Geçmiş*: kapanmış derse dokununca açık pencerede yoklama ekranı, değilse **yeniden açma talebi** penceresi
+    (gerekçe zorunlu, core `reopenRequestFormSchema`); bekleyen talep satırda yazar.
+  - İdare *Onay bekleyen*: yeni tür **Yeniden açma talebi** → liste + detay + onay/red.
+  - Bildirim bağlantıları `/attendance/reopen-requests/{id}` ve `/attendance/sessions/{id}` mobilde ilgili ekranlara açılıyor.
+  - `generated/schema.ts` dal API'sinden yeniden üretildi. Core testleri 227/227, mobil + web typecheck/lint yeşil.
+- **Cihazda/ekranda görülmedi.**
+
+✅ **Karar (2026-10-09, kullanıcı — inceleme sonrası):**
+1. Takılı talep **sessizce geçersiz** sayılır → 🔧 `voided` durumu: oturum `NotTaken`'dan çıkınca (retro/öğretmen girişi ya da
+   iptal) `VoidReopenRequestsOnSessionClosedHandler` bekleyen talebi kapatır; bildirim yok, not "Yoklama başka yoldan kapandı".
+2. **Kalıcı açma izi** tutulur → 🔧 append-only `academic.attendance_session_reopenings` (doğrudan + talep onayı, tazeleme dahil;
+   göç `20261009143056_20261009_attendance_reopen_trail`). Okuma ucu/ekranı yok — ayrı dilim adayı.
+3. **Kaydırarak yükleme, sunucu sayfalı** → 🔧 `GET unrecorded`, `GET reopen-requests`, `GET reopen-requests/mine` sayfalı
+   (`page`/`pageSize`, `PagedResult<T>`); mobil `useInfiniteQuery` ile 10'ar satır.
+4. **Web'e de eklenir** → web dilimi geliştiriliyor (Alınmayan Yoklamalar'da *Öğretmene aç*, *Yeniden Açma Talepleri* sekmesi,
+   öğretmenin web yoklama yüzeyinde talep).
+Kod: oksis-api `feat/yoklama-yeniden-acma` `502d1073` (Domain 1338 · Application 3624 · Api 495 · bekçiler 110 · entegrasyon
+347/347) · oksis-ui `feat/canli-yoklama-eylemleri` `5726976`. Push yok, Test'e alınmadı.
+Yan düzeltme: `teknik/kurallar/backend/api-design-rules.md` sayfalı yanıt bölümü koda göre düzeltildi (`PagedResult<T>`
+`data` içinde; belge `data[]`+`meta` diyordu, hiçbir uç öyle değildi).
+
+🔧 **2026-10-09 · web dilimi + istemci incelemesi · Test'e itildi:**
+- Web (oksis-ui `bd41f5a`): Alınmayan Yoklamalar'da *Öğretmene aç* (onay diyaloğu) ve "Öğretmene açık · bitiş"; yeni
+  **Yeniden Açma Talepleri** sekmesi (`?tab=reopen`, durum süzgeci + sunucu sayfalı liste + onay/red); öğretmenin *Yoklama ›
+  Bu Hafta* görünümünde kapanmış derste *Yeniden açılmasını iste*. Alınmayan Yoklamalar tablosu kademe/şube/öğretmen süzgecini
+  istemcide uyguladığı için seçili aralığın **tüm sayfalarını** çekiyor (kademe/şube süzgeci sunucuda yok) — tam sunucu
+  sayfalaması o süzgeçler sunucuya gelince.
+- Ekranda ölçüldü (yerel web, MSW sahte veri): idare *Öğretmene aç* → satır "Öğretmene açık · bitiş 10 Eki 18:00"; talep
+  sekmesi listeleniyor, gerekçesiz red engelleniyor; öğretmen talebi gönderiliyor, hücre "Talep idarede bekliyor".
+  Konsolda uygulama hatası yok.
+- Bağımsız istemci incelemesi: 🔴 1 — `retro` bayrağı pencereye bağlıydı, **idare açtığı yoklamayı 24 saat giremiyordu**;
+  kural yetkiye bağlandı (`isRetroSubmit(session, canManageAttendance)`). 🟠 5 (sonsuz sayfa denemesi, mobil roster'da kapanmış
+  oturum kapısı yok, gün kapanışı sonrası "bugünün dersi" istisnası sunucuyla çelişiyor, talep sekmesi sayfa/durum geçişleri,
+  sonraki sayfa hatası listeyi siliyor) ve 🟡/⚪ maddeler aynı gün düzeltildi: oksis-ui `392a7a3` (web + mock), `c379f53`
+  (core + mobil + api); oksis-api `3a3257b9` (DTO yorumu). Denetimler: typecheck + lint 12/12, vitest core 1153 · api 377 ·
+  api-mocks 299.
+- **Push yok, Test'e alınmadı; mobil cihazda görülmedi.**
+
+⬜ Açık: vekâlet düzeltmesinden (`B-113`) önce kapanmış eski oturumlarda sahip asıl öğretmende kalmış olabilir — açma ona gider
+(veride ölçülmedi).
+
+### `X-25` · Test DB'si uykudan uyanırken mobil giriş "Sunucuya ulaşılamadı" diyor, oturum yenileme yarıda kesilip 500 olarak kaydediliyor 🟠
+
+2026-10-09, Test ortamı (`api-test.oksis.net`), mobil kullanıcı testi. **Kök neden:** Test DB'si Azure SQL ücretsiz katmanında
+(serverless) — bir süre sorgu gelmezse Azure duraklatıyor, ilk bağlantı `40613` "Database 'oksis-test' … is not currently available"
+ile reddediliyor, uyanma **40-50 sn** sürüyor. Sunucudaki `ConnectionOpenRetryInterceptor` açılışı 6 kez yeniden denediği için istek
+düşmüyor ama uzun bekliyor. Ölçülen (API günlüğü, 2026-10-09):
+
+| Saat | İstek | Süre | Sonuç |
+|---|---|---|---|
+| 09:25 | `POST auth/account/login` | 48,0 sn | 200 — uygulama vazgeçmişti, ekranda "Sunucuya ulaşılamadı" |
+| 09:48 | `POST auth/account/login` | 42,9 sn | 200 |
+| 11:01:06 | `POST auth/account/refresh` | 25,6 sn | **500** — `TaskCanceledException` (istemci isteği bıraktı) |
+| 11:01:21 | `POST auth/account/refresh` | 47,6 sn | 200 (uygulamanın yeniden denemesi) |
+
+Uyanmadan sonra her şey normal (giriş 0,3 sn). **Üç kusur:** (1) kullanıcı 45 sn hiçbir açıklama görmüyor, sonunda yanlış yönlendiren
+"Ağ bağlantınızı kontrol edin" mesajı çıkıyor (`login-screen.tsx` `transportError === 'unreachable'`); (2) oturum yenileme taşıma hatasıyla
+düşerse uygulamanın oturumu kapatıp kapatmadığı ölçülmedi — kapatıyorsa kullanıcı sebepsiz yere çıkışa düşer; (3) istemcinin bıraktığı istek
+sunucuda ERR seviyesinde 500 olarak yazılıyor — gerçek hata olmayan kayıt gerçek hataları gömer. DB'yi sürekli uyanık tutmak çözüm değil:
+ücretsiz kota (100.000 vCore-sn/ay) 7/24 açıklığa yetmez; sabah tek uyandırma yalnız ilk saati kurtarır.
+
+⬜ **Öneri (sunucu + mobil birlikte, [[yamalama-kabul-degil]]):**
+- **oksis-api:** DB uyanıyorsa isteği 45 sn bekletme — birkaç saniye içinde **503** + ayırt edici hata kodu (ör. `system.database-starting`) +
+  `Retry-After` dön, uyandırma arka planda sürsün. İstemcinin iptal ettiği istek (`RequestAborted`) 500/ERR değil, bilgi seviyesinde ayrı kayıt.
+- **oksis-ui (mobil, gerekirse web):** giriş ekranı 503 "hazırlanıyor" yanıtında "Sunucu hazırlanıyor, birkaç saniye içinde tekrar deneniyor…"
+  göstersin ve kendisi yeniden denesin (toplam ~60 sn); gerçek ağ yokluğunda bugünkü mesaj kalsın. `classifyLoginError` yeni kolu tek yerde ayırsın.
+- **Oturum yenileme:** taşıma hatası ya da 503'te oturum kapanmasın, istek bekletilip yeniden denensin; oturum yalnız sunucu "geçersiz oturum"
+  dediğinde kapansın — önce bugünkü davranış ölçülecek.
+- Prod'da da sunucu yeniden başlarken/kısa kesintide aynı koruma geçerli; Test'in uykusu kullanıcıya görünmez olur.
+
+🔧 **2026-10-09 · istemci kodda (oksis-ui `fix/acik-bulgular` `adf3a1c`); sunucu ayağı ayrı dalda geliştiriliyor · Test'e itildi:**
+- **Ölçüldü (kod):** oturum yenileme (`auth-refresh.ts`) her başarısız yanıtı (500/503 dahil) "geçersiz" sayıyor ve `auth.clear()` +
+  `onUnauthorized` ile **kullanıcıyı çıkışa düşürüyordu** — kayıttaki "ölçülmedi" sorusu evet çıktı. Yalnız ağ hatası (fetch throw)
+  çıkışa düşürmüyordu.
+- Düzeltme: `RefreshOutcome` = `ok` · `invalid` · `transient`; oturum yalnız 401/403'te kapanır, 5xx/503/ağ hatasında `Retry-After`'a
+  uyarak ~60 sn yeniden denenir, sonra oturum açık kalır (+3 test).
+- Giriş: `classifyLoginError` → 503 + `system.database-starting` = yeni `starting`; web ve mobil "Sunucu hazırlanıyor…" der ve ortak
+  takvimle (`nextStartingRetryDelayMs`, 5 sn × 12) kendisi yeniden dener; alan değişince/elle gönderimde iptal (+2 test).
+
+🔧 **2026-10-09 · sunucu ayağı kodda (oksis-api `fix/cihaz-kaydi-ve-db-uyanma`) · Test'e itildi:** `13bfc2e9` DB uyanırken
+bağlantı açma süre bütçesine bağlandı, istek kısa sürede `503 system.database-starting` + `Retry-After` ile biter; istemci iptali
+artık Error seviyesinde loglanmıyor. `3ee332de` 503 yalnız uyanma hatası gerçekten görüldüyse dönüyor; istek hatalarının log
+seviyesi tek yardımcıda (`RequestFailureClassifier`). İstemci ayağı ayrıca `0cb499c` (sorgu/mutasyon yeniden deneme).
+
+### `B-113` · Vekil atanan ders, vekilin *Bugünkü Derslerim* ekranında "Boş" görünüyor; yoklama oturumu asıl öğretmende kalıyor 🟠
+
+2026-10-09, kullanıcı testi (Android, Oksis Test, Altınay, öğretmen ZK). *Nöbetlerim › Vekâlet derslerim* bugün için iki ders
+gösteriyor: **1. ders 08:55 11-B Seçmeli Coğrafya** ve **6. ders 12:25 9-B Coğrafya**, ikisi de "Mukaddes Yeşilyurt yerine"
+([kanıt](kanit/b113-nobetlerim-vekalet-karti.jpg)). Aynı öğretmenin *Bugünkü Derslerim* ekranında 1. ve 6. ders **"Boş"**
+([kanıt](kanit/b113-bugunku-derslerim-vekalet-yok.jpg)). Vekil, gireceği dersin yoklamasını alamıyor.
+
+Koddan ölçüldü (oksis-api `86c70b59`, salt okuma) — olası kök neden, **veritabanında ölçülmedi**:
+- *Bugünkü Derslerim* `GET attendance/sessions/my` → `GetTeacherDailySessionsQueryHandler`: oturumları
+  `ExpectedTeacherId == me || ActualTakerId == me` ile süzüyor.
+- `ExpectedTeacherId` yalnız oturum **üretilirken** yazılıyor: `SessionMaterializer.ResolveEffectiveTeacherId` o anda aktif
+  `TeacherSubstitution` istisnası varsa vekili, yoksa asıl öğretmeni yazıyor. Sonradan değiştiren bir yöntem yok
+  (`AttendanceSession` — `ExpectedTeacherId` yalnız `Create`'te atanıyor).
+- `MaterializeForDateAsync` günün var olan oturumlarını olduğu gibi döndürüyor (`existing`); yeniden çözmüyor.
+- `CreateSubstitutionCommandHandler` yoklama oturumlarına dokunmuyor.
+- Sonuç: günün oturumları vekâlet yazılmadan **önce** üretildiyse (sabah ilk pano/liste açılışı, hatırlatma işi), vekâlet
+  sonradan atandığında oturum asıl (izinli) öğretmende kalıyor; `ActualTakerId` da boş, çünkü `Open` hiç çağrılmıyor.
+  Program ve *Vekâlet derslerim* ise istisnayı her okumada canlı uyguluyor (`PublishedScheduleQueryHandler`,
+  `GetMySubstitutionsQueryHandler`) — bu yüzden orada görünüyor.
+
+Olası yan etkiler (ölçülmedi): yoklama hatırlatması ve *Canlı Yoklama*'daki gecikme satırı **izinli asıl öğretmene**
+yazılıyor; vekâlet geri alındığında aynı bayatlık ters yönde olabilir. Web'in öğretmen günlük listesi aynı uçtan beslendiği
+için web de etkilenmeli.
+
+Doğrulama yolu: Test ortamında 11-B 1. ders ve 9-B 6. ders oturumlarının `ExpectedTeacherId`'si ile vekâlet istisnasının
+oluşturulma zamanı karşılaştırılmalı.
+
+🔧 **2026-10-09 · kodda (oksis-api `fix/vekil-oturum-ogretmeni`) · Test'e itildi:** kök neden doğrulandı
+(oturum sahipliği yalnız üretimde çözülüyordu). Ayrıca vekilin dersi **açamadığı** da görüldü: `OpenOrGetSession` sahiplik kontrolü
+`(ActualTakerId ?? ExpectedTeacherId) != me` vekili reddederdi. Düzeltme merkezde:
+- Domain: `AttendanceSession.AlignExpectedTeacher(effectiveTeacherId)` — yalnız `Pending` oturumda; açılmış/kapanmış oturum
+  tarihtir, değişmez.
+- `SessionMaterializer.MaterializeForDateAsync`: var olan bekleyen oturumlar her okumada etkin öğretmene (vekâlet varsa vekil,
+  geri alındıysa asıl) hizalanıp kaydediliyor — *Bugünkü Derslerim*, pano, alınmayan yoklamalar bu yoldan.
+- `GetOrCreateAsync` (dersi açma yolu): var olan oturum dönmeden önce aynı hizalama (`AlignExpectedTeacherAsync`).
+- `AttendanceReminderJob`: hatırlatmadan önce günü üreticiden geçiriyor — hatırlatma izinli öğretmene değil vekile gider.
+Testler: domain 3 yeni (41/41), entegrasyon 2 yeni (vekâlet sonradan yazılır → vekil; geri alınır → asıl; açılmış oturum
+değişmez), yoklama entegrasyon paketi 210/210, mimari bekçiler 110/110. Test ortamında ölçülmedi (yayın gerekli).
+Kapsam dışı (ayrı madde adayı): oturumdan sonra yazılan **iptal** istisnası da var olan bekleyen oturumu iptal etmiyor —
+aynı sınıf, hizalamaya eklenmedi.
+
+### `E-42` · Duyuru oluştururken push ve e-posta kanalları kilitli ("yakında"); yayınlayan kanalı seçemiyor 🟡
+
+2026-10-09, kullanıcı testi (iPhone, mobil *Yeni duyuru*). *Gönderim kanalları* kartında **Uygulama içi** açık ve kilitli
+(doğru — kapatılamaz), **Push bildirim (yakında)** ve **E-posta (yakında)** kapalı ve kilitli: "Bu sürümde gönderilmiyor"
+([kanıt](kanit/e42-duyuru-kanallari-kilitli.png)). Kullanıcı isteği: kanallar açılsın, yayınlayan seçimine göre duyuru
+push ve/veya e-postayla da gitsin.
+
+Koddan ölçüldü (salt okuma):
+- İstemci (oksis-ui): `packages/core/src/announcements/constants.ts` → `DELIVERY_CHANNEL_CONFIG.push/email`
+  `locked: true, comingSoon: true`; gövdeye yalnız `DELIVERABLE_CHANNELS` yazılıyor. Dosyadaki `K-2` yorumu açmanın üç
+  ayağını sayıyor: (1) `locked`/`comingSoon`, (2) `DELIVERABLE_CHANNELS`, (3) form ekranlarında kanal seçimi yeniden bir durum
+  olmalı — `toggleChannel` silinmişti (web `apps/web/features/announcements/compose.tsx`, mobil
+  `apps/mobile/src/features/announcements/components/compose-screen.tsx`).
+- **Yorum bayat:** "Sunucuda kayıtlı tek `INotificationChannel` InApp'tir" diyor; bugün sunucuda üç kanal kayıtlı —
+  `InAppNotificationChannel`, `PushNotificationChannel`, `EmailNotificationChannel` (`NotificationChannelRegistration.cs`,
+  e-posta `TB-43` ile bağlandı). Taşıyıcılar hazır.
+- Sunucu (oksis-api): `CreateAnnouncementCommandValidator` `inApp`/`push`/`email` kabul ediyor; seçim duyuruda saklanıyor.
+  Ama `AnnouncementPublishedNotificationHandler` notu: sıradan duyuru `PushEventKeyMap`'te **yok** — yalnız acil duyuru
+  (`ANNOUNCEMENT_URGENT`) push'a çıkıyor. Dispatcher kanalları kullanıcının bildirim tercihlerine göre dağıtıyor; duyurunun
+  **kendi seçtiği kanalları** dikkate aldığına dair bir kol görülmedi — **ölçülmedi**.
+
+Yani iş yalnız istemci kilidini kaldırmak değil: sunucuda yayın, duyurunun seçili kanallarına göre push/e-posta fan-out'u
+yapmalı; sıradan duyurunun push eşlemesi eklenmeli; sessiz saat ve kullanıcı tercihleriyle ilişkisi netleşmeli.
+
+Karar gerektirir: kullanıcının bildirim tercihi (ör. e-postayı kapatmış veli) yayınlayanın seçimini ezer mi; kanal seçme
+yetkisi her yayınlayanda mı (öğretmen duyurusu da onaylanınca push'a çıkar mı); e-postada alıcı kapsamı (e-postası kayıtlı
+olanlar).
+
+✅ **Karar · 2026-10-09 (kullanıcı) — [[K-34 - Kanal Kararı Alıcınındır]]:** istek, ilk hâliyle ("yayınlayan seçsin")
+uygulanmayacak. Sistem kuralı: **yayınlayıcı hiçbir modülde kanal seçmez, okul olay×kanal matrisi de kalkar; kanalın tek
+kararı alıcının tercihidir.** Yukarıdaki üç soru böylece kapandı: alıcı tercihi her zaman geçerli, yayınlayanın seçme yetkisi
+yok, e-posta alıcı e-posta tercihi gelene kadar (`E-44`) kapalı.
+
+Maddenin yeni kapsamı:
+- Sıradan duyuru push'a çıkar (katalog varsayılanı açık, `ANNOUNCEMENT` push eşlemesi). Push başlığı = duyuru başlığı, gövde
+  sabit metin. Formda kanal kutusu yerine "alıcıların bildirim tercihlerine göre iletilir" bilgisi ve başlığın kilit ekranında
+  görünebileceği uyarısı.
+- Teslim raporu kanal kırılımı ve kanal başına "gönderilmedi" sayısı ile gerekçesini gösterir.
+- SMTP kayıtlarında alıcı adresi maskelenir.
+
+🔧 **2026-10-09 · kodda, Test'e itildi:**
+- oksis-api `feat/duyuru-kanallari`: `884a6b92` (kanal teslimi + rapor), `213945ec` (inceleme: e-posta kapalı, göç, maskeleme);
+  ardından K-34: `5d1bad74`, `3e7a71c0` (yayınlayıcı seçimi, `AllowedChannels`, okul matrisi, okul ana kanal anahtarları
+  kaldırıldı; kulüp olaylarının push varsayılanı açıldı). `dev` `59e618e6`.
+- oksis-ui `fix/acik-bulgular`: `f296261`, `3156feb`, `7704c20` (kanal seçimi — K-34 ile geri alınıyor), `8c7e217` (rapor:
+  atlanan + gerekçe), `39adfa0` · `0a36ac1` · `c52893c` · `4729a87` (K-34: form kanal kutuları, okul matrisi ve ana
+  anahtarlar kaldırıldı, şema). `dev` `99177aa`.
+- 2026-10-09 18:01 iki depo da Test'e itildi; mobil Test derlemesi başlatıldı.
+
+### `E-44` · Alıcının e-posta bildirim tercihi yok; e-posta kanalı bu yüzden tüm olaylarda kapalı 🟡
+
+2026-10-09, [[K-34 - Kanal Kararı Alıcınındır]]'ün açtığı iş. Kanalın tek kararı alıcınındır; ama bugünkü tercih tablosu
+(`NotificationPreference`) yalnız push'u taşıyor (`PushEnabled`, olay başına, satır yoksa açık). Alıcı e-postayı seçemediği
+için K-34 uygulamasıyla e-posta kanalı tüm bildirim olaylarında kapatıldı (hesap e-postaları — davet, parola sıfırlama —
+bildirim hattı dışında, etkilenmez).
+
+Yapılacak: tercih modeline olay başına e-posta tercihi (varsayılanı ürün kararı; `notification-rules.md` §5 "email kapalı"
+diyor), web ve mobil bildirim tercihleri ekranında e-posta sütunu, her e-postada **abonelikten çıkma bağlantısı** (giriş
+gerektirmeyen imzalı bağlantı), teslim raporunda e-posta satırının geri gelmesi. Ön koşul: SMTP gönderen hesabının okul/ürün
+hesabına taşınması (bugün `appsettings.json` SMTP bölümünde kişisel bir hesap duruyor — değer belgeye yazılmaz).
+
+### `E-43` · Giriş ekranındaki hızlı giriş bölümü yalnız geliştirme derlemesinde görünüyor; Test ortamında testçiler hesapları bilmiyor 🟡
+
+2026-10-09, kullanıcı isteği. Web ve mobil giriş ekranlarındaki *hızlı giriş* (Okul → Rol → Kullanıcı seçici, formu doldurur)
+Test ortamında görünmüyor; testçiler hangi hesapla gireceklerini bilmediği için test aksıyor. Kullanıcı kararı: **Test'te de
+görünsün, yalnız Prod'da gizlensin.**
+
+Koddan ölçüldü:
+- Sunucu zaten hazır: `DevQuickLoginController` `GET quick-login-accounts` yalnız `IsProduction()`'da 404; Test VM
+  `infra/test/docker-compose.yml` → `ASPNETCORE_ENVIRONMENT: Test`.
+- Kapı istemcilerde **derleme kipine** bağlıydı: mobil `__DEV__`, web `NODE_ENV !== "production"`. Test derlemeleri
+  production kipinde derlendiği için blok ölü koda dönüşüyordu.
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/mobil-kullanici-testi-turu`) · Test'e itildi:**
+- Tek karar core'da: `isDevQuickLoginVisible(isDevBuild, appEnv)` → dev derlemesi **veya** `appEnv === "test"` (+2 test).
+- Mobil `login-screen.tsx` → `isDevQuickLoginVisible(__DEV__, process.env.EXPO_PUBLIC_APP_ENV)`; `scripts/build-test.sh`
+  `EXPO_PUBLIC_APP_ENV=test` gömüyor.
+- Web `login-screen.tsx` → `isDevQuickLoginVisible(NODE_ENV !== "production", process.env.NEXT_PUBLIC_APP_ENV)`; CI'nin Test
+  dağıtımı (`OpenNext build`) `NEXT_PUBLIC_APP_ENV: test` veriyor. `turbo.json` `globalEnv`'e iki değişken eklendi.
+- Prod derlemesi bu değişkenleri almaz → blok görünmez; sunucu kapısı ayrıca duruyor.
+
+⚠️ **Güvenlik notu (kabul edilen risk, kullanıcı kararı):** Test'te uç, okulların **tüm hesap listesini** kimlik doğrulamasız
+döndürüyor ve istemci ortak parolayı (`DEV_QUICK_LOGIN_PASSWORD`) dolduruyor. Web Test Cloudflare Access arkasında; ama
+`api-test.oksis.net` mobil için açık olmalı — uç İnternet'ten okunabilir. Test verisi sahte olduğu sürece kabul edilebilir;
+Test'e gerçek kişi verisi girerse bu kapı yeniden değerlendirilmeli. Ayrıca hızlı giriş yalnız parolası ortak parola olan
+hesaplarda işe yarar (davetle parolasını kendisi seçen hesaplarda çalışmaz).
+
+### `TB-275` · Web `test` CI koşusu ≈8,5 dakika — push kancası lint + typecheck'i yerelde zaten koşuyor, CI tekrar ediyor ⚪
+
+2026-10-09, kullanıcı isteği (*"not al, kısaltacağız"*). `oksis-ui` `.github/workflows/ci.yml`, `test` dalı koşuları (GitHub):
+8 dk 38 sn (bugün, `8d0e9b3`) · 8 dk 56 sn · 8 dk 24 sn · 7 dk 27 sn. Bugünkü döküm: **Lint + typecheck + testler** 5,5 dk →
+**Web → Cloudflare Workers (Test)** 3 dk. Göç birleştirmesi (2026-10-07 baseline) yalnız `oksis-api` derlemesini etkiledi; web
+CI'ı hiç "saniyeler"e inmedi.
+
+Kısaltma adayları (ölçülmedi, karar uygulamada):
+- `.githooks/pre-push` `test`/`master` push'unda `npm run lint` + `npm run typecheck`'i yerelde zaten koşuyor; CI aynı ikisini
+  yeniden koşuyor. CI'da yalnız testler + dağıtım kalabilir (ya da kanca CI'a güvenip hafifler — biri seçilmeli).
+- Turborepo uzak önbelleği (remote cache) yok: her koşu soğuk; lint/typecheck/test görevleri önbellekten dönebilir.
+- `npm ci` iki işte ayrı ayrı koşuyor (test işi + dağıtım işi; npm indirme önbelleği `cache: npm` açık ama kurulum iki kez).
+- Dağıtım işi test işini bekliyor (`needs: check`, sıralı); OpenNext derlemesi testlerle paralel başlayabilir.
+
+🔧 **2026-10-09 · kodda (oksis-ui `fix/acik-bulgular` `5711972`; süre bir sonraki `test` koşusunda ölçülecek) · Test'e itildi:**
+- Turbo görev önbelleği (`.turbo/cache`) ve Next derleme önbelleği (`apps/web/.next/cache`) `actions/cache` ile koşular arasında
+  saklanıyor — değişmeyen paketin lint/typecheck/test'i önbellekten döner.
+- lint + typecheck + test tek `turbo run` çağrısında paralel (eskiden üç sıralı script).
+- `test` dalında `check` işindeki web build kalktı: dağıtım işi OpenNext ile aynı `next build`'i zaten yapıyor (master'da kaldı).
+- CI'daki lint/typecheck SİLİNMEDİ: push kancası `--no-verify` ile atlanabildiği için güvenlik ağı olarak duruyor (yalnız hızlandı).
+
+📏 **2026-10-09 18:01 ölçüm (ilk `test` koşusu, önbellek soğuk):** `check` 3 dk 53 sn + Cloudflare dağıtımı 3 dk 1 sn = **~7 dk**
+(taban ~8,5 dk: 5,5 + 3). Kazanç `check`'te; dağıtım aynı. Önbelleğin ısındığı ikinci koşuda yeniden ölçülecek; asıl kalan süre
+dağıtımdaki `next build` + OpenNext. Bir önceki `test` koşusu (15:22, `TB-275` öncesi) web derlemesinde Google Fonts çözümlemesi
+hatasıyla (`next/font/google`) düşmüştü; bu koşuda tekrarlamadı — geçici ağ hatası olarak not edildi.
 
 ## Not
 
