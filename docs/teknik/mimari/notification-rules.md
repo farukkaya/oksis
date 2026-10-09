@@ -150,6 +150,9 @@ CREATE TABLE notification_preferences (
 - Kullanıcı `/api/v1/me/notifications/preferences` ile yönetir.
 - Resolver bunu okuyup `PreferredChannels`'i daraltır.
 
+> [!important] Kanal kararı yalnız alıcınındır — [[K-34 - Kanal Kararı Alıcınındır]] (2026-10-09)
+> Teslim = **olay kataloğunun desteklediği kanallar ∩ alıcının tercihi**. Yayınlayıcı (duyuru dahil hiçbir modülde) kanal seçmez; okul olay×kanal matrisi yoktur. Okulun elinde yalnız zamanlama vardır (sessiz saatler). Bugün koddaki tercih tablosu yalnız push'u taşır (`NotificationPreference.PushEnabled`; satır yoksa açık). Alıcı e-posta tercihi gelene kadar (`E-44`) e-posta kanalı kapalıdır.
+
 ---
 
 ## 6. Quiet Hours
@@ -352,6 +355,7 @@ Mobile/Web bunu tap'lediğinde ilgili sayfaya yönlendirir. Tenant claim ile aut
 - ❌ Send notification with tenant context yok.
 - ❌ Tüm okullara `Clients.All.SendAsync`.
 - ❌ Email'i her event için göndermek (user kontrolü olmadan).
+- ❌ Yayınlayıcıya veya okula kanal seçtirmek: istek/komutta kanal alanı, okul düzeyinde olay×kanal ayarı ([[K-34 - Kanal Kararı Alıcınındır]]). Mimari test korur.
 - ❌ Template'i kod içinde string concat (`$"{user.Name} aldı: {score}"`).
 - ❌ Notification içine ham PII (T.C., adres) koymak.
 - ❌ Deep-link URL'inde authentication token query param.

@@ -18,7 +18,7 @@
 
 # 📋 Karar Panosu
 
-**Karara bağlanan: 14 / 19**
+**Karara bağlanan: 15 / 20**
 
 | ID | Konu | Durum | Tarih | Karar özeti |
 |:--|:--|:--|:--|:--|
@@ -43,6 +43,7 @@
 | **K-30** | Okulun türünü kim değiştirir, program değişince saat kararları ne olur? | ✅ Karara bağlandı · ✅ uygulandı | 2026-09-22 | **Tür değişimi platformun işi**: künyeye program alanı eklendi, müdürün yazma ucu silindi, penceresi salt-okunur. **Program değişince saat kararları silinir**, müfredat MEB'den geldiği gibi iner; okulun kendi dersleri kalır |
 | **K-31** | Öğrenci ve veli ödev yüzü web'de de olsun mu? | ⬜ Bekliyor | 2026-10-04 | — |
 | **K-32** | İptal edilen ödevin gerekçesi öğrenciye ve veliye gösterilsin mi? | ⬜ Bekliyor | 2026-10-04 | — |
+| **K-34** | Bildirim kanalına kim karar verir? | ✅ Karara bağlandı · ✅ uygulandı (api `59e618e6`, ui `99177aa`) | 2026-10-09 | **Yalnız alıcı.** Yayınlayıcı hiçbir modülde kanal seçmez; okul olay×kanal matrisi ve okul ana kanal anahtarları kalkar (sessiz saatler, geç gelme bildirimi, SMS limiti kalır). Teslim = katalog desteği ∩ alıcı tercihi. Alıcı e-posta tercihi gelene kadar (`E-44`) e-posta kapalı → [[K-34 - Kanal Kararı Alıcınındır]] |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
 | **Y-03** | Şube alanı (Sayısal / Eşit Ağırlık / Sözel / Yabancı Dil) nerede tutulur | ✅ Karara bağlandı · ✅ **uygulandı** (`oksis-api` `614a51b3` + `oksis-ui` `7fe92fc`) | 2026-09-17 | **(a) `ClassRoom.Track` + sabit enum.** Derse BAĞLANMADI (ders↔alan çoka-çok: "seçmeli matematik" dört alandan üçünde geçer) · öğrencinin alanı aktif şube atamasından türetilir, ayrıca tutulmaz · MEB'in 09/05/2025-05 çizelgesinde alan sütunu **yok**, yani bu okulun organizasyon ihtiyacı · enum çünkü listeyi okul düzenlemiyor — meslek lisesi kapsama girerse katalog tablosuna terfi eder |

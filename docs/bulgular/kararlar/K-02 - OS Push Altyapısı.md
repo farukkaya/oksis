@@ -51,6 +51,12 @@ Bilinçli olarak dışarıda: ders programı yayını ve sınav penceresi yayın
 
 **Aynı gün Android bildirim ikonu düzeltildi** (`oksis-ui`, `plugins/with-notification-icon.js`): tanımlı bildirim ikonu yoktu, Firebase opak uygulama ikonunu kullanıyor ve Android onu gri kareye çeviriyordu. Artık tek renk vektör ikon + `#1B2B5E` rengi manifestte `default_notification_icon`/`default_notification_color` olarak bildiriliyor.
 
+### R3 · 2026-10-09 — duyuru push kapsamına alındı, okul matrisi kalktı (kullanıcı kararı, [[K-34 - Kanal Kararı Alıcınındır]])
+
+- **Sıradan duyuru (`ANNOUNCEMENT`) push kapsamına girdi.** Katalog varsayılanı açık. Push başlığı duyurunun başlığıdır, gövde sabit metindir. Yazma formu, başlığın kilit ekranında görünebileceği uyarısını taşır. Acil duyuru eskisi gibi okulun sessiz saatini aşar.
+- **R2'deki "okul matristen kapatabilir" hükmü kalktı.** Okul olay×kanal matrisi (`notification_rule_configs`) kaldırıldı. Push'u yalnız alıcı, kendi olay bazlı tercihiyle (`notification_preferences`) kapatır.
+- **Yayınlayıcı kanal seçmez.** `E-42`'nin ilk hâlindeki duyuru formu kanal kutuları hiçbir ortama çıkmadan geri alındı.
+
 ---
 
 ## 1. Neden bu karar gerekliydi
