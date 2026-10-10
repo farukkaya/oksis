@@ -552,6 +552,9 @@ atamaları, yayın çakışma listesi; web ödev panosu ve şube sınav çıktı
 Tasarım (EKRAN 5): yükleme sayfası **Fotoğraf çek · Galeriden seç · PDF seç**. Uygulamada yalnız ilk ikisi var;
 `expo-document-picker` kurulu değil. Politika PDF/Word kabul ediyor, yani öğrenci matematik çözümünü taranmış PDF olarak
 veremiyor. Yerel modül eklemek geliştirme istemcisinin yeniden derlenmesini gerektirdiği için gece turunda yapılmadı.
+✅ **2026-10-10 · kodda (dev, ui `9b4404a`):** `expo-document-picker` eklendi (kullanıcı onayı); yükleme sayfasında üçüncü satır
+"PDF seç" — PDF ve DOCX, `lib/pick-document.ts` `pickImage` ile aynı sonucu döner, ön eleme ve yükleme aynı işleyicide.
+⬜ Yerel modül: cihazda denemek için yeni mobil derleme gerekir; ölçülünce arşive.
 
 ### `TB-269` · Push tercih listesi role göre süzülmüyor — veli öğretmen olaylarını görüyor 🟡
 
