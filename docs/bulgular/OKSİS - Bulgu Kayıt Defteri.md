@@ -531,6 +531,9 @@ bulundu; bu dosya açılamaz." döner; istemci kataloğuna da eklendi. Birim tes
 ⬜ Açık ayak: öğrenciye "dosyan kaldırıldı" haberi yok — dosya listeden sessizce düşer.
 
 📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — karantina + FILES_INFECTED dev'de (api 3547e33b); öğrenciye "dosyan kaldırıldı" bildirimi yok.
+✅ **2026-10-10 · açık ayak kodda (dev, api `f3fd9399`):** karantina handler'ı kayıttan sonra dosyayı yükleyen öğrenciye
+"Teslim dosyan kaldırıldı" bildirimi kuyruklar (veliye gitmez; tür `HomeworkPublished` — B-105 emsali, derin bağlantı ödev
+detayı). Birim testli. ⬜ Test ortamında EICAR ile ölçülünce arşive.
 
 ### `D-51` · Şubeler sözlük sırasıyla diziliyor — 9-A, 12-D'nin altında ⚪
 
@@ -539,6 +542,10 @@ Kademe + şube sırası beklenir. Büyük olasılıkla modüller arası kalıp (
 ortak bir şube sıralama anahtarı.
 🟡 **2026-10-04 · kısmen kodda:** ödev yönetim kataloğu (pano + süzgeçler) `GradeLevel.DisplayOrder` → ad sırasına geçti; öğretmen
 süzgeci core `homeworkSectionOptions` ile doğal sıralı. Başka modüllerde aynı kalıp aranmadı — madde açık.
+✅ **2026-10-10 · kodda (dev, api `51cdb2ab` · ui `c82bd09`):** ortak karşılaştırıcı — sunucuda `SectionNameComparer`
+(baştaki sayı sayı olarak, kalan Türkçe; sayısız ad önde), istemcide core `compareSectionNames` (aynı kural). Uygulandığı yerler:
+yoklama canlı pano, not defterlerim, sınav panosu (liste + ısı haritası), sınav görevlerim, sınav yerleşimlerim, öğretmen ders
+atamaları, yayın çakışma listesi; web ödev panosu ve şube sınav çıktısı. Mobilde ayrı şube sıralaması yok. ⬜ Test ortamında ölçülünce arşive.
 
 ### `E-36` · Öğrenci mobilde PDF teslim edemiyor — "PDF seç" seçeneği yok 🟡
 
@@ -552,6 +559,9 @@ veremiyor. Yerel modül eklemek geliştirme istemcisinin yeniden derlenmesini ge
 "Not girişi hatırlatması", "Sınav yerleştirme hatırlatması", "Sınav saati isteği" gibi hiç alamayacağı olayların anahtarlarını
 görüyor (ekranda ölçüldü) — `Y-05`/`TB-44` sınıfı sahte anahtar. İstemci süzmez (kural sunucuda). ⬜ Kapatma yolu: anahtarlara
 alıcı rolü bilgisi; liste aktif profile göre süzülür. Mock zaten rol bazlı döndüğü için mock ile sunucu bu noktada ayrışıyor.
+✅ **2026-10-10 · kodda (dev, api `f7d7c4ae`):** `PushEventKeyMap` her anahtara alıcı kitlesi (öğrenci/veli/öğretmen/personel/okul
+yöneticisi) taşıyor; tercih listesi hesabın BÜTÜN profillerinden + müdür/müdür yardımcısı rol atamasından kurulan kitleyle
+süzülüyor (öğretmen-veli iki kümenin birleşimini görür). Birim testli. ⬜ Test ortamında veli hesabıyla ölçülünce arşive.
 
 ## 11. Bildirimler 🟠
 
