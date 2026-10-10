@@ -5,7 +5,7 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son kapanış:** 2026-09-24 — `E-29` + `TB-249` + `TB-250` kapandı, Altınay B6.4 ✅ ([[OKSİS - Bulgu Arşivi]] §60).
+> **Son kapanış:** 2026-10-10 — kapanış turu: 59 madde koda karşı ölçülüp kapandı ([[OKSİS - Bulgu Arşivi]] §81).
 >
 > **Önceki kapanış turu:** 2026-09-15 — sınav takvimi kapanış turu: **10 madde kapandı**
 > ([[OKSİS - Bulgu Arşivi]] §48). Altı ürün kararı bağlandı. İkisi (`TB-124`, `TB-129`'un bir
@@ -224,7 +224,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-114` · `D-63` · `V-07` · `X-26` · `TB-277` · `E-45` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-115` · `D-69` · `V-08` · `X-26` · `TB-277` · `E-47` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -238,12 +238,27 @@ sayaçlar üçü arasında ortak.
 
 | Öncelik | Adet | Kapsam |
 |---|---|---|
-| 🔴 Kritik | 6 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 33 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 61 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 43 | Kozmetik, temizlik, adlandırma |
+| 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
+| 🟠 Yüksek | 19 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 42 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 21 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **144** | |
+| **Toplam** | **85** | |
+
+> **2026-10-10 (iPhone kullanıcı testi, bildirim kutusu):** yeni `B-114` 🟠 (bildirimli duyuru düzeltmesi içeriksiz "Bu duyuru
+> güncellendi." gönderiyor; ilk bildirim düzeltilen eski başlığı taşımaya devam ediyor, acillik ve push düşüyor). Toplam **154**.
+
+> **2026-10-10 (kapanış turu):** defterdeki "kodda" notu taşıyan 76 madde dört ajanla `origin/dev`'e (api `3f3831e5` · ui `876b32e`)
+> karşı ölçüldü; cihazda doğrulanmış 4 madde ile birlikte **59 madde kapandı**, [[OKSİS - Bulgu Arşivi]] §81'e taşındı.
+> Kısmen kalan 20 maddeye ölçüm notu (📏) düşüldü — çoğunda eksik olan, 2026-09-28 tarihli uygulanmamış kullanıcı kararları.
+> Toplam **85** (🔴 3 · 🟠 19 · 🟡 42 · ⚪ 21).
+
+> **2026-10-10 (iPhone kullanıcı testi, duyuru + yoklama):** yeni `V-07` 🟡 (geri çekme gerekçesi "isteğe bağlı" yazıyor, sunucu
+> zorunlu tutuyor), `D-63` 🟡 (alt panellerde klavye metin alanını ve butonları örtüyor — sınıf sorunu), `E-45` ⚪ (Canlı Yoklama'da
+> aşağı çekip yenileme yok), `D-64` ⚪ (Bugünkü Derslerim'de vekil ders ayırt edilmiyor), `D-65` 🟡 (web bildirim ayarlarında formlar
+> sağa sıkışmış), `D-66` 🟡 (mobil *Ulaşılamayan alıcılar* boşken boş görünüyor), `E-46` 🟡 (duyuru görsel eki uygulama içinde
+> gösterilmiyor), `D-67` 🟡 (değişiklik geçmişi yeniden tasarlanacak) ve `D-68` ⚪ (düzenleme formunda hedef kitle görünmüyor). Özet tablosu başlıklardan yeniden sayıldı
+> (kaymıştı): 🔴 5 · 🟠 30 · 🟡 65 · ⚪ 44 — toplam **144**.
 
 > **2026-10-09 (kullanıcı isteği, CI):** yeni `TB-275` ⚪ (web `test` CI koşusu ≈8,5 dk; kısaltılacak). Toplam **144**.
 
@@ -394,37 +409,6 @@ X-06  ──►  ortak koşum kurulmadan yazılan her handler yeni borç ekler
 
 ## 8. Nöbet & Vekalet 🟠
 
-### `B-85` · Kaydedilmemiş (ve sunucunun reddettiği) değişiklikle "Çizelgeyi Yayınla" sessizce ESKİ taslağı yayınlıyor; ekran yayından sonra da olmayan atamayı gösteriyor 🟠
-
-Altınay saha testi (C2.1, 2026-09-27), müdür hesabıyla Playwright. Otomatik dağıtım uygulandı (20 atama, taslak). Sonra
-Çarşamba › Bahçe'nin boş ikinci yerine, **o gün aynı hücrede yancı olan** öğretmen nöbetçi seçildi.
-
-1. **Seçim penceresi engellemiyor.** "O gün dolu" rozeti yalnız o gün **nöbetçi** olanları işaretliyor
-   (`packages/core/src/duty/logic.ts:82` `dutyBusyOnDay` yalnız `teacherId`'ye bakıyor); o gün **yancı** olan 4 öğretmen
-   seçilebilir. Yancı seçimi için doğru küme zaten var (`dutyActiveOnDay`, :93), nöbetçi seçiminde kullanılmıyor.
-2. **Kaydet 409 alıyor, mesaj yanıltıcı:** `PUT duties/roster` → *"Seçilen yancı o gün başka bir nöbette görevli."*
-   Kullanıcı yancı seçmedi, nöbetçi seçti. Sunucu kuralı doğru koruyor (taslak yeniden kurulurken yancı ataması düşüyor),
-   ama mesaj kullanıcının yaptığı işi anlatmıyor. Reddedilen atama ekranda kalıyor, "Kaydet" duruyor.
-3. **Asıl kusur — sessiz yanlış yayın:** "Çizelgeyi Yayınla" kaydedilmemiş değişiklik varken de açılıyor
-   (`duty-page.tsx:169-176` düğme `draftCount`'a bakmıyor; `PublishModal` yalnız `hasAssignments` alıyor). Pencere
-   uyarmıyor, "Yayınla" **sunucudaki eski taslağı** yayınlıyor (`POST duties/roster/publish` → 200). Yayın sonrası ekran
-   **"21 nöbet · v1 · 28.09.2026'dan beri yürürlükte"** diyor ve yayınlanmamış atamayı hücrede göstermeye devam ediyor;
-   "Kaydet" de duruyor. Sebep: yerel taslak yalnız sunucu çizelgesinin imzası değişince sıfırlanıyor
-   (`use-duty-editor.ts:72-78`), yayın atamaları değiştirmediği için imza aynı kalıyor. Sayfa yenilenince 20'ye dönüyor.
-   DB: yayınlanan sürüm `13b49377-…` v1, 20 atama, o hücrede yalnız ilk nöbetçi. **Öğretmenlere giden yayın bildirimi
-   ekrandaki çizelgeyi değil sunucudakini anlatıyor; yönetici ise ekranda başka bir şey görüyor.**
-
-⬜ Kapatma yolu: (a) seçim penceresi `dutyActiveOnDay` ile o gün yancı olanı da "o gün dolu" işaretlesin; (b) kaydedilmemiş
-değişiklik varken yayın ya engellensin ya da "önce kaydet" adımı zorunlu olsun (en azından pencere uyarsın); (c) kaydetme
-hatasında yerel taslak geri alınabilsin ("değişiklikleri at"); (d) 409 mesajı rolü doğru anlatsın ("X o gün bu bölgede yancı").
-Test: yancı ile aynı güne nöbetçi seçimi → rozet; kirli taslakla yayın → engel/uyarı.
-
-✅ **2026-09-28 · (d) sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `8b81acdb`):** o gün yancı olanı nöbetçi seçmek artık ayrı anahtarla reddediliyor — `duties.errors.duty-teacher-is-reliever-same-day`: "Nöbetçi seçilen öğretmen o gün yancı olarak da görevli; bir öğretmen aynı gün hem nöbetçi hem yancı olamaz. Önce o günkü yancılığını değiştirin." Çift yancılık `reliever-already-busy`'de kaldı, cümlesi yalnız onu anlatıyor; kural gevşemedi. Altınay senaryosu entegrasyon testinde yeşil.
-
-✅ **2026-09-28 · (a)(b)(c) istemci ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `5394140`, master'da — 2026-10-04 doğrulandı, ekranda ölçülmedi):** (a) `dutyTeacherBusyOnDay` o gün başka hücrede nöbetçi **ya da yancı** olanı "O gün dolu" işaretliyor, ipucu nedenini söylüyor (eski `dutyBusyOnDay` kaldırıldı); (b) kaydedilmemiş değişiklik varken yayın penceresi "Yayınla"yı kilitliyor, nedenini yazıyor ve "Önce Kaydet" sunuyor (kapı core'da, `dutyPublishBlock`); (c) onaylı "Değişiklikleri At" düğmesi, yayın başarısında yerel taslak imza değişmese de sıfırlanıyor. Dört ayak da kodda — madde merge + ekran ölçümüyle kapanır.
-
-📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): (a) seçim penceresinde o gün başka hücrede nöbetçi ya da yancı olan öğretmenler "O gün dolu" (Pzt: 7 öğretmen); düzenlenen hücrenin kendi yancısı işaretlenmiyor — doğru, nöbetçi değişince o yancı zaten düşüyor (`use-duty-editor.ts:119`). (b)(c) kaydedilmemiş değişiklik gerektirdiği için gerçek veride denenmedi. Not: seçim penceresi Escape ile kapanmıyor (yalnız dış tıklama).
-
 ### `D-39` · Nöbet çizelgesi ve Yük Raporu'nda "2026-2027" seçicisi işlevsiz ⚪
 
 Altınay saha testi (C2.1, 2026-09-27). Çizelge araç çubuğunda takvim simgesi + sezon adı + aşağı ok taşıyan bir düğme
@@ -439,65 +423,7 @@ başlamadan hazırlanamıyor** (geçici muafiyetler de ancak o çizelgede işe y
 
 ✅ **Karar (2026-09-28, kullanıcı):** nöbet ekranları **üst çubuktaki sezon/dönem seçicisine bağlanır**; yönetici 2. dönemi seçip çizelgeyi önceden hazırlayabilir. Uygulanacak.
 
-### `B-86` · Öğretmen kendi nöbetini hiçbir ekranda göremiyor; yayın bildirimi "Yetkiniz yok"a götürüyor 🟠
-
-Altınay saha testi (C2.1, 2026-09-27), çizelge v2 yayınlandıktan sonra öğretmen hesabıyla (Playwright) ölçüldü.
-
-- **Web:** öğretmen menüsünde nöbet sayfası yok (Panel, Yoklama, Notlar, Ödevler, Ders Programı, Sınav Takvimi, Duyurular,
-  Mesajlar, Kulüplerim). "📋 Nöbet çizelgesi güncellendi" bildirimi `/duties` → istemci `/duty`'ye çeviriyor → **"Yetkiniz
-  yok · Öğretmen rolü /duty sayfasını görüntüleyemez."**
-- **Mobil:** `MOBILE_MORE_SCHOOL_BY_ROLE.teacher` içinde "Nöbetlerim" öğesinin `href`'i yok; mobilde nöbet rotası da yok
-  (`navigate-to-target.ts:47` bunu kendisi not ediyor).
-- **Pano:** gerçek nöbet bilgisi yok; "BUGÜNKÜ NÖBET · ÖRNEK VERİ · Hakan Yüce · Ana Giriş · Kapı" gibi `K-09` örnek kartı
-  (bkz. `B-54`).
-- **Sunucu hazır:** `GET duties/me?termId=` öğretmen belirteciyle 200 ve doğru (örnek öğretmen: Pzt Bahçe nöbet, Per/Cum
-  2. Kat yancı — DB ile birebir); istemci kancası `useMyDuties` (`packages/api/src/duty/queries.ts:189`) var, **tüketicisi
-  yok**. `duties/on-duty?date=` de öğretmene 200 dönüyor (`TB-19`'un ekransız ucu).
-
-Sonuç: yayın öğretmene bildirim gönderiyor ama öğretmen hangi gün, nerede, nöbetçi mi yancı mı olduğunu göremiyor.
-⬜ Kapatma yolu: öğretmen için "Nöbetlerim" yüzeyi (web + mobil) `useMyDuties` üstüne; bildirim bağlantısı role göre o yüzeye;
-panodaki örnek nöbet kartı gerçek veriye (`K-09`).
-
-✅ **2026-09-28 web ayağı kodda (`oksis-ui` `feat/ogretmen-nobetlerim`, commit bekliyor):** öğretmen menüsüne "Nöbetlerim"
-(`/duty`, `requiresActiveSeason`) eklendi; `duty-page.tsx` rolü okuyup öğretmene `TeacherDutyScreen`, yöneticiye mevcut ekranı
-veriyor (`/exams` deseni, varsayılan dal yok — `B-34`). Ekran `useMyDuties` üstünde: yürürlükteki sürüm ve tarih, "Bugün"
-şeridi ve satır vurgusu, nöbet/yancı sayıları, haftalık liste (yönetici önizlemesinin görsel dili, E-05), yayında çizelge yokken
-ve görev yokken boş durum, "Nöbet nasıl işler?" penceresi. Dönem çözümü üç ekranda tek kancaya (`usePlanningTermId`) toplandı.
-Ekranda ölçüldü (Altınay, 28.09 Pazartesi): bir öğretmen Pzt Bahçe nöbet (Bugün vurgulu) + Per/Cum 2. Kat yancı — DB ile birebir;
-yayın bildirimine tıklayınca "Yetkiniz yok" yerine Nöbetlerim açılıyor; muaf öğretmende boş durum; müdür yönetici ekranını görüyor.
-⬜ **Açık kalan:** mobil "Nöbetlerim" (öğe `href`'siz, mobilde rota yok); öğretmenin vekâlet görevleri (`GET duties/substitution/me`
-var, istemci kancası yok); muaf öğretmene "muafsın" demek yerine genel boş durum gösteriliyor (uç muafiyet bilgisi taşımıyor);
-panodaki `K-09` örnek nöbet kartı.
-
-✅ **2026-09-28 pano kartı gerçek veriye bağlandı (`oksis-ui` `feat/pano-bugunku-nobet`, commit bekliyor, kullanıcı isteği):**
-"Bugünkü Nöbet" `K-09` örnek kartı (uydurma adlar) silindi; yerine `today-duty-card.tsx` → `GET duties/on-duty?date=bugün` (`TB-19`
-ucunun ilk tüketicisi): bölge, o gün fiilen bakan öğretmen, yancı; muafiyet varsa "X muaf · yerine bakıyor", kimse yoksa "Açık nöbet"
-ve başlıkta açık sayısı; okul günü değil / yürürlükte çizelge yok / atama yok boş durumları. Kapı `DASHBOARD_WIDGET_RULES.todayDuty`
-(`duties.view` + `/duty` erişimi) → yönetici ve öğretmen görür, öğrenci/veli görmez. Kart sağ sütunun başına, "Bekleyen İşlemler"in
-üstüne alındı. Ekranda ölçüldü (28.09 Pzt): beş nöbetçi ve yancıları v2 ile birebir; öğretmende düğme "Nöbetlerim". Muaf/açık
-nöbet satırı canlı veride yok, ekranda ölçülmedi. Panonun diğer `K-09` kartları (Bekleyen İşlemler'deki "Boşta kalan nöbet
-bölgesi" dahil) hâlâ örnek veri.
-
-✅ **2026-09-28 · vekâlet ve mobil ayakları kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `d021419`, `cd27d16`, master'da — 2026-10-04 doğrulandı):** web Nöbetlerim'de "Vekâlet derslerim" (`GET duties/substitution/me`, bugün vurgulu, geçmiş katlanır); mobilde `/duty` ekranı, "Daha fazla › Nöbetlerim" satırı ve `duties` bildiriminin yönlendirmesi; ortak mantık core'da testli (`buildMyDutyWeek`, `splitMySubstitutions`). Web Altınay'da öğretmenle ölçüldü (vekâlet listesi canlıda boş, boş durum doğru). ⬜ Açık: muafiyet bilgisi için `duties/me` alanı (sunucu), mobil ekran ölçümü.
-
-✅ **2026-09-28 · muafiyet için sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `95fbb0e1`):** `duties/me` → `exemptions[]` (yalnız çağıranın, açık okul yüklemiyle; sürekli + dönemle kesişen geçici; `coversWholeTerm` = `CoversPeriod`; canlı çizelge yokken de dolu). 3 entegrasyon testi, sınıf 6/6.
-
-✅ **2026-09-28 · muafiyet yüzeyi kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `2ebabd9`):** web `TeacherDutyScreen` ve mobil `MyDutyScreen` dönemi tamamen kapsayan muafiyette genel boş durum yerine "Nöbetten muafsınız" + tür/tarih/gerekçe, kısmi muafiyette atamaların üstünde bilgi şeridi (`describeMyDutyExemptions`, core'da testli). Böylece defterdeki dört açık ayağın hepsi kodda; madde merge + mobil ekran ölçümüyle kapanır.
-
-📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): öğretmen Nöbetlerim: Pzt 1. Kat nöbet (Bugün), Per yemekhane yancı, Cum 2. Kat nöbet — çizelgeyle birebir; "Vekâlet derslerim" boş durumu. Sürekli muaf öğretmende "Nöbetten muafsınız · Sürekli muafiyet · Gerekçe: İdari Görev". 2. dönemde geçici muafiyeti olan öğretmende 1. dönem ekranı muafiyet göstermiyor (doğru). Mobil ölçülmedi.
-
-### `B-89` · Otomatik dağıtımda yancı seçimi nöbet yükünü saymıyor — toplam yük 1–3 (ideal 2–3) 🟡
-
-Altınay saha testi (C2.1, 2026-09-28), `B-87` düzeltmesinden sonra ölçüldü. 18 öğretmene 20 nöbet + 20 yancı = 40 görev
-düşüyor; dengeli dağılım 14 kişiye 2, 4 kişiye 3 görev (aralık **2–3**). Çözücü **1–3** üretti: 6 öğretmen 3 görev (ikisi
-2 nöbet + 1 yancı), iki öğretmen yalnız 1 nöbet, 0 yancı. Kök neden `DutySolver` adım (3): yancı adayı yalnız
-`relieverCount`'a göre sıralanıyor (`OrderBy(r => relieverCount[r]).ThenBy(r => r)`), öğretmenin o haftaki **nöbet sayısı**
-hesaba katılmıyor; eşitlik GUID sırasıyla bozuluyor. Adalet metriği de (`MinLoad`/`MaxLoad`, ekrandaki "Denge 1–2") yalnız
-nöbeti sayıyor, yancıyı saymıyor — ekran "dengeli" derken Yük & Adalet sekmesi "dengesiz" gösteriyor.
-⬜ Kapatma yolu: yancı seçiminde birincil ölçüt toplam görev (nöbet + yancı), ikincil yancı sayısı; adalet metriği yancılık
-açıkken toplam görevi ölçsün. Test: 18 öğretmen × 20 hücre senaryosunda toplam yük aralığı ≤ 1.
-
-✅ **2026-09-28 · kodda düzeltildi (gece turu, `oksis-api` `fix/gece-defter-turu` `ab467c95`, master'da — 2026-10-04 doğrulandı):** `DutySolver.AssignRelievers` yancı adayını üç ölçütle sıralıyor — toplam görev (nöbet + yancı) → yancı sayısı → döner sıra (GUID'e dizilmiş havuzda son seçilenden sonraki; deterministik, eşitlik hep aynı öğretmene düşmüyor). `DutyFairnessScorer` yancılık açıkken nöbet + yancıyı, kapalıyken yalnız nöbeti ölçüyor. 6 yeni test (18 öğretmen × 20 hücrede toplam yük 2–3; öğle meşguliyetli varyantı; iki nöbetliye yancılık verilmez; metrik = gerçek yük), eski kodda 5'i kırmızı. ⬜ Altınay önizlemesinde yeniden ölçülmedi; ekrandaki "Denge x–y" etiketi artık toplam görevi gösterecek.
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — ölü düğmeler kalktı (ff4bc69); kullanıcı kararı (nöbet ekranları üst çubuk sezon/dönem seçicisine bağlanır) uygulanmamış — 2. dönem çizelgesi önceden hazırlanamıyor.
 
 ### `B-88` · Nöbet yayın bildirimi: "etkilenen" = yeni çizelgedeki bütün nöbetçiler — değişmeyene gidiyor, yalnız yancıya ve görevden çıkarılana gitmiyor 🟡
 
@@ -511,6 +437,8 @@ tasarım mı eksik mi ölçülmedi.
 ⬜ Kapatma yolu: önceki canlı sürümle (nöbetçi + yancı) fark alınıp yalnız değişenlere; ilk yayında nöbetçi ∪ yancı.
 
 ✅ **2026-09-28 · kodda düzeltildi (gece turu, `oksis-api` `fix/gece-defter-turu` `da83b009`, master'da — 2026-10-04 doğrulandı):** `DutyRoster.Publish(…, previousLive)` önceki canlı sürümle öğretmen başına (gün, bölge, nöbetçi/yancı) görev kümesi farkını alıyor: eklenen, çıkarılan ya da kümesi değişen öğretmen etkilenir; ilk yayında nöbetçi ∪ yancı; kimsenin görevi değişmediyse bildirim gitmez. 6 domain + 1 entegrasyon testi (eski kodda kırmızı). ⬜ E-posta/push kanalında kayıt olmaması sorusu ölçülmedi, açık.
+
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — fark hesabı dev'de (api da83b009); açık bırakılan e-posta/push kanal sorusu ne ölçüldü ne karara bağlandı.
 
 ### `D-38` · Bölge penceresinde "Simge" seçicisi "Tür"ün kopyası; stepper ve tür çiplerinin erişilebilir adı/durumu yok; şablon hiç sunulmuyor 🟡
 
@@ -540,6 +468,8 @@ stepper düğmelerine `aria-label`, çiplere `aria-pressed`; şablon ya pencerey
 ✅ **Karar (2026-09-28, kullanıcı):** 3. ayak: **`icon` kolonu ve bölge şablonları kaldırılır** (kolon + DTO alanı göçle, şablon tablosu ve domain notundaki vaat). Uygulanacak.
 
 ---
+
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — erişilebilir adlar dev'de (ui 2daa11b); kararın 3. ayağı (icon kolonu, DTO alanı ve bölge şablonlarının kaldırılması) uygulanmamış.
 
 ## 9. Notlar 🟡
 
@@ -589,49 +519,6 @@ Kaynak: domain-map taraması, `oksis-api` @ `b72c819` (2026-09-03). Modülün ha
 [[Ödevler]] notunda. Dört madde de kodun kendi ARCHITECTURE notunda "açık madde" olarak
 duruyordu ama defterde kaydı yoktu; ikisi ürün kararı bekliyor.
 
-### `TB-251` · Ödev şeması testi sabit teslim tarihine bağlı — tarih geçince kırmızıya düştü ⚪
-
-`E-29` doğrulamasında çıktı (2026-09-24). `packages/core/src/homework/schemas.test.ts` geçerli formu
-`dueDate: "2026-09-18"` ile kuruyor. Şema geçmiş teslim tarihini reddettiği için tarih geçince iki test kırmızıya düştü
-("geçerli formu kabul eder", "tek şube ile seçili öğrenciyi kabul eder"). Değişikliksiz tabanda da kırmızı (ölçüldü).
-Ürün kodu doğru, test zamana bağlı.
-
-⬜ Kapatma yolu: tarihi test anına göre üret (ör. bugün + 7 gün) ya da şemaya saat enjekte et. Aynı sabit tarih
-kalıbı başka şema testlerinde de var mı, taranmalı.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `58253db`, master'da — 2026-10-04 doğrulandı):** test saati 2026-09-10'a sabitlendi; core/api/api-mocks takımları 2028'e sabitlenmiş saatle koşuldu, başka tarih bombası çıkmadı. core 868/868. `TB-258` ve §12'deki `TB-220` aynı kusurun kopyası, birlikte kapandı.
-
-### `TB-258` · Ödev form şeması testi sabit tarihe bağlı; tarih geçince kırmızıya döndü 🟡
-
-2026-09-27'de `oksis-ui` `packages/core` tam koşusunda ölçüldü, `master`'da da aynı (değişiklik kenara alınarak
-doğrulandı). `src/homework/schemas.test.ts` içindeki "geçerli form" örneği teslim tarihini sabit `2026-09-18` veriyor.
-Şema geçmiş tarihi reddettiği için o günden beri iki test düşüyor ("geçerli formu kabul eder", "tek şube ile seçili
-öğrenciyi kabul eder"). Kod doğru; test takvime bağlı. Kırmızı takım gerçek bir kırılmayı gizler.
-
-⬜ Kapatma yolu: testte saati sabitle (`vi.useFakeTimers()` + `vi.setSystemTime`) ya da teslim tarihini "bugün + N gün"
-diye üret. Aynı desen başka tarih doğrulamalı testlerde de aranmalı.
-
-✅ **2026-09-28:** `TB-251` ile aynı commit'te kapandı (`58253db`).
-
-### Altınay ödev saha testi · 2026-10-04 (gece)
-
-Kaynak: Altınay (`ALTINAY-AL`) üzerinde ödevin bütün yaşam döngüsü — öğretmen (Matematik 9-A/10-A), öğrenci, iki veli, rehber
-(10-A), başka şubenin öğretmeni ve öğrencisi, müdür; web, mobil (Expo web, telefon genişliği), API betiği, DB ve Hangfire.
-Ayrıntılı test özeti: [[Altınay — 2026-10-04 Ödev Saha Testi Bulguları]]. Kod: `oksis-api` `fix/odev-ekran-turu`
-(`9e34817c` · `3547e33b` · `042f4a19` · `dff0c417`), `oksis-ui` aynı dal. **Merge bekliyor.**
-
-### `B-102` · Çok dersli öğretmenin ödev formu yalnız alfabetik ilk dersi açıyor — 19 öğretmenin 18'i ana dersine ödev veremiyor 🔴
-
-Form bağlamı (`GET homework/form-context`) öğretmenin okuttuğu derslerden ada göre İLKİNİ tek başına dönüyordu. Altınay'da 19
-öğretmenin 18'i "Deneme", "Rehberlik ve Yönlendirme", "Koçluk" gibi ikinci bir ders okutuyor; Matematik öğretmenine form
-**"Deneme" dersini ve yalnız 12-B'yi** sundu, matematik ödevi ekrandan **verilemiyordu** (sunucunun oluşturma ucu her dersi kabul
-ediyordu — kusur bağlam + iki istemci). Kodun kendi notu bunu "bilinen sınır, Faz 2" sayıyordu; gerçek veride sınır değil engel.
-
-✅ **2026-10-04 · kodda:** bağlam `subjects[]` taşıyor (her ders kendi şubeleriyle); varsayılan ders son ödevin dersi (hâlâ
-okutuluyorsa), yoksa en çok şubede okutulan ders. Web ve mobil formda ders seçici; ders değişince şube/öğrenci seçimi sıfırlanır,
-mobilde "Ders" alanı "Şube"nin üstüne taşındı (şubeler dersten türüyor). Canlı ölçüm: Matematik öğretmeni (9-A/10-A) → varsayılan Matematik
-(10-A, 9-A), 5 dersin hepsi seçilebilir; TYT Matematik → 11-A/11-C. Web'den ekli ödev uçtan uca verildi.
-
 ### `B-103` · Virüslü bulunan teslim listede kalıyor, kotadan yiyor; indirme "henüz taranmadı" diyor 🟠
 
 Öğrenci dosyayı bağladığında tarama henüz `Pending`; EICAR test dosyası saniyeler sonra `Infected` + karantina oldu ama teslim
@@ -643,75 +530,7 @@ aktörsüz, durum kapısı atlanır, gerekçe satırda). İndirme ucu virüslü 
 bulundu; bu dosya açılamaz." döner; istemci kataloğuna da eklendi. Birim testli (kapanmış ödevde de kaldırır, ilgisiz dosyada yazmaz).
 ⬜ Açık ayak: öğrenciye "dosyan kaldırıldı" haberi yok — dosya listeden sessizce düşer.
 
-### `V-05` · Yükleme kapısı içeriğe bakmıyor: `.jpg` adlı çalıştırılabilir dosya "temiz" geçip öğretmene sunuluyor 🟠
-
-Politika yalnız dosya adına ve istemcinin BEYAN ettiği türe bakıyordu. İçi `MZ` (Windows çalıştırılabilir) olan `sahte.jpg`
-teslim olarak kabul edildi, ClamAV'den temiz geçti, öğretmen için indirme bağlantısı üretildi. Dosya modülünün tamamını etkiler
-(duyuru, logo, belge kategorileri).
-
-✅ **2026-10-04 · kodda:** `FileSignature` ilk 1024 baytı beyan edilen türle karşılaştırıyor (pdf, png, jpeg, zip tabanlı docx/epub,
-svg; bilinmeyen tür geçer). Vekil yükleme ucunda anında 422; virüs tarama işinde — presigned yol dahil her dosyanın geçtiği tek
-kapı — `CONTENT_TYPE_MISMATCH` karantinası (ve `B-103` ile teslim kaldırılır). İmzasız içerik yükleyen 10 test gerçek imzaya
-çevrildi; EICAR testi depoya doğrudan yazıyor (dize ClamAV'de yalnız dosya başındayken tanınır).
-
-### `B-105` · Yayındaki ödevin iptali ve değişikliği öğrenciye/veliye hiç bildirilmiyor 🟠
-
-İhtiyaç analizi K-4 ("yayınlanmış ödevde değişiklik → ödev güncellendi bildirimi"), K-10 ve BR-HW-04 ("iptal bildirim üretir;
-sessiz geri çekme veli güvenini kırar") ve teknik analiz (`HOMEWORK_UPDATED`, `HOMEWORK_CANCELLED`) açık. Kodda ikisi de yoktu:
-iptal edilen ödev öğrencinin listesinden sessizce kayboluyordu, tarihi ileri alınan ödevin haberi gitmiyordu.
-
-✅ **2026-10-04 · kodda:** yayın bildiricisi genelleşti — aynı alıcı kümesi (takip satırlarının öğrencileri + velileri), aynı tür
-(`HomeworkPublished`; `DailyLeaveRevoked` emsali: veli tercihinde ödev haberi tek satır, yayını kapatan iptali de kapatmış olur),
-ayrım başlık/gövdede ("Ödev iptal edildi" / "Ödev güncellendi", tarih değiştiyse "son teslim tarihi değişti"). Güncelleme yalnız
-GERÇEK değişiklikte gider (aynı içerikle kaydetmek haber üretmedi — ölçüldü). İstemcide tür etiketi "Ödev verildi" → "Ödev".
-Canlı: tarih değişikliği 10-A'ya 20 bildirim, derin bağlantılı.
-
-### `B-104` · "Yüklendi/Güncellendi" etiketleri UTC gününden hesaplanıyor — gece yarısından sonra her şey "dün" 🟡
-
-`HomeworkDateLabel` saat dilimi kabul ediyordu (testi bile "dilim verilmezse dün der" diye yazılıydı) ama **hiçbir üretim
-çağıranı dilimi geçmiyordu**. Okul saatiyle 00:36'da yüklenen dosya ve 00:44'te güncellenen ödev "dün" göründü.
-
-✅ **2026-10-04 · kodda:** `HomeworkReader.SchoolTimeZoneAsync`; dört çağıran (öğrenci/veli detayı, ızgara, işaretleme, yükleme
-yanıtı) okulun dilimini geçiriyor. Canlı: aynı dosyalar "bugün".
-
-### `B-106` · Eksik ödev bildirimleri (anlık + günlük özet) hiçbir yere götürmüyor 🟡
-
-Yayın bildirimi `/homework/{id}` taşırken anlık eksik bildirimi ve 20:30 özeti `deepLink: null` gönderiyordu; veli dokununca
-hiçbir şey olmuyordu. Tasarım (EKRAN 6): özetin hedefi "Çocuğumun Ödevleri" listesi.
-
-✅ **2026-10-04 · kodda:** anlık → `/homework/{id}`, özet → `/homework` (`PushDeepLinks.HomeworkList`); istemci çözücüsü
-`/homework`'ü liste hedefi olarak tanıyor (web + mobil yönlendirici).
-
-### `V-06` · Seçili öğrenci hedefine başka şubenin öğrencisi taslakta sessizce giriyor 🟡
-
-9-A'ya seçili öğrenci hedefiyle 10-A öğrencisi verildi → 201. Yayında mevcutla kesişimde düştü: tamamen yabancı listede "şubede
-öğrenci bulunamadı" (409), karışık listede öğrenci **habersiz** ödevden çıkıyordu.
-
-✅ **2026-10-04 · kodda:** oluşturma ve taslak düzenleme mevcut dışı kimliği 400 ile reddediyor (`HomeworkReader.AllInRosterAsync`).
-
-### `D-47` · Dosya seçicisi kalıcı reddi geçici hata gibi sunuyor 🟡
-
-Web ek seçicisi yalnız boyutu ön-eliyordu: `.txt` ve sahte `.jpg` sunucuya gidip "Yüklenemedi · Tekrar dene" aldı — ret kalıcı,
-gerekçe yok; aynı anda iki ret olunca yalnız sonuncusu görünüyordu. Sunucu mesajı da teknikti ("kategori kurallarına uymuyor").
-
-✅ **2026-10-04 · kodda:** uzantı ön-elemesi, ön-retlerin hepsi birlikte, 4xx kalıcı ret satırı "Reddedildi" + sunucu gerekçesi
-(tekrar dene yok), tekrar dene yalnız ağ/5xx'te; aynı ilke mobil öğretmen eki ve öğrenci tesliminde. Sunucu cümlesi: "Bu dosya
-yüklenemez: türü desteklenmiyor, içeriği uzantısıyla uyuşmuyor ya da boyutu sınırı aşıyor." (istemci kataloğuyla birebir).
-
-### `D-48` · Türkçe iyelik eki elle "'in" yazılıyor — ünlüyle biten adda yanlış ek 🟡
-
-Veli ödev detayı ve boş liste başlığı `${ad}'in` kuruyordu; ünlüyle biten adda "…'İN YÜKLEMELERİ" çıktı (doğrusu "…'NİN"). ✅ **2026-10-04 · kodda:** core `trGenitive` (ünlü uyumu, kaynaştırma
-"n", Türkçe büyük harf, ince "l" istisnaları: Alp'in, Kemal'in) + test; iki çağrı yeri bağlandı.
-
-### `D-49` · PDF/Word teslimleri resim ikonuyla çiziliyor ⚪
-
-Veli ızgarası, öğrenci teslim kartı, web teslim paneli/görüntüleyicisi PDF'e resim ikonu, mobil öğretmen görüntüleyicisi ataç
-koyuyordu; Word dosyasının alt yazısı "Defter sayfası fotoğrafı"ydı. ✅ **2026-10-04 · kodda:** core `fileVisualKind(contentType)`.
-
-### `D-50` · Yönetici ödev listesinde şube çipi kırılıyor ("10-" / "A") ⚪
-
-`/homework` (müdür) Şube sütunu dar; "10-A" çipi tire yerinden iki satıra bölünüyor (9-A sığıyor). Çipe `white-space: nowrap`.
-✅ **2026-10-04 · kodda:** `.attm-cls` `white-space: nowrap`.
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — karantina + FILES_INFECTED dev'de (api 3547e33b); öğrenciye "dosyan kaldırıldı" bildirimi yok.
 
 ### `D-51` · Şubeler sözlük sırasıyla diziliyor — 9-A, 12-D'nin altında ⚪
 
@@ -727,108 +546,12 @@ Tasarım (EKRAN 5): yükleme sayfası **Fotoğraf çek · Galeriden seç · PDF 
 `expo-document-picker` kurulu değil. Politika PDF/Word kabul ediyor, yani öğrenci matematik çözümünü taranmış PDF olarak
 veremiyor. Yerel modül eklemek geliştirme istemcisinin yeniden derlenmesini gerektirdiği için gece turunda yapılmadı.
 
-### `E-37` · Rehber öğretmenin şubesinin ödevlerini gördüğü ekran yok 🟡
-
-İhtiyaç analizi: rehber, şubesinin tüm derslerdeki ödev listesini ve ızgarasını salt okunur görür. `GET homework/homeroom` ve
-`useHomeroomHomework` kancası var, **hiçbir ekran çağırmıyor**; 10-A rehber öğretmeni web'de yalnız "Henüz ödev vermediniz"
-gördü. ([[eksik-ekran-eksik-yetkiyi-gizler]] kalıbı.)
-
-✅ **2026-10-04 · kodda:** web ve mobil öğretmen listesinde "Verdiğim ödevler / Sınıfımın ödevleri" sekmeleri (core
-`teacher-tabs.ts`); hiç ödev vermemiş rehber "Sınıfımın ödevleri"yle açılır. Canlı: 10-A rehber öğretmeni şubenin 3 ödevini (Ders,
-Öğretmen sütunlarıyla) salt okunur gördü, satırdan rehber detayı açıldı.
-
-### `B-107` · Öğrenci teslim dosyası hiçbir yüzeyde açılmıyor — öğretmen defter fotoğrafını göremiyor 🟠
-
-Web öğretmen teslim görüntüleyicisi seçili dosya için yalnız yer tutucu çiziyor (kod yorumu: "Mock evreninde … yer tutucu,
-gerçek indirme URL'si bağlanınca <img>/<embed> ile değişir"); hiç ağ isteği yok, indirme düğmesi yok. Mobil öğretmen
-görüntüleyicisi, öğrencinin kendi teslim kartı ve veli teslim karoları da dosyayı açmıyor. İhtiyaç analizinin hedefi —
-"yüklemesi olan öğrenciyi uzaktan kontrol edebilmek" — çalışmıyor. Sunucu erişimi doğru (sahip/idare/öğrenci/veli açar, rehber ve
-sınıf arkadaşı 404).
-
-✅ **2026-10-04 · kodda:** web görüntüleyici ve idari sağ bölme ortak `submission-file-stage` sahnesini kullanıyor (görsel
-`<img>` satır içi, tıklayınca tam boy; her dosyada "İndir"; 409 tarama/virüs ve 404 için Türkçe hata + yeniden dene); mobil
-öğretmen görüntüleyicisi, öğrenci teslim kartı ve veli karoları `submission-file-view` (görsel önizleme, PDF/Word "Aç").
-İndirme adresi yalnız sorgu önbelleğinde (5 dk; imza 10 dk). PDF'in tarayıcı içi önizlemesi için `TB-268`.
-
-### `TB-268` · İmzalı indirme adresi hep `attachment` — PDF tarayıcıda önizlenemiyor, yalnız iniyor ⚪
-
-`GetFileDownloadUrlQueryHandler` adresi her zaman `ContentDispositionBuilder.BuildAttachment` ile üretiyor; `<iframe>`/yeni sekme
-PDF'i çizmek yerine indiriyor. Öğretmen 30 öğrencinin PDF teslimini tek tek indirmek zorunda. ⬜ Kapatma yolu: uca `inline`
-seçeneği (yalnız pdf/görsel türlerinde), istemci önizlemede onu ister.
-
-✅ **2026-10-04 · kodda:** `download-url?inline=true` yalnız PDF/PNG/JPEG için `inline` imzalar (SVG/HTML asla); canlı ölçüm:
-varsayılan `attachment`, inline `inline`. Web görüntüleyici PDF'i tarayıcının okuyucusunda çerçeve içinde açıyor (ekranda ölçüldü);
-mobil "Aç" ile cihazda açmaya devam ediyor.
-
-### `B-108` · Öğretmen ödev listesinin şube süzgeci mock'tan kalma sabit dört şube 🟡
-
-`homework-list-screen.tsx` `SECTION_FILTERS` = 9-A, 9-B, 10-C, 11-A ve kimlikleri `cr-9a`… Gerçek okulda süzgeç öğretmenin
-şubelerini göstermiyor, seçilen kimlik sunucuda hiçbir şubeye denk gelmiyor. ✅ **2026-10-04 · kodda:** seçenekler filtresiz
-listeden türüyor (core `homeworkSectionOptions`, doğal sıralı: 9-A, 10-A'dan önce).
-
-### `B-109` · Telefonda hiçbir dosya yüklenemiyor — `expo/fetch` RN dosya parçasını tanımıyor 🔴
-
-iPhone'da (kablolu dev derlemesi) öğrenci ödev teslimi "Çalışman yüklenemedi, tekrar dene." dedi; API günlüğüne `POST /files` hiç
-düşmedi. Yakalanan hata: `Unsupported FormDataPart implementation` (`expo/src/winter/fetch/convertFormData.ts`). Expo SDK 57
-`globalThis.fetch`'i `expo/fetch` ile değiştiriyor; o uygulama seçicilerin ürettiği RN `{ uri, name, type }` parçasını
-desteklemiyor. Aynı yol duyuru eki, mazeret belgesi ve okul logosu yüklemelerinde de kullanılıyor — mobilde bütün yüklemeler
-kapalıydı. Expo web'de görünmez (orada seçici gerçek `File` verir); gece turunda bu yüzden yakalanmadı.
-
-✅ **2026-10-04 · kodda ve cihazda ölçüldü** (oksis-ui `c3fac5b`): mobilin tek `fetch` girişine sarmalayıcı
-(`apps/mobile/src/lib/upload-aware-fetch.ts`) — `{ uri }` parçaları `expo-file-system` `File` üzerinden `bytes()` parçasına
-çevriliyor. Telefonda teslim: `POST /files` 200 → `POST /submissions` 201 → tarama temiz. ⬜ Duyuru/mazeret/logo yüklemesi
-cihazda ayrıca denenmedi (aynı yol).
-
-### `B-110` · iPhone'da push cihaz kaydı yapılamıyor — `getToken` "unregistered" 🟠
-
-Aynı cihazda her açılışta `[push] cihaz kaydı yapılamadı: [messaging/unregistered] You must be registered for remote messages
-before calling getToken`. Telefon sunucuya kaydolmuyor, iOS'ta anlık bildirim düşmez (uygulama içi bildirim etkilenmez).
-
-**Kod kusuru değil, hesap engeli** (karar geçmişi: `app.config.ts` iOS yorumu, 2026-08-29; [[K-02]]): APNs için
-`aps-environment` yetkisi + `UIBackgroundModes: remote-notification` gerekir, ücretsiz kişisel Apple takımı bu yeteneği vermez.
-Ölçüldü: cihazdaki derlemenin profili 7 günlük (28 Eyl → 5 Eki), yetkilerde `aps-environment` yok. ⬜ Kapatma yolu: ücretli
-Apple Developer Program → APNs `.p8` anahtarı Firebase'e → iki satır yapılandırma + yeniden derleme. O güne dek OS push yalnız
-Android'de test edilir. Yan not: E-38 ekranı iOS'ta izin "verildi" gösteriyor ama push gelmez — hesap açılınca kendiliğinden düzelir.
-
-✅ **2026-10-04 · kodda ve cihazda ölçüldü** (oksis-ui `da137d0`): ücretli Apple Developer Program'a geçildi; APNs anahtarı
-(Sandbox & Production) Firebase `oksis-dev` iOS uygulamasının iki yuvasına yüklendi; `app.config.ts`'e `aps-environment` +
-`remote-notification`. Profil artık 1 yıllık. Cihazda: kayıt 204, FCM kabul, uygulama arka plandayken "Yeni ödev verildi"
-telefona düştü. Uygulama ön plandayken afiş çıkmaz — tasarım gereği (`push-router.ts` `onMessage` yalnız listeyi tazeler).
-
-### `E-38` · Kişisel bildirim tercihi ve telefon bildirim izni hiçbir ekranda yok 🟡
-
-`K-02` R1 (2026-08-28) "veli bazlı tercih kapsam içinde (olay başına push kapatma)" dedi; sunucu uygulandı ve ölçüldü (tercihi
-kapatan veliye push denemesi yapılmadı, uygulama içi bildirim geldi) ama `GET/PUT notifications/preferences`'ı **hiçbir istemci
-çağırmıyor**. Telefon izni girişten sonra bir kez soruluyor; reddedilirse uygulama bunu göstermiyor, yeniden açma yolu yok —
-veli "neden bildirim gelmiyor" sorusunun cevabını göremez.
-
-✅ **2026-10-04 · kodda (mobil):** "Daha fazla › Bildirim tercihlerim" — telefon izni kartı (kapalı: "Telefon ayarlarını aç",
-sorulmadı: "Bildirimlere izin ver", web: "desteklenmiyor"; uygulama öne dönünce yeniden okunur), gruplu olay anahtarları, değişiklik
-anında PUT (iyimser, hata geri alınır). Canlı: veli ödev anahtarını açtı → `notification_preferences.push_enabled = 1`.
-⬜ Kalan: RNFirebase `hasPermission`/`requestPermission` `@deprecated` — ileride `expo-notifications`'a geçiş.
-
 ### `TB-269` · Push tercih listesi role göre süzülmüyor — veli öğretmen olaylarını görüyor 🟡
 
 `GetNotificationPreferencesQueryHandler` `PushEventKeyMap.PushableEventKeys`'in 17 anahtarının hepsini her hesaba dönüyor. Veli
 "Not girişi hatırlatması", "Sınav yerleştirme hatırlatması", "Sınav saati isteği" gibi hiç alamayacağı olayların anahtarlarını
 görüyor (ekranda ölçüldü) — `Y-05`/`TB-44` sınıfı sahte anahtar. İstemci süzmez (kural sunucuda). ⬜ Kapatma yolu: anahtarlara
 alıcı rolü bilgisi; liste aktif profile göre süzülür. Mock zaten rol bazlı döndüğü için mock ile sunucu bu noktada ayrışıyor.
-
-### `TB-266` · Eksik bildirim kipi gün içinde anlıktan özete çevrilince aynı eksik iki kez bildiriliyor ⚪
-
-Anlık kipte işaretlenen eksik için veliye anlık bildirim gitti; kip aynı gün "günlük özet"e çevrilince 20:30 özeti aynı işaretleri
-yeniden saydı (iki öğrencinin velileri ikişer haber aldı). Özet "bugün anlık bildirimi gitmiş işaret"i ayırt etmiyor. Seyrek.
-
-✅ **2026-10-04 · kodda:** özet işi anlık bildirimin deterministik olay kimliğini teslim günlüğünde arıyor; haber gitmişse işaret
-özete girmez. Canlı: anlık kipte işaretlenen öğrencinin velileri, kip özete çevrilip iş tetiklenince ikinci haber almadı.
-
-### `TB-267` · Son teslim tarihi değişikliği denetime yazılmıyor ⚪
-
-İhtiyaç analizi (Denetim): "yayın, iptal, son tarih değişikliği … hepsi izli". 6 → 7 → 8 Ekim değişiklikleri `homework/{id}/audit`'te
-yok; yalnız yayın ve idari kaldırma var.
-
-✅ **2026-10-04 · kodda:** yeni denetim türü `DueDateChanged` (tel `due-date-changed`, çip "Tarih değişti"), yalnız yayındaki
-ödevde, cümlede eski → yeni tarih ("Son teslim tarihini 6 Ekim → 8 Ekim olarak değiştirdi").
 
 ## 11. Bildirimler 🟠
 
@@ -873,70 +596,6 @@ düşündüren bir toggle.
 
 ✅ **Karar (2026-09-28, kullanıcı):** SMS **yüzeyden gizlenir** — matris sütunu, okul ayarı ve kota kartı; katalogda `SupportsSms=false`. Sağlayıcı seçilince geri gelir. Uygulanacak.
 
-### `E-40` · Yoklama hatırlatması işi bitince bildirim merkezinden kalkmıyor; liste sonsuza kadar birikiyor 🟡
-
-2026-10-05, kullanıcı testi (öğretmen, mobil Bildirimler). Liste art arda aynı satırla doluyor: "⏰ Yoklama Hatırlatması ·
-Bu ders için henüz yoklama girmediniz" — bugün 2, 2 Ekim 5, 1 Ekim 2+ satır; 35 okunmamış. Yoklaması alınmış ya da
-penceresi kapanmış dersin hatırlatması da duruyor; dokunulduğunda gidilen ekranda yapılacak bir şey yok.
-
-✅ **Karar (2026-10-05, kullanıcı):** hatırlatma bildirimi verilmeye devam eder, ama işi bitince kaldırılır:
-1. **Yoklama gönderilince** o dersin hatırlatması kalkar (metin "henüz girmediniz" dediği için o an yanlışlaşır).
-2. **Yoklama penceresi kapanınca** kalan hatırlatmalar kalkar — gün kapanışı işi (`CloseDailySessionsJob`) bağlanma yeri.
-3. **Cihaz çekmecesi de temizlenir:** teslim edilmiş push uygulama içi satır silinince kendiliğinden gitmez; mobil açılışta
-   / liste yenilenince kaldırır (`expo-notifications`), yoksa çekmeceden yine ölü ekrana gidilir.
-
-Kod ölçümü: `Notification` satırında hangi oturuma ait olduğunu söyleyen alan yok — bağ yalnız `DeepLink` metninde
-(`Oksis.Domain/Modules/Notifications/Entities/Notification.cs`); silme ya da süre sonu mekanizması da yok. Metni
-ayrıştırarak silmek kırılgan; bildirime kaynak kimliği alanı (ör. oturum kimliği) eklenip "bu oturumun hatırlatmalarını
-kaldır" bunun üstünden yapılmalı. Domain uyumu: sözlükte `notification` geçici, kişisel olay haberi — kalıcı/silinmez
-kayıt `announcement`'tır.
-
-✅ **2026-10-05 · 1. ve 2. adım kodda** (master'da — oksis-api `92173ece`): yeni kolon gerekmedi —
-hatırlatmanın `EventId`'si oturumdan deterministik türetiliyordu (`AttendanceReminderEventIds`, üretici ve kaldırıcı aynı yerden okur).
-(1) `RetractAttendanceRemindersOnSubmitHandler`: yoklama gönderilince o oturumun otomatik + elle hatırlatması yumuşak silinir (yoklamayla aynı
-işlemde). (2) `CloseDailySessionsJob` (21:45): okulun kapanıştan önce yaratılmış BÜTÜN `AttendanceReminder` satırları kalkar — oturumu
-iptal/yeniden yayında silinmiş olanlar ve geçmişte birikenler de. Birim testleri: `AttendanceReminderRetractionTests` (4).
-✅ **3. adım (çekmece) kodda — 2026-10-05, karar (b):** `expo-notifications` yerine kendi yerel modülümüz
-(oksis-ui `apps/mobile/modules/notification-tray`, Kotlin + Swift): yalnız teslim edilmişleri listeler/kaldırır, bildirim merkezi
-delegesine ve RNFirebase dokunuş yoluna dokunmaz (`expo-notifications` iOS'ta delegeyi alıp `pending-push.ts`'i kırabilirdi;
-proje onu bilinçli bırakmıştı, `teknik/kurallar/frontend/mobil.md` §10). Sunucu her push'a `{OLAY_ANAHTARI}:{eventId:N}` etiketi
-koyar (Android `tag`, iOS `apns-collapse-id`; `PushNotificationTag`); mobil açılışta ve her öne gelişte `ATT_REMINDER:` önekli
-bildirimleri çekmeceden kaldırır (`features/notifications/lib/tray-cleanup.ts`; iOS ayrıca veri `kind`'ine bakar). Hâlâ geçerli
-hatırlatma uygulama içi listede kalır. Ölçülen: Android `:notification-tray:compileDebugKotlin` ve iOS `NotificationTray` hedefi
-derleniyor, autolinking buluyor.
-✅ **Cihazda ölçüldü (2026-10-05 12:43–12:46, Xiaomi M2003J15SC, Altınay, Kezban Dumanlı öğretmen hesabı):** yeni derleme kuruldu;
-uygulama arka plandayken müdür 2. ders için "Hatırlat" dedi → push çekmeceye `tag=ATT_REMINDER:b22f96c2…` ile düştü (olay kimliği
-`b22f96c2-7979-…` ile birebir); uygulama öne gelince çekmecedeki `ATT_REMINDER` sayısı 1 → 0. Ardından öğretmen yoklamayı gönderdi
-(open + submit, 200) → o dersin iki satırı (09:55 otomatik + 12:43 elle) aynı anda `is_deleted=1`; diğer derslerinkiler yerinde.
-Bildirimler ekranı 40 → 41 → **39 okunmamış**, "Bugün" altında 2. ders yok. Gün kapanışı (21:45) ve B-111 gün dönümü cihazda ölçülmedi.
-Bilinen dar pencere: hatırlatma in-app satırı Hangfire'da yazılmadan yoklama gönderilirse satır gün kapanışına dek kalır.
-
-### `D-52` · Yoklama hatırlatması hangi ders olduğunu söylemiyor; satırlar birbirinin aynısı ⚪
-
-2026-10-05, kullanıcı testi (aynı ekran, `E-40`). Her satır "⏰ Yoklama Hatırlatması · Bu ders için henüz yoklama
-girmediniz" — "bu ders" hangisi belli değil; öğretmen hangi dersi kaçırdığını ancak dokunarak öğrenebiliyor. Kaynak metin
-`AttendanceNotificationContent.TeacherReminder()` parametresiz. ⬜ Öneri: başlık/gövdeye ders saati, şube ve ders adı
-("3. ders · 9-A Matematik"). `E-40` uygulansa da değerli.
-
-✅ **2026-10-05 · kodda ve cihazda ölçüldü** (master'da — oksis-api `92173ece`): `SessionNotTakenNotificationHandler`
-oturumdan ders saati, başlangıç, şube (`ClassRoom.FullName`) ve ders adını okur; `TeacherReminder(period, start, section, subject)` →
-"4. ders (11:25) · 12-C Türk Dili ve Edebiyatı için henüz yoklama girmediniz." Ad bulunamazsa uydurulmaz ("7. ders (14:15) için …").
-Telefonda (Altınay, Kezban Dumanlı) hem perdede hem uygulama içi listede bu metin görüldü. Eski satırlar eski metinle kalır (metin
-üretim anında yazılır). Testler: `SessionNotTakenNotificationHandlerTests` +2.
-
-### `D-53` · Android bildirim perdesinde push'un zamanı "2032y" görünüyor ⚪
-
-2026-10-05, `E-40` cihaz ölçümü (Xiaomi M2003J15SC, MIUI, Android 11). Az önce gelen yoklama hatırlatması perdede "Oksis Dev •
-**2032y**" başlığıyla duruyor — bildirimin zamanı yerine anlamsız bir süre. Diğer uygulamaların satırları ("2sa") doğru. Kaynak
-ölçülmedi: FCM `AndroidNotification.EventTimestamp` boş gönderiliyor olabilir (`FcmSender`) ya da MIUI'nin kendi kusuru. `E-40`
-etiketinden önce de var mıydı bilinmiyor; etiket `when` alanına dokunmaz.
-
-✅ **2026-10-05 · kök neden + düzeltme, cihazda ölçüldü:** bildirimin zamanı `when=-62135596800000` = **0001-01-01** (.NET `DateTime.MinValue`).
-FirebaseAdmin 3.6.0'da `AndroidNotification.EventTimestamp` nullable değil; doldurulmazsa `"event_time":"0001-01-01T00:00:00Z"` gider
-(JSON ölçüldü). Etiketten bağımsız, bütün OKSİS push'larında vardı. "2032" = MIUI'nin farkı 364 günlük yılla yazması (2032,7; takvim
-yılıyla 2025,8). Yan etkisi görüntüden büyük: Android çekmeceyi bu zamana göre sıralar, OKSİS bildirimleri en alta düşüyordu.
-Düzeltme `FcmSender`: `EventTimestamp = DateTime.UtcNow`. Telefonda `when=1791194542857` (gönderimden 13 sn önce okunan cihaz saatiyle tutarlı).
-
 ### `B-112` · Aynı cihaz yeniden kaydolunca `POST notifications/devices` 500 dönüyor 🟡
 
 2026-10-09 07:39, Test ortamı API günlüğü. Aynı hesap + aynı FCM token için ikinci kayıt isteği `ux_user_devices_account_token` benzersiz
@@ -965,25 +624,6 @@ mevcut paketli yoldan gitsin. Entegrasyon testi: sessiz saatte N alıcılı yay�
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
-
-### `TB-220` · Ödev form testi sabit tarihle yazılmış; takvim geçince kendiliğinden kırmızıya döndü ⚪
-
-`packages/core/src/homework/schemas.test.ts` geçerli formu sabit `dueDate: "2026-09-18"` ile
-kuruyor. Şema teslim tarihinin **gelecekte** olmasını istediği için test 18 Eylül'den sonra
-kendiliğinden düşüyor: 2026-09-20 koşumunda `homeworkFormSchema > geçerli formu kabul eder`
-ve `tek şube ile seçili öğrenciyi kabul eder` kırmızı (core paketi 645/647).
-
-Kusur şemada değil testte: "gelecek tarih" kuralı **bugüne göreli** olmalı
-(`new Date()` + n gün), sabit bir güne çakılmamalı. Sabit tarihli her test bir zaman
-bombasıdır — düştüğü gün ilgisiz bir işin ortasında düşer ve o işin kırmızısı sanılır
-(bugün tam olarak böyle oldu: `B-53`/`TB-120` turunda çıktı).
-
-⬜ Kapatma yolu: `valid` kurgusundaki tarih bugüne göreli üretilir; aynı dosyadaki diğer
-sabit tarihler de taranır. Depodaki benzer kalıplar için tek geçiş yapılmalı.
-
-✅ **2026-09-28:** `TB-251` ile aynı commit'te kapandı (`58253db`).
-
----
 
 ### `TB-231` · Entegrasyon takımının yarısı master'da kırmızı; push kapısının dışında olduğu için sessizce birikti 🟠
 
@@ -1026,6 +666,8 @@ ayrı bir zamanlanmış koşu + kırmızıda uyarı da kabul edilir. Karar gerek
 
 ✅ **Karar (2026-09-28, kullanıcı):** (2) push kapısı hızlı kalır; **merge öncesi `./scripts/test-changed.sh --integration` zorunlu adım** olarak CLAUDE.md/AGENTS.md ve commit kurallarına yazılır. Uygulanacak.
 
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — fixture ve CI entegrasyon işi dev'de (api e2aad5a0, af322046); "merge öncesi test-changed.sh --integration zorunlu" kuralı CLAUDE.md/AGENTS.md'de zorunlu yazılı değil.
+
 ### `TB-241` · Katalog ders adlarında kesme işaretinden sonra büyük harf: "Kur’An-I Kerim" ⚪
 
 Altınay B4.2 ölçümünde görüldü (2026-09-22). `master.subjects`'te iki satır bozuk:
@@ -1042,18 +684,7 @@ dönüştürücü; mevcut iki satır için düzeltme.
 
 ✅ **Karar (2026-09-28, kullanıcı):** mevcut bozuk adlar **göçle** düzeltilir (her ortamda aynı; okulun elle değiştirdiği adlara dokunulmaz, önbellek temizlenir). Uygulanacak.
 
-### `D-24` · Davet ekranı okulun resmî adını gösteriyor, görünen adını değil ⚪
-
-Altınay B6 turunda görüldü (2026-09-23). Davet önizlemesinde "Okul" satırı **"Altınay Eğitim
-Kurumları"** diyor (`School.Name`). Okulun kendi paneli, sidebar ve künye ise görünen adı
-**"Özel Altınay Anadolu Lisesi"** kullanıyor. `GetInvitationByTokenQueryHandler` ayarlardaki
-`DisplayName`'i okumuyor. Aynı kurum adı altında iki okul olan Altınay'da davetli, hangi okula
-katıldığını bu satırdan ayırt edemiyor (`ALTINAY-SBL` da "Altınay Eğitim Kurumları").
-
-⬜ Kapatma yolu: önizleme görünen adı döner (boşsa resmî ada düşer). Logo sorgusu aynı
-ayar satırını zaten okuyor.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `b453124a`, master'da — 2026-10-04 doğrulandı):** önizleme okul adını görünen ad → ayarlardaki resmî ad → `School.Name` sırasıyla veriyor (oturum bağlamı `GetCurrentContext` ile aynı sıra); ek sorgu yok. 3 birim testi.
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — TurkishTitleCase dev'de (api 2213cefe); mevcut bozuk adları düzelten göç yok.
 
 ### `V-04` · Öğrenci numarası: öneksiz okulda elle girişte "en az 100" şartı; sayaç elle girilen numarayı atlamıyor 🟠
 
@@ -1117,78 +748,6 @@ düğmesi sorunu kendisi çözüyor; 85 öğrencinin hepsi bu yoldan geçti.
 
 ✅ **Karar (2026-09-28, kullanıcı):** reşit olmayan öğrencinin KVKK rızasını **veli verir**; öğrenci yalnız aydınlatma metnini görür; ilk onay ve geri çekilmiş onay ayrı metinle anlatılır. Uygulanacak.
 
-### `B-65` · "Önceki Sezondan Kopyala" kaynak sezonu yanlış seçebilir (gizli) 🟡
-
-Altınay B9.2 kod kontrolü (2026-09-23). `teacher-assignments-page.tsx`:
-`prevSeason = seasons.find(s => s.id !== current && !s.isArchived)`. Kaynak "arşivlenmemiş
-başka **herhangi bir** sezon"; tarih sırası ya da durum denetlenmiyor. Bugün Altınay'da tek sezon
-olduğu için düğme görünmüyor. Ama gelecek yılın **taslak** (Setup) sezonu açıldığı an, aktif
-sezondayken "önceki sezondan kopyala" **gelecek sezonu** kaynak alır ve boş ya da yarım taslağı
-aktif sezona kopyalamayı önerir. Ters yönde de, taslak sezonda bakarken aktif sezonun yerine
-başka bir taslak seçilebilir.
-
-⬜ Kapatma yolu: kaynak, hedeften önce başlayan en yakın sezon olarak (başlangıç tarihine göre)
-seçilir; tercihen sunucu belirler.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fb00cc5`, master'da — 2026-10-04 doğrulandı):** kaynak saf ve testli `copySourceSeason`: hedeften önce başlayan en yakın sezon (`SeasonOption.startDate`). **Varsayım:** arşivlenmiş önceki sezon da kaynak olabiliyor (eski kod dışlıyordu; sunucu kısıtlamıyor) — istenmezse tek satır.
-
-✅ **Karar (2026-09-28, kullanıcı):** gece turunun varsayımı onaylandı — **arşivlenmiş sezon da kaynak olabilir**.
-
-### `D-26` · "Görevi kapat (devret)" onay istemiyor ve gerekçeyi sabit metinle yazıyor 🟡
-
-Altınay B9.2 (2026-09-23). Satır menüsündeki kırmızı *Görevi kapat (devret)* tek tıkla
-çalışıyor: onay penceresi yok, kapatma gerekçesi her zaman sabit metin (*"Yıl içi kapatıldı —
-görev devredilebilir."*). Kapatılan görev iz kaydına düşüyor ve geri açma yolu yok. Yanlış
-satıra basan idareci görevi geri alamıyor, iz kaydında da gerçek sebep yazmıyor.
-
-⬜ Kapatma yolu: onay penceresi + gerekçe alanı (sabit metin öneri olarak kalabilir).
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `abb1185`, master'da — 2026-10-04 doğrulandı):** kapatma `ConfirmDialog` istiyor, gerekçe alanı sabit metinle ön dolu (kırpılır, boşsa null, ≤1000); sunucu reddi pencerede.
-
-📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): "Görevi kapat (devret)" → "Görev kapatılsın mı?" penceresi, öğretmen — ders, gerekçe alanı ön dolu; Vazgeç ile kapatıldı.
-
-### `D-27` · Görevlendirme çekmecesi kayıt hatasında kapanıyor, hata başarı bildirimi gibi görünüyor 🟡
-
-Altınay B9.2 kod kontrolü (2026-09-23). `drawer.tsx` `save()` hata kolunda `onSaved(mutationErrorDesc(err))`
-çağırıyor. Sayfa bu çağrıda çekmeceyi kapatıp mesajı başarı bildirimiyle aynı yerde gösteriyor.
-Kullanıcı seçimini ve yazdığı gerekçeyi kaybediyor, hatayı başarı sanabiliyor.
-Kardeşi `CopyModal`: hata kolu sunucunun gerekçesini yutup sabit *"Kopyalama başarısız oldu."*
-yazıyor (`X-01` kalıbı).
-
-⬜ Kapatma yolu: hata çekmecenin içinde gösterilir, çekmece açık kalır; kopyalamada sunucu cümlesi
-geçirilir.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fab4132`, master'da — 2026-10-04 doğrulandı):** hata çekmecenin içinde, çekmece açık kalıyor; `CopyModal` sunucu cümlesini gösteriyor.
-
-### `D-28` · Arşiv sezonda Görevlendirmeler'de satır menüsü tamamen gizleniyor ⚪
-
-Altınay B9.2 kod kontrolü (2026-09-23). `detail.tsx`'te `RowMenu` bütünüyle `h.canWrite` koşuluna
-bağlı. Arşiv sezonda salt-okur ekranda yalnız *Görevi kapat* değil, **gezinme** öğeleri de
-(*Öğretmen profilini aç*, *Dersi aç*) kayboluyor. Okuma yetkisi olan kullanıcı eksenler arası
-geçiş yapamıyor.
-
-⬜ Kapatma yolu: yalnız yazma öğesi koşula bağlanır.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `1fd3f2e`, master'da — 2026-10-04 doğrulandı):** satır menüsü her zaman çiziliyor; yalnız "Görevi kapat" `canWrite`'a bağlı.
-
-### `TB-244` · Logosu olmayan okulda her sayfa açılışında logo ucu 404 dönüyor ⚪
-
-Altınay B7–B9 turlarında her sayfada ölçüldü (2026-09-23): `GET /api/v1/public/schools/{id}/logo` →
-404, konsolda *Failed to load resource*. Altınay'ın logosu yok; istemci logonun varlığını
-bilmeden isteği atıyor. Zararsız ama gerçek hataları konsolda gürültüye gömüyor (B7 turunda
-403'ler ayıklanırken bu satır da her seferinde çıktı).
-
-⬜ Kapatma yolu: okul ayarı logo yokken URL üretmez (istemci yer tutucuya düşer) ya da uç 204
-döner.
-
-🔎 **2026-09-28 · istemci tek başına kapatamaz (ölçüldü):** logonun varlığı yalnız `SchoolSettingsDetailDto.logoUrl` (yönetici izinli) ve `school-settings/public` (`X-Tenant-Code` istiyor) cevaplarında; oturum bağlamı `auth/me/context` logo taşımıyor. Kapatma: sunucu `ContextView.schoolLogoUrl: string | null` (ya da logo yokken 204), sonra istemci `null`'da istek atmaz.
-
-✅ **2026-09-28 · sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `774c9c43`):** `auth/me/context` → `schoolLogoUrl` (mevcut `ISchoolLogoUrlBuilder`; logo yoksa `null`, ek sorgu yok), 3 test.
-
-✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `fc759f8`, master'da — 2026-10-04 doğrulandı):** web `active-role.tsx` ve mobil `use-portal-header.ts` (+ mobil kimlik ekranı) logoyu tek çözücüden (`resolveSchoolLogoSrc`/`resolveSchoolLogoUrl`) alıyor: bağlamdaki `schoolLogoUrl` (yöneticide okul ayarlarının `logoUrl`'i öncelikli); `null` iken istek atılmıyor, baş harfler gösteriliyor. Tarayıcıda ölçülmedi. Madde iki dal birleşince (ve codegen yeniden koşunca) ekranda 404'ün kalktığı ölçülerek kapanır.
-
-📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): müdür panosu ve diğer sayfalarda logo isteği hiç atılmıyor, 404 yok.
-
 ### `D-29` · Katalog satırındaki simge düğmelerinin adı yok; pasife alma tek tık ve onaysız 🟡
 
 Altınay `B-64` ekran ölçümünde yaşandı (2026-09-23). *Ayarlar › Akademik Yapı › Ders Kataloğu*
@@ -1206,6 +765,8 @@ kullanımı varsa onu da söyleyerek).
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `ec6aba8`, master'da — 2026-10-04 doğrulandı):** ortak `AIconBtn` — satır bağlamlı `aria-label` (Ders, Branş, Sınav Türü kataloglarında ve aynı kalıbı taşıyan Zil/Tatil satırlarında); pasife alma / listeden düşürme onaylı; Sınav Türü onayı kullanımı (`isInUse`) söylüyor, ders/branşta kullanım verisi olmadığı için onay yalın.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Ders Kataloğu satır düğmeleri "Tarih — Düzenle" / "Tarih — Pasife al" adlarını taşıyor. Pasife almanın `ConfirmDialog`'dan geçtiği kodda doğrulandı (`course-catalog.tsx:126`); gerçek veride tıklanmadı.
+
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — simge düğmesi adları dev'de (ui ec6aba8); ders ve branş pasife alma onayı kullanımı (görevlendirme/program) söylemiyor — yalnız sınav türünde var.
 
 ### `TB-237` · Branş kataloğu boş: seed silindi, yerine geçecek yüzey yazılmadı 🔴
 
@@ -1320,6 +881,8 @@ fiilen bu yaşandı.
 
 ✅ **2026-09-28 · 2. ayak çözülmüş (ölçüldü):** "silme ucu yok" ifadesi yanlıştı — `cancel-setup` (`32ccead6`) hazırlıktaki sezonu siliyor, `reopen-to-draft` (`3cf3999b`) var, web'de silme penceresi `academic-sessions-page.tsx:575-582`. ⬜ 1. ayak (başlamış sezonun boş snapshot'ını kurtarma) açık.
 
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — hazırlıktaki sezon için rebase ve geri alma dev'de; başlamış (Active) sezonun boş snapshot'ı hâlâ kurtarılamıyor.
+
 ### `TB-230` · İzin çözücü `Platform` portalını tanımıyor; platform rolü hiçbir izin taşıyamaz 🟡
 
 `TB-165` kapanırken ayrıldı (`K-28`, 2026-09-22): o madde **ucun kendisi silindiği için**
@@ -1371,6 +934,8 @@ görünür ve bölümleme fiilen tekleşir (kodda yorumla işaretli, ayrı iş).
 ✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `34cecc4`, `2983c22`):** merkezî `ApiError.retryAfterSec` (`Retry-After` saniye ya da HTTP tarihi); `apiErrorDesc` 429'u "Çok fazla deneme yapıldı. N saniye sonra tekrar deneyin." diye anlatıyor, sorgular 429'u yeniden denemiyor; davet önizleme/kabul ekranları (web + mobil) ayrı "ratelimited" durumu gösteriyor; giriş ekranı sabit 60 sn yerine sunucunun süresini sayıyor. ⬜ **Yeni ayak:** CORS yalnız `X-Correlation-Id`'yi açığa veriyor (`Program.cs:185`) — web API'ye başka kökenden giderse `Retry-After` okunamaz; `WithExposedHeaders`'a eklenmeli.
 
 ✅ **2026-09-28 · CORS ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `2dbaac65`):** `WithExposedHeaders("X-Correlation-Id", "Retry-After")`. Açık kalan yalnız `ForwardedHeaders`.
+
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — hız sınırı uçları dev'de (api b98bcb17, 2dbaac65); `UseForwardedHeaders` kurulmamış — proxy arkasında sınır istemci IP'sini göremez.
 
 ### `TB-174` · Yarım Gün zil şablonu hiçbir okulda kaydedilemiyor — tekil indeks şablonu kapsamıyor (500) 🟠
 
@@ -1439,59 +1004,7 @@ Pzt–Per 1. programda; iki şablon da 8 ders olduğu için gün bilgisi olmayan
 
 ✅ **Karar (2026-09-28, kullanıcı):** satırsız şablona gün ataması **sunucuda 409 ile reddedilir**. Uygulanacak.
 
-### `TB-177` · Tatil Takvimi resmî tatilleri yıl ve bitiş tarihine bakmadan birleştiriyor — her dini bayram 5 kez 🟡
-
-Seed okulu `s1` (sezon 2026-09-15 → 2027-06-13) ile canlı ölçüldü: `GET school-settings/holidays?seasonId=…`
-25 resmî kayıt döndürüyor; **Ramazan Bayramı, arifesi, Kurban Bayramı ve arifesi dörder değil beşer kez**
-(ör. Ramazan Bayramı: 2027-02-04, 02-14, 02-26, 03-09, 03-19). Hepsinde `endDate = null`.
-
-Neden: katalog (`master.official_holidays`) dini bayramları **yıla özgü satırlar** olarak tutuyor
-(2026–2030, `year` dolu, `is_annual=0`, çok günlülerde `end_month/end_day`, arifede `is_half_day=1`).
-`GetHolidaysQueryHandler:83-110` yalnız `Id, Name, Month, Day` seçip her satırı sezonun her yılına
-yansıtıyor: `Year`, `EndMonth/EndDay`, `IsHalfDay`, `IsAnnual` yok sayılıyor. Böylece 2026, 2028, 2029 ve
-2030'un bayram tarihleri de 2027'ye düşüyor; çok günlü bayram tek gün, arife tam gün görünüyor.
-
-Yoklamanın okuduğu `HolidayCalendarReader:60`, `GetSchoolHolidaysForSession:46` ve
-`GetOfficialHolidaysInRange:27` bu alanların hepsini okuyor — yani **devamsızlık hesabı doğru, müdürün
-gördüğü tatil listesi yanlış.** Aynı kavramın iki birleştirme mantığı var.
-
-⬜ Kapatma yolu: ayar listesi resmî tatilleri kendi döngüsüyle değil `HolidayCalendarReader`/ortak
-çözücüyle üretir; tek kaynak.
-
-✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** `GetHolidaysQueryHandler` kendi döngüsünü bıraktı,
-yoklamanın okuduğu **aynı** `OfficialHolidayResolver.ResolveForRange`'i kullanıyor; çözücüye eksik alanlar taşındı
-(`Id`, `IsAnnual`, `IsHalfDay`). Sözleşme: `HolidayDto` ve `HolidayCalendarDto` artık `isHalfDay` taşıyor (arife tipi
-`PublicHoliday` kalıyor — `HalfDay` yazmak istemcinin kategori eşlemesini bozup arifeyi "düzenlenebilir" gösterirdi).
-Canlı ölçüm (seed `s1`, önbellek temizlendikten sonra): **25 resmî kayıt → 9**, tekrar yok; Ramazan 8–11 Mart 2027,
-Kurban 15–19 Mayıs 2027, arifeler yarım gün; `isRecurring` artık katalogdan (millî `true`, dinî `false`).
-Arayüzde `countHolidayDays` yarım günleri saymıyor, yeni `formatHolidayDuration` arifeyi "Yarım gün" yazıyor
-(web + mobil); core 605 test yeşil, typecheck ve lint temiz.
-**Varsayım (onay bekliyor):** yan karttaki "Toplam N gün" *tam kapalı* gün sayısıdır, arife eklenmiyor (okul o gün
-açık). 0,5 saymak da savunulabilirdi.
-
-✅ **Karar (2026-09-16, kullanıcı) — varsayım DEĞİŞTİ:** yarım gün (arife) toplam süreye **0,5 gün** olarak
-girer: `Toplam gün = tam gün sayısı + (yarım gün sayısı × 0,5)`. Kullanıcının koyduğu ayrım da yüzeye taşınacak:
-**"kaç tarih tatil"** ile **"toplam tatil süresi"** aynı şey değildir (3 yarım gün = 3 kayıt ama 1,5 gün).
-Gösterim Türkçe ondalıkla ("11,5 gün"). Uygulama `oksis-ui`'de yapılıyor.
-
-✅ **Uygulandı — 2026-09-16 (commit bekliyor).** Çekirdek tek yerde: `holidayWeightsByDay()` takvim günü → ağırlık
-haritası kuruyor (yarım gün 0,5, tam gün 1); **çakışan günler iki kez sayılmıyor, en yüksek ağırlık kazanıyor** (arifenin
-üstüne okul tatili girilmişse o gün 1'dir, 1,5 değil). Dört soru dört ayrı alan oldu: kaç kayıt · kaç tarih · kaçı yarım
-gün · toplam kaç gün süre (`countHolidayDates` yeni). Biçimlendirme tek yerde (`formatDayCount`): "11,5 gün", tam sayıda
-",0" kuyruğu yok; `toLocaleString` kullanılmadı (core'un RN/Hermes gerekçeli mevcut kuralı). Yan kart artık "Tatil Günü
-13 tarih · Yarım Gün 3 tarih · Toplam Süre 11,5 gün" gösteriyor, aynı üç satır mobil ekrana da eklendi (orada daha önce
-hiç toplam yoktu). core 615 test yeşil (tatil mantığı 13 → 23), typecheck ve lint üç pakette temiz.
-**Varsayım:** `isHalfDay` kayıt düzeyinde tek bir bayrak olduğu için çok günlü bir yarım gün kaydında bütün günler 0,5
-sayılır; arife katalogda zaten kendi tek günlük kaydı olduğundan bu durum pratikte oluşmuyor.
-**Altınay ekranında yeniden ölçüm yapılmadı** — müdür parolası bilinmiyor; aynı katalog ve çözücü Altınay'a da
-uygulandığı için "Resmî 25 / Toplam 47 gün" sayaçlarının düzelmesi bekleniyor, uyanınca ekrandan teyit edilmeli.
-
-➕ **2026-09-16 · Altınay ekranında ölçüldü** (sezon `2026-2027` açıldıktan sonra Ayarlar → Tatil Takvimi): "Resmî 25";
-Ramazan Bayramı ve arifesi 3–4 Şubat, 13–14 Şubat, 25–26 Şubat, 8–9 Mart, 18–19 Mart; Kurban Bayramı ve arifesi 13–14 Nisan,
-23–24 Nisan, 4–5 Mayıs, 15–16 Mayıs, 25–26 Mayıs. Doğrusu (MEB/İstanbul takvimi ve katalogun 2027 satırı) yalnız Ramazan
-8–11 Mart, Kurban 15–19 Mayıs. Yan kartın **"Toplam 47 gün"** sayacı bu sahte satırlarla şişiyor.
-
-🔎 **2026-09-28 · kod çözülmüş (ölçüldü):** `GetHolidaysQueryHandler.cs:102` → `OfficialHolidayResolver` (`425160d4`); seed `s1`'de 9 resmî kayıt, tekrar yok. Altınay'daki "25" ölçümü büyük olasılıkla eski API'ye karşı alınmış; yalnız Altınay ekranında "Resmî 9" teyidi kaldı.
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — tekil indeks düzeltmesi dev'de (api 425160d4); satırı olmayan şablona gün ataması 409 ile reddedilmiyor (karar), gün bazlı ızgara işi açık.
 
 ### `D-21` · Liste ekranları "hiç kayıt yok" ile "filtreyle eşleşme yok"u ayırmıyor (`D-10` yalnız ayarlarda uygulanmış) 🟡
 
@@ -1587,6 +1100,8 @@ yani **kullanıcı ürünün kendi komutuyla elle başlatmıştı**. Göç ya da
 
 ✅ **Karar (2026-09-28, kullanıcı):** 1. dönem kapatılmadan 2. dönemin başlangıç günü gelirse günlük iş **başlatmaz, uyarır** (pano + yönetici: "1. dönemi kapatın, 2. dönem başlayamıyor"); karne otomatiği tetiklenmez. Uygulanacak.
 
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — günlük dönem başlatma işi dev'de (api bd03aa4a, e3497537); 1. dönem kapanmadığında uyarı yok (2026-09-28 kararı), topbar hâlâ tarih aralığından çözüyor.
+
 ### `TB-193` · Platformdan açılan okulun branş kataloğu boş doğuyor 🟠
 
 Altınay B4 ölçümünde çıktı (2026-09-16). Altınay `school.branches` = **0 satır**; seed okullarının her birinde
@@ -1613,6 +1128,8 @@ branşsız doğacak. Kalıcı düzeltme (açılışta tohum + mevcut boş okulla
 uygulanabilir hâle geldi.
 
 ✅ **2026-09-28 · kalıcı ayak kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `e1529723`, master'da — 2026-10-04 doğrulandı):** yeni tek yol `BranchCatalogImporter` (`TB-195` kalıbı); "MEB'den Getir" düğmesi ve okul açılışı (`CreateSchoolCommandHandler`, sınav türü tohumundan sonra) aynı sınıfı çağırıyor. `master.branches` boşsa açılış durmuyor, bilinçli ve yorumlu. Entegrasyon testi: açılan okulun branşları aktif master branş sayısına eşit. ⬜ Açık: mevcut branşsız okullar için backfill (göç yazılmadı).
+
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — açılışta branş tohumu dev'de (api e1529723); branşsız mevcut okullar için backfill yok.
 
 ### `TB-195` · Sınav türü kataloğu global ve okul tarafından değiştirilemiyor 🟠
 
@@ -1663,6 +1180,8 @@ tabi — **arşiv sezonda katalog yazılamıyor**, oysa ders kataloğu (`Academi
 
 ✅ **Karar (2026-09-28, kullanıcı):** sınav türü yönetimi **ders kataloğuyla eşitlenir** — `active-season-write` politikası olmayan controller'a taşınır; gerçek SQL tenant izolasyon testi yazılır. Uygulanacak.
 
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — okul kapsamlı katalog dev'de (api 6cefeed8, 9a3271f8); yönetim uçları hâlâ `active-season-write` altında (karar), gerçek SQL tenant izolasyon testi yok.
+
 ### `E-31` · Kişinin adı ve soyadı hesap açıldıktan sonra düzeltilemiyor — uç var, ekran yok 🟡
 
 Altınay B6.5 ölçümünde çıktı (2026-09-24). Ad ve soyadı değiştirebilen **tek yüzey davet kabul ekranı**
@@ -1687,6 +1206,8 @@ da ölçülmemiş durumda.
 ✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `7a93ac8`, master'da — 2026-10-04 doğrulandı, ekranda ölçülmedi):** Kullanıcılar, Öğretmenler, Öğrenciler ve Veliler çekmecelerinde ad/soyad düzeltme penceresi (`users.update`). Uç **tam değiştirme** yaptığı için pencere önce kişiyi okuyup yalnız adı/soyadı değiştiriyor, öteki alanları aynen geri gönderiyor; istemci şeması sunucu doğrulayıcısının aynısı (2–100, harf/boşluk/kesme/tire). ⬜ Cinsiyeti boş kişide düzenleme kapalı ve nedeni yazılı (`B-71`); geri gönderilen telefon sunucu desenine uymazsa red olası (ölçülmedi); MSW'de `GET/PUT users/persons/{id}` yok.
 
 📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): çekmecede "Adı düzelt" → pencere ad/soyadı dolu açılıyor; müdürün cinsiyet kaydı boş olduğu için "değer uydurulmadan ad şu an düzeltilemez" uyarısı görünüyor (`B-71`). Kaydedilmedi.
+
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — ad düzeltme penceresi dev'de (ui 7a93ac8); MSW karşılığı yok, cinsiyeti boş kişide düzeltme kapalı (B-71).
 
 ### `TB-198` · `school_onboarding_status` ölü tablo — açılış ilerlemesi hiçbir yerde görünmüyor ⚪
 
@@ -1714,30 +1235,6 @@ eksik), `E-24`'ün "seed gerçek yolu ölçmüyor" kalıbı ve bu turda ölçül
 
 ⏸️ **Karar (2026-09-28, kullanıcı): askıda kalır** (daha geniş çerçeve kararı bekliyor).
 
-### `TB-190` · Sahte bağlamla yazılan testte tenant alanı boş kalıyor; okul süzen sorgular sessizce "hepsi reddedildi" ölçüyor 🟡
-
-`E-28` uygulamasında ölçüldü (2026-09-16) ve **beş testi birden yanlış yoldan geçiriyordu**.
-
-`Profile.AssignTo` yalnız `PersonId` kuruyor; `SchoolId`'yi gerçek koşuda insert sırasında
-`TenantSaveChangesInterceptor` dolduruyor. Sahte `DbContext`'te interceptor **yok**, alan `Guid.Empty` kalıyor —
-dolayısıyla `pr.SchoolId == schoolId` süzen her sorgu **boş küme** döndürüyor. Test yazan kişi bunu görmez:
-handler beklenen hata mesajını verir, iddia geçer ya da "reddedildi" dalında doğrulanır; oysa ölçülen şey iş
-kuralı değil, **kurulumun eksikliğidir**.
-
-Somut belirti: ödev devri testlerinde her devir *"Yeni sorumlu, bu okulda görevi süren bir öğretmen olmalıdır."*
-ile reddediliyordu; kod doğruydu, kurulum yanlıştı. Dosya o güne dek hiç derlenmediği için bu beş ölçüm **bir kez
-bile koşmamıştı**, yani kusur ancak derleme düzelince görünür oldu.
-
-Sınıf olarak [[bellek-ici-test-db-kisitini-zorlamaz]] dersinin kardeşi: bellek içi bağlam yalnız DB kısıtlarını
-değil, **interceptor'ların doldurduğu alanları da** taklit etmiyor. `TB-184` ve `TB-187` ile birlikte aynı aile —
-test altyapısının sessiz yanlışları.
-
-⬜ Kapatma yolu: profil/kişi kuran **ortak bir test fixture'ı** tenant alanını da kursun (bugün her testte elle,
-yansımayla yapılıyor ve çoğu test hiç yapmıyor). Yamalama yerine merkezî çözüm: aynı kalıbın kullanıldığı diğer
-test dosyaları da ona bağlanmalı.
-
-✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `68f6a3d8`):** ortak yardımcı `TenantTestEntities.InSchool()`; elle yansıma yapan 6 dosya ona bağlandı.
-
 ### `TB-189` · Seed sezon verisi ürünün üretebildiği durumları temsil etmiyor ⚪
 
 `TB-185` canlı ölçümünde ortaya çıktı (2026-09-16), ölçümün kendisi iki kez buna takıldı.
@@ -1755,42 +1252,6 @@ bağlı kusurlar ancak sahada görülüyor (`E-24`'ün "seed gerçek yolu ölçm
 
 ⬜ Kapatma yolu: dev seed'inde **canlı bir `Setup` sezon** bulunsun (ve sezonsuz bir okul kalmaya devam etsin);
 silinmiş satırların ad çakışması temizlensin ya da tekil ad kuralının silinmişleri nasıl saydığı bilinçli yazılsın.
-
-### `TB-187` · Mapster'ın paylaşılan yapılandırması paralel test koşumunda çöküyor ⚪
-
-`TB-109` doğrulamasında ölçüldü (2026-09-16). `GetSchoolSettingsQueryHandlerTests` tam takım koşumunda
-`InvalidOperationException: Collection was modified` ile düştü; yığının tamamı Mapster'ın içinde
-(`SettingStore.Apply` → `TypeAdapterConfig.GetMergedSettings`). İki bağımsız kanıt belirtinin **paralellikten**
-geldiğini gösterdi: izole koşuda 8/8 yeşil, ikinci tam koşuda 2731/0 yeşil.
-
-Sebep: paylaşılan `TypeAdapterConfig` önbelleği xUnit'in paralel iş parçacıklarınca **eşzamanlı** derleniyor.
-Ürün kodunda tek süreçli ısınma olduğu için bugün yalnız testte görünüyor — ama aynı yapı, uygulama açılışında
-eşzamanlı ilk isteklerde de kuramsal olarak kırılgan.
-
-Sınıfı `TB-184` ile aynı: **sıraya bağlı kırmızı**, gerçek bir düşüşü gürültüye gömer.
-
-⬜ Kapatma yolu: eşleme yapılandırması uygulama/test açılışında **bir kez** ve deterministik biçimde derlensin
-(ısınma adımı), ya da testlerde koleksiyon paylaşımı kapatılsın. Önce hangisinin doğru olduğu ölçülmeli.
-
-✅ **2026-09-28 · `TB-213` ile aynı commit'te kapandı (`d5638537`).**
-
-### `TB-184` · Entegrasyon testi paylaşılan DB'de küresel sayı bekliyor — takımla koşunca kırmızı ⚪
-
-Gece turunun son doğrulamasında ölçüldü (2026-09-16). `ExpireStaleInvitationsJobTests.Run_ShouldExpire_OnlyActiveAndStale…`
-**takımla koşunca kırmızı** ("beklenen 2, bulunan 4"), **tek başına yeşil** (izole koşu: 1/1, 978 ms — ölçüldü).
-
-Kök neden: test süpürme işini `SystemTenantContext` ile koşturuyor (`CurrentSchoolId = null`, `IsSuperAdmin = true`),
-yani küresel tenant süzgeci düşüyor ve iş **paylaşılan veritabanındaki bütün** eskimiş aktif davetleri süpürüyor.
-Test ise kendi yazdığı 4 satıra bakıp **kesin küresel sayı 2** bekliyor. Kirleten satırlar `K-27` platform diliminden:
-`CreateSchoolCommandHandlerTests` bilerek terminal olmayan bir davet bırakıyor.
-
-Belirti ürün değil **test altyapısı**: aynı sınıf, sıraya bağlı kırmızılar üretir ve gerçek bir regresyonu gürültüye
-gömer (`TB-182`'nin 22 kırmızısında yaşandı).
-
-⬜ Kapatma yolu: testin iddiası küresel sayı yerine **kendi yazdığı kayıtların kimliğine** bağlansın (ya da süpürme
-tek okula kapsanıp öyle ölçülsün). Testi gevşetmek değil, ölçüyü kendi verisine bağlamak.
-
-✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `02205f44`):** test kendi dört davetinin son durumunu ölçüyor; toplam sayı için yalnız alt sınır (`>= 2`) kaldı. `TB-204` aynı madde.
 
 ### `TB-181` · Hesabın birden çok okulda kişisi varsa giriş hangi okulu seçeceğini garanti etmiyor ⚪
 
@@ -1816,32 +1277,6 @@ belgelendirir. Karar verilene kadar sorgunun determinist bir sıralaması olmal�
 🔴 **2026-09-28 · ekran ölçümü gece turundaki ara korumayı geri çevirdi:** Altınay'da bir öğretmenin e-postası test dışı ALTINAY-SBL'de de kayıtlı (dev DB'de tek çakışan e-posta; hesaba bağlı çift kişi 0). "En eski kişi" kuralı o öğretmenin girişini **SBL'ye** çevirdi — yönetici ekranı ve boş nöbet bölgesiyle açıldı. Master'da sırasız sorgu fiilen birincil anahtar sırasıyla dönüyor (`Include` + küme taraması) ve Altınay'a düşüyordu. Düzeltme (`oksis-api` `24469bac`): açık sıra **en küçük Id** — mevcut davranış sabitlendi, kimsenin girdiği okul değişmiyor; test oluşturulma zamanının sırayı değiştirmediğini kilitliyor. Ekranda yeniden ölçüldü: öğretmen Altınay'a giriyor. ⬜ Ürün kararı hâlâ açık — ve artık somut bir örneği var: aynı e-posta iki okulda.
 
 ✅ **Karar (2026-09-28, kullanıcı):** **tek okul kısıtı** — bir e-posta/hesap yalnız bir okulda kişi olabilir (kısıt + göç). Mevcut tek çakışma: ALTINAY-SBL'deki kaydın e-postası `@altinaysbl.test` alanına çekilir (kayıt silinmez). Uygulanacak.
-
-### `TB-180` · Rol seed bekçisi dört gündür kırmızı; günlük test döngüsü onu hiç koşmuyor 🟡
-
-`TB-174` düzeltmesi sırasında entegrasyon koşusunda ortaya çıktı (2026-09-16, dal `fix/ilk-sezon-acilisi`,
-HEAD `60e65caf`). `MasterRoleSeedTests.Should_GrantFullCatalogToAdminRoles` düşüyordu: `SCHOOL_ADMIN`'de
-"fazladan" `exams.place` var diyordu. Ölçüm, düşüşün gece turundaki değişikliklerle ilgisi olmadığını gösterdi —
-testin girdisi yalnız EF model seed'i (`GetSeedData`), ilgili seed dosyaları 31 Temmuz'dan beri değişmemiş.
-
-**Kök neden:** `RolePermissionSeedData.cs:59-77` `exams.place`'i **2026-09-12'de bilerek** `SCHOOL_ADMIN`'e verdi
-(Faz 2a Görev 7.9: yönetici kelebek oturumunu elle kurarken yerleştirme ızgarasını `GetPlacementSlots`'tan
-okuyamıyor, şubenin okulda olmadığı saate oturum kurabiliyordu). Ama aynı turda **iki yer güncellenmedi**:
-bekçi testinin `roleSpecificCodes` kümesi ("yalnız TEACHER alır") ve `AllPermissionIds()` üstündeki katalog
-yorumu ("hiçbir yönetici rolüne gitmez"). Yani seed değişti, onu koruyan bekçi ve yanındaki yorum eski niyeti
-anlatmaya devam etti.
-
-**Asıl mesele bekçinin görünmezliği:** `./scripts/test-changed.sh` "mimari bekçiler" adımında `Oksis.Tests`'i
-**süzgeçle** (7 test) koşuyor; projenin tam takımı (62 test) yalnız o proje değişen koda bağlı sayıldığında ya da
-`--integration` ile çalışıyor. Bu yüzden kırmızı bekçi dört gün, günlük döngüde hiç görünmeden durdu.
-
-✅ **Düzeltildi (2026-09-16, commit bekliyor):** `exams.place` testte `roleSpecificCodes`'tan çıkarılıp
-`schoolAdminOnlyCodes`'a taşındı (SuperAdmin katalogda olmadığı için almaz, SchoolAdmin alır) ve iki yere de
-2026-09-12 gerekçesi yazıldı; `RolePermissionSeedData`'nın bayat katalog yorumu düzeltildi.
-⬜ **Açık ayak:** günlük döngü `Oksis.Tests`'in tam takımını koşmuyor. Süzgeç kapsamı genişletilmeli ya da bu
-projenin tamamı her koşuda çalışmalı — bekçi, koşulmadığı sürece bekçi değildir.
-
-✅ **2026-09-28 · açık ayak kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `c814af5d`):** `Oksis.Tests`'te Docker isteyen tek sınıf (`SchoolSettingsTenantTests`) `Category=RequiresDocker`; günlük döngü artık `Category!=RequiresDocker` ile **110 testi** (eskiden 54 mimari bekçi) ~6 sn'de koşuyor, kalan 2 Docker testi `--integration`'da.
 
 ### `TB-158` · Push tepsiye düşüyor ama ekranı uyandırmıyor 🟡
 
@@ -1894,56 +1329,6 @@ yorumlandı.
 ⬜ **Kalan:** iOS'tan bugüne kadar **hiç cihaz kaydı gelmemiş** (17 kaydın 17'si Android).
 Bu ayrı bir arıza ve muhtemelen Apple hesabı eksikliğine dayanıyor
 ([[magaza-hesaplari-yok]]); ayrıca ölçülmeli.
-
-### `TB-141` · Çağıran çözümü depo genelinde okul süzmüyor — kalıbın kendisi 🟡
-
-`TB-140` iki ORTAK çözümleyiciyi (Attendance, Announcements) düzeltti. Ama kalıp ortak bir
-metotta yaşamıyor: **elle kopyalanmış** hâlleri sekiz modüle yayılmış.
-
-Ölçüldü (2026-09-13, `oksis-api` @ `1905abbc` sonrası):
-`src/Oksis.Application` içinde `p.LinkedAccountId == currentUser.Id` biçimli **17** çözüm
-var; **16'sı okul yüklemi taşımıyor** (tek yüklemli olan `TB-140`'ta düzeltilen
-`AttendanceCallerResolver`).
-
-| Modül | Yüklemsiz | Nerede |
-|---|---|---|
-| Users | 5 | `PersonAccessGuard`, `GetMyProfile`, `UpdateMyProfile`, `GetMyConsents`, `RevokeMyConsent` |
-| Duties | 3 | `GetMyDuties`, `GetMyDutyLoad`, `GetMySubstitutions` |
-| Clubs | 2 | `ClubScope`, `ClubFamilyScope` |
-| **Exams** | **2** | `PublishExamWindow`, `PublishExamSchedule` |
-| Grades | 1 | `GradeBookScope` |
-| Announcements | 1 | `AnnouncementLifecycleGuard` |
-| Homework | 1 | `HomeworkScope` |
-| Documents | 1 | `StudentDocumentEntityScopeResolver` |
-
-**Turun asıl dersi burada.** `TB-130` sınav modülünü kapattı sayılıyordu; oysa kapattığı şey
-`ExamCaller`'ın ÇAĞIRANLARIYDI. Yukarıdaki iki sınav handler'ı `ExamCaller`'ı hiç
-çağırmıyor, kalıbın kendi kopyasını taşıyordu — yani **ortak metodun çağıranlarını taramak,
-kalıbı taramak değildir**. Ölçüm bir sonraki turda sembolden değil **şekilden** yapılmalı.
-
-✅ **Sınav modülünün ikisi hemen kapatıldı** (2026-09-13, Faz 2b Görev 1.2 turunda
-bulunduğu yerde): iki handler `ExamCaller.ResolveAsync(db, currentUser, schoolId, ct)`
-kullanıyor ve pencere okumaları açık `SchoolId` yüklemi taşıyor.
-
-⬜ **Kalan 14 çağrı yedi modülde** açık. Kapanış merkezî olmalı
-([[yamalama-kabul-degil]]): her modülün kendi `*Scope`/`*Guard` sınıfı zaten var, çözüm
-oralara tek seferde girer. Bugün sızdırmıyor — `IsSuperAdmin` üründe hiçbir zaman `true`
-olmuyor (`TB-139`) — ama yüklem aynı zamanda sorgunun kapsamını tutar (`M17`).
-
-✅ **2026-09-16 · kapandı (gece turu, commit bekliyor).** Kalıbın tek sahibi oldu:
-`Application/Common/Security/CallerPerson.cs`. Üç emsal çözücü (`ExamCaller`, `AttendanceCallerResolver`,
-`AnnouncementCallerResolver`) de artık aynı sorguya delege ediyor — modül docblock'ları kendi bağlamını anlatmaya
-devam ediyor ama **sorgu tek**. 13 çağrı yeri bağlandı (Users 5, Duties 2, Clubs 2, Grades 1, Announcements 1 —
-`AnnouncementLifecycleGuard` imzasına `schoolId` eklendi, 8 çağıran güncellendi —, Homework 1, Documents 1).
-Exams'in iki yeri zaten kapalıydı, kodla doğrulandı. Depodaki ham kalıp **17 → 3**'e indi.
-**Bekçi kopyanın kendisini yasaklıyor**, "her kopyada yüklem var mı"yı değil: ikincisi kopyayı meşrulaştırır ve bir
-sonraki kopya yüklemsiz doğar — `TB-140`'ın yaşadığı tam olarak buydu (`CallerPersonSchoolPredicateTests`,
-üç gerekçeli muafiyet).
-⬜ **Açık kalan iki ayak:** (1) `GetMySubstitutions` o sırada başka bir turdaydı (`TB-174`), hâlâ yüklemsiz —
-bekçide **geçici** muafiyet ve randevu notu var. (2) `PersonDirectory.FindByAccountIdAsync` bilinçli olarak
-tenant süzgeci dışı (giriş akışı, `BR-identity-001`); oradan çıkan belirsizlik ayrı madde: `TB-181`.
-
-✅ **2026-09-28 · açık ayak (1) kapandı (gece turu, `oksis-api` `fix/gece-defter-turu` `6d718b8d`):** `GetMySubstitutions` `CallerPerson.ResolveIdAsync`'e bağlandı, bekçideki geçici muafiyet silindi; ham kalıp 3 → 2 (`CallerPerson` + gerekçeli `PersonDirectory`). Entegrasyon testi: hesabın başka okuldaki kişisi bu okulda çağıran sayılmıyor. Kalan (2) `TB-181`'de. Madde merge ile arşive gider.
 
 ### `TB-139` · Küresel tenant süzgeci süper yöneticiyi BÜTÜN okullara açıyor 🔴
 
@@ -2111,6 +1496,9 @@ bloke etmek olur.
 ✅ **Karar (2026-09-28, kullanıcı):** (b) `Async` son eki kuralı **suggestion'a indirilir**; yeniden adlandırma yapılmaz. Uygulanacak.
 
 ---
+
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — (a) PascalCase istisnası dev'de (api 425160d4); (b) `async_methods_should_end_with_async` hâlâ warning.
+
 ### `TB-117` · Depoda biriken biçim borcu her görevde commit'e sızıyor ⚪
 
 `dotnet format` (pre-commit zorunlu) sınav takvimi görevlerinde **dokunulmamış** dosyalarda da
@@ -2180,86 +1568,7 @@ tarama sırasında sayı 150/92 idi, gece turunda 218 işleyicinin 132'si ölç�
 
 ⏸️ **Karar (2026-09-28, kullanıcı): ertelendi.**
 
-### `TB-199` · İkon adı tipi hiçbir şeyi korumuyor; olmayan ada sessizce boş ikon çiziliyor ⚪
-
-Ayarlar ekran revizyonunda ölçüldü (2026-09-16, `oksis-ui`). `OksisIcon` bilinmeyen bir ad aldığında
-**sessizce `null` döner** (`packages/ui/src/components/icon.tsx`: `const shapes = SHAPES[name]; if (!shapes)
-return null`). Tip katmanı bunu yakalayamıyor: `OksisIconName = keyof typeof SHAPES` ve `SHAPES`
-`Record<string, Shape[]>` olarak yazılmış — yani `keyof` **`string`'e** çözülüyor; üstüne
-`OksisIconProps.name` de zaten `string`. Sonuç: ikon adı üç katmanda da denetimsiz.
-
-Somut belirti: Akademik Yapı › Kataloglar sekme şeridinde "Ders Kataloğu" sekmesi `icon: "doc"` diyordu;
-`SHAPES`'te `doc` diye bir ad yok, sekme ikonsuz çiziliyordu ve ne tip denetimi ne lint bunu gördü.
-
-✅ **Bu turda düzeltilen ayak:** sekme sabiti tipli bir arayüze (`ACardTab<T>`) bağlandı ve adlar var
-olanlarla değiştirildi (`notlar`, `karne`). Tip hâlâ `string` olduğu için düzeltme **yalnız o dosya için**
-geçerli — kalıbın kendisi açık.
-
-⬜ **Kapatma yolu:** `SHAPES` `Record<string, …>` açıklaması yerine `satisfies` ile yazılsın (ya da açıklama
-kaldırılsın) — `keyof typeof SHAPES` o zaman gerçek birleşim tipine çözülür; `OksisIconProps.name` de
-`OksisIconName` olsun. Depoda bilinmeyen adla çizilen başka ikon olup olmadığı **şu an bilinmiyor**; ancak bu
-değişiklikten sonra ölçülebilir.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `b80dec5`, master'da — 2026-10-04 doğrulandı):** `SHAPES` `satisfies` ile, `name` tipi `OksisIconName`; core'dan `string` gelen 3 yer `isOksisIconName` koruyucusuyla. Tipin yakaladığı ve **boş çizilen** altı ad düzeltildi: `close`→`x`, `wallet`→`para`, `hand`→`userCheck`, `msg`→`mesaj`, `inbox`→`box` (3 yer), `undo`→`move`.
-
----
-
-### `TB-203` · Entegrasyon paketinin yarısı master'da kırmızı — üç tenant'laştırma commit'i test fixture'larını güncellemedi 🟠
-
-MEB müfredatı Dilim 1 uygulamasında ölçüldü (2026-09-18). `tests/Oksis.Infrastructure.IntegrationTests`
-tam koşusu `b7f8baaf` (master) üzerinde **676 / 1479** başarısız. Birleştirmenin ilk ebeveyni
-`60e65caf`'de aynı 79 testlik alt küme 79/79 yeşil, `b7f8baaf`'de 64'ü kırmızı. Kırmızıların kaynağı Altınay
-birleştirmesinin ikinci ebeveynindeki üç commit:
-
-| Sınıf | Adet | Commit | Neden |
-|---|---|---|---|
-| R1 | 338 | `7d9302b7` (TB-191) | `Subject` artık `TenantEntity`; fixture'lar okulu `School.Create` ile açıp ders kataloğunu içe aktarmıyor. 269 test `AnnouncementAudienceFixture.cs:310` `Subjects.FirstAsync`'te boş sonuç alıyor, 67'si "Cannot insert Subject without tenant context", 2'si dev seeder testi. |
-| R2 | 303 | `6cefeed8` (TB-195) | `ExamType` artık `TenantEntity`; sınav fixture'larında `ExamTypes…FirstAsync` boş (289 "Sequence contains no elements", 14 "Index out of range", `MergeExamSessions:694`). |
-| R3 | 34 | `15edc440` (TB-186) | `IsSchoolDay` sezonun `Active` olmasını istiyor (`AcademicCalendarRules.cs:61`); yoklama fixture'ları sezonu etkinleştirmiyor. |
-
-**Üretimde karşılığı yok:** gerçek okul açılışı iki kataloğu da içe aktarıyor
-(`CreateSchoolCommandHandler.cs:136/141`, dev seed `ClassRoomDevSeeder.cs:101/112`), TB-186 kuralı da
-bilinçli. Sorun yalnız test altyapısında. Ama bedeli ağır: push kapısı yalnız birim testleri koşturduğu
-için kırmızı fark edilmedi, ve paket bu hâldeyken **yeni bir entegrasyon kırmızısı gürültünün içinde
-kaybolur**. Müfredat dalı bunu yeni-eski başarısız test adı kümelerini `comm` ile karşılaştırarak aşıyor;
-bu bir geçici çözüm, kapanış değil.
-
-- 🔁 **İkinci kez ölçüldü ve `comm` yöntemi ikinci kez işe yaradı** *(2026-09-20, `TB-120` turu)*:
-  `ClassRoom|OpenSeasonFromDraft|Exams` süzgeci taban (`f3488976`) üzerinde **304/397** kırmızı,
-  TB-120 değişiklikleriyle **301/393**. Kırmızı test ADI kümeleri karşılaştırıldığında
-  (`comm -13`) **yeni kırmızı sıfır**; üç fark, TB-120 ile artık üretilemeyen "dersliksiz şube"
-  hâlini ölçtüğü için silinen testler (üçü de tabanda da kırmızıydı). Hata imzaları R2 sınıfıyla
-  birebir örtüştü (289 "Sequence contains no elements" + 14 "Index out of range"). Bulgunun
-  "yeni bir entegrasyon kırmızısı gürültünün içinde kaybolur" uyarısı doğrulandı: değişikliğin
-  masumiyeti ancak taban çizgisi alınarak gösterilebildi ve bu tek başına ~12 dakika sürdü.
-
-⬜ Merkezî düzeltme ([[yamalama-kabul-degil]]): fixture'ların okulu açtığı tek bir yardımcı, tenant
-bağlamında `SubjectCatalogImporter` + `ExamTypeCatalogImporter` çağırsın ve sezonu etkinleştirebilsin;
-ders yazan testler `CreateDbContext(schoolId)` kullansın; `MasterSeedIds.Subjects` ile karşılaştıran testler
-`MasterSubjectId` üzerinden çevrilsin (içe aktarılan ders yeni kimlik alıyor). Kapanış kanıtı: tam koşu
-yeşil. Teşhis raporu (fixture satırları ve komutlarla):
-[[2026-09-18 Entegrasyon Paketi Kırmızı Teşhisi]].
-
-🔎 **Yeniden ölçüm — 2026-09-24 (`E-29` dalı, taban `f07eb5ea`, Docker açık).** Takım **1545 testin 724'ü
-kırmızı**. Dal ile taban karşılaştırıldı: kırmızı kümesi birebir aynı, dal 4 testi fazladan yeşile çeviriyor
-(yeni testler), **yeni kırmızı 0**. Mesaj dağılımı: 555 "Sequence contains no elements" (en çok sınav oturumu,
-aday, yerleşim ve duyuru sınıfları; sınav türü tohumu `TB-195` sonrası boş), 54 "Cannot insert Subject without
-tenant context", 47 Garage ve 4 ClamAV konteyneri ayakta değil, 14 "Index out of range", 12 "Middle kademesi
-için eğitim programı tercihi tanımlı değil". Karşılaştırmalı ölçüm olmadan bu takımda "yeşil mi?" sorusunun
-cevabı hâlâ yok.
-
-✅ **2026-09-28 · kapandı (kodda; master'da — 2026-10-04 doğrulandı):** R1 (ders), R2 (sınav türü) ve R3 (sezon aktivasyonu) imzalarının tamamı sıfırlandı — ayrıntı ve sayılar `TB-231` bloğunda (675 → 1). Tarafta gizli kalmış iki kök de düzeltildi: 13 sezon testi eğitim programı tercihi eksikliğinden düşüyordu; `OpenSeasonFromDraftTests` 2026-09-22 yürürlük kuralından önceki "2026-2027 → Manual" beklentisini taşıyordu (Master + 2025-2026 uyumluluk sürümüne çekildi).
-
-### `TB-204` · `ExpireStaleInvitationsJobTests` koşu sırasına bağlı — iş paylaşılan DB'deki bütün okulların davetini sayıyor ⚪
-
-`TB-203` teşhisinde ayrı görüldü (2026-09-18). `ExpireStaleInvitationsJobTests.cs:85` 2 bekliyor, 5
-görüyor: iş paylaşılan fixture veritabanındaki **tüm** okulların süresi geçmiş davetlerini tarıyor, sonuç
-önceki testlerin bıraktığı davetlere bağlı. Birleştirmeyle ilgisi yok; üretim davranışı doğru (iş zaten
-tüm okulları taramalı).
-
-⬜ Test `expiredCount` toplamını değil, yalnız kendi oluşturduğu davetlerin durumunu doğrulasın.
-
-✅ **2026-09-28 · `TB-184` ile aynı commit'te kapandı (`02205f44`).**
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — **açık** — dar ayak dev'de (api e53e1d68); geniş ayak (ortak gerçek-SQL koşumu) yazılmadı, 265 test dosyası MockQueryable kullanıyor; karar 2026-09-28'de ertelendi.
 
 ### `TB-206` · PdfPig sürümü kanonik görünmüyor; kararlı sürüme sabitlenmeli ⚪
 
@@ -2275,22 +1584,6 @@ Infrastructure'daki tek adaptör değişir, çizelge ayrıştırıcısı saf ve 
 
 ⬜ Gerçek nuget.org beslemesinde PdfPig'in kararlı sürümü doğrulansın ve
 `src/Oksis.Infrastructure/Oksis.Infrastructure.csproj` ona sabitlensin.
-
-### `TB-213` · `GetSchoolSettingsQueryHandlerTests` tam koşuda kararsız (Mapster genel yapılandırması) ⚪
-
-2026-09-20 tam koşusunda düştü, **tek başına 8/8 geçti**, ikinci tam koşuda yine yeşil geldi.
-Hata: `TypeAdapter.Adapt was already called, please clone or create new TypeAdapterConfig`
-(`SchoolSettingsMappings.Register`). Yani testler paylaşılan **global Mapster yapılandırmasını**
-kullanıyor ve başka bir test önce `Adapt` çağırdığında kayıt yapılamıyor — koşu sırasına /
-paralelliğe bağlı.
-
-Müfredat çalışmasıyla ilgisi yok (Schools modülü; dosyaya en son dokunan commit'ler bu
-oturumdan önce). Ama kararsız test, gerçek bir kırmızıyı gürültüye boğar.
-
-⬜ Test kendi `TypeAdapterConfig`'ini kursun (global olanı paylaşmasın) ya da kayıt idempotent
-olsun.
-
-✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `d5638537`):** ölçüm — handler'lar `.Adapt<T>()` ile küresel yapılandırmayı okuyor, testin kendi `TypeAdapterConfig`'i handler'a ulaşmaz. Doğru yol tek seferlik kayıt: beş test `ApplicationMappings.EnsureConfigured()` ile `AddApplication()`'daki kilitli, bir kez çalışan kurulumu (`TB-51`) çağırıyor; paylaşılan ayara kilitsiz yazma kalmadı. `TB-187` aynı madde.
 
 ### `B-54` · Öğretmen panosu yöneticinin panosunu çiziyor; beş uç 403 dönüyor 🟠
 
@@ -2357,89 +1650,6 @@ yeni uç yok). Canlı ölçüm (Playwright, Altınay, worktree web 3005 + API 51
 ⬜ Açık: öğrenci/veli web yüzeyi kararı ve öğrencinin `academic-sessions/current` 403'ü (canlı ölçülmedi); K-09 örnek kartları.
 
 💬 **2026-09-28 · ayrıca konuşulacak (kullanıcı).** Ölçüm: web'de öğrenci/veli portalı yok; `login-screen.tsx:447` `RedirectView` her rolü `/`'a gönderiyor ama ekranda "… portalına yönlendiriliyorsunuz" yazıyor. 403'ler gitti (kartlar izinle kapılı), ama K-09 örnek kartları (`ActivityFeedCard`, `PendingTasksCard`, `UpcomingCalendarCard`) rol kapısız — öğrenci/veli "Kilitli hesap" gibi yönetici örnek içeriği görüyor.
-
-### `D-23` · Kullanıcılar ekranı idari personelin bağlı profilini "—" gösteriyor ⚪
-
-**Ölçüm (Altınay, 2026-09-20):** 14 hesaplık listede müdür ve müdür yardımcısının **Bağlı
-Profil** sütunu "—", yani hiç profili yokmuş gibi. Oysa ikisinin de `identity.profiles`
-satırı var (`profile_type = Staff`) ve sunucu bunu **dosdoğru söylüyor**:
-
-```
-GET /api/v1/users → METİN KABACA   linkedProfileType: "Staff", linkedPersonId: VAR
-                    HİLAL KAHVECİOĞLU linkedProfileType: "Staff", linkedPersonId: VAR
-```
-
-**Kök neden:** `apps/web/features/users/users-labels.ts:41` içindeki
-`PROFILE_TYPE_LABEL: Record<UserProfileType, string>` yalnız `teacher` · `parent` · `student`
-taşıyor; istemci sözleşmesindeki `UserProfileType` de `staff`'ı hiç tanımıyor. Sunucunun
-öncelik listesi ise (`AccountUserProjection._primaryProfilePriority`) `Staff`'ı **en başa**
-koyuyor — yani idari personel için gelen tek değer, ekranın çeviremediği değer.
-
-⬜ **Kapatma yolu:** `staff` istemci tipine ve etiket tablosuna eklenmeli ("İdari Personel").
-Bugünkü hâliyle sütun, "profil bağlanmamış" ile "profili ekranın tanımadığı tipte" durumunu
-ayırt edilemez kılıyor — [[serilesmis-sekil-sozlesmedir]] ile aynı sınıftan bir sessiz kayıp.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `78fe886`, master'da — 2026-10-04 doğrulandı):** `staff` istemci tipine ve etiketlere "İdari Personel" olarak girdi; modül ekranı olmadığı için profile git düğmesi çizilmiyor.
-
-📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Kullanıcılar'da müdürün Bağlı Profil sütunu "İdari Personel".
-
-### `TB-221` · Ders kataloğu okul kapsamına taşınınca dev seed testi kaldı ⚪
-
-Aynı turda ölçüldü. `TimetableDevSeederTests` → "K-10: dev seed yetkinlik üretir ve dersleri
-müfredattan türetir" kırmızı: `competencies` boş.
-
-Ölçülen sebep: `SubjectGradeLevel` bir **TenantEntity**'dir
-(`school.subject_grade_levels`, `TB-191` ile okul kapsamına taşındı), test okulu ise ham
-kayıtla doğuyor ve ders kataloğunu hiç içe aktarmıyor. `TimetableDevSeeder`
-`SchoolGradeLevels × SubjectGradeLevels` kesişimini boş buluyor ve erken dönüyor.
-
-Testi en son elleyen commit `de7ced5e`. Müfredat Dilim 7-10 çalışması bu dosyalara
-dokunmuyor: aynı turda program/ders/branş kataloğu değişti ama okulun ders kataloğu
-tohumlama yoluna hiç girilmedi ve müfredat entegrasyon testlerinin 49/50'si yeşil.
-
-⬜ Test kendi öncülünü kurmalı: okulu açtıktan sonra `SubjectCatalogImporter` ile ders
-kataloğunu içe aktarmalı. Kusur üründe değil, testin öncülünde.
-
-✅ **2026-09-28 · ölçüldü, kapalı:** davranış `919d22b3` ile zaten düzelmiş, test tabanda yeşildi; `e2aad5a0` ile ortak okul açılış yardımcısına bağlandı.
-
-### `TB-227` · İçe aktarma ekranı hangi programın müfredatı olduğunu söylemiyor 🟠
-
-2026-09-21'de kullanıcı manuel ekran testi yaparken sordu: "hangisi hazırlık sınıfı
-içeriyor, nasıl anlayacağım?" Cevap: **anlaşılmıyor.**
-
-`İçe aktarmalar` listesinin sütunları `Akademik yıl · Durum · Satır · Oluşturulma · İşlem`.
-**Program sütunu yok.** 2025/05 kararının altı çalışması ekranda şöyle görünüyor:
-
-| Akademik yıl | Durum | Satır |
-|---|---|---|
-| 2025-2026 | İnceleme bekliyor | 162 |
-| 2025-2026 | İnceleme bekliyor | 142 |
-| 2025-2026 | İnceleme bekliyor | **168** |
-| 2025-2026 | İnceleme bekliyor | 163 |
-| 2025-2026 | İnceleme bekliyor | **168** |
-| 2025-2026 | İnceleme bekliyor | 161 |
-
-Altı satırı ayıran tek şey satır sayısı — ve **ikisi aynı** (Hazırlık Sınıfı Bulunan Anadolu
-Lisesi ile Hazırlık Sınıfı Bulunan Fen Lisesi, ikisi de 168). Yani geçici çözüm bile
-çalışmıyor.
-
-Detay ekranı da söylemiyor: `ImportRunDetailDto` ve `ImportRunListItemDto`
-`EducationProgramId` taşıyor ama **yalnız Guid**; program adı hiçbir DTO'da yok ve ekran
-Guid'i de basmıyor.
-
-Zarar: onay iki kişi kuralına bağlı gerçek bir kapıdır ve merkez kullanıcısı **hangi
-programın müfredatını onayladığını bilmeden** onaylıyor. Yanlış çalışmayı onaylamak sessiz
-bir hata üretir — yayımlanan sürüm doğru programa gider (bağ sunucuda kurulu), ama insan
-"Fen Lisesi'ni onaylıyorum" sanıp Anadolu'yu onaylamış olabilir ve ne onayladığını
-denetleyemez.
-
-⬜ Program adı iki DTO'ya da eklenmeli ve listede sütun olmalı. Çizelge sayfa numarası
-(`SourcePageNumber`) da yardımcı olur: kullanıcı MEB Kaynakları ekranında `s3` kartını
-görüp aynı numarayı burada arayabilir.
-
-✅ **2026-09-28 · sunucu ayağı kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `7d325952`):** `ImportRunListItemDto` ve `ImportRunDetailDto`'ya `EducationProgramName` ve `EducationProgramSourcePageNumber` eklendi (ekleme türü sözleşme); entegrasyon testi yeşil. ⬜ İstemcide program sütunu.
-
-✅ **2026-09-28 · istemci ayağı kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `e138272`):** merkez İçe aktarmalar listesinde ilk sütun Program ("ad · s3"), eşleme ekranının üst çubuğunda program adı ve sayfa. Madde merge ile kapanır.
 
 ### `TB-228` · Dipnot işareti saklanıyor, açıklaması atılıyor 🟡
 
@@ -2551,6 +1761,8 @@ desteklenmeyeceği karara bağlanmalı. Ölçüm hazır: 28 çizelge belgesinin 
 
 ✅ **Karar (2026-09-28, kullanıcı):** (c) **yalnız okulların fiilen bağlı olduğu eski kararlar** için ayrıştırıcı genişletilir; diğerleri karantinada kalır. Uygulanacak.
 
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — (a) ve (b) dev'de (api 8767d1bd, 80152104); (c) eski çizelge düzenleri için ayrıştırıcı genişletme kararı uygulanmamış.
+
 ### `TB-224` · Bozuk metin katmanlı belge kataloğa çöp program adı yazıyor 🟠
 
 2026-09-21'de taze veritabanında keşif süpürmesi otuz belgenin tamamını indirince ölçüldü.
@@ -2614,6 +1826,8 @@ tutarsız. Karar gerekiyor: bu yollar kurulumdaki sezonu mu hedeflemeli, sezonsu
 
 ✅ **Karar (2026-09-28, kullanıcı):** ölçüm: öğrenci kaydı kurulumdaki sezonda zaten açık (`6647bbd3`). Kalan iki yol: **kullanıcı oluşturma kurulumdaki sezona yazar** (davet yolu gibi), **logo ve dosya yükleme sezondan bağımsız** çalışır. Uygulanacak.
 
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — **açık** — öğrenci kaydı ayağı dev'de (api 6647bbd3); kullanıcı oluşturma (PersonUserCreationService NoActiveSeason) ve dosya yükleme (NoActiveAcademicSession) hâlâ aktif sezon istiyor.
+
 ### `TB-248` · Aktif sezonda dönem yokken ekranlar varsayılan dönemi üç ayrı kuralla seçiyor 🟡
 
 2026-09-24 sezon–menü ön incelemesinde ölçüldü
@@ -2637,29 +1851,6 @@ karar bekliyor.
 
 ✅ **Karar (2026-09-28, kullanıcı):** **okuma ekranları son kapanan dönemi, planlama ekranları başlamamış ilk dönemi** varsayılan alır; kural core'da tek fonksiyon, backend'in id'siz okuması da aynı kuralı uygular. Uygulanacak.
 
-### `X-24` · Hata iki kez gösteriliyor: genel hata yüzeyi + ekranın kendi hata kolu (ekranlar genelinde) 🟡
-
-2026-10-02, Altınay saha testi. `D-43` kök nedeni (ön yüz ajanı ölçtü): uygulamanın genel hata yüzeyi (`apps/web` `query-client.ts`
-MutationCache) `useMutation` tanımında `onError` yoksa kırmızı bildirimi basıyor; ekranlar ise hatayı `mutate(..., { onError })` ile
-ayrıca gösterince aynı mesaj iki kez çıkıyor. Zil sekmesinde düzeltildi (`6c111fa`). **Aynı çift gösterim sahada ikinci kez ölçüldü:**
-Ders Programı › Yayınla penceresinde 409 `DuringLessonHours` hem pencere üstünde "Yayınlanamadı. …" şeridinde hem alttaki
-bildirimde çıktı (09:42). `apps/web/features` altında `onError` + toast deseni ~54 yerde var (ayarlar sekmeleri: tatil, genel, modül,
-bildirim, ders/alan/sınav türü katalogları, kademe kartı…) — hepsi tek tek ölçülmedi.
-⬜ Öneri (merkezî, [[yamalama-kabul-degil]]): ekran kendi hatasını gösteriyorsa mutasyon `meta.errorHandled` ile genel yüzeyi
-bastırsın (`useGrantDailyLeave` kalıbı) ya da genel yüzey `mutate` seviyesindeki `onError`'u da görsün; tek kural, lint ya da test ile
-korunur.
-
-✅ **2026-10-02 · kodda düzeltildi** (`oksis-ui` master `8ef5c3d`): `@workspace/api` `useMutation` sarmalayıcısı — çağrı anındaki `onError` çalıştıysa genel yüzey susuyor; `SCREEN_SHOWS_ERROR` seçeneği; doğrudan TanStack `useMutation` importu lint ile yasak; ~20 ekran tek gösterime indi. **Kalan ölçüm:** ekranda (yayın penceresi ve bir ayar sekmesi).
-
-### `D-44` · Yayın penceresi ders saatinde "Yayına hazır" diyor, ret ancak düğmeye basınca geliyor ⚪
-
-2026-10-02 09:42, Altınay saha testi (`Y-07`). Ders saatinde 10-A için *Yayınla* penceresi yeşil "Yayına hazır. Çakışma yok." gösteriyor,
-`publish-preview` `canPublish: true` dönüyor; kullanıcı ancak "Onayla ve Yayınla"dan sonra 409 alıyor. Onay adımında "ertesi okul
-gününden geçerli" bilgisi var ama ders saati yasağı yok. ⬜ Öneri: önizleme `Y-07` penceresini bilsin (`canPublish=false` + gerekçe
-"Ders saatlerinde yayınlanamaz; 15:25'ten sonra"), pencere bunu yeşil kutu yerine gösterip Yayınla'yı kilitlesin.
-
-✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `ac682f9b`; `oksis-ui` master `536dac5`): önizleme ders saatinde `canPublish=false` + `publishBlockedReason`/`publishOpensAt` (409 ile aynı üretici); pencere kilitli, "15:25'ten sonra". **Kalan ölçüm:** ders saatinde ekranda (pazartesi).
-
 ### `D-45` · Veli ekranı ders başladıktan sonra "Henüz bilgi yok — İlk ders 08:55'da başlayacak" diyor ⚪
 
 2026-10-02 10:23, mobil veli ekranı (11-B öğrencisinin velisi). Öğrencinin 1. dersinin yoklaması alınmamışken kart "Bugün ilk ders: Henüz bilgi
@@ -2668,36 +1859,7 @@ dersin yoklaması henüz girilmedi"; ek için core'daki `tr-ablative` yardımcı
 
 ✅ **2026-10-02 · kodda düzeltildi** (`oksis-ui` master `a77a414`): kart "İlk dersin yoklaması henüz girilmedi" / "08:55'te başlayacak". ➕ Açık kalan: veli çocuk listesindeki kısa etiket ders başladıktan sonra da "Henüz ders başlamadı".
 
-### `D-46` · Devam Karnesi: ilk öğrenci aramasının öneri listesi kartın içinde kırpılıyor — 5 sonuçtan yalnız 1'i görünüyor 🟡
-
-2026-10-02 20:5x, web, Altınay müdürü, `/attendance?tab=karne` (Chrome eklentisiyle ölçüldü). Öğrenci seçilmemişken arama kutusuna
-"ber" yazılınca 5 öneri dönüyor (Beril Biçer, Berfin Duman, Hatice Berra Karadağ, Hazal Berfin Kılıççeken, Berk Özkan) ama ekranda
-yalnız ilki görünüyor; ikincisi yarım, kalan üçü hiç görünmüyor ve tıklanamıyor. **Kök neden:** öneri kutusu `position:absolute`
-(`karne-tab.tsx` ~220, `top: 110%`, 314 px), ama atası `.attm-card` `overflow: hidden` taşıyor ve kart 546. pikselde bitiyor.
-Öğrenci seçildikten sonraki "Öğrenci değiştir…" araması (~437) aynı 5 sonucu eksiksiz gösteriyor, yani kusur yalnız boş durumdaki
-kutuda. Aynı kutuda: **Escape ve dışarı tıklama listeyi kapatmıyor**, ok tuşlarıyla gezinme yok (ARIA `listbox/option` rolü de yok);
-sonuçlar 5'te kesiliyor ama "daha fazla sonuç var, aramayı daraltın" ipucu yok. ⬜ Öneri (merkezî, [[yamalama-kabul-degil]]):
-yerel typeahead yerine portal'la çizilen ortak combobox/popover (kırpan atadan bağımsız; Escape, dışarı tıklama, klavye ve ARIA hazır);
-iki karne araması da onu kullansın. `.attm-card`'dan `overflow:hidden`'ı kaldırmak yalnız bu ekranı kurtarır, kartın köşe kırpmasını
-bozabilir.
-
-✅ **2026-10-02 · kodda düzeltildi** (`oksis-ui` master `2de91b5`): iki karne araması tek `KarneStudentSearch`
-(`features/attendance/karne-student-search.tsx`) — liste mevcut ortak `AnchoredPopover` ile çiziliyor; ↓/↑ + Enter, Esc/dışarı tıklama,
-ARIA combobox/listbox/option, "N öğrenci daha — aramayı daraltın" ipucu. **Merkezî ikinci ayak:** `AnchoredPopover` body'ye çizdiği için
-rol teması (`--p/--s`, `.shell[data-role]`) kayboluyor, avatarlar renksiz çıkıyordu — portal hedefi artık çapanın en yakın `.shell`'i
-(yoksa body); tüm satır menüleri/açılır listeler etkilenir. Tarayıcıda ölçüldü: "ber" → 5/5 görünür ve tıklanır, avatar `rgb(238,241,250)`,
-↓↓ → 3. satır seçili ve `aria-activedescendant` eşleşiyor, Esc ve dışarı tıklama kapatıyor, Enter seçiyor, "a" → "82 öğrenci daha";
-"Öğrenci değiştir…" sağa hizalı açılıyor; regresyon: Görevlendirmeler satır menüsü `.shell` içinde `fixed` doğru konumda. `tsc` + eslint temiz.
-
-### `TB-265` · Aynı içerikle kaydedilen zil de gelecek günlerin bekleyen oturumlarını silip yeniden ürettiriyor ⚪
-
-2026-10-02 15:37, Altınay saha testi (`Y-07` zil kabulü). Son dersten sonra müdür toplu zil ucuna **mevcut içeriğin aynısını** kaydetti
-(204, zil satırları birebir aynı): 14–20 Ekim'in 436 bekleyen oturumu yine de yumuşak silindi (ilk okumada yeniden üretilecek).
-İçerik değişmediği hâlde kimlikler değişiyor; açık mobil uygulamanın eski oturum kimliğini tutması (`B-91`) bu yoldan da tetiklenir.
-⬜ Öneri: zil komutları değişiklik yoksa temizlik/hizalama zincirini çalıştırmasın (ön yüz artık yalnız değişen parçayı gönderiyor —
-`D-43`; sunucu da no-op'u tanısın).
-
-✅ **2026-10-02 · kodda düzeltildi** (`oksis-api` master `01f94a97` `7297d5a7`): beş zil komutu içerik aynıysa hiçbir şey yazmıyor, temizlik/hizalama çalışmıyor (`BellContentComparison`); Y-07 kilidi eşitlikten önce. **Kalan ölçüm:** sahada aynı içerikli zil kaydı (son dersten sonra).
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — ilk ders notu dev'de (ui a77a414); veli çocuk listesindeki kısa etiket ders başladıktan sonra da "Henüz ders başlamadı" diyor (today-glance.ts:24).
 
 ### `B-98` · Zil değişince kulüp saati etkinliği ikizleniyor; eski saatteki etkinliğe girilen yoklama devamsızlığa hiç yazılmıyor 🟠
 
@@ -2721,42 +1883,6 @@ kulüp saati etkinliklerine dokunmuyor. ⬜ Öneri: zil/gün ataması değişinc
 
 ✅ **2026-10-01 · kodda düzeltildi** (`oksis-api` `fix/yoklama-saha-2026-10-01` ← `d77d3d4b`, göç `20261001132811_…club_hour_twin_cleanup` dev DB'de, **5 ikiz** yumuşak silindi): başlamamış kulüp saati yeni zile taşınır (`ClubHourActivitySync`, `RescheduleClubHour`), beş zil komutu hizalamayı tetikler, eşleşmeyen yoklama 409 `Attendance.ClubHour.NoMatchingPeriod`. Sahada ölçüldü: her kulübün tek kulüp saati var; bayat etkinliğe işaret 409. **Karar bekliyor:** Kütüphanecilik'in işaretli bayat 15:10 etkinliği (`90E2D7C4…`, 5 "katıldı") korunuyor.
 
-### `D-42` · Danışmanın ekranları kulüp saatini göstermiyor: günlük listede "Boş", kulüp kartında "0 etkinlik" 🟡
-
-2026-10-01, Altınay saha testi. Çevre ve Kimya danışmanı (aynı zamanda 10-B Kimya öğretmeni) mobilde *Yoklama › Bugünkü
-Derslerim*'de 8. saati (15:00–15:30) **"Boş"** görüyor; o saatte kulüp yoklaması alması gerektiğini söyleyen hiçbir şey yok,
-*Daha fazla › Kulüplerim › kulüp › Etkinlikler*'e kendisi gitmeli. Aynı kulübün kartı hem webde hem mobilde **"0 etkinlik"**
-diyor (web özet kartı "Toplam etkinlik 0"); kulübün içindeki sekme "Etkinlikler 2" gösteriyor — sayaç kulüp saati türünü
-saymıyor. `TB-259` kararıyla hatırlatma da gitmediği için danışmanı kulüp saatine götüren tek yol hafızası. ⬜ Öneri: günlük listede
-kulüp saati satırı ("Kulüp saati · <kulüp> · Yoklama al"), kart sayacı tüm türleri saysın.
-
-✅ **Karar (2026-10-01, kullanıcı):** öneri kabul — web ve mobil günlük ders listesinde kulüp saati satırı, doğrudan kulüp
-yoklamasına götürür; kart sayacı tüm etkinlik türlerini sayar.
-
-✅ **2026-10-01 · kodda düzeltildi** (`oksis-ui` `fix/yoklama-ekran-kurallari` ← `a76c07b`; sayaç `oksis-api` `fix/yoklama-saha-2026-10-01` ← `6f3c530d`). Sahada ölçüldü: web'de danışmanın 8. saati "Kulüp saati · Müzik Kulübü · 6 üye · Yoklama Al"; `/clubs/mine` `activityCount` 1. **Kalan ölçüm:** mobil.
-
-### `B-111` · Yoklama hatırlatması bildirimine dokununca *Bugünkü Derslerim* dünü açıyor; uygulama kapatılıp açılınca düzeliyor 🟠
-
-2026-10-05, kullanıcı testi (Android, öğretmen hesabı). Bildirim merkezindeki **yoklama hatırlatması** bildirimine
-dokunuldu; açılan *Bugünkü Derslerim* ekranı bugünü değil **dünü** gösterdi: başlık "Bugün · 4 Ekim Pazar", üst çubuk
-"Pazar, 4 Ekim 2026", gövde "Bugün dersiniz yok". Uygulama **tamamen kapatılıp açılınca** ekran doğru güne (5 Ekim)
-geldi.
-
-Neden önemli: öğretmen hatırlatmaya güvenip ekrana gelir, dünün boş listesini "bugün dersim yok" diye okur ve yoklamayı
-almaz — hatırlatmanın amacı tersine döner.
-
-Not (doğrulanmadı): `today-lessons.tsx` tarihi (`todayISODate()`) ve başlığı her render'da yeniden hesaplıyor; üst
-çubuktaki tarih de bayat olduğuna göre ağaç gün döndükten sonra yeniden çizilmemiş görünüyor. Kapatıp açınca düzelme
-deseni `B-91` ile aynı aileden.
-
-✅ **2026-10-05 · kodda** (master'da — oksis-ui `487dc25`; gün dönümü cihazda ölçülmedi): kök neden tek ekran değil bir
-sınıf — mobilde "bugün" render anında `new Date()` ya da `useMemo(..., [])` ile bir kez hesaplanıyordu; dokunuş sekmeyi yeniden mount
-etmediği için dünün tarihi ve dünün sorgu anahtarı kalıyordu. Merkezî çözüm: `lib/current-day.ts` (`useToday`/`useTodayDate`) günü öne
-gelişte (`AppState` active) ve yerel gece yarısında yeniden hesaplar; *Bugünkü Derslerim*, etkinlik sayımı, yönetici canlı yoklama, yoklama
-detayı ve üst çubuk tarihi ona bağlandı. Ayrıca `lib/app-focus.ts` React Query `focusManager`'ı `AppState`'e bağladı — RN'de bağlı değildi,
-öne gelişte hiçbir sorgu tazelenmiyordu (`B-91`'in "kapatıp açınca düzelir" belirtisine de değebilir, ölçülmedi). Core: `msUntilNextLocalDay`
-+ 3 test. Kapsam dışı bırakılanlar: ay anahtarı (`currentMonthKey`) ve form varsayılanları — kullanıcı gezinmesiyle değişen değerler.
-
 ### `B-91` · Açık mobil uygulama, yeniden yayında silinen yoklama oturumunun kimliğini tutuyor — "Sınıf listesi yüklenemedi" 🟠
 
 2026-09-30, `B-90` ekran testi (Android, `com.oksis.mobile.dev`, öğretmen Zuhal Karaca Kaya). 11-A yeniden yayınlandıktan
@@ -2775,35 +1901,6 @@ Kök neden **bulunamadı**: `useMyDailySessions` düz `useQuery` (kalıcı önbe
 tuttuğu (yönlendirme yığını / `router.push` aynı rotayı mı yeniden kullanıyor) ölçülmeli; (b) sunucu tarafında içerik
 değişmeyen yerleşimin bekleyen oturumu korunabilir (kimlik değişmez) — `ProgramPublisher` şu an hepsini siliyor.
 
-### `TB-262` · Yayından sonraki ilk pano açılışında `attendance/unrecorded` 500 — gün üretiminde yarış koruması yok 🟠
-
-2026-09-30, `B-90` ekran testi. İki yeniden yayının ikisinde de webde *Devamsızlık* açılır açılmaz
-`GET /api/v1/attendance/unrecorded` **500** döndü; ikinci çağrı 200. Günlük: `Cannot insert duplicate key row …
-ux_attendance_sessions_school_placement_date`. Pano ile "Alınmayan Yoklamalar" aynı günü aynı anda üretmeye çalışıyor;
-`SessionMaterializer.MaterializeForDateAsync`'te — `GetOrCreateAsync`'in aksine — yarış koruması **hiç yoktu**. `B-90`
-yayında bekleyen oturumları sildiği için yayından sonraki ilk açılışta bu yarış **her seferinde** yaşanıyor.
-
-✅ **2026-09-30 · kodda düzeltildi** (`oksis-api` master `0582af31`): indeks ihlalinde kaybedenin
-satırları `Detach` edilir, kazananın ürettiği gün okunup döner (`GetOrCreateAsync` kalıbı). Entegrasyon testi yarışı
-kaybedenin `SaveChanges` anına bir yakalayıcıyla kazananı sokarak **deterministik** kuruyor
-(`MaterializeForDateAsync_RaceLoss_ReturnsWinnersSessionsWithoutThrowing`). 
-
-**2026-09-30 · canlı ölçüm (API master `0582af31` ile yeniden başlatıldı):** panonun tarih seçicisi yalnız bugün ve geçmiş iki günü
-sunuyor, yani ekrandan yeni gün açılamıyor (yarış ekranda yalnız yeniden yayınla kurulur). Ölçüm panonun çağırdığı iki uçla,
-oturumu olmayan günlerde yapıldı. Altı eşzamanlı istek (`board` + `unrecorded`, 5 Ekim): **iki istek slot indeksi ihlaline
-düştü, ikisi de yakalanıp 200 döndü** (düzeltme öncesi 500). Ama bir `board` isteği **deadlock kurbanı** oldu (SQL 1205,
-`SessionMaterializer.cs:123`) → 500. Kurbanın işlemi sunucuda tümüyle geri alındığından "yakala + yeniden oku" burada işe
-yaramaz; işlemin yeniden denenmesi gerekir (`TransactionBehavior` içinde EF yürütme stratejisi / yeniden deneme). İki eşzamanlı
-istekle 6 günde (6–13 Ekim) hepsi 200, ama o denemelerde istekler çakışmadı; kanıt sayılmaz.
-✅ **2026-09-30 · deadlock kolu da kodda kapandı** (`oksis-api` master `d251036a`): `MaterializeForDateAsync` yazacak satır
-varsa kendi transaction'ını açıp `sp_getapplock` ile **okul×gün kilidi** alıyor, dolu slotları kilit altında yeniden okuyup
-yalnız eksikleri yazıyor; ikinci istek bekliyor ve hiçbir şey yazmıyor (yazacak satır yoksa kilit hiç alınmıyor). İndeks
-ihlali yakalaması kilit almayan `GetOrCreateAsync`'e karşı ikinci savunma olarak kaldı. Testler: ikinci üretimin kilitte
-beklediği `sys.dm_tran_locks`'tan ölçülerek kuruluyor; yoklama/ders programı/okul entegrasyon takımı 286/286.
-Canlı ölçüm **yapılmadı**: 23:36'da başka bir oturum ana ağaçtan (kilitsiz kodla) 5112'de API başlatmıştı; ona karşı 5 günde
-6'şar eşzamanlı istek yine 500 verdi — eski davranışın teyidi, yeni kodun ölçümü değil. İkinci API açmak arka plan işlerini
-yineleyeceği için açılmadı. **Arşive gitmek için:** yeni ikiliyle eşzamanlı istek ölçümü.
-
 ### `TB-263` · Dev veritabanında koddan olmayan bir B-90 göçü uygulanmış (`…b90_attendance_supersession`) 🟡
 
 2026-09-30. `oksis_dev`'in `__EFMigrationsHistory`'sinde `20260928201835_20260928_b90_attendance_supersession` var ama
@@ -2818,26 +1915,13 @@ Kullanıcı kaldırmayı onayladı (2026-09-30) ama otomatik izin denetimi verit
 Ölçüm: üç sütun da boş, bağlı indeks/FK/varsayılan yok; codex göçünün yeniden kurduğu `placement` indeksini
 `20260930182147` zaten düşürdü.
 
+📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — birleştirme betiği dev'de (api 968cb28c); betiğin dev DB'ye uygulanıp uygulanmadığı koddan ölçülemiyor.
+
 ### `D-40` · Program editörü açılışta başlıkta şube adı yerine şube kimliği gösteriyor ⚪
 
 2026-09-30, `B-90` ekran testi. Revize durumdaki 11-A programı `/schedule/<id>` ile doğrudan açılınca yükleme bittikten
 sonra başlık bir an **`15c03917-848b-4941-a8b5-394d52cac67e`** (şubenin kimliği) oldu; birkaç saniye sonra "11-A"ya
 döndü. Bir kez görüldü; şube adı sorgusu gelmeden başlık kimliğe düşüyor gibi.
-
-### `TB-256` · Yoklama maddileştirme ve pano entegrasyon testlerinin 17'si master'da kırmızı (ders kataloğu hatasından ayrı) 🟡
-
-2026-09-26, `Y-06` entegrasyon koşusunda ölçüldü. `SessionMaterializerTests` + `AttendanceBoardAndJobsTests`: **17 kırmızı / 27**.
-Aynı iki sınıf `HEAD` (`d6598101`) üzerinde ayrı bir worktree'de koşturuldu: **yine 17 / 27** — dal getirmedi. Hata `TB-231`'in
-"Cannot insert Subject" hatası değil: oturum hiç üretilmiyor ("Expected sessions to contain 1 item(s), but found 0"),
-`board.IsSchoolDay` false, `Open` NotFound. Tarih/okul günü çözümüne bağlı görünüyor (ölçüm günü Cumartesi; testlerin bir kısmı
-"bugün"e bakıyor). 
-**2026-09-27 ölçümü (E-34 dalı):** `FullyQualifiedName~Attendance` süzgeciyle master'da **40 kırmızı / 155**, dal aynı 40'ı
-veriyor (liste birebir aynı). Kökler iki: (1) **`TB-186`** okul gününü yalnız AKTİF sezonun öğretim döneminde sayıyor, test
-tohumları `AcademicSession.Create` sonrası `Activate` çağırmıyor → `IsSchoolDayAsync` false, oturum üretilmiyor, `Open` NotFound,
-pano `IsSchoolDay` false. Yeni `ClubHourAttendanceTests` tohumunda sezon aktifleştirilince aynı zincir yeşil koştu. (2) 5 test
-`TB-231`'in "Cannot insert Subject without tenant context" hatası. ⬜ Kapatma yolu: yoklama test tohumlarında sezonu aktifleştirmek.
-
-✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `af322046`, master'da — 2026-10-04 doğrulandı):** beş yoklama dosyası sezonu `DatabaseFixture.Activated` ile etkinleştiriyor (`StudentAttendanceViewsTests`'te yalnız "bugün" sezonu — okulda tek aktif sezon kısıtı); yoklama kırmızıları sıfır.
 
 ### `X-23` · `Oksis.Infrastructure` derlemesi 5–6 dakika: 227 göç Designer dosyası (≈3,4 milyon satır) her derlemede analiz ediliyor 🟡
 
@@ -2849,41 +1933,6 @@ göçte birleştirmek (squash), Designer dosyalarını analizörlerden dışlama
 ayrı bir derlemeye taşımak. Karar gerektirir.
 
 ✅ **Karar (2026-09-28, kullanıcı):** göç **Designer dosyaları analizden çıkarılır** (`generated_code = true`), kazanç ölçülür. Uygulanacak.
-
-### `D-37` · Mazeret Kaydı penceresi açıklamayı "isteğe bağlı" gösteriyor, sunucu zorunlu tutuyor; red sessizce yutuluyor 🟡
-
-2026-09-27, `E-34` ekran ölçümünde (Altınay'ın veritabanı kopyasında, müdür hesabı) görüldü. *Devamsızlık › Mazeret Kaydı*
-penceresinde "Açıklama · ops." yazıyor; açıklamasız "Kaydet ve Onayla" `POST attendance/excuses` 400 dönüyor
-(`CreateExcuseCommandValidator`: `Description` `NotEmpty` → `attendance.errors.reason-required`). Pencere hiçbir cümle
-göstermiyor: `create-excuse-modal.tsx` `createExcuse.mutate(…, { onSuccess })` çağırıyor, hata kolu yok; kullanıcı düğmeye
-bastığında hiçbir şey olmuyor sanıyor. Aynı pencerede "Raporlu" seçilince belge zorunluluğu istemci doğrulamasıyla görünüyor
-(o kol çalışıyor).
-
-⬜ Kapatma yolu: kural tek yerde — ya açıklama gerçekten isteğe bağlı olur (sunucu gevşer) ya da alan zorunlu işaretlenir ve
-istemci şeması aynı kuralı uygular; her iki durumda da pencere sunucu hatasını (`mutationErrorDesc`) göstermeli.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `8c180e1`, master'da — 2026-10-04 doğrulandı):** kural sunucuda olduğu için istemci ona uyuldu: açıklama zorunlu (ortak şema, web + mobil), sunucu reddi pencerede, MSW 400'ü aynalıyor.
-
-📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): Mazeret Kaydı penceresinde "Açıklama" artık "ops." değil; "Belge · ops." kalıyor.
-
-### `D-31` · Native `<select>` yasağı delinmiş: web uygulamasında ~69 native seçim kutusu 🟠
-
-2026-09-25'te kullanıcı bulgusu (Y-05 sabit kural formu native select ile yazılmıştı). Kural `FilterDropdown`
-dosya başında ve kullanıcı bulgularında yazılı: native `<select>` kullanılmaz, form alanında `SelectBox`. Ölçüldü
-(`grep -rn "<select" apps/web`): 69 satır, birkaçı yorum. En çok: `sections/modals.tsx` 6, `homework-admin-screen.tsx` 6,
-`platform/school-wizard.tsx` 5, `settings/classroom-tab.tsx` 4, `schedule/constraints-page.tsx` 4, `settings/general-tab.tsx` 3.
-Yasak yalnız yorumda; makine zorlaması (lint) yok, bu yüzden her yeni ekranda yeniden deliniyor.
-
-🟡 **Kısmen (commit bekliyor, dal `feat/sinif-rehberligi-dersleri`):** `FilterDropdown`'a `searchable` (varsayılan kapalı,
-Türkçe katlamalı arama; ortak `core` `foldTurkish`) ve `block` (form alanında tam genişlik; `SelectBox`'ta varsayılan açık)
-eklendi. Sabit kural formu (ders aramalı, gün, başlangıç) ve editörün öğretmen görünümü seçimi (aramalı) `SelectBox`'a geçti.
-Ekranda ölçüldü: kutu kap genişliğine eşit (251/251), "rehb" → Rehberlik, "turk dılı" → 3 ders, eşleşme yoksa "Sonuç yok",
-Enter tek sonucu seçer, gün menüsünde arama yok.
-⬜ Kalan: diğer ~65 native select'in `SelectBox`'a taşınması ve bir eslint kuralı (JSX `select` yasağı) ile kalıcı kapı.
-
-✅ **2026-09-28 · kodda (gece turu, `oksis-ui` `fix/gece-defter-turu` `0a9061a`…`b136c67`, master'da — 2026-10-04 doğrulandı):** web'deki 67 native `<select>` ortak `SelectBox`/`FilterDropdown`'a taşındı; bileşen seçilemeyen madde, grup başlığı, `id`/`htmlFor`, alan + değer söyleyen erişilebilir ad, ↑/↓/Home/End ve odak dönüşü kazandı; uzun listeler aramalı. **Kalıcı kapı:** `packages/eslint-config/next.js`'te JSX `select` yasak (deneme dosyasında lint hatası ölçüldü). Davranış değişikliği: ders programı üretiminde "Seviye seçin…"e dönmek artık 0. seviye değil seçimsizlik yazıyor. Ekranda yalnız DEV hızlı giriş ölçüldü, diğer 38 ekran gezilmedi.
-
-📺 **2026-09-28 · ekranda ölçüldü** (dal kodu: API 5113 + web 3005, Altınay, yalnız okuma): giriş ekranındaki DEV seçiciler ve Kullanıcılar süzgeçleri yeni bileşenle çalışıyor; Mazeret penceresinde native select yok.
 
 ### `B-71` · Kişi güncelleme ucu cinsiyeti zorunlu tutuyor; sihirbazın cinsiyetsiz açtığı veli güncellenemiyor 🟡
 
@@ -2911,34 +1960,6 @@ bir ders düzenlendiği için anahtar düşmüş, orada görünüyordu. Üç oku
 etkilenen önbellek önekleri temizlenir, ya da önbellek anahtarı şema/göç sürümünü taşır. Tek seferlik elle silme kalıcı çözüm değil.
 
 ✅ **Karar (2026-09-28, kullanıcı):** **API açılışında** son uygulanan göç değişmişse tenant önbellek önekleri temizlenir (göç kimliği Redis'te). Uygulanacak.
-
-### `TB-254` · `CurriculumVersioningMigrationTests.Cutover_…` kırmızı: eski göç noktasında güncel model `track` kolonunu okuyor ⚪
-
-2026-09-25'te Y-05 doğrulamasında çıktı (ajan ölçümü). Test göçleri eski bir noktaya kadar kurup veriyi güncel
-kodla okuyor; `SessionCurriculum.LoadItemsAsync` Y-04'ün `track` kolonunu seçtiği için `Invalid column name 'track'`.
-Y-04 (`14b1f130`, master) ile başladı; Y-05 değişikliğiyle ilgisi yok. Ürün kodu doğru; test, ara göç şemasında
-güncel sorguyu çalıştırıyor.
-
-⬜ Kapatma yolu: testin okuma adımı hedef göç noktasının şemasıyla uyumlu kalsın (ham SQL) ya da test kesme noktasını
-güncel göçe taşısın. `TB-252` ailesi (entegrasyon testi ortam varsayımı).
-
-✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `f47ebdd3`):** okuma adımı kesme noktasının şemasına uygun ham SQL'e alındı. Göç zincirini sona kadar sürmek ayrı bir kusur gösterdi → `TB-260`.
-
-### `TB-252` · Müfredat entegrasyon testi paylaşılan veritabanındaki yayımlanmış sürüme bağlı — çalışma sırasına göre kırmızı ⚪
-
-`Y-04` (alan bazlı müfredat profili) doğrulamasında çıktı (2026-09-24, `oksis-api` `cc4a2aa3` tabanı).
-`CurriculumSnapshotActivationTests.Manual_draft_yields_empty_snapshot`, 2033 yılında MEB master'ı **olmadığını**
-varsayıyor ve snapshot'ın `Manual` olmasını bekliyor. Aynı paylaşılan test veritabanına
-`CurriculumPublishTests` "2033-2034" sürümünü yayımlıyor ve silmiyor. O test daha önce koştuysa taslak
-`Master` kaynaklı doğuyor ve test kırmızıya düşüyor (`Expected Manual, found Master`). Tek başına koşuda da
-kırmızı çünkü satır veritabanında kalıcı. Ürün kodu doğru; test ortam durumuna bağlı. `Y-04` değişikliğiyle
-ilgisi yok: snapshot kaynak türünü taslaktan alıyor, o yol değişmedi.
-
-⬜ Kapatma yolu: "master'ı olmayan yıl"ı test içinde garanti et (ör. hiçbir testin yayımlamadığı ve
-çalışma anında boş olduğu doğrulanan bir yıl) ya da `CurriculumPublishTests` kendi yayımladığı sürümü
-temizlesin. `TB-184` ailesi: paylaşılan veritabanında küresel duruma bakan test.
-
-✅ **2026-09-28 · kapandı (kodda (gece turu, `oksis-api` `fix/gece-defter-turu` `03005e56`, `fc4b718c`):** manuel taslak testi çalışma anında yayımlı en eski yılın öncesini seçip öncülünü doğruluyor (sabit 2033 ayrıca 2026-09-22 yürürlük kuralıyla da kırmızıydı). `CurriculumPublishTests` paylaşılan DB'deki "Matematik/Türkçe" adlı başka derslerle "ambiguous" eşleşiyordu; fixture'ın iki dersine bağlandı ve payload ders kodunu taşıyor. Yan etki düzeltildi: `Preview_matches_the_snapshot` karşılaştırması saatli satırlara çekildi (önizleme 0 saatlik satırı saymıyor, snapshot yazıyor). ⚠️ **İz:** paylaşılan test DB'sinde MIDDLE-GENERAL için 2031/2033/2035 sürümleri kalıyor; ileri yıl testi kırmızıya düşerse ilk bakılacak yer.
 
 ### `TB-260` · `education_program_from_document` göçü, cutover'ın snapshot satırlarının bağlı olduğu tohum müfredat satırlarını silerken FK'ye takılıyor 🟡
 
@@ -2987,6 +2008,19 @@ logosu yerine OKSİS işaretiyle değiştirildi — `OksisMark` geometrisinden �
 `app.config.ts` `imageWidth` 76 → 96 (JS açılışındaki `OksisMark size={96}` ile aynı), zemin `#1B2B5E` (gradyanın başlangıç rengi).
 Yerel ekran JS açılışının ilk karesine benziyor. ⚠️ `android/` gitignore'da: değişiklik ancak `expo prebuild` ve yeni
 derlemeyle cihaza iner.
+
+⚠️ **2026-10-09 · derleme 949'da hâlâ iki ekran (kullanıcı):** yalnız görsel yetmedi. Ölçülen iki neden: (1) yerel ekran
+kendiliğinden ilk çizimde kalkıyor, kök `_layout.tsx` fontlar/mock hazır olana dek `return null` döndüğü için arada boş bir
+kare çıkıyordu; (2) JS açılışı düz zemin yerine gradyanla, işareti yazıyla birlikte ortaladığı için yukarı kaymış başlıyordu.
+🔧 **oksis-ui `fix/acilis-tek-ekran` `f67b713` (cihazda ölçülmedi):** `preventAutoHideAsync` + kök hazır olunca `hideAsync`
+(kökte, çünkü bildirim dokunuşuyla açılışta ilk rota açılış ekranı olmayabilir); JS açılışının ilk karesi yerelinin aynısı
+(düz `#1B2B5E`, tam ortada 96 dp işaret), gradyan ve "Oksis" yazısı 400 ms'de yerinde beliriyor, işaret kımıldamıyor.
+🔁 **2026-10-09 gece · kullanıcı kararı:** JS açılışı yeniden tasarlanmasın — eski hâli (gradyan + işaret + yazı) birebir geri getirildi
+(`f39e4b9`); yerel ekran ona uydurulur. **iOS** (`c323d56`): yeni config plugin `with-ios-launch-screen` storyboard'u ezer — gerilen kare
+gradyan + ortada işaret ve yazı (JS grubunun tamamı); görseller JS değerlerinden üretildi, cihaz ekran görüntüsüyle 1 px içinde örtüşüyor.
+**iPhone'da doğrulandı (kullanıcı, kabloyla kurulan 950).** **Android** (`09a1199`): sistem gradyan/yazıya izin vermiyor; yerel ekran
+ikonsuz düz lacivert (`with-android-plain-splash`). Play iç teste 955 olarak yüklendi; Android cihazda henüz ölçülmedi. 2026-10-10 `dev` `10cbe88` → Test'e itildi,
+mobil derleme 967 (TestFlight + Play iç test).
 
 ### `D-57` · Giriş ekranı hero'sunun sağ üst köşesinde keskin kenarlı, opak mavi bir daire çiziliyor 🟡
 
@@ -3466,6 +2500,200 @@ Kısaltma adayları (ölçülmedi, karar uygulamada):
 (taban ~8,5 dk: 5,5 + 3). Kazanç `check`'te; dağıtım aynı. Önbelleğin ısındığı ikinci koşuda yeniden ölçülecek; asıl kalan süre
 dağıtımdaki `next build` + OpenNext. Bir önceki `test` koşusu (15:22, `TB-275` öncesi) web derlemesinde Google Fonts çözümlemesi
 hatasıyla (`next/font/google`) düşmüştü; bu koşuda tekrarlamadı — geçici ağ hatası olarak not edildi.
+
+### `V-07` · Duyuru geri çekme panelinde gerekçe "isteğe bağlı" yazıyor ama sunucu zorunlu tutuyor; boş gönderimde üstte "Gerekçe zorunludur." çıkıyor 🟡
+
+2026-10-10, kullanıcı testi (iPhone). Mobil *Duyuru detayı → Duyuruyu geri çek* panelinde alan etiketi **"Gerekçe (isteğe bağlı)"**;
+boş gönderince üstte kırmızı **"Gerekçe zorunludur."** notu çıkıyor, etiket aynı kalıyor.
+
+Koddan ölçüldü:
+- Sunucu zorunlu: `oksis-api` `WithdrawAnnouncementCommandValidator` `RuleFor(x => x.Reason).NotEmpty()`; domain de aynı kural
+  (`Announcement.cs` `Announcements.Withdraw.ReasonRequired`). MSW mock'u da 400 dönüyor.
+- İstemci şeması boşa izin veriyor: `packages/core/src/announcements/schemas.ts` `reason: z.string().trim().max(200)` — `min` yok.
+- Etiket iki yüzeyde elle "isteğe bağlı": mobil `withdraw-sheet.tsx` `label="Gerekçe (isteğe bağlı)"`, web `modals.tsx`
+  `(isteğe bağlı)` — **web'de de aynı çelişki var**.
+- Hata yolu: sunucu 400 → `app/announcements/[id]/index.tsx` `setWithdrawError` → panelin üstündeki Note.
+
+Düzeltme yönü: şemaya `min(1, "Gerekçe zorunludur.")` (emsal: aynı dosyadaki `rejectAnnouncementSchema`), etiket iki yüzeyde
+"Gerekçe (zorunlu)", hata alanın altında. Kural sunucuda zaten var — istemci yalnız aynı kuralı söyleyecek.
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-ui `6bc959e` — `withdrawAnnouncementSchema` gerekçeyi zorunlu tutuyor (sunucu mesajıyla); web ve mobilde etiket "Gerekçe", boşken *Geri çek* kapalı, hata alanın altında. Core testi `schemas.test.ts`.
+
+### `D-63` · Mobil alt panellerde (sheet) klavye açılınca metin alanı ve butonlar klavyenin altında kalıyor 🟡
+
+2026-10-10, kullanıcı testi (iPhone). Öğretmen *Yoklama Geçmişim → Yeniden açılmasını iste* panelinde açıklama alanına dokununca
+klavye açılıyor; açıklama alanı ve *Gönder/Vazgeç* klavyenin altında kalıyor, yazılan görülmüyor.
+
+Koddan ölçüldü:
+- Panel `attendance/components/reopen-request-sheet.tsx`, ortak `components/sheet.tsx` üstünde (RN `Modal`, ekranın dibine yaslı
+  `justifyContent:'flex-end'`). `Sheet` içinde `KeyboardAvoidingView`, klavye dinleyicisi ya da klavye payı **yok**.
+- `D-60` (`830855a`) ortak `KeyboardAvoidingRoot`'u yazdı ama yalnız `auth-shell` ve `template-form-screen`'e bağlandı; `Sheet`'e
+  dokunulmadı. Android'de `edgeToEdgeEnabled=true` olduğu için `adjustResize` de pencereyi kısaltmıyor.
+- **Sınıf sorunu:** `Sheet` içinde metin alanı taşıyan diğer paneller de aynı durumda — duyuru geri çekme (`withdraw-sheet`),
+  onay kuyruğu red gerekçesi, şablon panelleri, onay gerekçesi (`approval-parts`), günlük izin, öğretmen izni, acil kapanış,
+  öğrenci arama, ödev/not/etkinlik ekranlarındaki paneller; ayrıca kendi `Modal`'ını kullanan yoklama `correction-sheet`.
+
+Düzeltme yönü: tek merkezde — `Sheet`'in dış kabı `KeyboardAvoidingRoot` olur, bütün paneller birlikte düzelir
+([[yamalama-kabul-degil]]). Android `Modal` ayrı pencere olduğundan cihazda doğrulanmalı.
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-ui `52ff6a8` — ortak `Sheet` `KeyboardAvoidingRoot` içinde; gövde kayar, buton satırı klavyenin üstünde, `keyboardShouldPersistTaps="handled"`. `correction-sheet` kendi Modal'ı yerine ortak `Sheet`'e geçti. ⚠️ Android'de Modal penceresinde klavye olayları cihazda doğrulanmalı.
+
+### `E-45` · Yönetici *Canlı Yoklama* listesinde aşağı çekip yenileme yok ⚪
+
+2026-10-10, kullanıcı isteği. *"Canlı yoklama listesi pull refresh özelliği gelsin."*
+
+Koddan ölçüldü: `attendance/components/admin-live-screen.tsx` `ScrollView`'unda `refreshControl` yok; yenileme yalnız hata
+durumundaki *Tekrar dene* ile. Pano ve alınmamış yoklama sorgularında (`packages/api/src/attendance/queries.ts`
+`useAttendanceBoard`, `useUnrecordedSessionsInfinite`) `refetchInterval` de yok — ekranın adı "Canlı" ama veri yalnız mutasyon
+sonrası ve öne gelişte (`B-111`) tazeleniyor. Uygulamadaki 13 listede aşağı çekip yenileme var, ortak kalıp yok (her ekran
+`RefreshControl`'u kendisi yazıyor; örn. `schedule/today-screen.tsx`, `notif-list-screen.tsx`).
+
+Düzeltme yönü: iki sorguyu birlikte yenileyen `RefreshControl`. Ekranın periyodik tazelenmesi (örn. 30–60 sn) ayrı bir karar.
+
+✅ **Karar (2026-10-10, kullanıcı):** periyodik tazeleme **yok**; yalnız aşağı çekip yenileme.
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-ui `ed81069` — pano + alınmamış yoklama birlikte yenilenir; döner gösterge yalnız kullanıcının çekmesinde, portal renginde.
+
+### `D-64` · Öğretmen *Bugünkü Derslerim*'de vekil ders ayırt edilmiyor; *Programım*'daki açık sarı zemin ve rozet yok ⚪
+
+2026-10-10, kullanıcı isteği (`B-113` ardından). *"Vekil öğretmen bugünkü derslerimde açık sarı arka plan kullansın (programımda ki gibi)."*
+
+Koddan ölçüldü:
+- *Programım* `schedule/components/lesson-row.tsx`: istisnalı derste zemin `mixWithWhite(COLORS.warning, 0.06)` (açık sarı),
+  rozet `packages/core/src/schedule/my-schedule.ts` `isSubstitutionIn → "Vekâlet"`. Sarı zemin vekâlete özel değil — her istisnada
+  (derslik değişikliği dahil) çıkıyor.
+- *Bugünkü Derslerim* `attendance/components/today-lessons.tsx` yoklama oturumu verisinden çiziliyor; `isSubstitute` hiç okunmuyor.
+  *Yoklama Geçmişim* ve *Canlı Yoklama* aynı alanı "VEKÂLET" rozeti olarak gösteriyor.
+- ⚠️ Sunucu kısıtı: `AttendanceSession.IsSubstitute` yalnız oturum **açılırken** (`AttendanceSession.Open()`) yazılıyor; ders
+  başlamadan önceki `pending` oturumda `false`. Bugünkü ekran bu alana bakarsa vekil ders, ders başlayana kadar işaretsiz kalır.
+  Vekil bilgisi `ExpectedTeacherId`'de zaten var (`SessionMaterializer`).
+
+Düzeltme yönü: sunucuda oturum DTO'suna durumdan bağımsız vekâlet bilgisi (ya da istemcide *Programım* verisiyle eşleme); kartta
+*Programım* ile aynı zemin + "Vekâlet" rozeti.
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-api `bc9d80d0` — `AttendanceRosterBuilder` `isSubstitute`'u `Pending` oturumda aktif `TeacherSubstitution` istisnasından türetiyor (sözleşme aynı, göç yok; entegrasyon testi). oksis-ui `8b3446a` — core `substitutionInMark`; *Bugünkü Derslerim* kartı *Programım* ile aynı açık sarı zemin + "Vekâlet" rozeti.
+
+### `D-65` · Web okul ayarları *Bildirimler* sekmesinde formlar sağdaki dar kolona sıkışmış; sol kolonda yalnız tek cümlelik kanal kartı var 🟡
+
+2026-10-10, kullanıcı testi (web). *"Bildirim kanalları kartını sil, sağa sıkışmış kartları (Gönderim tercihleri, Duyuru moderasyonu)
+ekranda düzgünce yerleştir; Nerede kullanılır yine sağda kalsın."*
+
+Koddan ölçüldü (`K-34` sonrası):
+- `apps/web/features/settings/notification-tab.tsx`: geniş sol kolonda (`.ayr-col`) yalnız *Bildirim Kanalları* kartı
+  (`NOTIFICATION_CHANNEL_NOTE`, tek cümle). *Gönderim Tercihleri*, *Duyuru Moderasyonu* ve *Nerede kullanılır* üçü de sağdaki
+  `.ayr-side.wide-side`'da (348 px, sticky, kendi içinde kayan). Matris kalkınca formlar sağa taşınmıştı (dosyadaki 2026-10-09 yorumu).
+  Hata dalı aynı yapıda.
+- Bayat içerik: *Nerede kullanılır* (`NOTIFICATION_USED_IN`) hâlâ "SMS gönderim kuyruğu" diyor.
+- Mobil karşılık (`school-settings/components/notification-settings-screen.tsx`): kanal notu kartsız `<Note>`; ama mobil hâlâ
+  **günlük SMS limiti** satırı, SMS limit uyarısı ve **SMS kotası** bölümünü gösteriyor, alt başlıkta "SMS limiti ve kota" —
+  web bunları `K-12 §A3` ile kaldırmıştı.
+
+Düzeltme yönü: kanal kartı silinir; *Gönderim Tercihleri* ve *Duyuru Moderasyonu* sol kolona, sağda yalnız *Nerede kullanılır*
+(dar standart kolon). Mobildeki SMS kalıntıları web ile hizalanır.
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-ui `0e91f9c` — web: kanal kartı silindi, *Gönderim Tercihleri* + *Duyuru Moderasyonu* sol kolonda, sağda yalnız *Nerede kullanılır*; bayat SMS maddesi ve `wide-side` kuralı kalktı, `NOTIFICATION_CHANNEL_NOTE` silindi. Mobil: kanal notu, günlük SMS limiti, SMS kotası bölümleri kaldırıldı (`dailySmsLimit` sözleşmede duruyor).
+
+### `D-66` · Mobil duyuru detayında *Ulaşılamayan alıcılar* kartı boşken boş görünüyor; push almayan kişiler bu listede hiç yer almıyor 🟡
+
+2026-10-10, kullanıcı testi (iPhone, acil duyuru, 19 alıcı). Teslim raporu: uygulama içi 19/19, push 2/19 ("17 kişiye gönderilmedi ·
+Kayıtlı cihaz yok 17"). Altındaki *Ulaşılamayan alıcılar* kartında başlık ve açıklama var, liste **bomboş**.
+
+Koddan ölçüldü:
+- Liste tanımı uygulama içi erişim: `GetAnnouncementDeliveryReportQueryHandler` `unreachable = rows.Where(r => !r.HasAccount)`
+  (gerekçe "Hesap bağlı değil" / "Kişi kaydı silinmiş"). Push'u almayanlar yalnız kanal sayacında (`SkipReasons`); kişi listesi
+  üretilmiyor. Bu duyuruda herkesin hesabı var → liste doğru olarak boş.
+- Web boş durumu söylüyor (`detail.tsx`: "Ulaşılamayan alıcı yok — Duyuru hedeflenen herkese uygulama içinde iletildi").
+  Mobil `announcement-detail-screen.tsx`'te **boş durum dalı yok** — kullanıcının gördüğü bu. Ayrıca liste `key={person.name}`:
+  aynı adlı iki kişide çakışır.
+
+Düzeltme yönü: mobilde web ile aynı boş durum. Push almayanların kişi kişi listelenmesi isteniyorsa sunucu ayrı liste döndürmeli
+(gerekçesiyle) — ürün kararı: *"telefonla aranacak veliler"* listesine cihazı olmayanlar girecek mi?
+
+✅ **Karar (2026-10-10, kullanıcı):** *"Hiçbir kaynaktan ulaşılmamış/ulaşılamamışsa telefonla aranacak listesine girsin."* Yalnız push'u
+almayan ama uygulama içinden ulaşılan kişi listeye girmez. Bugünkü `!HasAccount` kuralı pratikte bununla aynı sonucu veriyor (hesabı
+olan herkes uygulama içinden ulaşılmış sayılır); kural sunucuda açık yazılıp testle kilitlenecek, mobil boş durum eklenecek.
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-api `65f34dab` — `IsReachedByAnyChannel` (uygulama içi ∨ push ∨ e-posta), davranış farkı yok; test: hesabı olup push almayan listede değil. oksis-ui `4b9ff7c` — mobil boş durum (core `UNREACHABLE_RECIPIENTS_EMPTY`, web de aynı sabit), satır anahtarı benzersiz.
+
+### `E-46` · Duyuru ekindeki görsel uygulama içinde gösterilmiyor; yalnız dosya adı + indirme satırı var 🟡
+
+2026-10-10, kullanıcı isteği. *"Duyurulara eklenen görseller indirme ihtiyacı olmadan uygulama içinde gösterilmeli."*
+
+Koddan ölçüldü:
+- Duyuru tek ek taşıyor (`Announcement.AttachmentFileId`); DTO `fileId, name, size, mimeType, url`. Mobil ve web detayı yalnız ad,
+  boyut ve indirme düğmesi çiziyor; önizleme yok.
+- Sunucu hazır: `GET /api/v1/files/{id}/download-url?inline=true` (10 dk süreli imzalı adres; inline yalnız güvenli türlerde —
+  PNG/JPEG/PDF). Emsal istemci kullanımı: `useFileDownloadUrl(id, {inline:true})` (web ödev teslim görüntüleyici, mobil profil fotoğrafı).
+- `ThumbnailGenerationJob` küçük resim üretiyor ama id'si duyuru DTO'suna açılmıyor.
+
+Düzeltme yönü: `mimeType` görselse detayda satır içi görsel (dokununca tam ekran), indirme seçeneği kalır. Küçük resim için DTO'ya
+`thumbnailFileId` (sunucu işi, isteğe bağlı).
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-ui `6f955d0` — görsel ek `useFileDownloadUrl(id,{inline:true})` ile satır içi önizleme (mobil 200 px, web 280 px), dokununca tam ekran (mobil yakınlaştırmalı, web ışık kutusu), indirme satırı duruyor; yönetici detayı + veli/öğrenci okuyucu. Küçük resim ucu yapılmadı.
+
+### `D-67` · Duyuru *Değişiklik geçmişi* yeniden tasarlanacak — ne değiştiği görünmüyor, ham sistem kodları ekrana basılıyor 🟡
+
+2026-10-10, kullanıcı isteği (iPhone). *"Duyuru değişiklik geçmişi yeniden tasarla."* Ekranda iki satır: "Metin Kabaca duyuruyu
+yayınladı — Acil olarak işaretlendi", "duyuruyu düzeltti — Sessiz düzeltme — alıcıya bildirim gönderilmedi"; ikisi de aynı turuncu
+yenile ikonlu rozetle.
+
+Koddan ölçüldü:
+- Mobil `features/announcements/components/audit-screen.tsx` (zaman çizelgesi), web `audit-drawer.tsx` (çekmece). Veri
+  `GET /announcements/{id}/audit-trail` → `{actorName, actorInitials, action, at, field, tag, tone}`; istemcide çeviri yok.
+- **Ne değiştiği saklanmıyor:** düzeltme kaydında `field: null`, yalnız "Güncellendi…/Sessiz düzeltme…" etiketi
+  (`AmendAnnouncementCommandHandler`). Eski başlık/metin hiçbir yerde tutulmuyor.
+- **Ham kodlar:** onay/geri çekme/geri alma kayıtlarında `field` İngilizce wire kodu taşıyor (örn. `Durum: pendingApproval → published`)
+  ve olduğu gibi gösteriliyor.
+- Web tarih biçimlemesinde mobildeki yerel saate çevirme yok (tahmin: saat farkı çıkabilir).
+
+Karar gereken: yeni tasarım (olay başına ikon/renk, ne değişti özeti, düzeltmede eski→yeni farkı). Fark gösterimi isteniyorsa sunucu
+düzeltmede önceki başlık/metni saklamalı.
+
+✅ **Karar (2026-10-10, kullanıcı):** fark gösterimi **yok**, sunucu değişmez — yalnız tasarım çalışması (olay türüne göre ikon/renk,
+ham kodların Türkçe karşılığı, okunaklı zaman çizelgesi; web ve mobil aynı dil).
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-ui `18b1de3` — olay türü sunucu cümlelerinden çözülüyor (yayınladı, onaya gönderdi, onayladı, reddetti, düzeltti, sessiz düzeltme, geri çekti, geri aldı, acil kaldırıldı); olay başına ikon/renk, durum geçişi Türkçe ("Onay bekliyor → Yayında"), gerekçe alıntı; yerel saat (web'deki eksik düzeldi); yükleniyor/boş/hata durumları. Core `audit-presentation` + testler.
+
+### `D-68` · Duyuru düzenleme formunda hedef kitle görünmüyor ⚪
+
+2026-10-10, kullanıcı testi. *"Duyuru düzenlede hedef kitle görünmüyor."*
+
+Koddan ölçüldü:
+- Hedefin düzenlenememesi **bilinçli** (INV-2): düzeltme `AmendAnnouncementCommand(Id, Title, Body, Silent)` — hedef alanı yok;
+  yansıma testi `Should_NotAcceptAudienceParameter_When_AmendIsDeclared` kilitliyor. Alıcı listesi yayın anında sabitlenir.
+- Salt okunur gösterim var ama göze girmiyor: mobil `compose-screen.tsx` hedefi ayrı alan olarak değil, kilit notunun cümlesine gömülü
+  yazıyor ("Alıcı listesi yayın anında sabitlenir ({hedef})…"); hedef etiketi boşsa **"Tüm okul" uyduruyor** (web bu fallback'i
+  "hedefi uydurur" gerekçesiyle kaldırmıştı). Web'de etiket boşsa çip hiç çizilmiyor.
+
+Düzeltme yönü: düzenleme formunda hedef kitle ayrı, salt okunur bir alan/çip olarak; "Tüm okul" uydurması kalkar. Sunucuya dokunulmaz.
+
+🔧 **2026-10-10 · kodda (cihazda ölçülmedi) · Test'e itildi (2026-10-10, mobil derleme 967):** oksis-ui `5d27dab` — düzenleme kipinde hedef kitle ayrı salt okunur alan (etiket, alıcı sayısı, kilit, "yayın anında sabitlenir"; core `AUDIENCE_LOCKED_COPY`), web ve mobil; "Tüm okul" uydurması kalktı.
+
+### `B-114` · Bildirimli duyuru düzeltmesi yalnız içeriksiz "Bu duyuru güncellendi." gönderiyor; ilk bildirim eski (düzeltilen) başlığı taşımaya devam ediyor 🟠
+
+2026-10-10, kullanıcı testi (iPhone, bildirim kutusu). *"Bir duyuru güncellenip güncellemesi yayınlandığında bildirim gönder
+seçeneği seçilirse bildirim güncellenmiş."* Kutuda iki satır yan yana ([kanıt](kanit/b114-duyuru-duzeltme-bildirimi.jpg)):
+- 49 dk önce · **ACİL DUYURU** · "Acil duyuru: Zuhal bugün ki yoklamalarını almamış 😡 Als…" · "Okul yönetimi yeni bir duyuru yayınladı."
+- 44 dk önce · **DUYURU GÜNCELLENDİ** · "Yoklamalar alınsın gün bitmeden !!" · "Bu duyuru güncellendi."
+
+Koddan ölçüldü (oksis-api `59e618e6`, salt okuma):
+- **İlk bildirim dondurulmuş kopya:** `Notification.Title`/`Body` gönderim anında yazılıyor; `AnnouncementAmendedEvent`'in tek
+  tüketicisi `AnnouncementAmendedNotificationHandler` ve o yalnız **yeni** bildirim kuyruğa koyuyor. Önceki bildirime dokunan yol yok.
+  Sonuç: düzeltmenin amacı yanlış/uygunsuz metni geri almaksa (buradaki gibi bir öğretmenin adı), eski başlık her alıcının bildirim
+  kutusunda (ve gitmişse push geçmişinde) kalıyor — düzeltme kutuya yansımıyor.
+- **Düzeltme bildirimi ne değiştiğini söylemiyor:** gövde sabit `"Bu duyuru güncellendi."`, başlık yeni başlık. Başlık değiştiyse
+  alıcı iki satırın aynı duyuru olduğunu anlayamıyor; yalnız gövde değiştiyse iki satır aynı başlığı taşıyor.
+- **Acillik düşüyor:** düzeltme her zaman `NotificationKind.AnnouncementAmended` (`Info`) ile gidiyor; acil duyurunun düzeltmesi
+  "Acil duyuru:" önekini, uyarı rengini ve sessiz saat muafiyetini (`PushQuietHours.Bypasses` yalnız `AnnouncementUrgentPublished`) kaybediyor.
+- **Düzeltme push atmıyor:** `AnnouncementAmended` ne `PushEventKeyMap`'te ne `NotificationEventKeyMap`'te var — "bildirim gönder"
+  seçilse de yalnız uygulama içi satır üretiyor. Push'la ilk duyuruyu alan veli/öğretmen düzeltmeden telefonda haberdar olmuyor.
+- Seçenek doğru bağlı: `Silent=false` → `Amended=true` + bildirim; `Silent=true` → bildirim yok (`AmendAnnouncementCommandHandler`).
+
+Karar gereken: (1) düzeltmede ilk bildirim de güncellensin mi (başlık/gövde yenilenir ya da "düzeltildi" işaretlenir), yoksa yalnız
+yeni satır mı kalsın; (2) düzeltme bildirimi push'a girsin mi, acil duyuruda acil türünü korusun mu; (3) gövde metni ne söylesin
+(ör. "<eski başlık> duyurusu düzeltildi").
+
+⚠️ Kullanıcının cümlesi yarım; kayıt ekran görüntüsüne ve kodda ölçülene göre yorumlandı — beklenen davranış teyit edilmeli.
 
 ## Not
 

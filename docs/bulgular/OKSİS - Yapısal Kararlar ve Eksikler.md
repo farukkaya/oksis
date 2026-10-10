@@ -43,6 +43,7 @@
 | **K-30** | Okulun türünü kim değiştirir, program değişince saat kararları ne olur? | ✅ Karara bağlandı · ✅ uygulandı | 2026-09-22 | **Tür değişimi platformun işi**: künyeye program alanı eklendi, müdürün yazma ucu silindi, penceresi salt-okunur. **Program değişince saat kararları silinir**, müfredat MEB'den geldiği gibi iner; okulun kendi dersleri kalır |
 | **K-31** | Öğrenci ve veli ödev yüzü web'de de olsun mu? | ⬜ Bekliyor | 2026-10-04 | — |
 | **K-32** | İptal edilen ödevin gerekçesi öğrenciye ve veliye gösterilsin mi? | ⬜ Bekliyor | 2026-10-04 | — |
+| **K-33** | Landing demo talepleri nerede tutulur, talepten satışa akış ve satışa dönmeyen talep | ✅ Karara bağlandı · ⬜ uygulanmadı | 2026-10-08 | **Merkez Platform'da `DemoRequest`** (tenant'sız, `leads.*`, Operasyon) · ara çözüm Vercel `/api/demo` → e-posta · akış Yeni→Nitelendirme→Demo→**Pilot 30 gün**→Teklif→Kazanıldı/Kaybedildi (neden zorunlu) · dönmeyen talep **24 ay** sonra anonimleşir — [[OKSİS — Demo Talebi ve Satış Akışı · İhtiyaç Analizi]] |
 | **K-34** | Bildirim kanalına kim karar verir? | ✅ Karara bağlandı · ✅ uygulandı (api `59e618e6`, ui `99177aa`) | 2026-10-09 | **Yalnız alıcı.** Yayınlayıcı hiçbir modülde kanal seçmez; okul olay×kanal matrisi ve okul ana kanal anahtarları kalkar (sessiz saatler, geç gelme bildirimi, SMS limiti kalır). Teslim = katalog desteği ∩ alıcı tercihi. Alıcı e-posta tercihi gelene kadar (`E-44`) e-posta kapalı → [[K-34 - Kanal Kararı Alıcınındır]] |
 | **Y-01** | Görevlendirme bildirimi | ✅ Karara bağlandı | 2026-08-08 | Görevlendirilen öğretmene bildirim gider |
 | **Y-02** | Anaokulu kademesi ekranlardan kaldırılsın | ✅ Karara bağlandı | 2026-08-08 | Ekranda gizlenir, altyapı korunur |
@@ -1888,5 +1889,42 @@ detayı `cancelReason` taşımadı. İptal bildirimi (`B-105`, aynı gece eklend
 **Karar veren:**
 
 > 
+
+--- end-multi-column
+
+---
+
+## K-33 · Landing demo talepleri: nerede tutulur, satışa nasıl döner, dönmezse ne olur?
+
+--- start-multi-column: K-33
+```column-settings
+number of columns: 2
+largest column: standard
+border: off
+```
+
+### 📄 Bağlam
+
+**Durum:** ✅ Karara bağlandı · ⬜ uygulanmadı
+**Kaynak:** 2026-10-08 landing yayını; "Demo talep et" bölümü planlanmamıştı.
+
+Ölçüm: landing formu veriyi hiçbir yere göndermiyor (`onsubmit` yalnız buton metnini değiştiriyor). Merkez Platform'da
+okul açma ucu var; 0019 ayrı satış rolünü reddetti. Prod API henüz yok.
+
+Tam tasarım, şemalar ve dilimler: [[OKSİS — Demo Talebi ve Satış Akışı · İhtiyaç Analizi]].
+
+--- column-break ---
+
+### ✍️ Karar Alanı
+
+**Durum:** ✅ Karara bağlandı
+**Tarih:** 2026-10-08
+**Karar veren:** Faruk
+
+> - Talepler **Merkez Platform'da** `DemoRequest` kaydında (tenant'sız, `leads.view`/`leads.manage`, Operasyon + Yöneticisi). Harici CRM yok.
+> - Prod API gelene kadar **Vercel fonksiyonu → e-posta** ara çözümü; form sözleşmesi baştan nihai.
+> - Akış: Yeni → Nitelendirme → Demo planlandı → Demo yapıldı → **Pilot (30 gün)** → Teklif → Kazanıldı / Kaybedildi; Geçersiz ayrı.
+> - Kaybetme nedeni zorunlu; eksik özellik yol haritasına, zamanlama/fiyat yeniden temas tarihine bağlanır.
+> - Satışa dönmeyen talebin kişisel verisi **24 ay** sonra anonimleşir; pilot okul Askıda → 30 gün → Arşiv.
 
 --- end-multi-column
