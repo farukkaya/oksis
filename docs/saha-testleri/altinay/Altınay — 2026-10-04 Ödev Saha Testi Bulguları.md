@@ -76,7 +76,7 @@ Test başlığı satırı: [[Altınay — Yaşam Döngüsü Test Başlıkları]]
 | ID | Öncelik | Başlık | Durum |
 |---|---|---|---|
 | `B-102` | 🔴 | Çok dersli öğretmen formda yalnız alfabetik ilk dersi görüyor | ✅ kodda · ekranda ölçüldü |
-| `B-103` | 🟠 | Virüslü teslim listede kalıyor, kotadan yiyor | ✅ kodda · birim testli |
+| `B-103` | 🟠 | Virüslü teslim listede kalıyor, kotadan yiyor | ✅ kodda · yerelde EICAR ile ölçüldü (2 kaçak kapandı, 2026-10-10) |
 | `V-05` | 🟠 | İçerik imzası denetlenmiyor (`.jpg` adlı EXE) | ✅ kodda · canlı 422 |
 | `B-105` | 🟠 | İptal ve güncelleme bildirimi yok | ✅ kodda · canlı ölçüldü |
 | `B-107` | 🟠 | Teslim dosyası hiçbir yüzeyde açılmıyor | ✅ kodda · mobil görüntüleyicide gerçek dosya ölçüldü |
@@ -86,13 +86,13 @@ Test başlığı satırı: [[Altınay — Yaşam Döngüsü Test Başlıkları]]
 | `V-06` | 🟡 | Seçili öğrenci hedefine başka şubenin öğrencisi giriyor | ✅ kodda |
 | `D-47` | 🟡 | Kalıcı dosya reddi "Tekrar dene" ile sunuluyor | ✅ kodda |
 | `D-48` | 🟡 | Türkçe iyelik eki elle "'in" | ✅ kodda |
-| `E-36` | 🟡 | Mobilde "PDF seç" yok | ⬜ yerel modül + derleme gerekiyor |
+| `E-36` | 🟡 | Mobilde "PDF seç" yok | ✅ kodda · Expo web'de ölçüldü; cihazda yeni derleme bekliyor |
 | `E-37` | 🟡 | Rehber öğretmenin şube ödev listesi yok | ✅ kodda · ekranda ölçüldü |
 | `E-38` | 🟡 | Kişisel bildirim tercihi / telefon izni ekranı yok | ✅ kodda · ekrandan açılan tercih DB'ye yazıldı |
-| `TB-269` | 🟡 | Push tercih listesi role göre süzülmüyor | ⬜ sunucu |
+| `TB-269` | 🟡 | Push tercih listesi role göre süzülmüyor | ✅ kodda · yerelde veli ve yönetici ile ölçüldü |
 | `D-49` | ⚪ | PDF teslimleri resim ikonuyla | ✅ kodda · ekranda ölçüldü |
 | `D-50` | ⚪ | Yönetici listesinde şube çipi kırılıyor | ✅ kodda |
-| `D-51` | ⚪ | Şubeler sözlük sırasıyla (9-A en sonda) | 🟡 ödev ekranlarında kodda; diğer modüller aranmadı |
+| `D-51` | ⚪ | Şubeler sözlük sırasıyla (9-A en sonda) | ✅ kodda (ortak karşılaştırıcı, tüm modüller) · yerelde ölçüldü; sınav panosu veri yok |
 | `TB-268` | ⚪ | İmzalı adres hep `attachment` — PDF önizlenemiyor | ✅ kodda · web'de PDF önizlemesi ölçüldü |
 | `TB-266` | ⚪ | Kip değişiminde aynı eksik iki kez bildiriliyor | ✅ kodda · canlı ölçüldü |
 | `TB-267` | ⚪ | Son teslim değişikliği denetime yazılmıyor | ✅ kodda |
