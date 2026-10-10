@@ -5,7 +5,9 @@
 > **Kapanmış her şey:** [[OKSİS - Bulgu Arşivi]] — kanıtlar, commit'ler, kapanış turları.
 > Aşağıdaki metinlerde geçen kapanmış madde ID'leri (`B-20`, `TB-88`, `X-15` gibi) orada aranır.
 > **Karar bekleyenler:** [[OKSİS - Yapısal Kararlar ve Eksikler]]
-> **Son kapanış:** 2026-10-10 — kapanış turu: 59 madde koda karşı ölçülüp kapandı ([[OKSİS - Bulgu Arşivi]] §81).
+> **Son kapanış:** 2026-10-10 — ödev saha testi turu: 7 madde test ortamında ölçülüp kapandı ([[OKSİS - Bulgu Arşivi]] §82).
+>
+> **Önceki kapanış:** 2026-10-10 — kapanış turu: 59 madde koda karşı ölçülüp kapandı ([[OKSİS - Bulgu Arşivi]] §81).
 >
 > **Önceki kapanış turu:** 2026-09-15 — sınav takvimi kapanış turu: **10 madde kapandı**
 > ([[OKSİS - Bulgu Arşivi]] §48). Altı ürün kararı bağlandı. İkisi (`TB-124`, `TB-129`'un bir
@@ -239,11 +241,15 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 19 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 42 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 21 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 18 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 20 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **85** | |
+| **Toplam** | **81** | |
+
+> **2026-10-10 (ödev saha testi turu):** `B-115`, `E-47`, `E-48` aynı gün açılıp kodlandı (88); yedi madde (`B-103`, `B-115`, `D-51`,
+> `TB-269`, `E-36`, `E-47`, `E-48`) test ortamında ölçülüp kapandı, [[OKSİS - Bulgu Arşivi]] §82'ye taşındı. Toplam **81**
+> (🔴 3 · 🟠 18 · 🟡 40 · ⚪ 20, başlıklardan sayıldı).
 
 > **2026-10-10 (iPhone kullanıcı testi, bildirim kutusu):** yeni `B-114` 🟠 (bildirimli duyuru düzeltmesi içeriksiz "Bu duyuru
 > güncellendi." gönderiyor; ilk bildirim düzeltilen eski başlığı taşımaya devam ediyor, acillik ve push düşüyor). Toplam **154**.
@@ -519,103 +525,7 @@ Kaynak: domain-map taraması, `oksis-api` @ `b72c819` (2026-09-03). Modülün ha
 [[Ödevler]] notunda. Dört madde de kodun kendi ARCHITECTURE notunda "açık madde" olarak
 duruyordu ama defterde kaydı yoktu; ikisi ürün kararı bekliyor.
 
-### `B-115` · Web'de ödev detayındaki öğretmen eki açılmıyor — yalnız adı yazıyor 🟠
-
-Kaynak: 2026-10-10 kullanıcı isteği ("duyuru görseli gibi ödevde de yüklenen PDF görüntülenmeli") üzerine kod incelemesi.
-`apps/web/features/homework/homework-detail-screen.tsx` ekleri `<span className="hwd-att">` olarak çiziyor: tıklanamıyor, indirme
-ya da önizleme yok. Öğretmen ve idare web'den ödeve eklenmiş dosyaya hiç ulaşamıyor. (Aynı ekranın öğrenci teslimi sahnesi
-`submission-file-stage.tsx` görseli ve PDF'i satır içi gösteriyor — ek tarafı geride kalmış.)
-✅ **2026-10-10 · kodda (dev, api `0f927150` · ui `9bc3d35`):** ek DTO'su içerik türünü taşıyor (`contentType`, okul kapsamlı
-alt sorgu); web'de dosya eki düğme, bağlantı eki yeni sekme. Dosya eki öğrenci teslimiyle aynı sahnede açılır
-(`attachment-viewer.tsx` → `SubmissionFileStage`; görsel satır içi, PDF çerçevede, Word "İndir"); öğretmen ve idare detayı paylaşır.
-📏 **2026-10-10 · yerelde ölçüldü (Altınay, tarayıcı):** öğretmen (Hatice Karavuş) ve idare (Metin Kabaca) detayında
-`calisma-kagidi-2.pdf` pencerede açıldı, içerik göründü; EBA bağlantısı bağlantı olarak çiziliyor. Not: seed'deki 45 baytlık
-sahte PDF'ler (`calisma-kagidi-1.pdf` vb.) tarayıcıda "yüklenemedi" der — veri sorunu, kod değil. ⬜ Test ortamında ölçülünce arşive.
-
-### `E-47` · Mobilde öğretmen ekindeki görsel uygulama içinde gösterilmiyor 🟡
-
-Öğrenci/veli ödev detayının "Öğretmen ekleri" listesi (`self-parts.tsx :: AttachmentList`) her dosyayı `openFileDownload` +
-`Linking.openURL` ile tarayıcıya gönderiyor; görsel de dahil. Duyuruda aynı ihtiyaç `E-46` ile çözüldü (satır içi önizleme +
-tam ekran); ödev ekinde yok.
-✅ **2026-10-10 · kodda (dev, ui `9bc3d35`):** duyurunun görsel önizlemesi ortak bileşene taşındı (`components/file-image-preview.tsx`);
-ödev ek listesi görsel eki listenin altında satır içi gösterir.
-📏 **2026-10-10 · yerelde ölçüldü (Expo web):** yalnız bir öğrenciye hedeflenmiş test ödevindeki PNG eki öğrenci detayında satır
-içi göründü (ölçüm sonrası ödev iptal edildi; push yerel API'de kapalıydı). ⬜ Cihazda ölçülünce arşive.
-
-### `E-48` · Mobilde PDF uygulama içinde görüntülenmiyor — tarayıcıya ya da indirmeye düşüyor 🟡
-
-Teslim görüntüleyicisi (öğretmen/öğrenci/veli) ve öğretmen ekleri PDF'i "Aç" ile imzalı indirme adresine gönderiyor
-(`Content-Disposition: attachment`): iOS'ta Safari'ye geçiyor, Android'de çoğunlukla dosya inip kalıyor. Web'de öğretmen
-görüntüleyicisi PDF'i satır içi gösteriyor. ✅ **Karar (2026-10-10, kullanıcı):** uygulama içi görüntüleyici için
-`react-native-pdf` eklenir (yerel modül, yeni derleme gerekir).
-✅ **2026-10-10 · kodda (dev, ui `9bc3d35`):** `react-native-pdf` + `react-native-blob-util`; `components/pdf-view.native.tsx`
-satır içi imzalı adresi (`inline`) gösterir — teslim sahnesi ve öğretmen eki penceresi kullanır. Web karşılığı (`pdf-view.tsx`)
-yok sayılır, web eski davranışla indirir (Expo web'de ölçüldü). iOS simülatör derlemesi yerel modülle başarılı.
-⬜ Uygulama içi PDF cihazda/simülatörde ölçülmedi (simülatörde dokunma yapılamadı) — yeni mobil derleme gerekir; ölçülünce arşive.
-
-### `B-103` · Virüslü bulunan teslim listede kalıyor, kotadan yiyor; indirme "henüz taranmadı" diyor 🟠
-
-Öğrenci dosyayı bağladığında tarama henüz `Pending`; EICAR test dosyası saniyeler sonra `Infected` + karantina oldu ama teslim
-satırı kaldı: öğrencinin 5 dosyalık kotasının birini yedi, öğretmenin ızgarasında açılamayan dosya olarak durdu, indirme ucu
-"Dosya henüz virüs taramasından geçmedi" (409) dedi. `FileQuarantinedEvent` yayınlanıyordu ama **hiç tüketicisi yoktu**.
-
-✅ **2026-10-04 · kodda:** ödev modülü olayın ilk tüketicisi — teslim sistem adına yumuşak silinir (`HomeworkSubmissionRemoval.Quarantine`:
-aktörsüz, durum kapısı atlanır, gerekçe satırda). İndirme ucu virüslü dosyaya `FILES_INFECTED` (409) "Dosyada zararlı içerik
-bulundu; bu dosya açılamaz." döner; istemci kataloğuna da eklendi. Birim testli (kapanmış ödevde de kaldırır, ilgisiz dosyada yazmaz).
-⬜ Açık ayak: öğrenciye "dosyan kaldırıldı" haberi yok — dosya listeden sessizce düşer.
-
-📏 **2026-10-10 · kapanış turu (koda karşı ölçüldü, `origin/dev` api `3f3831e5` · ui `876b32e`):** kısmen — karantina + FILES_INFECTED dev'de (api 3547e33b); öğrenciye "dosyan kaldırıldı" bildirimi yok.
-✅ **2026-10-10 · açık ayak kodda (dev, api `f3fd9399`):** karantina handler'ı kayıttan sonra dosyayı yükleyen öğrenciye
-"Teslim dosyan kaldırıldı" bildirimi kuyruklar (veliye gitmez; tür `HomeworkPublished` — B-105 emsali, derin bağlantı ödev
-detayı). Birim testli. ⬜ Test ortamında EICAR ile ölçülünce arşive.
-📏 **2026-10-10 · yerelde EICAR ile ölçüldü — iki kaçak bulundu ve kapandı:**
-1. **Bildirim hiç gitmiyordu.** `VirusScanJob` MediatR pipeline'ından geçmediği için tüketicinin `IPostCommitDispatcher`'a bıraktığı
-   bildirim kuyruğa hiç alınmıyordu (teslim kaldırılıyor, haber sessizce kayboluyordu; birim test sahte kuyrukla geçmişti).
-   ✅ dev, api `b7210555`: job kayıttan sonra kuyruğu drene eder; düzeltmesiz kırılan entegrasyon testi eklendi.
-2. **Tarama teslimden önce biterse virüslü dosya kalıcı bağlanıyordu.** Oturum yenilemesi teslimi bir saniye geciktirince dosya
-   `Infected` olduktan sonra teslime bağlandı; olay çoktan yayınlandığı için kaldırılmadı. ✅ dev, api `15e02bad`: teslim ekleme
-   `Infected` dosyayı `FILES_INFECTED` (409) ile reddeder, öğrenci "Dosyada zararlı içerik bulundu" uyarısını görür. Birim testli.
-Ölçüm (Expo web, öğrenci Ali Arda Ata): EICAR'lı `.docx` (V-05 imza kapısını geçen tek yol — EICAR yalnız dosya başındayken
-tanınır, PDF imzası önüne konamaz) → teslim sistem adına kaldırıldı + yalnız öğrenciye "Teslim dosyan kaldırıldı" bildirimi, derin
-bağlantı ödev detayına açtı; erken biten taramada teslim 409 ile reddedildi. ⬜ Test ortamında ölçülünce arşive.
-
-### `D-51` · Şubeler sözlük sırasıyla diziliyor — 9-A, 12-D'nin altında ⚪
-
-Ödev panosu (yoğunluk) ve yönetici süzgeçleri şubeleri `StringComparer.Ordinal` ile sıralıyor: 10-A … 12-D, sonra 9-A, 9-B.
-Kademe + şube sırası beklenir. Büyük olasılıkla modüller arası kalıp (başka ekranlarda da aranmalı) — tek ekranda yamamak yerine
-ortak bir şube sıralama anahtarı.
-🟡 **2026-10-04 · kısmen kodda:** ödev yönetim kataloğu (pano + süzgeçler) `GradeLevel.DisplayOrder` → ad sırasına geçti; öğretmen
-süzgeci core `homeworkSectionOptions` ile doğal sıralı. Başka modüllerde aynı kalıp aranmadı — madde açık.
-✅ **2026-10-10 · kodda (dev, api `51cdb2ab` · ui `c82bd09`):** ortak karşılaştırıcı — sunucuda `SectionNameComparer`
-(baştaki sayı sayı olarak, kalan Türkçe; sayısız ad önde), istemcide core `compareSectionNames` (aynı kural). Uygulandığı yerler:
-yoklama canlı pano, not defterlerim, sınav panosu (liste + ısı haritası), sınav görevlerim, sınav yerleşimlerim, öğretmen ders
-atamaları, yayın çakışma listesi; web ödev panosu ve şube sınav çıktısı. Mobilde ayrı şube sıralaması yok. ⬜ Test ortamında ölçülünce arşive.
-📏 **2026-10-10 · yerelde ölçüldü:** idare ödev şube süzgeci (9-A, 9-B, 10-A … 12-D) ve yoklama canlı panosu doğru. Ölçümde bir
-kaçak daha bulundu: yeni ödev formu (`GetHomeworkFormContext`) şubeleri hâlâ `Ordinal` diziyordu (10-A, 9-A) — ✅ dev, api
-`404bf9ba`, formda 9-A, 10-A ölçüldü. Sınav panosu ölçülemedi: Altınay'da sınav penceresi yok.
-
-### `E-36` · Öğrenci mobilde PDF teslim edemiyor — "PDF seç" seçeneği yok 🟡
-
-Tasarım (EKRAN 5): yükleme sayfası **Fotoğraf çek · Galeriden seç · PDF seç**. Uygulamada yalnız ilk ikisi var;
-`expo-document-picker` kurulu değil. Politika PDF/Word kabul ediyor, yani öğrenci matematik çözümünü taranmış PDF olarak
-veremiyor. Yerel modül eklemek geliştirme istemcisinin yeniden derlenmesini gerektirdiği için gece turunda yapılmadı.
-✅ **2026-10-10 · kodda (dev, ui `9b4404a`):** `expo-document-picker` eklendi (kullanıcı onayı); yükleme sayfasında üçüncü satır
-"PDF seç" — PDF ve DOCX, `lib/pick-document.ts` `pickImage` ile aynı sonucu döner, ön eleme ve yükleme aynı işleyicide.
-⬜ Yerel modül: cihazda denemek için yeni mobil derleme gerekir; ölçülünce arşive.
-📏 **2026-10-10 · yerelde ölçüldü (Expo web):** "PDF seç" satırı görünüyor; seçilen PDF yüklendi (`POST /files` 200, teslim 201)
-ve "Çalışmam" listesine düştü. Cihazda yerel modülle ölçüm bekliyor.
-
-### `TB-269` · Push tercih listesi role göre süzülmüyor — veli öğretmen olaylarını görüyor 🟡
-
-`GetNotificationPreferencesQueryHandler` `PushEventKeyMap.PushableEventKeys`'in 17 anahtarının hepsini her hesaba dönüyor. Veli
-"Not girişi hatırlatması", "Sınav yerleştirme hatırlatması", "Sınav saati isteği" gibi hiç alamayacağı olayların anahtarlarını
-görüyor (ekranda ölçüldü) — `Y-05`/`TB-44` sınıfı sahte anahtar. İstemci süzmez (kural sunucuda). ⬜ Kapatma yolu: anahtarlara
-alıcı rolü bilgisi; liste aktif profile göre süzülür. Mock zaten rol bazlı döndüğü için mock ile sunucu bu noktada ayrışıyor.
-✅ **2026-10-10 · kodda (dev, api `f7d7c4ae`):** `PushEventKeyMap` her anahtara alıcı kitlesi (öğrenci/veli/öğretmen/personel/okul
-yöneticisi) taşıyor; tercih listesi hesabın BÜTÜN profillerinden + müdür/müdür yardımcısı rol atamasından kurulan kitleyle
-süzülüyor (öğretmen-veli iki kümenin birleşimini görür). Birim testli. ⬜ Test ortamında veli hesabıyla ölçülünce arşive.
-📏 **2026-10-10 · yerelde ölçüldü:** veli (Adem Şişman) 11 anahtar aldı — duyuru ×2, devamsızlık, kulüp ×2, sınav ×3, not, ödev ×2;
-öğretmen/idare/öğrenciye özel anahtar yok. Yönetici (Metin Kabaca, yalnız personel profili) duyuru ×2 + idare ×3 aldı.
+_Açık madde yok — son yedisi 2026-10-10'da kapandı ([[OKSİS - Bulgu Arşivi]] §82)._
 
 ## 11. Bildirimler 🟠
 
