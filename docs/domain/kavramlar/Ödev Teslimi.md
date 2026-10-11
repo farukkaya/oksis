@@ -32,7 +32,7 @@ last-synced: 2026-09-13 (294ffe6)
 - İçerik türü kırpılmaz, uzunsa reddedilir; kırpılmış tür yanlış ikon çizer. Ad kırpılabilir.
 - **Teslim sayacı öğrenci sayar:** üç fotoğraf yükleyen öğrenci birdir.
 - **Yükleme takip satırının durumunu değiştirmez.** Dosya gelmesi "tamamlandı" demek değildir; öğretmen dosyaya bakar ve kararı kendisi verir.
-- **Yükleme bildirim üretmez** ve bu kasıtlıdır: 30 kişilik sınıfta akşam 30 bildirim olurdu; öğretmen ızgarada sayıyı görür.
+- **Yükleme bildirim üretmez** ve bu kasıtlıdır: 30 kişilik sınıfta akşam 30+ bildirim olurdu. **Öğretmene haber "Ödev gönder"le gider** (2026-10-11 kullanıcı kararı): öğrenci dosyalarını yükleyip gönderir, ödevden sorumlu öğretmene öğrenci başına tek bildirim düşer ("10-C │ Ad Soyad" · "Ödev gönderdi · Ders: başlık"); dokununca öğretmen detayında o öğrencinin paneli açılır. Gönderim damgası satırdadır; dosya eklenince/kaldırılınca düşer ve öğrenci yeniden gönderir. Değişmemiş teslimi ikinci kez göndermek yeni bildirim üretmez. Öğretmenin işareti damgaya dokunmaz.
 - Rehber öğretmen teslim içeriğini görmez; veli görür ama yükleyemez ve veli şemasında "yükleyebilir" alanı **hiç yoktur** — alanın varlığı bile bir iddiadır.
 - Tekil teslimin kendi okuma ucu yoktur; dosya ödev detayının teslim listesinden okunur.
 - Teslimin **notlandırılması yoktur;** öğretmenin kararı takip satırındaki beş durumdur.

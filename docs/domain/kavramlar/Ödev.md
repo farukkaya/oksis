@@ -48,7 +48,7 @@ last-synced: 2026-09-13 (294ffe6)
 - **Yönetici yazma kapısından geçmez.** Adına yayın yalnız sahibi **ayrılmış** taslakta çalışır, gerekçelidir ve yeni son teslim tarihini zorunlu ister. "Ayrılmış" bir kolon değil, çalışan öğretmenler kümesinin tümleyenidir; sezona bağlı bir kayda bağlansaydı sezon devri gününde bütün öğretmenler ayrılmış görünürdü ([[0016-ayrilmis-ogretmen-kadrodan-turer]]). Sahiplik **devredilmez** (açık soru).
 - **Gecikmiş** ayrı bir durum değil türevdir: yayında ve son teslim günü geçmiş; **kontrol bekliyor** = gecikmiş ve işaretlenmemiş satırı var. İkisi sayaçlardan türer, istemcide hesaplanmaz. Gecikme teslimi kapatmaz; teslimi kapatan sahibinin ödevi kapatmasıdır (bkz. [[Ödev Teslimi]]).
 - **Denetim:** yayın, adına yayın, iptal, toplu tamamlama ve idari teslim kaldırma yazılır; tekil işaretleme ve kapatma yazılmaz. Gerekçe aileyle paylaşılmaz. Okuyan uç bugün yoktur.
-- **Bildirim:** yayın hedef öğrencilere ve velilerine gider; alıcı listesi takip satırlarından okunur, mevcuttan değil (seçili hedefte ikisi ayrışır). İki yayın ucu tek üreticiden geçer ve bildirim kayıt bittikten **sonra** kuyruklanır. Oluşturma, taslak silme ve teslim yükleme bildirim üretmez.
+- **Bildirim:** yayın hedef öğrencilere ve velilerine gider; alıcı listesi takip satırlarından okunur, mevcuttan değil (seçili hedefte ikisi ayrışır). İki yayın ucu tek üreticiden geçer ve bildirim kayıt bittikten **sonra** kuyruklanır. Oluşturma, taslak silme ve teslim yükleme bildirim üretmez; öğrencinin "Ödev gönder"i sorumlu öğretmene tek bildirim üretir (2026-10-11).
 
 ## İlişkiler
 

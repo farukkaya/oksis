@@ -51,7 +51,7 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[Sınav Oturumu]] — kelebek birimi: tek ders, tek saat, çok şube; sahipsiz; derslik ve gözetmen türer, öğrenciler oransal serpiştirilir
 - [[Ödev]] — dönem × şube × ders × sahip; `Draft → Published → Closed | Cancelled`; yayın geri alınamaz, iptal görünür
 - [[Ödev Takibi]] — ödev × öğrenci; beş durum, "işaretlenmedi" karar değil; sonradan katılan satır okurken sentezlenir
-- [[Ödev Teslimi]] — satırın dosyası; yumuşak kaldırma, 5 aktif dosya kotası, yükleme bildirim üretmez
+- [[Ödev Teslimi]] — satırın dosyası; yumuşak kaldırma, 5 aktif dosya kotası, yükleme değil "Ödev gönder" öğretmene bildirir
 - [[Resmî Tatil]] — millî ve dini tatiller; dini bayramlar seed'de taslak, Diyanet teyidi bekliyor
 - [[Branş]] — öğretmenin alanı; okula özel katalog, MEB kaynaklılar korumalı
 - [[Ders Görevlendirmesi]] — öğretmen × ders yetkinliği; tek kanonik görevlendirme kaydı, kapasite ve kademe süzgeci
