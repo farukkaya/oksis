@@ -27,6 +27,8 @@ Mevcutla birleşim yalnız **tüm sınıfa verilmiş ve hâlâ yayında** olan �
 - **Tekillik:** ödev + öğrenci.
 - Öğrenci numarası ve adı kolon değildir; okumada birleştirilir. Anlık kopya, ad değişikliğinde eski ödevde eski adı gösterirdi.
 - **Muafiyet gerekçesi zorunludur ve duruma bağlıdır:** muaf dışına çıkan satır gerekçesini kaybeder ("tamamlandı — raporlu" çelişkisi kalmasın). Gerekçe bir **sağlık bilgisi** sayılır: rehber öğretmenin ve ailenin şemasında alan boş değil, **hiç yoktur**.
+- **Eksik notu zorunludur, duruma bağlıdır ve öğrenciye görünür** (2026-10-11): öğretmen "eksik" işaretlerken öğrenciye ne eksik olduğunu yazar; not muafiyet gerekçesinden ayrı kolondadır. Ödev hâlâ tamamlanabilirken (yayında, son teslim geçmemiş) öğrenciye "Ders · Ödev · Eksik" bildirimi gider; not bildirim gövdesine yazılmaz, detayda okunur.
+- **Kapatma bir değerlendirme sonudur** (2026-10-11): işaretlenmemiş satırlar (ızgarada görünüp satırı olmayanlar dâhil) "yapılmadı" olur. Ödev gönderip işaretlenmemiş öğrenci varken ödev kapanmaz — onay penceresi önce onları gösterir. Kapanışta ödevin tüm öğrencilerine kapandıkları durumla bildirim gider ("Ders · Ödev · Yapılmadı" — "ödevin teslim edilmeden kapandı"; ötekiler "… ödevin Tamamlandı/Eksik/Muaf olarak kapandı"); veliye gitmez.
 - "İşaretlenmedi"ye dönüş karar damgasını (kim, ne zaman) siler — karar yokluğunun damgası olmaz.
 - **Yalnız sahip işaretler,** yalnız yayındaki ödevde. Sentezlenmiş satır da işaretlenebilir; mevcutta olmayan öğrenci 404.
 - **Toplu tamamlama** işaretlenmemiş kalan tüm satırları, sentezlenmişler dâhil, tamamlandı yapar ve **tek özet** denetim kaydı yazar. Tekil işaretleme denetlenmez.
