@@ -6,7 +6,7 @@ tags:
   - domain/clubs
   - module
 status: completed
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-12 (78da8a03)
 ---
 
 # Kulüpler
@@ -16,6 +16,8 @@ last-synced: 2026-09-13 (294ffe6)
 ## Ne yapar
 
 Okulun öğrenci kulüplerini dört yüzden taşır. **İdare** kulüp açar, düzenler, danışman atar, pasife alır ve arşivler; okulun bütün kulüplerini (taslak ve arşiv dâhil) görür. **Danışman öğretmen** kendi kulüplerini listeler, üye ve başvuru listesini okur, başvuruyu onaylar ya da gerekçesiyle reddeder, etkinlik açar, yayınlar, iptal eder, yoklama tutar ve kulüp duyurusu yayınlar. **Öğrenci** keşif listesinden kulüp bulur, katılır, ayrılır, "Kulüplerim"i görür, üyesi olduğu kulüplerin yaklaşan etkinliklerine kaydolur ve kaydını geri çeker, dönem içi aktivite geçmişini çeker. **Veli** çocuklarının özetini, bir çocuğun kulüplerini, tek kulüp detayını ve aktivite geçmişini **salt okunur** görür.
+
+2026-09-26'dan (`Y-06`) beri modülün beşinci bir yüzü daha var: **programdaki kulüp saati.** Okul ders programına türü "kulüp" olan bir ders koyduğunda, kulüpler o haftalık dilimde toplanan şubeler-üstü gruplara dönüşür; sistem her hafta her aktif kulübe bir "kulüp saati" etkinliği açar, danışmanın aldığı yoklama öğrencinin devamsızlığına yazılır.
 
 Modülün iki karakteristik özelliği var. Birincisi **izin ile kapsamın ayrılması**: bir izin anahtarı ucu açar, handler içindeki kapı **hangi kulüpte** olduğunu söyler. İkincisi **kararın sunucuda verilmesi**: öğrencinin "Katıl" düğmesi sunucunun türettiği beş durumlu hâlden çizilir; istemci mod, kontenjan ve pencereden kendi kararını üretmez.
 
@@ -33,16 +35,20 @@ Modülün iki karakteristik özelliği var. Birincisi **izin ile kapsamın ayrı
 - [[Modül Yapılandırması]] — `clubs` anahtarı; standart katman, plan kısıtı yok
 - [[Bildirim]] / [[Bildirim Türü]] — dört olay: başvuru sonucu, etkinlik yayını, etkinlik iptali, duyuru yayını; dördü de uygulama içi + push
 - [[Okul]] — saat dilimi ve "okulun bugünü"
+- [[Derslik]] — kulüp saatinin yeri; katalogdan kimlikle seçilir
+- [[Ders Programı]] / [[Program Sürümü]] — kulüp saatinin kaynağı; türü kulüp olan dersin yerleşimleri, her gün o gün yürürlükteki sürümden
+- [[Zil Çizelgesi]] — kulüp saati etkinliğinin başlangıç ve bitiş anı
+- [[Yoklama Oturumu]] — kulüp saati yoklamasının devamsızlığa yazıldığı oturum
 
 ## Ana akışlar
 
-1. **Kulüp açma ve düzenleme** — İdare gövdede durum ve sezon göndermez: sezonu sunucu çözer (yoksa 409), durum danışmandan türer. Düzenleme gövdesi oluşturmayla aynıdır; danışman alanı her kaydetmede gönderilir, `null` danışmanı kaldırır ama kulübü taslağa düşürmez, dolu değer taslağı yayına alır. Durum değişikliği ayrı uçtur (aktif ↔ pasif, arşiv); "adı düzelten" bir istek kulübü sessizce kapatamaz. Danışman seçicisinin havuzu okulun bugünkü kadrosudur ve kulüp bağlamı olmadan da açılır; yalnız idare okur — öğretmen listesi kadro kaydıdır ([[0016-ayrilmis-ogretmen-kadrodan-turer]]).
+1. **Kulüp açma ve düzenleme** — İdare gövdede durum ve sezon göndermez: sezonu sunucu çözer (yoksa 409), durum danışmandan türer. Düzenleme gövdesi oluşturmayla aynıdır; danışman alanı her kaydetmede gönderilir, `null` danışmanı kaldırır ama kulübü taslağa düşürmez, dolu değer taslağı yayına alır. Durum değişikliği ayrı uçtur (aktif ↔ pasif, arşiv); "adı düzelten" bir istek kulübü sessizce kapatamaz. Danışman seçicisinin havuzu okulun bugünkü kadrosudur ve kulüp bağlamı olmadan da açılır; yalnız idare okur — öğretmen listesi kadro kaydıdır ([[0016-ayrilmis-ogretmen-kadrodan-turer]]). Kulübün kulüp saati yeri de bu formdan seçilir. Danışmanı başka bir aktif kulübün danışmanı olan öğretmen, oluşturmada, danışman değişiminde ve yeniden aktifleştirmede reddedilir (409).
 
-2. **Katılma ve ayrılma** — Tek katılma komutu iki modu karşılar: açık kulüpte anında üyelik ve sayaç artışı, onaylı kulüpte bekleyen başvuru. Ayrı "başvur" ucu yoktur ve yazılmayacaktır. Ayrılma da tek uçtur: bekleyen için geri çekme, üye için ayrılma; kulübün durumu süzülmez. Kimlik yetkilendirme başlığından çözülür; öğrenci başkasının adına işlem yapamaz. Kontenjan başvuruda kapatılır, onayda yeniden bakılır; bekleme listesi yoktur. Başvuru ve üyelik tek kayıttır ([[0014-kulup-basvurusu-ve-uyeligi-tek-kayit]]).
+2. **Katılma ve ayrılma** — Tek katılma komutu iki modu karşılar: açık kulüpte anında üyelik ve sayaç artışı, onaylı kulüpte bekleyen başvuru. Ayrı "başvur" ucu yoktur ve yazılmayacaktır. Ayrılma da tek uçtur: bekleyen için geri çekme, üye için ayrılma; kulübün durumu süzülmez. Kimlik yetkilendirme başlığından çözülür; öğrenci başkasının adına işlem yapamaz. Kontenjan başvuruda kapatılır, onayda yeniden bakılır; bekleme listesi yoktur. Öğrencinin sezonda başka bir kulüpte canlı satırı varsa (bekleyen başvuru dâhil) ya da okulda kulüp saati varken sınıfında yoksa katılma kulübün hâlinden bağımsız olarak reddedilir; cümle keşifteki "kapalı" gerekçesiyle aynıdır. Başvuru ve üyelik tek kayıttır ([[0014-kulup-basvurusu-ve-uyeligi-tek-kayit]]).
 
-3. **Başvuru kararı** — Onay ve ret tek komut, iki kol. Kararı danışman **ya da** idare verir; izin `clubs.write`'tır (`clubs.manage` değil) çünkü karar danışmanın asli işidir ve öğretmende yönetme izni yoktur. Kulüp satırı karar sırasında değişmişse ayrı bir çakışma kodu döner. Danışmansız aktif kulüpte kararı idare verir; sonradan atanan danışman bekleyenleri devralır ([[0015-danismansiz-aktif-kulup-basvuru-alir]]). Onay iki olay yayar; bugün yalnız "sonuçlandı" olayının tüketicisi var.
+3. **Başvuru kararı** — Onay ve ret tek komut, iki kol. Kararı danışman **ya da** idare verir; izin `clubs.write`'tır (`clubs.manage` değil) çünkü karar danışmanın asli işidir ve öğretmende yönetme izni yoktur. Kulüp satırı karar sırasında değişmişse ayrı bir çakışma kodu döner. Danışmansız aktif kulüpte kararı idare verir; sonradan atanan danışman bekleyenleri devralır ([[0015-danismansiz-aktif-kulup-basvuru-alir]]). Onay anında tek üyelik yeniden sorulur: kural yürürlüğe girmeden düşmüş ikinci başvuru onaylanıp iki üyeliğe dönüşemez. Onay iki olay yayar; bugün yalnız "sonuçlandı" olayının tüketicisi var.
 
-4. **Etkinlik ve yoklama** — Danışman etkinliği taslak açar, ayrı bir jestle yayınlar; iptal gerekçe ister. Yoklama listesi ilk açılışta üye listesinden türetilir, kaydedilince yalnız gönderilen satırlar yazılır. Tamamlanmış etkinlikte de yoklama yazılabilir. Her gece 23:00'te bir iş bitmiş yayınları "tamamlandı"ya çeker; okul okul, seri, idempotent.
+4. **Etkinlik ve yoklama** — Danışman etkinliği taslak açar, ayrı bir jestle yayınlar; iptal gerekçe ister. Yoklama listesi ilk açılışta üye listesinden türetilir, kaydedilince yalnız gönderilen satırlar yazılır. Tamamlanmış etkinlikte de yoklama yazılabilir. Her gece 23:00'te bir iş bitmiş yayınları "tamamlandı"ya çeker; okul okul, seri, idempotent. Danışman kartındaki etkinlik sayısı iptal edilmemiş bütün etkinlikleri, kulüp saati dâhil, sayar (`D-42`; kart "0" derken kulübün içindeki sekme kulüp saatlerini gösteriyordu).
 
 5. **Kulüp duyurusu** — Tek adım yayın; imza çağırandan çözülür ve donar. Dört rol aynı uçtan okur.
 
@@ -62,13 +68,19 @@ Handler içindeki ikinci katman "hangi kulüp" sorusunu sorar ve sırası sabitt
 
 **Hata sözleşmesi.** Kodlar `Clubs.` önekiyle gelir ve HTTP durumu önekten çözülür: doğrulama 400 (bozuk süzgeç, tanınmayan kategori, kadroda olmayan danışman, durum değiştirmede taslak hedefi, roster'da üye olmayan öğrenci); durum makinesi ihlali, kontenjan dolu, eşzamanlı karar, sezon yok ve aynı adda kulüp 409; kapsam dışı, başka sezonun kulübü ve okuma yolunda sezonsuz okul 404. 409 ölçütü: "gövde kusursuz, kaydın hâli uygun değil" — aynı istek koşul değişince aynen geçer. Domain istisnasının Türkçe mesajı korunur ve doğrudan kullanıcıya gösterilir. Ad tekilliği iki katmandır: ön kontrol hatayı anlaşılır yapar, indeks son savunmadır ve ihlal indeks adından tanınır.
 
-### Kulüp saati (`Y-06`, 2026-09-26)
+### Kulüp saati (`Y-06`, 2026-09-26 · `E-34` · `B-92` · `B-98` · `Y-07`)
 
 - Kulübün **kulüp saati yeri** okulun derslik kataloğundan seçilir (isteğe bağlı; boşsa "Belirtilmedi"). Kulüpte kullanılan derslik silinemez.
 - **Tek aktif danışmanlık:** öğretmen bir sezonda yalnız bir aktif kulübün danışmanı olur (oluşturma, danışman değişimi, yeniden aktifleştirme). Pasif kulüp sayılmaz.
 - **Tek üyelik:** öğrencinin bir sezonda tek canlı (bekleyen/aktif/askıda) üyeliği olur; keşifte öteki kulüpler "kapalı" ve gerekçeli, katılma ve onay uçları reddeder.
 - **Başvuru kapsamı:** okul kulüp saatini programa koyduysa sınıfında kulüp saati olmayan öğrenci kulüpleri görmez, başvuramaz.
 - **Kulüp saati etkinliği:** programda kulüp saati olan her hafta her aktif kulübe sistem açar (tür `clubHour`); aktif üyeler kayıtlı doğar, öğrenci geri çekemez, kontenjan kapısı işlemez, elle iptal edilemez, tatilde açılmaz. Yoklamayı danışman alır; işaret öğrencinin devamsızlığına yazılır (`E-34`, bkz. [[Yoklama ve Devamsızlık]] · Kulüp saati): mazeret kapsar, düzeltme penceresi işler, işaretlenmiş yoklama "kayıtlı"ya geri alınamaz.
+- **Açılış ve hizalama — tek yer:** her sabah 06:20'de bir iş, okul okul, bugünden haftanın cumasına kadar hizalar; zil çizelgesini ya da gün atamasını değiştiren her komut da kayıttan sonra aynı hizalamayı çağırır. Kaynak her gün için o gün yürürlükteki program sürümüdür (`Y-07`: yayın günü ikiz etkinlik doğmaz); saat o günün zilinden, yer kulübün dersliğinden gelir. Aynı gündeki ardışık kulüp saatleri tek etkinliktir. Okul günü olmayan, tatil ya da zili o saatte ders olmayan gün pencere üretmez. İşin HTTP ucu yoktur ve izin kapısı taşımaz (sistem komutu).
+- **Zil değişince (`B-98`):** başlangıcı aynı kalan etkinlik yerinde kalır (başlamadıysa bitişi güncellenir); kayan pencereye başlamamış eski etkinlik **taşınır** — kimliği ve katılım satırları korunur, ikiz açılmaz. Hiçbir pencereye uymayan, başlamamış ve hiç işaretlenmemiş etkinlik katılımlarıyla birlikte **yumuşak silinir**, iptal edilmez: iptal üyelere bildirim üretir ve listede "İptal" olarak kalırdı, oysa hiç gerçekleşmeyecek bir saatin duyurulacak iptali yoktur. Başlamış ya da işaretli etkinliğe dokunulmaz.
+- **Üye listesi başlangıca dek izlenir:** başlamamış etkinliğe yeni aktif üye kayıtlı eklenir, üyeliği biten öğrencinin kaydı geri çekilir.
+- **Yoklama saati (`B-92`):** kulüp saatinde "katıldı/katılmadı" en erken başlangıçtan 5 dakika önce işaretlenir; şube yoklamasıyla aynı kural, aynı kaynak. Sıradan etkinlik bu kapıya takılmaz.
+- **Eşleşmeyen yoklama sessiz geçmez (`B-98`):** etkinliğin saati öğrencinin şubesinin programındaki kulüp saatiyle eşleşmiyorsa yoklama reddedilir ve "idareye bildirin" denir; katılım ve devamsızlık tek kayıtta yazıldığı için biri reddedilirse ikisi de yazılmaz.
+- **Program tarafındaki yansımalar** (sahibi bu modül değil): yayın hazırlık kontrolü kulüp saatinin şubeler arasında farklı dilimde olmasını ve danışmanın o dilimde başka şubeye ders almasını engel; kulüpsüz öğrenciyi, kapsam dışındaki üyeliği, danışmansız aktif kulübü, yeri belirtilmemiş kulübü ve aynı derslikteki iki kulübü uyarı sayar. Aktif kulübü olan danışman o dilimde meşguldür (vekil/nöbetçi olarak boş sayılmaz) ve kulüp saati haftalık ders yüküne bir kez eklenir (bkz. [[Ders Programı Yönetimi]], [[Görevlendirmeler]]).
 
 ## Kapsam dışı
 
@@ -79,7 +91,7 @@ Handler içindeki ikinci katman "hangi kulüp" sorusunu sorar ve sırası sabitt
 - **Sayfalama.** Kulüp, üye, başvuru ve veli özeti listeleri tek yanıtta döner; sözleşmede de yok. Yüzlerce kulüplü okul çıkarsa yeniden düşünülür.
 - **Duyuru düzenleme ve silme.** Yeni duyuru yayınlanır.
 - **Geçmiş sezon görünümü.** Hiçbir uç sezon parametresi almaz; arşiv kulüp yalnız idarenin listesinde görünür.
-- **Ders programındaki "Kulüp" saatiyle bağ** ve **ders saatiyle çakışan etkinliğin devamsızlık köprüsü.** İkisi de bilinçli olarak kurulmadı.
+- **Ders saatiyle çakışan sıradan etkinliğin devamsızlık köprüsü.** Devamsızlığa yalnız kulüp saati etkinliği yazılır; gezi, turnuva gibi sıradan etkinlik bilinçli olarak yazmaz. (Ders programındaki kulüp saatiyle bağ 2026-09-13'te kapsam dışıydı; `Y-06` kurdu.)
 - **Dosya bağı.** Dosya kategorisi kataloğunda "kulüp belgesi" tanımlı, ama kulüp kayıtlarına dosya bağlanamıyor (bkz. [[Dosya Kategorisi]]).
 - **Öğretmen için etkinlik detay ucu** ve öğrenci için **geçmiş etkinlik listesi.**
 - **Veliye yazma.** Salt okunur; tercih listesi rol süzgeci push tarafında ayrı iş.

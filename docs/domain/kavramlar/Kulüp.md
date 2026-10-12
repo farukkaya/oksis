@@ -3,7 +3,7 @@ aliases: [Club, Öğrenci Kulübü]
 tags: [domain/clubs]
 table: school.clubs
 status: active
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-12 (78da8a03)
 ---
 
 # Kulüp
@@ -14,7 +14,7 @@ last-synced: 2026-09-13 (294ffe6)
 
 Bir sezonda açılan, şubeden bağımsız öğrenci topluluğu — "Satranç Kulübü", "Robotik Kulübü". Koordinatı **okul × sezon × ad**; aynı sezonda aynı adla ikinci kulüp açılamaz. Modülün aggregate root'u, ama üyelik, etkinlik ve duyuru onun çocuğu **değildir**: üçü de kendi kökleridir ve kulübe yalnız kimlikle bağlanır.
 
-İki komşuyla karıştırılmamalı. Ders programındaki haftalık "Kulüp" saati bir **derstir** ([[Ders]] kataloğunda, şubeye bağlı); buradaki kulüp 9-A'dan da 11-C'den de öğrenci alır ve ikisi arasında bağ yoktur, MVP'de kurulmayacaktır. Gezi/tören sayımı olan [[Etkinlik Yoklaması]] da ayrı bir şeydir (bkz. [[Kulüp Etkinliği]]).
+İki komşuyla karıştırılmamalı. Ders programındaki haftalık "Kulüp" saati bir **derstir** ([[Ders]] kataloğunda, türü kulüp, şubeye bağlı ve öğretmensiz); buradaki kulüp 9-A'dan da 11-C'den de öğrenci alır. 2026-09-13'te ikisi arasında bağ yoktu; `Y-06` ile (2026-09-26) bağ kuruldu: okul kulüp saatini programa koyduğunda o dilim bütün kulüplerin toplandığı ortak saattir, kulübün kendisi ise yine şubeden bağımsızdır — kulübe sınıf alanı eklenmedi, kapsam programdan türer. Gezi/tören sayımı olan [[Etkinlik Yoklaması]] da ayrı bir şeydir (bkz. [[Kulüp Etkinliği]]).
 
 ## Yaşam döngüsü
 
@@ -47,6 +47,8 @@ Bir sezonda açılan, şubeden bağımsız öğrenci topluluğu — "Satranç Ku
 - **Başvuru penceresi** iki uçlu ya da tek uçludur ("15 Eylül'den itibaren, bitiş yok" kabul edilir), bitiş günü **dâhildir**, ters pencere reddedilir. Pencere **okulun gününe** göre ölçülür, sunucunun makinesinin gününe değil. "Başvurular açık mı" sorusunun tek kaynağı vardır ve telin `applicationOpen` alanını, kartın notunu ve öğrencinin beş durumlu ekran hâlini aynı kaynak besler — üçü ayrışırsa kart "açık" derken düğme kapalı olur. Bu soru **kontenjana bakmaz**: dolu kulüp idare yüzünde "başvurular açık" görünür; "katılabilir mi" ayrımını öğrencinin beş durumlu hâli taşır ve ikinci bir yerde yeniden türetilmez.
 - **Kategori bir enum'dur, lookup tablosu değildir.** On değer sabittir; "Satranç" kategori değil kulüp adıdır (Spor altında). Sayısal değerler kolona gömülüdür; yeni kategori yalnız sona eklenir.
 - **Kulüp içi roller (başkan, başkan yardımcısı) yetki DEĞİL etikettir** — gerçek yetki [[Sistem Rolü]] ve [[Rol Ataması]]'ndadır; MVP'nin tek yönetici rolü danışman öğretmendir.
+- **Tek aktif danışmanlık (`Y-06` karar 7).** Bir öğretmen bir sezonda en fazla bir **aktif** kulübün danışmanıdır; kulüp saatinde danışman kendi kulübündedir ve iki aktif kulüp aynı dilimde iki yer demektir. Kural oluşturmada (danışmanlı kulüp aktif doğar), danışman değişiminde, taslağın danışman atanarak aktifleşmesinde ve pasif kulübün yeniden aktifleştirilmesinde sorulur; pasif kulüp sayılmaz. İhlal durum çakışmasıdır (409), gerekçe öteki kulübün adını söyler.
+- **Kulüp saati yeri bir [[Derslik]] kimliğidir, serbest metin değildir.** İsteğe bağlıdır (boşsa "Belirtilmedi"); iki kulübün aynı dilimde aynı dersliğe düşmesi ancak kimlikle yakalanır. Katalogda aktif olmayan derslik seçilemez (400), ama kontrol yalnız yer **değiştiğinde** yapılır — pasife alınmış derslikte duran kulübün adı yine düzeltilebilmeli (danışman kapısıyla aynı gerekçe). Kulübün kullandığı derslik silinemez; arşivlenmiş kulübün yeri değiştirilemez. Sistemin açtığı kulüp saati etkinliği yer adını kulübün dersliğinden alır.
 - Kolon sınırı ile doğrulayıcı sınırı bilinçli olarak farklıdır (kolon geniş, doğrulayıcı dar); domain aşan metni kırpar, asıl kapı doğrulayıcıdır ve o reddeder.
 
 ## İlişkiler
@@ -57,10 +59,13 @@ Bir sezonda açılan, şubeden bağımsız öğrenci topluluğu — "Satranç Ku
 - [[Kulüp Etkinliği]] — kulübün faaliyeti; ayrı kök, sezonunu kulüp üzerinden alır
 - [[Kulüp Duyurusu]] — kulübün üyelerine haberi; ayrı kök, sezonunu kulüp üzerinden alır
 - [[Modül Yapılandırması]] — `clubs` anahtarı; standart katman, plan kısıtı yok, yeni okulda açık doğar
+- [[Derslik]] — kulüp saatinin yeri; kimlikle, kısıtlı silme
+- [[Ders Programı]] — kulüp saati dilimi; aktif kulüp danışmanının o dilimdeki meşguliyeti ve haftalık yükü buradan
 
 ## Geçtiği modüller
 
 - [[Kulüpler]] — kavramın sahibi; açma, düzenleme, durum, danışman havuzu burada
+- [[Ders Programı Yönetimi]] — yayın hazırlık kontrolü (danışman çakışması, yeri belirtilmemiş kulüp, aynı derslikte iki kulüp)
 
 <!-- generated:end -->
 

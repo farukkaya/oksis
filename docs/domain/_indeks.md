@@ -99,7 +99,7 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 
 - [[Kulüp]] — okul × sezon × ad; `Draft → Active ↔ Inactive → Archived`; danışmansız aktif kulüp başvuru alır
 - [[Kulüp Üyeliği]] — başvuru ve üyelik tek kayıt; terminal hâlden çıkış yok, yeniden başvuru yeni satır
-- [[Kulüp Etkinliği]] — saatli faaliyet; `Draft → Published → Completed | Cancelled`; tamamlandı etikettir, kilit değil
+- [[Kulüp Etkinliği]] — saatli faaliyet; `Draft → Published → Completed | Cancelled`; tamamlandı etikettir, kilit değil; kulüp saati etkinliği programdan açılır, yoklaması devamsızlığa yazılır
 - [[Etkinlik Katılımı]] — kayıt ve yoklama tek satır; koşulsuz tekillik, geri çekilmiş satır yeniden açılır
 - [[Kulüp Duyurusu]] — durum makinesiz, silinmez, imzası donar; [[Duyuru]]'nun kardeşi, örneği değil
 
@@ -119,7 +119,7 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[Kimlik Doğrulama]] — giriş, oturum, bağlam geçişi, parola, izin çözümleme
 - [[Duyurular]] — kitlesel iletişim; hedefleme, moderasyon, şablonlar
 - [[Bildirimler]] — olay → alıcı → kanal; uygulama içi, push ve e-posta; mükerrer koruması
-- [[Kulüpler]] — öğrenci kulüpleri; dört yüz (idare, danışman, öğrenci, veli), izin ≠ kapsam, sezon süzgeci elle
+- [[Kulüpler]] — öğrenci kulüpleri; dört yüz (idare, danışman, öğrenci, veli), izin ≠ kapsam, sezon süzgeci elle; programdaki kulüp saati, tek danışmanlık ve tek üyelik
 - [[Notlar]] — dönem içi not girişi; yayın birimi sütun, tembel defter, kapsam ders programından, karar sunucuda
 - [[Ödevler]] — ödevin tüm ömrü; beş yüz (öğretmen, öğrenci, veli, idare, rehber), görünüm kimlikten, sahiplik ≠ kapsam, üç bildirim ve iki gece işi
 - [[Sınav Takvimi]] — sınav haftası; iki düzen (ders saati, kelebek), iki adımlı yayın, üç kademeli kural denetimi, ders programına yazmaz

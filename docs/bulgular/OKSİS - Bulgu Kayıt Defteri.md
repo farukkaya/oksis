@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-116` · `D-69` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-117` · `D-69` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -582,6 +582,17 @@ sürümü/aktiflik güncellensin, 200 dönsün; eşzamanlı iki istek için benz
 (hesap + token varsa güncellenir, 200); `33af6e3b` eşzamanlı yarışta benzersiz indeks ihlali ya da eşzamanlılık çakışması
 yakalanıp satır yeniden okunarak tekrar denenir, soft-delete'li satırla çakışma yutulmaz. İstemci `registerDevice`
 veritabanı uyanırken yeniden dener (`X-25`). Entegrasyon testleri yeşil.
+
+### `B-116` · Kulüp etkinliği yayını ve iptali bildirimi veliye hiç gitmiyor 🟠
+
+2026-10-12, kod taraması (kulüp tercih/yerleştirme işi, D6 sırasında; dal `feature/kulup-tercih-yerlestirme`, `master`'daki kodla aynı).
+`ClubActivityPublishedNotificationHandler.cs:72` ve `ClubActivityCancelledNotificationHandler.cs:75` **öğrenci** kişi kimliklerini
+`INotificationRecipientResolver.ResolveGuardianAccountsMapAsync`'e veriyor; metot ise **veli** kişi kimliği bekliyor
+(`NotificationRecipientResolver.cs:138` — verilen kimlikleri doğrudan `Persons.LinkedAccountId`'ye çeviriyor). Sonuç: "veli" eşlemesi
+öğrencilerin kendi hesaplarını döndürüyor, `Distinct` onları eliyor; etkinlik yayını ve iptali **hiçbir veliye ulaşmıyor**. Domain notu
+([[Kulüp Etkinliği]] · Bildirim) ve analiz (S-12) veliyi alıcı sayıyor; birim testler alıcı kümesini sahte çözümleyiciyle ölçtüğü için
+yakalamadı. ⬜ Öneri: önce öğrenci → veli kişi kimliği çözümü (`ResolveGuardianPersonIdsAsync`, `CanViewInfo` süzgeciyle; tercih işinde
+eklenen `ResolveGuardianPersonIdsByStudentAsync` de kullanılabilir), sonra hesap eşlemesi; gerçek çözümleyiciyle entegrasyon testi.
 
 ### `TB-276` · Sessiz saatte ertelenen push alıcı başına ayrı Hangfire işi açıyor 🟡
 

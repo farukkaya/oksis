@@ -3,7 +3,7 @@ aliases: [ClubActivityParticipation, Katılım, Etkinlik Kaydı]
 tags: [domain/clubs]
 table: school.club_activity_participations
 status: active
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-12 (78da8a03)
 ---
 
 # Etkinlik Katılımı
@@ -39,6 +39,16 @@ Bir öğrencinin bir kulüp etkinliğine kaydı **ve** yoklaması — ikisi tek 
 - **Geçmişte yalnız "geldi" sayılır.** Öğrencinin ve velinin dönem içi aktivite geçmişi ile velinin çocuk özetindeki etkinlik sayısı aynı tanımı paylaşır: yalnız Present satırlar, yalnız **başlamış** ve **iptal edilmemiş** etkinliklerde. Gelmedi, geri çekilmiş, yoklaması henüz yapılmamış kayıt ve gelecekteki etkinlik sayılmaz; kayıt yaptırıp işaretlenmemiş öğrenci o etkinliğe katılmış sayılamaz. Özet bir ara kayıtlıları da sayıyordu ve veli iki ekranda iki farklı sayı görüyordu (B-48). Saat sayısı satırların dakikalarının toplamının saate yuvarlanmasıdır. Geçmiş yalnız aktif sezondur.
 - Kimliği çözülemeyen çağıran geçmiş sorgusunda boş özet alır, 403 değil.
 
+### Kulüp saati etkinliğinde (`Y-06`, `E-34`, `B-92`, `B-98`)
+
+- **Satırı öğrenci değil sistem açar.** Hizalama işi başlamamış etkinliğe her aktif üyeyi kayıtlı ekler (geri çekilmiş satırı yeniden açar), üyeliği biten öğrencinin kayıtlı satırını geri çeker; sayaç bağını bu yol kurar. Duraklatılmış üye eklenmez.
+- **Öğrencinin kayıt ve geri çekme uçları reddeder** (409): kayıt üyelikten gelir, geri çekme yoktur — kulüp saati bir ders saatidir.
+- **Roster'da "geri çekilmiş" hedefi yasaktır** (400); yoklama yalnız katıldı / katılmadı / kayıtlıdır.
+- **İşaretlenmiş satır "kayıtlı"ya geri alınamaz** (400) — işaret devamsızlığa yazıldı; şube yoklamasında da gönderilmiş kayıt silinmez, düzeltilir. Sıradan etkinlikteki "yoklamayı geri al" burada yoktur.
+- **İşaret en erken başlangıçtan 5 dakika önce atılır** (409, `B-92`); şube yoklamasıyla aynı kural ve aynı kaynak.
+- **Devamsızlığa yalnız DEĞİŞEN işaret gider.** Danışman aynı işareti yeniden kaydettiğinde idarenin yoklama tarafında yaptığı düzeltme (ör. mazeretli) ezilmez. Katılım satırı ve devamsızlık kaydı **tek kayıtta** yazılır; biri reddedilirse (düzeltme penceresi kapandı, gün geçti, programda eşleşen kulüp saati yok — `B-98`) ikisi de yazılmaz.
+- **Etkinlik yumuşak silinince satırları da silinir** — bu yalnız başlamamış ve hiç işaretlenmemiş etkinlikte olur; işaretli satır bu yolla kaybolamaz.
+
 ## İlişkiler
 
 - [[Kulüp Etkinliği]] — sahibi; sayaç orada, kapı orada
@@ -46,10 +56,12 @@ Bir öğrencinin bir kulüp etkinliğine kaydı **ve** yoklaması — ikisi tek 
 - [[Kişi]] — öğrenci ve işaretleyen öğretmen; yalnız kimlik
 - [[Veli-Öğrenci İlişkisi]] — velinin çocuğunun geçmişini görme kapsamı
 - [[Etkinlik Yoklaması]] — komşu kavram; güvenlik sayımıdır, bununla birleşmez
+- [[Yoklama Oturumu]] — kulüp saati işaretinin devamsızlık karşılığı; şube × kulüp × ders saati × gün başına bir oturum
 
 ## Geçtiği modüller
 
 - [[Kulüpler]] — kayıt, geri çekme, roster, aktivite geçmişi (öğrenci ve veli yüzü)
+- [[Yoklama ve Devamsızlık]] — kulüp saati işaretinin devamsızlığa yazılması
 
 <!-- generated:end -->
 

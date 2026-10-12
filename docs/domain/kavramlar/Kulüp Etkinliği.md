@@ -3,7 +3,7 @@ aliases: [ClubActivity, Etkinlik, Kulüp Faaliyeti]
 tags: [domain/clubs]
 table: school.club_activities
 status: active
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-12 (78da8a03)
 ---
 
 # Kulüp Etkinliği
@@ -13,6 +13,8 @@ last-synced: 2026-09-13 (294ffe6)
 ## Nedir
 
 Bir kulübün düzenlediği tek faaliyet — atölye, gezi, turnuva. **Saati vardır**: ödevden ayrıldığı nokta budur; tarih + başlangıç/bitiş saati okulun saat dilimiyle birleştirilip zaman damgası olarak saklanır. Kulübün çocuğu değil, kendi köküdür; kulübe yalnız kimlikle bağlanır ve **sezon kolonu taşımaz** — sezonunu kulüp üzerinden alır.
+
+İki türü vardır (`Y-06`): **sıradan** etkinlik danışmanın açtığı atölye/gezi/turnuvadır; **kulüp saati** etkinliği ise programdaki haftalık kulüp saati için sistemin açtığı satırdır. Aynı tablo ve aynı roster ekranı ikisini taşır, ama kuralları ayrışır (aşağıda).
 
 Adı bilinçli olarak "etkinlik"tir, "olay" değil: bu depoda `…Event` soneki domain olayı demektir.
 
@@ -32,18 +34,34 @@ Adı bilinçli olarak "etkinlik"tir, "olay" değil: bu depoda `…Event` soneki 
 
 İki terminal hâlden de çıkış yoktur: iptal edilmiş etkinliği yeniden yayınlamak ya da tamamlanmışı yayına almak geçmişin ekranda değişmesidir.
 
+**Kulüp saati etkinliğinin döngüsü farklıdır:**
+
+```
+  (sistem, sabah işi ya da zil değişikliği) ──► Published ──(gece işi)──► Completed
+                                                   │
+                                                   ├─(zil değişti, başlamamış)──► Published (yeni saate taşındı, aynı kimlik)
+                                                   └─(pencere kalktı, başlamamış, işaretsiz)──► yumuşak silindi
+```
+
+Taslak adımı ve yayın bildirimi yoktur (her hafta açılır, üyeler zaten kayıtlıdır); elle iptal edilemez (409) — tatil gününde zaten açılmaz, programdan kalkan saat iptal değil silmedir.
+
 ## Kurallar
 
-- **Doğum durumu daima taslaktır** (kulübün danışmandan türeyen doğum durumundan farklı): danışmanın gözden geçirme fırsatı "taslak, sonra yayın" iki adımıyla çözülür. Oluşturma olayı yayılmaz — taslak kimseye ulaşmaz.
+- **Sıradan etkinliğin doğum durumu daima taslaktır** (kulübün danışmandan türeyen doğum durumundan farklı): danışmanın gözden geçirme fırsatı "taslak, sonra yayın" iki adımıyla çözülür. Oluşturma olayı yayılmaz — taslak kimseye ulaşmaz.
 - **Başlangıç geçmişte olamaz, bugün olabilir** (gün içi akşam etkinliği); karşılaştırma tam anla yapılır, gün değil. Bitiş başlangıçtan sonra olmalıdır; aynı gün serbesttir.
 - **Kayıt yalnız yayındaki etkinliğe** alınır; kapı domain'dedir, handler'a emanet edilmez.
 - **Katılımcı sayacı denormalizedir, tek yazarı etkinliğin metotlarıdır** ve yalnız **kontenjan tutan** satırları sayar: kayıtlı, geldi ve gelmedi tutar; geri çekilmiş tutmaz. Sayacı yalnız öğrencinin kayıt ve geri çekme uçları hareket ettirir; öğretmenin roster kaydı sayaca dokunmaz (bkz. [[Etkinlik Katılımı]]). Kontenjan kapısı burada durur; sürüm damgası kontenjan yarışının birinci savunmasıdır, tekil indeks üçüncüsü. Azaltmada durum kontrolü yoktur (iptal edilmiş etkinliğin kaydını yönetici temizleyebilmeli); eksiye düşme istisnadır.
 - **Sayaç bağı ile katılım satırı iki ayrı aggregate'tir, tek işlemde yazılır**: önce sayaç kapısı (etkinlik), sonra satır (katılım). Bkz. [[Etkinlik Katılımı]].
 - **Yayın anında toplu katılım satırı doğmaz.** 24 üyeli kulübün 3 kişilik atölyesinde 21 anlamsız satır üretirdi. Roster (yoklama listesi) ilk açıldığında kulübün üye listesinden "kayıtlı" varsayılanıyla **türetilir**, fiziksel satır açılmaz.
 - **Roster kaydı delta davranışlıdır:** gövdedeki her satırın hâli yazılır, gövdede olmayan satırlara dokunulmaz. Tamamlanmış ve iptal edilmiş etkinlikte de roster yazılabilir. Roster yalnız kulübün aktif ya da duraklatılmış üyesi için yazılır; üye olmayan öğrenci gövdede 400'dür. Kayıttan sonra kulüpten ayrılan öğrencinin kaydedilmiş satırı roster'da görünmeye devam eder (satırı düşürmek geçmişi ekranda değiştirmek olurdu) ama yeni işaret alamaz.
+- **Kulüp saati etkinliği programdan türer, elden açılmaz.** Kaynak her gün için o gün yürürlükteki program sürümünün türü kulüp olan yerleşimleridir (`Y-07`); başlangıç ve bitiş o günün zilinden, yer kulübün dersliğinden gelir, başlık sunucu metnidir. Aynı gündeki ardışık kulüp saatleri tek etkinliktir. Yalnız **aktif** kulübe açılır. Kulüp × başlangıç anı başına tek kulüp saati etkinliği vardır; filtreli tekil indeks son savunmadır, böylece işin yeniden ya da eşzamanlı koşması ikinci satır açmaz.
+- **Kulüp saati etkinliği kontenjansızdır**; kontenjan kapısı işlemez, her aktif üye kayıtlıdır.
+- **Yalnız başlamamış kulüp saati yeniden hizalanır** (`B-98`). Başlamış etkinlik danışmanın yoklama alanıdır; taşınmaz, kaldırılmaz. Taşıma etkinliğin kimliğini ve katılım satırlarını korur; bildirim üretmez.
+- **Kulüp saati devamsızlığa köprülenir** (`E-34`): danışmanın "katıldı/katılmadı" işareti öğrencinin şubesinin o günkü kulüp saati ders saatlerine yoklama kaydı olarak yazılır (blok kulüp saati iki kayıt). İşaret en erken başlangıçtan 5 dakika önce atılır (`B-92`). Sıradan etkinlikte köprü yoktur. Ayrıntı [[Etkinlik Katılımı]] ve [[Yoklama ve Devamsızlık]]'tadır.
 - **İdare ve danışman listesinde "yaklaşan / geçmiş" ayrımı başlangıç anına göredir, güne göre değil:** öğleden sonra bakılan akşam etkinliği hâlâ yaklaşandır.
 - **Kontenjan:** boş = sınırsız; sıfır ve negatif reddedilir. Türetilmiş "dolu mu" değeri kolon değildir ve sorgu içinde kullanılamaz — kod derlenir, ilk gerçek çağrıda 500 verir.
 - **Öğrencinin kapsamı üyelikten gelir, kimlikten değil.** Yalnız üyesi olduğu (aktif ya da duraklatılmış) kulübün yayındaki etkinliğini görür; bekleyen başvuru üye sayılmaz; üye olmayanın kayıt denemesi 404'tür ("bu etkinlik senin için yok"). Öğrencinin yaklaşan listesi yalnız yayında + başlangıcı okul saatine göre gelecekte olanları döner; geçmiş etkinlik listesi MVP'de öğrenciye yoktur.
+- **Etkinlik sayısı** danışman kartında iptal edilmemiş bütün etkinliklerdir, kulüp saati dâhil (`D-42`).
 - **Bildirim:** yayın **üyelere (aktif + duraklatılmış) ve velilerine** gider — etkinlik okul saatleri dışına taşabilir, ücret veya ulaşım gerektirebilir. İptal **yalnız kayıtlı katılımcılara ve velilerine** gider; gerekçe olduğu gibi taşınır. Etkinlik ya da kulüp okunamıyorsa bildirim sessizce düşer. Tamamlanma olayı yayılır ama tüketicisi yoktur (bilinçli).
 - İptal gerekçesinin uzunluk sınırı (15–500) doğrulayıcıdadır; domain yalnız boşu reddeder, üstünü kırpar — iş sınırı değişse domain kalır.
 
@@ -56,10 +74,15 @@ Adı bilinçli olarak "etkinlik"tir, "olay" değil: bu depoda `…Event` soneki 
 - [[Okul]] — saat dilimi (tarih/saat çevirimi) ve "okulun bugünü" (yaklaşan/geçmiş süzgeci)
 - [[Bildirim]] — yayın ve iptal olayları; alıcı kümeleri farklıdır
 - [[Etkinlik Yoklaması]] — komşu kavram, **aynı şey değil**
+- [[Ders Programı]] / [[Program Sürümü]] — kulüp saati etkinliğinin günü ve saati
+- [[Zil Çizelgesi]] — kulüp saati etkinliğinin başlangıç/bitiş anı; zil değişince etkinlik yeniden hizalanır
+- [[Yoklama Oturumu]] — kulüp saati işaretinin yazıldığı oturum
 
 ## Geçtiği modüller
 
-- [[Kulüpler]] — oluşturma, yayın, iptal, roster, öğrencinin yaklaşan listesi, geçmiş sayaçları, gece tamamlama işi
+- [[Kulüpler]] — oluşturma, yayın, iptal, roster, öğrencinin yaklaşan listesi, geçmiş sayaçları, gece tamamlama işi, sabah kulüp saati işi
+- [[Okul Yönetimi]] — zil çizelgesi ve gün atamasını değiştiren komutlar kulüp saati etkinliklerini yeniden hizalar
+- [[Yoklama ve Devamsızlık]] — kulüp saati yoklamasının devamsızlık kaydı
 
 <!-- generated:end -->
 

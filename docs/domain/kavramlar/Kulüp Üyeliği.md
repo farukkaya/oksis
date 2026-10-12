@@ -3,7 +3,7 @@ aliases: [ClubMembership, Kulüp Başvurusu, Üyelik]
 tags: [domain/clubs]
 table: school.club_memberships
 status: active
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-12 (78da8a03)
 ---
 
 # Kulüp Üyeliği
@@ -48,7 +48,10 @@ Bir öğrencinin bir kulüpteki ilişkisi — **başvuru ve üyelik aynı kayıt
 - **Başvuru anı domain zamanıdır**, denetim damgası değil; ikisi bugün aynı değere düşse de denetim alanı iş kuralına kaynak yapılmaz.
 - **Ret gerekçesi yalnız ret kolunda saklanır ve zorunlu değildir**; boş metin `null`'a indirgenir. Onay kolunda alınır ama yazılmaz (sözleşme iki uca aynı gövdeyi veriyor).
 - **Onay anında kulüp satırı değişmişse** ayrı bir kod döner ("karar verilirken kulüp değişti"); bu "kulüp dolu" ile aynı şey değildir ve ekranda farklı cümle kurmalıdır.
-- **Öğrencinin ekranda gördüğü beş durumlu hâl** (katılınabilir / bekliyor / üye / dolu / kapalı) bu satırın hâli **değildir**; kulübün durumu, penceresi, kontenjanı ve öğrencinin kendi satırından **sunucuda, tek yerde** türer ve katılma ucunun kapılarıyla aynı cümleyi söyler. Sıra: öğrencinin kendi satırı her şeyden önce (dolu kulübün üyesi "dolu" değil "üye" görür), sonra "kapalı", sonra "dolu". Danışmansız aktif kulüp "kapalı" **değildir** (B-44, bkz. [[0015-danismansiz-aktif-kulup-basvuru-alir]]).
+- **Öğrencinin ekranda gördüğü beş durumlu hâl** (katılınabilir / bekliyor / üye / dolu / kapalı) bu satırın hâli **değildir**; kulübün durumu, penceresi, kontenjanı ve öğrencinin kendi satırından **sunucuda, tek yerde** türer ve katılma ucunun kapılarıyla aynı cümleyi söyler. Sıra: öğrencinin kendi satırı her şeyden önce (dolu kulübün üyesi "dolu" değil "üye" görür), sonra kulüpten bağımsız engel (tek üyelik, kulüp saati kapsamı — "kapalı"), sonra kulübün "kapalı" hâli, sonra "dolu". Danışmansız aktif kulüp "kapalı" **değildir** (B-44, bkz. [[0015-danismansiz-aktif-kulup-basvuru-alir]]).
+- **Tek üyelik (`Y-06` karar 3).** Öğrencinin bir sezonda en fazla **bir canlı satırı** olur — bekleyen, aktif ya da duraklatılmış; bekleyen başvuru da sayılır, yoksa ikinci başvuru birincisi onaylanınca iki üyeliğe dönüşürdü. Kural katılmada ve **onayda yeniden** sorulur: kural yürürlüğe girmeden önce düşmüş ikinci başvuru onaylanamaz. Kulübe bağlı kontenjan kapısından farklı olarak bu engel kulübün hâlinden **bağımsızdır**; ekran hâli "kapalı" olur, gerekçe öteki kulübün adını söyler ve keşif, detay ve katılma ucu aynı cümleyi kullanır.
+- **Başvuru kapsamı kulüp saatinden türer (`Y-06` karar 10).** Okul kulüp saatini programa koyduysa sınıfında kulüp saati olmayan öğrenci kulüpleri **keşifte hiç görmez** (boş liste) ve katılma ucu reddeder; şubesi atanmamış öğrenci de kapsam dışıdır. Kaynak yayındaki programdır — taslak program kimseyi bağlamaz. Okulda kulüp saati yoksa kısıt da yoktur. **Var olan üyelik bu kuraldan etkilenmez**: kural yeni başvuruyu keser, kapsam dışına düşmüş üyelik program yayınında uyarıdır.
+- **Aktif üye kulüp saati etkinliğine kayıtlı doğar** (bkz. [[Etkinlik Katılımı]]); duraklatılmış üye bu listeye girmez — burada da "üye" ile "sayaçta yer tutan" ayrımı korunur.
 - **Katılma izni yalnız öğrencidedir** (`clubs.join`); veli okur, idare yönetir. Kimlik yetkilendirme başlığından çözülür — öğrenci başkasının adına katılamaz.
 - **Kulüp içi rol etikettir, yetki değildir** ve MVP'de yazan uç yoktur; her üyelik "üye" doğar.
 - Onay iki olay yayar (başvuru sonuçlandı + öğrenci katıldı). Bugün yalnız ilkinin tüketicisi vardır; ikincisine tüketici bağlanırsa onaylı kulüpte **çift bildirim** doğar.

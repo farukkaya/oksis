@@ -109,7 +109,9 @@ kullanıcı kararı). `tea-homework-create`, `adm-activity-create`,
 korunur ama kök `_layout` onu şeffaf modal sunar ve içerik `Sheet` olur:
 - Yeni ödev: içerik kadar panel; ders, son teslim ve ekler panelin İÇİNDE,
   yayın onayı ikinci adım.
-- Yeni etkinlik ve Yeni/Düzenle duyuru: `Sheet size="full"`. Panel başlık
+- Yeni etkinlik: içerik kadar panel; her adım ayrı panel (İleri/Geri'de panel
+  kapanıp sonraki adım açılır), adım çizgisi yok, alt başlık adımın adı.
+- Yeni/Düzenle duyuru: `Sheet size="full"`. Panel başlık
   çubuğunun ÜSTÜNE çıkmaz, alt kenarına kadar uzar (`components/top-chrome.ts`).
 - Üst üste panel kabul edilir (hedef kitle, öğrenci arama, bağlantı).
 
