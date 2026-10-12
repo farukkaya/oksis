@@ -72,10 +72,17 @@ dosya seçmek bu projede iki kez yanlış sonuç verdi.
 sırası render edilenden farklıdır. **Render edilen kazanır.**
 
 Doğrulanmış setler (hepsi 5, sonuncusu "Daha fazla"): yönetici *Anasayfa ·
-Duyurular · Okul · Raporlar* · öğretmen *Anasayfa · Yoklama · Notlar · Ödev* ·
+Duyurular · Okul · Raporlar* · öğretmen *Anasayfa · Programım · Notlar · Ödev* ·
 öğrenci *Anasayfa · Devamsızlığım · Notlarım · Ödevlerim* · veli *Anasayfa ·
-Devamsızlık · Notlar · Ödevler*. **Program sekmesi yok** (Daha fazla → Okul'a
+Devamsızlık · Notlar · Ödevler*. **Öğrencide Program sekmesi yok** (Daha fazla → Okul'a
 indi), **Çocuklarım sekmesi yok** (çocuk seçici veli anasayfasının içinde).
+
+> **2026-10-12 kullanıcı kararı:** öğretmende "Yoklama" sekmesi kalktı, yerine
+> "Programım" geldi (prototipten bilinçli sapma). Yeniden tasarlanan Programım günün
+> derslerini zaman çizelgesinde yoklama durumuyla, "Yoklamaya git" kısayoluyla,
+> etkinlik sayımı kartıyla, kulüp saati yoklamasıyla ve "N yoklama eksik → geçmiş"
+> girişiyle gösterir. `/attendance` öğretmende Programım'a yönlenir; öğrenci/veli
+> devamsızlık sekmesi aynen durur. Yoklama geçmişi anasayfa kısayoluna çıktı.
 
 ## Header standardı
 
