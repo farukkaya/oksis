@@ -11496,6 +11496,8 @@ bir "ön seçim" işareti taşıyıp taşımayacağı uygulamada netleşecek.
 
 ✅ **2026-10-05 · cihazda ölçüldü, kapandı:** kullanıcı Android'de test etti, sorun yok.
 
+🔁 **2026-10-12 · kapsam genişletildi (kullanıcı kararı):** test ortamında "aynı gün diğer derslerde otomatik seçili gelmiyor, bazen" bildirimi ölçüldü — kusur değil, kuralın kapsamıydı: 1. derste **gelmedi** işaretli iki öğrenci 2. derse "var" geliyordu, çünkü yalnız raporlu/izinli taşınıyordu ("bazen" = raporlu/izinli taşınır, gelmedi taşınmaz). Karar: **gelmedi de taşınır**; geç gelen taşınmaz (öğrenci okuldadır). Kaynak notu yine yok (2026-10-05 kararı korunur). `oksis-api` dev `75194b00`, birleştirme `78da8a03` — `EarlierSessionDefaults` koşuluna `Absent` eklendi; kulüp saati sonucu değişmez (gelmeyen öğrenci zaten "yok" yazılıyordu). Entegrasyon testi gelmedi + geç ayaklarıyla genişletildi; yoklama entegrasyon takımı 237/237 yeşil. Mobilde hiç görünmeyen "X. saatin yoklamasını devralayım mı?" afişi (`CarryFrom` hep `null`) hâlâ ölü kod.
+
 ### `D-54` · Android'de öğretmen anasayfasının "Şu anki ders" kartında "Yoklama al" düğmesi "Sonra:" satırının üstüne biniyor 🟡 *(kapandı — 2026-10-05)*
 
 2026-10-05, kullanıcı testi (Android, öğretmen hesabı, 5. ders 12-B TYT Kimya). A kartında "Yoklama al" düğmesi
