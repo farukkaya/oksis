@@ -87,6 +87,14 @@ indi), **Çocuklarım sekmesi yok** (çocuk seçici veli anasayfasının içinde
 Rol başına 2. satır: öğretmen/veli `Salı, 15 Eylül 2026` · öğrenci `11-A · <tarih>`
 · yönetici `Altınay Lisesi · 14:32`.
 
+⚠️ **Sayfa içi başlık YOK** (2026-10-12 kullanıcı kararı). Sekme ekranında `OksisHomeHeader`
+altına içerikte ikinci bir büyük başlık + alt başlık ("Devamsızlığım / Yalnızca kendi
+kayıtlarını görürsün", "Duyurular", "Bugünkü Derslerim", "Takip" …) konmaz — prototipte olsa
+bile portlanmaz. Ekranın adı sekmede, bağlamı (tarih, okul, çocuk) üst bardadır. Başlığın
+yanındaki eylem düğmesi (Şablonlar, Geçmiş, hafta görünümü) kaybolmaz: içeriğin ilk satırına
+(filtre çipleri, gün şeridi) ya da sağa yaslı küçük bir eylem satırına taşınır. Anasayfa
+selamlaması ("İyi akşamlar, …") bu kurala girmez.
+
 ⚠️ Tasarımda **iki eski alt-header varyantı** duruyor ve `STopBar` ile çelişiyor:
 `excuse-parent.jsx` (54/16/12, dairesiz 40×40 geri, 16.5/800) ve
 `notifications-admin.jsx` `AdmTopBar`. **Kullanıcı kararı: standart `STopBar`**,
