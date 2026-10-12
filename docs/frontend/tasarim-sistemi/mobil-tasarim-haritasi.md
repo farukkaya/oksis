@@ -103,6 +103,19 @@ FAB: `ExcParentList` (56×56, r28, `0 8px 22px rgba(13,17,23,0.22)`, right 18 /
 bottom 20) ve `adm-announcements` (60×60, bottom 104 — kapsayıcı tab bar'ı da
 içerdiği için). Ekran boşken de durur.
 
+⚠️ **Oluşturma formları prototipte alt ekran, üretimde PANEL** (2026-10-12
+kullanıcı kararı). `tea-homework-create`, `adm-activity-create`,
+`adm-announce-new`/`-edit` prototipte `STopBar`lı alt ekrandır; üretimde rota
+korunur ama kök `_layout` onu şeffaf modal sunar ve içerik `Sheet` olur:
+- Yeni ödev: içerik kadar panel; ders, son teslim ve ekler panelin İÇİNDE,
+  yayın onayı ikinci adım.
+- Yeni etkinlik ve Yeni/Düzenle duyuru: `Sheet size="full"`. Panel başlık
+  çubuğunun ÜSTÜNE çıkmaz, alt kenarına kadar uzar (`components/top-chrome.ts`).
+- Üst üste panel kabul edilir (hedef kitle, öğrenci arama, bağlantı).
+
+Duyuru şablonu formu (`template-form-screen.tsx`) bilinçli olarak alt ekran
+kalır: klavye açıkken panel gövdesinin daralması gerekçesi orada yazılı.
+
 Boş/"yakında" ekran kalıbı (`TeacherEmptyTab`/`StudentEmptyTab`/`AdminEmptyTab`):
 56×56 daire (`#E9EEF7`) içinde `N_ICONS.lock` 24px, başlık 17/700, açıklama 14 ·
 maxWidth 260.
