@@ -11,8 +11,9 @@ Her senaryonun satırı: **[kod] başlık** — ön koşul · adımlar · beklen
 
 ## 1. Önce bunu oku
 
-1. **Okul `s4` kullanılır.** Tercih ve yerleştirme uçtan uca `s4`'te ölçüldü (öğrenciler şubelere kayıtlı, danışman öğretmenler var). Kulüp seed'de YOKTUR; senaryolar kulüp açmakla başlar. Mobil hızlı giriş `s1`'e sabit olduğundan `s4` hesapları mobilde kimlikle elle girilir.
-2. **İdare modu özellik bayrağının arkasındadır:** web `.env.local` içinde `NEXT_PUBLIC_FEATURE_CLUB_ADMINISTRATION_ADMISSION=true` yoksa sihirbazda "İdare" seçeneği görünmez (K-11). Bayrak değişince `next dev` yeniden başlatılır.
+1. **Okul `s4` kullanılır.** Tercih ve yerleştirme uçtan uca `s4`'te ölçüldü (öğrenciler şubelere kayıtlı, danışman öğretmenler var). Kulüp seed'de YOKTUR; senaryolar kulüp açmakla başlar. Hızlı giriş (web ve mobil) okul seçicisinde `4 - OKSİS Test Lisesi`'ni sunar; parola alanına tıklamak bazı tarayıcı eklentilerinin katmanını açtığı için hızlı giriş tercih edilir.
+   **Boş DB'de dikkat:** `s4` yapısı boş seed'lenir (`BareSchools`: kademe/şube/öğrenci kaydı yok) ve MEB kataloğu yüklü değilse `s1`–`s3` hiç seed'lenmez. Tercih kapsamı aktif öğrenci kaydından hesaplandığı için önce öğrenciler aktif sezona kaydedilmelidir (2026-10-13 koşusunda test DB'sine `academic.student_enrollments` satırı SQL ile eklendi, şubesiz). Aynı sebeple `s4`'te sezon sihirbazı "Sezonu Aç"ta "Okul için sınıf kademesi tanımlı değil" der; B3'ün aktivasyon ayağı kurulumsuz `s4`'te koşulamaz.
+2. **İdare modu özellik bayrağının arkasındadır:** web `.env.local` içinde `NEXT_PUBLIC_FEATURE_CLUB_ADMINISTRATION_ADMISSION=enabled` yoksa sihirbazda "İdare" seçeneği görünmez (K-11). Bayrak değişince `next dev` yeniden başlatılır.
 3. **Mod yalnız sezon aktivasyonunda yazılır.** Sihirbazda seçmek yetmez; sezon aktifleşene kadar okulun modu eski değerinde kalır. Aşağıdaki B bölümü bunu ölçer. İdare moduna geçmenin hızlı yolu test okulunda yeni sezonu sihirbazla açıp aktifleştirmektir.
 4. **Öğrenci/veli yüzü mobildir**, idare/danışman yüzü web'dedir. Mobilde Expo web hedefi (`http://localhost:8081`) yeterlidir; sayfa yenilemek oturumu düşürür.
 5. **Bildirim:** `s4` sezonu 15 Eylül 2026'da başladı; bildirim kutusunda görünür. Kuyruk birkaç saniye gecikebilir. Push gerçek cihazda ölçülmez (bkz. §10).
@@ -47,8 +48,8 @@ Her senaryonun satırı: **[kod] başlık** — ön koşul · adımlar · beklen
 
 ## B. Sihirbazda mod seçimi ve sezon aktivasyonu
 
-- **[B1] Bayrak kapalıyken** — `NEXT_PUBLIC_FEATURE_CLUB_ADMINISTRATION_ADMISSION` tanımsız/false. Adım: sezon sihirbazını aç. Beklenen: "Kulüp Üye Kabul Sorumlusu" alanı yok ya da yalnız Öğretmen; İdare seçilemez. Hesap: `mudur.s4`.
-- **[B2] Bayrak açıkken seçim** — bayrak true, yeniden başlat. Adım: yeni sezon sihirbazı › Kulüpler adımı; segment [Öğretmen | İdare]; her seçeneğin altında açıklama cümlesi; "İdare" seç; özet adımında seçilen mod görünür; taslağı kaydet, sayfayı yenile. Beklenen: seçim taslakta korunur (`GET season-drafts/current` → `clubAdmissionMode: "administration"`); önceki değer varsayılan gelir. Hesap: `mudur.s4`.
+- **[B1] Bayrak kapalıyken** — `NEXT_PUBLIC_FEATURE_CLUB_ADMINISTRATION_ADMISSION` tanımsız ya da `enabled` dışında bir değer. Adım: sezon sihirbazını aç. Beklenen: "Kulüp Üye Kabul Sorumlusu" alanı yok ya da yalnız Öğretmen; İdare seçilemez. Hesap: `mudur.s4`.
+- **[B2] Bayrak açıkken seçim** — bayrak `enabled`, yeniden başlat. Adım: yeni sezon sihirbazı › **5/6 Öğrenciler** adımının altı ("Kulüp Üye Kabul Sorumlusu"); segment [Öğretmen | İdare]; her seçeneğin altında açıklama cümlesi; "İdare" seç; özet adımında seçilen mod görünür; taslağı kaydet, sayfayı yenile. Beklenen: seçim taslakta korunur (`GET season-drafts/current` → `clubAdmissionMode: "administration"`); önceki değer varsayılan gelir. Hesap: `mudur.s4`.
 - **[B3] Mod aktivasyonda yazılır** — B2 sonrası sezon henüz **Setup**. Adım: Ayarlar kartına bak → hâlâ "Öğretmen" olmalı, eski sezonda başvuru akışı sürmeli (K-3). Sonra sezonu **aktifleştir**. Beklenen: aynı işlemde kart "İdare" olur (`GET school-settings/club-settings`); `:join` artık 409. Hesap: `mudur.s4`.
 - **[B4] Mod sezon içinde değişmez** — aktif sezonda Ayarlar kartında düzenleme yok, sihirbaza bağlantı var; ayarı değiştirecek bir yazma ucu yok. Hesap: `mudur.s4`.
 - **[B5] Sonraki sezona taşınma** — yeni bir taslak aç; sihirbazda önceki değer (İdare) varsayılan gelir; Öğretmen'e çevirip aktifleştirince mod geri döner ve **geçen sezonun** üyelik/başvuruları kendi sezonunda kalır. Hesap: `mudur.s4`.

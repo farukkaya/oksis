@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-119` · `D-70` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-121` · `D-72` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -610,6 +610,39 @@ ve boş durumda gerekçe cümlesi — sunucuda tek yerden (TB-32).
 ([[Kulüp Etkinliği]] · Bildirim) ve analiz (S-12) veliyi alıcı sayıyor; birim testler alıcı kümesini sahte çözümleyiciyle ölçtüğü için
 yakalamadı. ⬜ Öneri: önce öğrenci → veli kişi kimliği çözümü (`ResolveGuardianPersonIdsAsync`, `CanViewInfo` süzgeciyle; tercih işinde
 eklenen `ResolveGuardianPersonIdsByStudentAsync` de kullanılabilir), sonra hesap eşlemesi; gerçek çözümleyiciyle entegrasyon testi.
+
+### `B-119` · İdarenin yerleştirdiği öğrenci danışmana "Onaylandı" durumlu başvuru olarak görünüyor 🟡
+
+2026-10-13, gerçek API'ye bağlı ekran testi (dal `feature/kulup-tercih-yerlestirme`, API `b415d6fc` · UI `36711ea`, henüz `dev`'de değil).
+İdare modunda yerleştirme yayınlandıktan sonra danışman (`ogretmen.s4.07`) web kulüp detayında **"2 Karara Bağlanan Başvuru"**
+şeridini görüyor; "Göster" deyince yerleştirilen iki öğrenci "Onaylandı" rozetiyle listeleniyor. Öğrenciler başvurmadı, danışman onaylamadı.
+Kök neden iki ayaklı: `ClubMembership.CreatePlaced` yerleştirilen üyeliğe `AppliedAt` + `DecidedAt` + `DecidedByPersonId` yazıyor;
+`GET clubs/{id}/applications` (`ListClubApplicationsQueryHandler` → `ApplicationsAsync`) kararlı her üyeliği "onaylanmış başvuru" sayıyor.
+Web danışman detayı da karara bağlanan başvuru şeridini moddan bağımsız gösteriyor ("Başvurular" sekmesi gizlenmiş, bu şerit gizlenmemiş).
+⬜ Öneri: başvuru kaynağını üyelikte ayırt et (yerleştirme kaydı başvuru alanı taşımasın ya da kaynak kolonu) ve başvuru sorgusu yalnız gerçek
+başvuruları döndürsün — sunucuda (TB-32); ekran şeridi İdare modunda gizlensin. Merge öncesi bu dalda kapatılması önerilir.
+
+### `D-70` · "Kapsamdaki öğrenci" iki ekranda farklı evreni sayıyor (17 / 19) ⚪
+
+2026-10-13, aynı ekran testi. Tercih Dönemi sayfası KPI'ı **17** (kulüp saati kapsamında, üyeliği olmayan), Yerleştirme ekranı aynı etiketle
+**19** (mevcut üyeler dâhil; alt satır "9 tercih yapmadı · 2 mevcut üye"). İkisi de doğru sayıyor ama aynı ad iki ayrı kümeye verilmiş;
+idareci sayının neden değiştiğini sorar. ⬜ Öneri: yerleştirme ekranında etiketi ayır ("Tablodaki öğrenci" / "Kapsam + mevcut üye") ya da
+iki sayfada aynı tanımı kullan.
+
+### `D-71` · Yerleştirilen öğrencinin tercih ekranında "kulüp tercihi yapman gerekmiyor" yazıyor ⚪
+
+2026-10-13, aynı ekran testi (mobil, `ogrenci.s4.005`). Yayından sonra `/clubs/preference` üstte doğru sonuç kartını gösteriyor
+("2. tercihin olan Resim'e yerleştirildin"), altında ise uygunluk metni `"Resim" kulübünün üyesisin; kulüp tercihi yapman gerekmiyor.`
+duruyor. Yerleştirilmiş öğrenci için anlamsız; tercih listesinin kendisi de artık görünmüyor (öğrenci neyi seçtiğini göremiyor).
+⬜ Öneri: yerleştirme yayınlanmışsa uygunluk metni yerine öğrencinin kaydettiği sıralı tercihleri salt okunur göster.
+
+### `B-120` · Mobil ana sayfada "Şu anki ders" kartı düğme içinde düğme üretiyor (web hedefinde hydration hatası) ⚪
+
+2026-10-13, aynı ekran testinde Expo web konsolunda her ana sayfa açılışında: `<button> cannot contain a nested <button>`.
+`HomeSquareCard` → `HomeTapCard` (`Pressable`, rol `button`) kartın tamamını düğme yapıyor; ders verisi yüklenemediğinde içine
+`Pressable onPress={refetch}` ("Yüklenemedi · tekrar dene") giriyor (`apps/mobile/src/features/home/components/home-parts.tsx`, `LessonNowCard`).
+Kulüp işiyle ilgisiz; `dev`'de de var. Yerel uygulamada iç içe dokunma hedefi (TB-68 sınıfı) — iç düğmeye basış dış karta da gidebilir.
+⬜ Öneri: hata durumunda kartın dış `onPress`'i kapansın ya da "tekrar dene" kartın dışına alınsın.
 
 ### `TB-276` · Sessiz saatte ertelenen push alıcı başına ayrı Hangfire işi açıyor 🟡
 
