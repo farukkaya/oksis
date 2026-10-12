@@ -3,7 +3,7 @@ aliases: [SchoolSettings, Kurum Bilgileri, Akademik Politika]
 tags: [domain/platform]
 table: school.school_settings
 status: active
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-12 (b415d6fc)
 ---
 
 # Okul Ayarları
@@ -37,6 +37,14 @@ Okul oluşturulduğunda varsayılan değerlerle otomatik açılır ve hiç silin
 **Not politikası** — kademe bazlı **öğrenci görünürlüğü** (ilkokul, ortaokul, lise için ayrı; "gizli" ya da "veliyle aynı anda"; ilkokulda varsayılan gizli — veli her hâlde görür, ayar yalnız öğrenci yüzünü kapatır), aileye **sınıf ortalaması** gösterilsin mi (varsayılan hayır), **not düzeltme penceresi** (saat; varsayılan 48 — pencere kapandıktan sonra düzeltme yalnız yönetime açılır). Bu üç alan not modülünün yönetme izniyle okul ayarları altından güncellenir; akademik politikadaki ölçek, geçme notu ve ağırlıklarla birlikte [[Notlar]]'ın politika ucundan okuma izniyle herkese verilir.
 
 **Ödev politikası** — **son teslim hatırlatma saati** (0–72; sıfır "hatırlatma yok" demektir, "teslim anında hatırlat" değil; varsayılan 24), **eksik ödev bildirim kipi** (kapalı / günlük özet / anlık; varsayılan günlük özet; sayıları 1'den başlar ki "hiç kaydedilmedi" ile "bilerek kapatıldı" ayrılsın) ve **günlük yoğunluk eşiği** (varsayılan 3; idare panosunda bir şubenin bir gündeki ödev sayısı eşiği aşınca vurgulanır). Ekranda beş kontrol vardır, kolon üçtür: "hatırlatma açık" ve "veli bildirimi açık" anahtarları bu alanlardan türer, kalıcılaştırılmaz. Ödev modülünün yönetme izniyle okul ayarları altından güncellenir.
+
+**Kulüp politikası — Kulüp Üye Kabul Sorumlusu** (2026-10-12) — öğrencinin kulübe nasıl girdiğini kimin belirlediği: **Öğretmen** (varsayılan; öğrenci katılır ya da başvurur, danışman onaylar) ya da **İdare** (öğrenci [[Kulüp Tercih Dönemi]]'nde sıralı tercih yapar, idare yerleştirir). Sezona bağlı bir kayıt değildir; değiştirilmedikçe her sezon aynen sürer. Kurallar:
+
+- **Yalnız sezon aktivasyonunda yazılır.** Seçim sezon sihirbazının taslağında bekler ve sezon aktifleşirken, aktivasyonla aynı işlemde okula yazılır (devir de aynı yoldan geçer); tek yazım yeri budur. Açılışta değil: açılan sezon "Setup"tadır ve eski sezon aktivasyona kadar aktif kalır, açılışta yazmak eski sezonu sezon ortasında yeni modla çalıştırırdı. Sihirbazda seçim yapılmadıysa ya da sezon sihirbaz dışında açıldıysa değer değişmez.
+- **Ayarlar'da salt okunurdur; yazma ucu yoktur** (K-3). Okuma ucu kulüp modülünün okuma iznini ister, okul ayarları görüntüleme iznini değil — izinler VE ile birleştiği için ikincisi danışman öğretmeni ve öğrenciyi dışarıda bırakırdı.
+- Tanımsız değer reddedilir; aynı değeri yeniden yazmak "ayar değişti" olayı yaymaz.
+- Mevcut okullar göçle **Öğretmen** başlar; İdare'ye en erken bir sonraki sezon açılışında geçilir (K-17).
+- Mod önbelleğe alınmaz; okunduğu tek yer kulüp modülündeki kabul kapısıdır. Gerekçe ve bütün mod: [[0023-kulup-uye-kabul-sorumlusu-sezon-basinda-secilir]].
 
 ## Okulun sunduğu kademeler
 
@@ -89,7 +97,8 @@ Ayrıca kademe bazında **not ölçeği override'ı** verilebilir: okul ilkokulu
 ## Geçtiği modüller
 
 - [[Okul Yönetimi]] — kavramın sahibi
-- [[Yoklama ve Devamsızlık]], [[Nöbetler]], [[Duyurular]], [[Sınıflar ve Şubeler]], [[Notlar]], [[Ödevler]] — politika tüketicileri
+- [[Yoklama ve Devamsızlık]], [[Nöbetler]], [[Duyurular]], [[Sınıflar ve Şubeler]], [[Notlar]], [[Ödevler]], [[Kulüpler]] — politika tüketicileri
+- [[Sezon Yönetimi]] — Kulüp Üye Kabul Sorumlusu'nun tek yazarı (sezon aktivasyonu)
 
 <!-- generated:end -->
 

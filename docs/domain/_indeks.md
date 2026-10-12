@@ -20,7 +20,7 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 ### Kurum
 
 - [[Okul]] — tenant'ın kendisi; `Kurulum → Aktif ↔ Askıda → Arşiv`
-- [[Okul Ayarları]] — kurum bilgisi ve diğer modüllerin politika kaynağı
+- [[Okul Ayarları]] — kurum bilgisi ve diğer modüllerin politika kaynağı; Kulüp Üye Kabul Sorumlusu da burada (salt okunur, sezon aktivasyonunda yazılır)
 - [[Modül Yapılandırması]] — hangi modül açık, plan neyi kilitliyor
 - [[Bildirim Yapılandırması]] — kanal anahtarları, olay × kanal matrisi ve sessiz saat; teslimatta okunur
 - [[Saklı Dosya]] — yüklenmiş dosyanın kaydı; depo byte tutar, gerçek burada
@@ -102,6 +102,9 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[Kulüp Etkinliği]] — saatli faaliyet; `Draft → Published → Completed | Cancelled`; tamamlandı etikettir, kilit değil; kulüp saati etkinliği programdan açılır, yoklaması devamsızlığa yazılır
 - [[Etkinlik Katılımı]] — kayıt ve yoklama tek satır; koşulsuz tekillik, geri çekilmiş satır yeniden açılır
 - [[Kulüp Duyurusu]] — durum makinesiz, silinmez, imzası donar; [[Duyuru]]'nun kardeşi, örneği değil
+- [[Kulüp Tercih Dönemi]] — idare modunda sezonun tek tercih süreci; `Draft → Open ⇄ Closed → Published`; açma/kapama jesttir, tarihten türemez; yayından sonra yeniden açılmaz
+- [[Kulüp Tercihi]] — öğrencinin sıralı üç kulübü; başvuru değildir; son kayıt anı "önce kaydeden önce" ölçütü, her değişiklikte yenilenir
+- [[Kulüp Yerleştirmesi]] — öğrenci başına taslak ve yayınlanmış kulüp; otomatik yerleştirme kontenjanı aşmaz, idare elle aşabilir; yayın üyelik doğurur, kısmi yayın yok
 
 ## Modüller
 
@@ -119,7 +122,7 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[Kimlik Doğrulama]] — giriş, oturum, bağlam geçişi, parola, izin çözümleme
 - [[Duyurular]] — kitlesel iletişim; hedefleme, moderasyon, şablonlar
 - [[Bildirimler]] — olay → alıcı → kanal; uygulama içi, push ve e-posta; mükerrer koruması
-- [[Kulüpler]] — öğrenci kulüpleri; dört yüz (idare, danışman, öğrenci, veli), izin ≠ kapsam, sezon süzgeci elle; programdaki kulüp saati, tek danışmanlık ve tek üyelik
+- [[Kulüpler]] — öğrenci kulüpleri; dört yüz (idare, danışman, öğrenci, veli), izin ≠ kapsam, sezon süzgeci elle; programdaki kulüp saati, tek danışmanlık ve tek üyelik; kabul sorumlusu öğretmen ya da idare — idare modunda tercih dönemi ve yerleştirme, on bildirim olayı
 - [[Notlar]] — dönem içi not girişi; yayın birimi sütun, tembel defter, kapsam ders programından, karar sunucuda
 - [[Ödevler]] — ödevin tüm ömrü; beş yüz (öğretmen, öğrenci, veli, idare, rehber), görünüm kimlikten, sahiplik ≠ kapsam, üç bildirim ve iki gece işi
 - [[Sınav Takvimi]] — sınav haftası; iki düzen (ders saati, kelebek), iki adımlı yayın, üç kademeli kural denetimi, ders programına yazmaz
@@ -145,6 +148,7 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[0013-gun-degeri-gercek-system-dayofweek]] — gün değeri gerçek takvim günüdür (Pzt=1…Cum=5); hafta içi sınırı sunucuda zorlanmıyor
 - [[0014-kulup-basvurusu-ve-uyeligi-tek-kayit]] — başvuru ve üyelik tek kayıt; iki liste aynı satırlardan süzülür
 - [[0015-danismansiz-aktif-kulup-basvuru-alir]] — yayındaki kulüp danışmansız da başvuru alır; sonradan atanan danışman bekleyenleri devralır
+- [[0023-kulup-uye-kabul-sorumlusu-sezon-basinda-secilir]] — kulüp üye kabul sorumlusu (öğretmen/idare) yalnız sezon sihirbazında seçilir, aktivasyonda yazılır, sezon içinde değişmez; idare modunda tercih + yerleştirme
 - [[0016-ayrilmis-ogretmen-kadrodan-turer]] — "çalışan öğretmen" kadro kaydı ve kişinin yaşam durumundan türer, sezonluk görevlendirmeden değil
 - [[0017-kelebek-derslik-ve-gozetmen-turetilir]] — kelebekte derslik ev dersliğinden, gözetmen ders programından türer; yöneticinin eli satırdaki işaretle korunur
 - [[0018-sinav-kurallari-denetleyicide]] — sınav kuralları tek denetleyicide; geçilemez sert, gerekçeyle geçilen, yalnız görünen
