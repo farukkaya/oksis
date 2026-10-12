@@ -1,0 +1,1494 @@
+{
+  "info": {
+    "name": "OKSİS — Kulüp Tercih Dönemi ve İdare Yerleştirmesi",
+    "description": "Kulüp Üye Kabul Sorumlusu = İdare modunda tercih dönemi, yerleştirme ve öğrenci tercihi uçları. Plan: teknik-analizler/kulupler/kulup-tercih-ve-yerlestirme-plani.md. Önce '0 · Giriş' klasörünü koş; sonra sırasıyla 2 (dönem) -> 4 (öğrenci tercihi) -> 2 (kapat) -> 3 (yerleştirme). clubId1..3 ve studentId koleksiyon değişkenlerine elle yazılır (GET /clubs ve /placements yanıtından).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5112/api/v1"
+    },
+    {
+      "key": "adminToken",
+      "value": ""
+    },
+    {
+      "key": "studentToken",
+      "value": ""
+    },
+    {
+      "key": "teacherToken",
+      "value": ""
+    },
+    {
+      "key": "parentToken",
+      "value": ""
+    },
+    {
+      "key": "roundId",
+      "value": ""
+    },
+    {
+      "key": "rowVersion",
+      "value": ""
+    },
+    {
+      "key": "clubId1",
+      "value": ""
+    },
+    {
+      "key": "clubId2",
+      "value": ""
+    },
+    {
+      "key": "clubId3",
+      "value": ""
+    },
+    {
+      "key": "studentId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "0 · Giriş",
+      "item": [
+        {
+          "name": "İdare (mudur.s4)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/account/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "account",
+                "login"
+              ]
+            },
+            "description": "Parola tüm seed hesaplarında aynıdır.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"mudur.s4@oksis.local\",\n  \"password\": \"Oksis1234!\",\n  \"channel\": \"web\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"profil seçimi gerekmiyor\", () => pm.expect(d.needsProfileSelection).to.not.eql(true));",
+                  "pm.collectionVariables.set(\"adminToken\", d.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Öğrenci (ogrenci.s4.005)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/account/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "account",
+                "login"
+              ]
+            },
+            "description": "Parola tüm seed hesaplarında aynıdır.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"ogrenci.s4.005@oksis.local\",\n  \"password\": \"Oksis1234!\",\n  \"channel\": \"web\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"profil seçimi gerekmiyor\", () => pm.expect(d.needsProfileSelection).to.not.eql(true));",
+                  "pm.collectionVariables.set(\"studentToken\", d.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Danışman öğretmen (ogretmen.s4.07)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/account/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "account",
+                "login"
+              ]
+            },
+            "description": "Parola tüm seed hesaplarında aynıdır.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"ogretmen.s4.07@oksis.local\",\n  \"password\": \"Oksis1234!\",\n  \"channel\": \"web\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"profil seçimi gerekmiyor\", () => pm.expect(d.needsProfileSelection).to.not.eql(true));",
+                  "pm.collectionVariables.set(\"teacherToken\", d.accessToken);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Veli (veli.s4.005)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/account/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "account",
+                "login"
+              ]
+            },
+            "description": "Parola tüm seed hesaplarında aynıdır.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"identifier\": \"veli.s4.005@oksis.local\",\n  \"password\": \"Oksis1234!\",\n  \"channel\": \"web\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"profil seçimi gerekmiyor\", () => pm.expect(d.needsProfileSelection).to.not.eql(true));",
+                  "pm.collectionVariables.set(\"parentToken\", d.accessToken);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "1 · Ayar ve sezon taslağı",
+      "item": [
+        {
+          "name": "Kulüp ayarı (mod) oku",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/school-settings/club-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "school-settings",
+                "club-settings"
+              ]
+            },
+            "description": "Salt okunur. Okuma izni clubs.read. Mod yalnız sezon aktivasyonunda yazılır.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"clubAdmissionMode advisor|administration\", () => pm.expect(d.clubAdmissionMode).to.be.oneOf([\"advisor\",\"administration\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sezon taslağını oku (clubAdmissionMode)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/season-drafts/current",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "season-drafts",
+                "current"
+              ]
+            },
+            "description": "Taslak yoksa 404/boş dönebilir. clubAdmissionMode alanı sihirbazdaki seçimdir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200, 404\", () => pm.expect(pm.response.code).to.be.oneOf([200, 404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sezon taslağını kaydet (mod: administration)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/season-drafts/current",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "season-drafts",
+                "current"
+              ]
+            },
+            "description": "Değer sezon AKTİFLEŞİRKEN okul ayarına yazılır (K-3). Bu istek canlı okulda mevcut taslağın üstüne yazar; yalnız test okulunda koş.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"2026-2027 QA taslağı\",\n  \"sourceSessionId\": null,\n  \"currentStep\": 1,\n  \"copyTerms\": true,\n  \"copyBranches\": true,\n  \"copyHolidays\": true,\n  \"copyAssignments\": false,\n  \"copySchedule\": false,\n  \"excludePassiveStudents\": false,\n  \"termDatesJson\": null,\n  \"branchMapJson\": null,\n  \"holidaysJson\": null,\n  \"clubAdmissionMode\": \"administration\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200, 204\", () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2 · Tercih dönemi (idare)",
+      "item": [
+        {
+          "name": "Dönemi oku",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round"
+              ]
+            },
+            "description": "Sezonun tek dönemi; yoksa data boş.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.expect(pm.response.code).to.be.oneOf([200]));",
+                  "const d = pm.response.json().data;",
+                  "if (d && d.id) { pm.collectionVariables.set(\"roundId\", d.id); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dönem oluştur",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round"
+              ]
+            },
+            "description": "Yalnız İdare modunda; sezonda ikinci dönem 409 Clubs.PreferenceRoundExists. targetEndOn yalnız bilgi (null olabilir, geçmiş tarih reddedilir).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetEndOn\": \"2026-10-20\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set(\"roundId\", d.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Hedef son günü güncelle",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetEndOn\": \"2026-10-22\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tercihe aç (:open)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}:open",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}:open"
+              ]
+            },
+            "description": "Hazırlık veya yayınlanmamış Kapalı -> Açık. Öğrencilere N1 bildirimi gider. Yayından sonra 409.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tercihi kapat (:close)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}:close",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}:close"
+              ]
+            },
+            "description": "Açık -> Kapalı. Diğer idarecilere N3 özeti gider. İkinci çağrı 409.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tercih yapmayanlara hatırlat (:remind)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}:remind",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}:remind"
+              ]
+            },
+            "description": "Yalnız Açık dönemde. Aynı gün ikinci çağrı 409 Clubs.PreferenceReminderAlreadySent.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200, 409\", () => pm.expect(pm.response.code).to.be.oneOf([200, 409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Dönemi sil",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}"
+              ]
+            },
+            "description": "Yalnız Hazırlık durumundaki dönem silinebilir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200, 204\", () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Genel bakış (overview)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}/overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}",
+                "overview"
+              ]
+            },
+            "description": "inScopeCount, submittedCount, notSubmittedCount ve kulüp başına 1./2./3. tercih sayıları.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"sayılar tutarlı\", () => pm.expect(d.submittedCount + d.notSubmittedCount).to.eql(d.inScopeCount));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tercih yapmayanlar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}/non-submitters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}",
+                "non-submitters"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "3 · Yerleştirme (idare)",
+      "item": [
+        {
+          "name": "Yerleştirme tablosunu oku",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}/placements?status=&clubId=&classRoomId=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}",
+                "placements"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": ""
+                },
+                {
+                  "key": "clubId",
+                  "value": ""
+                },
+                {
+                  "key": "classRoomId",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Süzgeçler isteğe bağlı: classRoomId, clubId, status. rowVersion sonraki Kaydet/Otomatik/Yayınla isteklerine taşınır.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set(\"rowVersion\", d.rowVersion);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Otomatik yerleştir (:auto)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}/placements:auto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}",
+                "placements:auto"
+              ]
+            },
+            "description": "Kontenjanı aşmaz; önce kaydeden önce. Yayınlanmış satırlar kilitli sayılır. Bayat rowVersion 409 Clubs.PlacementStale.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"keepLocked\": true,\n  \"fillUnplaced\": false,\n  \"rowVersion\": \"{{rowVersion}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set(\"rowVersion\", d.rowVersion);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Kaydet (elle yerleştirme)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}/placements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}",
+                "placements"
+              ]
+            },
+            "description": "clubId null = kulüpten çıkar/boşalt. Kontenjan aşımı engel değil, uyarıdır.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rowVersion\": \"{{rowVersion}}\",\n  \"rows\": [\n    {\n      \"studentId\": \"{{studentId}}\",\n      \"clubId\": \"{{clubId1}}\",\n      \"locked\": true\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set(\"rowVersion\", d.rowVersion);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Yayın önizlemesi (diff)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}/placements/diff",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}",
+                "placements",
+                "diff"
+              ]
+            },
+            "description": "newCount, changedCount, removedCount, unplacedCount, overCapacityClubs, blockers (tek üyelik çatışması).",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set(\"rowVersion\", d.rowVersion);",
+                  "pm.test(\"blockers dizi\", () => pm.expect(d.blockers).to.be.an(\"array\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Yayınla (:publish)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round/{{roundId}}:publish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round",
+                "{{roundId}}:publish"
+              ]
+            },
+            "description": "Yalnız Kapalı dönemde (açıkken 409 Clubs.PublishWhileOpen). Çatışma varsa 409 Clubs.PlacementConflict. Yanıtta board.rowVersion yeni sürümdür.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rowVersion\": \"{{rowVersion}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set(\"rowVersion\", d.board.rowVersion);",
+                  "pm.test(\"uygulandı\", () => pm.expect(d.applied).to.be.a(\"boolean\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "4 · Öğrenci tercihi (mobil)",
+      "item": [
+        {
+          "name": "Tercihimi oku",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/me/clubs/preference",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "me",
+                "clubs",
+                "preference"
+              ]
+            },
+            "description": "Hazırlık dönemi öğrenciye dönmez. Yanıt: admission, canSubmit, eligibility, blockReason, seçilebilir kulüpler, tercih, result.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tercihimi kaydet",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/students/me/clubs/preference",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "me",
+                "clubs",
+                "preference"
+              ]
+            },
+            "description": "Sıralı; tekrar yok; aktif kulüp sayısı 3'ten azsa o kadar. Her kayıt 'son kayıt anı'nı yeniler (K-4). Dönem açık değilse 409 Clubs.PreferenceRoundNotOpen.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clubIds\": [\n    \"{{clubId1}}\",\n    \"{{clubId2}}\",\n    \"{{clubId3}}\"\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200, 204\", () => pm.expect(pm.response.code).to.be.oneOf([200, 204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Keşif (admission bloğu)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/me/clubs/discovery",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "me",
+                "clubs",
+                "discovery"
+              ]
+            },
+            "description": "Her kartta admission: {mode, round, myPreferenceSubmitted, placementPublished}.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Katıl (İdare modunda 409)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/students/me/clubs/{{clubId1}}:join",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "me",
+                "clubs",
+                "{{clubId1}}:join"
+              ]
+            },
+            "description": "İdare modunda 409 Clubs.AdmissionByAdministration.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Ayrıl (İdare modunda 409)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/students/me/clubs/{{clubId1}}:leave",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "students",
+                "me",
+                "clubs",
+                "{{clubId1}}:leave"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.expect(pm.response.code).to.be.oneOf([409]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "5 · Veli ve danışman (yalnız sonuç / mod bilgisi)",
+      "item": [
+        {
+          "name": "Veli: çocukların kulüp özeti",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/parents/me/children/clubs-summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parents",
+                "me",
+                "children",
+                "clubs-summary"
+              ]
+            },
+            "description": "Veli tercih sürecini görmez, yalnız yayın sonrası kulübü.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{parentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Danışman: kulüplerim (admissionMode)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/mine",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "mine"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Öğretmen: dönemi okuma yetkisi yok",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round"
+              ]
+            },
+            "description": "clubs.manage yok -> 403 beklenir.",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{teacherToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Öğrenci: idare dönem ucu yetkisi yok",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/clubs/preference-round",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "clubs",
+                "preference-round"
+              ]
+            },
+            "description": "",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{studentToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.expect(pm.response.code).to.be.oneOf([403]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
