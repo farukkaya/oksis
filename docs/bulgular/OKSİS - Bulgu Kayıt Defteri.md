@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-117` · `D-70` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-119` · `D-70` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -2704,6 +2704,11 @@ Koddan ölçüldü (oksis-api, salt okuma):
 
 Karar gereken: pano «bekleyen»i «dersi henüz bitmemiş», «alınmadı»yı «dersi bitmiş ve kayıt yok» olarak mı saysın (liste ile
 aynı pencere kuralı), yoksa gün sonu kapanışı bilinçli mi? Web canlı panosu da aynı ucu kullanıyor.
+
+**Karar (2026-10-12, kullanıcı):** ders bitince «alınmadı»; süren ders «bekleyen»; yalnız sayım değişir (oturum durumu ve gün
+sonu işi aynen). **Düzeltme `dev`'de:** api `6dc3a760` — `GetSchoolLiveBoardQueryHandler` girilmemiş Pending'i
+`localNow > tarih + EndTime` ise alınmadı sayar; Open bekleyen kalır; hücre durumları ham. Entegrasyon testi
+`Board_OverduePending_CountsAsNotTaken_BeforeDayClose`. Test ortamına çıkınca kullanıcı onayıyla arşive.
 
 ## Not
 
