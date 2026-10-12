@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-117` · `D-69` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-117` · `D-70` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -582,6 +582,15 @@ sürümü/aktiflik güncellensin, 200 dönsün; eşzamanlı iki istek için benz
 (hesap + token varsa güncellenir, 200); `33af6e3b` eşzamanlı yarışta benzersiz indeks ihlali ya da eşzamanlılık çakışması
 yakalanıp satır yeniden okunarak tekrar denenir, soft-delete'li satırla çakışma yutulmaz. İstemci `registerDevice`
 veritabanı uyanırken yeniden dener (`X-25`). Entegrasyon testleri yeşil.
+
+### `D-69` · Kulüp saati kapsamı dışındaki öğrenci keşifte "Henüz yayında kulüp yok" görüyor 🟡
+
+2026-10-12, kulüp tercih/yerleştirme işi sırasında ölçüldü (mobil, mock). `ListClubDiscoveryQueryHandler`, okulda kulüp saati varken sınıfında
+kulüp saati olmayan öğrenciye (Y-06 karar 10) moddan bağımsız **boş liste** döndürüyor; mobil keşif ekranı bunu "hiç kulüp yok" sanıp
+"Henüz yayında kulüp yok" yazıyor. Kulüpler var; öğrenci kapsam dışı. İdare modunda bu ekran artık uygunluk bandıyla ("Sınıfının programında
+kulüp saati yok…") düzeltildi (`admission.eligibility = outsideScope`, boş durum metni gizli), **Öğretmen modunda** ise istemcinin durumu
+bilmesinin yolu yok. ⬜ Öneri: keşif yanıtına kapsam sinyali (ör. `outsideClubHourScope` ya da Öğretmen modunda da dolu bir uygunluk alanı)
+ve boş durumda gerekçe cümlesi — sunucuda tek yerden (TB-32).
 
 ### `B-116` · Kulüp etkinliği yayını ve iptali bildirimi veliye hiç gitmiyor 🟠
 
