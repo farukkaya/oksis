@@ -583,6 +583,14 @@ sürümü/aktiflik güncellensin, 200 dönsün; eşzamanlı iki istek için benz
 yakalanıp satır yeniden okunarak tekrar denenir, soft-delete'li satırla çakışma yutulmaz. İstemci `registerDevice`
 veritabanı uyanırken yeniden dener (`X-25`). Entegrasyon testleri yeşil.
 
+⚠️ **2026-10-13 · CI'da aralıklı kırmızı:** `B-112 · Eşzamanlı kayıtlar unique indeks ihlaline düşmez, tek satır kalır`
+son 8 test/master koşusunun 2'sinde düştü (`38166279200`, `38316489700`; ikincisi B-118 test push'u — değişiklikle ilgisiz).
+Hata `DbUpdateConcurrencyException` (row_version): test 16 isteği aynı anda yarıştırıyor, handler'ın bütçesi
+`maxAttempts = 5`; şanssız bir istek beş turun hepsinde güncelle kolunda row_version yarışını kaybedip istisnayı
+dışarı taşıyor. Gerçek hayatta aynı cihazdan 16 eşzamanlı kayıt beklenmez, ama bütçe tükenince 500 döner. ⬜ Karar:
+ya bütçe tükenince son tur sonucu "satır var" diye başarı sayılsın (upsert'in amacı tek satır — o zaten sağlanmış), ya da
+test yarışı gerçekçi bir sayıya (2-4) indirilsin. Test dağıtımı bu kırmızıdan etkilenmedi (entegrasyon kapısı dağıtımı durdurmaz).
+
 ### `D-69` · Kulüp saati kapsamı dışındaki öğrenci keşifte "Henüz yayında kulüp yok" görüyor 🟡
 
 2026-10-12, kulüp tercih/yerleştirme işi sırasında ölçüldü (mobil, mock). `ListClubDiscoveryQueryHandler`, okulda kulüp saati varken sınıfında
