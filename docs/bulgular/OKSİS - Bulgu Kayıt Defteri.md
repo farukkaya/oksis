@@ -2689,6 +2689,22 @@ yeni satır mı kalsın; (2) düzeltme bildirimi push'a girsin mi, acil duyuruda
 
 ⚠️ Kullanıcının cümlesi yarım; kayıt ekran görüntüsüne ve kodda ölçülene göre yorumlandı — beklenen davranış teyit edilmeli.
 
+### `B-118` · Canlı yoklama panosu saati geçmiş ama alınmamış dersi gün sonuna kadar «Bekleyen» sayıyor; «Alınmadı» sayacı gün içinde hep 0 🟡
+
+2026-10-12, mobil Canlı Yoklama (Expo web, Altınay, saat 20:48). Sayaçlar «0 tamamlanan · 88 bekleyen · 0 alınmadı»; hemen
+altındaki *Alınmayan Yoklamalar* listesi aynı günün 1. derslerini «11 sa gecikme» ile gösteriyor. TestFlight geri bildirimi
+(2026-10-12, derleme 1006) bu çelişkinin öbür yüzünü yakaladı: liste geçmiş günleri de sayıyordu (o kısım mobilde «son 7 gün»
+etiketiyle düzeltildi).
+
+Koddan ölçüldü (oksis-api, salt okuma):
+- `GetSchoolLiveBoardQueryHandler` oturumu yalnız `State`e göre sayar: `Completed` → tamamlanan, `NotTaken` → alınmadı, kalan
+  `Pending`/`Open` → bekleyen. Saat bilgisine bakmaz.
+- `NotTaken`e tek geçiş `CloseDailySessionsJob` (gün sonu). Yani dersi bitmiş, yoklaması alınmamış oturum gün boyu «bekleyen».
+- `ListUnrecordedSessionsQueryHandler` ise saati geçmiş `Pending`i de «alınmayan» sayar → iki uç aynı oturumu farklı sınıflar.
+
+Karar gereken: pano «bekleyen»i «dersi henüz bitmemiş», «alınmadı»yı «dersi bitmiş ve kayıt yok» olarak mı saysın (liste ile
+aynı pencere kuralı), yoksa gün sonu kapanışı bilinçli mi? Web canlı panosu da aynı ucu kullanıyor.
+
 ## Not
 
 `TB-##` maddeleri **kod taramasından** çıktı; bir kısmının kullanıcıya görünen belirtisi
