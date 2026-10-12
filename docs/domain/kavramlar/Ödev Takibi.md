@@ -3,7 +3,7 @@ aliases: [HomeworkTracking, TrackingStatus, Takip Satırı, Kontrol Izgarası, �
 tags: [domain/academic]
 table: academic.homework_tracking
 status: active
-last-synced: 2026-09-13 (294ffe6)
+last-synced: 2026-10-12 (d535a672)
 ---
 
 # Ödev Takibi
@@ -32,7 +32,7 @@ Mevcutla birleşim yalnız **tüm sınıfa verilmiş ve hâlâ yayında** olan �
 - "İşaretlenmedi"ye dönüş karar damgasını (kim, ne zaman) siler — karar yokluğunun damgası olmaz.
 - **Yalnız sahip işaretler,** yalnız yayındaki ödevde. Sentezlenmiş satır da işaretlenebilir; mevcutta olmayan öğrenci 404.
 - **Toplu tamamlama** işaretlenmemiş kalan tüm satırları, sentezlenmişler dâhil, tamamlandı yapar ve **tek özet** denetim kaydı yazar. Tekil işaretleme denetlenmez.
-- **Sayaçların tek kaynağı vardır;** yüzde alanı yoktur, ekran "12/26" gösterir. "İşaretlendi" = işaretlenmemiş olmayan (muaf da bir karardır). Teslim sayacı **öğrenci** sayar, dosya değil.
+- **Sayaçların tek kaynağı vardır;** yüzde alanı yoktur, ekran "12/26" gösterir. "İşaretlendi" = işaretlenmemiş olmayan (muaf da bir karardır). Teslim sayacı **öğrenci** sayar, dosya değil. Tamamlama raporunda da yüzde istemcide türetilir; paydaya yalnız tamamlandı, eksik ve yapılmadı girer ([[Ödevler]] akış 10).
 - **Hatırlatma damgası satırdadır,** ödevde değil: hatırlatma öğrenci başına ve yalnız **işaretlenmemiş** satıra gider; tamamlandı, eksik, yapılmadı ya da muaf işaretlenmiş öğrenciye gitmez. Damga sıfırlanmaz — işaret geri alınsa da, son teslim tarihi ileri alınsa da (açık soru).
 - **Eksik / yapılmadı işareti yalnız veliye bildirilir,** öğrenciye değil (kendi ızgarasında görüyor; ikinci kez söylemek cezalandırma tonudur). Kip okul politikasından gelir: anlık kipte işaretleme anında, günlük özet kipte her akşam veli başına **tek** bildirim, kapalı kipte hiç.
 

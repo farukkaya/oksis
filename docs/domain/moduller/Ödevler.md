@@ -2,7 +2,7 @@
 aliases: [Homework, api/v1/homework, Ödev Modülü]
 tags: [domain/academic, module]
 status: completed
-last-synced: 2026-10-04 (972fc99d)
+last-synced: 2026-10-12 (d535a672)
 ---
 
 # Ödevler
@@ -52,6 +52,8 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 
 9. **Bildirim ve zamanlanmış işler** — Üç tür: **ödev haberi** (yayın, güncelleme ve iptal — üçü aynı türdür ki veli tercihinde tek satır olsun; hedef öğrenciler + veliler; gövdede başlık geçer, içerik ve gerekçe geçmez), **son teslim yaklaşıyor** (saatlik iş; her okulun kendi politikası; yalnız işaretlenmemiş satırın öğrencisi + velisi; pencere son teslim gününün okul-yerel başlangıcına göre; damga satırda; kaçırılan pencere sonradan telafi edilmez) ve **eksik ödev** (yalnız veliye; anlık kipte işaretleme anında, özet kipte her akşam 20:30'da veli başına tek bildirim; özet iş hiçbir şey yazmaz, tekliği deterministik olay anahtarı sağlar). Bildirim grubu "Akademik" değil ayrı **Ödev** grubudur — veli not bildirimlerini kapatırken ödevi de kapatmış olmasın. Derin bağlantı: ödev haberi ve anlık eksik ödev detayına, günlük özet ödev listesine iner. Eksik ödev push kapsamı dışındadır (yalnız uygulama içi); kullanıcı ödev haberi ve hatırlatmanın push'unu kişisel tercihten kapatabilir. Teslim yükleme, taslak silme ve oluşturma bildirim üretmez. Dördüncü tür **ödev gönderildi** (2026-10-11): öğrencinin açık "Ödev gönder" eylemi yalnız sorumlu öğretmene, push dâhil gider; derin bağlantı `/homework/{id}/students/{personId}` öğretmeni öğrencinin satırına götürür. Beşinci tür **ödev değerlendirmesi** (2026-10-11): yalnız öğrenciye, push dâhil — kapanış (durumuyla) ve eksik notu; veliye gitmez (veli haftalık özeti ayrı iştir, okulun eksik ödev politikasına dokunulmadı). "Yüklendi/güncellendi" etiketleri okulun saat diliminde hesaplanır.
 
+10. **Tamamlama oranı raporu** (2026-10-12) — Öğrencinin, öğretmen ve ders ayırt etmeksizin, kendisine verilen ödevlerin ne kadarını yaptığı. Oran = tamamlandı / (tamamlandı + eksik + yapılmadı): eksik paydada ama payda değildir; muaf (ödev fiilen verilmemiştir) ve işaretlenmedi (karar beklenir) paydaya girmez, işaretlenmedi ayrı sütundur. Yalnız yayında ve kapanmış ödev sayılır, tarih aralığı son teslime uygulanır; sayım öğrenci merkezlidir (eski şubesindeki satırlar da sayılır), sentezlenmiş satır sayılmaz, satırı olmayan öğrenci sıfırlarla listelenir. Sunucu oran değil **sayaç** döner (bkz. [[Ödev Takibi]]); sıra sunucudadır: oran artan, paydası sıfır olan sonda, eşitlikte yapılmadı azalan, sonra ad. **Kapsam sunucuda, tek izinle (okuma):** yönetme izni → seçilen dönemde okula kayıtlı (aktif/dondurulmuş) öğrenciler; aksi hâlde **rehber** → BUGÜN rehberi olduğu şubelerin öğrencileri, geçmiş dönem seçilse de aynı öğrenciler (geçen yıl rehber olup bu yıl olmayan hiçbir şey görmez); ikisi de değilse boş rapor, öğrenci detayı 404. Öğrenci detayı ders kırılımı ve ödev listesi verir; muafiyet gerekçesi hiçbir yüzde yoktur. Dışa aktarım Excel'dir, rehbere de açıktır ve her aktarım kim/kapsam/süzgeç/satır sayısıyla loglanır. **Öğretmen boyutu yoktur** (süzgeç de sıralama da) — rapor öğrenciyi izler, öğretmeni kıyaslamaz. Önbellek yoktur; işaretleme anında yansır. Veli ve öğrenci kendi oranını görmez.
+
 **Yetki — izin ve görünüm.** **Okuma** öğretmen, veli, öğrenci ve idarede (platform hesabında da); **yazma** öğretmen ve okul yöneticisinde; **yönetme** yalnız okul yöneticisinde ve izin kataloğu dışında — platform hesabı okul içi ödev veremez ve ödev kararı alamaz. İkinci katman görünümdür ve istemciden gelmez: **sahiplik → idare → rehberlik → kapsam dışı (404)**. Daraltma serileştirme düzeyindedir; rehber ve aile şemaları ayrı kayıt tipleridir, alan "boş" değil "yok"tur. Yazma kapısı yöneticiye açılmaz; idarenin işleri kendi uçlarındadır.
 
 **Hata sözleşmesi.** Kodlar `Homework.` önekiyle gelir. Durum makinesi ihlali, boş hedef, teslim kotası ve teslime kapalı ödev 409; geçmiş son teslim ve doğrulama 400; sahibi olmayan, kapsam dışı ve mevcutta olmayan öğrenci 404. "Teslime kapalı" ile "geçersiz durum" aynı HTTP kodunu paylaşır ama ayrı tiplerdir: biri öğrenciye, diğeri öğretmene gösterilir. Kota aşımı doğrulama değildir — gövde kusursuzdur, kaydın hâli uygun değildir. Arşiv sezon bağlamında tüm yazma uçları kapalıdır.
@@ -62,9 +64,10 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 - **Sahiplik devri.** Adına yayınlanan ödevin sahibi ayrılmış öğretmen kalır (açık soru).
 - **Teslimin notlandırılması.** Öğretmenin kararı beş durumdur; puan yoktur.
 - **Teslim yükleme, taslak silme ve oluşturma bildirimi.** (Öğretmene haber yüklemeyle değil "Ödev gönder"le gider.)
-- **Öğretmene göre sıralama ve öğretmen başına sayaç** panolarda; süzme kıyas değildir, sıralama kıyastır.
+- **Öğretmene göre sıralama ve öğretmen başına sayaç** panolarda ve tamamlama raporunda; süzme kıyas değildir, sıralama kıyastır.
 - **E-posta kanalı.** Seed'de işaretli ama depo genelinde kanal yok.
 - **Kaçırılan hatırlatmanın telafisi.** Geç kalmış hatırlatma gürültü sayıldı.
+- **Veli/öğrenciye tamamlama oranı.** Oran idare ve rehberin aracıdır; aileye yüzde göstermek bilinçli olarak dışarıda bırakıldı.
 - **Aile yüzünde "gördü" damgası.** [[Notlar]]'daki "yeni not" rozetinin karşılığı yoktur; ödev okumaları hiçbir şey yazmaz.
 - **Modül açık/kapalı kontrolü.** Seed'de anahtar bile yok; bkz. `X-20`.
 
@@ -73,6 +76,7 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 ## Notlar
 
 <El yazısı alan.>
+
 
 ## Açık Sorular
 
@@ -83,3 +87,6 @@ Modülün karakteri [[Notlar]] ile aynı üç ilkeye dayanır: **yayın birimi �
 - Modül yapılandırması seed'inde ödev anahtarı yok; Notlar'daki `marks` uyumsuzluğunun bir adım ötesi. `X-20`.
 - Handler seviyesinde test altyapısı yok; saf çekirdekler ve validator'lar test edildi, satır doğuran kollar ve sayaç okuyucusu koşulmadı (kod kendi ARCHITECTURE notunda söylüyor).
 - Kademe etiketi üç modülde kopya (Yoklama, Notlar, Ödevler).
+- **Tamamlama raporunda "güncel sezon"** okulun bugününü içeren dönemin sezonudur, yoksa en son başlamış dönemin; sezonun durum alanına bakılmaz. Yaz arasında rehber evreni bu kurala göre geçen yılın sınıfında kalır — bilinçli mi, karar bekliyor.
+- **Muaf sayısı rapor satırında görünür;** gerekçe yok ama sayı dolaylı sağlık işareti sayılabilir (KVKK notu, analizde).
+- Büyük okulda `homework (okul, dönem, durum)` + son teslim indeksi gerekebilir; ölçülmedi.
