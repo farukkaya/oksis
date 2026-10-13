@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-121` · `D-72` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-121` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -241,11 +241,17 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 18 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 40 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 20 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 19 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 45 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 27 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **81** | |
+| **Toplam** | **94** | |
+
+> **2026-10-13 (OSYN-4, kulüp tercih dalı yerel ekran testi):** dal `feature/kulup-tercih-yerlestirme` (api `b415d6fc` · ui `36711ea`)
+> `oksis_dev`'in yerel kopyasında (DEV-OKUL, İdare modu) web + Expo web'de gerçek tıklamayla koşuldu. `B-116`, `B-119`, `B-120`, `D-70`,
+> `D-71` **teyit edildi** (kanıt: `kanit/osyn4/`); `D-69` ekranda tekrar edilemedi (seed okullarında kulüp saati yok), kodda hâlâ açık.
+> Yeni: `D-72` 🟡 (sezon sihirbazı reddi yalnız 2,6 sn'lik nötr toast), `D-73` 🟡 (yayından sonra tercih istatistikleri sıfırlanıyor),
+> `D-74`…`D-77` ⚪. Tablo başlıklardan yeniden sayıldı (88 → 94; önceki tablo 81'de kalmıştı).
 
 > **2026-10-10 (ödev saha testi turu):** `B-115`, `E-47`, `E-48` aynı gün açılıp kodlandı (88); yedi madde (`B-103`, `B-115`, `D-51`,
 > `TB-269`, `E-36`, `E-47`, `E-48`) test ortamında ölçülüp kapandı, [[OKSİS - Bulgu Arşivi]] §82'ye taşındı. Toplam **81**
@@ -599,6 +605,9 @@ kulüp saati olmayan öğrenciye (Y-06 karar 10) moddan bağımsız **boş liste
 kulüp saati yok…") düzeltildi (`admission.eligibility = outsideScope`, boş durum metni gizli), **Öğretmen modunda** ise istemcinin durumu
 bilmesinin yolu yok. ⬜ Öneri: keşif yanıtına kapsam sinyali (ör. `outsideClubHourScope` ya da Öğretmen modunda da dolu bir uygunluk alanı)
 ve boş durumda gerekçe cümlesi — sunucuda tek yerden (TB-32).
+📏 2026-10-13 (OSYN-4): ekranda **tekrar edilemedi** — `oksis_dev` kopyasındaki seed okullarının hiçbirinde kulüp saati (öğretim biçimi
+`Club` olan canlı yerleşim) yok; tek örnek gerçek okul verisinde, o kullanılmadı. Dalın `ListClubDiscoveryQueryHandler`'ı (`b415d6fc`)
+kapsam dışı öğrenciye hâlâ moddan bağımsız, kabul bloğu taşımayan `[]` dönüyor → kodda açık.
 
 ### `B-116` · Kulüp etkinliği yayını ve iptali bildirimi veliye hiç gitmiyor 🟠
 
@@ -610,6 +619,10 @@ ve boş durumda gerekçe cümlesi — sunucuda tek yerden (TB-32).
 ([[Kulüp Etkinliği]] · Bildirim) ve analiz (S-12) veliyi alıcı sayıyor; birim testler alıcı kümesini sahte çözümleyiciyle ölçtüğü için
 yakalamadı. ⬜ Öneri: önce öğrenci → veli kişi kimliği çözümü (`ResolveGuardianPersonIdsAsync`, `CanViewInfo` süzgeciyle; tercih işinde
 eklenen `ResolveGuardianPersonIdsByStudentAsync` de kullanılabilir), sonra hesap eşlemesi; gerçek çözümleyiciyle entegrasyon testi.
+📏 2026-10-13 (OSYN-4) **ekranda teyit edildi**: DEV-OKUL "OSYN4 Müzik" (6 üye) etkinliği yayınlandı → API logu
+`ClubActivityPublished to 6 accounts`, alıcıların 6'sı da öğrenci, veli 0. Veli (`veli.s1.001`) mobil bildirim listesinde
+yerleştirme bildirimi var, "Yeni etkinlik" yok ([kanıt](kanit/osyn4/11-B116-veli-bildirimleri.jpg)); etkinliğin kendisi velinin çocuk kulüp
+ekranında görünüyor ([kanıt](kanit/osyn4/12-veli-cocuk-kulup-ekrani.jpg)) — kayıp yalnız bildirimde.
 
 ### `B-119` · İdarenin yerleştirdiği öğrenci danışmana "Onaylandı" durumlu başvuru olarak görünüyor 🟡
 
@@ -621,6 +634,10 @@ Kök neden iki ayaklı: `ClubMembership.CreatePlaced` yerleştirilen üyeliğe `
 Web danışman detayı da karara bağlanan başvuru şeridini moddan bağımsız gösteriyor ("Başvurular" sekmesi gizlenmiş, bu şerit gizlenmemiş).
 ⬜ Öneri: başvuru kaynağını üyelikte ayırt et (yerleştirme kaydı başvuru alanı taşımasın ya da kaynak kolonu) ve başvuru sorgusu yalnız gerçek
 başvuruları döndürsün — sunucuda (TB-32); ekran şeridi İdare modunda gizlensin. Merge öncesi bu dalda kapatılması önerilir.
+📏 2026-10-13 (OSYN-4) **teyit edildi** (aynı commit'ler, `oksis_dev` kopyası, DEV-OKUL): danışman `ogretmen.s1.07` web "OSYN4 Müzik"
+detayında "Bu sezon üyeleri idare yerleştirir… başvuru ve onay adımı yoktur" bandının hemen altında **"6 Karara Bağlanan Başvuru"**;
+"Göster" → yerleştirilen 6 öğrencinin hepsi "Onaylandı" ([kanıt](kanit/osyn4/16-B119-danisman-basvuru-seridi.jpg)). İdarenin aynı kulüp
+detayında şerit yok — yalnız danışman paneli.
 
 ### `D-70` · "Kapsamdaki öğrenci" iki ekranda farklı evreni sayıyor (17 / 19) ⚪
 
@@ -628,6 +645,9 @@ başvuruları döndürsün — sunucuda (TB-32); ekran şeridi İdare modunda gi
 **19** (mevcut üyeler dâhil; alt satır "9 tercih yapmadı · 2 mevcut üye"). İkisi de doğru sayıyor ama aynı ad iki ayrı kümeye verilmiş;
 idareci sayının neden değiştiğini sorar. ⬜ Öneri: yerleştirme ekranında etiketi ayır ("Tablodaki öğrenci" / "Kapsam + mevcut üye") ya da
 iki sayfada aynı tanımı kullan.
+📏 2026-10-13 (OSYN-4) **teyit edildi**, yayından sonra fark büyüyor: Tercih Dönemi sayfası **48**
+([kanıt](kanit/osyn4/14-D70-tercih-donemi-48.jpg)), Yerleştirme ekranı aynı etiketle **60** ("48 tercih yapmadı · 0 mevcut üye",
+[kanıt](kanit/osyn4/15-D70-yerlestirme-60.jpg)). Yayından önce ikisi de 60'tı. Aynı kökün ikinci belirtisi → `D-73`.
 
 ### `D-71` · Yerleştirilen öğrencinin tercih ekranında "kulüp tercihi yapman gerekmiyor" yazıyor ⚪
 
@@ -635,6 +655,9 @@ iki sayfada aynı tanımı kullan.
 ("2. tercihin olan Resim'e yerleştirildin"), altında ise uygunluk metni `"Resim" kulübünün üyesisin; kulüp tercihi yapman gerekmiyor.`
 duruyor. Yerleştirilmiş öğrenci için anlamsız; tercih listesinin kendisi de artık görünmüyor (öğrenci neyi seçtiğini göremiyor).
 ⬜ Öneri: yerleştirme yayınlanmışsa uygunluk metni yerine öğrencinin kaydettiği sıralı tercihleri salt okunur göster.
+📏 2026-10-13 (OSYN-4) **teyit edildi** (Expo web, `ogrenci.s1.001`, 3. tercihine yerleşti): bildirimden `/clubs/preference`'a inince
+"3. tercihin olan OSYN4 Müzik'e yerleştirildin" kartının altında `"OSYN4 Müzik" kulübünün üyesisin; kulüp tercihi yapman gerekmiyor.`;
+kaydettiği 3 tercih görünmüyor ([kanıt](kanit/osyn4/10-D71-tercih-ekrani.jpg)).
 
 ### `B-120` · Mobil ana sayfada "Şu anki ders" kartı düğme içinde düğme üretiyor (web hedefinde hydration hatası) ⚪
 
@@ -643,6 +666,56 @@ duruyor. Yerleştirilmiş öğrenci için anlamsız; tercih listesinin kendisi d
 `Pressable onPress={refetch}` ("Yüklenemedi · tekrar dene") giriyor (`apps/mobile/src/features/home/components/home-parts.tsx`, `LessonNowCard`).
 Kulüp işiyle ilgisiz; `dev`'de de var. Yerel uygulamada iç içe dokunma hedefi (TB-68 sınıfı) — iç düğmeye basış dış karta da gidebilir.
 ⬜ Öneri: hata durumunda kartın dış `onPress`'i kapansın ya da "tekrar dene" kartın dışına alınsın.
+📏 2026-10-13 (OSYN-4) **teyit edildi**: öğrenci ve veli ana sayfasında Expo web geliştirici kaplamasında
+`<button> cannot contain a nested…` (2 hata); DOM'da `button button` eşleşmesi "Yüklenemedi · tekrar dene"
+([kanıt](kanit/osyn4/04-B120-ana-sayfa-ic-ice-dugme.jpg)). Tetik: `timetable/students/me/today` 404 (yayınlanmış program yok).
+
+### `D-72` · Sezon sihirbazı "Sezonu Aç" reddedildiğinde gerekçe yalnız 2,6 sn'lik nötr toast'ta görünüyor 🟡
+
+2026-10-13, OSYN-4 (dal `feature/kulup-tercih-yerlestirme`, web `36711ea`, `oksis_dev` kopyası). OSYN-3'teki "422, ekranda hata görünmedi"
+gözlemi tekrar edildi: kademesi tanımsız `TST-AL` müdürü (`mudur.s4`) sihirbazı 6/6'ya kadar hiçbir uyarı almadan ilerliyor, "Sezonu Aç"
+→ `POST academic-sessions/open-from-draft` **422** `academic-sessions.errors.no-grade-levels` "Okul için sınıf kademesi tanımlı değil."
+(üç denemede de). Ekranda kalıcı bir iz yok: düğme "Açılıyor…"dan "Sezonu Aç"a geri dönüyor, adım/kart değişmiyor. Gerekçe
+`academic-sessions-page.tsx` `showToast` ile **2600 ms** yaşayan, `variant` verilmediği için nötr (`role="status"`, hata stili değil) bir toast'a
+gidiyor; tıklamanın hemen ardından okunan DOM'da `.stu-toast` bulunamadı. Kullanıcı neden açılmadığını kaçırıyor, tekrar basıyor.
+Ayrıca eksik kademe, sihirbazın 1-5. adımlarında hiç söylenmiyor (Şubeler adımı "0 / 0" gösterip geçiyor).
+⬜ Öneri: ret gerekçesi Özet & Onay kartının içinde kalıcı hata satırı olsun (ya da en azından `variant="error"`, daha uzun süre); kademe
+yoksa Şubeler adımı baştan uyarsın.
+
+### `D-73` · Yerleştirme yayınlandıktan sonra Tercih Dönemi istatistikleri sıfırlanıyor 🟡
+
+2026-10-13, OSYN-4 (DEV-OKUL, İdare modu). 60 öğrencinin 12'si tercih yaptı; yayından önce Tercih Dönemi sayfası "12 Tercih yapan · %20" ve
+kulüp talepleri tablosunu (Robotik 6/4/2, Satranç 3/5/4, Müzik 3/3/6, "Talep kontenjanı aşıyor") doğru gösteriyordu. Yayından sonra aynı sayfa
+"48 Kapsamdaki öğrenci · **0 Tercih yapan · %0** · 48 Tercih yapmayan" ve talep tablosunda her hücre **0** gösteriyor — tercih yapan 12 öğrenci
+yerleşip üye olunca "üyeliği olmayan" kapsamından düşüyor, istatistikleri de onlarla siliniyor. Dönemin sonucu bu sayfadan artık okunamıyor.
+Aynı kök `D-70`. ⬜ Öneri: dönem kapandıktan/yayınlandıktan sonra KPI ve talep tablosu dönemin kayıtlı tercihlerinden sayılsın (kapsam
+kuralı yalnız açık dönemde canlı süzgeç olsun).
+
+### `D-74` · İdare modunda boş kulüp listesi "öğrenciler başvurmaya başlayabilir" diyor ⚪
+
+2026-10-13, OSYN-4. Kulübü olmayan İdare modundaki okulda web Kulüpler boş durumu: "Bu sezon henüz kulüp açılmadı — Yeni bir kulüp açtığında
+öğrenciler başvurmaya başlayabilir." İdare modunda başvuru yok (tercih + yerleştirme). Metin `club-list-page.tsx` `ClubEmptyState`'te sabit.
+⬜ Öneri: modlu metin ("…tercih dönemini açtığında öğrenciler kulüp seçebilir").
+
+### `D-75` · Danışmanın "Kulübünüze N öğrenci yerleştirildi" bildirimi mobilde "0 üye" gösteren etkinlik ekranına iniyor ⚪
+
+2026-10-13, OSYN-4 (Expo web, `ogretmen.s1.07`). Bildirim "'OSYN4 Müzik' kulübüne 6 öğrenci yerleştirildi" diyor; dokununca
+`navigate-to-target.ts` İdare modunda bilinçli olarak `/clubs/[clubId]/activities`'e iniyor ve ekranda tek sayı etkinlik kartındaki
+**"0 üye"** (etkinliğe kayıtlı) ([kanıt](kanit/osyn4/13-danisman-bildirim-inisi.jpg)). Yerleşen 6 öğrenci mobilde hiçbir yerde görünmüyor;
+danışman bildirimin söylediğini doğrulayamıyor. Plan §5.2 N6 bağlantısı "danışman paneli". ⬜ Öneri: mobil danışmana salt okunur üye listesi
+ya da etkinlik kartında "6 kulüp üyesi · 0 kayıtlı" ayrımı.
+
+### `D-76` · Veli kulüp ekranında konumsuz etkinlik "14:00 ·" diye sarkan ayraçla bitiyor ⚪
+
+2026-10-13, OSYN-4 (Expo web, `veli.s1.001`). Konumu boş yayınlanan etkinlik "Yaklaşan Etkinlikler" satırında `14:00 ·`
+([kanıt](kanit/osyn4/12-veli-cocuk-kulup-ekrani.jpg)). ⬜ Öneri: konum boşken ayraç basılmasın.
+
+### `D-77` · Öğrencinin "Kulüplerim" boş durumu açık tercih döneminde tercih ekranına yol göstermiyor ⚪
+
+2026-10-13, OSYN-4 (Expo web, `ogrenci.s1.001`, dönem "Tercihe açık"). Ana sayfa "Kulüplerim" kutusu `/clubs/mine`'a iniyor:
+"Henüz bir kulübe üye değilsin — Kulüplere yerleştirmeyi idare yapar…" yazıyor, düğme yok ([kanıt](kanit/osyn4/05-ogrenci-kuluplerim-bos.jpg)).
+Öğrencinin tercih ekranına ulaşan tek yol bildirim (ya da keşif ekranındaki bant). ⬜ Öneri: açık dönemde boş duruma "Kulüp tercihini yap"
+eylemi.
 
 ### `TB-276` · Sessiz saatte ertelenen push alıcı başına ayrı Hangfire işi açıyor 🟡
 
