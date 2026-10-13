@@ -52,6 +52,16 @@ Oluşturulur, düzenlenir, gerekirse iptal edilir. **İptal sayım kayıtların�
 
 ## Notlar
 
+### Öğrenci/veli görünümü (2026-10-13 kararı)
+
+Uç: `GET api/v1/attendance/students/{studentId}/activities`. Kapsam ders yoklaması görünümleriyle aynı: öğrencinin kendisi, görüntüleme izni olan (CanViewInfo) veli ya da yoklama yönetim izinli personel; aksi hâlde 404.
+
+- **Yalnız katıldığı etkinlikler.** Öğrenci en az bir grubun katılımcı listesindeyse etkinlik döner; değilse hiç görünmez.
+- **KVKK sınırı.** Başka katılımcının kimliği, adı, numarası, sayım durumu ya da öğrencinin bulunmadığı grubun öğretmeni/turu yanıta hiçbir alanda girmez. Öğretmen ve turlar yalnız öğrencinin bulunduğu gruplardan türer.
+- **Sayım sonucu yalnız veliye.** Veli (ve personel) çocuğun sayım durumunu ve hangi turda sayıldığını görür; öğrenci kendisi çağırınca `count` her zaman boştur. Kural sunucuda uygulanır — sayım kayıtları öğrenci çağrısında okunmaz bile.
+- **Durum kuralı.** Her grup kaydı için o grubun turlarındaki en son sayım geçerlidir. Öğrenci birden çok gruptaysa güvenli taraf seçilir: hepsi "geldi" ise geldi; herhangi biri başka bir durumla sayıldıysa o durum; hiç ya da yalnız kısmen sayıldıysa boş.
+- **İptal edilen etkinlik düşmez**, `canceled: true` ile listede kalır (öğretmenin "etkinliklerim" listesinin tersine).
+
 <El yazısı alan.>
 
 ## Açık Sorular
