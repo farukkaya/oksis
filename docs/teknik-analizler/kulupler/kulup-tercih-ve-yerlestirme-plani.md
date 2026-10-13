@@ -421,7 +421,8 @@ Yayın bildirimlerinin olay kimliği `round + student + publishVersion` olur. Ay
 - Yayından sonra sonuç kartı gösterilir: "2. tercihin olan Satranç Kulübü'ne yerleştirildin".
 - Öğrencinin üyeliği varsa ekranda "X kulübünün üyesisin" yazar ve tercih yapılamaz (K-5).
 
-**Mobilde bilinçli olarak yapılmayanlar:** sezon sihirbazı, yerleştirme ve dönem yönetimi. Bunlar idarenin masa başı işidir; mobilde idare kulüp ekranı zaten `PlannedScreen`.
+**Mobilde bilinçli olarak yapılmayanlar:** sezon sihirbazı, dönem oluşturma/silme, yerleştirme tahtası ve yayın — idarenin masa başı işi.
+**Mobil idare yüzü (2026-10-13, Faruk kararı: izleme + hafif eylemler):** `PlannedScreen` kaldırıldı. Yönetici mobilde kulüp listesini (durum çipi, danışman, doluluk), salt okunur kulüp detayını (üyeler) ve İdare modunda tercih dönemi kartını görür; kartta **Tercihe Aç / Tercihi Kapat / Yeniden Aç / Tercih yapmayanlara hatırlat** onay paneliyle yapılır. N3 bildirimi bu ekrana iner.
 
 ---
 

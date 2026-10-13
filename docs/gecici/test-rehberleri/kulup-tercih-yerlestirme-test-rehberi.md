@@ -157,7 +157,7 @@ Ek kontroller:
 6. **Tarih bilgidir:** hedef son gün dönemi kapatmaz/açmaz; zamanlanmış iş yoktur.
 7. **Öğrenci kendisi ayrılamaz** (K-9); veli süreci görmez (K-8).
 8. **Sürükle-bırak yok** (MVP); mobilde sıra ok düğmeleriyle.
-9. **Mobilde idare kulüp ekranı `PlannedScreen`;** sihirbaz, dönem ve yerleştirme yalnız web.
+9. **Mobil idare yüzü yalnız izleme + hafif eylem:** liste, salt okunur detay, dönem kartında Tercihe Aç / Kapat / Yeniden Aç / Hatırlat (2026-10-13). Sihirbaz, dönem oluşturma/silme, yerleştirme ve yayın yalnız web.
 10. **Excel çıktısı** (`placements:export`, K-13) bu sürümde yok (D8).
 11. **Mod değişimi için sezon aktivasyonu gerekir;** Setup sezonunda taslak seçimi okul ayarını değiştirmez (§11).
 12. **Bellek içi test DB** kısıtı zorlamaz; tekil indeks ve tek işlemli yayın iddiaları yalnız gerçek SQL entegrasyon testinde ölçülür (`--integration`).
