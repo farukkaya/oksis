@@ -149,6 +149,7 @@ Projeye yeni geldiysen [[Sezon]] ile başla — okulun bütün akademik kayıtla
 - [[0014-kulup-basvurusu-ve-uyeligi-tek-kayit]] — başvuru ve üyelik tek kayıt; iki liste aynı satırlardan süzülür
 - [[0015-danismansiz-aktif-kulup-basvuru-alir]] — yayındaki kulüp danışmansız da başvuru alır; sonradan atanan danışman bekleyenleri devralır
 - [[0023-kulup-uye-kabul-sorumlusu-sezon-basinda-secilir]] — kulüp üye kabul sorumlusu (öğretmen/idare) yalnız sezon sihirbazında seçilir, aktivasyonda yazılır, sezon içinde değişmez; idare modunda tercih + yerleştirme
+- [[0024-ogrenci-anasayfasi-gune-odaklanir]] — öğrenci telefonu okulda teslim eder: öğrenci anasayfası "şimdi"ye değil güne (bugün / sıradaki okul günü) odaklanır; öğretmen "şimdi" kartında kalır
 - [[0016-ayrilmis-ogretmen-kadrodan-turer]] — "çalışan öğretmen" kadro kaydı ve kişinin yaşam durumundan türer, sezonluk görevlendirmeden değil
 - [[0017-kelebek-derslik-ve-gozetmen-turetilir]] — kelebekte derslik ev dersliğinden, gözetmen ders programından türer; yöneticinin eli satırdaki işaretle korunur
 - [[0018-sinav-kurallari-denetleyicide]] — sınav kuralları tek denetleyicide; geçilemez sert, gerekçeyle geçilen, yalnız görünen
