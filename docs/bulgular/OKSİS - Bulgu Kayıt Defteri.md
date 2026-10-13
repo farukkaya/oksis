@@ -675,6 +675,7 @@ Kulüp işiyle ilgisiz; `dev`'de de var. Yerel uygulamada iç içe dokunma hedef
 📏 2026-10-13 (OSYN-4) **teyit edildi**: öğrenci ve veli ana sayfasında Expo web geliştirici kaplamasında
 `<button> cannot contain a nested…` (2 hata); DOM'da `button button` eşleşmesi "Yüklenemedi · tekrar dene"
 ([kanıt](kanit/osyn4/04-B120-ana-sayfa-ic-ice-dugme.jpg)). Tetik: `timetable/students/me/today` 404 (yayınlanmış program yok).
+✅ **2026-10-13 · kodda (dev, ui `e8e0089` anasayfa yeniden tasarımı):** sorun yeniden tasarımla kalktı — `now-hero`/`day-hero` hata hâlini düz `View` içinde çiziyor, `HomeListCard` gövdesi dokunulabilir değil (yalnız başlıktaki "Tümü" ayrı düğme); `HomeCardError` artık hiçbir düğmenin içinde değil. Ayrı düzeltme dalı (`fix/b-120-ic-ice-dugme`, `b436ffd`) eski tabana yazıldığı ve silinmiş `lesson-now-card.tsx`'e dokunduğu için birleştirilmedi, silindi. ⬜ Test ortamında Expo web konsolunda `cannot contain a nested` görülmeyince arşive.
 
 ### `D-72` · Sezon sihirbazı "Sezonu Aç" reddedildiğinde gerekçe yalnız 2,6 sn'lik nötr toast'ta görünüyor 🟡
 
