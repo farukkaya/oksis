@@ -25,3 +25,7 @@ Thumbs.db
 docs/.obsidian/workspace.json
 docs/.obsidian/workspace-mobile.json
 /.obsidian/
+
+# --- Mobil geri bildirim çekimi (oksis-ui/apps/mobile/scripts/feedback-pull.js) ---
+# Ekran görüntüleri öğrenci/öğretmen verisi taşıyabilir (KVKK) — depoya girmez.
+docs/bulgular/gelen/
