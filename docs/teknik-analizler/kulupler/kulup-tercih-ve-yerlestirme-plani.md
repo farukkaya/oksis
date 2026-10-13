@@ -1,6 +1,6 @@
 # Kulüp Üye Kabul Sorumlusu — Tercih Dönemi ve İdare Yerleştirmesi · Plan
 
-> **Durum:** D1–D7 uygulandı (2026-10-12) — `oksis-api` `b415d6fc`, `oksis-ui` `36711ea`, dal `feature/kulup-tercih-yerlestirme` (henüz `dev`'e birleşmedi). D8 (Excel çıktısı, K-13) açık. Uygulamada netleşenler §11'de.
+> **Durum:** D1–D7 uygulandı (2026-10-12) — `oksis-api` `b415d6fc`, `oksis-ui` `36711ea`, dal `feature/kulup-tercih-yerlestirme`; ekran testi bulguları (B-119, D-70, D-71, D-73, D-74, D-75, D-77) ve mobil yönetici yüzü eklenip 2026-10-13'te **`dev`'e birleşti** (api `d86e7c15` · ui `e335bf9`; `test`/`master`'a henüz çıkmadı). D8 (Excel çıktısı, K-13) açık. Uygulamada netleşenler §11'de.
 > **Kapsam:** `oksis-api` (backend) · `oksis-ui/apps/web` (idare, danışman) · `oksis-ui/apps/mobile` (öğrenci, veli, danışman).
 > **Dayanak:** kod taraması `oksis-api` `78da8a03`, `oksis-ui` güncel `main`; domain notları [[Kulüpler]], [[Kulüp]], [[Kulüp Üyeliği]]; kulüp saati tasarımı `teknik-analizler/ders-programi/kulup-saati.md`.
 > **Kararlar:** §9'da.

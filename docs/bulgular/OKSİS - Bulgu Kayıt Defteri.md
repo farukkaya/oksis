@@ -638,6 +638,8 @@ başvuruları döndürsün — sunucuda (TB-32); ekran şeridi İdare modunda gi
 detayında "Bu sezon üyeleri idare yerleştirir… başvuru ve onay adımı yoktur" bandının hemen altında **"6 Karara Bağlanan Başvuru"**;
 "Göster" → yerleştirilen 6 öğrencinin hepsi "Onaylandı" ([kanıt](kanit/osyn4/16-B119-danisman-basvuru-seridi.jpg)). İdarenin aynı kulüp
 detayında şerit yok — yalnız danışman paneli.
+✅ **2026-10-13 · kodda (dev, api `d86e7c15` · ui `e335bf9`):** üyeliğe `Source` (`MembershipSource.Application`/`Placement`) eklendi, `CreatePlaced` → Placement; `ApplicationsAsync` ve `ClubWire.OutcomeOf` yerleştirme üyeliğini hiçbir süzgeçte döndürmüyor (göç `20261013_kulup_uyelik_kaynagi`). Web danışman detayında karara bağlanan başvuru şeridi ve liste kartındaki bekleyen çipi İdare modunda gizli.
+📏 Gerçek API (`oksis_kulup_tercih`, s4): yayın sonrası dört kulübün başvuru listesi boş; danışman `ogretmen.s4.07` Robotik detayında şerit yok, iki üye listeleniyor. ⬜ Test ortamında ölçülünce arşive.
 
 ### `D-70` · "Kapsamdaki öğrenci" iki ekranda farklı evreni sayıyor (17 / 19) ⚪
 
@@ -648,6 +650,8 @@ iki sayfada aynı tanımı kullan.
 📏 2026-10-13 (OSYN-4) **teyit edildi**, yayından sonra fark büyüyor: Tercih Dönemi sayfası **48**
 ([kanıt](kanit/osyn4/14-D70-tercih-donemi-48.jpg)), Yerleştirme ekranı aynı etiketle **60** ("48 tercih yapmadı · 0 mevcut üye",
 [kanıt](kanit/osyn4/15-D70-yerlestirme-60.jpg)). Yayından önce ikisi de 60'tı. Aynı kökün ikinci belirtisi → `D-73`.
+✅ **2026-10-13 · kodda (dev, api `d86e7c15` · ui `e335bf9`):** kapsam yalnız başvuruyla doğan üyeliği "mevcut üye" sayıyor; yerleştirme ekranındaki etiket "Tablodaki öğrenci".
+📏 Gerçek API: Tercih Dönemi 12, yerleştirme "Tablodaki öğrenci 12 · 0 mevcut üye" — iki sayı tutarlı. ⬜ Test ortamında ölçülünce arşive.
 
 ### `D-71` · Yerleştirilen öğrencinin tercih ekranında "kulüp tercihi yapman gerekmiyor" yazıyor ⚪
 
@@ -658,6 +662,8 @@ duruyor. Yerleştirilmiş öğrenci için anlamsız; tercih listesinin kendisi d
 📏 2026-10-13 (OSYN-4) **teyit edildi** (Expo web, `ogrenci.s1.001`, 3. tercihine yerleşti): bildirimden `/clubs/preference`'a inince
 "3. tercihin olan OSYN4 Müzik'e yerleştirildin" kartının altında `"OSYN4 Müzik" kulübünün üyesisin; kulüp tercihi yapman gerekmiyor.`;
 kaydettiği 3 tercih görünmüyor ([kanıt](kanit/osyn4/10-D71-tercih-ekrani.jpg)).
+✅ **2026-10-13 · kodda (dev, api `d86e7c15` · ui `e335bf9`):** yerleştirme üyeliği uygunluğu `Member` yapmıyor → `blockReason` kapalı dönem metni; mobil tercih ekranı kayıtlı tercihleri salt okunur gösteriyor.
+📏 Gerçek API (Expo web, `ogrenci.s4.005`): sonuç kartı altında "Kulüp tercih dönemi kapandı; tercihin artık değiştirilemez." ve kaydedilen üç tercih. ⬜ Test ortamında ölçülünce arşive.
 
 ### `B-120` · Mobil ana sayfada "Şu anki ders" kartı düğme içinde düğme üretiyor (web hedefinde hydration hatası) ⚪
 
@@ -690,12 +696,16 @@ kulüp talepleri tablosunu (Robotik 6/4/2, Satranç 3/5/4, Müzik 3/3/6, "Talep 
 yerleşip üye olunca "üyeliği olmayan" kapsamından düşüyor, istatistikleri de onlarla siliniyor. Dönemin sonucu bu sayfadan artık okunamıyor.
 Aynı kök `D-70`. ⬜ Öneri: dönem kapandıktan/yayınlandıktan sonra KPI ve talep tablosu dönemin kayıtlı tercihlerinden sayılsın (kapsam
 kuralı yalnız açık dönemde canlı süzgeç olsun).
+✅ **2026-10-13 · kodda (dev, api `d86e7c15` · ui `e335bf9`):** kök `B-119` ile ortak (üyelik kaynağı): yayınla doğan üyelik kapsamdan düşürmüyor.
+📏 Gerçek API: overview yayın öncesi ve sonrası birebir aynı (12 kapsam · 6 tercih yapan · 6 yapmayan; talep tablosu aynı); web sayfası da öyle. ⬜ Test ortamında ölçülünce arşive.
 
 ### `D-74` · İdare modunda boş kulüp listesi "öğrenciler başvurmaya başlayabilir" diyor ⚪
 
 2026-10-13, OSYN-4. Kulübü olmayan İdare modundaki okulda web Kulüpler boş durumu: "Bu sezon henüz kulüp açılmadı — Yeni bir kulüp açtığında
 öğrenciler başvurmaya başlayabilir." İdare modunda başvuru yok (tercih + yerleştirme). Metin `club-list-page.tsx` `ClubEmptyState`'te sabit.
 ⬜ Öneri: modlu metin ("…tercih dönemini açtığında öğrenciler kulüp seçebilir").
+✅ **2026-10-13 · kodda (dev, api `d86e7c15` · ui `e335bf9`):** `ClubEmptyState` İdare modunda "Yeni bir kulüp açıp tercih dönemini başlattığında öğrenciler kulüp tercihi yapabilir."
+📏 Gerçek API (web, kulübü olmayan İdare modu s4): metin göründü. ⬜ Test ortamında ölçülünce arşive.
 
 ### `D-75` · Danışmanın "Kulübünüze N öğrenci yerleştirildi" bildirimi mobilde "0 üye" gösteren etkinlik ekranına iniyor ⚪
 
@@ -704,6 +714,8 @@ kuralı yalnız açık dönemde canlı süzgeç olsun).
 **"0 üye"** (etkinliğe kayıtlı) ([kanıt](kanit/osyn4/13-danisman-bildirim-inisi.jpg)). Yerleşen 6 öğrenci mobilde hiçbir yerde görünmüyor;
 danışman bildirimin söylediğini doğrulayamıyor. Plan §5.2 N6 bağlantısı "danışman paneli". ⬜ Öneri: mobil danışmana salt okunur üye listesi
 ya da etkinlik kartında "6 kulüp üyesi · 0 kayıtlı" ayrımı.
+✅ **2026-10-13 · kodda (dev, api `d86e7c15` · ui `e335bf9`):** mobil danışman etkinlik ekranının üstünde "N kulüp üyesi · Göster" kartı (`useClubMembers`), etkinlik sayısı "kayıtlı" birimiyle.
+📏 Gerçek API (Expo web, `ogretmen.s4.07`): N6 bildirimi → "2 kulüp üyesi", açınca Levent Şen ve Tuğçe Polat. ⬜ Test ortamında ölçülünce arşive.
 
 ### `D-76` · Veli kulüp ekranında konumsuz etkinlik "14:00 ·" diye sarkan ayraçla bitiyor ⚪
 
@@ -716,6 +728,8 @@ ya da etkinlik kartında "6 kulüp üyesi · 0 kayıtlı" ayrımı.
 "Henüz bir kulübe üye değilsin — Kulüplere yerleştirmeyi idare yapar…" yazıyor, düğme yok ([kanıt](kanit/osyn4/05-ogrenci-kuluplerim-bos.jpg)).
 Öğrencinin tercih ekranına ulaşan tek yol bildirim (ya da keşif ekranındaki bant). ⬜ Öneri: açık dönemde boş duruma "Kulüp tercihini yap"
 eylemi.
+✅ **2026-10-13 · kodda (dev, api `d86e7c15` · ui `e335bf9`):** `/clubs/mine` boş durumu açık dönemde ve uygun öğrencide "Kulüp tercihini yap" (kayıtlıysa "Tercihini düzenle") → `/clubs/preference`.
+📏 Yalnız mock'ta ölçüldü (gerçek API turunda dönem yayınlanmıştı); ⬜ test ortamında ölç. ⬜ Test ortamında ölçülünce arşive.
 
 ### `TB-276` · Sessiz saatte ertelenen push alıcı başına ayrı Hangfire işi açıyor 🟡
 
