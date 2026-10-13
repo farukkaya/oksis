@@ -5,7 +5,7 @@ tags: [ofis, handoff]
 # SESSION-HANDOFF — Ajanlar Arası Beyaz Tahta
 
 > Sahibi: Teknik Lider (`oksis-tech-lead`). Her ajan işe bu dosyayı okuyarak başlar,
-> bitirirken **Günlük**'e bir satır ekler. Organizasyon: [[oksis-sanal-ofis-organizasyon]].
+> bitirirken **Günlük**'e bir satır ekler.
 
 ## Aktif dilim
 
