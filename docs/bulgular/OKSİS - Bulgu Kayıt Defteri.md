@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-122` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-124` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -241,11 +241,15 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 19 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 45 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| 🟠 Yüksek | 20 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 46 | İşlev eksik ama alternatif yol var; borç birikiyor |
 | ⚪🟢 Düşük | 28 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **95** | |
+| **Toplam** | **97** | |
+
+> **2026-10-14 (REQ-005 geliştirme/ekran testi):** yeni `B-122` 🟠, 🔴 adayı (zorunlu parola değişimi sunucuda zorlanmıyor —
+> `require_password_change` talebini okuyan kapı yok, `PasswordChangeRequired` hatası ölü; web oturum geri yüklemede bayrağa bakmıyor) ve
+> `B-123` 🟡 (davet/sıfırlama/zorunlu değişim formlarının parola kuralı sunucudan katı — küçük harf şart, sembol çip). Toplam **97**.
 
 > **2026-10-14 (Playwright ekran testi, Altınay, veli):** yeni `B-121` ⚪ (veli mobil anasayfada `GET school-settings` 403 —
 > rol çözülmeden varsayılan `admin` rolüyle istek atılıyor; aynı testteki `club-settings` 404'ü API/UI sürüm kayması, maddeye not).
@@ -785,6 +789,82 @@ uç `oksis-api`'de yalnız `dev`/`test`'te var (`b415d6fc`, kulüp üye kabul so
 tabanlı UI'ı `master` API'ye karşı koşturunca doğan **sürüm kayması**; tutarlı çiftte (UI `dev` + API `dev`) uç `clubs.read` ile kapılı
 (`GetClubSettingsQuery.cs:23`) ve veli bu izni taşıyor (`RolePermissionSeedData.cs:218`) → 200 beklenir. `oksis-ui` `master` bu ucu
 çağırmıyor. Ekran testi aynı daldaki API'ye karşı tekrarlanınca görülmezse not düşülür.
+
+### `B-122` · Zorunlu parola değişimi sunucuda zorlanmıyor — bayraklı oturum bütün uçları kullanabiliyor 🟠
+
+2026-10-14, REQ-005 geliştirme/ekran testi (mobil zorunlu parola akışı). Güvenlik bulgusu; **🔴 adayı** — önem kullanıcı kararıyla
+yükseltilebilir. **Kod okundu, çalıştırılmadı** (`oksis-api` `master` @ `2b05d1b1`, `oksis-ui` `master` @ `ba099ff`).
+**Belirti:** geçici parolayla açılan hesap (`RequirePasswordChange = true`) girişte tam yetkili access + refresh token alıyor; parolayı
+değiştirmeden okul uçlarının hepsine istek atabiliyor. Zorunlu değişim yalnız **istemci kapısı**: istemci formu atlarsa (ya da token'ı
+doğrudan kullanırsa) sunucu bir şey demiyor.
+**Kök neden (sunucu):**
+- Bayrak yalnız yazılıyor ve yanıtta dönüyor: JWT talebi `Oksis.Infrastructure/Identity/AccountTokenIssuer.cs:48`
+  (`require_password_change`), ayrıca `AccountLoginCommandHandler.cs:246`, `AccountRefreshTokenCommandHandler.cs:150`,
+  `AccountSwitchProfileCommandHandler.cs:105`, `AccountSwitchSeasonCommandHandler.cs:157` sonuçları ve `me/context`
+  (`GetCurrentContextQueryHandler.cs:108`). Depoda bu talebi **okuyan** hiçbir policy / middleware / filtre / handler yok
+  (`require_password_change` dizgesi `src/` altında göçler dışında yalnız token üreticisinde geçiyor).
+- Hata tanımlı ama ölü: `AccountErrors.PasswordChangeRequired` (`Oksis.Application/Modules/Identity/Errors/AccountErrors.cs:27-29`,
+  kod `identity.account.password-change-required`) ve mesajı `Oksis.Api/Errors/ErrorMessageCatalog.cs:260` ("Devam etmeden önce
+  parolanızı değiştirmeniz gerekiyor.") — hiçbir yerde dönülmüyor; testlerde de geçmiyor.
+- Bayrağı bugün kuran tek yol öğrenci hesabının kayıtla doğması: `StudentAccountProvisioner.cs:48`
+  (`Account.Create(..., requirePasswordChange: true)`, geçici parola yanıtta bir kez döner). `Account.AdminResetPassword`
+  (`Account.cs:202-207`) ve `MarkPasswordChangeRequired` (`:348`) da bayrağı kuruyor ama **çağıranı yok**. Yani açık bugün kayıtla
+  doğan ortaokul/lise öğrenci hesaplarında: geçici parolayı gören herkes (kaydı yapan idare dâhil) hesabı süresiz kullanabilir.
+**İstemci durumu:**
+- **Mobil:** `oksis-ui` `master`'da giriş ekranı bayrakta "Bu adım şimdilik yalnızca web panelde tamamlanabilir" diyor (bkz.
+  [[OKSİS — Hazır Olmayan ve Yakında Ekranlar Envanteri]] M-6). REQ-005 (`oksis-ui` `design/req-005`) splash'te
+  `me/context.requirePasswordChange` kontrolü ve zorunlu formdan "Girişe dön" ile token temizliği ekleyerek kapatıyor — henüz birleşmedi.
+- **Web (`oksis-ui` `master`) — açık:** kapı yalnız giriş anında. `apps/web/features/auth/login-screen.tsx:108-113`
+  `applyResult` bayrakta `ForcePasswordView`'e (`:264`, tanım `:678`) geçiyor; ama token'lar `useLogin` `onSuccess`'inde **bu karardan
+  önce** saklanıyor (`packages/api/src/auth/queries.ts:26-34, 50` `persistTokens`). Oturum geri yüklemede bayrak okunmuyor:
+  `apps/web/components/app-shell.tsx:101` `useMyContext()`'ten yalnız `activeProfileType` alıyor, `apps/web/middleware.ts` yalnız
+  host/yüzey ayrımı yapıyor; `apps/web` içinde `requirePasswordChange`'i okuyan başka satır yok. Sonuç: zorunlu formdayken adres
+  çubuğundan `/`'e gitmek ya da sayfayı yenilemek formu atlatır (çalıştırılarak ölçülmedi).
+**Karar geçmişi:** arşivde "tasarım gereği" kararı yok. Aynı akışın önceki ayağı `B-61` 🔴 (zorunlu parola ekranı yer tutucuydu, uca
+bağlandı — [[OKSİS - Bulgu Arşivi]]) yalnız istemci formunu düzeltti; sunucu zorlaması o maddenin kapsamında değildi. Domain
+kuralı açık: öğrenci hesabında ilk girişte parola değişimi **zorunludur** (`domain/kavramlar/Hesap.md`, karar `0009`) — kural bugün
+yalnız ekranda ([[kural-ekranda-degil-sunucuda]]).
+⬜ **Seçenekler (karar verilmedi):**
+1. **Sunucu kapısı (önerilen yön):** `require_password_change = true` talebi taşıyan isteğe, izin listesi dışındaki her uçta
+   **403 `identity.account.password-change-required`** dönen bir authorization filter / global policy. İzin listesi:
+   `account/change-password`, `account/logout`, `account/logout-all`, `account/refresh`, `me/context` (gerekirse
+   `me/available-contexts`). Mevcut ölü hata kodu ve mesajı doğrudan kullanılır. Talep token'da olduğu için DB'ye gitmeden karar
+   verilir; değişim sonrası refresh token'lar zaten iptal (`Account.ChangePassword`) — yeni giriş bayraksız token alır.
+2. **İstemciler bu kodu tanısın:** `classifyLoginError` / ortak API katmanı 403 `password-change-required`'i görünce zorunlu forma
+   yönlendirsin (web + mobil tek noktadan). 1 olmadan tek başına yetmez; 1 ile birlikte "form atlatıldı" durumunu kapatır.
+3. **Web ara düzeltmesi:** oturum geri yüklemede (`app-shell` / sağlayıcı) `me/context.requirePasswordChange` kontrolü — mobilde
+   REQ-005'in yaptığının ikizi. Sunucu kapısı gelince gereksizleşir; yalnız 1 gecikirse anlamlı.
+Entegrasyon testi (1 seçilirse): bayraklı hesapla giriş → rastgele okul ucu 403 + kod; `change-password` 200; yeni girişte aynı uç 200.
+
+### `B-123` · Davet, sıfırlama ve zorunlu değişim formlarının parola kuralı sunucudan katı — küçük harf şart, sembol "kural" gibi gösteriliyor 🟡
+
+2026-10-14, REQ-005 geliştirme sırasında (mobil parola değiştirme formu sunucu kuralına göre yazılırken) fark edildi. Kod okundu,
+çalıştırılmadı. Aynı satırlar `oksis-ui` `master` (@ `ba099ff`) ve `oksis-ui-tasarim` `design/genel-tasarim` (@ `116f722`)'de birebir.
+**Sunucu kuralı (tek hüküm):** `oksis-api` `src/Oksis.Application/Modules/Identity/ValueObjects/PasswordPolicy.cs` — en az 8 karakter
+(`:11`, `:22`), en az 1 büyük harf (`char.IsUpper`, Türkçe dâhil her Unicode büyük harf, `:33`), en az 1 rakam (`:34`). Küçük harf ve
+sembol **zorunlu değil**. Üst sınır 256: `AccountChangePasswordCommandValidator.cs:14`, `AccountResetPasswordCommandValidator.cs:12,17`.
+**İstemci (`packages/core` ortak, iki uygulama da buradan okuyor):**
+- `packages/core/src/auth/logic.ts:46-60` `passwordStrength` — dört kural: `length`, `caseMix` (`:49`, **küçük ve büyük** harf birlikte,
+  büyük harf yalnız `[A-ZÇĞİÖŞÜ]`), `number`, `symbol` (`:51`). Kaynağı tasarım dosyasındaki güç göstergesi (`auth.jsx pwStrength`),
+  sunucu politikası değil. Üst sınır yok.
+- **Gönder kapısı küçük harf istiyor** (`caseMix`): `packages/core/src/auth/schemas.ts:36-41` `newPasswordSchema` (web zorunlu değişim
+  formu `apps/web/features/auth/login-screen.tsx:692`); web sıfırlama `apps/web/features/auth/reset-password-screen.tsx:105-109`; web
+  davet `apps/web/features/auth/invite-screen.tsx:255-259`; mobil davet
+  `apps/mobile/src/features/invitations/components/invite-accept-screen.tsx:71-72`. Sunucunun kabul ettiği `PAROLA123` gibi bir parola
+  ekranda reddediliyor; hata metni de "büyük/küçük harf" diyor (`schemas.ts:41`).
+- **Sembol kural çipi olarak gösteriliyor:** web `apps/web/features/auth/password-fields.tsx:37, 80-104` (çip `:99-103`, metin
+  `auth-dict.ts:207` "En az bir sembol"), mobil `apps/mobile/src/features/invitations/components/password-fields.tsx:27-32, 76, 129-132`.
+  Gönderi kapısı sembol istemiyor ama kullanıcı dört çipi şart olarak okuyor; çip kapanmadıkça "eksik" hissi kalıyor. Mobil bileşenin
+  kendi yorumu (`password-fields.tsx:65-66`) "backend PasswordPolicy ile aynı kaynak" diyor — doğru değil.
+**Etki:** kullanıcıya sunucunun istemediği şart dayatılıyor; kural iki yerde, ikisi farklı ([[kural-ekranda-degil-sunucuda]]).
+**Karar geçmişi:** arşivde bu kurala dair "tasarım gereği" kararı yok; `B-61` kapanışı zorunlu formu `newPasswordSchema`'ya bağladı,
+kuralın kendisini ele almadı.
+⬜ **Önerilen çözüm (karar verilmedi):** REQ-005'te `packages/core/src/auth/logic.ts`'e sunucuyla birebir `passwordPolicyRules` /
+`isPasswordPolicyMet` eklendi (`length ≥ 8`, `\p{Lu}`, `\p{Nd}`, `≤ 256`; testi `password-policy.test.ts`) — şimdilik yalnız
+`design/req-005` dalında (`oksis-ui-req005` @ `741a9bf`) ve yalnız mobil parola değiştirme formunda kullanılıyor. Birleşince
+`newPasswordSchema`, web sıfırlama/davet ve mobil davet kapıları bu ortak kurala geçsin; kural çipleri sunucunun üç şartını göstersin.
+`passwordStrength` istenirse yalnız **görsel güç çubuğu** olarak kalır (kapıya ve "kural" çiplerine girmez). Tek merkezî değişiklik —
+ekran ekran yamalanmaz ([[yamalama-kabul-degil]]).
 
 ### `TB-231` · Entegrasyon takımının yarısı master'da kırmızı; push kapısının dışında olduğu için sessizce birikti 🟠
 
