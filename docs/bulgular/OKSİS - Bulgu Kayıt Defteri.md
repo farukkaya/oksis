@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-125` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-131` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -242,10 +242,17 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 20 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 46 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 29 | Kozmetik, temizlik, adlandırma |
+| 🟡 Orta | 48 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 33 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **98** | |
+| **Toplam** | **104** | |
+
+> **2026-10-14 (REQ-022 kod incelemesi + güvenlik denetimi, oksis-api `feature/ogrenci-veli-etkinlik` @ d7674a19):** yeni `B-125` 🟡
+> (süresi dolmuş veli ilişkisi hâlâ erişim veriyor — `ValidFrom`/`ValidUntil` hiçbir veli kapısında okunmuyor, 14 yer listelendi),
+> `B-126` ⚪ (`Authenticated` hız sınırı politikası tanımlı ama bağlı değil; `security-rules.md` §7 ile çelişki), `B-127` ⚪
+> (`multi-tenant-rules.md` "elle `SchoolId ==` yazma" ↔ kodun açık okul koşulu; kardeş etkinlik uçları küresel süzgece dayanıyor),
+> `B-128` ⚪ (etkinlik `Note` metni tüm velilere gidiyor, uyarı yok), `B-129` ⚪ (kapsam dışı 404 denemeleri KVKK izi bırakmıyor) ve
+> `B-130` 🟡 (mobil, çocuksuz velide kısayollar bozuk — 🔧 REQ-021 ile düzeltiliyor). Toplam **104**.
 
 > **2026-10-14 (REQ-006 / REQ-011 ekran testleri, Altınay, öğretmen):** yeni `B-124` ⚪, düşük-orta önerisi (öğretmen Notlar ekranında
 > `GradeBookCard` düğmesi içinde `AssessmentStatusChip` düğmeleri — iç içe `<button>`; anasayfa ayağı kodda bulunamadı, yeniden ölçülecek).
@@ -3018,6 +3025,111 @@ aynı pencere kuralı), yoksa gün sonu kapanışı bilinçli mi? Web canlı pan
 sonu işi aynen). **Düzeltme `dev`'de:** api `6dc3a760` — `GetSchoolLiveBoardQueryHandler` girilmemiş Pending'i
 `localNow > tarih + EndTime` ise alınmadı sayar; Open bekleyen kalır; hücre durumları ham. Entegrasyon testi
 `Board_OverduePending_CountsAsNotTaken_BeforeDayClose`. Test ortamına çıkınca kullanıcı onayıyla arşive.
+
+### `B-125` · Süresi dolmuş veli ilişkisi hâlâ erişim veriyor: veli kapıları `ValidFrom`/`ValidUntil`'e bakmıyor 🟡
+
+2026-10-14, REQ-022 kod incelemesi (oksis-api `feature/ogrenci-veli-etkinlik` @ `d7674a19`). **Kaynak:** kod inceleyici raporu.
+Sistemik — bu dalın getirdiği değil, dal aynı kalıbı yeniden kullanıyor.
+
+**Etki:** `StudentAttendanceScopeGuard.cs:47-53` veli yetkisini yalnız `RevokedAt == null && CanViewInfo` ile veriyor;
+`ParentStudentRelationship.ValidFrom`/`ValidUntil` (`DateOnly`) okunmuyor. Bitiş tarihi geçmiş (ya da başlangıcı gelmemiş) ilişkinin
+velisi, çocuğun yoklama özeti / kayıtları / bugün / etkinlikleri uçlarını görmeye devam eder. Aynı kalıp başka veli kapılarında da var
+(grep, `RevokedAt == null` ile ilişki okuyanlar; hiçbiri tarih aralığına bakmıyor):
+- Yoklama: `ListExcusesQueryHandler:69`, `GetExcuseDetailQueryHandler:36`, `CreateExcuseCommandHandler:90`,
+  `GetDailyLeaveCandidateQueryHandler:48`, `GrantDailyLeaveCommandHandler:141`
+- Bildirim alıcı çözümü: `ActivityBulkExcusedNotificationHandler:36`, `AttendanceSubmittedNotificationHandler:94`,
+  `AttendanceDailySummaryNotifier:61`, `AssessmentPublishedNotificationHandler:72`
+- Notlar / Kulüpler: `GradeBookScope:99`, `GetFamilyGradesQueryHandler:170`, `ClubFamilyScope:87,108`
+
+Tek yönlü sigorta: `Revoke` çağrısı `ValidUntil`'i iptal gününe çekiyor (`ParentStudentRelationship.cs:139-144`) — yani iptal edilmiş
+ilişki zaten `RevokedAt` ile düşüyor; açık kalan yalnız **iptal edilmeden süresi dolan** ilişki.
+
+**Karar geçmişi:** henüz yok.
+
+⬜ **Seçenekler (karar verilmedi):**
+- (a) Ortak bir "ilişki bugün geçerli mi" yüklemi (tek yerde, `RevokedAt == null && ValidFrom <= bugün && (ValidUntil == null || ValidUntil >= bugün)`)
+  yazıp yukarıdaki tüm kapılara bağla — merkezî çözüm ([[yamalama-kabul-degil]]).
+- (b) Yalnız `StudentAttendanceScopeGuard`'a ekle — bu dalın kapsamı kalır, kalan kapılar açık kalır (yama; önerilmez).
+- (c) Bilinçli kabul: ilişkiyi süresi dolunca bir sweep'in iptal etmesi beklenir (`RoleAssignment` için böyle bir sweep var; ilişki için yok).
+- Yan karar: bitiş günü **dahil mi** (`>=`), "bugün" **okulun yerel saatine** mi göre (UTC yerine okul saat dilimi)? Bildirim alıcı
+  çözümleri (yazma yönü) kapsama girsin mi, yalnız okuma kapıları mı?
+
+### `B-126` · Kimlikli uçlarda hız sınırı yok: `Authenticated` politikası tanımlı ama hiçbir uca bağlı değil ⚪
+
+2026-10-14, REQ-022 güvenlik denetimi (oksis-api `feature/ogrenci-veli-etkinlik` @ `d7674a19`). **Kaynak:** güvenlik denetçisi raporu.
+
+**Etki:** `src/Oksis.Api/Extensions/RateLimitingSetup.cs:11,78` `RateLimitPolicies.Authenticated` ("authenticated") politikasını kuruyor;
+`RateLimitPolicies.Authenticated` / `RequireRateLimiting` için `src` altında kullanım yok. `security-rules.md` §7 "Genel (auth'lu) 300/dakika/User"
+diyor. Belge-kod çelişkisi: oturum açmış kullanıcı için okuma/yazma uçlarında fiilen sınır yok (yalnız anonim/giriş uçları sınırlı).
+
+**Karar geçmişi:** henüz yok.
+
+⬜ **Seçenekler (karar verilmedi):**
+- (a) Küresel, kullanıcı başına (`User`) bölümlendirilmiş politikayı tüm kimlikli uçlara bağla (`RequireRateLimiting` ya da varsayılan
+  `GlobalLimiter`) — belge doğru olur.
+- (b) Belgeyi düzelt ("kimlikli uçlarda sınır uygulanmıyor, reverse proxy'de") — kod doğru kabul edilir.
+- Hangisi seçilirse, mobil toplu çağrılar (ana sayfa açılışı) 300/dk'yı aşar mı diye ölçülmeli.
+
+### `B-127` · Belge çelişkisi: `multi-tenant-rules.md` "elle `SchoolId ==` yazma" diyor, kod süper yönetici oturumu için açık okul koşulu istiyor ⚪
+
+2026-10-14, REQ-022 kod incelemesi (oksis-api `feature/ogrenci-veli-etkinlik` @ `d7674a19`). **Kaynak:** kod inceleyici raporu.
+
+**Etki:** `multi-tenant-rules.md` satır 91 (AI Kuralı): `IHasTenant` entity'de "hiçbir zaman elle `.Where(e => e.SchoolId == ...)` yazma".
+Kod ise tersini söylüyor: `AttendanceCallerResolver.cs:9-13` (TB-139/TB-140 notu) — süper yönetici oturumunda küresel süzgeç tümden
+düştüğü için okul sınırını taşıyan tek şey sorgunun açık yüklemi. Belgeyi harfiyen izleyen bir ajan/geliştirici, süper yönetici
+oturumunda tüm okulları tarayan sorgu yazar. **Kod doğru kaynak**; belge uzlaştırılmalı.
+
+Dal durumu: etkinlik ucunda açık okul koşulu REQ-022 düzeltme turunda ekleniyor; kardeş `GetSeasonActivities` / `GetMyActivities` /
+`GetActivity` uçları ise **hâlâ yalnız küresel süzgece dayanıyor** (açık koşul yok) — belge düzeltilirse bu üçü de kapsam taramasına
+girmeli.
+
+**Karar geçmişi:** henüz yok.
+
+⬜ **Seçenekler (karar verilmedi):**
+- (a) Belgeye istisna yaz: "Süper yönetici oturumunda küresel süzgeç düşer; okul-kapsamlı okuma yollarında açık `SchoolId` yüklemi yaz
+  (TB-139/TB-140)". Ardından üç kardeş etkinlik ucuna açık koşul ekle.
+- (b) Belgeyi olduğu gibi bırak, süzgeci süper yönetici için düşmeyecek şekilde değiştir (TB-139 kararını geri alır; geniş etki).
+
+### `B-128` · Etkinlik "Açıklama" (`Note`) serbest metni tüm katılımcıların velilerine gidiyor; oluşturma ekranında uyarı yok ⚪
+
+2026-10-14, REQ-022 güvenlik denetimi (oksis-api `feature/ogrenci-veli-etkinlik` @ `d7674a19`). **Kaynak:** güvenlik denetçisi raporu.
+
+**Etki:** `StudentActivityViewBuilder.cs:74` etkinliğin `Note` alanını öğrenci/veli görünümüne olduğu gibi koyuyor. Etkinliği oluşturan
+öğretmen/idare "Açıklama"ya iç not (ör. öğrenciye dair bir uyarı, lojistik ayrıntı) yazarsa katılımcı **tüm öğrencilerin velileri**
+okur. Oluşturma ekranında "veliler görür" uyarısı yok; alan adı da bunu ima etmiyor.
+
+**Karar geçmişi:** henüz yok. Ürün kararı.
+
+⬜ **Seçenekler (karar verilmedi):**
+- (a) Alan kalır, oluşturma/düzenleme ekranına "Bu metni katılımcıların velileri görür" yardım metni eklenir (web + mobil).
+- (b) İki alan: veliye açık "Açıklama" + yalnız personele görünür "İç not".
+- (c) Etkinlik `Note`'u veli görünümünden çıkar.
+
+### `B-129` · Öğrenci/veli yoklama okuma uçlarında kapsam dışı (404) denemeler KVKK izi bırakmıyor ⚪
+
+2026-10-14, REQ-022 güvenlik denetimi. **Kaynak:** güvenlik denetçisi raporu. Sistemik — dalın getirdiği değil.
+
+**Etki:** öğrenci/veli yoklama okuma uçlarında yalnız **başarılı** okuma `AttendanceKvkkAudit`'e düşüyor. Kapsam dışı bir öğrenci kimliğiyle
+yapılan deneme (404, varlık sızdırmama) hiçbir iz bırakmıyor: bir hesabın başkasının çocuğunu tek tek denemesi (kimlik taraması)
+denetim kaydından görülemez. Başarılı okuma izi var; **reddedilen deneme izi yok** — tarama saldırısı tespit edilemez.
+
+**Karar geçmişi:** henüz yok.
+
+⬜ **Seçenekler (karar verilmedi):**
+- (a) Kapsam dışı deneme için ayrı, düşük gürültülü bir denetim satırı (ör. `ScopeDenied`) yaz; tekrar eden denemeye eşik uyarısı.
+- (b) Yalnız yapılandırılmış log (Serilog uyarı seviyesi) + hız sınırı (`B-126` ile birlikte) — KVKK tablosuna dokunma.
+- (c) Kabul: varlık sızdırmayan 404 yeterli, deneme izi tutulmaz.
+
+### `B-130` · (Mobil) Bağlı çocuğu olmayan velide çocuğa bağlı kısayollar bozuk açılıyor: "Mazeret bildir" `studentId: ''` ile, "Ders programı" çocuksuz çağrılıyor 🟡
+
+2026-10-14, REQ-022 ekran/kod incelemesi (oksis-ui, mobil). **Kaynak:** kod inceleyici raporu.
+
+**Etki:** hesabına bağlı çocuk bulunmayan velide ana sayfa kısayolları çocuk kimliği olmadan çalışıyor: "Mazeret bildir" formu
+`studentId: ''` ile açılıyor (boş çocuk, gönderimde hata/yanlış hedef), "Ders programı" ekranı çocuksuz uç çağrısı yapıyor.
+
+🔧 **Düzeltiliyor — REQ-021 ile.** Kullanıcı kararı (2026-10-14): çocuğu olmayan velide kısayola dokununca **ortak bir panel** açılır, panelde
+durum bilgisi gösterilir (bağlı çocuk yok); header'daki çocuk paneli de aynı bilgiyi gösterir (REQ-020). Kapanış REQ-021 teslimiyle,
+kullanıcı onayıyla arşive.
 
 ## Not
 
