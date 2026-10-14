@@ -884,6 +884,15 @@ yalnız ekranda ([[kural-ekranda-degil-sunucuda]]).
 3. **Web ara düzeltmesi:** oturum geri yüklemede (`app-shell` / sağlayıcı) `me/context.requirePasswordChange` kontrolü — mobilde
    REQ-005'in yaptığının ikizi. Sunucu kapısı gelince gereksizleşir; yalnız 1 gecikirse anlamlı.
 Entegrasyon testi (1 seçilirse): bayraklı hesapla giriş → rastgele okul ucu 403 + kod; `change-password` 200; yeni girişte aynı uç 200.
+**Durum (2026-10-14, REQ-014):** sunucu kapısı (seçenek 1) `oksis-api-req014` `feature/zorunlu-parola-sunucu-kapisi` dalında (dev tabanlı; push/merge
+yok). Bağımsız kod incelemesi ve güvenlik denetimi **düzeltmeyle onay** verdi; düzeltmeler dalda. Kapı: `PasswordChangeGateMiddleware` +
+`[AllowWhilePasswordChangeRequired]`; muaf 6 uç (change-password, logout, logout-all, refresh, `me/context`, `DELETE notifications/devices/{token}`).
+Ek sertleştirme: yeni parola mevcutla aynı olamaz (`identity.password.same-as-current`), yanlış mevcut parola kilit sayacına yazılır,
+change-password dakikada 5 (429), `AdminResetPassword`/`MarkPasswordChangeRequired` eski token'ı `perms_ver` ile anında geçersiz kılar.
+**Kalan:** (a) istemci kolu REQ-017 (403 kodunu tanıma + zorunlu forma yönlendirme + oturum geri yüklemede `me/context` kontrolü + hub'ı bayrak
+varken açmama); (b) master öncesi dağıtım koordinasyonu — kapı açılınca istemciler hazır değilse bayraklı kullanıcı 403 görür; **DB'de
+`RequirePasswordChange = 1` olup giriş yapmış hesap sayımı** alınmalı (etkilenecek kullanıcı sayısı; cihaz kaydı olanlar dâhil); (c) takip D-2:
+kapı tetiklenme metriği/örnekleme (şimdi her reddedilen istek Warning log; istemci hatası yağarsa gürültü).
 
 ### `B-123` · Davet, sıfırlama ve zorunlu değişim formlarının parola kuralı sunucudan katı — küçük harf şart, sembol "kural" gibi gösteriliyor 🟡
 
