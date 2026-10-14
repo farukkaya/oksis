@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-132` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-136` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -241,11 +241,17 @@ sayaçlar üçü arasında ortak.
 | Öncelik | Adet | Kapsam |
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
-| 🟠 Yüksek | 20 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 48 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 34 | Kozmetik, temizlik, adlandırma |
+| 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
+| 🟡 Orta | 49 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 35 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **105** | |
+| **Toplam** | **109** | |
+
+> **2026-10-14 (REQ-025 kod incelemesi + güvenlik denetimi, oksis-api `origin/dev` @ ebb1cd00):** yeni `B-132` 🟠 (🔴 adayı —
+> `CanViewInfo=false` veli not/ödev/kulüp/öğrenci belgesi kapılarında ve not/ödev bildirimlerinde süzülmüyor; K-12 B2 / `TB-78` ihlali),
+> `B-133` 🟠 (günlük izinde `CanPickup=false` veli teslim alan seçilebiliyor), `B-134` ⚪ (arşiv/hazırlık sezonu geçiş hataları 422
+> dönüyor, `AuthController` yalnız 403 ilan ediyor) ve `B-135` 🟡 (kalıcı arşiv sezonu switch-child/switch-profile/login/refresh'te
+> yeniden denetlenmiyor). Kod okundu, çalıştırılmadı. Toplam **109**.
 
 > **2026-10-14 (REQ-023 bildirim ekranı varyasyonları, Playwright çekimi, Altınay, öğretmen):** yeni `B-131` ⚪
 > (`AttendanceSessionReopened` bildirim türü mobil `NOTIFICATION_KIND_CONFIG`'te yok — zilde genel "Bildirim"/zil ikonu; komşu
@@ -3067,6 +3073,8 @@ velisi, çocuğun yoklama özeti / kayıtları / bugün / etkinlikleri uçların
 Tek yönlü sigorta: `Revoke` çağrısı `ValidUntil`'i iptal gününe çekiyor (`ParentStudentRelationship.cs:139-144`) — yani iptal edilmiş
 ilişki zaten `RevokedAt` ile düşüyor; açık kalan yalnız **iptal edilmeden süresi dolan** ilişki.
 
+**İlgili:** `B-132` (aynı kapılarda `CanViewInfo` eksik — ortak yüklemle tek iş), `B-133` (günlük izin teslim alan).
+
 **Karar geçmişi:** henüz yok.
 
 ⬜ **Seçenekler (karar verilmedi):**
@@ -3153,6 +3161,102 @@ denetim kaydından görülemez. Başarılı okuma izi var; **reddedilen deneme i
 🔧 **Düzeltiliyor — REQ-021 ile.** Kullanıcı kararı (2026-10-14): çocuğu olmayan velide kısayola dokununca **ortak bir panel** açılır, panelde
 durum bilgisi gösterilir (bağlı çocuk yok); header'daki çocuk paneli de aynı bilgiyi gösterir (REQ-020). Kapanış REQ-021 teslimiyle,
 kullanıcı onayıyla arşive.
+
+### `B-132` · `CanViewInfo=false` veli notları, ödevi (teslim dosyaları dahil), kulüpleri ve öğrenci belgesini okuyabiliyor; not/ödev bildirimi de ona gidiyor 🟠 (🔴 adayı)
+
+2026-10-14, REQ-025 güvenlik denetimi ek görevi (oksis-api `origin/dev` @ `ebb1cd00`; yollar `src/` altına göre). **Kaynak:** güvenlik denetimi.
+Kod okundu, çalıştırılmadı. `B-125` ile aynı kapı ailesi (veli ilişkisi yüklemi); orada tarih, burada `CanViewInfo` eksik.
+
+**Bakmayan kapılar:**
+- Notlar: `Grades/Internal/GradeBookScope.cs:84-100` (kullananlar `GetFamilyGradesQueryHandler.cs:59`, `MarkFamilyGradesSeenCommandHandler.cs:27`);
+  `GetFamilyGradesQueryHandler.cs:168-171` `ReadChildrenAsync` — kısıtlı çocuk ad/kademe/şube ile listede.
+- Ödev: `Homework/Internal/HomeworkScope.cs:70-88` (kullananlar `GetFamilyHomeworkQueryHandler.cs:35`, `ListFamilyHomeworkQueryHandler.cs:42`,
+  `Documents/Security/HomeworkEntityScopeResolver.cs:64,72`, `HomeworkSubmissionEntityScopeResolver.cs:63` — teslim dosyaları dahil).
+- Kulüp: `Clubs/Internal/ClubFamilyScope.cs:76-89, 100-110`.
+- Öğrenci belgesi: `Documents/Security/StudentDocumentEntityScopeResolver.cs:76-88` (kimlik sureti, sağlık raporu — özel nitelikli veri;
+  bugün veliye listeleyen uç yok, ama dosya kapısı açık).
+- `available-contexts` (`GetAvailableContextsQueryHandler.cs:33-37`, `Infrastructure/Identity/PersonDirectory.cs:113-136`) kısıtlı çocuğu ad +
+  güncel şube + kayıt yıllarıyla döndürüyor. `Infrastructure/Identity/ContextResolver.cs:104-113` tek çocuğu `CanViewInfo=false` olsa da aktif
+  yapıyor (switch-child ise reddediyor — çelişki). `Identity/Services/SeasonEnrollmentScope.cs:61-66` (REQ-025 dalında düzeltiliyor).
+
+**Doğru davranan kapılar (karşılaştırma):** `StudentAttendanceScopeGuard.cs:61-66`, mazeret liste/detay/oluşturma/ek, sınav takvimi/rozetleri,
+ders programı, `PersonAccessGuard.cs:71-76`, switch-child.
+
+**Bildirim:** `Grades/Events/AssessmentPublishedNotificationHandler.cs:71-74` merkezi `NotificationRecipientResolver`'ı atlıyor —
+K-12 B2 / `TB-78` ihlali (`TB-78` kapanmış; kural: bildirim alıcısı tek çözücüden). Ödev bildirimleri de `CanViewInfo` bakmıyor:
+`HomeworkPublishNotifier.cs:147-148`, `HomeworkMissingDigestJob.cs:179-182`, `HomeworkDueReminderJob.cs:167-170`, `MarkHomeworkTracking…:234-235`.
+
+**Ölü kod:** `Api/Authorization/ChildScopeRequirement.cs:66-67` + `Program.cs:99-100` `child-scope` politikası kayıtlı ama hiçbir uçta
+kullanılmıyor (ölü ABAC kodu).
+
+**Belge çelişkisi:** `oksis/docs/teknik-analizler/notlar/not-modulu-teknik-analiz.md:173, :426, :579` not kapısı ve bildirimi için
+`CanViewInfo=true` istiyor; kod bunu uygulamıyor.
+
+**Testler:** `CanViewInfo=false` testleri yalnız doğru kapılarda var (`StudentActivitiesViewTests:305-313`, `StudentAttendanceViewsTests:228-241`,
+`PersonAccessGuardTests:90-95`, `PersonAccessIntegrationTests:114`, `AccountSwitchChildCommandHandlerTests:84-93`); not/ödev/kulüp için yok;
+not analizinin öngördüğü testler depoda yok.
+
+**İstismar:** okul tarafından bilgi görme yetkisi kapatılmış (ör. mahkeme kararı) ama ilişkisi iptal edilmemiş veli, yoklamada 404 alırken
+notları, ödev teslim dosyalarını, kulüp etkinliklerinin yer/zamanını okuyabilir; not yayını push'unu alır. Önem: 🟠, kapatılmış yetkiye rağmen
+özel nitelikli veri okunabildiği için 🔴 adayı.
+
+**Karar geçmişi:** henüz yok (bildirim ayağı için K-12 B2 zaten karar; yeni karar gerekmez).
+
+⬜ **Seçenekler (karar verilmedi):**
+- (1) Ortak "veli bu çocuğun bilgisini görebilir mi" yüklemi (`RevokedAt == null && CanViewInfo` + `B-125` tarih kararı) — tüm kapılar buna
+  bağlanır; `B-125` ile tek iş (önerilen, merkezi; [[yamalama-kabul-degil]]).
+- (2) Not/ödev bildirimleri merkezi `NotificationRecipientResolver`'a taşınır (K-12 B2'yi uygulamak).
+- (3) `child-scope` politikası kaldırılır ya da uçlara bağlanır.
+- Karar soruları: ödev/kulüp bildirimi `CanViewInfo=false` veliye bilinçli istisna mı? Kısıtlı çocuk `available-contexts`'te hiç görünmesin mi,
+  yoksa yalnız ad mı (şube/sezon görünmemeli)?
+
+### `B-133` · Günlük izinde `CanPickup=false` veli teslim alan olarak seçilebiliyor 🟠
+
+2026-10-14, REQ-025 güvenlik denetimi (oksis-api `origin/dev` @ `ebb1cd00`). **Kaynak:** güvenlik denetimi, kod okundu.
+
+**Etki:** `Attendance/Queries/GetDailyLeaveCandidate/GetDailyLeaveCandidateQueryHandler.cs:47-50` `CanPickup`'ı yalnız sıralamada kullanıyor (DTO'da
+yok, ekran işaretleyemez); `Attendance/Commands/GrantDailyLeave/GrantDailyLeaveCommandHandler.cs:139-146` `CanPickup`'a hiç bakmıyor. Öğrenciyi
+almaya yetkisi olmayan (ör. mahkeme kararıyla) bir veli teslim alan olarak kaydedilebilir. **Fiziksel güvenlik riski.** `B-125` ile aynı iki
+dosyada tarih eksikliği de var.
+
+**Karar geçmişi:** henüz yok.
+
+⬜ **Seçenekler (karar verilmedi):**
+- (a) Zorlayıcı: `GrantDailyLeave` `CanPickup=false` ilişkiyi reddeder.
+- (b) Uyarı: aday listesinde işaret + onay (idarenin istisnai izni).
+- Karar sorusu: zorlayıcı mı, uyarı mı?
+
+### `B-134` · Arşiv/hazırlık sezonu geçiş hataları 422 dönüyor; `AuthController` yalnız 403 ilan ediyor ⚪
+
+2026-10-14, REQ-025 güvenlik denetimi (oksis-api `origin/dev` @ `ebb1cd00`). **Kaynak:** güvenlik denetimi.
+
+**Etki:** `identity.account.archived-season-unauthorized`, `setup-season-unauthorized` ve yeni `season-not-enrolled` hataları
+`Api/Extensions/ResultExtensions.cs` `MapStatusCode` varsayılanıyla **422** dönüyor; `AuthController.cs:279` yalnız 403 ilan ediyor
+(REQ-025'te 422 sözleşmeye ekleniyor). Yetki hatasının 422 olması istemcide doğrulama hatası gibi işlenmesine yol açabilir.
+
+**Karar geçmişi:** henüz yok.
+
+⬜ **Seçenekler (karar verilmedi):**
+- (a) Yetki hatalarını 403'e taşı (istemci `mutation-error.ts` 403 kolu etkilenir).
+- (b) 422'de bırak ve belgele.
+
+### `B-135` · Kalıcı arşiv sezonu (`Account.LastActiveSeasonId`) switch-child, switch-profile, login ve refresh'te yeniden denetlenmiyor 🟡
+
+2026-10-14, REQ-025 güvenlik denetimi (oksis-api `origin/dev` @ `ebb1cd00`). **Kaynak:** güvenlik denetimi, kod okundu.
+
+**Etki:** `ContextResolver.cs:55`, `AccountSwitchProfileCommandHandler.cs:71-72`, `AccountRefreshTokenCommandHandler.cs:82`,
+`AccountLoginCommandHandler.cs:193`, `AccountSwitchChildCommandHandler.cs:67-72` kalıcı sezonu olduğu gibi kullanıyor; `ArchivedSeasonAccess` ve
+REQ-025 `SeasonEnrollmentScope` yalnız switch-season'da çalışıyor. Senaryolar: veli A'nın yılına geçip B'ye geçer; öğretmen+veli hesabı öğretmen
+profilinde arşive geçip veliye geçer; okul arşiv ayarını kapatsa da kullanıcı eski yılda kalır. Etki çocuk verisi değil, okul düzeyi arşiv
+içeriği.
+
+**Belge-kod çelişkisi:** `ArchivedSeasonAccess.cs:10-21` docblock'u `AttendanceTermResolver`'ı "asıl kapı" sayıyor ama çözücü ikisini de çağırmıyor.
+
+**Karar geçmişi:** kullanıcı kararı bekleniyor (REQ-025).
+
+⬜ **Seçenekler:**
+- (a) Token üretilen tek noktada (`ContextResolver`) yeniden doğrulama; kapsam dışıysa güncel yıla sessiz dönüş (önerilen).
+- (b) Aynı noktada ret.
 
 ## Not
 
