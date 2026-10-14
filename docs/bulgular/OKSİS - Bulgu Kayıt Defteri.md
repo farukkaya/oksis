@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-124` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-125` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -243,9 +243,13 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 20 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 46 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 28 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 29 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **97** | |
+| **Toplam** | **98** | |
+
+> **2026-10-14 (REQ-006 / REQ-011 ekran testleri, Altınay, öğretmen):** yeni `B-124` ⚪, düşük-orta önerisi (öğretmen Notlar ekranında
+> `GradeBookCard` düğmesi içinde `AssessmentStatusChip` düğmeleri — iç içe `<button>`; anasayfa ayağı kodda bulunamadı, yeniden ölçülecek).
+> Toplam **98**.
 
 > **2026-10-14 (REQ-005 geliştirme/ekran testi):** yeni `B-122` 🟠, 🔴 adayı (zorunlu parola değişimi sunucuda zorlanmıyor —
 > `require_password_change` talebini okuyan kapı yok, `PasswordChangeRequired` hatası ölü; web oturum geri yüklemede bayrağa bakmıyor) ve
@@ -532,6 +536,51 @@ girince 400 alır, "85" girince kabul edilir. ⬜ Ya harf ölçeği katalogdan/s
 kaldırılır ya da harfli giriş ve ortalama kuralı tasarlanır ([[Not Ölçeği]] açık sorusu).
 
 ✅ **Karar (2026-09-28, kullanıcı):** harfli ölçek **katalogdan/seçimden kaldırılır**. Uygulanacak.
+
+### `B-124` · Öğretmen Notlar ekranında defter kartı düğme, içindeki sütun çipleri de düğme — iç içe `<button>` ⚪
+
+2026-10-14, REQ-006 ve REQ-011 ekran testlerinde (Expo web, Altınay, öğretmen Mahir Çelikkeser) Notlar sekmesi açılınca React
+geliştirme uyarısı: `<button> cannot contain a nested <button>`. REQ-005 testinde aynı uyarı öğretmen anasayfasında da görüldü (aşağıda).
+Önerilen önem **düşük-orta**: işlev çalışıyor, kayıp erişilebilirlikte; native ekran okuyucu etkisi ölçülürse 🟡'ye çıkar.
+**Kod okundu, çalıştırılmadı** (`oksis-ui-tasarim` `design/genel-tasarim` @ `12f38ed`; ilgili satırlar `oksis-ui` `master` @ `ba099ff`'de
+birebir — yalnız tasarım dalının sorunu değil; yapı `5d2f789`'dan, not modülünün ilk ortak bileşenlerinden beri var).
+**Kaynak (Notlar, öğretmen yüzü):**
+- `apps/mobile/src/features/grade/components/grade-parts.tsx:265-267` — `GradeBookCard` kartın tamamını `Pressable`
+  (`accessibilityRole="button"`) yapıyor; dokunuş `onOpenBook` → ilk taslak/boş sütunun girişi.
+- Aynı kartın içinde `:315-319` `ChipRow` her sütun için `AssessmentStatusChip` çiziyor; çip `:40-42` yine bir `Pressable` ve
+  `onPress` verildiğinde rolü `button` (verilmezse `text`).
+- Öğretmende `onPress` hep verili: `features/grade/components/grade-tab-screen.tsx:53-55` `onOpenAssessment` →
+  `grade-book-list-screen.tsx:163` `onAssessment`. React Native Web `role=button`'ı gerçek `<button>` öğesine çevirdiği için DOM'da
+  `button > … > button` oluşuyor. Veli/öğrenci yüzü (`GradeFamily*`) bu kartı kullanmıyor.
+**Etki:**
+- **Web:** geçersiz HTML. ARIA'da `button`'ın çocukları sunumsaldır — ekran okuyucu kartı tek düğme okur (etiket yalnız
+  "şube ders, N öğrenci"), sütun çiplerine ayrı ayrı erişilemez; klavye sırası tarayıcıya göre tutarsız. Uygulama istemci tarafında
+  çiziliyor (web `output` statik değil), yani bu bir hydration hatası değil, geliştirme modunda DOM iç içelik uyarısı; üretim
+  derlemesinde konsol sessiz ama yapı aynı.
+- **Basış:** iç düğmeye basınca dış kartın da tetiklenmesi riski — RN/RNW yanıtlayıcı sistemi dokunuşu en içteki hedefe verdiği için
+  çift gezinme beklenmiyor; **ölçülmedi** (çip → doğru sütun mu, yoksa kartın açtığı ilk taslak sütun mu, bir tıklamayla görülür).
+- **Native:** görsel etki yok, dokunuş en içteki `Pressable`'a gider. Ama `Pressable` varsayılan `accessible`; iOS'ta erişilebilir
+  ebeveyn alt öğeleri tek öğede toplar → VoiceOver kullanıcısı belirli bir sütunu açamaz, yalnız kartın seçtiği sütuna gider. Android
+  TalkBack'te davranış farklı olabilir. İkisi de ölçülmedi.
+**Anasayfa ayağı:** öğretmen anasayfası (`features/home/components/teacher-home.tsx`, `now-hero.tsx`, `home-parts.tsx`,
+`home-shortcut-grid.tsx`, ortak `components/app-header.tsx`) statik okumada iç içe düğme **bulunamadı**: `NowHero` hata hâli düz `View`
+(`now-hero.tsx:41-46`), "Yoklama al" kartın kardeşi (`footer` `:130`'da, `:102-129` `Pressable`'ının dışında), `HomeListCard` gövdesi dokunulabilir değil,
+`HomeTapCard` çocuklarında `Pressable` yok, `LessonChip` tek katman. REQ-005'teki gözlem için iki olası açıklama: (a) Expo web
+geliştirici kaplaması uyarıyı sekmeler arasında taşıyor (sekme bir kez açılınca bağlı kalıyor; React aynı uyarıyı oturumda bir kez basar,
+ilk kaynağı gösteren yığın Notlar olabilir), (b) REQ-005 dalında farklı bir anasayfa hâli. Tekrar ölçülmeden ayrı madde açılmadı.
+Bu, `B-120`'nin arşiv kapısını da ilgilendiriyor: "Expo web konsolunda `cannot contain a nested` görülmeyince" ölçümü yapılırken
+uyarının hangi ekrandan geldiği (yığındaki bileşen adı) okunmalı, yoksa `B-124` `B-120`'yi açık gösterir.
+**Karar geçmişi:** arşivde "tasarım gereği" kararı yok. Aynı sınıfın iki emsali: `TB-68` (ders satırında yoklama ipucu, iç dokunma
+hedefi **etikete** çevrilerek kapandı — [[OKSİS - Bulgu Arşivi]]) ve `B-120` (anasayfa "tekrar dene", yeniden tasarımla kalktı).
+Üçüncü tekrar → ekran ekran değil, kalıp düzeyinde çözüm ([[yamalama-kabul-degil]]).
+⬜ **Seçenekler (karar verilmedi):**
+1. **Çip etikete dönsün (TB-68 emsali):** `GradeBookCard` içinde çip `onPress` almaz, `accessibilityRole="text"`; kart tek hedef, sütun
+   seçimi giriş ekranındaki sütun geçişinden yapılır. En küçük değişiklik; bedeli "doğrudan şu sütuna git" kısayolunun kaybı.
+2. **Kart düğme olmaktan çıksın:** dış kap düz `View`; başlık satırı (şube + ders + chevron) ayrı bir `Pressable`, çipler kardeş
+   düğmeler olarak kalır. İki eylem de korunur, her biri ayrı erişilebilir hedef.
+3. **Merkezî bekçi:** ortak bir `Tappable`/kart bileşeni iç içe dokunulabiliri yasaklasın (geliştirmede uyarı) ya da depoya bir
+   lint/test kuralı (`Pressable` altında `Pressable`) eklensin — `TB-68` → `B-120` → `B-124` tekrarını kapatan tek seçenek. 1 veya 2 ile
+   birlikte uygulanır.
 
 ## 10. Ödevler 🟡
 
