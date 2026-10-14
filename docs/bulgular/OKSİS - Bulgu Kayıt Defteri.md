@@ -893,6 +893,10 @@ change-password dakikada 5 (429), `AdminResetPassword`/`MarkPasswordChangeRequir
 varken açmama); (b) master öncesi dağıtım koordinasyonu — kapı açılınca istemciler hazır değilse bayraklı kullanıcı 403 görür; **DB'de
 `RequirePasswordChange = 1` olup giriş yapmış hesap sayımı** alınmalı (etkilenecek kullanıcı sayısı; cihaz kaydı olanlar dâhil); (c) takip D-2:
 kapı tetiklenme metriği/örnekleme (şimdi her reddedilen istek Warning log; istemci hatası yağarsa gürültü).
+**Takip (REQ-014 son inceleme):** (1) yönetici sıfırlaması bağlanırken `perms_ver` Redis aynası güncellenmeli
+(`IPermissionVersionBumper` / `IPermissionVersionStore.SetAsync`); `Account.AdminResetPassword`/`MarkPasswordChangeRequired` yalnız entity
+sürümünü artırır, aynayı güncellemeden eski token ömrü (15 dk) boyunca geçer (REQ-014 son inceleme O-1). (2) Denetim kaydında kaynak ayrımı
+(change-password kilit sayacı girişle aynı sayaç; hangi akıştan geldiği ayrışsın) — takip. (3) O-3 kabul: kilit aynı sayaç, istemci 423'ü REQ-017'de gösterir.
 
 ### `B-123` · Davet, sıfırlama ve zorunlu değişim formlarının parola kuralı sunucudan katı — küçük harf şart, sembol "kural" gibi gösteriliyor 🟡
 
