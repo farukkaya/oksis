@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-137` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-139` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -243,9 +243,14 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 49 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 36 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 38 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **110** | |
+| **Toplam** | **112** | |
+
+> **2026-10-14 (REQ-027 ekran gezintisi, Expo web, oksis-ui `design/genel-tasarim` @ `2e2f3d1`):** yeni `B-137` ⚪ (yoklama geçmişi detay
+> ekranında geliştirme kipinde `[Pressable] İç içe dokunulabilir öğe` uyarısı — `B-124`'te seçenek 3 olarak önerilen merkezî bekçinin
+> yakaladığı ilk yeni örnek; REQ-027 öncesi görselde de var) ve `B-138` ⚪ (`ParentKidsScreen` hiçbir rotadan açılmıyor — ölü ekran
+> temizliği). Statik okuma, çalıştırılmadı. Toplam **112**.
 
 > **2026-10-14 (REQ-025 entegrasyon koşusu, oksis-api `feature/ogrenci-kayitli-sezonlar`):** yeni `B-136` ⚪ (`UserDeviceTenantFilterTests`
 > "B-112 · Eşzamanlı kayıtlar…" testi kararsız, ara sıra `DbUpdateConcurrencyException`; üretim bütçesi mi test yarışı mı — karar yok,
@@ -594,6 +599,8 @@ uyarının hangi ekrandan geldiği (yığındaki bileşen adı) okunmalı, yoksa
 **Karar geçmişi:** arşivde "tasarım gereği" kararı yok. Aynı sınıfın iki emsali: `TB-68` (ders satırında yoklama ipucu, iç dokunma
 hedefi **etikete** çevrilerek kapandı — [[OKSİS - Bulgu Arşivi]]) ve `B-120` (anasayfa "tekrar dene", yeniden tasarımla kalktı).
 Üçüncü tekrar → ekran ekran değil, kalıp düzeyinde çözüm ([[yamalama-kabul-degil]]).
+**Sonradan:** seçenek 3 (merkezî bekçi) REQ-015'te `@/components/pressable` ile uygulandı; bekçinin yakaladığı ilk yeni örnek `B-137`
+(yoklama geçmişi detayı).
 ⬜ **Seçenekler (karar verilmedi):**
 1. **Çip etikete dönsün (TB-68 emsali):** `GradeBookCard` içinde çip `onPress` almaz, `accessibilityRole="text"`; kart tek hedef, sütun
    seçimi giriş ekranındaki sütun geçişinden yapılır. En küçük değişiklik; bedeli "doğrudan şu sütuna git" kısayolunun kaybı.
@@ -3286,6 +3293,43 @@ Aynı kırmızı `B-112`'nin 2026-10-13 CI notunda da görülmüştü (son 8 ko�
 ⬜ **Seçenekler (karar verilmedi):**
 - (1) Üretim yolunu incele: bütçe tükenince son tur sonucu "satır var" diye başarı sayılsın mı, bütçe artsın mı, bekleme/geri çekilme (backoff) eklensin mi.
 - (2) Testi deterministik yap: yarış sayısını gerçekçi değere (2-4) indir ya da yarışı kontrollü kurgula.
+
+### `B-137` · Yoklama geçmişi detay ekranında geliştirme kipinde "[Pressable] İç içe dokunulabilir öğe" uyarısı ⚪
+
+2026-10-14, REQ-027 ekran gezintisi (Expo web, oksis-ui `design/genel-tasarim` @ `2e2f3d1`). REQ-027 öncesi görselde de var — o
+değişiklikten gelmiyor. **Kod okundu, çalıştırılmadı** (uyarının yığın metni alınmadı; kaynak statik okumayla belirlendi).
+Önerilen önem ⚪: işlev çalışıyor, uyarı yalnız geliştirme kipinde (`components/pressable.tsx` `DEV` kapısı); `B-124` ile aynı sınıf.
+**Kaynak (`apps/mobile/src/features/attendance/components/`):**
+- `history-detail.tsx:373-427` — her öğrenci satırı `Pressable` (`onPress={() => setCorrectionTarget(record)}`, `disabled={!rowInteractive}`).
+- Aynı satırın içinde `:426` `<StatusChipRow … onChange=…>`; `status-chip.tsx:68-89` her durum için yine `Pressable`
+  (`onPress={() => onChange?.(status)}`, `accessibilityRole="radio"`). Satır `Pressable`ı altında `Pressable` → bekçi tetikleniyor.
+- Bekçi koşulu yalnız prop'a bakar (`pressable.tsx:62-68`: `onPress != null`, rol `text` değil, `accessible !== false`); `disabled`
+  değerlendirmeye girmiyor. İşlevsel olarak iki taraf birbirini dışlıyor (satır yalnız kilitliyken `locked && !alreadySent`, çipler
+  yalnız kilitli DEĞİLKEN `!locked` etkin), ama uyarı bunu görmez, hep basar.
+- Web'de `role=button`/`radio` iç içe → geçersiz HTML riski, `B-124` ile aynı erişilebilirlik etkisi (iOS VoiceOver alt öğeleri tek öğede toplar).
+  Ölçülmedi.
+**Karar geçmişi:** arşivde "tasarım gereği" kararı yok. Emsaller: `TB-68` (iç hedef **etikete** çevrilerek kapandı), `B-120`, `B-124`
+(merkezî bekçi seçeneği; bu madde onun yakaladığı yeni örnek).
+⬜ **Seçenekler (karar verilmedi):**
+1. **İç hedefi etikete çevir (TB-68 emsali):** kilitliyken çipler zaten etkisiz; satır `Pressable`ı varken `StatusChipRow` `onChange`siz
+   (salt görsel, rol `text`) çizilir; düzenlenebilir modda satır `Pressable` olmaz. Yani iki durum için iki kap.
+2. **Dış kabı düz `View` yap:** satır `View`; "düzeltme talebi aç" eylemi ayrı bir hedef (ad/numara bloğu `Pressable`ı), çipler kardeş.
+   Her eylem ayrı erişilebilir hedef; bedeli satırın tamamının dokunulabilir olmaması (yerleşim ölçülmeli).
+
+### `B-138` · `ParentKidsScreen` hiçbir rotadan açılmıyor — ölü veli "Çocuklarım" ekranı ⚪
+
+2026-10-14, REQ-027 ekran gezintisi sırasında statik okuma (oksis-ui `design/genel-tasarim` @ `2e2f3d1`). Ölü kod temizliği.
+**Dosya:** `apps/mobile/src/features/attendance/components/parent-kids-screen.tsx` (322 satır), `features/attendance/index.ts:12` dışa aktarıyor.
+**Neden ölü:**
+- `apps/mobile/src` içinde `ParentKidsScreen` için `index.ts` dışında çağıran yok; `app/` altında rotası yok.
+- Dosyanın kendi notu (`:245`): "Ekran zaten hiçbir rotadan render edilmiyor (`(tabs)/children.tsx` yok); ileride bağlanırsa eski seçici
+  davranışını geri getirmesin diye şimdiden hizalandı." Çocuk seçimi 2026-08-30'da sezon bağlamı modaline taşınmış.
+- Yan etki: dosya `useAvailableContexts` / `useStudentToday` bağımlılığını ve başlık notunu (parent rolünde `users.read` 403) taşıyor; üç kardeş
+  dosya yorumdan ona atıf yapıyor (`excuse-list-screen.tsx:120`, `excuse-create-screen.tsx:80`, `parent-attendance-screen.tsx:93,102`).
+  Dosya silinirse bu atıflar boşa düşer.
+**Öneri (karar verilmedi):** dosyayı ve `index.ts` dışa aktarımını sil; `TodayGlance` yardımcıları (`../lib/today-glance`) başka yerde
+kullanılıyorsa kalsın (ölçülmedi); başlık notundaki 403 bilgisini kaybetmemek için üç atıf yorumunu `parent-attendance-screen.tsx` içine taşı
+ya da `available-contexts` notuna bağla. Ölü ekranın kapısı: silmeden önce `ParentKidsScreen` için tüm depoda (`oksis-ui` ana dal dâhil) çağıran yok teyidi.
 
 ## Not
 
