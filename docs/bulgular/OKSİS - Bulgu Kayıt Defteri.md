@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-139` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-142` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -242,10 +242,15 @@ sayaçlar üçü arasında ortak.
 |---|---|---|
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
-| 🟡 Orta | 49 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 38 | Kozmetik, temizlik, adlandırma |
+| 🟡 Orta | 48 | İşlev eksik ama alternatif yol var; borç birikiyor |
+| ⚪🟢 Düşük | 41 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **112** | |
+| **Toplam** | **114** | |
+
+> **2026-10-14 (REQ-025 kapanışı, oksis-api `dev` @ `17caa118`, commit `36eb1647`):** `B-135` 🟡 kapandı, arşive taşındı
+> ([[OKSİS - Bulgu Arşivi]] §83). `B-134`'e not (422 sözleşmesi sabitlendi, 403 kararı açık). Yeni `B-139` ⚪ (switch-child/switch-season eski
+> token iptal edilmiyor), `B-140` ⚪ (hazırlık yılı yeniden doğrulamanın dışında), `B-141` ⚪ (yürürlükteki yıl yokken izin çözümü
+> süzgeci atlıyor). Kod okundu. Toplam **114**.
 
 > **2026-10-14 (REQ-027 ekran gezintisi, Expo web, oksis-ui `design/genel-tasarim` @ `2e2f3d1`):** yeni `B-137` ⚪ (yoklama geçmişi detay
 > ekranında geliştirme kipinde `[Pressable] İç içe dokunulabilir öğe` uyarısı — `B-124`'te seçenek 3 olarak önerilen merkezî bekçinin
@@ -3252,23 +3257,48 @@ dosyada tarih eksikliği de var.
 - (a) Yetki hatalarını 403'e taşı (istemci `mutation-error.ts` 403 kolu etkilenir).
 - (b) 422'de bırak ve belgele.
 
-### `B-135` · Kalıcı arşiv sezonu (`Account.LastActiveSeasonId`) switch-child, switch-profile, login ve refresh'te yeniden denetlenmiyor 🟡
+**2026-10-14 not (REQ-025, `dev` @ `17caa118`):** `switch-season`'a `ProducesResponseType(422)` eklendi ve kodların 422'ye gittiği `ResultExtensionsSwitchSeasonTests` ile sabitlendi (sözleşme artık gerçeği söylüyor). 403'e taşıma kararı hâlâ açık.
 
-2026-10-14, REQ-025 güvenlik denetimi (oksis-api `origin/dev` @ `ebb1cd00`). **Kaynak:** güvenlik denetimi, kod okundu.
+### `B-139` · switch-child (ve switch-season) yeni token ürettiğinde eski access/refresh token iptal edilmiyor; `PermissionsVersion` artmıyor ⚪
 
-**Etki:** `ContextResolver.cs:55`, `AccountSwitchProfileCommandHandler.cs:71-72`, `AccountRefreshTokenCommandHandler.cs:82`,
-`AccountLoginCommandHandler.cs:193`, `AccountSwitchChildCommandHandler.cs:67-72` kalıcı sezonu olduğu gibi kullanıyor; `ArchivedSeasonAccess` ve
-REQ-025 `SeasonEnrollmentScope` yalnız switch-season'da çalışıyor. Senaryolar: veli A'nın yılına geçip B'ye geçer; öğretmen+veli hesabı öğretmen
-profilinde arşive geçip veliye geçer; okul arşiv ayarını kapatsa da kullanıcı eski yılda kalır. Etki çocuk verisi değil, okul düzeyi arşiv
-içeriği.
+2026-10-14, REQ-025 kapanışında (B-135) ölçüldü (oksis-api `dev` @ `17caa118`). **Kaynak:** kod okundu. **Yer:**
+`src/Oksis.Application/Modules/Identity/Commands/AccountSwitchChild/AccountSwitchChildCommandHandler.cs:273, :286-287`.
 
-**Belge-kod çelişkisi:** `ArchivedSeasonAccess.cs:10-21` docblock'u `AttendanceTermResolver`'ı "asıl kapı" sayıyor ama çözücü ikisini de çağırmıyor.
+**Etki:** switch-child kapsam dışı kalınca yeni token üretiyor (200); switch-season'da önceden de böyleydi. Eski access/refresh token iptal
+edilmiyor; eski jti'nin Redis çocuk kaydı yeniden üretim kararından ÖNCE yeni çocuğa yazılıyor; `PermissionsVersion` artırılmıyor
+(switch-profile artırıyor). İstemci 200'ü yok sayarsa en fazla 15 dk (`AccessTokenMinutes`) arşiv yılı taşınır; çocuk verisi sızmaz (veri
+uçları `studentId` + aile kapsamıyla seçer). Her geçiş refresh zincirine yeni token ekler.
 
-**Karar geçmişi:** kullanıcı kararı bekleniyor (REQ-025).
+**Karar geçmişi:** henüz yok.
 
-⬜ **Seçenekler:**
-- (a) Token üretilen tek noktada (`ContextResolver`) yeniden doğrulama; kapsam dışıysa güncel yıla sessiz dönüş (önerilen).
-- (b) Aynı noktada ret.
+⬜ **Öneri:** eski jti kara listeye alınsın / Redis kaydına dokunulmasın; refresh rotasyonu `RotateRefreshToken` kalıbıyla.
+
+### `B-140` · Hazırlık (Setup) yılı yeniden doğrulamanın dışında: `season.update` yeniden sorulmuyor ⚪
+
+2026-10-14, REQ-025 kapanışında (B-135) ölçüldü (oksis-api `dev` @ `17caa118`). **Kaynak:** kod okundu. `ActiveSeasonValidator.cs` setup yıl için
+`Allowed` dönüyor; docblock dışlamayı bilinçli bırakıyor.
+
+**Senaryolar:** (1) personel+veli hesabı personel profilinde hazırlık yılına geçip veli profiline geçer → hazırlık yılı veli bağlamında kalır;
+(2) `season.update` izni geri alınan personel login/refresh boyunca hazırlık yılında kalır.
+**Etki:** aile tarafında `ReadChildrenAsync` taslak kayıtları dışarıda bıraktığı için sızıntı yok denecek kadar az; personel taslak
+program/şube verisini görmeye devam eder.
+
+**Karar geçmişi:** docblock'ta "bilinçli dışlama"; ürün kararı verilmedi.
+
+⬜ **Karar sorusu:** doğrulayıcı setup'ta da `season.update` sorsun mu?
+
+### `B-141` · Okulun yürürlükteki yılı yoksa izin çözümü sezon süzgecini atlıyor; `ActiveSeasonValidator` elle `SchoolId` süzüyor ⚪
+
+2026-10-14, REQ-025 kapanışında (B-135) ölçüldü (oksis-api `dev` @ `17caa118`). **Kaynak:** kod okundu.
+
+**Etki:** `currentSeasonId` null iken `AccountPermissionResolver.cs:38-42` sezon süzgecini atlayıp kişinin tüm yıllardaki aktif
+atamalarını birleştiriyor; `ActiveSeasonValidator` `season.archive.view`'i buna göre çözüyor → eski davranıştan biraz geniş (yalnız kişinin
+kendi geçmiş rolleri). Ayrıca `ActiveSeasonValidator` elle `s.SchoolId == account.SchoolId` süzüyor; `TB-139` gerekçe yorumu yok
+(`B-127` belge çelişkisiyle bağlı: `multi-tenant-rules.md` "elle `SchoolId ==` yazma" diyor).
+
+**Karar geçmişi:** henüz yok.
+
+⬜ **Öneri:** null'da `ArchiveDenied` dön ya da bilinçli kabulü docblock'a yaz; elle süzgece gerekçe yorumu ekle.
 
 ### `B-136` · `UserDeviceTenantFilterTests` "B-112 · Eşzamanlı kayıtlar unique indeks ihlaline düşmez" testi kararsız: ara sıra `DbUpdateConcurrencyException` ile düşüyor ⚪
 

@@ -1592,7 +1592,7 @@ TB-46 (ağırlık iki yerde, tüketici yok)  ← KARAR not modülünden ÖNCE ve
 | B-15 · X-06 | Çalışma zamanı hata kaydı — `oksis-api` @ `4852544` (2026-08-10 21:32, CorrelationId `fbe06603d7d44724bea4f90575e08faf`). Kullanıcının çalışan API'sinden alınan tam yığın izi + kod doğrulaması. Hatalı kod ucun ilk commit'inden beri yerinde (`231f3e8`, 2026-06-13) |
 | TB-48 … TB-50 | Hedefli tarama — `oksis-api` @ `2270867` + `oksis-ui` @ `59f8010` (2026-08-10). Kapsam: Görevlendirme v1 (`teaching_assignments`) kazınabilir mi? **Cevap: hayır.** `X-03`'ün kanoniklik sorusu bu partide cevaplandı. `TB-49` "saat gerçekten gerekli mi" tartışması sırasında çıktı. Tarama `oksis-api` içinde ayrı bir worktree'de yapıldı, kod değiştirilmedi |
 
-*Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
+*Kod taraması notlarının kendisi ayrı bir vault'ta duruyor: `~/Repositories/oksis-documents/docs/domain/` (domain haritası). Buradan wikilink verilmiyor — iki ayrı vault.*
 
 **Not:** `TB-##` ve `X-##` sayaçları [[OKSİS - Yapısal Kararlar ve Eksikler]] dosyasıyla ortaktır — orada `TB-01…TB-06` ve `X-01…X-02` kullanılmış, ilk kod taraması partisi `TB-07` ve `X-03`'ten, duyurular partisi `TB-22`'den, ders programı partisi `TB-27` ve `X-05`'ten, yoklama partisi `TB-30`'dan, okul ayarları partisi `TB-34`'ten, öğrenci kayıt partisi `TB-37`'den, dosya yönetimi partisi `TB-40`'tan, bildirimler partisi `TB-43`'ten, müfredat partisi `TB-46`'dan, görevlendirme kazıma taraması `TB-48`'den devam etti, çalışma zamanı hata kaydı partisi `B-15` ve `X-06`'yı aldı, C6 dilimi kapanışı `TB-51`'i aldı, ekran testi turu `B-16`, `TB-52`, `B-17`, `X-08` ve `ENG-02`'yi aldı, `B-04` kapanış turu `X-09`'u, `B-10` taraması `TB-53`'ü, `B-16` turu `TB-54`'ü, `B-17` turu `X-10`'u, `X-09` kapanışı `X-11`'i aldı, **uçtan uca ekran testi turu (2026-08-16)** `B-21`…`B-32`,
 `D-09`…`D-14`, `V-02`·`V-03`, `X-12`·`X-13`, `E-11`…`E-15` ve `TB-56`'yı aldı.
@@ -13145,5 +13145,35 @@ süzülüyor (öğretmen-veli iki kümenin birleşimini görür). Birim testli. 
 
 ✅ **2026-10-10 · kapandı (test ortamına alındı, kullanıcı onayıyla arşive):** master api `1f9f1d84` (#42) · ui `e7200bd` (#7); mobil Oksis Test 973 (TestFlight + Play iç test). Yerelde ölçüldü; test ortamında kullanıcı onayıyla kapandı.
 
+
+---
+
+## 83. REQ-025 — token üretiminde sezon yeniden doğrulaması (2026-10-14) ✅
+
+> `B-135` oksis-api `dev` @ `17caa118` (REQ-025 commit `36eb1647`) ile kapandı. Çıkan artıklar defterde: `B-139`, `B-140`, `B-141`.
+
+### `B-135` · Kalıcı arşiv sezonu (`Account.LastActiveSeasonId`) switch-child, switch-profile, login ve refresh'te yeniden denetlenmiyor 🟡 *(kapandı — 2026-10-14)*
+
+2026-10-14, REQ-025 güvenlik denetimi (oksis-api `origin/dev` @ `ebb1cd00`). **Kaynak:** güvenlik denetimi, kod okundu.
+
+**Etki:** `ContextResolver.cs:55`, `AccountSwitchProfileCommandHandler.cs:71-72`, `AccountRefreshTokenCommandHandler.cs:82`,
+`AccountLoginCommandHandler.cs:193`, `AccountSwitchChildCommandHandler.cs:67-72` kalıcı sezonu olduğu gibi kullanıyor; `ArchivedSeasonAccess` ve
+REQ-025 `SeasonEnrollmentScope` yalnız switch-season'da çalışıyor. Senaryolar: veli A'nın yılına geçip B'ye geçer; öğretmen+veli hesabı öğretmen
+profilinde arşive geçip veliye geçer; okul arşiv ayarını kapatsa da kullanıcı eski yılda kalır. Etki çocuk verisi değil, okul düzeyi arşiv
+içeriği.
+
+**Belge-kod çelişkisi:** `ArchivedSeasonAccess.cs:10-21` docblock'u `AttendanceTermResolver`'ı "asıl kapı" sayıyor ama çözücü ikisini de çağırmıyor.
+
+**Karar geçmişi:** kullanıcı kararı bekleniyor (REQ-025).
+
+⬜ **Seçenekler:**
+- (a) Token üretilen tek noktada (`ContextResolver`) yeniden doğrulama; kapsam dışıysa güncel yıla sessiz dönüş (önerilen).
+- (b) Aynı noktada ret.
+
+✅ **2026-10-14 · kodda (dev, api `36eb1647`, dal ucu `17caa118`):** `ContextResolver.ResolveAsync` içinde `IActiveSeasonValidator`
+(sezon var mı → setup ise dokunma → `ArchivedSeasonAccess` → `SeasonEnrollmentScope`). Kapsam dışıysa `Account.ClearActiveSeason()` ve token
+yürürlükteki yılla üretilir. login/refresh/switch-profile/switch-season/switch-child hepsi bu noktadan geçiyor; mimari bekçi
+`TokenIssuanceGoesThroughContextResolverTests`. `ArchivedSeasonAccess` docblock'u düzeltildi. switch-child kapsam dışıysa 200 + yeni token
+(aksi 204); UI uyarlaması REQ-028'de. Artıklar: `B-139`, `B-140`, `B-141`.
 
 ---
