@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-142` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-143` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -243,9 +243,13 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 48 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 41 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 42 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **114** | |
+| **Toplam** | **115** | |
+
+> **2026-10-14 (REQ-028 şema yeniden üretimi, oksis-ui `design/req-028` @ `004aaa0`, kaynak oksis-api `dev` @ `17caa118`):** yeni `B-142` ⚪
+> (OpenAPI'de `B-122` 403 şeması 568 işlemde satır içi çoğaltılıyor, `$ref` yok; `meta` zorunlu/null olamaz görünüyor;
+> `ContextView.enrolledSessionIds` `required`'da yok). Kod okundu. Toplam **115**.
 
 > **2026-10-14 (REQ-025 kapanışı, oksis-api `dev` @ `17caa118`, commit `36eb1647`):** `B-135` 🟡 kapandı, arşive taşındı
 > ([[OKSİS - Bulgu Arşivi]] §83). `B-134`'e not (422 sözleşmesi sabitlendi, 403 kararı açık). Yeni `B-139` ⚪ (switch-child/switch-season eski
@@ -3360,6 +3364,34 @@ değişiklikten gelmiyor. **Kod okundu, çalıştırılmadı** (uyarının yığ
 **Öneri (karar verilmedi):** dosyayı ve `index.ts` dışa aktarımını sil; `TodayGlance` yardımcıları (`../lib/today-glance`) başka yerde
 kullanılıyorsa kalsın (ölçülmedi); başlık notundaki 403 bilgisini kaybetmemek için üç atıf yorumunu `parent-attendance-screen.tsx` içine taşı
 ya da `available-contexts` notuna bağla. Ölü ekranın kapısı: silmeden önce `ParentKidsScreen` için tüm depoda (`oksis-ui` ana dal dâhil) çağıran yok teyidi.
+
+### `B-142` · OpenAPI'de `B-122` zorunlu-parola 403 yanıtı her işleme satır içi şema olarak yazılıyor — 568 kopya, `$ref` yok; `meta` ve `enrolledSessionIds` sözleşmesi tutarsız ⚪
+
+2026-10-14, REQ-028 için `oksis-ui` `packages/api/src/generated/schema.ts` yeniden üretilirken görüldü (`oksis-ui` `design/req-028`
+@ `004aaa0`; kaynak `oksis-api` `dev` @ `17caa118`). Kod okundu, üretilen belge ayrıca çalıştırılıp ölçülmedi. Bağlı: `B-122` (sunucu kapısı).
+**Belirti:** yeniden üretim yaklaşık **12 bin satırlık** fark çıkardı; neredeyse tamamı her işlemin `403` yanıtına gömülen aynı
+`ApiResponse` gövdesi. 568 işlemde ayrı kopya var, ortak `components.responses` / `$ref` yok — oysa `B-122` commit'leri "`$ref`" diyor.
+**Kök neden:** `src/Oksis.Api/Extensions/OpenApiSetup.cs:45-68` — `AddOperationTransformer`, kapıya tabi her uç için (`:47`,
+`PasswordChangeGatePolicy.IsGated`) `403` yoksa **her işlemde yeni** `OpenApiResponse` kuruyor (`:60-67`); şemayı
+`GetOrCreateSchemaAsync(typeof(ApiResponse<object>), …)` (`:59`) ile alıp `Content`'e doğrudan koyuyor, bileşene bağlamıyor.
+`AnnotateExisting` (`:22-36`) yalnız zaten bildirilmiş 403'e not ekliyor; `$ref` durumunu yalnız yorumda anıyor, kendisi `$ref` üretmiyor.
+**Yan sözleşme kusurları (aynı üretimde):**
+- **`meta`:** 403 gövdesindeki `meta` zorunlu ve null olamaz görünüyor. Kaynak `ApiResponse<T>.Meta` `PaginationMeta?`
+  (`src/Oksis.Api/Contracts/ApiResponse.cs:3-7`) ve kapı yanıtı `ApiResponse<object>.Fail(...)` ile `meta: null` yazıyor
+  (`PasswordChangeGateMiddleware.cs:58-63`). Gerçek yanıtla uyumlu mu — **kontrol edilmeli** (üretilen belgede `meta`'nın `required`/`nullable`
+  durumu ölçülmedi; istemci tipi `meta`'yı dolu sanıyorsa 403 gövdesini okuyan kod patlar).
+- **`ContextView.enrolledSessionIds`:** `Application/Modules/Identity/Queries/GetCurrentContext/ContextView.cs:101`
+  (`IReadOnlyList<Guid>? EnrolledSessionIds = null`) OpenAPI `required` listesinde **yok** (diğer alanlar zorunlu) → istemci tipinde
+  isteğe bağlı çıkıyor. Anlam üç değerli (null = bilinmiyor, `[]` = hiç kayıtlı yıl yok, dolu = kayıtlı yıllar — `ContextView.cs:88-100`); sözleşme
+  bunu "her zaman var, null olabilir" diye ifade etmeli.
+**Öneri (karar verilmedi):**
+1. 403 yanıtını tek `components.responses` girdisine (ör. `PasswordChangeRequired`) taşı; dönüştürücü her işlemde `OpenApiResponseReference` ile
+   `$ref` versin (`OpenApiSetup.cs:59-67`); not (`GateNote`) bileşende dursun, işlemde ezme gerekmesin. Beklenen: `schema.ts` farkı ~12 bin satırdan
+   birkaç satıra iner.
+2. `ApiResponse<T>.Meta`'yı OpenAPI'de nullable yayınla (şema dönüştürücüsü / `[JsonIgnore(Condition=WhenWritingNull)]` ve `required`'dan çıkar) — önce
+   üretilen belgede mevcut durumu ölç.
+3. `EnrolledSessionIds`'i `required` + nullable yap (`ContextView`'da `= null` varsayılanı kalkınca ya da şema dönüştürücüsüyle).
+Kapanışta `oksis-ui` `schema.ts` yeniden üretilir ve fark ölçülür; `B-122` kapanış kaydındaki "`$ref`" ifadesi düzeltilir.
 
 ## Not
 
