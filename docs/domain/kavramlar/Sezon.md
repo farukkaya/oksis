@@ -40,6 +40,7 @@ Sihirbazla açılan sezonun yapısı `Setup`'a geçerken, öğrenci ve görevlen
 - Tenant başına en fazla bir `Active` sezon bulunur; yeni sezon aktive edilirken öncekini arşivlemek handler katmanının sorumluluğundadır (BR-AS-001, BR-AS-002).
 - Statü geçişi tek yönlüdür, `Archived` terminaldir (BR-AS-002).
 - Arşivlenmiş sezonda hiçbir yazma işlemi kabul edilmez (BR-AS-003).
+- Öğrenci ve veli arşiv sezonlarından yalnız öğrencinin (velide aktif çocuğun) kayıtlı olduğu yılları görür ve onlara geçebilir; kural sezon geçişinde sunucuda uygulanır (REQ-025, 2026-10-14 — ayrıntı [[Kimlik Doğrulama]] bağlam geçişi).
 - Ad ve tarih değişikliği yalnızca `Setup` statüsünde izinlidir; `Active` sezonda yeniden adlandırma reddedilir.
 - Tarih tutarlılığı (BR-AS-004): sezon başlangıcı bitişinden önce olmalı; T1 sezon başlangıcından önce başlayamaz; T1, T2 başlamadan bitmeli; T2 sezon bitişini aşamaz.
 - T1 ve T2 farklı dönem tiplerinde olmalıdır.
