@@ -76,3 +76,32 @@ Bu dosya `oksis-documents` deposunda çalışan Claude Code oturumlarına yol g�
 ## Şüphede
 
 Bir kural koddan ve bu belgelerden net çıkmıyorsa tahmin etme, kullanıcıya sor — adlandırma, kütüphane seçimi ve klasör yeri kararları bilinçlidir ve belgelenmiştir.
+
+
+## Ekip koordinasyonu (oksis-coordinator)
+
+> Kaynak: `oksis-coordinator/CLAUDE.md`. Bu bölüm o dosyanın ekip oturumları için
+> özetidir; çelişkide bu deponun yukarıdaki kuralları geçerlidir.
+
+- Bağımsız oturumlar ortak görev panosunu kullanır:
+  `python3 "$OKSIS_COORD_HOME/scripts/coordinator.py"` (DB: `OKSIS_COORD_DB`).
+  Değişkenler tanımlı değilse dur, yolu tahmin etme (`oksis-coordinator/README.md` §1).
+- Koordinatör oturumu `/coordinate`, ekip lideri oturumları `/lead <ekip>` ile çalışır
+  (ekipler: `oksis-coordinator/docs/coordination/teams.json`). İşe başlamadan panoya bak;
+  görev atanmışsa `claim-task` ile sahiplen, atanmamışsa koordinatörle çakışmayı çöz.
+- `coordinator.py` komutlarını yalnızca üst oturum çalıştırır. Agent tool ile başlatılan
+  alt ajanlar (`oksis-*`) coordinator'a yazmaz; Bash'leri üst oturumun
+  `CLAUDE_CODE_SESSION_ID`'siyle çalışır. Alt ajan sonucunu üst oturum raporlar.
+- Lider, ekip kapasitesinden fazla alt ajan başlatmaz; yalnızca `next-subtasks` /
+  `finish-subtask` çıktısındaki `START:` satırları kadar alt ajan çalıştırır.
+- Bir oturumun panoda kayıtlı olması çalıştığını kanıtlamaz; doğrulayamadığın durumu
+  açıkça belirt.
+- Başka oturumların dosyalarına, worktree'lerine ve Git değişikliklerine izinsiz dokunma;
+  kendi işin için ayrı dal/worktree aç.
+- API, event, veritabanı şeması ve ortak DTO değişikliklerini etkilenen ekiplerle pano
+  üzerinden koordine et; ortak dosyaya dokunan işleri paralel değil sıralı planla.
+- `review`/`done` için doğrulama kanıtı gerekir; kodun yazılmış olması yetmez. Test
+  çalıştırılmadıysa raporda açıkça yaz.
+- Görev kapanış raporu: değişen dosyalar, teknik kararlar, çalıştırılan testler ve
+  gerçek sonuçları, entegrasyon etkileri, kalan riskler, sonraki adım —
+  `coordinator.py report-task` ile kaydedilir.
