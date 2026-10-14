@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-131` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-132` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -243,9 +243,13 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 20 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 48 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 33 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 34 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **104** | |
+| **Toplam** | **105** | |
+
+> **2026-10-14 (REQ-023 bildirim ekranı varyasyonları, Playwright çekimi, Altınay, öğretmen):** yeni `B-131` ⚪
+> (`AttendanceSessionReopened` bildirim türü mobil `NOTIFICATION_KIND_CONFIG`'te yok — zilde genel "Bildirim"/zil ikonu; komşu
+> 49/51 türleri de yok; sunucu başlık emojisi tablo ikonuyla tekrar edebilir). Toplam **105**.
 
 > **2026-10-14 (REQ-022 kod incelemesi + güvenlik denetimi, oksis-api `feature/ogrenci-veli-etkinlik` @ d7674a19):** yeni `B-125` 🟡
 > (süresi dolmuş veli ilişkisi hâlâ erişim veriyor — `ValidFrom`/`ValidUntil` hiçbir veli kapısında okunmuyor, 14 yer listelendi),
@@ -806,6 +810,25 @@ paket mantığı bu yolda kullanılmıyor.
 
 ⬜ Öneri: erteleme olay başına tek iş olsun (alıcı listesi işin içinde ya da çalışma anında yeniden çözülsün), sabah gönderimi
 mevcut paketli yoldan gitsin. Entegrasyon testi: sessiz saatte N alıcılı yayın → tek planlı iş.
+
+### `B-131` · `AttendanceSessionReopened` bildirim türü mobil tür tablosunda yok — zilde genel "Bildirim" etiketi ve zil ikonuyla görünüyor ⚪
+
+2026-10-14, REQ-023 (bildirim ekranı varyasyonları) Playwright çekimi, Altınay, öğretmen Mahir Çelikkeser'in gerçek verisi.
+Sunucu başlığı "🔓 Yoklama size açıldı" (`AttendanceNotificationContent.cs:105`); satır zilde `NOTIFICATION_KIND_FALLBACK`'e
+(`label: "Bildirim"`, `icon: "bell"`) düşüyor. Sebep: `NOTIFICATION_KIND_CONFIG`
+(`oksis-ui` `packages/core/src/notifications/constants.ts:43`) bu türü içermiyor; tür sunucuda
+`NotificationKind.AttendanceSessionReopened = 50` (`Notifications/Enums/NotificationKind.cs:495`) ve
+`AttendanceSessionReopenedNotificationHandler.cs:54` içinde `enqueuer.Enqueue(...)` ile üretiliyor. Aynı blokta
+komşu `AttendanceReopenRequestSubmitted = 49` ve `AttendanceReopenRequestDecided = 51` de tabloda yok
+(`constants.ts` içinde `ReopenRequest` geçmiyor); hepsi aynı sınıf (51'in üretim yolu ayrıca ölçülmedi).
+
+Emoji notu: sunucu başlıklara emoji koyuyor ("🔓", "❌" …). Tür tablosu ise ikonu ayrıca (`icon: "userx"` gibi vektör
+ikon) ve etiketi ayrıca veriyor. Tür tabloya eklenirse satırda hem tablo ikonu hem başlıktaki emoji görünür — tekrar eder;
+merkezi çözümde başlık emojisinin istemcide mi, sunucuda mı kalacağı birlikte karara bağlanmalı (yamalama yok).
+
+⬜ Seçenekler: (1) türü core tabloya ekle (Yoklama grubu, uygun ikon/etiket, hedef rota); (2) ek olarak sunucudaki
+tüm `NotificationKind` adlarının core tabloda karşılığı olduğunu doğrulayan sunucu/istemci sözleşme testi — bu tür
+tekrarını önleyen merkezi seçenek. Öneri: (1)+(2).
 
 ## 12. Çapraz Kesen İşler ✳️
 
