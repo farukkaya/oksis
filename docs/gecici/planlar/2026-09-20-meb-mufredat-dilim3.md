@@ -63,7 +63,7 @@ Plan yazılmadan önce kaynak ve bir gerçek belge ölçüldü:
 - Bu plan yalnız **Dilim 3** içindir. Okul yönetim API sözleşmeleri (program seçme, MEB–okul
   fark görünümü, override, yeniden tabanlama, aktivasyon önizlemesi) **Dilim 4**'tür.
 - Kod yalnız `/Users/farukkaya/Repositories/oksis-api`; plan, rapor ve domain notu yalnız
-  `/Users/farukkaya/Repositories/oksis/docs`.
+  `/Users/farukkaya/Repositories/oksis-documents/docs`.
 - Başlangıç dalı `master` (`db1c11b1`), uygulama dalı `feat/mufredat-keşif-parser`
   (worktree `.claude/worktrees/mufredat-kesif-parser`).
 - **Ekran yok.** Bu dilim backend uçları + Postman koleksiyonu güncellemesidir.

@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Kod yalnız `oksis-api` (`~/Repositories/oksis-api`, branch `master` @ `4fb82833`) ve `oksis-ui` (`~/Repositories/oksis-ui` @ `aecfd09`) depolarına yazılır; belge, plan, rapor yalnız `~/Repositories/oksis/docs/` altına.
+- Kod yalnız `oksis-api` (`~/Repositories/oksis-api`, branch `master` @ `4fb82833`) ve `oksis-ui` (`~/Repositories/oksis-ui` @ `aecfd09`) depolarına yazılır; belge, plan, rapor yalnız `~/Repositories/oksis-documents/docs/` altına.
 - `~/Repositories/antre` OKSİS değildir; dokunma.
 - Tenant izolasyonu: `IgnoreQueryFilters()` yalnız gerekçe yorumu ile; `IsSuperAdmin` kısa devresine bu dilimde DOKUNULMAZ (`TB-139` kendi turunda).
 - AutoMapper yok (Mapster); repository sarmalayıcı yok; controller'da `DbContext` yok (`ISender.Send`); domain'de EF/DataAnnotations yok; lazy loading yok; `async void` / `.Result` / `.Wait()` yok.
@@ -2815,7 +2815,7 @@ Claude-Session: https://claude.ai/code/session_01W8ksrYqz3prgzeNCARapcp"
 - [ ] **Step 6: Commit (oksis)**
 
 ```bash
-cd ~/Repositories/oksis && git add -A
+cd ~/Repositories/oksis-documents && git add -A
 git commit -m "docs(platform): K-27 ilk dilim kapanışı — E-24 ve TB-162 arşive, domain notları, kural belgeleri
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

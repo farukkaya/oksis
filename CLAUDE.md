@@ -1,10 +1,10 @@
 # CLAUDE.md
 
-Bu dosya `oksis` deposunda çalışan Claude Code oturumlarına yol gösterir. `AGENTS.md` aynı içeriği Codex için taşır — biri değişirse öteki de değişir.
+Bu dosya `oksis-documents` deposunda çalışan Claude Code oturumlarına yol gösterir. `AGENTS.md` aynı içeriği Codex için taşır — biri değişirse öteki de değişir.
 
 ## Bu depo nedir
 
-`oksis`, OKSİS'in **belge merkezidir**. Kod barındırmaz. Obsidian ile görüntülenir; **vault kökü `docs/`**. Yeni oturumlar ve AI ajanları için OKSİS hakkında **birincil kaynaktır** — bir işe başlamadan önce `docs/_indeks.md`'den ilgili belgeye git.
+`oksis-documents`, OKSİS'in **belge merkezidir**. Kod barındırmaz. Obsidian ile görüntülenir; **vault kökü `docs/`**. Yeni oturumlar ve AI ajanları için OKSİS hakkında **birincil kaynaktır** — bir işe başlamadan önce `docs/_indeks.md`'den ilgili belgeye git.
 
 **OKSİS:** Türk özel okulları için çok kiracılı (multi-tenant) SaaS okul yönetim sistemi. Satır düzeyi izolasyon `SchoolId` ile. Arayüz dili Türkçe (bugün i18n altyapısı yok; çoklu dil kapsam dışı). Domain dili ve commit mesajları Türkçe; kod identifier'ları İngilizce.
 
@@ -12,7 +12,7 @@ Bu dosya `oksis` deposunda çalışan Claude Code oturumlarına yol gösterir. `
 
 ```
 ~/Repositories/
-├── oksis/       belge merkezi (bu depo) — yalnız md
+├── oksis-documents/ belge merkezi (bu depo) — yalnız md
 ├── oksis-api/   .NET 10 backend — yalnız kod (Clean Architecture + CQRS, SQL Server, EF Core 10)
 └── oksis-ui/    Turborepo monorepo — yalnız kod (apps/web Next.js, apps/mobile Expo, packages/*)
 ```

@@ -15,7 +15,7 @@ _Henüz yok — Teknik Lider ilk dilim planını Faruk'a sunacak._
 
 | Masa | Ajan | Klasör | Dal | Durum |
 |---|---|---|---|---|
-| 1 · Yönetim | `oksis-tech-lead` | `~/Repositories/oksis` | — | boşta |
+| 1 · Yönetim | `oksis-tech-lead` | `~/Repositories/oksis-documents` | — | boşta |
 | 2 · Backend | `oksis-backend-developer` | `~/Repositories/oksis-api-wt-backend` | — (dev) | boşta |
 | 3 · Web | `oksis-web-developer` | `~/Repositories/oksis-ui-wt-web` | — (dev) | boşta |
 | 4 · İnceleme | `oksis-code-reviewer` | `~/Repositories/oksis-ui`, `~/Repositories/oksis-api` | — | boşta |

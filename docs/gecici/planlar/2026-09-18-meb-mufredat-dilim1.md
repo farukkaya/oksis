@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Bu plan yalnız **Dilim 1** içindir. MEB sayfa/PDF keşfi, ham belge saklama, parser, staging, merkez inceleme/onay uçları ve okul yönetim UI/API'larının yeni sözleşmeleri bu planda uygulanmaz; sırasıyla Dilim 2–4 planlarıdır.
-- Kod yalnız `/Users/farukkaya/Repositories/oksis-api` deposuna; plan ve domain notları yalnız `/Users/farukkaya/Repositories/oksis/docs` deposuna yazılır.
+- Kod yalnız `/Users/farukkaya/Repositories/oksis-api` deposuna; plan ve domain notları yalnız `/Users/farukkaya/Repositories/oksis-documents/docs` deposuna yazılır.
 - Başlangıç dalı `master`; uygulama dalı `feat/mufredat-surum-snapshot`. Başlangıç commit'i bu plan yazılırken `b7f8baaf` idi; uygulamaya başlarken `origin/master` ile güncellik yeniden doğrulanır.
 - Tenant entity'lerin tamamı `TenantEntity`/`IHasTenant`, global query filter ve `TenantSaveChangesInterceptor` korumasında olur. Tenant yolunda `IgnoreQueryFilters()` kullanılmaz.
 - Master varlıklar tenant kimliği taşımaz. Dilim 1'de master'a yazan ürün endpoint'i açılmaz; yalnız deterministik seed ve göç verisi vardır.

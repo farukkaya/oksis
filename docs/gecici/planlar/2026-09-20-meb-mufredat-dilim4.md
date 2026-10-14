@@ -49,7 +49,7 @@ bağlanabiliyor.
 - Bu plan yalnız **Dilim 4** içindir. Ekranlar (`oksis-ui`) bu dilimin dışındadır; tasarım
   §3'te de "UI ekranlarının bu backend diliminde uygulanması" kapsam dışıdır.
 - Kod yalnız `/Users/farukkaya/Repositories/oksis-api`; plan, rapor ve domain notu yalnız
-  `/Users/farukkaya/Repositories/oksis/docs`.
+  `/Users/farukkaya/Repositories/oksis-documents/docs`.
 - Başlangıç dalı `master` (`1f0f60af`), uygulama dalı `feat/mufredat-okul-yonetimi`
   (worktree `.claude/worktrees/mufredat-okul-yonetimi`).
 - **Yeni tablo ve göç yok.** Model Dilim 1'de kuruldu; bu dilim yalnız sözleşme ekler.
