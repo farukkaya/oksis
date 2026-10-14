@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-121` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-122` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -243,9 +243,13 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 19 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 45 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 27 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 28 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **94** | |
+| **Toplam** | **95** | |
+
+> **2026-10-14 (Playwright ekran testi, Altınay, veli):** yeni `B-121` ⚪ (veli mobil anasayfada `GET school-settings` 403 —
+> rol çözülmeden varsayılan `admin` rolüyle istek atılıyor; aynı testteki `club-settings` 404'ü API/UI sürüm kayması, maddeye not).
+> Toplam **95**.
 
 > **2026-10-13 (OSYN-4, kulüp tercih dalı yerel ekran testi):** dal `feature/kulup-tercih-yerlestirme` (api `b415d6fc` · ui `36711ea`)
 > `oksis_dev`'in yerel kopyasında (DEV-OKUL, İdare modu) web + Expo web'de gerçek tıklamayla koşuldu. `B-116`, `B-119`, `B-120`, `D-70`,
@@ -747,6 +751,40 @@ mevcut paketli yoldan gitsin. Entegrasyon testi: sessiz saatte N alıcılı yay�
 
 Tek bir ekranın değil, bir **sınıfın** işi. Kapanışları da merkezî olmak zorunda
 ([[yamalama-kabul-degil]]).
+
+### `B-121` · Veli (ve yönetici olmayan her rol) mobil anasayfada `GET school-settings` çağırıp 403 alıyor ⚪
+
+2026-10-14, Playwright ekran testi (Expo web, Altınay okulu, veli Yusuf Kılınç; UI `oksis-ui-tasarim` `design/genel-tasarim`).
+**Belirti:** veli oturum açıp anasayfaya inince ağda `GET /api/v1/school-settings` → **403**, konsola hata düşüyor. Ekranda görünür bir
+kırılma ölçülmedi (veli başlık satırı okul adını zaten kullanmıyor); kayıp boşa giden istek + konsol gürültüsü.
+**Adımlar:** veli hesabıyla giriş → anasayfa → geliştirici araçları Ağ/Konsol.
+**Kök neden (kod okundu, çalıştırılmadı):** istek, rol çözülmeden önce atılıyor.
+- `apps/mobile/src/features/navigation/use-portal-header.ts:44` — `useSchoolSettings({ enabled: role === 'admin' })`. Bekçi var, ama
+  `role` alanına bakıyor.
+- `apps/mobile/src/features/navigation/use-active-role.ts:49-50` — `role = resolvedRole ?? PORTAL_ROLE_FALLBACK`; bağlam
+  (`useMyContext`) inene kadar `role` varsayılana düşüyor ve o varsayılan `'admin'` (`packages/core/src/roles/roles.ts:65`). İlk
+  çizimde `enabled` `true` olduğu için sorgu bir kez başlıyor; bağlam inip rol `parent` olduğunda istek çoktan gitmiş oluyor. Aynı
+  dosyanın kendi yorumu bu tuzağı anlatıyor ("varsayılana düşen `role` ile bir KARAR vermek yanlıştır", C4 I-1) — burada uygulanmamış.
+- Sunucu tarafı doğru kapılı: `GetSchoolSettingsQuery.cs:18` `[RequirePermission("school-settings.view")]`; izin yalnız yönetim
+  rollerinde (`RolePermissionSeedData.cs:404`), veli bloğunda (`:209-230`) yok → 403 beklenen yanıt. Kusur istemcide.
+- Mobilde başka `enabled: role === …` bekçisi yok (tarandı); `oksis-ui` `master` ve `dev`'de aynı satır var — yalnız tasarım dalının
+  sorunu değil. Öğretmen ve öğrenci de aynı yarışa açık (ölçülmedi).
+**Karar geçmişi:** arşivde "tasarım gereği" kararı yok. Aynı ailenin önceki ayağı `B-38` / `X-17` "aşağı doğru" (öğretmen yüzü
+yönetici ucundan besleniyordu, 403) — orada çözüm role özel salt okunur uç (`GET grades/policy`) oldu ([[OKSİS - Bulgu Arşivi]] §24).
+⬜ **Seçenekler (karar verilmedi):**
+1. **İstemci çağırmasın** — bekçi `resolvedRole === 'admin'`'e geçsin (bağlam inmeden istek yok). Tek satır, sunucuya dokunmaz.
+   Varsayılan rol ile karar veren başka yer kalmasın diye `role` kullanımları birlikte taransın ([[yamalama-kabul-degil]]).
+2. **Uç veli için salt okunur alt küme döndürsün** — ya `school-settings` rolüne göre daraltılmış bir DTO verir, ya da ayrı, herkese açık
+  bir "okul kimliği" ucu (ad, logo; `school-settings/public` emsali) açılır ve başlık bütün rollerde okul adını oradan okur. Veli
+  başlığında okul adı ürün isteği değilse gereksiz.
+3. İkisi birlikte: 1 hemen, 2 ancak dört rolün başlığında okul adı isteniyorsa.
+
+**Aynı testte görülen `club-settings` 404'ü bu maddeden AYRI, ayrı madde açılmadı:** veli çocuk kulüp detayı
+(`apps/mobile/src/app/clubs/parent/[studentId]/[clubId].tsx:22` `useClubSettings()`) `GET school-settings/club-settings` çağırıyor;
+uç `oksis-api`'de yalnız `dev`/`test`'te var (`b415d6fc`, kulüp üye kabul sorumlusu), `master`'da yok → 404. Tasarım dalı `dev`
+tabanlı UI'ı `master` API'ye karşı koşturunca doğan **sürüm kayması**; tutarlı çiftte (UI `dev` + API `dev`) uç `clubs.read` ile kapılı
+(`GetClubSettingsQuery.cs:23`) ve veli bu izni taşıyor (`RolePermissionSeedData.cs:218`) → 200 beklenir. `oksis-ui` `master` bu ucu
+çağırmıyor. Ekran testi aynı daldaki API'ye karşı tekrarlanınca görülmezse not düşülür.
 
 ### `TB-231` · Entegrasyon takımının yarısı master'da kırmızı; push kapısının dışında olduğu için sessizce birikti 🟠
 
