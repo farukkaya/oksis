@@ -226,7 +226,7 @@
 - `E-##` → Eksik özellik · `ENG-##` → Engel
 - Tam sözlük (açılımlar, öncelik işaretleri, karıştırılmaması gereken kodlar): [[CLAUDE]]
 
-**Sıradaki boş ID:** `B-136` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
+**Sıradaki boş ID:** `B-137` · `D-78` · `V-08` · `X-26` · `TB-277` · `E-49` · `ENG-04` *(`B-93` arşivde kullanılmış, sayaç atlamıştı)*
 *(`K-##` karar sayacı: sıradaki `K-35` — `K-16`…`K-26` modül belgelerinde kullanılmış.)*
 *(`E-##` sayacı [[OKSİS - Yapısal Kararlar ve Eksikler]] ile ortaktır.)*
 
@@ -243,9 +243,13 @@ sayaçlar üçü arasında ortak.
 | 🔴 Kritik | 3 | Tenant izolasyonu · veri/çıktı kaybı · akışı bütünüyle bloklayan |
 | 🟠 Yüksek | 22 | İşlev yanlış çalışıyor, veri/yetki güveni zedeleniyor |
 | 🟡 Orta | 49 | İşlev eksik ama alternatif yol var; borç birikiyor |
-| ⚪🟢 Düşük | 35 | Kozmetik, temizlik, adlandırma |
+| ⚪🟢 Düşük | 36 | Kozmetik, temizlik, adlandırma |
 | ❓ Netleşmemiş | 0 | — |
-| **Toplam** | **109** | |
+| **Toplam** | **110** | |
+
+> **2026-10-14 (REQ-025 entegrasyon koşusu, oksis-api `feature/ogrenci-kayitli-sezonlar`):** yeni `B-136` ⚪ (`UserDeviceTenantFilterTests`
+> "B-112 · Eşzamanlı kayıtlar…" testi kararsız, ara sıra `DbUpdateConcurrencyException`; üretim bütçesi mi test yarışı mı — karar yok,
+> `test`/`master` kapısı ve CI ara sıra kırmızı). Toplam **110**.
 
 > **2026-10-14 (REQ-025 kod incelemesi + güvenlik denetimi, oksis-api `origin/dev` @ ebb1cd00):** yeni `B-132` 🟠 (🔴 adayı —
 > `CanViewInfo=false` veli not/ödev/kulüp/öğrenci belgesi kapılarında ve not/ödev bildirimlerinde süzülmüyor; K-12 B2 / `TB-78` ihlali),
@@ -670,6 +674,7 @@ Hata `DbUpdateConcurrencyException` (row_version): test 16 isteği aynı anda ya
 dışarı taşıyor. Gerçek hayatta aynı cihazdan 16 eşzamanlı kayıt beklenmez, ama bütçe tükenince 500 döner. ⬜ Karar:
 ya bütçe tükenince son tur sonucu "satır var" diye başarı sayılsın (upsert'in amacı tek satır — o zaten sağlanmış), ya da
 test yarışı gerçekçi bir sayıya (2-4) indirilsin. Test dağıtımı bu kırmızıdan etkilenmedi (entegrasyon kapısı dağıtımı durdurmaz).
+Kararsızlık ayrı madde olarak izleniyor: `B-136`.
 
 ### `D-69` · Kulüp saati kapsamı dışındaki öğrenci keşifte "Henüz yayında kulüp yok" görüyor 🟡
 
@@ -3257,6 +3262,30 @@ içeriği.
 ⬜ **Seçenekler:**
 - (a) Token üretilen tek noktada (`ContextResolver`) yeniden doğrulama; kapsam dışıysa güncel yıla sessiz dönüş (önerilen).
 - (b) Aynı noktada ret.
+
+### `B-136` · `UserDeviceTenantFilterTests` "B-112 · Eşzamanlı kayıtlar unique indeks ihlaline düşmez" testi kararsız: ara sıra `DbUpdateConcurrencyException` ile düşüyor ⚪
+
+2026-10-14, REQ-025 entegrasyon koşusu (oksis-api `feature/ogrenci-kayitli-sezonlar`, taban `origin/dev` @ `ebb1cd00`; dal bu alana dokunmuyor).
+**Kaynak:** entegrasyon koşusu. Tek başına 3 koşuda 2 geçti 1 düştü; ilk tam koşuda geçmişti. Test:
+`tests/Oksis.Infrastructure.IntegrationTests/Persistence/UserDeviceTenantFilterTests.cs:246` (`B112_eszamanli_kayitlar_tek_satir_birakirAsync`).
+Aynı kırmızı `B-112`'nin 2026-10-13 CI notunda da görülmüştü (son 8 koşunun 2'si); bu madde onu ayrı, izlenebilir bir iş olarak açar.
+
+**Etki:** `test`/`master` push kapısı ve CI ara sıra kırmızı; değişiklikle ilgisiz dallar engelleniyor.
+
+**Kod okundu, iki olasılık (karar verilmedi):**
+- **Üretim kusuru (B-112 düzeltmesi tam kapanmamış):** `RegisterDeviceCommandHandler` upsert'i `maxAttempts = 5` ile sınırlı döngüde yapıyor;
+  `DbUpdateConcurrencyException` (row_version) ya da `ux_user_devices_account_token` ihlali yakalanıp satır yeniden okunuyor. Bütçe tükenince
+  (`attempt < maxAttempts` koşulu sağlanmaz) istisna dışarı taşınıyor → 500. Aynı hesap + token için yarışan istek sayısı 5 turdan fazlaysa
+  şanssız bir istek tüm turları kaybedebilir; yani sorun yalnız testte değil, bütçe tükenince başarı yerine hata dönen kodda da.
+- **Test yarışı:** test 16 isteği `ManualResetEventSlim` kapısıyla aynı anda başlatıyor (`parallel = 16`); gerçek hayatta aynı cihazdan 16
+  eşzamanlı kayıt beklenmez. Düşüş yalnız bu yapay yük altında oluşuyorsa test, ürünün görmeyeceği bir senaryoyu sınıyor. Ayrıca test
+  `logger.Retries > 0` bekliyor (yarış yaşanmalı), yani yük bilerek yüksek tutulmuş.
+
+**Karar geçmişi:** henüz yok (`B-112` 2026-10-13 notunda iki yol önerilmişti, seçilmedi).
+
+⬜ **Seçenekler (karar verilmedi):**
+- (1) Üretim yolunu incele: bütçe tükenince son tur sonucu "satır var" diye başarı sayılsın mı, bütçe artsın mı, bekleme/geri çekilme (backoff) eklensin mi.
+- (2) Testi deterministik yap: yarış sayısını gerçekçi değere (2-4) indir ya da yarışı kontrollü kurgula.
 
 ## Not
 
