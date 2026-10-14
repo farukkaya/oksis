@@ -11,12 +11,16 @@ Bu dosya `oksis-documents` deposunda çalışan Codex oturumlarına yol gösteri
 ## Depolar
 
 ```
-~/Repositories/
-├── oksis-documents/ belge merkezi (bu depo) — yalnız md
-├── oksis-api/   .NET 10 backend — yalnız kod (Clean Architecture + CQRS, SQL Server, EF Core 10)
-└── oksis-ui/    Turborepo monorepo — yalnız kod (apps/web Next.js, apps/mobile Expo, packages/*)
+~/Repositories/oksis/          proje kökü (git deposu değil)
+├── oksis-documents/   belge merkezi (bu depo) — yalnız md
+├── oksis-api/         .NET 10 backend — yalnız kod (Clean Architecture + CQRS, SQL Server, EF Core 10)
+├── oksis-ui/          Turborepo monorepo — yalnız kod (apps/web Next.js, apps/mobile Expo, packages/*)
+├── oksis-coordinator/ oturumlar arası koordinasyon kiti (SQLite görev panosu, `scripts/coordinator.py`)
+├── oksis-sosyal/      Instagram görsel/video servisi (Vercel serverless)
+└── oksis-ui-*/        oksis-ui worktree'leri (ör. `oksis-ui-req027`, `oksis-ui-tasarim`)
 ```
 
+- Tüm OKSİS depoları `~/Repositories/oksis/` altında toplanır (2026-10-14). Eski `~/Repositories/oksis-*` yolları geçersizdir; ajan worktree'leri de bu kökün altına açılır (ör. `~/Repositories/oksis/oksis-api-wt-backend`).
 - `oksis-web` ve `oksis-mobile` emeklidir; yerlerini `oksis-ui` aldı.
 - Kod repolarının kendi `AGENTS.md`'si katmana özgü komut ve yasakları taşır; bir katmanda çalışırken önce onu oku.
 - **Kod repolarında belge tutulmaz.** Analiz, rapor, plan, spec, test rehberi, Postman koleksiyonu, domain/mimari notu, envanter — hepsi bu depoya yazılır.

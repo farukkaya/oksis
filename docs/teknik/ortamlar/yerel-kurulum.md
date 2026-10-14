@@ -35,12 +35,12 @@
 └── oksis-ui/
 ```
 
-Mobil betikleri API'yi `~/Repositories/oksis-api` ya da `~/Projects/oksis/oksis-api` altında arar. Farklı bir konum için `OKSIS_API_DIR` verilir (`src/Oksis.Api` klasörünü göstermeli).
+Mobil betikleri API'yi `~/Repositories/oksis/oksis-api` ya da `~/Projects/oksis/oksis-api` altında arar. Farklı bir konum için `OKSIS_API_DIR` verilir (`src/Oksis.Api` klasörünü göstermeli).
 
 ## 3. Altyapı (docker compose)
 
 ```bash
-cd ~/Repositories/oksis-api
+cd ~/Repositories/oksis/oksis-api
 docker compose up -d
 ```
 
@@ -61,7 +61,7 @@ docker compose ps                                          # tüm servisler heal
 ## 4. API (`oksis-api`)
 
 ```bash
-cd ~/Repositories/oksis-api
+cd ~/Repositories/oksis/oksis-api
 git config core.hooksPath .githooks          # bir kez: pre-push kapısı (build + birim testler)
 dotnet build
 dotnet ef database update --project src/Oksis.Infrastructure --startup-project src/Oksis.Api
@@ -101,7 +101,7 @@ dotnet run --project src/Oksis.Api
 ### 5.1 Ortak adımlar
 
 ```bash
-cd ~/Repositories/oksis-ui
+cd ~/Repositories/oksis/oksis-ui
 npm install
 git config core.hooksPath .githooks          # bir kez: pre-push kapısı (lint + typecheck)
 npm run typecheck && npm run lint

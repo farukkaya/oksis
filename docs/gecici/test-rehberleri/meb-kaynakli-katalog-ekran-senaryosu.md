@@ -40,12 +40,12 @@ onaylanamaz" açıklaması.
 
 ```bash
 # API (göç uygulanmış olmalı — API başlangıçta MİGRATE ETMEZ)
-cd ~/Repositories/oksis-api
+cd ~/Repositories/oksis/oksis-api
 dotnet ef migrations list | grep Pending     # boş çıkmalı
 dotnet run --project src/Oksis.Api           # http://localhost:5112
 
 # Web
-cd ~/Repositories/oksis-ui/apps/web && npm run dev   # http://localhost:3000
+cd ~/Repositories/oksis/oksis-ui/apps/web && npm run dev   # http://localhost:3000
 ```
 
 **Hesaplar:**

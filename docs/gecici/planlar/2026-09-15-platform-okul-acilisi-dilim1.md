@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Kod yalnız `oksis-api` (`~/Repositories/oksis-api`, branch `master` @ `4fb82833`) ve `oksis-ui` (`~/Repositories/oksis-ui` @ `aecfd09`) depolarına yazılır; belge, plan, rapor yalnız `~/Repositories/oksis-documents/docs/` altına.
+- Kod yalnız `oksis-api` (`~/Repositories/oksis/oksis-api`, branch `master` @ `4fb82833`) ve `oksis-ui` (`~/Repositories/oksis/oksis-ui` @ `aecfd09`) depolarına yazılır; belge, plan, rapor yalnız `~/Repositories/oksis/oksis-documents/docs/` altına.
 - `~/Repositories/antre` OKSİS değildir; dokunma.
 - Tenant izolasyonu: `IgnoreQueryFilters()` yalnız gerekçe yorumu ile; `IsSuperAdmin` kısa devresine bu dilimde DOKUNULMAZ (`TB-139` kendi turunda).
 - AutoMapper yok (Mapster); repository sarmalayıcı yok; controller'da `DbContext` yok (`ISender.Send`); domain'de EF/DataAnnotations yok; lazy loading yok; `async void` / `.Result` / `.Wait()` yok.
@@ -2381,7 +2381,7 @@ Claude-Session: https://claude.ai/code/session_01W8ksrYqz3prgzeNCARapcp"
 
 ### Task 6: Web — platform girişi ve okul tanımlama ekranı
 
-Depo: `~/Repositories/oksis-ui`. Dal: `feature/platform-okul-acilisi`.
+Depo: `~/Repositories/oksis/oksis-ui`. Dal: `feature/platform-okul-acilisi`.
 
 **Files:**
 - Modify: `packages/api/src/generated/schema.ts` (codegen ile)
@@ -2400,7 +2400,7 @@ Depo: `~/Repositories/oksis-ui`. Dal: `feature/platform-okul-acilisi`.
 API çalışırken (`dotnet run --project src/Oksis.Api`):
 
 ```bash
-cd ~/Repositories/oksis-ui && pnpm --filter @workspace/api codegen
+cd ~/Repositories/oksis/oksis-ui && pnpm --filter @workspace/api codegen
 git diff --stat packages/api/src/generated/schema.ts
 ```
 Expected: `PlatformLoginBody`, `PlatformAuthResult`, `PlatformMeDto`, `CreateSchoolCommand`, `CreateSchoolResult`, `PlatformSchoolListItemDto` şemaya girdi; `InvitationListItemDto.seasonId` ve `RoleAssignmentDto.seasonId` nullable oldu.
@@ -2746,7 +2746,7 @@ Görsel cila bu dilimin dışıdır; ekranın işi senaryoyu yürütmektir.
 - [ ] **Step 6: "Tüm sezonlar" gösterimi**
 
 ```bash
-cd ~/Repositories/oksis-ui && grep -rn "seasonName" apps/web/features/invitations apps/web/features/users packages/api/src/invitations packages/core/src | head
+cd ~/Repositories/oksis/oksis-ui && grep -rn "seasonName" apps/web/features/invitations apps/web/features/users packages/api/src/invitations packages/core/src | head
 ```
 Her gösterim yerinde `dto.seasonName ?? "Tüm sezonlar"` (adaptörde `season: dto.seasonName ?? "Tüm sezonlar"` gibi tek noktada yapılıyorsa orada). Davet sihirbazında hedef rol `SCHOOL_ADMIN` seçilince sezon alanı zorunlu olmaktan çıkar: sihirbazın sezon doğrulamasını `role.code === "SCHOOL_ADMIN"` ise atla (doğrulama `packages/core/src/invitations` altındaysa oraya, aksi hâlde `apps/web/features/invitations/wizard.tsx`'e).
 
@@ -2815,7 +2815,7 @@ Claude-Session: https://claude.ai/code/session_01W8ksrYqz3prgzeNCARapcp"
 - [ ] **Step 6: Commit (oksis)**
 
 ```bash
-cd ~/Repositories/oksis-documents && git add -A
+cd ~/Repositories/oksis/oksis-documents && git add -A
 git commit -m "docs(platform): K-27 ilk dilim kapanışı — E-24 ve TB-162 arşive, domain notları, kural belgeleri
 
 Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>

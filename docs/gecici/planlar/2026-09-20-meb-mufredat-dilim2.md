@@ -29,8 +29,8 @@ Garage (S3 uyumlu obje deposu) + ClamAV, Hangfire, xUnit + FluentAssertions + NS
 - Bu plan yalnız **Dilim 2** içindir. MEB kategori sayfası keşfi, otomatik indirme, PDF/tablo
   ayrıştırma, golden-file testleri ve parser drift **Dilim 3**'tür; okul yönetim API sözleşmeleri
   (program seçme, fark görünümü, yeniden tabanlama, aktivasyon önizlemesi) **Dilim 4**'tür.
-- Kod yalnız `/Users/farukkaya/Repositories/oksis-api`; plan, rapor ve domain notu yalnız
-  `/Users/farukkaya/Repositories/oksis-documents/docs`.
+- Kod yalnız `/Users/farukkaya/Repositories/oksis/oksis-api`; plan, rapor ve domain notu yalnız
+  `/Users/farukkaya/Repositories/oksis/oksis-documents/docs`.
 - Başlangıç dalı `master` (`c89c22bf`), uygulama dalı `feat/mufredat-belge-onay`
   (worktree `.claude/worktrees/mufredat-belge-onay`).
 - **Ekran yok.** Bu dilim backend uçları + Postman koleksiyonudur; platform paneli ekranları

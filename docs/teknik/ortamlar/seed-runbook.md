@@ -85,7 +85,7 @@ Adres seçimi arayüzde zincirleme seçim kutularıyla yapılır. Veri `countrie
 **Yöntem A: PowerShell betiği (önerilen).** Betik bir kez çalıştırılır ve çıktı commit'lenir. Yeni sunucu kurulumunda tekrar çalıştırmaya gerek yoktur, çünkü CSV'ler assembly içindedir.
 
 ```powershell
-cd ~/Repositories/oksis-api
+cd ~/Repositories/oksis/oksis-api
 pwsh ./tools/seed-locations/Generate-LocationCsvs.ps1 `
     -SourceUrl '<kaynak JSON URL>' `
     -SourceFormat Hierarchical

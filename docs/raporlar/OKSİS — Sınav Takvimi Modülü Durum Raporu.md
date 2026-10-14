@@ -63,8 +63,8 @@ aynı ucu gösterdiği için silinmedi, geride iş bırakmıyorlar.
 
 | Depo | Dal | Uç | Ağaç | Kim |
 |---|---|---|---|---|
-| `oksis-api` | `feature/exam-session-client` = `master` = `origin/master` | `20ab14bd` | `~/Repositories/oksis-api` | sınav işi |
-| `oksis-ui` | `feature/exam-session-client` = `master` = `origin/master` | `3dcfeed` | `~/Repositories/oksis-ui` | sınav işi |
+| `oksis-api` | `feature/exam-session-client` = `master` = `origin/master` | `20ab14bd` | `~/Repositories/oksis/oksis-api` | sınav işi |
+| `oksis-ui` | `feature/exam-session-client` = `master` = `origin/master` | `3dcfeed` | `~/Repositories/oksis/oksis-ui` | sınav işi |
 | `oksis-api` | `fix/polish` | `dda332cf` | `~/Repositories/worktrees/oksis-api-polish` | **kullanıcı** — dokunulmaz |
 | `oksis-ui` | `fix/polish` | `1ab7a20` | `~/Repositories/worktrees/oksis-ui-polish` | **kullanıcı** — dokunulmaz |
 
@@ -211,7 +211,7 @@ Bu üç adım atlanırsa ekran boş açılır ve bir tur boşa gider.
 ```bash
 # 1. Göçleri uygula — API göçleri otomatik uygulamıyor.
 #    Bu yapılmazsa oturum tabloları dev veritabanında YOK ve her ekran "veri yok" gösterir.
-cd ~/Repositories/oksis-api
+cd ~/Repositories/oksis/oksis-api
 git checkout master   # feature/exam-session-client aynı ucu gösteriyor
 dotnet ef database update --project src/Oksis.Infrastructure --startup-project src/Oksis.Api
 
@@ -220,7 +220,7 @@ dotnet ef database update --project src/Oksis.Infrastructure --startup-project s
 dotnet run --project src/Oksis.Api
 
 # 3. Şemayı yenile. Üretilen şema boşsa DUR — sunucu bayattır.
-cd ~/Repositories/oksis-ui
+cd ~/Repositories/oksis/oksis-ui
 npm run codegen -w packages/api
 ```
 

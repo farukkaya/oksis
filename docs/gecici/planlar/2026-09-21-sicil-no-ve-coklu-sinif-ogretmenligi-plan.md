@@ -8,11 +8,11 @@
 
 **Tech Stack:** .NET 10 / EF Core 10 / xUnit + FluentAssertions + NSubstitute + MockQueryable (api) · Next.js 16 / TypeScript strict / TanStack Query / Vitest / MSW (ui)
 
-**Spec:** `~/Repositories/oksis-documents/docs/gecici/planlar/2026-09-21-sicil-no-ve-coklu-sinif-ogretmenligi.md`
+**Spec:** `~/Repositories/oksis/oksis-documents/docs/gecici/planlar/2026-09-21-sicil-no-ve-coklu-sinif-ogretmenligi.md`
 
 ## Global Constraints
 
-- **Depolar ve dallar:** backend `~/Repositories/worktrees/oksis-api-polish` (dal `fix/polish`), frontend `~/Repositories/worktrees/oksis-ui-polish` (dal `fix/polish`). `~/Repositories/oksis-api` ana checkout'una **DOKUNULMAZ** — orada başka bir oturum `feat/meb-kaynakli-katalog` dalında çalışıyor.
+- **Depolar ve dallar:** backend `~/Repositories/worktrees/oksis-api-polish` (dal `fix/polish`), frontend `~/Repositories/worktrees/oksis-ui-polish` (dal `fix/polish`). `~/Repositories/oksis/oksis-api` ana checkout'una **DOKUNULMAZ** — orada başka bir oturum `feat/meb-kaynakli-katalog` dalında çalışıyor.
 - **Derleme:** `dotnet build`/`dotnet test` daima `-m:1` ile. Çok düğümlü derleme bu makinede `MSB4166` ile worker düşürüp **bozuk assembly** bırakıyor (2026-09-20'de `Oksis.Application.dll` bu yüzden yüklenemez hâle geldi).
 - **Veritabanı:** `docker start oksis-mssql` gerekli (konteyner OOM ile düşebiliyor). Integration testleri SQL Server ister.
 - **Doğrulama kullanıcı kararıyla EN SONDA toplu** (Task 6). Ara adımlarda tarayıcı doğrulaması YAPILMAZ; `dotnet test`/`vitest` adımları normal TDD döngüsünün parçasıdır ve çalıştırılır.
@@ -697,7 +697,7 @@ EOF
 **Files:**
 - Create: `apps/web/components/shared/multi-select.tsx`
 - Modify: `packages/ui/src/styles/screens.css` (`.usr-fdd-item .chk` kuralından sonra, `.usr-bulk` bloğundan önce)
-- Modify: `~/Repositories/oksis-documents/docs/frontend/bilesenler/_envanter.md`
+- Modify: `~/Repositories/oksis/oksis-documents/docs/frontend/bilesenler/_envanter.md`
 
 **Interfaces:**
 - Consumes: `OksisIcon`, `OksisIconName` (`@workspace/ui`)
@@ -982,7 +982,7 @@ Beklenen: ikisi de temiz. (Bileşenin henüz tüketicisi yok; Task 5'te bağlana
 
 - [ ] **Step 4: Envanteri güncelle**
 
-`~/Repositories/oksis-documents/docs/frontend/bilesenler/_envanter.md` — `apps/web/components/shared/*`
+`~/Repositories/oksis/oksis-documents/docs/frontend/bilesenler/_envanter.md` — `apps/web/components/shared/*`
 tablosuna, `SelectCheckbox` satırının ardına:
 
 ```markdown
@@ -1006,7 +1006,7 @@ Claude-Session: https://claude.ai/code/session_017bGMTJy5QnwzXNRPiLzdYu
 EOF
 )"
 
-cd ~/Repositories/oksis-documents/docs
+cd ~/Repositories/oksis/oksis-documents/docs
 git add frontend/bilesenler/_envanter.md
 git commit -m "$(cat <<'EOF'
 docs(bilesenler): MultiSelect envantere eklendi

@@ -15,11 +15,11 @@ _Henüz yok — Teknik Lider ilk dilim planını Faruk'a sunacak._
 
 | Masa | Ajan | Klasör | Dal | Durum |
 |---|---|---|---|---|
-| 1 · Yönetim | `oksis-tech-lead` | `~/Repositories/oksis-documents` | — | boşta |
-| 2 · Backend | `oksis-backend-developer` | `~/Repositories/oksis-api-wt-backend` | — (dev) | boşta |
-| 3 · Web | `oksis-web-developer` | `~/Repositories/oksis-ui-wt-web` | — (dev) | boşta |
-| 4 · İnceleme | `oksis-code-reviewer` | `~/Repositories/oksis-ui`, `~/Repositories/oksis-api` | — | boşta |
-| 5 · QA | `oksis-qa-engineer` | `~/Repositories/oksis-ui-wt-qa` | — (dev) | boşta |
+| 1 · Yönetim | `oksis-tech-lead` | `~/Repositories/oksis/oksis-documents` | — | boşta |
+| 2 · Backend | `oksis-backend-developer` | `~/Repositories/oksis/oksis-api-wt-backend` | — (dev) | boşta |
+| 3 · Web | `oksis-web-developer` | `~/Repositories/oksis/oksis-ui-wt-web` | — (dev) | boşta |
+| 4 · İnceleme | `oksis-code-reviewer` | `~/Repositories/oksis/oksis-ui`, `~/Repositories/oksis/oksis-api` | — | boşta |
+| 5 · QA | `oksis-qa-engineer` | `~/Repositories/oksis/oksis-ui-wt-qa` | — (dev) | boşta |
 
 ## Açık engeller / Faruk'un kararını bekleyenler
 

@@ -122,7 +122,7 @@ Parola (passphrase) sorarsa bir parola verin; Mac anahtar zincirine kaydedilir.
 ## Adım 5 — VM kurulumu (≈15 dk, Mac terminalinden)
 
 ```bash
-cd ~/Repositories/oksis-api
+cd ~/Repositories/oksis/oksis-api
 scp -i ~/.ssh/oksis_test -r infra/test ubuntu@<IP>:/tmp/oksis-test
 ssh -i ~/.ssh/oksis_test ubuntu@<IP>
 
